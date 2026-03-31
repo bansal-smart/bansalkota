@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Play, BookOpen, ClipboardCheck, Bot, BarChart3, Swords, Smartphone, Star, Check, Flame } from "lucide-react";
+import { ArrowRight, Play, BookOpen, ClipboardCheck, Bot, BarChart3, Swords, Smartphone, Star, Check, Flame, Rocket, GraduationCap, FileText, Trophy, Users, Monitor, Award, Heart, Sparkles } from "lucide-react";
 
 const LandingPage = () => {
   return (
@@ -34,11 +34,11 @@ const LandingPage = () => {
           <div className="grid items-center gap-12 md:grid-cols-2">
             <div>
               <span className="inline-flex items-center gap-2 rounded-pill bg-primary/20 px-4 py-1.5 text-sm font-semibold text-primary">
-                🚀 India's Rising EdTech Platform
+                <Rocket className="h-4 w-4" /> India's Rising EdTech Platform
               </span>
               <h1 className="mt-6 font-display">
-                <span className="block text-4xl font-black text-card md:text-5xl lg:text-6xl">शुरुआत करो,</span>
-                <span className="block text-4xl font-black text-primary md:text-5xl lg:text-6xl">मंज़िल पाओ</span>
+                <span className="block text-4xl font-black text-card md:text-5xl lg:text-6xl">Start Your Journey,</span>
+                <span className="block text-4xl font-black text-primary md:text-5xl lg:text-6xl">Reach Your Goals</span>
               </h1>
               <p className="mt-3 text-lg font-semibold text-muted">JEE · NEET · Board Exams | India & Dubai</p>
               <p className="mt-4 max-w-md text-muted-foreground">
@@ -53,9 +53,9 @@ const LandingPage = () => {
                 </button>
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted">
-                <span className="font-semibold">📚 10,000+ Students</span>
-                <span className="font-semibold">📺 500+ Live Classes</span>
-                <span className="font-semibold">🏆 99% Results</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Users className="h-4 w-4 text-primary" /> 10,000+ Students</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Monitor className="h-4 w-4 text-primary" /> 500+ Live Classes</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Award className="h-4 w-4 text-primary" /> 99% Results</span>
               </div>
             </div>
             <div className="relative hidden md:block">
@@ -77,7 +77,7 @@ const LandingPage = () => {
                       <p className="text-[10px] text-muted-foreground">All India Rank</p>
                     </div>
                     <div className="rounded-lg bg-secondary-light p-3">
-                      <p className="text-xs font-bold text-secondary">8 Day Streak 🔥</p>
+                      <p className="text-xs font-bold text-secondary inline-flex items-center gap-1"><Flame className="h-3 w-3" /> 8 Day Streak</p>
                       <p className="text-[10px] text-muted-foreground">Keep it going!</p>
                     </div>
                     <div className="rounded-lg bg-accent/10 p-3">
@@ -88,9 +88,9 @@ const LandingPage = () => {
                 </div>
               </div>
               {/* Sparkle decorations */}
-              <div className="absolute -top-4 right-8 text-2xl text-accent animate-pulse">✦</div>
-              <div className="absolute bottom-12 -left-4 text-xl text-primary animate-pulse delay-300">✦</div>
-              <div className="absolute top-1/3 -right-2 text-lg text-secondary animate-pulse delay-700">✦</div>
+              <Sparkles className="absolute -top-4 right-8 h-6 w-6 text-accent animate-pulse" />
+              <Sparkles className="absolute bottom-12 -left-4 h-5 w-5 text-primary animate-pulse" />
+              <Sparkles className="absolute top-1/3 -right-2 h-4 w-4 text-secondary animate-pulse" />
             </div>
           </div>
         </div>
@@ -100,14 +100,16 @@ const LandingPage = () => {
       <section className="border-b border-border bg-card py-8">
         <div className="container mx-auto grid grid-cols-2 gap-6 px-4 md:grid-cols-4">
           {[
-            { icon: "📚", num: "50,000+", label: "Enrolled Students" },
-            { icon: "🎓", num: "200+", label: "Expert Teachers" },
-            { icon: "📝", num: "10,000+", label: "Test Questions" },
-            { icon: "🏆", num: "Top 0.1%", label: "Results" },
+            { icon: BookOpen, num: "50,000+", label: "Enrolled Students" },
+            { icon: GraduationCap, num: "200+", label: "Expert Teachers" },
+            { icon: FileText, num: "10,000+", label: "Test Questions" },
+            { icon: Trophy, num: "Top 0.1%", label: "Results" },
           ].map((s) => (
-            <div key={s.label} className="text-center">
-              <span className="text-2xl">{s.icon}</span>
-              <p className="mt-1 text-2xl font-black font-display text-foreground">{s.num}</p>
+            <div key={s.label} className="flex flex-col items-center text-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-light">
+                <s.icon className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-2xl font-black font-display text-foreground">{s.num}</p>
               <p className="text-sm text-muted-foreground">{s.label}</p>
             </div>
           ))}
@@ -119,7 +121,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="text-center">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">
-              सब कुछ एक जगह
+              Everything in One Place
             </h2>
             <p className="mt-2 text-muted-foreground">Everything you need to crack your dream exam</p>
           </div>
@@ -153,7 +155,7 @@ const LandingPage = () => {
             {[
               { title: "JEE Physics Booster 2026", teacher: "Ramesh Kumar", price: "₹999", tag: "JEE", color: "from-primary to-primary-dark" },
               { title: "NEET Biology Complete", teacher: "Dr. Sunita Rao", price: "₹1,299", tag: "NEET", color: "from-secondary to-secondary-dark" },
-              { title: "Organic Chemistry Mastery", teacher: "Priya Sharma", price: "₹799", tag: "JEE", color: "from-accent to-[#D97706]" },
+              { title: "Organic Chemistry Mastery", teacher: "Priya Sharma", price: "₹799", tag: "JEE", color: "from-accent to-[hsl(38,92%,42%)]" },
               { title: "Maths for JEE Advanced", teacher: "AK Bansal", price: "₹1,199", tag: "JEE", color: "from-[hsl(271,91%,65%)] to-[hsl(271,81%,45%)]" },
             ].map((c) => (
               <div key={c.title} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
@@ -220,7 +222,7 @@ const LandingPage = () => {
       {/* CTA */}
       <section className="bg-primary grid-texture py-16">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-black font-display text-primary-foreground md:text-4xl">अभी शुरू करो</h2>
+          <h2 className="text-3xl font-black font-display text-primary-foreground md:text-4xl">Start Now</h2>
           <p className="mt-3 text-primary-foreground/80">Join 50,000+ students already preparing with Arambh Classes</p>
           <Link to="/signup" className="mt-8 inline-flex items-center gap-2 rounded-pill bg-card px-8 py-3.5 text-base font-bold text-primary shadow-lg hover:shadow-xl transition-shadow">
             Start for Free <ArrowRight className="h-4 w-4" />
@@ -247,7 +249,9 @@ const LandingPage = () => {
               <Link to="#" className="hover:text-foreground transition-colors">Terms</Link>
             </div>
           </div>
-          <p className="mt-8 text-center text-xs text-muted-foreground">Made with ❤️ for Indian Students · © 2026 Arambh Classes</p>
+          <p className="mt-8 text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
+            Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Indian Students · © 2026 Arambh Classes
+          </p>
         </div>
       </footer>
     </div>
