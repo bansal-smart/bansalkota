@@ -190,7 +190,7 @@ const LoginPage = () => {
                   </button>
                 </div>
               </div>
-              <button className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
+              <button onClick={() => navigate("/dashboard")} className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
                 Login
               </button>
               <button className="w-full rounded-lg border border-border py-3 text-sm font-semibold text-foreground hover:bg-background transition-colors flex items-center justify-center gap-2">

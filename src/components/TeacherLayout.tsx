@@ -91,7 +91,7 @@ const TeacherLayout = () => {
               <Bell className="h-5 w-5" />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">5</span>
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">RS</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">VT</div>
           </div>
         </header>
 

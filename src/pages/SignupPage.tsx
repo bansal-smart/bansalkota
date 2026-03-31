@@ -111,7 +111,7 @@ const SignupPage = () => {
                 </select>
               </div>
             </div>
-            <button className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
+            <button onClick={() => { toast.success("Account created! Please login."); navigate("/login"); }} className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
               Create Account
             </button>
           </div>
