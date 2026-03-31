@@ -35,8 +35,8 @@ const LoginPage = () => {
               <Flame className="h-7 w-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-black font-display text-card">ARAMBH CLASSES</h1>
-              <p className="text-sm text-muted">Start Now, Reach Your Destination</p>
+              <h1 className="text-2xl font-black font-display text-white">ARAMBH CLASSES</h1>
+              <p className="text-sm text-white/60">Start Now, Reach Your Destination</p>
             </div>
           </div>
 
@@ -50,13 +50,13 @@ const LoginPage = () => {
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/20">
                   <Check className="h-4 w-4 text-secondary" />
                 </div>
-                <span className="text-sm font-medium text-card/80">{t}</span>
+                <span className="text-sm font-medium text-white/80">{t}</span>
               </div>
             ))}
           </div>
 
-          <p className="mt-12 text-sm text-muted">Join 50,000+ students already learning</p>
-          <p className="mt-4 text-xs text-muted">Trusted by students from India & Dubai</p>
+          <p className="mt-12 text-sm text-white/60">Join 50,000+ students already learning</p>
+          <p className="mt-4 text-xs text-white/40">Trusted by students from India & Dubai</p>
 
           <Sparkles className="mt-8 h-6 w-6 text-accent animate-pulse" />
         </div>
