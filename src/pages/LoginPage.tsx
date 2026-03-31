@@ -4,6 +4,7 @@ import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe } from "lucide-
 import { useAppStore } from "@/store/useAppStore";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<"phone" | "email">("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
