@@ -4,10 +4,10 @@ import { Plus, Upload, Brain, GraduationCap, ThumbsUp, ThumbsDown, Clock, CheckC
 const filterTabs = ["All", "Pending", "Answered", "AI Solved"];
 
 const mockDoubts = [
-  { id: 1, subject: "Physics", question: "How does the magnetic field due to a solenoid differ from a bar magnet at large distances?", status: "answered", answeredBy: "Teacher: Ramesh Sir", time: "2 hours ago" },
+  { id: 1, subject: "Physics", question: "How does the magnetic field due to a solenoid differ from a bar magnet at large distances?", status: "answered", answeredBy: "Teacher: Vikram Sir", time: "2 hours ago" },
   { id: 2, subject: "Chemistry", question: "Explain the mechanism of SN1 reaction with an example.", status: "ai-solved", answeredBy: "AI", time: "5 hours ago" },
   { id: 3, subject: "Maths", question: "How to solve integration by parts for trigonometric functions?", status: "pending", answeredBy: null, time: "1 day ago" },
-  { id: 4, subject: "Physics", question: "Derive the expression for electric field due to a uniformly charged ring.", status: "answered", answeredBy: "Teacher: Priya Ma'am", time: "2 days ago" },
+  { id: 4, subject: "Physics", question: "Derive the expression for electric field due to a uniformly charged ring.", status: "answered", answeredBy: "Teacher: Ananya Ma'am", time: "2 days ago" },
   { id: 5, subject: "Chemistry", question: "What is the difference between thermodynamic and kinetic stability?", status: "pending", answeredBy: null, time: "3 days ago" },
 ];
 
@@ -31,11 +31,10 @@ const DoubtPage = () => {
     <div className="pb-20 lg:pb-0">
       <div className="p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-5">
-          {/* Left - Doubt List */}
           <div className="flex-1 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between animate-fade-in-up">
               <h2 className="text-lg font-black font-display text-foreground">My Doubts</h2>
-              <button className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors">
+              <button className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">
                 <Plus className="h-3.5 w-3.5" /> Ask New Doubt
               </button>
             </div>
@@ -48,9 +47,9 @@ const DoubtPage = () => {
               ))}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 stagger-children">
               {mockDoubts.map(d => (
-                <div key={d.id} className="rounded-xl border border-border bg-card p-4 hover:border-primary/30 transition-colors cursor-pointer">
+                <div key={d.id} className="rounded-xl border border-border bg-card p-4 hover:border-primary/30 transition-colors cursor-pointer hover-lift">
                   <div className="flex items-start gap-3">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${statusDot[d.status]}`} />
                     <div className="flex-1 min-w-0">
@@ -68,10 +67,8 @@ const DoubtPage = () => {
             </div>
           </div>
 
-          {/* Right - Ask Doubt / AI Response */}
           <div className="lg:w-[380px] space-y-4">
-            {/* Ask Form */}
-            <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="rounded-2xl border border-border bg-card p-5 animate-fade-in-up">
               <h3 className="text-sm font-bold font-display text-foreground flex items-center gap-2 mb-4">
                 <Brain className="h-4 w-4 text-primary" /> Ask a Doubt
               </h3>
@@ -87,7 +84,7 @@ const DoubtPage = () => {
                   <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG, PDF</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => setShowAIResponse(true)} className="rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors flex items-center justify-center gap-1.5">
+                  <button onClick={() => setShowAIResponse(true)} className="rounded-xl bg-gradient-to-r from-primary to-accent py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5">
                     <Brain className="h-3.5 w-3.5" /> Solve with AI
                   </button>
                   <button className="rounded-xl bg-secondary py-2.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors flex items-center justify-center gap-1.5">
@@ -97,9 +94,8 @@ const DoubtPage = () => {
               </div>
             </div>
 
-            {/* AI Response */}
             {showAIResponse && (
-              <div className="rounded-2xl border border-primary/20 bg-primary-light p-5">
+              <div className="rounded-2xl border border-primary/20 bg-primary-light p-5 animate-fade-in-up">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Brain className="h-4 w-4 text-primary" />
@@ -114,7 +110,7 @@ const DoubtPage = () => {
                     "The key difference is in the near-field region where the solenoid field is uniform inside.",
                   ].map((step, i) => (
                     <div key={i} className="flex items-start gap-2">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">{i + 1}</span>
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[10px] font-bold text-primary-foreground">{i + 1}</span>
                       <p className="text-xs text-foreground leading-relaxed">{step}</p>
                     </div>
                   ))}

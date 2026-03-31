@@ -14,19 +14,19 @@ const revenueData = Array.from({ length: 30 }, (_, i) => ({
 }));
 
 const recentUsers = [
-  { name: "Arjun Mehta", email: "arjun@gmail.com", plan: "Pro", joined: "2 min ago", status: "active" },
-  { name: "Priya Sharma", email: "priya@gmail.com", plan: "Free", joined: "15 min ago", status: "active" },
-  { name: "Rahul Singh", email: "rahul@yahoo.com", plan: "Elite", joined: "1 hr ago", status: "active" },
-  { name: "Sneha Gupta", email: "sneha@gmail.com", plan: "Pro", joined: "2 hr ago", status: "active" },
-  { name: "Vikram Joshi", email: "vikram@outlook.com", plan: "Free", joined: "3 hr ago", status: "active" },
+  { name: "Aditya Rajan", email: "aditya@gmail.com", plan: "Pro", joined: "2 min ago", status: "active" },
+  { name: "Ishita Bansal", email: "ishita@gmail.com", plan: "Free", joined: "15 min ago", status: "active" },
+  { name: "Karan Malhotra", email: "karan@yahoo.com", plan: "Elite", joined: "1 hr ago", status: "active" },
+  { name: "Divya Nair", email: "divya@gmail.com", plan: "Pro", joined: "2 hr ago", status: "active" },
+  { name: "Saurabh Pillai", email: "saurabh@outlook.com", plan: "Free", joined: "3 hr ago", status: "active" },
 ];
 
 const topCourses = [
-  { rank: 1, name: "JEE Physics Booster", teacher: "Ramesh Sir", enrolled: 847, revenue: "₹11L", rating: 4.9 },
-  { rank: 2, name: "NEET Biology Complete", teacher: "Priya Ma'am", enrolled: 623, revenue: "₹8.1L", rating: 4.8 },
-  { rank: 3, name: "JEE Chemistry Crash", teacher: "Ajay Sir", enrolled: 534, revenue: "₹6.9L", rating: 4.7 },
-  { rank: 4, name: "Class 12 Mathematics", teacher: "Neha Ma'am", enrolled: 412, revenue: "₹5.4L", rating: 4.6 },
-  { rank: 5, name: "JEE Advanced Problems", teacher: "Ramesh Sir", enrolled: 389, revenue: "₹5.1L", rating: 4.8 },
+  { rank: 1, name: "JEE Physics Booster", teacher: "Vikram Thapar", enrolled: 847, revenue: "₹11L", rating: 4.9 },
+  { rank: 2, name: "NEET Biology Complete", teacher: "Dr. Kavitha Menon", enrolled: 623, revenue: "₹8.1L", rating: 4.8 },
+  { rank: 3, name: "JEE Chemistry Crash", teacher: "Rohan Kapoor", enrolled: 534, revenue: "₹6.9L", rating: 4.7 },
+  { rank: 4, name: "Class 12 Mathematics", teacher: "Meghna Joshi", enrolled: 412, revenue: "₹5.4L", rating: 4.6 },
+  { rank: 5, name: "JEE Advanced Problems", teacher: "Vikram Thapar", enrolled: 389, revenue: "₹5.1L", rating: 4.8 },
 ];
 
 const regionData = [
@@ -36,17 +36,17 @@ const regionData = [
 ];
 
 const liveClasses = [
-  { name: "Electrostatics", teacher: "Ramesh Sir", viewers: 142, duration: "45 min" },
-  { name: "Organic Chemistry", teacher: "Ajay Sir", viewers: 98, duration: "32 min" },
-  { name: "Integration", teacher: "Neha Ma'am", viewers: 76, duration: "18 min" },
+  { name: "Electrostatics", teacher: "Vikram Thapar", viewers: 142, duration: "45 min" },
+  { name: "Organic Chemistry", teacher: "Rohan Kapoor", viewers: 98, duration: "32 min" },
+  { name: "Integration", teacher: "Meghna Joshi", viewers: 76, duration: "18 min" },
 ];
 
 const AdminDashboard = () => (
   <div className="p-4 lg:p-6 space-y-6 pb-24 lg:pb-6">
     {/* Stats */}
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
       {stats.map((s) => (
-        <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+        <div key={s.label} className="rounded-xl border border-border bg-card p-4 hover-lift">
           <s.icon className={`h-5 w-5 ${s.color}`} />
           <p className="mt-2 text-2xl font-bold text-foreground">{s.value}</p>
           <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
@@ -56,7 +56,7 @@ const AdminDashboard = () => (
     </div>
 
     {/* Revenue Chart */}
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
       <h2 className="text-sm font-bold text-foreground mb-4">Revenue — Last 30 Days</h2>
       <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={revenueData}>
@@ -64,16 +64,20 @@ const AdminDashboard = () => (
           <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="hsl(215,16%,47%)" />
           <YAxis tick={{ fontSize: 10 }} stroke="hsl(215,16%,47%)" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`} />
           <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Revenue']} />
-          <Area type="monotone" dataKey="revenue" stroke="hsl(24,95%,53%)" fill="hsl(24,95%,53%)" fillOpacity={0.15} />
+          <defs>
+            <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="hsl(24,95%,53%)" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="hsl(24,95%,53%)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <Area type="monotone" dataKey="revenue" stroke="hsl(24,95%,53%)" fill="url(#revenueGrad)" />
         </AreaChart>
       </ResponsiveContainer>
     </div>
 
     <div className="grid lg:grid-cols-3 gap-6">
-      {/* Left — 2/3 */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Recent Users */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground">Recent Users (Today)</h2>
             <a href="/admin/users" className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5">View All <ArrowRight className="h-3 w-3" /></a>
@@ -95,8 +99,7 @@ const AdminDashboard = () => (
           </div>
         </div>
 
-        {/* Top Courses */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <h2 className="text-sm font-bold text-foreground mb-3">Top Courses</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -118,14 +121,12 @@ const AdminDashboard = () => (
         </div>
       </div>
 
-      {/* Right — 1/3 */}
       <div className="space-y-6">
-        {/* Live Classes */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <h2 className="text-sm font-bold text-foreground mb-3">Currently Live: {liveClasses.length} classes</h2>
           <div className="space-y-2">
             {liveClasses.map((c, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3 hover-lift">
                 <div className="flex h-2.5 w-2.5 rounded-full bg-destructive animate-live-pulse" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{c.name}</p>
@@ -137,8 +138,7 @@ const AdminDashboard = () => (
           </div>
         </div>
 
-        {/* Pending Approvals */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <h2 className="text-sm font-bold text-foreground mb-3">Pending Approvals</h2>
           <div className="space-y-2">
             {[{ label: "New teacher requests", count: 5 }, { label: "Course reviews", count: 12 }, { label: "Reported content", count: 2 }].map((a) => (
@@ -151,8 +151,7 @@ const AdminDashboard = () => (
           <button className="mt-3 text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">Review All <ArrowRight className="h-3 w-3" /></button>
         </div>
 
-        {/* Region Breakdown */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <h2 className="text-sm font-bold text-foreground mb-3">Region Breakdown</h2>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>

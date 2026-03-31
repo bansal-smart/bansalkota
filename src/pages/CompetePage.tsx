@@ -8,8 +8,7 @@ const CompetePage = () => {
   return (
     <div className="pb-20 lg:pb-0 min-h-[calc(100vh-57px)]" style={{ background: "hsl(var(--navy))" }}>
       <div className="grid-texture p-4 lg:p-6 space-y-5">
-        {/* Header */}
-        <div className="text-center">
+        <div className="text-center animate-fade-in-up">
           <h1 className="text-xl font-black font-display text-white flex items-center justify-center gap-2">
             <Swords className="h-6 w-6 text-accent" /> Compete
           </h1>
@@ -21,8 +20,8 @@ const CompetePage = () => {
         </div>
 
         {matchState === "lobby" && (
-          <div className="text-center space-y-4">
-            <button onClick={() => setMatchState("playing")} className="rounded-full bg-primary px-8 py-3 text-sm font-bold text-primary-foreground hover:bg-primary-dark transition-colors">
+          <div className="text-center space-y-4 animate-fade-in-up">
+            <button onClick={() => setMatchState("playing")} className="rounded-full bg-gradient-to-r from-primary to-accent px-8 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
               Find Opponent
             </button>
             <button className="block mx-auto text-xs text-white/60 underline hover:text-white/80">Practice Solo</button>
@@ -31,18 +30,15 @@ const CompetePage = () => {
 
         {matchState === "playing" && (
           <>
-            {/* Battle Arena */}
-            <div className="flex items-center justify-center gap-4 py-4 relative">
+            <div className="flex items-center justify-center gap-4 py-4 relative animate-fade-in-up">
               <Sparkles className="absolute top-2 left-8 h-4 w-4 text-accent/40 animate-float" />
               <Sparkles className="absolute bottom-4 right-12 h-3 w-3 text-primary/40 animate-float-delayed" />
-              <Sparkles className="absolute top-8 right-6 h-5 w-5 text-secondary/30 animate-float" />
 
-              {/* You */}
               <div className="text-center">
                 <div className="relative">
                   <Crown className="h-4 w-4 text-accent absolute -top-3 left-1/2 -translate-x-1/2" />
-                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary-dark border-2 border-primary flex items-center justify-center mx-auto">
-                    <span className="text-lg font-bold text-white">AV</span>
+                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-accent border-2 border-primary flex items-center justify-center mx-auto">
+                    <span className="text-lg font-bold text-white">AR</span>
                   </div>
                 </div>
                 <p className="text-xs font-bold text-white mt-1.5">You</p>
@@ -53,17 +49,15 @@ const CompetePage = () => {
                 </div>
               </div>
 
-              {/* VS */}
               <div className="h-12 w-12 rounded-full bg-white/10 backdrop-blur flex items-center justify-center">
                 <span className="text-sm font-black text-white">VS</span>
               </div>
 
-              {/* Opponent */}
               <div className="text-center">
-                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[hsl(271,91%,65%)] to-[hsl(271,81%,45%)] border-2 border-[hsl(271,91%,65%)] flex items-center justify-center mx-auto">
-                  <span className="text-lg font-bold text-white">AS</span>
+                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary-dark to-accent border-2 border-accent flex items-center justify-center mx-auto">
+                  <span className="text-lg font-bold text-white">TM</span>
                 </div>
-                <p className="text-xs font-bold text-white mt-1.5">Aastha</p>
+                <p className="text-xs font-bold text-white mt-1.5">Tanvi</p>
                 <div className="flex gap-1 justify-center mt-1.5">
                   {[1, 2, 3, 4, 5].map(i => (
                     <span key={i} className={`h-2 w-5 rounded-full ${i <= 2 ? "bg-secondary" : "bg-white/20"}`} />
@@ -72,9 +66,8 @@ const CompetePage = () => {
               </div>
             </div>
 
-            {/* Question Box */}
-            <div className="rounded-2xl bg-card overflow-hidden">
-              <div className="bg-[hsl(var(--navy2))] px-4 py-2 text-center">
+            <div className="rounded-2xl bg-card overflow-hidden animate-fade-in-up">
+              <div className="bg-gradient-to-r from-[hsl(var(--navy2))] to-[hsl(var(--navy))] px-4 py-2 text-center">
                 <span className="text-xs font-bold text-white">Question 1 of 5</span>
               </div>
               <div className="p-5">
@@ -84,7 +77,7 @@ const CompetePage = () => {
                 <div className="space-y-2.5">
                   {["Electronegativity increases down a group", "Ionization energy decreases across a period", "Atomic radius increases across a period", "Electron affinity generally increases across a period"].map((opt, i) => (
                     <button key={i} onClick={() => setSelectedOption(i)} className={`flex items-center gap-3 w-full rounded-xl border p-3.5 text-left transition-all ${selectedOption === i ? "border-primary bg-primary-light" : "border-border hover:border-primary/30"}`}>
-                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${selectedOption === i ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}>
+                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${selectedOption === i ? "bg-gradient-to-br from-primary to-accent text-primary-foreground" : "border border-border text-muted-foreground"}`}>
                         {String.fromCharCode(65 + i)}
                       </div>
                       <span className="text-xs font-medium text-foreground">{opt}</span>
@@ -94,16 +87,15 @@ const CompetePage = () => {
               </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-white/5 backdrop-blur p-4 flex items-center justify-between">
+              <div className="rounded-xl bg-white/5 backdrop-blur p-4 flex items-center justify-between hover-lift">
                 <div>
                   <p className="text-[10px] text-white/50 uppercase">India Rank</p>
                   <p className="text-lg font-black font-display text-white">1,13,002</p>
                 </div>
                 <Trophy className="h-6 w-6 text-accent/60" />
               </div>
-              <div className="rounded-xl bg-white/5 backdrop-blur p-4">
+              <div className="rounded-xl bg-white/5 backdrop-blur p-4 hover-lift">
                 <p className="text-[10px] text-white/50 uppercase">Streak</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Flame className="h-4 w-4 text-primary" />
@@ -119,14 +111,14 @@ const CompetePage = () => {
         )}
 
         {matchState === "result" && (
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-4 animate-fade-in-up">
             <div className="rounded-2xl bg-card p-6">
               <h2 className="text-xl font-black font-display text-foreground">You Won!</h2>
-              <p className="text-sm text-muted-foreground mt-1">You 4 vs Aastha 2</p>
+              <p className="text-sm text-muted-foreground mt-1">You 4 vs Tanvi 2</p>
               <span className="inline-block mt-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">+50 XP earned</span>
             </div>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => { setMatchState("lobby"); setSelectedOption(null); }} className="rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-dark">Play Again</button>
+              <button onClick={() => { setMatchState("lobby"); setSelectedOption(null); }} className="rounded-xl bg-gradient-to-r from-primary to-accent px-6 py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90">Play Again</button>
               <button onClick={() => setMatchState("lobby")} className="rounded-xl border border-white/20 px-6 py-2.5 text-xs font-bold text-white hover:bg-white/10">Back to Home</button>
             </div>
           </div>

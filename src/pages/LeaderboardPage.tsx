@@ -4,14 +4,14 @@ import { Trophy, Medal, Crown } from "lucide-react";
 const filters = ["All India", "My Batch", "My Centre", "Weekly", "Monthly"];
 
 const topThree = [
-  { rank: 2, name: "Priya Sharma", score: 4820, avatar: "PS", color: "from-slate-300 to-slate-400" },
-  { rank: 1, name: "Ravi Patel", score: 5100, avatar: "RP", color: "from-accent to-amber-600" },
-  { rank: 3, name: "Sneha Gupta", score: 4650, avatar: "SG", color: "from-amber-700 to-amber-800" },
+  { rank: 2, name: "Ishita Bansal", score: 4820, avatar: "IB", color: "from-muted to-muted-foreground" },
+  { rank: 1, name: "Karan Malhotra", score: 5100, avatar: "KM", color: "from-accent to-primary" },
+  { rank: 3, name: "Divya Nair", score: 4650, avatar: "DN", color: "from-primary-dark to-accent" },
 ];
 
 const rankings = Array.from({ length: 10 }, (_, i) => ({
   rank: i + 4,
-  name: ["Amit Kumar", "Kavita Singh", "Rahul Verma", "Anita Desai", "Vikram Shah", "Neha Joshi", "Arjun Verma", "Meera Patel", "Sanjay Gupta", "Divya Rao"][i],
+  name: ["Harsh Agarwal", "Nisha Reddy", "Saurabh Pillai", "Tanvi Mehta", "Ravi Shankar", "Pooja Desai", "Aditya Rajan", "Shreya Gupta", "Manish Tiwari", "Ayesha Khan"][i],
   batch: ["Alpha", "Beta", "Alpha", "Gamma", "Beta", "Alpha", "Beta", "Gamma", "Alpha", "Beta"][i],
   score: 4600 - i * 80,
   accuracy: 92 - i * 1.5,
@@ -24,24 +24,22 @@ const LeaderboardPage = () => {
 
   return (
     <div className="pb-20 lg:pb-0">
-      <div className="bg-[hsl(var(--navy))] grid-texture px-4 pt-4 pb-5">
+      <div className="bg-gradient-to-br from-[hsl(var(--navy))] to-[hsl(var(--navy2))] grid-texture px-4 pt-4 pb-5">
         <h1 className="text-lg font-black font-display text-white flex items-center gap-2">
           <Trophy className="h-5 w-5 text-accent" /> Leaderboard
         </h1>
       </div>
 
       <div className="p-4 lg:p-6 space-y-5">
-        {/* Filters */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {filters.map((f, i) => (
-            <button key={f} onClick={() => setActiveFilter(i)} className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${i === activeFilter ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted/30"}`}>
+            <button key={f} onClick={() => setActiveFilter(i)} className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${i === activeFilter ? "bg-gradient-to-r from-primary to-accent text-primary-foreground" : "border border-border text-muted-foreground hover:bg-muted/30"}`}>
               {f}
             </button>
           ))}
         </div>
 
-        {/* Podium */}
-        <div className="flex items-end justify-center gap-4 py-6">
+        <div className="flex items-end justify-center gap-4 py-6 animate-fade-in-up">
           {topThree.map((p) => (
             <div key={p.rank} className={`text-center ${p.rank === 1 ? "order-2" : p.rank === 2 ? "order-1" : "order-3"}`}>
               <div className="relative">
@@ -52,15 +50,14 @@ const LeaderboardPage = () => {
               </div>
               <p className="text-xs font-bold text-foreground mt-2">{p.name}</p>
               <p className="text-xs text-primary font-bold">{p.score}</p>
-              <div className={`mt-2 mx-auto rounded-t-lg ${p.rank === 1 ? "h-20 w-20 bg-accent/20" : p.rank === 2 ? "h-14 w-16 bg-slate-200" : "h-10 w-16 bg-amber-100"} flex items-center justify-center`}>
+              <div className={`mt-2 mx-auto rounded-t-lg ${p.rank === 1 ? "h-20 w-20 bg-accent/20" : p.rank === 2 ? "h-14 w-16 bg-muted" : "h-10 w-16 bg-primary-light"} flex items-center justify-center`}>
                 <span className="text-lg font-black font-display text-foreground">#{p.rank}</span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Rank Table */}
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card overflow-hidden animate-fade-in-up">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead><tr className="border-b border-border bg-muted/30">{["Rank", "Student", "Batch", "Score", "Accuracy", "Tests"].map(h => <th key={h} className="p-3 text-left font-bold text-muted-foreground">{h}</th>)}</tr></thead>
@@ -85,8 +82,7 @@ const LeaderboardPage = () => {
           </div>
         </div>
 
-        {/* Your Position */}
-        <div className="sticky bottom-20 lg:bottom-4 bg-primary rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
+        <div className="sticky bottom-20 lg:bottom-4 bg-gradient-to-r from-primary to-accent rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
           <span className="text-xs font-bold text-primary-foreground">Your Position</span>
           <span className="text-sm font-black font-display text-primary-foreground">#10</span>
         </div>
