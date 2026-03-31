@@ -8,15 +8,15 @@ const SignupPage = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left Panel */}
-      <div className="hidden w-[60%] bg-navy grid-texture p-12 lg:flex lg:flex-col lg:justify-center">
+      <div className="hidden w-[60%] bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] grid-texture p-12 lg:flex lg:flex-col lg:justify-center">
         <div className="mx-auto max-w-md">
           <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
               <Flame className="h-7 w-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-black font-display text-card">ARAMBH CLASSES</h1>
-              <p className="text-sm text-muted">Start Now, Reach Your Destination</p>
+              <h1 className="text-2xl font-black font-display text-white">ARAMBH CLASSES</h1>
+              <p className="text-sm text-white/60">Start Now, Reach Your Destination</p>
             </div>
           </div>
           <div className="space-y-5 mt-12">
@@ -25,11 +25,11 @@ const SignupPage = () => {
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/20">
                   <Check className="h-4 w-4 text-secondary" />
                 </div>
-                <span className="text-sm font-medium text-card/80">{t}</span>
+                <span className="text-sm font-medium text-white/80">{t}</span>
               </div>
             ))}
           </div>
-          <p className="mt-12 text-sm text-muted">Join 50,000+ students already learning</p>
+          <p className="mt-12 text-sm text-white/60">Join 50,000+ students already learning</p>
           <Sparkles className="mt-8 h-6 w-6 text-accent animate-pulse" />
         </div>
       </div>
@@ -109,7 +109,7 @@ const SignupPage = () => {
                 </select>
               </div>
             </div>
-            <button className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary-dark transition-colors">
+            <button className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
               Create Account
             </button>
           </div>
