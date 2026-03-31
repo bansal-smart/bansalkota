@@ -1,101 +1,85 @@
 
 
-## Plan: Color Sync, Country Selection, Dummy Data Refresh, AI Images & Animations
+## Plan: Fix Visibility Issues, Add Landing Page Sections, Polish All Feature Pages
 
-### Summary
-Synchronize the orange gradient color theme across all pages, add a country selector on landing/login, replace all teacher/course names with fresh dummy names, add placeholder illustration images to cards, and apply subtle animations throughout.
+### Problem Analysis
+The visibility issues stem from CSS variable misuse:
+- `text-muted` (HSL 220 14% 90% = light grey) used on dark navy backgrounds — nearly invisible since both are light/neutral
+- `text-card` (white) used correctly on dark bg but `text-card/80` is too faint
+- Some pages have white text on light backgrounds or vice versa
+- Hero sections on dark gradient use `text-muted` which renders as light grey on dark navy — barely readable
 
-### 1. Color Theme Sync — Consistent Gradients Everywhere
+### 1. Fix Visibility Issues Across All Pages
 
-Update gradient usage across all pages to use a unified orange-based palette instead of ad-hoc colors like `from-blue-500 to-purple-600` or `from-green-500 to-teal-600`.
+**Key color fixes:**
+- On dark navy backgrounds: use `text-white`, `text-white/70`, `text-white/50` instead of `text-muted`, `text-card/80`
+- On light backgrounds: ensure `text-foreground` (dark navy) for headings, `text-muted-foreground` (medium grey) for secondary text
+- Fix Login/Signup left panel text from `text-muted`/`text-card/80` to `text-white/90`/`text-white/60`
+- Fix LandingPage hero: `text-muted` → `text-white/60`, stats → `text-white/70`
 
-**Unified gradient palette:**
-- Physics: `from-orange-500 to-amber-600` (warm orange)
-- Chemistry: `from-primary to-red-500` (orange-red)
-- Maths: `from-amber-500 to-yellow-600` (gold)
-- Biology: `from-secondary to-emerald-600` (teal-green — kept as accent)
-- General/Purple references: `from-primary to-primary-dark`
+**Files to fix:** `LandingPage`, `LoginPage`, `SignupPage`, `CompetePage`, `LeaderboardPage`, `TestListPage`, `QBankPage`, `AnalyticsPage`, `TestResultPage`, `ProfilePage`, `LiveClassRoomPage`
 
-**Files to update:** `CoursesPage`, `CourseDetailPage`, `QBankPage`, `StudentDashboard`, `CompetePage`, `LandingPage`, `AdminDashboard`, `TeacherDashboard`, `LeaderboardPage`, `AnalyticsPage`, `TestResultPage`
+### 2. Expand Landing Page — Add 5 New Sections
 
-### 2. Country Selection on Landing & Login
+Add these sections between existing ones:
 
-- **LandingPage**: Add a country selector banner/modal at the very top or as a floating pill before hero — "Choose Your Region: India | Dubai" — saves to `localStorage` and Zustand store
-- **LoginPage**: Add country toggle at top of the right panel before forms
-- **SignupPage**: Already has country dropdown — keep as is
-- **useAppStore**: Add `country: 'india' | 'dubai'` and `setCountry` to the store, defaulting from localStorage
+1. **"How It Works"** — 3-step visual (Sign Up → Choose Course → Start Learning) with numbered circles and connecting lines
+2. **"Class Formats"** — Cards for: 1-on-1 Private Classes, Live Batch Classes, Recorded Lectures — each with description, icon, and "Learn More" link
+3. **"Meet Our Educators"** — 4 educator cards with avatar, name, subject, rating, students count, and short bio
+4. **"Student Success Stories"** — Testimonial cards with student photo placeholder, quote, exam result, and rank achieved
+5. **"Why Arambh?"** — Comparison table or feature grid: Arambh vs Traditional Coaching (Live + Recorded, AI Doubts, Flexible Schedule, Affordable)
 
-### 3. Replace All Teacher/Faculty Names
+Also add to footer: social links row, "Download App" badges, address for India & Dubai
 
-Replace across **all 12+ files** that reference old names:
+### 3. Feature Pages Polish
 
-| Old Name | New Name |
-|----------|----------|
-| Ramesh Kumar / Ramesh Sir | Vikram Thapar |
-| Priya Sharma / Priya Ma'am | Ananya Iyer |
-| AK Bansal | Dr. Siddharth Nair |
-| Dr. Sunita Rao | Dr. Kavitha Menon |
-| Ajay Sir | Rohan Kapoor |
-| Neha Ma'am | Meghna Joshi |
-| Dr. Meera Patel | Dr. Tara Deshmukh |
-
-Also update student names in chat/doubts:
-
-| Old | New |
-|-----|-----|
-| Arjun Mehta | Aditya Rajan |
-| Priya (student) | Ishita Bansal |
-| Rahul Singh | Karan Malhotra |
-| Sneha Gupta | Divya Nair |
-| Amit Patel | Harsh Agarwal |
-| Kavita | Nisha Reddy |
-| Vikram Joshi | Saurabh Pillai |
-
-**Files:** `StudentDashboard`, `TeacherDashboard`, `CoursesPage`, `CourseDetailPage`, `LiveClassRoomPage`, `DoubtPage`, `TeacherDoubtQueuePage`, `AdminDashboard`, `AdminUsersPage`, `AdminPaymentsPage`, `LandingPage`, `LeaderboardPage`, `useAppStore`
-
-### 4. AI-Generated Placeholder Images on Cards
-
-Use `placeholder.co` SVG images with brand colors for all card thumbnails:
-
-- **Course cards** (CoursesPage, LandingPage): Add `<img>` with themed placeholder like `https://illustrations.popsy.co/amber/...` or use inline SVG illustrations of books/students
-- **Feature cards** (LandingPage): Add small illustration SVGs inline
-- **Educator cards** (StudentDashboard): Add avatar-style placeholders
-- **QBank topic cards**: Add subject-themed illustration placeholders
-
-Since we can't generate real AI images in code, use `https://placeholder.co/400x200/F97316/FFF?text=Physics` style URLs with our brand orange color, or create simple inline SVG illustrations.
-
-### 5. Animations
-
-Add to `tailwind.config.ts` and apply across pages:
-
-- **fade-in-up**: Cards fade in with slight upward motion on page load
-- **hover-lift**: Cards lift on hover (`hover:-translate-y-1 hover:shadow-lg transition-all`)
-- **stagger-children**: Stats cards animate in sequence
-- **progress-bar**: Width animates from 0 on mount
-- **count-up feel**: Use CSS transitions on number elements
-
-Apply `hover:-translate-y-1 transition-all duration-200` to all card components across pages.
-Add `animate-fade-in` class to major sections.
+Ensure all pages have:
+- Proper contrast between text and backgrounds
+- Consistent card styling (white bg, border, rounded-2xl)
+- Hover animations on all interactive cards
+- Proper section spacing
 
 ### Files to Modify (16 files)
 
 | File | Changes |
 |------|---------|
-| `src/store/useAppStore.ts` | Add `country` field |
-| `src/pages/LandingPage.tsx` | Country selector, new names, images on cards, gradient sync, animations |
-| `src/pages/LoginPage.tsx` | Country toggle, name updates |
-| `src/pages/SignupPage.tsx` | Minor name cleanup |
-| `src/pages/StudentDashboard.tsx` | New teacher names, gradient sync, hover animations |
-| `src/pages/TeacherDashboard.tsx` | New names, gradient sync |
-| `src/pages/CoursesPage.tsx` | New educator names, gradient sync, card images |
-| `src/pages/CourseDetailPage.tsx` | New names, gradient sync |
-| `src/pages/LiveClassRoomPage.tsx` | New chat names |
-| `src/pages/DoubtPage.tsx` | New names |
-| `src/pages/TeacherDoubtQueuePage.tsx` | New student/teacher names |
-| `src/pages/AdminDashboard.tsx` | New names, gradient sync |
-| `src/pages/AdminUsersPage.tsx` | New names |
-| `src/pages/AdminPaymentsPage.tsx` | New names |
-| `src/pages/QBankPage.tsx` | Gradient sync, card images |
-| `src/pages/LeaderboardPage.tsx` | New names |
-| `tailwind.config.ts` | Add fade-in-up, hover-lift keyframes/animations |
+| `src/index.css` | No changes needed — variables are fine, usage is the issue |
+| `src/pages/LandingPage.tsx` | Fix hero text colors, add 5 new sections (How It Works, Class Formats, Educators, Testimonials, Why Arambh), expand footer |
+| `src/pages/LoginPage.tsx` | Fix left panel: `text-muted` → `text-white/60`, `text-card/80` → `text-white/80` |
+| `src/pages/SignupPage.tsx` | Same fixes as LoginPage |
+| `src/pages/CompetePage.tsx` | Fix `text-white/60` already ok — verify all text visible on navy bg |
+| `src/pages/LeaderboardPage.tsx` | Fix podium text colors, ensure rank table has proper contrast |
+| `src/pages/TestListPage.tsx` | Fix navy header text visibility |
+| `src/pages/QBankPage.tsx` | Fix navy header text, ensure topic cards readable |
+| `src/pages/AnalyticsPage.tsx` | Fix hero KPI cards text on gradient bg |
+| `src/pages/TestResultPage.tsx` | Fix hero section text visibility |
+| `src/pages/ProfilePage.tsx` | Fix gradient header text |
+| `src/pages/LiveClassRoomPage.tsx` | Fix chat area contrast, video overlay text |
+| `src/pages/StudentDashboard.tsx` | Minor fixes — ensure all card text readable |
+| `src/pages/CoursesPage.tsx` | Ensure course card text contrast |
+| `src/pages/CourseDetailPage.tsx` | Fix gradient hero text |
+| `src/pages/DoubtPage.tsx` | Ensure doubt cards have proper contrast |
+
+### Landing Page New Section Details
+
+**Section order (top to bottom):**
+1. Country Selector Banner
+2. Navbar
+3. Hero (existing, fix text colors)
+4. Stats Bar (existing)
+5. **NEW: "How It Works"** — 3 steps with icons and connecting dotted line
+6. Features grid (existing)
+7. **NEW: "Class Formats"** — 3 format cards (1-on-1, Live Batch, Recorded)
+8. Popular Batches / Courses (existing)
+9. **NEW: "Meet Our Educators"** — 4 educator profile cards
+10. **NEW: "Student Success Stories"** — 3 testimonial cards
+11. Pricing (existing)
+12. **NEW: "Why Arambh vs Traditional?"** — comparison grid
+13. CTA (existing)
+14. Footer (expanded with social links, app badges, addresses)
+
+### Class Formats Content
+- **1-on-1 Private Classes**: Personal attention, custom pace, flexible scheduling — for students who need focused mentoring
+- **Live Batch Classes**: Interactive group sessions, real-time doubt solving, peer learning — join a batch of 30-50 students  
+- **Recorded Lectures**: Learn at your own pace, rewatch anytime, chapter-wise organized — complete course library access
 
