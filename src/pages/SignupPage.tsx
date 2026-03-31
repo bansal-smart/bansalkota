@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles } from "lucide-react";
 
 const SignupPage = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   return (
