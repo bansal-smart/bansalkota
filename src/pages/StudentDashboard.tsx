@@ -1,8 +1,9 @@
-import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, Flame, FlaskConical, Compass, BadgeCheck } from "lucide-react";
+import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, Flame, FlaskConical, Compass, BadgeCheck, BookOpen, Bot, BarChart3, Video, ArrowRight } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
 import { useAppStore } from "@/store/useAppStore";
+import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const subjectIcons: Record<string, React.ElementType> = {
@@ -39,6 +40,18 @@ const educators = [
   { name: "Dr. Siddharth Nair", subject: "Mathematics", followers: "15.2K", icon: Compass, color: "from-accent to-primary" },
 ];
 
+const quickActions = [
+  { icon: Video, label: "Attend Class", desc: "Join live session", link: "/live-classes", gradient: "from-primary to-primary-dark" },
+  { icon: ClipboardCheck, label: "Take Test", desc: "Start a mock test", link: "/tests", gradient: "from-secondary to-secondary-dark" },
+  { icon: Bot, label: "Ask Doubt", desc: "AI doubt solver", link: "/doubts", gradient: "from-accent to-primary" },
+  { icon: BarChart3, label: "Analytics", desc: "View progress", link: "/analytics", gradient: "from-primary-dark to-accent" },
+];
+
+const continueWatching = [
+  { title: "Electrostatics — Gauss's Law", teacher: "Vikram Thapar", progress: 72, subject: "Physics" },
+  { title: "Organic Chemistry — SN2 Reactions", teacher: "Ananya Iyer", progress: 45, subject: "Chemistry" },
+];
+
 const StudentDashboard = () => {
   const { user } = useAppStore();
   const firstName = user?.full_name?.split(" ")[0] || "Student";
@@ -61,12 +74,45 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 stagger-children">
+          {quickActions.map(qa => (
+            <Link key={qa.label} to={qa.link} className={`rounded-xl bg-gradient-to-br ${qa.gradient} p-4 text-center hover-lift group`}>
+              <qa.icon className="h-6 w-6 text-white mx-auto mb-2 group-hover:scale-110 transition-transform" />
+              <p className="text-xs font-bold text-white">{qa.label}</p>
+              <p className="text-[10px] text-white/70">{qa.desc}</p>
+            </Link>
+          ))}
+        </div>
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4 stagger-children">
           <StatCard icon={Zap} value="8 day" label="Current Streak" trend="↑ 3 from last week" stripeColor="primary" />
           <StatCard icon={Target} value="84%" label="Overall Accuracy" trend="↑ 2.3% improvement" stripeColor="secondary" />
           <StatCard icon={ClipboardCheck} value="23" label="Tests Completed" trend="↑ 5 this month" stripeColor="accent" />
           <StatCard icon={Trophy} value="99.2%ile" label="All India Percentile" trend="↑ from 98.8" stripeColor="purple" />
+        </div>
+
+        {/* Continue Watching */}
+        <div className="rounded-2xl border border-border bg-card p-5 mb-6 animate-fade-in-up">
+          <SectionHeader title="Continue Watching" viewAllLink="/courses" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {continueWatching.map(cw => (
+              <div key={cw.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover-lift cursor-pointer">
+                <div className="h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate">{cw.title}</p>
+                  <p className="text-[10px] text-muted-foreground">{cw.teacher}</p>
+                  <div className="mt-1.5 h-1.5 rounded-full bg-muted">
+                    <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${cw.progress}%` }} />
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-primary">{cw.progress}%</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Today's Schedule */}
@@ -125,7 +171,7 @@ const StudentDashboard = () => {
                   </p>
                   <p className="text-xs text-muted-foreground">{edu.subject}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{edu.followers} followers</p>
-                  <button className="mt-3 w-full rounded-lg border border-primary px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary-light transition-colors">Follow</button>
+                  <button className="mt-3 w-full rounded-lg border border-primary px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">Follow</button>
                 </div>
               </div>
             ))}
@@ -139,15 +185,15 @@ const StudentDashboard = () => {
 
         {/* Rank Cards */}
         <div className="space-y-3 mb-5">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-primary-dark p-4 text-primary-foreground">
-            <p className="text-xs font-medium opacity-80">All India Percentile</p>
-            <p className="text-3xl font-black font-display">99.2</p>
-            <p className="text-xs font-medium opacity-80">Batch Rank #3</p>
+          <div className="rounded-xl bg-gradient-to-br from-primary to-primary-dark p-4">
+            <p className="text-xs font-medium text-white/80">All India Percentile</p>
+            <p className="text-3xl font-black font-display text-white">99.2</p>
+            <p className="text-xs font-medium text-white/80">Batch Rank #3</p>
           </div>
-          <div className="rounded-xl bg-gradient-to-br from-secondary to-secondary-dark p-4 text-secondary-foreground">
-            <p className="text-xs font-medium opacity-80">Centre Percentile</p>
-            <p className="text-3xl font-black font-display">94.5</p>
-            <p className="text-xs font-medium opacity-80">Top 5.5%</p>
+          <div className="rounded-xl bg-gradient-to-br from-secondary to-secondary-dark p-4">
+            <p className="text-xs font-medium text-white/80">Centre Percentile</p>
+            <p className="text-3xl font-black font-display text-white">94.5</p>
+            <p className="text-xs font-medium text-white/80">Top 5.5%</p>
           </div>
         </div>
 
@@ -213,14 +259,14 @@ const StudentDashboard = () => {
           <div className="space-y-2">
             {upcomingTests.map((t) => (
               <div key={t.name} className="flex items-center gap-3 rounded-lg border border-border p-3 hover-lift">
-                <div className="h-9 w-9 rounded-lg bg-primary-light flex items-center justify-center">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                   <ClipboardCheck className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-foreground truncate">{t.name}</p>
                   <p className="text-[10px] text-muted-foreground">{t.date} · {t.duration}</p>
                 </div>
-                <span className={`rounded-pill px-2 py-0.5 text-[10px] font-bold ${t.status === 'Enrolled' ? 'bg-secondary-light text-secondary' : 'bg-primary-light text-primary'}`}>
+                <span className={`rounded-pill px-2 py-0.5 text-[10px] font-bold ${t.status === 'Enrolled' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'}`}>
                   {t.status}
                 </span>
               </div>

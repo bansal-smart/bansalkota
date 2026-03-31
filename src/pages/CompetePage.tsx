@@ -12,7 +12,7 @@ const CompetePage = () => {
           <h1 className="text-xl font-black font-display text-white flex items-center justify-center gap-2">
             <Swords className="h-6 w-6 text-accent" /> Compete
           </h1>
-          <p className="text-xs text-white/60 mt-1">Challenge peers, earn India rank</p>
+          <p className="text-xs text-white/70 mt-1">Challenge peers, earn India rank</p>
           <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent/20 px-3 py-1">
             <Trophy className="h-3 w-3 text-accent" />
             <span className="text-xs font-bold text-accent">Your Rank: #1,13,002</span>
@@ -24,7 +24,7 @@ const CompetePage = () => {
             <button onClick={() => setMatchState("playing")} className="rounded-full bg-gradient-to-r from-primary to-accent px-8 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
               Find Opponent
             </button>
-            <button className="block mx-auto text-xs text-white/60 underline hover:text-white/80">Practice Solo</button>
+            <button className="block mx-auto text-xs text-white/70 underline hover:text-white/90">Practice Solo</button>
           </div>
         )}
 
@@ -88,15 +88,15 @@ const CompetePage = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-white/5 backdrop-blur p-4 flex items-center justify-between hover-lift">
+              <div className="rounded-xl bg-white/10 backdrop-blur p-4 flex items-center justify-between hover-lift">
                 <div>
-                  <p className="text-[10px] text-white/50 uppercase">India Rank</p>
+                  <p className="text-[10px] text-white/60 uppercase font-medium">India Rank</p>
                   <p className="text-lg font-black font-display text-white">1,13,002</p>
                 </div>
                 <Trophy className="h-6 w-6 text-accent/60" />
               </div>
-              <div className="rounded-xl bg-white/5 backdrop-blur p-4 hover-lift">
-                <p className="text-[10px] text-white/50 uppercase">Streak</p>
+              <div className="rounded-xl bg-white/10 backdrop-blur p-4 hover-lift">
+                <p className="text-[10px] text-white/60 uppercase font-medium">Streak</p>
                 <div className="flex items-center gap-2 mt-1">
                   <Flame className="h-4 w-4 text-primary" />
                   <span className="text-xs font-bold text-white">10 / 10 mins</span>

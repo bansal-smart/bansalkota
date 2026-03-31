@@ -60,9 +60,9 @@ const AnalyticsPage = () => {
             { icon: Clock, value: "142h", label: "Study Hours" },
           ].map(kpi => (
             <div key={kpi.label} className="rounded-xl bg-white/15 backdrop-blur p-3">
-              <kpi.icon className="h-4 w-4 opacity-70 mb-1" />
-              <p className="text-xl font-black font-display">{kpi.value}</p>
-              <p className="text-[10px] opacity-70">{kpi.label}</p>
+              <kpi.icon className="h-4 w-4 text-white/80 mb-1" />
+              <p className="text-xl font-black font-display text-white">{kpi.value}</p>
+              <p className="text-[10px] text-white/70 font-medium">{kpi.label}</p>
             </div>
           ))}
         </div>
