@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check } from "lucide-react";
+import { Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles } from "lucide-react";
 
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +16,7 @@ const SignupPage = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black font-display text-card">ARAMBH CLASSES</h1>
-              <p className="text-sm text-muted">शुरुआत करो, मंज़िल पाओ</p>
+              <p className="text-sm text-muted">Start Now, Reach Your Destination</p>
             </div>
           </div>
           <div className="space-y-5 mt-12">
@@ -30,14 +30,14 @@ const SignupPage = () => {
             ))}
           </div>
           <p className="mt-12 text-sm text-muted">Join 50,000+ students already learning</p>
-          <div className="mt-8 text-2xl text-accent animate-pulse">✦</div>
+          <Sparkles className="mt-8 h-6 w-6 text-accent animate-pulse" />
         </div>
       </div>
 
       {/* Right Panel */}
       <div className="flex flex-1 items-center justify-center bg-card p-8 overflow-y-auto">
         <div className="w-full max-w-sm">
-          <h2 className="text-2xl font-black font-display text-foreground">Create Account 🚀</h2>
+          <h2 className="text-2xl font-black font-display text-foreground">Create Account</h2>
           <p className="mt-1 text-sm text-muted-foreground">Start your preparation journey</p>
 
           <div className="mt-6 space-y-3">
@@ -52,8 +52,8 @@ const SignupPage = () => {
               <label className="text-sm font-medium text-foreground">Phone Number</label>
               <div className="mt-1 flex gap-2">
                 <select className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground">
-                  <option>🇮🇳 +91</option>
-                  <option>🇦🇪 +971</option>
+                  <option>IN +91</option>
+                  <option>AE +971</option>
                 </select>
                 <input type="tel" placeholder="Phone number" className="flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
               </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Mail, Eye, EyeOff, Phone, Check } from "lucide-react";
+import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles } from "lucide-react";
 
 const LoginPage = () => {
   const [tab, setTab] = useState<"phone" | "email">("phone");
@@ -34,7 +34,7 @@ const LoginPage = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black font-display text-card">ARAMBH CLASSES</h1>
-              <p className="text-sm text-muted">शुरुआत करो, मंज़िल पाओ</p>
+              <p className="text-sm text-muted">Start Now, Reach Your Destination</p>
             </div>
           </div>
 
@@ -54,16 +54,16 @@ const LoginPage = () => {
           </div>
 
           <p className="mt-12 text-sm text-muted">Join 50,000+ students already learning</p>
-          <p className="mt-4 text-xs text-muted">Trusted by students from India & Dubai 🇮🇳 🇦🇪</p>
+          <p className="mt-4 text-xs text-muted">Trusted by students from India & Dubai</p>
 
-          <div className="mt-8 text-2xl text-accent animate-pulse">✦</div>
+          <Sparkles className="mt-8 h-6 w-6 text-accent animate-pulse" />
         </div>
       </div>
 
       {/* Right Panel */}
       <div className="flex flex-1 items-center justify-center bg-card p-8">
         <div className="w-full max-w-sm">
-          <h2 className="text-2xl font-black font-display text-foreground">Welcome Back 👋</h2>
+          <h2 className="text-2xl font-black font-display text-foreground">Welcome Back</h2>
           <p className="mt-1 text-sm text-muted-foreground">Log in to continue your preparation</p>
 
           {/* Tabs */}
@@ -92,8 +92,8 @@ const LoginPage = () => {
                     onChange={(e) => setCountryCode(e.target.value)}
                     className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground"
                   >
-                    <option value="+91">🇮🇳 +91</option>
-                    <option value="+971">🇦🇪 +971</option>
+                    <option value="+91">IN +91</option>
+                    <option value="+971">AE +971</option>
                   </select>
                   <input
                     type="tel"

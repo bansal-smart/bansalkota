@@ -1,14 +1,20 @@
-import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle } from "lucide-react";
+import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, Flame, FlaskConical, Compass, BadgeCheck } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
 import { useAppStore } from "@/store/useAppStore";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
+const subjectIcons: Record<string, React.ElementType> = {
+  Physics: Zap,
+  Chemistry: FlaskConical,
+  Maths: Compass,
+};
+
 const scheduleData = [
   { time: "09:00 AM", title: "Electrostatics & Capacitors", subject: "Physics", teacher: "Ramesh Kumar", status: "completed", color: "from-primary to-primary-dark" },
   { time: "11:30 AM", title: "Organic Chemistry Reactions", subject: "Chemistry", teacher: "Priya Sharma", status: "missed", color: "from-secondary to-secondary-dark" },
-  { time: "03:00 PM", title: "Calculus Integration", subject: "Maths", teacher: "AK Bansal", status: "live", color: "from-accent to-[#D97706]" },
+  { time: "03:00 PM", title: "Calculus Integration", subject: "Maths", teacher: "AK Bansal", status: "live", color: "from-accent to-[hsl(38,92%,42%)]" },
   { time: "06:30 PM", title: "Modern Physics", subject: "Physics", teacher: "Ramesh Kumar", status: "upcoming", color: "from-[hsl(271,91%,65%)] to-[hsl(271,81%,45%)]" },
 ];
 
@@ -28,9 +34,9 @@ const upcomingTests = [
 ];
 
 const educators = [
-  { name: "Ramesh Kumar", subject: "Physics", followers: "12.5K", emoji: "⚡", color: "from-primary to-primary-dark" },
-  { name: "Priya Sharma", subject: "Chemistry", followers: "9.8K", emoji: "🧪", color: "from-secondary to-secondary-dark" },
-  { name: "AK Bansal", subject: "Mathematics", followers: "15.2K", emoji: "📐", color: "from-accent to-[#D97706]" },
+  { name: "Ramesh Kumar", subject: "Physics", followers: "12.5K", icon: Zap, color: "from-primary to-primary-dark" },
+  { name: "Priya Sharma", subject: "Chemistry", followers: "9.8K", icon: FlaskConical, color: "from-secondary to-secondary-dark" },
+  { name: "AK Bansal", subject: "Mathematics", followers: "15.2K", icon: Compass, color: "from-accent to-[hsl(38,92%,42%)]" },
 ];
 
 const StudentDashboard = () => {
@@ -44,11 +50,13 @@ const StudentDashboard = () => {
         {/* Greeting */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-xl font-black font-display text-foreground lg:text-2xl">Good morning, {firstName} 👋</h1>
+            <h1 className="text-xl font-black font-display text-foreground lg:text-2xl">Good morning, {firstName}</h1>
             <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
           </div>
           <div className="flex gap-2">
-            <button className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">📞 Talk to Counsellor</button>
+            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">
+              <PhoneCall className="h-3.5 w-3.5" /> Talk to Counsellor
+            </button>
             <button className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors">Enroll in Course</button>
           </div>
         </div>
@@ -65,37 +73,40 @@ const StudentDashboard = () => {
         <div className="rounded-2xl border border-border bg-card p-5 mb-6">
           <SectionHeader title="Today's Schedule" viewAllLink="/live-classes" />
           <div className="space-y-3">
-            {scheduleData.map((cls) => (
-              <div key={cls.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-background/50 transition-colors">
-                <div className={`h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br ${cls.color} flex items-center justify-center text-lg`}>
-                  {cls.subject === "Physics" ? "⚡" : cls.subject === "Chemistry" ? "🧪" : "📐"}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold ${cls.status === 'live' ? 'text-destructive' : cls.status === 'missed' ? 'text-destructive' : cls.status === 'completed' ? 'text-muted-foreground' : 'text-primary'}`}>
-                      {cls.time}
-                    </span>
-                    {cls.status === 'live' && <LiveBadge />}
+            {scheduleData.map((cls) => {
+              const SubjectIcon = subjectIcons[cls.subject] || Zap;
+              return (
+                <div key={cls.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-background/50 transition-colors">
+                  <div className={`h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br ${cls.color} flex items-center justify-center`}>
+                    <SubjectIcon className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-sm font-bold text-foreground truncate">{cls.title}</p>
-                  <p className="text-xs text-muted-foreground">{cls.teacher}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold ${cls.status === 'live' ? 'text-destructive' : cls.status === 'missed' ? 'text-destructive' : cls.status === 'completed' ? 'text-muted-foreground' : 'text-primary'}`}>
+                        {cls.time}
+                      </span>
+                      {cls.status === 'live' && <LiveBadge />}
+                    </div>
+                    <p className="text-sm font-bold text-foreground truncate">{cls.title}</p>
+                    <p className="text-xs text-muted-foreground">{cls.teacher}</p>
+                  </div>
+                  <div className="shrink-0">
+                    {cls.status === "live" && (
+                      <button className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">Join Now</button>
+                    )}
+                    {cls.status === "upcoming" && (
+                      <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background transition-colors">Set Reminder</button>
+                    )}
+                    {cls.status === "completed" && (
+                      <span className="text-xs font-medium text-muted-foreground">Recording ▶</span>
+                    )}
+                    {cls.status === "missed" && (
+                      <span className="text-xs font-medium text-destructive">Missed</span>
+                    )}
+                  </div>
                 </div>
-                <div className="shrink-0">
-                  {cls.status === "live" && (
-                    <button className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">Join Now</button>
-                  )}
-                  {cls.status === "upcoming" && (
-                    <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background transition-colors">Set Reminder</button>
-                  )}
-                  {cls.status === "completed" && (
-                    <span className="text-xs font-medium text-muted-foreground">Recording ▶</span>
-                  )}
-                  {cls.status === "missed" && (
-                    <span className="text-xs font-medium text-destructive">Missed</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -105,11 +116,13 @@ const StudentDashboard = () => {
           <div className="grid gap-4 sm:grid-cols-3">
             {educators.map((edu) => (
               <div key={edu.name} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                <div className={`h-20 bg-gradient-to-br ${edu.color} flex items-center justify-center text-3xl`}>
-                  {edu.emoji}
+                <div className={`h-20 bg-gradient-to-br ${edu.color} flex items-center justify-center`}>
+                  <edu.icon className="h-8 w-8 text-white/80" />
                 </div>
                 <div className="p-4 text-center">
-                  <p className="text-sm font-bold font-display text-foreground">{edu.name} ✓</p>
+                  <p className="text-sm font-bold font-display text-foreground inline-flex items-center gap-1">
+                    {edu.name} <BadgeCheck className="h-4 w-4 text-primary" />
+                  </p>
                   <p className="text-xs text-muted-foreground">{edu.subject}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{edu.followers} followers</p>
                   <button className="mt-3 w-full rounded-lg border border-primary px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary-light transition-colors">Follow</button>
@@ -167,7 +180,7 @@ const StudentDashboard = () => {
               <YAxis tick={{ fontSize: 9 }} />
               <Tooltip contentStyle={{ fontSize: 11 }} />
               <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Line type="monotone" dataKey="you" stroke="hsl(222, 81%, 58%)" strokeWidth={2} dot={{ r: 2 }} name="You" />
+              <Line type="monotone" dataKey="you" stroke="hsl(24, 95%, 53%)" strokeWidth={2} dot={{ r: 2 }} name="You" />
               <Line type="monotone" dataKey="topper" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 2 }} name="Topper" />
               <Line type="monotone" dataKey="avg" stroke="hsl(215, 16%, 47%)" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Average" />
             </LineChart>

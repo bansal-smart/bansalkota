@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Target } from "lucide-react";
 import { useState } from "react";
 
 const goals = ["IIT JEE", "NEET", "Boards", "JEE + NEET"];
@@ -17,7 +17,7 @@ const GoalSelector = ({ value = "IIT JEE", onChange }: GoalSelectorProps) => {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 rounded-pill bg-primary-light px-3 py-1.5 text-sm font-bold font-display text-primary hover:bg-primary/10 transition-colors"
       >
-        🎯 {value}
+        <Target className="h-3.5 w-3.5" /> {value}
         <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open && (
