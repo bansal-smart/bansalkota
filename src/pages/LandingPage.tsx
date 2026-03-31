@@ -1,15 +1,30 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Play, BookOpen, ClipboardCheck, Bot, BarChart3, Swords, Smartphone, Star, Check, Flame, Rocket, GraduationCap, FileText, Trophy, Users, Monitor, Award, Heart, Sparkles, Globe, Video, User, MessageCircle, Quote, Zap, Target, Shield, Clock, ChevronRight } from "lucide-react";
+import { ArrowRight, Play, BookOpen, ClipboardCheck, Bot, BarChart3, Swords, Smartphone, Star, Check, Flame, Rocket, GraduationCap, FileText, Trophy, Users, Monitor, Award, Heart, Sparkles, Globe, Video, User, MessageCircle, Quote, Zap, Target, Shield, Clock, ChevronRight, ChevronDown, HelpCircle } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
-import heroStudent from "@/assets/hero-student.png";
+import { useState } from "react";
+import heroIllustration from "@/assets/hero-illustration.png";
 import coursePhysics from "@/assets/course-physics.png";
 import courseChemistry from "@/assets/course-chemistry.png";
 import courseMaths from "@/assets/course-maths.png";
 import courseBiology from "@/assets/course-biology.png";
-import featureLive from "@/assets/feature-live.png";
+import featureLiveClass from "@/assets/feature-live-class.png";
+import featureAiDoubt from "@/assets/feature-ai-doubt.png";
+import featureAnalytics from "@/assets/feature-analytics.png";
+import featureCompete from "@/assets/feature-compete.png";
+import featureMobile from "@/assets/feature-mobile.png";
+import featureTest from "@/assets/feature-test.png";
+
+const faqs = [
+  { q: "What exams does Arambh cover?", a: "Arambh covers JEE Main, JEE Advanced, NEET, and Board Exams (CBSE & State Boards) for classes 11 and 12. We also offer foundation courses for class 9 and 10." },
+  { q: "Can I attend classes from Dubai?", a: "Absolutely! Our live classes run on IST but recordings are available 24/7. Students from UAE, Oman, and other GCC countries study with us regularly." },
+  { q: "How does the AI Doubt Solver work?", a: "Simply upload a photo of your question or type it out. Our AI analyzes the problem and gives you a step-by-step solution with explanations within seconds." },
+  { q: "Is there a free trial?", a: "Yes! Our Explorer plan is completely free — you get access to 5 live classes, basic test series, and community doubt solving. No credit card required." },
+  { q: "What if I miss a live class?", a: "No worries! All live classes are recorded and available in your dashboard within 2 hours. You can rewatch them as many times as you want." },
+];
 
 const LandingPage = () => {
   const { country, setCountry } = useAppStore();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -42,7 +57,7 @@ const LandingPage = () => {
             <Link to="/courses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Courses</Link>
             <Link to="/tests" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Tests</Link>
             <Link to="/live-classes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Live Classes</Link>
-            <Link to="#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">About</Link>
+            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-sm font-semibold text-foreground hover:text-primary transition-colors">Login</Link>
@@ -53,38 +68,43 @@ const LandingPage = () => {
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] grid-texture">
-        <div className="container mx-auto px-4 py-16 md:py-24">
+      {/* Hero — redesigned with radial glow */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)]">
+        {/* Radial glow */}
+        <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 30% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)' }} />
+        <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 70% 30%, hsl(38 92% 50% / 0.2) 0%, transparent 50%)' }} />
+        <div className="absolute inset-0 grid-texture" />
+        <div className="container mx-auto px-4 py-20 md:py-28 relative z-10">
           <div className="grid items-center gap-12 md:grid-cols-2">
             <div className="animate-fade-in-up">
-              <span className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary/20 to-accent/20 px-4 py-1.5 text-sm font-semibold text-primary">
+              <span className="inline-flex items-center gap-2 rounded-pill border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
                 <Rocket className="h-4 w-4" /> {country === 'india' ? "India's Rising EdTech Platform" : "UAE's Trusted EdTech Platform"}
               </span>
               <h1 className="mt-6 font-display">
                 <span className="block text-4xl font-black text-white md:text-5xl lg:text-6xl">Start Your Journey,</span>
                 <span className="block text-4xl font-black md:text-5xl lg:text-6xl gradient-text">Reach Your Goals</span>
               </h1>
-              <p className="mt-3 text-lg font-semibold text-white/70">JEE · NEET · Board Exams | India & Dubai</p>
-              <p className="mt-4 max-w-md text-white/50">
+              <p className="mt-4 text-lg font-semibold text-white/90">JEE · NEET · Board Exams | India & Dubai</p>
+              <p className="mt-3 max-w-md text-base text-white/70 leading-relaxed">
                 Master your exams with live classes from top educators, AI-powered doubt solving, and smart test analytics.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link to="/signup" className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-7 py-3 text-base font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-all">
+                <Link to="/signup" className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-8 py-3.5 text-base font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-all hover:scale-105">
                   Start for Free <ArrowRight className="h-4 w-4" />
                 </Link>
-                <button className="inline-flex items-center gap-2 rounded-pill border border-white/20 px-6 py-3 text-base font-semibold text-white hover:bg-white/10 transition-colors">
+                <button className="inline-flex items-center gap-2 rounded-pill border border-white/30 px-6 py-3.5 text-base font-semibold text-white hover:bg-white/10 transition-colors">
                   <Play className="h-4 w-4" /> Watch Demo
                 </button>
               </div>
-              <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-white/60">
-                <span className="inline-flex items-center gap-1.5 font-semibold"><Users className="h-4 w-4 text-primary" /> 10,000+ Students</span>
+              <div className="mt-10 flex flex-wrap items-center gap-6 text-sm text-white/80">
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Users className="h-4 w-4 text-primary" /> 50,000+ Students</span>
                 <span className="inline-flex items-center gap-1.5 font-semibold"><Monitor className="h-4 w-4 text-primary" /> 500+ Live Classes</span>
                 <span className="inline-flex items-center gap-1.5 font-semibold"><Award className="h-4 w-4 text-primary" /> 99% Results</span>
               </div>
             </div>
             <div className="relative hidden md:block animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <img src={heroStudent} alt="Student studying with laptop and books" width={800} height={640} className="mx-auto w-80 drop-shadow-2xl animate-float" />
+              <div className="absolute inset-0 rounded-full opacity-30" style={{ background: 'radial-gradient(circle, hsl(24 95% 53% / 0.3) 0%, transparent 70%)' }} />
+              <img src={heroIllustration} alt="Student studying with laptop and books" width={1024} height={1024} className="mx-auto w-96 drop-shadow-2xl animate-float relative z-10" />
               <Sparkles className="absolute -top-4 right-8 h-6 w-6 text-accent animate-pulse" />
               <Sparkles className="absolute bottom-12 -left-4 h-5 w-5 text-primary animate-pulse" />
               <Sparkles className="absolute top-1/3 -right-2 h-4 w-4 text-secondary animate-pulse" />
@@ -93,8 +113,20 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Trusted By Strip */}
+      <section className="border-b border-border bg-card py-5">
+        <div className="container mx-auto px-4">
+          <p className="text-center text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Trusted by students from top institutions</p>
+          <div className="flex items-center justify-center gap-8 flex-wrap opacity-60">
+            {["IIT Delhi", "IIT Bombay", "AIIMS", "NIT Trichy", "BITS Pilani", "VIT"].map(name => (
+              <span key={name} className="text-sm font-bold text-muted-foreground">{name}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Stats Bar */}
-      <section className="border-b border-border bg-card py-8">
+      <section className="border-b border-border bg-background py-10">
         <div className="container mx-auto grid grid-cols-2 gap-6 px-4 md:grid-cols-4 stagger-children">
           {[
             { icon: BookOpen, num: "50,000+", label: "Enrolled Students" },
@@ -103,8 +135,8 @@ const LandingPage = () => {
             { icon: Trophy, num: "Top 0.1%", label: "Results" },
           ].map((s) => (
             <div key={s.label} className="flex flex-col items-center text-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-light to-accent/10">
-                <s.icon className="h-5 w-5 text-primary" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
+                <s.icon className="h-6 w-6 text-primary" />
               </div>
               <p className="text-2xl font-black font-display text-foreground">{s.num}</p>
               <p className="text-sm text-muted-foreground">{s.label}</p>
@@ -114,14 +146,13 @@ const LandingPage = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">How It Works</h2>
             <p className="mt-2 text-muted-foreground">Get started in 3 simple steps</p>
           </div>
           <div className="mt-12 grid gap-8 md:grid-cols-3 stagger-children relative">
-            {/* Connecting line */}
             <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 border-t-2 border-dashed border-primary/30" />
             {[
               { step: "1", icon: User, title: "Sign Up Free", desc: "Create your account in under 30 seconds. Choose your exam goal and get a personalized dashboard." },
@@ -141,8 +172,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-16 md:py-24 bg-card">
+      {/* Features with Illustrations */}
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">
@@ -152,19 +183,24 @@ const LandingPage = () => {
           </div>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {[
-              { icon: BookOpen, title: "Live Classes", desc: "Real-time classes with top educators", color: "bg-primary/10 text-primary", img: featureLive },
-              { icon: ClipboardCheck, title: "Smart Test Engine", desc: "JEE/NEET pattern with negative marking & rank", color: "bg-primary-light text-primary" },
-              { icon: Bot, title: "AI Doubt Solver", desc: "Upload image, get step-by-step solution instantly", color: "bg-secondary-light text-secondary" },
-              { icon: BarChart3, title: "Deep Analytics", desc: "Know your weak topics, beat the topper", color: "bg-accent/10 text-accent" },
-              { icon: Swords, title: "Compete Mode", desc: "1v1 quiz battles, climb the India rank", color: "bg-primary/10 text-primary" },
-              { icon: Smartphone, title: "Mobile App", desc: "Study anywhere, even offline", color: "bg-secondary/10 text-secondary" },
+              { icon: BookOpen, title: "Live Classes", desc: "Real-time classes with top educators. Interactive sessions with live Q&A.", img: featureLiveClass },
+              { icon: ClipboardCheck, title: "Smart Test Engine", desc: "JEE/NEET pattern with negative marking, detailed analysis & rank.", img: featureTest },
+              { icon: Bot, title: "AI Doubt Solver", desc: "Upload image, get step-by-step solution instantly. Available 24/7.", img: featureAiDoubt },
+              { icon: BarChart3, title: "Deep Analytics", desc: "Know your weak topics, chapter heatmaps, and beat the topper.", img: featureAnalytics },
+              { icon: Swords, title: "Compete Mode", desc: "1v1 quiz battles, climb the India rank, earn XP and badges.", img: featureCompete },
+              { icon: Smartphone, title: "Mobile App", desc: "Study anywhere with offline access. Download lectures on the go.", img: featureMobile },
             ].map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-background p-6 shadow-sm hover-lift">
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${f.color}`}>
-                  <f.icon className="h-6 w-6" />
+              <div key={f.title} className="rounded-2xl border border-border bg-card overflow-hidden hover-lift group">
+                <div className="h-40 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4 overflow-hidden">
+                  <img src={f.img} alt={f.title} loading="lazy" width={512} height={512} className="h-32 w-32 object-contain group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mt-4 text-lg font-bold font-display text-foreground">{f.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{f.desc}</p>
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <f.icon className="h-5 w-5 text-primary" />
+                    <h3 className="text-base font-bold font-display text-foreground">{f.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{f.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -172,7 +208,7 @@ const LandingPage = () => {
       </section>
 
       {/* Class Formats */}
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Flexible Class Formats</h2>
@@ -184,7 +220,7 @@ const LandingPage = () => {
               { icon: Users, title: "Live Batch Classes", desc: "Interactive group sessions with real-time doubt solving and peer learning. Join batches of 30-50 students.", features: ["Live interaction", "Real-time doubts", "Peer learning", "Recorded replays"], gradient: "from-secondary to-secondary-dark" },
               { icon: Video, title: "Recorded Lectures", desc: "Learn at your own pace, rewatch anytime. Complete chapter-wise organized course library access.", features: ["Self-paced", "Rewatch anytime", "Chapter-wise", "Offline access"], gradient: "from-accent to-primary" },
             ].map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card overflow-hidden hover-lift group">
+              <div key={f.title} className="rounded-2xl border border-border bg-background overflow-hidden hover-lift group">
                 <div className={`bg-gradient-to-br ${f.gradient} p-6 text-center`}>
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur mb-3">
                     <f.icon className="h-7 w-7 text-white" />
@@ -211,20 +247,22 @@ const LandingPage = () => {
       </section>
 
       {/* Courses Preview */}
-      <section className="bg-card py-16">
+      <section className="bg-background py-16 md:py-24">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-black font-display text-foreground animate-fade-in-up">Popular Batches</h2>
-          <p className="mt-2 text-muted-foreground">Join thousands of students preparing for their dream</p>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
+          <div className="text-center animate-fade-in-up">
+            <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Popular Batches</h2>
+            <p className="mt-2 text-muted-foreground">Join thousands of students preparing for their dream</p>
+          </div>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
             {[
               { title: "JEE Physics Booster 2026", teacher: "Vikram Thapar", price: country === 'india' ? "₹999" : "AED 149", tag: "JEE", color: "from-primary to-primary-dark", img: coursePhysics },
               { title: "NEET Biology Complete", teacher: "Dr. Kavitha Menon", price: country === 'india' ? "₹1,299" : "AED 199", tag: "NEET", color: "from-secondary to-secondary-dark", img: courseBiology },
               { title: "Organic Chemistry Mastery", teacher: "Ananya Iyer", price: country === 'india' ? "₹799" : "AED 119", tag: "JEE", color: "from-accent to-primary", img: courseChemistry },
               { title: "Maths for JEE Advanced", teacher: "Dr. Siddharth Nair", price: country === 'india' ? "₹1,199" : "AED 179", tag: "JEE", color: "from-primary-dark to-accent", img: courseMaths },
             ].map((c) => (
-              <div key={c.title} className="overflow-hidden rounded-2xl border border-border bg-background shadow-sm hover-lift">
+              <div key={c.title} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover-lift">
                 <div className={`h-36 bg-gradient-to-br ${c.color} relative flex items-center justify-center overflow-hidden`}>
-                  <img src={c.img} alt={c.title} loading="lazy" className="h-28 w-28 object-contain opacity-80" />
+                  <img src={c.img} alt={c.title} loading="lazy" className="h-28 w-28 object-contain opacity-90" />
                   <span className="absolute top-3 left-3 rounded-pill bg-white/20 px-3 py-1 text-xs font-bold text-white">{c.tag}</span>
                 </div>
                 <div className="p-4">
@@ -245,7 +283,7 @@ const LandingPage = () => {
       </section>
 
       {/* Meet Our Educators */}
-      <section className="py-16 md:py-24 bg-background">
+      <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Meet Our Educators</h2>
@@ -258,7 +296,7 @@ const LandingPage = () => {
               { name: "Dr. Siddharth Nair", subject: "Mathematics", rating: 4.9, students: "15.2K", bio: "Gold medalist in Mathematics. Simplifies JEE Advanced problems with unique techniques.", gradient: "from-accent to-primary", initials: "SN" },
               { name: "Dr. Kavitha Menon", subject: "Biology", rating: 4.8, students: "11.3K", bio: "AIIMS alumna. Expert in NEET Biology with a focus on diagrams and mnemonics.", gradient: "from-primary-dark to-secondary", initials: "KM" },
             ].map((edu) => (
-              <div key={edu.name} className="rounded-2xl border border-border bg-card overflow-hidden hover-lift text-center">
+              <div key={edu.name} className="rounded-2xl border border-border bg-background overflow-hidden hover-lift text-center">
                 <div className={`bg-gradient-to-br ${edu.gradient} py-8 relative`}>
                   <div className="mx-auto h-20 w-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-2xl font-bold text-white border-2 border-white/30">
                     {edu.initials}
@@ -280,7 +318,7 @@ const LandingPage = () => {
       </section>
 
       {/* Student Success Stories */}
-      <section className="py-16 md:py-24 bg-card">
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Student Success Stories</h2>
@@ -292,7 +330,7 @@ const LandingPage = () => {
               { name: "Ishita Bansal", exam: "NEET 2025", result: "AIR 156", quote: "The test series and analytics helped me identify my weak areas. Dr. Kavitha's biology classes were incredibly detailed.", avatar: "IB", tag: "AIIMS Delhi" },
               { name: "Karan Malhotra", exam: "JEE Main 2025", result: "99.8%ile", quote: "I loved the compete mode — battling peers kept me motivated. The 1-on-1 mentoring sessions were the real difference maker.", avatar: "KM", tag: "IIT Delhi" },
             ].map((s) => (
-              <div key={s.name} className="rounded-2xl border border-border bg-background p-6 hover-lift relative">
+              <div key={s.name} className="rounded-2xl border border-border bg-card p-6 hover-lift relative">
                 <Quote className="absolute top-4 right-4 h-8 w-8 text-primary/10" />
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
@@ -315,16 +353,19 @@ const LandingPage = () => {
       </section>
 
       {/* Pricing */}
-      <section className="py-16 md:py-24 bg-background">
+      <section id="pricing" className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
-          <h2 className="text-center text-3xl font-black font-display text-foreground animate-fade-in-up">Simple Pricing</h2>
+          <div className="text-center animate-fade-in-up">
+            <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Simple Pricing</h2>
+            <p className="mt-2 text-muted-foreground">Choose a plan that fits your goals</p>
+          </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3 stagger-children">
             {[
               { name: "Explorer", price: "Free", desc: "Get started", features: ["5 free live classes", "Basic test series", "Community doubts"], cta: "Start Free", popular: false },
               { name: "JEE Pro", price: country === 'india' ? "₹999" : "AED 149", desc: "/month", features: ["Unlimited live classes", "Full test series", "AI doubt solver", "Analytics"], cta: "Get Pro", popular: true },
               { name: "Elite", price: country === 'india' ? "₹3,999" : "AED 599", desc: "/month", features: ["Everything in Pro", "1-on-1 mentoring", "Personal study plan", "Priority support"], cta: "Go Elite", popular: false },
             ].map((p) => (
-              <div key={p.name} className={`relative rounded-2xl border p-8 hover-lift ${p.popular ? 'border-primary bg-card shadow-blue' : 'border-border bg-card shadow-sm'}`}>
+              <div key={p.name} className={`relative rounded-2xl border p-8 hover-lift ${p.popular ? 'border-primary bg-background shadow-blue' : 'border-border bg-background shadow-sm'}`}>
                 {p.popular && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-pill bg-gradient-to-r from-primary to-accent px-4 py-1 text-xs font-bold text-primary-foreground">
                     Most Popular
@@ -344,7 +385,7 @@ const LandingPage = () => {
                 </ul>
                 <Link
                   to="/signup"
-                  className={`mt-8 block rounded-pill py-3 text-center text-sm font-bold transition-colors ${p.popular ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90' : 'border border-border text-foreground hover:bg-primary-light'}`}
+                  className={`mt-8 block rounded-pill py-3 text-center text-sm font-bold transition-colors ${p.popular ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90' : 'border border-border text-foreground hover:bg-primary/5'}`}
                 >
                   {p.cta}
                 </Link>
@@ -355,17 +396,17 @@ const LandingPage = () => {
       </section>
 
       {/* Why Arambh vs Traditional */}
-      <section className="py-16 md:py-24 bg-card">
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Why Arambh?</h2>
             <p className="mt-2 text-muted-foreground">See how we compare to traditional coaching</p>
           </div>
-          <div className="mt-12 max-w-3xl mx-auto rounded-2xl border border-border bg-background overflow-hidden">
-            <div className="grid grid-cols-3 bg-gradient-to-r from-primary to-accent text-white text-center">
-              <div className="p-4 text-sm font-bold">Feature</div>
-              <div className="p-4 text-sm font-bold">Arambh Classes</div>
-              <div className="p-4 text-sm font-bold">Traditional Coaching</div>
+          <div className="mt-12 max-w-3xl mx-auto rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-3 bg-gradient-to-r from-primary to-accent text-center">
+              <div className="p-4 text-sm font-bold text-white">Feature</div>
+              <div className="p-4 text-sm font-bold text-white">Arambh Classes</div>
+              <div className="p-4 text-sm font-bold text-white">Traditional Coaching</div>
             </div>
             {[
               { feature: "Live + Recorded Classes", arambh: true, traditional: false },
@@ -391,14 +432,46 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-gradient-to-r from-primary via-primary-dark to-accent grid-texture py-16">
-        <div className="container mx-auto px-4 text-center animate-fade-in-up">
-          <h2 className="text-3xl font-black font-display text-white md:text-4xl">Start Now</h2>
-          <p className="mt-3 text-white/80">Join 50,000+ students already preparing with Arambh Classes</p>
-          <Link to="/signup" className="mt-8 inline-flex items-center gap-2 rounded-pill bg-white px-8 py-3.5 text-base font-bold text-primary shadow-lg hover:shadow-xl transition-shadow">
-            Start for Free <ArrowRight className="h-4 w-4" />
+      {/* FAQ */}
+      <section className="py-16 md:py-24 bg-card">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center animate-fade-in-up">
+            <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Frequently Asked Questions</h2>
+            <p className="mt-2 text-muted-foreground">Got questions? We've got answers</p>
+          </div>
+          <div className="mt-12 space-y-3">
+            {faqs.map((faq, i) => (
+              <div key={i} className="rounded-xl border border-border bg-background overflow-hidden hover-lift">
+                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-4 text-left">
+                  <span className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <HelpCircle className="h-4 w-4 text-primary shrink-0" /> {faq.q}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === i && (
+                  <div className="px-4 pb-4 pt-0">
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-6">{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA — FIXED visibility */}
+      <section className="relative overflow-hidden py-20">
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))]" />
+        <div className="absolute inset-0 grid-texture" />
+        <div className="absolute inset-0 opacity-20" style={{ background: 'radial-gradient(circle at 50% 50%, hsl(24 95% 53% / 0.4) 0%, transparent 60%)' }} />
+        <div className="container mx-auto px-4 text-center animate-fade-in-up relative z-10">
+          <Sparkles className="mx-auto h-8 w-8 text-accent mb-4 animate-pulse" />
+          <h2 className="text-3xl font-black font-display text-white md:text-5xl">Start Your Journey Today</h2>
+          <p className="mt-4 text-lg text-white/90 max-w-lg mx-auto">Join 50,000+ students already preparing with Arambh Classes. Your dream college is just one step away.</p>
+          <Link to="/signup" className="mt-8 inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-10 py-4 text-lg font-bold text-white shadow-blue hover:opacity-90 hover:scale-105 transition-all">
+            Start for Free <ArrowRight className="h-5 w-5" />
           </Link>
+          <p className="mt-4 text-sm text-white/60">No credit card required · Cancel anytime</p>
         </div>
       </section>
 
@@ -413,46 +486,46 @@ const LandingPage = () => {
                 </div>
                 <span className="text-lg font-black font-display gradient-text">ARAMBH CLASSES</span>
               </div>
-              <p className="text-sm text-white/50">Empowering students across India & Dubai to achieve their dream exam results.</p>
+              <p className="text-sm text-white/60">Empowering students across India & Dubai to achieve their dream exam results.</p>
               <div className="flex gap-3 mt-4">
                 {["Twitter", "YouTube", "Instagram"].map(s => (
-                  <div key={s} className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white/60 hover:bg-white/20 cursor-pointer transition-colors">
+                  <div key={s} className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-white/70 hover:bg-white/20 cursor-pointer transition-colors">
                     {s[0]}
                   </div>
                 ))}
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-bold mb-3 text-white/90">Quick Links</h4>
+              <h4 className="text-sm font-bold mb-3 text-white">Quick Links</h4>
               <div className="space-y-2">
                 {["Courses", "Tests", "Live Classes", "Question Bank"].map(l => (
-                  <Link key={l} to={`/${l.toLowerCase().replace(/ /g, '-')}`} className="block text-sm text-white/50 hover:text-white/80 transition-colors">{l}</Link>
+                  <Link key={l} to={`/${l.toLowerCase().replace(/ /g, '-')}`} className="block text-sm text-white/60 hover:text-white/90 transition-colors">{l}</Link>
                 ))}
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-bold mb-3 text-white/90">Company</h4>
+              <h4 className="text-sm font-bold mb-3 text-white">Company</h4>
               <div className="space-y-2">
                 {["About Us", "Contact", "Privacy Policy", "Terms of Service"].map(l => (
-                  <Link key={l} to="#" className="block text-sm text-white/50 hover:text-white/80 transition-colors">{l}</Link>
+                  <Link key={l} to="#" className="block text-sm text-white/60 hover:text-white/90 transition-colors">{l}</Link>
                 ))}
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-bold mb-3 text-white/90">Reach Us</h4>
-              <div className="space-y-2 text-sm text-white/50">
+              <h4 className="text-sm font-bold mb-3 text-white">Reach Us</h4>
+              <div className="space-y-2 text-sm text-white/60">
                 <p>🇮🇳 New Delhi, India</p>
                 <p>🇦🇪 Dubai, UAE</p>
                 <p>support@arambhclasses.com</p>
               </div>
               <div className="mt-4 flex gap-2">
-                <div className="rounded-lg bg-white/10 px-3 py-2 text-[10px] font-bold text-white/70">📱 App Store</div>
-                <div className="rounded-lg bg-white/10 px-3 py-2 text-[10px] font-bold text-white/70">▶ Google Play</div>
+                <div className="rounded-lg bg-white/10 px-3 py-2 text-[10px] font-bold text-white/80 hover:bg-white/20 cursor-pointer transition-colors">📱 App Store</div>
+                <div className="rounded-lg bg-white/10 px-3 py-2 text-[10px] font-bold text-white/80 hover:bg-white/20 cursor-pointer transition-colors">▶ Google Play</div>
               </div>
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-center text-xs text-white/40 flex items-center justify-center gap-1">
+            <p className="text-center text-xs text-white/50 flex items-center justify-center gap-1">
               Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Students · © 2026 Arambh Classes
             </p>
           </div>

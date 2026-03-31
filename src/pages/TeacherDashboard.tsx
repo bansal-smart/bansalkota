@@ -1,11 +1,19 @@
-import { Users, BookOpen, MessageCircle, Star, Video, Clock, TrendingUp, IndianRupee, ArrowRight, AlertCircle } from "lucide-react";
+import { Users, BookOpen, MessageCircle, Star, Video, Clock, TrendingUp, IndianRupee, ArrowRight, AlertCircle, ClipboardCheck, Calendar, Bot, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from "recharts";
+import { Link } from "react-router-dom";
 
 const stats = [
   { label: "Total Students", value: "847", icon: Users, change: "+23 new this week", color: "text-primary" },
   { label: "Active Courses", value: "12", icon: BookOpen, change: "3 ongoing batches", color: "text-secondary" },
   { label: "Pending Doubts", value: "38", icon: MessageCircle, change: "Respond within 24hrs", color: "text-destructive" },
   { label: "Avg Rating", value: "4.8", icon: Star, change: "Based on 1,204 reviews", color: "text-accent" },
+];
+
+const quickActions = [
+  { icon: Calendar, label: "Schedule Class", desc: "Create live session", link: "/teacher/create-course", gradient: "from-primary to-primary-dark" },
+  { icon: ClipboardCheck, label: "Create Test", desc: "New assessment", link: "/teacher/create-test", gradient: "from-secondary to-secondary-dark" },
+  { icon: Bot, label: "Answer Doubts", desc: "38 pending", link: "/teacher/doubts", gradient: "from-accent to-primary" },
+  { icon: BarChart3, label: "Analytics", desc: "View insights", link: "/teacher/analytics", gradient: "from-primary-dark to-accent" },
 ];
 
 const upcomingClasses = [
@@ -46,6 +54,17 @@ const TeacherDashboard = () => (
       <p className="text-sm text-muted-foreground">12 students joined today</p>
     </div>
 
+    {/* Quick Actions */}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
+      {quickActions.map(qa => (
+        <Link key={qa.label} to={qa.link} className={`rounded-xl bg-gradient-to-br ${qa.gradient} p-4 text-center hover-lift group`}>
+          <qa.icon className="h-6 w-6 text-white mx-auto mb-2 group-hover:scale-110 transition-transform" />
+          <p className="text-xs font-bold text-white">{qa.label}</p>
+          <p className="text-[10px] text-white/70">{qa.desc}</p>
+        </Link>
+      ))}
+    </div>
+
     {/* Stats Row */}
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
       {stats.map((s) => (
@@ -55,7 +74,7 @@ const TeacherDashboard = () => (
           </div>
           <p className="mt-2 text-2xl font-bold text-foreground">{s.value}</p>
           <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
-          <p className="mt-1 text-[10px] text-muted2">{s.change}</p>
+          <p className="mt-1 text-[10px] text-muted-foreground">{s.change}</p>
         </div>
       ))}
     </div>
@@ -125,7 +144,7 @@ const TeacherDashboard = () => (
                 <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary mb-1">{d.subject} · {d.topic}</span>
                 <p className="text-xs text-muted-foreground line-clamp-1">{d.question}</p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-[10px] text-muted2">{d.time}</span>
+                  <span className="text-[10px] text-muted-foreground">{d.time}</span>
                   <button className="text-[10px] font-semibold text-primary hover:underline flex items-center gap-0.5">Answer Now <ArrowRight className="h-3 w-3" /></button>
                 </div>
               </div>

@@ -34,35 +34,35 @@ const weakTopics = [
 const TestResultPage = () => (
   <div className="pb-20 lg:pb-0">
     {/* Hero */}
-    <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-white text-center">
-      <h1 className="text-2xl font-black font-display mb-4">Your Result</h1>
+    <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-center">
+      <h1 className="text-2xl font-black font-display text-white mb-4">Your Result</h1>
       <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
         <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-          <p className="text-[10px] font-medium opacity-80">Total Score</p>
-          <p className="text-2xl font-black font-display">104</p>
-          <p className="text-xs opacity-70">/ 360</p>
+          <p className="text-[10px] font-medium text-white/80">Total Score</p>
+          <p className="text-2xl font-black font-display text-white">104</p>
+          <p className="text-xs text-white/70">/ 360</p>
         </div>
         <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-          <p className="text-[10px] font-medium opacity-80">Correct</p>
-          <p className="text-2xl font-black font-display text-[hsl(var(--secondary))]">+112</p>
+          <p className="text-[10px] font-medium text-white/80">Correct</p>
+          <p className="text-2xl font-black font-display text-secondary">+112</p>
         </div>
         <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-          <p className="text-[10px] font-medium opacity-80">Incorrect</p>
-          <p className="text-2xl font-black font-display text-[hsl(var(--destructive))]">-8</p>
+          <p className="text-[10px] font-medium text-white/80">Incorrect</p>
+          <p className="text-2xl font-black font-display text-destructive">-8</p>
         </div>
       </div>
       <div className="mt-4 flex justify-center gap-6">
-        <div><p className="text-3xl font-black font-display text-[hsl(var(--secondary))]">87%</p><p className="text-xs opacity-70">Accuracy</p></div>
-        <div><p className="text-3xl font-black font-display">83/90</p><p className="text-xs opacity-70">Attempted</p></div>
+        <div><p className="text-3xl font-black font-display text-secondary">87%</p><p className="text-xs text-white/70">Accuracy</p></div>
+        <div><p className="text-3xl font-black font-display text-white">83/90</p><p className="text-xs text-white/70">Attempted</p></div>
       </div>
     </div>
 
     {/* Rank Strip */}
     <div className="bg-[hsl(var(--navy))] grid-texture px-4 py-4">
       <div className="grid grid-cols-3 gap-4 text-center">
-        <div><p className="text-[10px] text-white/60 mb-1">Batch Rank</p><p className="text-lg font-black font-display text-accent"><Trophy className="inline h-4 w-4 mr-1" />#3</p></div>
-        <div className="border-x border-white/10"><p className="text-[10px] text-white/60 mb-1">Centre %ile</p><p className="text-lg font-black font-display text-secondary">94.5</p></div>
-        <div><p className="text-[10px] text-white/60 mb-1">All India %ile</p><p className="text-lg font-black font-display text-accent">99.8</p></div>
+        <div><p className="text-[10px] text-white/70 mb-1">Batch Rank</p><p className="text-lg font-black font-display text-accent"><Trophy className="inline h-4 w-4 mr-1" />#3</p></div>
+        <div className="border-x border-white/10"><p className="text-[10px] text-white/70 mb-1">Centre %ile</p><p className="text-lg font-black font-display text-secondary">94.5</p></div>
+        <div><p className="text-[10px] text-white/70 mb-1">All India %ile</p><p className="text-lg font-black font-display text-accent">99.8</p></div>
       </div>
     </div>
 
