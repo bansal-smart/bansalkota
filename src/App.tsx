@@ -7,6 +7,8 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import StudentLayout from "./components/StudentLayout";
+import TeacherLayout from "./components/TeacherLayout";
+import AdminLayout from "./components/AdminLayout";
 import StudentDashboard from "./pages/StudentDashboard";
 import TestListPage from "./pages/TestListPage";
 import TestTakingPage from "./pages/TestTakingPage";
@@ -21,6 +23,14 @@ import CoursesPage from "./pages/CoursesPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import LecturePlayerPage from "./pages/LecturePlayerPage";
 import ProfilePage from "./pages/ProfilePage";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import CreateTestPage from "./pages/CreateTestPage";
+import TeacherDoubtQueuePage from "./pages/TeacherDoubtQueuePage";
+import CreateCoursePage from "./pages/CreateCoursePage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminPaymentsPage from "./pages/AdminPaymentsPage";
+import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +62,20 @@ const App = () => (
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/courses/:slug" element={<CourseDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+          </Route>
+          {/* Teacher layout pages */}
+          <Route element={<TeacherLayout />}>
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/tests/create" element={<CreateTestPage />} />
+            <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
+            <Route path="/teacher/courses/create" element={<CreateCoursePage />} />
+          </Route>
+          {/* Admin layout pages */}
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+            <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
