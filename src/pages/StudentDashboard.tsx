@@ -12,10 +12,10 @@ const subjectIcons: Record<string, React.ElementType> = {
 };
 
 const scheduleData = [
-  { time: "09:00 AM", title: "Electrostatics & Capacitors", subject: "Physics", teacher: "Ramesh Kumar", status: "completed", color: "from-primary to-primary-dark" },
-  { time: "11:30 AM", title: "Organic Chemistry Reactions", subject: "Chemistry", teacher: "Priya Sharma", status: "missed", color: "from-secondary to-secondary-dark" },
-  { time: "03:00 PM", title: "Calculus Integration", subject: "Maths", teacher: "AK Bansal", status: "live", color: "from-accent to-[hsl(38,92%,42%)]" },
-  { time: "06:30 PM", title: "Modern Physics", subject: "Physics", teacher: "Ramesh Kumar", status: "upcoming", color: "from-[hsl(271,91%,65%)] to-[hsl(271,81%,45%)]" },
+  { time: "09:00 AM", title: "Electrostatics & Capacitors", subject: "Physics", teacher: "Vikram Thapar", status: "completed", color: "from-primary to-primary-dark" },
+  { time: "11:30 AM", title: "Organic Chemistry Reactions", subject: "Chemistry", teacher: "Ananya Iyer", status: "missed", color: "from-secondary to-secondary-dark" },
+  { time: "03:00 PM", title: "Calculus Integration", subject: "Maths", teacher: "Dr. Siddharth Nair", status: "live", color: "from-accent to-primary" },
+  { time: "06:30 PM", title: "Modern Physics", subject: "Physics", teacher: "Vikram Thapar", status: "upcoming", color: "from-primary-dark to-accent" },
 ];
 
 const trendData = [
@@ -34,9 +34,9 @@ const upcomingTests = [
 ];
 
 const educators = [
-  { name: "Ramesh Kumar", subject: "Physics", followers: "12.5K", icon: Zap, color: "from-primary to-primary-dark" },
-  { name: "Priya Sharma", subject: "Chemistry", followers: "9.8K", icon: FlaskConical, color: "from-secondary to-secondary-dark" },
-  { name: "AK Bansal", subject: "Mathematics", followers: "15.2K", icon: Compass, color: "from-accent to-[hsl(38,92%,42%)]" },
+  { name: "Vikram Thapar", subject: "Physics", followers: "12.5K", icon: Zap, color: "from-primary to-primary-dark" },
+  { name: "Ananya Iyer", subject: "Chemistry", followers: "9.8K", icon: FlaskConical, color: "from-secondary to-secondary-dark" },
+  { name: "Dr. Siddharth Nair", subject: "Mathematics", followers: "15.2K", icon: Compass, color: "from-accent to-primary" },
 ];
 
 const StudentDashboard = () => {
@@ -48,7 +48,7 @@ const StudentDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 p-4 lg:p-6 min-w-0">
         {/* Greeting */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 animate-fade-in-up">
           <div>
             <h1 className="text-xl font-black font-display text-foreground lg:text-2xl">Good morning, {firstName}</h1>
             <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -57,12 +57,12 @@ const StudentDashboard = () => {
             <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">
               <PhoneCall className="h-3.5 w-3.5" /> Talk to Counsellor
             </button>
-            <button className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors">Enroll in Course</button>
+            <button className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Enroll in Course</button>
           </div>
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4 stagger-children">
           <StatCard icon={Zap} value="8 day" label="Current Streak" trend="↑ 3 from last week" stripeColor="primary" />
           <StatCard icon={Target} value="84%" label="Overall Accuracy" trend="↑ 2.3% improvement" stripeColor="secondary" />
           <StatCard icon={ClipboardCheck} value="23" label="Tests Completed" trend="↑ 5 this month" stripeColor="accent" />
@@ -70,13 +70,13 @@ const StudentDashboard = () => {
         </div>
 
         {/* Today's Schedule */}
-        <div className="rounded-2xl border border-border bg-card p-5 mb-6">
+        <div className="rounded-2xl border border-border bg-card p-5 mb-6 animate-fade-in-up">
           <SectionHeader title="Today's Schedule" viewAllLink="/live-classes" />
           <div className="space-y-3">
             {scheduleData.map((cls) => {
               const SubjectIcon = subjectIcons[cls.subject] || Zap;
               return (
-                <div key={cls.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-background/50 transition-colors">
+                <div key={cls.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-background/50 transition-colors hover-lift">
                   <div className={`h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br ${cls.color} flex items-center justify-center`}>
                     <SubjectIcon className="h-5 w-5 text-white" />
                   </div>
@@ -111,11 +111,11 @@ const StudentDashboard = () => {
         </div>
 
         {/* Educators */}
-        <div className="mb-6">
+        <div className="mb-6 animate-fade-in-up">
           <SectionHeader title="Top Educators" viewAllLink="/educators" />
           <div className="grid gap-4 sm:grid-cols-3">
             {educators.map((edu) => (
-              <div key={edu.name} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <div key={edu.name} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover-lift">
                 <div className={`h-20 bg-gradient-to-br ${edu.color} flex items-center justify-center`}>
                   <edu.icon className="h-8 w-8 text-white/80" />
                 </div>
@@ -212,7 +212,7 @@ const StudentDashboard = () => {
           <p className="text-sm font-bold font-display text-foreground mb-3">Upcoming Tests</p>
           <div className="space-y-2">
             {upcomingTests.map((t) => (
-              <div key={t.name} className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <div key={t.name} className="flex items-center gap-3 rounded-lg border border-border p-3 hover-lift">
                 <div className="h-9 w-9 rounded-lg bg-primary-light flex items-center justify-center">
                   <ClipboardCheck className="h-4 w-4 text-primary" />
                 </div>

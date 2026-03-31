@@ -23,9 +23,9 @@ const scoreDistribution = [
 ];
 
 const pendingDoubts = [
-  { student: "Arjun Mehta", subject: "Physics", topic: "Electrostatics", question: "Sir, how to solve Gauss's law problems with non-uniform charge...", time: "2h ago", urgent: true },
-  { student: "Priya Sharma", subject: "Chemistry", topic: "Organic", question: "Why does SN1 reaction prefer tertiary carbon over primary?", time: "4h ago", urgent: false },
-  { student: "Rahul Singh", subject: "Physics", topic: "Optics", question: "Can you explain the difference between real and virtual images in...", time: "6h ago", urgent: false },
+  { student: "Aditya Rajan", subject: "Physics", topic: "Electrostatics", question: "Sir, how to solve Gauss's law problems with non-uniform charge...", time: "2h ago", urgent: true },
+  { student: "Ishita Bansal", subject: "Chemistry", topic: "Organic", question: "Why does SN1 reaction prefer tertiary carbon over primary?", time: "4h ago", urgent: false },
+  { student: "Karan Malhotra", subject: "Physics", topic: "Optics", question: "Can you explain the difference between real and virtual images in...", time: "6h ago", urgent: false },
 ];
 
 const dailyEarnings = [
@@ -41,15 +41,15 @@ const dailyEarnings = [
 const TeacherDashboard = () => (
   <div className="p-4 lg:p-6 space-y-6 pb-24 lg:pb-6">
     {/* Greeting */}
-    <div>
-      <h1 className="text-xl font-bold text-foreground">Good morning, Ramesh Sir</h1>
+    <div className="animate-fade-in-up">
+      <h1 className="text-xl font-bold text-foreground">Good morning, Vikram Sir</h1>
       <p className="text-sm text-muted-foreground">12 students joined today</p>
     </div>
 
     {/* Stats Row */}
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
       {stats.map((s) => (
-        <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+        <div key={s.label} className="rounded-xl border border-border bg-card p-4 hover-lift">
           <div className="flex items-center justify-between">
             <s.icon className={`h-5 w-5 ${s.color}`} />
           </div>
@@ -61,17 +61,15 @@ const TeacherDashboard = () => (
     </div>
 
     <div className="grid lg:grid-cols-3 gap-6">
-      {/* Left Column — 2/3 */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Upcoming Classes */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-foreground">Upcoming Classes</h2>
             <button className="text-xs font-semibold text-primary hover:underline">+ Schedule New</button>
           </div>
           <div className="space-y-3">
             {upcomingClasses.map((c, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <div key={i} className="flex items-center gap-3 rounded-lg border border-border p-3 hover-lift">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   {c.live ? <Video className="h-5 w-5 text-primary" /> : <Clock className="h-5 w-5 text-muted-foreground" />}
                 </div>
@@ -93,8 +91,7 @@ const TeacherDashboard = () => (
           </div>
         </div>
 
-        {/* Score Distribution Chart */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <h2 className="text-sm font-bold text-foreground mb-4">Student Performance — Last Test</h2>
           <ResponsiveContainer width="100%" height={220}>
             <ComposedChart data={scoreDistribution}>
@@ -109,17 +106,15 @@ const TeacherDashboard = () => (
         </div>
       </div>
 
-      {/* Right Column — 1/3 */}
       <div className="space-y-6">
-        {/* Doubt Queue */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground">Pending Doubts (38)</h2>
             <a href="/teacher/doubts" className="text-xs text-primary font-semibold hover:underline">View All</a>
           </div>
           <div className="space-y-3">
             {pendingDoubts.map((d, i) => (
-              <div key={i} className="rounded-lg border border-border p-3">
+              <div key={i} className="rounded-lg border border-border p-3 hover-lift">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
                     {d.student.split(' ').map(n => n[0]).join('')}
@@ -138,8 +133,7 @@ const TeacherDashboard = () => (
           </div>
         </div>
 
-        {/* Earnings */}
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
           <h2 className="text-sm font-bold text-foreground mb-1">Earnings This Month</h2>
           <p className="text-2xl font-bold text-secondary mb-3 flex items-center gap-1"><IndianRupee className="h-5 w-5" />48,200</p>
           <ResponsiveContainer width="100%" height={100}>

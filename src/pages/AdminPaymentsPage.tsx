@@ -14,12 +14,12 @@ const monthlyRevenue = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", 
 }));
 
 const transactions = [
-  { id: "TXN-001234", student: "Arjun Mehta", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-30", status: "success" },
-  { id: "TXN-001233", student: "Priya Sharma", plan: "Elite Annual", amount: "₹7,999", currency: "INR", gateway: "Razorpay", date: "2026-03-30", status: "success" },
-  { id: "TXN-001232", student: "Sneha Gupta", plan: "Pro Monthly", amount: "AED 149", currency: "AED", gateway: "Stripe", date: "2026-03-29", status: "success" },
-  { id: "TXN-001231", student: "Amit Patel", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-29", status: "failed" },
-  { id: "TXN-001230", student: "Rahul Singh", plan: "Course Only", amount: "₹1,999", currency: "INR", gateway: "Razorpay", date: "2026-03-28", status: "refunded" },
-  { id: "TXN-001229", student: "Vikram Joshi", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-28", status: "success" },
+  { id: "TXN-001234", student: "Aditya Rajan", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-30", status: "success" },
+  { id: "TXN-001233", student: "Ishita Bansal", plan: "Elite Annual", amount: "₹7,999", currency: "INR", gateway: "Razorpay", date: "2026-03-30", status: "success" },
+  { id: "TXN-001232", student: "Divya Nair", plan: "Pro Monthly", amount: "AED 149", currency: "AED", gateway: "Stripe", date: "2026-03-29", status: "success" },
+  { id: "TXN-001231", student: "Harsh Agarwal", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-29", status: "failed" },
+  { id: "TXN-001230", student: "Karan Malhotra", plan: "Course Only", amount: "₹1,999", currency: "INR", gateway: "Razorpay", date: "2026-03-28", status: "refunded" },
+  { id: "TXN-001229", student: "Saurabh Pillai", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-28", status: "success" },
 ];
 
 const statusBadge = (s: string) => {
@@ -39,10 +39,9 @@ const AdminPaymentsPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6 pb-24 lg:pb-6">
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
+          <div key={s.label} className="rounded-xl border border-border bg-card p-4 hover-lift">
             <s.icon className={`h-5 w-5 ${s.color}`} />
             <p className="mt-2 text-2xl font-bold text-foreground">{s.value}</p>
             <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -50,8 +49,7 @@ const AdminPaymentsPage = () => {
         ))}
       </div>
 
-      {/* Monthly Revenue Chart */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
         <h2 className="text-sm font-bold text-foreground mb-4">Monthly Revenue</h2>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={monthlyRevenue}>
@@ -64,8 +62,7 @@ const AdminPaymentsPage = () => {
         </ResponsiveContainer>
       </div>
 
-      {/* Transactions */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="text-sm font-bold text-foreground">Transactions</h2>
           <div className="flex gap-2">
@@ -95,12 +92,11 @@ const AdminPaymentsPage = () => {
         </div>
       </div>
 
-      {/* Subscription Overview */}
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
         <h2 className="text-sm font-bold text-foreground mb-3">Subscription Overview</h2>
         <div className="grid grid-cols-3 gap-3">
           {subPlans.map((p) => (
-            <div key={p.plan} className="rounded-lg border border-border p-3 text-center">
+            <div key={p.plan} className="rounded-lg border border-border p-3 text-center hover-lift">
               <p className="text-lg font-bold text-foreground">{p.count.toLocaleString()}</p>
               <p className="text-xs font-medium text-muted-foreground">{p.plan} users</p>
               <p className="text-xs font-semibold text-secondary mt-1">{p.revenue}</p>

@@ -2,14 +2,14 @@ import { useState } from "react";
 import { Search, UserPlus, Download, MoreHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const allUsers = [
-  { id: 1, name: "Arjun Mehta", email: "arjun@gmail.com", phone: "+91 98765 43210", role: "student", plan: "Pro", country: "India", joined: "2025-12-01" },
-  { id: 2, name: "Priya Sharma", email: "priya@gmail.com", phone: "+91 87654 32109", role: "student", plan: "Elite", country: "India", joined: "2025-11-15" },
-  { id: 3, name: "Ramesh Kumar", email: "ramesh@arambh.com", phone: "+91 76543 21098", role: "teacher", plan: "Pro", country: "India", joined: "2025-06-01" },
+  { id: 1, name: "Aditya Rajan", email: "aditya@gmail.com", phone: "+91 98765 43210", role: "student", plan: "Pro", country: "India", joined: "2025-12-01" },
+  { id: 2, name: "Ishita Bansal", email: "ishita@gmail.com", phone: "+91 87654 32109", role: "student", plan: "Elite", country: "India", joined: "2025-11-15" },
+  { id: 3, name: "Vikram Thapar", email: "vikram.t@arambh.com", phone: "+91 76543 21098", role: "teacher", plan: "Pro", country: "India", joined: "2025-06-01" },
   { id: 4, name: "Admin User", email: "admin@arambh.com", phone: "+91 99999 00000", role: "admin", plan: "Elite", country: "India", joined: "2025-01-01" },
-  { id: 5, name: "Sneha Gupta", email: "sneha@gmail.com", phone: "+971 50 123 4567", role: "student", plan: "Free", country: "Dubai", joined: "2026-01-10" },
-  { id: 6, name: "Vikram Joshi", email: "vikram@outlook.com", phone: "+91 65432 10987", role: "student", plan: "Pro", country: "India", joined: "2026-02-14" },
-  { id: 7, name: "Neha Sharma", email: "neha@arambh.com", phone: "+91 54321 09876", role: "teacher", plan: "Pro", country: "India", joined: "2025-08-20" },
-  { id: 8, name: "Amit Patel", email: "amit@gmail.com", phone: "+91 43210 98765", role: "student", plan: "Free", country: "India", joined: "2026-03-01" },
+  { id: 5, name: "Divya Nair", email: "divya@gmail.com", phone: "+971 50 123 4567", role: "student", plan: "Free", country: "Dubai", joined: "2026-01-10" },
+  { id: 6, name: "Saurabh Pillai", email: "saurabh@outlook.com", phone: "+91 65432 10987", role: "student", plan: "Pro", country: "India", joined: "2026-02-14" },
+  { id: 7, name: "Meghna Joshi", email: "meghna@arambh.com", phone: "+91 54321 09876", role: "teacher", plan: "Pro", country: "India", joined: "2025-08-20" },
+  { id: 8, name: "Harsh Agarwal", email: "harsh@gmail.com", phone: "+91 43210 98765", role: "student", plan: "Free", country: "India", joined: "2026-03-01" },
 ];
 
 const roleBadge = (role: string) => {
@@ -36,13 +36,11 @@ const AdminUsersPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-4 pb-24 lg:pb-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3 animate-fade-in-up">
         <h1 className="text-lg font-bold text-foreground">Users</h1>
-        <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"><UserPlus className="h-3.5 w-3.5" /> Invite User</button>
+        <button className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-2 text-xs font-semibold text-primary-foreground"><UserPlus className="h-3.5 w-3.5" /> Invite User</button>
       </div>
 
-      {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -55,7 +53,6 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
-      {/* Bulk Actions */}
       {selected.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3">
           <span className="text-xs font-medium text-foreground">{selected.length} selected</span>
@@ -65,8 +62,7 @@ const AdminUsersPage = () => {
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-border bg-card overflow-x-auto">
+      <div className="rounded-xl border border-border bg-card overflow-x-auto animate-fade-in-up">
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border bg-background">
@@ -86,7 +82,7 @@ const AdminUsersPage = () => {
                 <td className="p-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded" checked={selected.includes(u.id)} onChange={(e) => setSelected(e.target.checked ? [...selected, u.id] : selected.filter(id => id !== u.id))} /></td>
                 <td className="p-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary shrink-0">{u.name.split(' ').map(n => n[0]).join('')}</div>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0">{u.name.split(' ').map(n => n[0]).join('')}</div>
                     <span className="font-medium text-foreground">{u.name}</span>
                   </div>
                 </td>
@@ -102,7 +98,6 @@ const AdminUsersPage = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Showing {filtered.length} of {allUsers.length} users</span>
         <div className="flex gap-1">
@@ -112,18 +107,17 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
-      {/* User Detail Drawer */}
       {drawerUser && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setDrawerUser(null)} />
-          <div className="relative w-full max-w-sm bg-card shadow-xl border-l border-border overflow-y-auto">
+          <div className="relative w-full max-w-sm bg-card shadow-xl border-l border-border overflow-y-auto animate-slide-in-right">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h2 className="text-sm font-bold text-foreground">User Details</h2>
               <button onClick={() => setDrawerUser(null)}><X className="h-4 w-4 text-muted-foreground" /></button>
             </div>
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">{drawerUser.name.split(' ').map(n => n[0]).join('')}</div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">{drawerUser.name.split(' ').map(n => n[0]).join('')}</div>
                 <div>
                   <p className="text-sm font-bold text-foreground">{drawerUser.name}</p>
                   <p className="text-xs text-muted-foreground">{drawerUser.email}</p>
