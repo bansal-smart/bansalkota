@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
