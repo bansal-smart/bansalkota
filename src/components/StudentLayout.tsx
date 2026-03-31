@@ -30,7 +30,7 @@ const StudentLayout = () => {
   const location = useLocation();
   const { user, currentGoal, setCurrentGoal, notificationCount } = useAppStore();
 
-  const NavLink = ({ item }: { item: typeof navItems[0] & { live?: boolean; badge?: number } }) => {
+  const NavLink = ({ item }: { item: { label: string; icon: React.ElementType; path: string; live?: boolean; badge?: number } }) => {
     const active = location.pathname === item.path;
     return (
       <Link
