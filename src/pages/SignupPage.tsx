@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles } from "lucide-react";
 
 const SignupPage = () => {
