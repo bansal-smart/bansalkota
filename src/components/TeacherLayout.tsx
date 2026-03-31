@@ -57,9 +57,9 @@ const TeacherLayout = () => {
 
         <div className="border-t border-border p-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">RS</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">VT</div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">Ramesh Sir</p>
+              <p className="text-xs font-semibold text-foreground truncate">Vikram Thapar</p>
               <p className="text-[10px] text-muted-foreground">Physics Educator</p>
             </div>
           </div>
@@ -91,7 +91,7 @@ const TeacherLayout = () => {
               <Bell className="h-5 w-5" />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">5</span>
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">RS</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">VT</div>
           </div>
         </header>
 

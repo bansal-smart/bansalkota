@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<"phone" | "email">("phone");
   const [showPassword, setShowPassword] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -148,7 +149,7 @@ const LoginPage = () => {
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">Resend OTP in 60s</p>
                   </div>
-                  <button className="w-full rounded-lg bg-secondary py-3 text-sm font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">
+                  <button onClick={() => navigate("/dashboard")} className="w-full rounded-lg bg-secondary py-3 text-sm font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">
                     Verify & Login
                   </button>
                 </>
@@ -189,7 +190,7 @@ const LoginPage = () => {
                   </button>
                 </div>
               </div>
-              <button className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
+              <button onClick={() => navigate("/dashboard")} className="w-full rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity">
                 Login
               </button>
               <button className="w-full rounded-lg border border-border py-3 text-sm font-semibold text-foreground hover:bg-background transition-colors flex items-center justify-center gap-2">

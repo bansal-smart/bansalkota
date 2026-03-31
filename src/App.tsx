@@ -14,6 +14,7 @@ import TestListPage from "./pages/TestListPage";
 import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
+import LiveClassesListPage from "./pages/LiveClassesListPage";
 import QBankPage from "./pages/QBankPage";
 import CompetePage from "./pages/CompetePage";
 import DoubtPage from "./pages/DoubtPage";
@@ -23,14 +24,27 @@ import CoursesPage from "./pages/CoursesPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import LecturePlayerPage from "./pages/LecturePlayerPage";
 import ProfilePage from "./pages/ProfilePage";
+import EducatorsPage from "./pages/EducatorsPage";
+import SettingsPage from "./pages/SettingsPage";
+import StorePage from "./pages/StorePage";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import CreateTestPage from "./pages/CreateTestPage";
 import TeacherDoubtQueuePage from "./pages/TeacherDoubtQueuePage";
 import CreateCoursePage from "./pages/CreateCoursePage";
+import TeacherCoursesPage from "./pages/TeacherCoursesPage";
+import TeacherLiveClassesPage from "./pages/TeacherLiveClassesPage";
+import TeacherStudentsPage from "./pages/TeacherStudentsPage";
+import TeacherAnalyticsPage from "./pages/TeacherAnalyticsPage";
+import TeacherSettingsPage from "./pages/TeacherSettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
+import AdminCoursesPage from "./pages/AdminCoursesPage";
+import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
+import AdminTestsPage from "./pages/AdminTestsPage";
+import AdminModerationPage from "./pages/AdminModerationPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +67,7 @@ const App = () => (
             <Route path="/dashboard" element={<StudentDashboard />} />
             <Route path="/tests" element={<TestListPage />} />
             <Route path="/tests/:id/result" element={<TestResultPage />} />
+            <Route path="/live-classes" element={<LiveClassesListPage />} />
             <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
             <Route path="/qbank" element={<QBankPage />} />
             <Route path="/compete" element={<CompetePage />} />
@@ -62,20 +77,33 @@ const App = () => (
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/courses/:slug" element={<CourseDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/educators" element={<EducatorsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/store" element={<StorePage />} />
           </Route>
           {/* Teacher layout pages */}
           <Route element={<TeacherLayout />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
+            <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
             <Route path="/teacher/tests/create" element={<CreateTestPage />} />
             <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
+            <Route path="/teacher/students" element={<TeacherStudentsPage />} />
+            <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
+            <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
             <Route path="/teacher/courses/create" element={<CreateCoursePage />} />
           </Route>
           {/* Admin layout pages */}
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/courses" element={<AdminCoursesPage />} />
+            <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
+            <Route path="/admin/tests" element={<AdminTestsPage />} />
             <Route path="/admin/payments" element={<AdminPaymentsPage />} />
             <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+            <Route path="/admin/moderation" element={<AdminModerationPage />} />
+            <Route path="/admin/settings" element={<AdminSettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
