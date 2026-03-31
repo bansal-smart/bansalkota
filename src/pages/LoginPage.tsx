@@ -149,7 +149,7 @@ const LoginPage = () => {
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">Resend OTP in 60s</p>
                   </div>
-                  <button className="w-full rounded-lg bg-secondary py-3 text-sm font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">
+                  <button onClick={() => navigate("/dashboard")} className="w-full rounded-lg bg-secondary py-3 text-sm font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">
                     Verify & Login
                   </button>
                 </>
