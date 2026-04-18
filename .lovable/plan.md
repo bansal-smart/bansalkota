@@ -1,78 +1,75 @@
-## Plan: "Career with Arambh" Section + Educator Application Form
 
-### Overview
+The user wants a **Product Requirements Document (PRD)** as a downloadable file for building an Android app version of the Arambh web application. This is an artifact-generation task, not a code change to the web app.
 
-Add a new "Career with Arambh" section to the landing page with a "Join Us" CTA. Clicking opens a multi-field application form in a modal/dialog. On submit, the educator is "registered" (mock), shown a success toast, and redirected to `/teacher/dashboard`.
+Key understanding from the request:
+- Android-only native app (mirror of web app)
+- Login screen with Signup button
+- After login: Home screen with Top bar + Bottom bar
+- Bottom bar has a "Profile" button → opens entire dashboard (mirroring web)
+- Theme must match the web app (orange #F97316, navy, Mulish/Plus Jakarta Sans)
+- Reference all features from the existing web app (Student/Teacher/Admin portals, Live Classes, Tests, QBank, Doubts, Educators, Compete, Leaderboard, Store, Settings, AI Doubt Solver, Career with Arambh, India/Dubai region, Razorpay/Stripe payments)
 
-Since no backend/auth is wired up yet, this will be a **frontend-only mock flow** (form data logged + stored in `useAppStore` / localStorage). When Lovable Cloud is connected later, we can persist to a real DB and storage bucket.
+Format clarification: User explicitly said "give me the PRD file" — so a downloadable document is wanted (no ambiguity, no need to ask).
 
-### 1. New Section on Landing Page
+## Plan: Generate Android App PRD Document
 
-**File:** `src/pages/LandingPage.tsx`
+### Deliverable
+A professionally formatted **PDF** PRD file (`Arambh_Android_App_PRD.pdf`) saved to `/mnt/documents/` — ready for handoff to Android developers.
 
-Add a new section "Career with Arambh" between "Meet Our Educators" and "Student Success Stories":
+### PRD Structure (15+ sections)
 
-- Eye-catching gradient background (orange → navy) matching theme
-- Heading: "Career with Arambh"
-- Subtext: "Join India & Dubai's fastest-growing edtech platform. Teach thousands, earn well, work flexibly."
-- 3 perk cards: Flexible Hours, Competitive Pay, Reach 50,000+ Students
-- Large "Join Us" button → opens the application dialog
+1. **Document Info** — version, date, owner, status
+2. **Executive Summary** — what we're building & why
+3. **Product Vision & Goals** — mirror Arambh web on Android, India + Dubai
+4. **Target Audience & Personas** — Students (JEE/NEET/CBSE/Dubai curriculum), Teachers, Admins
+5. **Scope** — In-scope (MVP) vs Out-of-scope (v2+)
+6. **Tech Stack Recommendation**
+   - Native: Kotlin + Jetpack Compose, MVVM, Hilt, Retrofit, Room, ExoPlayer, Razorpay/Stripe SDKs, Firebase (FCM, Crashlytics)
+   - Backend: same Lovable Cloud / Supabase backend as web (REST + Realtime)
+6b. **Alternative Hybrid path** — Capacitor wrap of existing React app (faster route)
+7. **App Architecture** — module structure, navigation graph
+8. **Screen-by-Screen Specs** with user flow:
+   - Splash → Onboarding (Region: India/Dubai, Goal selector)
+   - **Login Screen** (with Signup CTA, OTP, Google Sign-In, Forgot Password)
+   - **Signup Screen** (email/phone/Google → OTP verify)
+   - **Home Screen** (Top Bar: logo + region + notifications + search; Content: hero, continue learning, upcoming live classes, recommended courses; Bottom Bar tabs)
+   - **Bottom Navigation tabs**: Home | Courses | Live | Tests | **Profile (Dashboard)**
+   - **Profile/Dashboard tab** — full mirror of web Student Dashboard (stats, streak, recent activity, settings entry)
+   - Course Detail, Lecture Player (ExoPlayer fullscreen)
+   - Live Class Room (WebRTC/HLS)
+   - Test Engine (immersive, palette, timer, auto-save)
+   - QBank, Doubts (AI Solver), Educators, 1-on-1 booking
+   - Leaderboard, Compete
+   - Store + Payments (Razorpay India / Stripe Dubai)
+   - Settings, Profile Edit, Notifications
+   - Career with Arambh (Educator application form)
+   - Teacher portal screens (if user role = teacher)
+9. **Design System** — exact colors (#F97316, #1E293B, #FFFBF5), fonts (Mulish display, Plus Jakarta Sans body), spacing, components, dark/light, Lucide-equivalent icons (Material Symbols), motion guidelines
+10. **Functional Requirements** matrix (FR-001 … FR-0XX) with priority
+11. **Non-Functional Requirements** — performance, offline, accessibility (TalkBack, ≥AA contrast), security (no roles in profile table, RLS), localization (English + Hindi + Arabic for Dubai)
+12. **Backend & API Integration** — reuse Supabase, list endpoints/tables, auth flow, realtime channels
+13. **Permissions** — Camera, Mic, Storage, Notifications, Network
+14. **Analytics & Tracking** — events to track (signup, course view, test attempt, payment)
+15. **Push Notifications** — FCM topics (live class start, test reminder, doubt reply)
+16. **Payments** — Razorpay (IN INR), Stripe (AE AED), 3-step checkout flow
+17. **Offline Support** — downloaded lectures, cached tests
+18. **Security & Compliance** — DPDP (India), GDPR (Dubai), age gate
+19. **Testing Strategy** — unit, instrumentation, Espresso, beta via Play Console
+20. **Release Plan & Milestones** — 6 sprints (~12 weeks) to MVP
+21. **Success Metrics / KPIs** — DAU, retention D7/D30, course completion, payment conversion
+22. **Risks & Mitigations**
+23. **Appendix** — sitemap diagram (ASCII), wireframe references, glossary
 
-### 2. New Component: Educator Application Form
+### Generation Approach
+- Python script using `reportlab` to build a styled PDF:
+  - Cover page with Arambh orange gradient banner
+  - Section headings in navy, body text dark
+  - Tables for FR matrix, screen list, milestones
+  - Mini ASCII navigation diagram
+- After generation, convert each PDF page to PNG and visually QA every page (check overflow, headings, tables) before delivering
+- Final output: `<lov-artifact path="Arambh_Android_App_PRD.pdf" mime_type="application/pdf">`
 
-**File (new):** `src/components/EducatorApplicationDialog.tsx`
-
-A `Dialog` containing a scrollable form with these fields:
-
-
-| Field                       | Type                                                                 | Required |
-| --------------------------- | -------------------------------------------------------------------- | -------- |
-| Candidate Name              | text                                                                 | ✅        |
-| Email                       | email                                                                | ✅        |
-| Date of Birth               | date picker                                                          | ✅        |
-| Contact No                  | tel                                                                  | ✅        |
-| Alternative Contact No      | tel                                                                  | optional |
-| Subject                     | Select dropdown (Physics, Chemistry, Maths, Biology, English, Other) | ✅        |
-| Highest Qualification       | text                                                                 | ✅        |
-| Other Qualification         | text                                                                 | optional |
-| Current Organization        | text                                                                 | optional |
-| Previous Organization       | text                                                                 | optional |
-| Total Experience (years)    | number                                                               | ✅        |
-| Current CTC (per month, ₹)  | number                                                               | optional |
-| Expected CTC (per month, ₹) | number                                                               | ✅        |
-| Photo Upload                | file (image)                                                         | ✅        |
-| Resume Upload               | file (PDF/DOC)                                                       | ✅        |
-| Demo Video Link             | URL                                                                  | ✅        |
-
-
-**Validation:** `react-hook-form` + `zod` schema with proper messages. Files validated for type and size (Photo ≤ 2MB image, Resume ≤ 5MB PDF/DOC, Video link must be valid URL).
-
-**On Submit:**
-
-1. Validate all required fields
-2. Show success toast: "Welcome to Arambh! Your educator account is ready."
-3. Save educator profile to `useAppStore` (mock auth as teacher)
-4. Navigate to `/teacher/dashboard`
-
-### 3. Store Update
-
-**File:** `src/store/useAppStore.ts`
-
-Add a minimal `currentEducator` slice + `registerEducator(data)` action that stores the form data (excluding raw files — store filenames only) in state and localStorage.
-
-### 4. Files to Modify / Create
-
-
-| File                                           | Action                                            |
-| ---------------------------------------------- | ------------------------------------------------- |
-| `src/pages/LandingPage.tsx`                    | Add "Career with Arambh" section + dialog trigger |
-| `src/components/EducatorApplicationDialog.tsx` | **NEW** — form modal                              |
-| `src/store/useAppStore.ts`                     | Add educator registration slice                   |
-
-
-### Notes
-
-- Files are not actually uploaded to storage in this mock — only filenames captured. When Lovable Cloud is enabled, we'll wire to a `educator-uploads` bucket and an `educator_applications` table.
-- Form uses existing shadcn `Dialog`, `Form`, `Input`, `Select`, `Calendar`, `Button` components — consistent with the rest of the app.
-- Date picker will use the shadcn `Calendar` inside a `Popover` per project conventions.
-- User wants you to connect it to lovable cloud for proper data storage and smooth workflow.
+### What I will NOT do
+- No changes to the web app codebase
+- Not start building the Android app (PRD only, as requested)
+- Not ask further questions — request is clear and explicit
