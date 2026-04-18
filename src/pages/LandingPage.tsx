@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Play, BookOpen, ClipboardCheck, Bot, BarChart3, Swords, Smartphone, Star, Check, Flame, Rocket, GraduationCap, FileText, Trophy, Users, Monitor, Award, Heart, Sparkles, Globe, Video, User, MessageCircle, Quote, Zap, Target, Shield, Clock, ChevronRight, ChevronDown, HelpCircle } from "lucide-react";
+import { ArrowRight, Play, BookOpen, ClipboardCheck, Bot, BarChart3, Swords, Smartphone, Star, Check, Flame, Rocket, GraduationCap, FileText, Trophy, Users, Monitor, Award, Heart, Sparkles, Globe, Video, User, MessageCircle, Quote, Zap, Target, Shield, Clock, ChevronRight, ChevronDown, HelpCircle, Briefcase, IndianRupee } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useState } from "react";
+import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
 import heroIllustration from "@/assets/hero-illustration.png";
 import coursePhysics from "@/assets/course-physics.png";
 import courseChemistry from "@/assets/course-chemistry.png";
@@ -313,6 +314,52 @@ const LandingPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Career with Arambh */}
+      <section className="relative overflow-hidden py-16 md:py-24 bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)]">
+        <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 70% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)' }} />
+        <div className="absolute inset-0 grid-texture" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center animate-fade-in-up max-w-2xl mx-auto">
+            <span className="inline-flex items-center gap-2 rounded-pill border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+              <Briefcase className="h-4 w-4" /> We're Hiring Educators
+            </span>
+            <h2 className="mt-5 text-3xl font-black font-display text-white md:text-5xl">
+              Career with <span className="gradient-text">Arambh</span>
+            </h2>
+            <p className="mt-3 text-base text-white/80 md:text-lg">
+              Join India & Dubai's fastest-growing edtech platform. Teach thousands, earn well, work flexibly.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3 stagger-children max-w-4xl mx-auto">
+            {[
+              { icon: Clock, title: "Flexible Hours", desc: "Teach from anywhere on a schedule that fits your life. Live, recorded, or 1-on-1." },
+              { icon: IndianRupee, title: "Competitive Pay", desc: "Industry-leading compensation with bonus on student outcomes and reviews." },
+              { icon: Users, title: "Reach 50,000+ Students", desc: "Inspire learners across India and Dubai. Build your personal brand with us." },
+            ].map((p) => (
+              <div key={p.title} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-6 hover-lift">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent mb-4">
+                  <p.icon className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <h3 className="text-lg font-bold font-display text-white">{p.title}</h3>
+                <p className="mt-2 text-sm text-white/70">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <EducatorApplicationDialog
+              trigger={
+                <button className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-10 py-4 text-lg font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-all hover:scale-105">
+                  Join Us <ArrowRight className="h-5 w-5" />
+                </button>
+              }
+            />
+            <p className="mt-4 text-sm text-white/60">Application takes ~5 minutes • Response within 48 hours</p>
           </div>
         </div>
       </section>
