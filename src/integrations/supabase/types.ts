@@ -14,7 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      educator_applications: {
+        Row: {
+          alt_contact_no: string | null
+          candidate_name: string
+          contact_no: string
+          created_at: string
+          current_ctc: number | null
+          current_organization: string | null
+          date_of_birth: string
+          demo_video_link: string
+          email: string
+          expected_ctc: number
+          highest_qualification: string
+          id: string
+          other_qualification: string | null
+          photo_url: string | null
+          previous_organization: string | null
+          resume_url: string | null
+          status: string
+          subject: string
+          total_experience: number
+          updated_at: string
+        }
+        Insert: {
+          alt_contact_no?: string | null
+          candidate_name: string
+          contact_no: string
+          created_at?: string
+          current_ctc?: number | null
+          current_organization?: string | null
+          date_of_birth: string
+          demo_video_link: string
+          email: string
+          expected_ctc: number
+          highest_qualification: string
+          id?: string
+          other_qualification?: string | null
+          photo_url?: string | null
+          previous_organization?: string | null
+          resume_url?: string | null
+          status?: string
+          subject: string
+          total_experience: number
+          updated_at?: string
+        }
+        Update: {
+          alt_contact_no?: string | null
+          candidate_name?: string
+          contact_no?: string
+          created_at?: string
+          current_ctc?: number | null
+          current_organization?: string | null
+          date_of_birth?: string
+          demo_video_link?: string
+          email?: string
+          expected_ctc?: number
+          highest_qualification?: string
+          id?: string
+          other_qualification?: string | null
+          photo_url?: string | null
+          previous_organization?: string | null
+          resume_url?: string | null
+          status?: string
+          subject?: string
+          total_experience?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
