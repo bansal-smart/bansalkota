@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, BookOpen, Video, ClipboardCheck, CreditCard, Bell, Shield, Settings, Search, LogOut, Flame, CircleDot } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, Video, ClipboardCheck, CreditCard, Bell, Shield, Settings, Search, LogOut, Flame, CircleDot, Briefcase } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
@@ -7,6 +7,7 @@ const navItems = [
   { label: "Courses", icon: BookOpen, path: "/admin/courses" },
   { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
+  { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Payments", icon: CreditCard, path: "/admin/payments" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },
   { label: "Moderation", icon: Shield, path: "/admin/moderation" },
