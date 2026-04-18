@@ -200,7 +200,18 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={(d) => d > new Date() || d < new Date("1940-01-01")}
+                        captionLayout="dropdown-buttons"
+                        fromYear={1940}
+                        toYear={new Date().getFullYear()}
+                        defaultMonth={field.value ?? new Date(2000, 0)}
                         initialFocus
+                        classNames={{
+                          caption_label: "hidden",
+                          caption_dropdowns: "flex gap-2 justify-center",
+                          dropdown: "rounded-md border border-input bg-background px-2 py-1 text-sm font-medium",
+                          dropdown_month: "relative",
+                          dropdown_year: "relative",
+                        }}
                         className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
