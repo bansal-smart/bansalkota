@@ -163,7 +163,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
             </div>
             <div>
               <DialogTitle className="text-2xl font-display">Join as an Educator</DialogTitle>
-              <DialogDescription>Fill in your details to start teaching with Arke.</DialogDescription>
+              <DialogDescription>Fill in your details to start teaching with ARKE.</DialogDescription>
             </div>
           </div>
         </DialogHeader>
