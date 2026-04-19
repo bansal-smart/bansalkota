@@ -1,4 +1,4 @@
-import { Briefcase, BookOpen, Users, Rocket, GraduationCap, ArrowRight } from "lucide-react";
+import { Briefcase, BookOpen, Users, Rocket, GraduationCap, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
@@ -121,8 +121,15 @@ const LandingPage = () => {
 
       {/* Footer */}
       <footer className="border-t border-border py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Arke. All rights reserved.
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+          <div>© {new Date().getFullYear()} Arke. All rights reserved.</div>
+          <a
+            href="tel:+917597514217"
+            className="inline-flex items-center gap-2 hover:text-primary transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+            +91 7597 514 217
+          </a>
         </div>
       </footer>
     </div>
