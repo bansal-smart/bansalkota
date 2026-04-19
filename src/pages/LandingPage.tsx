@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Phone,
   Sparkles,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,13 +48,13 @@ const LandingPage = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3">
           <img
             src={arkeLogo}
-            alt="Arke"
+            alt="ARKE"
             className="h-12 sm:h-14 w-auto object-contain shrink-0"
           />
           <a
             href="tel:+917597514217"
             className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
-            aria-label="Call Arke"
+            aria-label="Call ARKE"
           >
             <Phone className="h-4 w-4" />
             <span className="hidden sm:inline">+91 7597 514 217</span>
@@ -77,15 +78,21 @@ const LandingPage = () => {
 
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12 sm:py-20 lg:py-24">
           <div className="text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 text-xs sm:text-sm">
+            <Badge className="mb-3 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 text-xs sm:text-sm">
               <Briefcase className="h-3.5 w-3.5 mr-1.5" />
               We're Hiring Educators
             </Badge>
+            <div className="mb-4 flex justify-center">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-[11px] sm:text-xs font-semibold text-secondary-foreground">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+                Led by Kota's Top Educators · Kota, Rajasthan
+              </span>
+            </div>
             <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
-              Apply to Teach at <span className="text-primary">Arke</span>
+              Apply to Teach at <span className="text-primary">ARKE</span>
             </h1>
             <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              Join our founding team of educators. We're looking for passionate teachers for{" "}
+              Join our founding team of educators from <span className="font-semibold text-foreground">Kota</span>. We're looking for passionate teachers for{" "}
               <span className="font-semibold text-foreground">Class 8th to 10th</span>.
             </p>
           </div>
@@ -138,11 +145,12 @@ const LandingPage = () => {
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold">
-              What is <span className="text-primary">Arke</span>?
+              What is <span className="text-primary">ARKE</span>?
             </h2>
             <p className="mt-3 sm:mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              Arke is a next-generation learning platform for India and Dubai — built to make
-              world-class education accessible, engaging, and outcome-driven for every student.
+              ARKE is a next-generation learning platform for India and Dubai — led by{" "}
+              <span className="font-semibold text-foreground">Kota's top educators</span> and built
+              to make world-class education accessible, engaging, and outcome-driven for every student.
             </p>
           </div>
 
@@ -167,8 +175,8 @@ const LandingPage = () => {
       <footer className="border-t border-border py-6 sm:py-8 bg-card/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={arkeLogo} alt="Arke" className="h-8 sm:h-9 w-auto object-contain" />
-            <span>© {new Date().getFullYear()} Arke. All rights reserved.</span>
+            <img src={arkeLogo} alt="ARKE" className="h-8 sm:h-9 w-auto object-contain" />
+            <span>© {new Date().getFullYear()} ARKE. All rights reserved.</span>
           </div>
           <a
             href="tel:+917597514217"
