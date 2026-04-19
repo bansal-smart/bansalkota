@@ -145,11 +145,12 @@ const LandingPage = () => {
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="text-center mb-10 sm:mb-14">
             <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold">
-              What is <span className="text-primary">Arke</span>?
+              What is <span className="text-primary">ARKE</span>?
             </h2>
             <p className="mt-3 sm:mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              Arke is a next-generation learning platform for India and Dubai — built to make
-              world-class education accessible, engaging, and outcome-driven for every student.
+              ARKE is a next-generation learning platform for India and Dubai — led by{" "}
+              <span className="font-semibold text-foreground">Kota's top educators</span> and built
+              to make world-class education accessible, engaging, and outcome-driven for every student.
             </p>
           </div>
 
