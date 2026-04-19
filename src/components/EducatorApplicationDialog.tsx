@@ -251,6 +251,20 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
                   <FormMessage />
                 </FormItem>
               )} />
+              <FormField control={form.control} name="class_level" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class Level *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select class to teach" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {CLASS_LEVELS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
 
             {/* Qualifications */}

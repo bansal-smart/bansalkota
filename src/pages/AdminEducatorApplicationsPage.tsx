@@ -19,6 +19,7 @@ type Application = {
   contact_no: string;
   alt_contact_no: string | null;
   subject: string;
+  class_level: string | null;
   highest_qualification: string;
   other_qualification: string | null;
   current_organization: string | null;
@@ -191,6 +192,7 @@ const AdminEducatorApplicationsPage = () => {
                     <div>
                       <p className="text-muted-foreground">Subject</p>
                       <p className="font-semibold text-foreground flex items-center gap-1"><GraduationCap className="h-3 w-3 text-primary" />{a.subject}</p>
+                      {a.class_level && <p className="text-[10px] text-muted-foreground mt-0.5">{a.class_level}</p>}
                     </div>
                     <div>
                       <p className="text-muted-foreground">Experience</p>
@@ -271,6 +273,8 @@ const AdminEducatorApplicationsPage = () => {
                 <Field icon={Phone} label="Contact" value={selected.contact_no} />
                 <Field icon={Phone} label="Alt. Contact" value={selected.alt_contact_no || "—"} />
                 <Field icon={CalIcon} label="Date of Birth" value={format(new Date(selected.date_of_birth), "dd MMM yyyy")} />
+                <Field icon={GraduationCap} label="Subject" value={selected.subject} />
+                <Field icon={GraduationCap} label="Class Level" value={selected.class_level || "—"} />
                 <Field icon={GraduationCap} label="Highest Qualification" value={selected.highest_qualification} />
                 <Field icon={GraduationCap} label="Other Qualification" value={selected.other_qualification || "—"} />
                 <Field icon={Building2} label="Current Organization" value={selected.current_organization || "—"} />
