@@ -28,6 +28,7 @@ const schema = z.object({
   contact_no: z.string().trim().min(7, "Enter a valid contact number").max(20),
   alt_contact_no: z.string().trim().max(20).optional().or(z.literal("")),
   subject: z.string().min(1, "Select a subject"),
+  class_level: z.string().min(1, "Select a class level"),
   highest_qualification: z.string().trim().min(2, "Required").max(100),
   other_qualification: z.string().trim().max(200).optional().or(z.literal("")),
   current_organization: z.string().trim().max(150).optional().or(z.literal("")),
@@ -53,7 +54,8 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "English", "Other"];
+const SUBJECTS = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "PCMB"];
+const CLASS_LEVELS = ["Class 8", "Class 9", "Class 10"];
 
 interface Props {
   trigger: React.ReactNode;
@@ -73,6 +75,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
       contact_no: "",
       alt_contact_no: "",
       subject: "",
+      class_level: "",
       highest_qualification: "",
       other_qualification: "",
       current_organization: "",
@@ -111,6 +114,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
         contact_no: values.contact_no,
         alt_contact_no: values.alt_contact_no || null,
         subject: values.subject,
+        class_level: values.class_level,
         highest_qualification: values.highest_qualification,
         other_qualification: values.other_qualification || null,
         current_organization: values.current_organization || null,
@@ -135,11 +139,11 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
         avatar_url: photo_url,
       });
 
-      toast.success("Welcome to Arambh!", {
-        description: "Your educator account is ready. Redirecting to dashboard…",
+      toast.success("Application submitted!", {
+        description: "Thanks for applying to Arke. Our team will review and get back within 5–7 working days.",
       });
       setOpen(false);
-      setTimeout(() => navigate("/teacher/dashboard"), 600);
+      form.reset();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Submission failed";
       toast.error("Could not submit application", { description: message });
@@ -159,7 +163,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
             </div>
             <div>
               <DialogTitle className="text-2xl font-display">Join as an Educator</DialogTitle>
-              <DialogDescription>Fill in your details to start teaching with Arambh.</DialogDescription>
+              <DialogDescription>Fill in your details to start teaching with Arke.</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -242,6 +246,20 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
                     </FormControl>
                     <SelectContent>
                       {SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="class_level" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class Level *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select class to teach" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {CLASS_LEVELS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <FormMessage />
