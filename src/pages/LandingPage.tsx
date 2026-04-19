@@ -1,4 +1,4 @@
-import { Briefcase, BookOpen, Users, Rocket, GraduationCap, ArrowRight } from "lucide-react";
+import { Briefcase, BookOpen, Users, Rocket, GraduationCap, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
