@@ -175,8 +175,8 @@ const LandingPage = () => {
       <footer className="border-t border-border py-6 sm:py-8 bg-card/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={arkeLogo} alt="Arke" className="h-8 sm:h-9 w-auto object-contain" />
-            <span>© {new Date().getFullYear()} Arke. All rights reserved.</span>
+            <img src={arkeLogo} alt="ARKE" className="h-8 sm:h-9 w-auto object-contain" />
+            <span>© {new Date().getFullYear()} ARKE. All rights reserved.</span>
           </div>
           <a
             href="tel:+917597514217"
