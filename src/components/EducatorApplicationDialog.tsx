@@ -140,7 +140,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
       });
 
       toast.success("Application submitted!", {
-        description: "Thanks for applying to Arke. Our team will review and get back within 5–7 working days.",
+        description: "Thanks for applying to ARKE. Our team will review and get back within 5–7 working days.",
       });
       setOpen(false);
       form.reset();
