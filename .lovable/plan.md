@@ -1,75 +1,65 @@
 
-The user wants a **Product Requirements Document (PRD)** as a downloadable file for building an Android app version of the Arambh web application. This is an artifact-generation task, not a code change to the web app.
+The user wants to pivot the entire app to a "Coming Soon" landing page for **Arke** (rebrand from Arambh) with only:
+1. Hero/Coming Soon section
+2. "What is the platform" section (what we do)
+3. Current openings: Educators for Class 8th–10th — Maths, Science, PCMB
+4. "Apply Now" button → opens existing educator application form (already built, sends to admin)
+5. Logo: the uploaded ARKE logo
+6. Hide everything else (no nav links to courses, tests, login, signup, dashboards, etc.)
+7. Rename Arambh → Arke everywhere
 
-Key understanding from the request:
-- Android-only native app (mirror of web app)
-- Login screen with Signup button
-- After login: Home screen with Top bar + Bottom bar
-- Bottom bar has a "Profile" button → opens entire dashboard (mirroring web)
-- Theme must match the web app (orange #F97316, navy, Mulish/Plus Jakarta Sans)
-- Reference all features from the existing web app (Student/Teacher/Admin portals, Live Classes, Tests, QBank, Doubts, Educators, Compete, Leaderboard, Store, Settings, AI Doubt Solver, Career with Arambh, India/Dubai region, Razorpay/Stripe payments)
+Let me check key files quickly to confirm scope.
 
-Format clarification: User explicitly said "give me the PRD file" — so a downloadable document is wanted (no ambiguity, no need to ask).
+## Plan: Rebrand to Arke + Coming Soon Landing Only
 
-## Plan: Generate Android App PRD Document
+### 1. Add Logo Asset
+- Copy uploaded logo → `src/assets/arke-logo.png`
+- Use in landing header + footer
 
-### Deliverable
-A professionally formatted **PDF** PRD file (`Arambh_Android_App_PRD.pdf`) saved to `/mnt/documents/` — ready for handoff to Android developers.
+### 2. Rebuild Landing Page (`src/pages/LandingPage.tsx`)
+Replace entirely with a focused single-page "Coming Soon" layout:
 
-### PRD Structure (15+ sections)
+- **Top Bar**: ARKE logo + tagline "Inspiring Excellence" only. No nav links. No login/signup buttons.
+- **Hero / Coming Soon**: Large "Coming Soon" headline, subtext "India & Dubai's next-generation learning platform — launching soon", animated gradient background (orange + navy from logo)
+- **What is Arke (About)**: Brief 3-card section explaining the platform — Live Classes, Personalized Learning, Expert Educators
+- **Current Openings**: Highlighted card —  
+  - "We're Hiring Educators"  
+  - Subjects: Mathematics, Science, PCMB (Physics, Chemistry, Maths, Biology)  
+  - Classes: 8th – 10th  
+  - Big "Apply Now" CTA → opens existing `EducatorApplicationDialog`
+- **Footer**: ARKE logo, copyright, contact email
 
-1. **Document Info** — version, date, owner, status
-2. **Executive Summary** — what we're building & why
-3. **Product Vision & Goals** — mirror Arambh web on Android, India + Dubai
-4. **Target Audience & Personas** — Students (JEE/NEET/CBSE/Dubai curriculum), Teachers, Admins
-5. **Scope** — In-scope (MVP) vs Out-of-scope (v2+)
-6. **Tech Stack Recommendation**
-   - Native: Kotlin + Jetpack Compose, MVVM, Hilt, Retrofit, Room, ExoPlayer, Razorpay/Stripe SDKs, Firebase (FCM, Crashlytics)
-   - Backend: same Lovable Cloud / Supabase backend as web (REST + Realtime)
-6b. **Alternative Hybrid path** — Capacitor wrap of existing React app (faster route)
-7. **App Architecture** — module structure, navigation graph
-8. **Screen-by-Screen Specs** with user flow:
-   - Splash → Onboarding (Region: India/Dubai, Goal selector)
-   - **Login Screen** (with Signup CTA, OTP, Google Sign-In, Forgot Password)
-   - **Signup Screen** (email/phone/Google → OTP verify)
-   - **Home Screen** (Top Bar: logo + region + notifications + search; Content: hero, continue learning, upcoming live classes, recommended courses; Bottom Bar tabs)
-   - **Bottom Navigation tabs**: Home | Courses | Live | Tests | **Profile (Dashboard)**
-   - **Profile/Dashboard tab** — full mirror of web Student Dashboard (stats, streak, recent activity, settings entry)
-   - Course Detail, Lecture Player (ExoPlayer fullscreen)
-   - Live Class Room (WebRTC/HLS)
-   - Test Engine (immersive, palette, timer, auto-save)
-   - QBank, Doubts (AI Solver), Educators, 1-on-1 booking
-   - Leaderboard, Compete
-   - Store + Payments (Razorpay India / Stripe Dubai)
-   - Settings, Profile Edit, Notifications
-   - Career with Arambh (Educator application form)
-   - Teacher portal screens (if user role = teacher)
-9. **Design System** — exact colors (#F97316, #1E293B, #FFFBF5), fonts (Mulish display, Plus Jakarta Sans body), spacing, components, dark/light, Lucide-equivalent icons (Material Symbols), motion guidelines
-10. **Functional Requirements** matrix (FR-001 … FR-0XX) with priority
-11. **Non-Functional Requirements** — performance, offline, accessibility (TalkBack, ≥AA contrast), security (no roles in profile table, RLS), localization (English + Hindi + Arabic for Dubai)
-12. **Backend & API Integration** — reuse Supabase, list endpoints/tables, auth flow, realtime channels
-13. **Permissions** — Camera, Mic, Storage, Notifications, Network
-14. **Analytics & Tracking** — events to track (signup, course view, test attempt, payment)
-15. **Push Notifications** — FCM topics (live class start, test reminder, doubt reply)
-16. **Payments** — Razorpay (IN INR), Stripe (AE AED), 3-step checkout flow
-17. **Offline Support** — downloaded lectures, cached tests
-18. **Security & Compliance** — DPDP (India), GDPR (Dubai), age gate
-19. **Testing Strategy** — unit, instrumentation, Espresso, beta via Play Console
-20. **Release Plan & Milestones** — 6 sprints (~12 weeks) to MVP
-21. **Success Metrics / KPIs** — DAU, retention D7/D30, course completion, payment conversion
-22. **Risks & Mitigations**
-23. **Appendix** — sitemap diagram (ASCII), wireframe references, glossary
+### 3. Lock Down Routing (`src/App.tsx`)
+- Keep only `/` (landing) as a public route
+- Redirect ALL other routes (`/login`, `/signup`, `/courses`, `/student/*`, `/teacher/*`, `/admin/*`, etc.) → `/` via a catch-all `<Navigate to="/" replace />`
+- **Exception**: keep `/admin/educator-applications` accessible (admin needs to view submissions) but unlinked from UI — accessible only by typing URL. Optionally keep `/admin` dashboard route too for admin access.
 
-### Generation Approach
-- Python script using `reportlab` to build a styled PDF:
-  - Cover page with Arambh orange gradient banner
-  - Section headings in navy, body text dark
-  - Tables for FR matrix, screen list, milestones
-  - Mini ASCII navigation diagram
-- After generation, convert each PDF page to PNG and visually QA every page (check overflow, headings, tables) before delivering
-- Final output: `<lov-artifact path="Arambh_Android_App_PRD.pdf" mime_type="application/pdf">`
+### 4. Update Educator Application Dialog
+- Pre-fill subject dropdown to include: Mathematics, Science, Physics, Chemistry, Biology, PCMB
+- Add a "Class Level" field (8th, 9th, 10th) so admin sees what they applied for
+- Confirm submission still inserts to `educator_applications` table (already routes to admin) — no DB change needed unless we add `class_level` column
 
-### What I will NOT do
-- No changes to the web app codebase
-- Not start building the Android app (PRD only, as requested)
-- Not ask further questions — request is clear and explicit
+### 5. Database (small migration)
+- Add `class_level` (text) column to `educator_applications` table — optional/nullable so existing rows are fine
+
+### 6. Rebrand Arambh → Arke
+- Search & replace across: `LandingPage.tsx`, `EducatorApplicationDialog.tsx`, `index.html` (title + meta), `AdminLayout.tsx`, any page still showing the brand name
+- Update toast messages: "Welcome to Arke!" instead of "Welcome to Arambh!"
+- Update `index.html` `<title>` and Open Graph tags
+
+### 7. Files to Modify / Create
+
+| File | Action |
+|------|--------|
+| `src/assets/arke-logo.png` | NEW (copy from upload) |
+| `src/pages/LandingPage.tsx` | Rewrite — Coming Soon layout |
+| `src/App.tsx` | Reduce routes to `/` + admin-only + catch-all redirect |
+| `src/components/EducatorApplicationDialog.tsx` | Add class_level field, update subject options, rename |
+| `src/pages/AdminEducatorApplicationsPage.tsx` | Show class_level column |
+| `index.html` | Update title, meta, favicon to Arke |
+| `supabase/migrations/...` | Add `class_level` column |
+
+### Notes
+- All other built pages (Student/Teacher/Admin dashboards, Courses, Tests, etc.) stay in the codebase but become unreachable from UI — preserved for post-launch.
+- Admin application review page (`/admin/educator-applications`) remains accessible by URL so you can monitor incoming applications.
+- After approval: clicking "Update" in publish dialog deploys the coming-soon page to arke.pro.
