@@ -22,11 +22,11 @@ const AdminLayout = () => {
       {/* Dark Navy Sidebar */}
       <aside className="hidden lg:flex w-[220px] flex-col sticky top-0 h-screen overflow-y-auto" style={{ backgroundColor: "hsl(222, 47%, 11%)" }}>
         <div className="p-4">
-          <Link to="/admin/dashboard" className="flex items-center gap-2">
+          <Link to="/admin/educator-applications" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Flame className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-sm font-black font-display text-white">ARAMBH</span>
+            <span className="text-sm font-black font-display text-white">ARKE</span>
           </Link>
           <div className="mt-3 rounded-md bg-destructive/20 px-2 py-1 text-center">
             <span className="text-[10px] font-bold uppercase tracking-wider text-destructive">Admin Panel</span>
