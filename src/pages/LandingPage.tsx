@@ -83,7 +83,7 @@ const LandingPage = () => {
               We're Hiring Educators
             </Badge>
             <div className="mb-4 flex justify-center">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-[11px] sm:text-xs font-semibold text-secondary-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] sm:text-xs font-semibold text-foreground">
                 <MapPin className="h-3.5 w-3.5 text-primary" />
                 Led by Kota's Top Educators · Kota, Rajasthan
               </span>
