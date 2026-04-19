@@ -54,7 +54,7 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-const SUBJECTS = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "PCMB"];
+const SUBJECTS = ["Physics", "Chemistry", "Biology", "Mathematics", "Science"];
 const CLASS_LEVELS = ["Class 8", "Class 9", "Class 10"];
 
 interface Props {

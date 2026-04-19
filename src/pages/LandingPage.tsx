@@ -14,14 +14,11 @@ import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
 import arkeLogo from "@/assets/arke-logo.jpeg";
 
 const openings = [
-  { subject: "Mathematics", short: "Maths", classes: "Class 8 – 10" },
-  { subject: "Science", short: "Science", classes: "Class 8 – 10" },
-  {
-    subject: "PCMB",
-    short: "PCMB",
-    sub: "Physics · Chemistry · Maths · Biology",
-    classes: "Class 8 – 10",
-  },
+  { subject: "Physics", classes: "Class 8 – 10" },
+  { subject: "Chemistry", classes: "Class 8 – 10" },
+  { subject: "Biology", classes: "Class 8 – 10" },
+  { subject: "Mathematics", classes: "Class 8 – 10" },
+  { subject: "Science", classes: "Class 8 – 10" },
 ];
 
 const features = [
@@ -47,20 +44,12 @@ const LandingPage = () => {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Top Bar */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <img
-              src={arkeLogo}
-              alt="Arke"
-              className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg object-cover shrink-0"
-            />
-            <div className="min-w-0">
-              <div className="font-heading text-lg sm:text-xl font-bold leading-none truncate">Arke</div>
-              <div className="text-[10px] sm:text-xs text-muted-foreground truncate">
-                Inspiring Excellence
-              </div>
-            </div>
-          </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3">
+          <img
+            src={arkeLogo}
+            alt="Arke"
+            className="h-12 sm:h-14 w-auto object-contain shrink-0"
+          />
           <a
             href="tel:+917597514217"
             className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
@@ -102,7 +91,7 @@ const LandingPage = () => {
           </div>
 
           {/* Openings */}
-          <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {openings.map((o) => (
               <div
                 key={o.subject}
@@ -119,9 +108,6 @@ const LandingPage = () => {
                 <div className="font-heading text-lg sm:text-xl font-bold leading-snug">
                   {o.subject}
                 </div>
-                {o.sub && (
-                  <div className="mt-1 text-xs text-muted-foreground">{o.sub}</div>
-                )}
               </div>
             ))}
           </div>
@@ -181,7 +167,7 @@ const LandingPage = () => {
       <footer className="border-t border-border py-6 sm:py-8 bg-card/30">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <img src={arkeLogo} alt="Arke" className="h-6 w-6 rounded object-cover" />
+            <img src={arkeLogo} alt="Arke" className="h-8 sm:h-9 w-auto object-contain" />
             <span>© {new Date().getFullYear()} Arke. All rights reserved.</span>
           </div>
           <a
