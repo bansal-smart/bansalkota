@@ -48,13 +48,13 @@ const LandingPage = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3">
           <img
             src={arkeLogo}
-            alt="Arke"
+            alt="ARKE"
             className="h-12 sm:h-14 w-auto object-contain shrink-0"
           />
           <a
             href="tel:+917597514217"
             className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
-            aria-label="Call Arke"
+            aria-label="Call ARKE"
           >
             <Phone className="h-4 w-4" />
             <span className="hidden sm:inline">+91 7597 514 217</span>
