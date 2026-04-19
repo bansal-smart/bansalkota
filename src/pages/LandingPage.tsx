@@ -15,11 +15,11 @@ import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
 import arkeLogo from "@/assets/arke-logo.jpeg";
 
 const openings = [
-  { subject: "Physics", classes: "Class 8 – 10" },
-  { subject: "Chemistry", classes: "Class 8 – 10" },
-  { subject: "Biology", classes: "Class 8 – 10" },
-  { subject: "Mathematics", classes: "Class 8 – 10" },
-  { subject: "Science", classes: "Class 8 – 10" },
+  { subject: "Physics", classes: "Class 6 – 10" },
+  { subject: "Chemistry", classes: "Class 6 – 10" },
+  { subject: "Biology", classes: "Class 6 – 10" },
+  { subject: "Mathematics", classes: "Class 6 – 10" },
+  { subject: "Science", classes: "Class 6 – 10" },
 ];
 
 const features = [
@@ -85,15 +85,15 @@ const LandingPage = () => {
             <div className="mb-4 flex justify-center">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] sm:text-xs font-semibold text-foreground">
                 <MapPin className="h-3.5 w-3.5 text-primary" />
-                Led by Kota's Top Educators · Kota, Rajasthan
+                Crafted in Kota, Rajasthan · India's Coaching Capital
               </span>
             </div>
             <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
               Apply to Teach at <span className="text-primary">ARKE</span>
             </h1>
             <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              Join our founding team of educators from <span className="font-semibold text-foreground">Kota</span>. We're looking for passionate teachers for{" "}
-              <span className="font-semibold text-foreground">Class 8th to 10th</span>.
+              Step into a founding faculty shaped by <span className="font-semibold text-foreground">Kota's finest mentors</span>. We're inviting exceptional educators to teach{" "}
+              <span className="font-semibold text-foreground">Class 6th to 10th</span> and redefine how India learns.
             </p>
           </div>
 
@@ -148,9 +148,8 @@ const LandingPage = () => {
               What is <span className="text-primary">ARKE</span>?
             </h2>
             <p className="mt-3 sm:mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              ARKE is a next-generation learning platform for India and Dubai — led by{" "}
-              <span className="font-semibold text-foreground">Kota's top educators</span> and built
-              to make world-class education accessible, engaging, and outcome-driven for every student.
+              Born in <span className="font-semibold text-foreground">Kota — India's coaching capital</span> — ARKE is a next-generation learning platform for India and Dubai,
+              powered by master mentors who've shaped thousands of toppers. Built to make world-class education accessible, engaging, and outcome-driven for every learner.
             </p>
           </div>
 
