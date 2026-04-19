@@ -78,15 +78,21 @@ const LandingPage = () => {
 
         <div className="mx-auto max-w-5xl px-4 sm:px-6 py-12 sm:py-20 lg:py-24">
           <div className="text-center">
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 text-xs sm:text-sm">
+            <Badge className="mb-3 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 text-xs sm:text-sm">
               <Briefcase className="h-3.5 w-3.5 mr-1.5" />
               We're Hiring Educators
             </Badge>
+            <div className="mb-4 flex justify-center">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 text-[11px] sm:text-xs font-semibold text-secondary-foreground">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+                Led by Kota's Top Educators · Kota, Rajasthan
+              </span>
+            </div>
             <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
-              Apply to Teach at <span className="text-primary">Arke</span>
+              Apply to Teach at <span className="text-primary">ARKE</span>
             </h1>
             <p className="mt-4 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-              Join our founding team of educators. We're looking for passionate teachers for{" "}
+              Join our founding team of educators from <span className="font-semibold text-foreground">Kota</span>. We're looking for passionate teachers for{" "}
               <span className="font-semibold text-foreground">Class 8th to 10th</span>.
             </p>
           </div>
