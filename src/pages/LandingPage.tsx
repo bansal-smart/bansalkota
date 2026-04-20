@@ -178,11 +178,11 @@ const LandingPage = () => {
             <span>© {new Date().getFullYear()} ARKE. All rights reserved.</span>
           </div>
           <a
-            href="tel:+917597514217"
+            href="tel:+918764809537"
             className="inline-flex items-center gap-2 hover:text-primary transition-colors font-medium"
           >
             <Phone className="h-4 w-4" />
-            +91 7597 514 217
+            +91 8764 809 537
           </a>
         </div>
       </footer>
