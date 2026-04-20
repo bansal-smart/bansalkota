@@ -15,11 +15,11 @@ import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
 import arkeLogo from "@/assets/arke-logo.jpeg";
 
 const openings = [
-  { subject: "Physics", classes: "Class 6 – 10" },
-  { subject: "Chemistry", classes: "Class 6 – 10" },
-  { subject: "Biology", classes: "Class 6 – 10" },
-  { subject: "Mathematics", classes: "Class 6 – 10" },
-  { subject: "Science", classes: "Class 6 – 10" },
+  { subject: "Physics", classes: "CLASS 8 – 10" },
+  { subject: "Chemistry", classes: "CLASS 8 – 10" },
+  { subject: "Biology", classes: "CLASS 8 – 10" },
+  { subject: "Mathematics", classes: "CLASS 8 – 10" },
+  { subject: "Science", classes: "CLASS 8 – 10" },
 ];
 
 const features = [
