@@ -184,10 +184,14 @@ const AdminEducatorApplicationsPage = () => {
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="reviewed">Reviewed</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
+        <Button variant="outline" onClick={exportCsv} className="md:ml-auto">
+          <Download className="h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       {/* List */}
