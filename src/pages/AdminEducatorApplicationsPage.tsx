@@ -140,6 +140,7 @@ const AdminEducatorApplicationsPage = () => {
   const counts = {
     all: apps.length,
     pending: apps.filter((a) => a.status === "pending").length,
+    reviewed: apps.filter((a) => a.status === "reviewed").length,
     approved: apps.filter((a) => a.status === "approved").length,
     rejected: apps.filter((a) => a.status === "rejected").length,
   };
@@ -150,17 +151,18 @@ const AdminEducatorApplicationsPage = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-black font-display text-foreground">
-            <Briefcase className="h-6 w-6 text-primary" /> Educator Applications
+            <Briefcase className="h-6 w-6 text-primary" /> Educator Enquiries
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Review, approve, or reject educator applications submitted via the Career page.</p>
+          <p className="mt-1 text-sm text-muted-foreground">All "Join as an Educator" enquiries submitted via the ARKE landing page.</p>
         </div>
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {[
-          { label: "Total", value: counts.all, color: "text-primary" },
+          { label: "Total", value: counts.all, color: "text-foreground" },
           { label: "Pending", value: counts.pending, color: "text-warning" },
+          { label: "Reviewed", value: counts.reviewed, color: "text-primary" },
           { label: "Approved", value: counts.approved, color: "text-secondary" },
           { label: "Rejected", value: counts.rejected, color: "text-destructive" },
         ].map((s) => (
