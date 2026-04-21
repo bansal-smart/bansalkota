@@ -348,24 +348,24 @@ const AdminEducatorApplicationsPage = () => {
                 )}
               </div>
 
-              {selected.status === "pending" && (
-                <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                  <Button
-                    variant="destructive"
-                    disabled={updatingId === selected.id}
-                    onClick={() => updateStatus(selected.id, "rejected")}
-                  >
-                    <X className="h-4 w-4" /> Reject
-                  </Button>
-                  <Button
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                    disabled={updatingId === selected.id}
-                    onClick={() => updateStatus(selected.id, "approved")}
-                  >
-                    {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center justify-between gap-2 pt-4 border-t border-border">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Update status</span>
+                <Select
+                  value={selected.status}
+                  onValueChange={(v) => updateStatus(selected.id, v as "pending" | "reviewed" | "approved" | "rejected")}
+                  disabled={updatingId === selected.id}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue />}
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span></SelectItem>
+                    <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Reviewed</span></SelectItem>
+                    <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Approved</span></SelectItem>
+                    <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span></SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </>
           )}
         </DialogContent>
