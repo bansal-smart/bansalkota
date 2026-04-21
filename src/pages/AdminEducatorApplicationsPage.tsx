@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye } from "lucide-react";
+import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye, Download, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -36,8 +36,16 @@ type Application = {
 
 const statusVariants: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-warning/15 text-warning border-warning/30" },
+  reviewed: { label: "Reviewed", className: "bg-primary/15 text-primary border-primary/30" },
   approved: { label: "Approved", className: "bg-secondary/15 text-secondary border-secondary/30" },
   rejected: { label: "Rejected", className: "bg-destructive/15 text-destructive border-destructive/30" },
+};
+
+const escapeCsv = (val: unknown) => {
+  if (val === null || val === undefined) return "";
+  const s = String(val);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 };
 
 const AdminEducatorApplicationsPage = () => {
@@ -67,7 +75,7 @@ const AdminEducatorApplicationsPage = () => {
     load();
   }, []);
 
-  const updateStatus = async (id: string, status: "approved" | "rejected") => {
+  const updateStatus = async (id: string, status: "pending" | "reviewed" | "approved" | "rejected") => {
     setUpdatingId(id);
     const { error } = await supabase
       .from("educator_applications")
@@ -75,13 +83,45 @@ const AdminEducatorApplicationsPage = () => {
       .eq("id", id);
 
     if (error) {
-      toast.error(`Could not ${status === "approved" ? "approve" : "reject"}`, { description: error.message });
+      toast.error(`Could not update status`, { description: error.message });
     } else {
-      toast.success(`Application ${status}`);
+      toast.success(`Marked as ${status}`);
       setApps((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
       if (selected?.id === id) setSelected({ ...selected, status });
     }
     setUpdatingId(null);
+  };
+
+  const exportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error("Nothing to export");
+      return;
+    }
+    const headers = [
+      "Submitted", "Name", "Email", "Contact", "Alt Contact", "DOB", "Subject", "Class Level",
+      "Highest Qualification", "Other Qualification", "Current Org", "Previous Org",
+      "Experience (yrs)", "Current CTC", "Expected CTC", "Demo Video", "Resume", "Photo", "Status",
+    ];
+    const rows = filtered.map((a) => [
+      format(new Date(a.created_at), "yyyy-MM-dd HH:mm"),
+      a.candidate_name, a.email, a.contact_no, a.alt_contact_no ?? "",
+      a.date_of_birth, a.subject, a.class_level ?? "",
+      a.highest_qualification, a.other_qualification ?? "",
+      a.current_organization ?? "", a.previous_organization ?? "",
+      a.total_experience, a.current_ctc ?? "", a.expected_ctc,
+      a.demo_video_link, a.resume_url ?? "", a.photo_url ?? "", a.status,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map(escapeCsv).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `arke-enquiries-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} enquiries`);
   };
 
   const filtered = apps.filter((a) => {
