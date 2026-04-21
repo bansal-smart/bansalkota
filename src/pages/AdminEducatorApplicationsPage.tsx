@@ -264,26 +264,21 @@ const AdminEducatorApplicationsPage = () => {
                         </a>
                       </Button>
                     )}
-                    {a.status === "pending" && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                          disabled={updatingId === a.id}
-                          onClick={() => updateStatus(a.id, "approved")}
-                        >
-                          {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={updatingId === a.id}
-                          onClick={() => updateStatus(a.id, "rejected")}
-                        >
-                          <X className="h-3.5 w-3.5" /> Reject
-                        </Button>
-                      </>
-                    )}
+                    <Select
+                      value={a.status}
+                      onValueChange={(v) => updateStatus(a.id, v as "pending" | "reviewed" | "approved" | "rejected")}
+                      disabled={updatingId === a.id}
+                    >
+                      <SelectTrigger className="w-[140px] h-9">
+                        {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SelectValue />}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3 w-3" /> Pending</span></SelectItem>
+                        <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3 w-3" /> Reviewed</span></SelectItem>
+                        <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3 w-3" /> Approved</span></SelectItem>
+                        <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span></SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
