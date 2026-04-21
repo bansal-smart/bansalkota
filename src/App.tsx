@@ -6,6 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import LandingPage from "./pages/LandingPage";
 import AdminLayout from "./components/AdminLayout";
 import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import StaffDashboardPage from "./pages/StaffDashboardPage";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import { AuthProvider } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -15,15 +19,30 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          {/* Admin-only access (unlinked) for reviewing educator applications */}
-          <Route element={<AdminLayout />}>
-            <Route path="/admin/educator-applications" element={<AdminEducatorApplicationsPage />} />
-          </Route>
-          {/* Catch-all → landing */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+
+            {/* Staff auth */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+
+            {/* Protected staff dashboard */}
+            <Route
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout />
+                </ProtectedAdminRoute>
+              }
+            >
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
+              <Route path="/admin/educator-applications" element={<AdminEducatorApplicationsPage />} />
+            </Route>
+
+            {/* Catch-all → landing */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

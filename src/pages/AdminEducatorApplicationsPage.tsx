@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye } from "lucide-react";
+import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye, Download, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -36,8 +36,16 @@ type Application = {
 
 const statusVariants: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-warning/15 text-warning border-warning/30" },
+  reviewed: { label: "Reviewed", className: "bg-primary/15 text-primary border-primary/30" },
   approved: { label: "Approved", className: "bg-secondary/15 text-secondary border-secondary/30" },
   rejected: { label: "Rejected", className: "bg-destructive/15 text-destructive border-destructive/30" },
+};
+
+const escapeCsv = (val: unknown) => {
+  if (val === null || val === undefined) return "";
+  const s = String(val);
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 };
 
 const AdminEducatorApplicationsPage = () => {
@@ -67,7 +75,7 @@ const AdminEducatorApplicationsPage = () => {
     load();
   }, []);
 
-  const updateStatus = async (id: string, status: "approved" | "rejected") => {
+  const updateStatus = async (id: string, status: "pending" | "reviewed" | "approved" | "rejected") => {
     setUpdatingId(id);
     const { error } = await supabase
       .from("educator_applications")
@@ -75,13 +83,45 @@ const AdminEducatorApplicationsPage = () => {
       .eq("id", id);
 
     if (error) {
-      toast.error(`Could not ${status === "approved" ? "approve" : "reject"}`, { description: error.message });
+      toast.error(`Could not update status`, { description: error.message });
     } else {
-      toast.success(`Application ${status}`);
+      toast.success(`Marked as ${status}`);
       setApps((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
       if (selected?.id === id) setSelected({ ...selected, status });
     }
     setUpdatingId(null);
+  };
+
+  const exportCsv = () => {
+    if (filtered.length === 0) {
+      toast.error("Nothing to export");
+      return;
+    }
+    const headers = [
+      "Submitted", "Name", "Email", "Contact", "Alt Contact", "DOB", "Subject", "Class Level",
+      "Highest Qualification", "Other Qualification", "Current Org", "Previous Org",
+      "Experience (yrs)", "Current CTC", "Expected CTC", "Demo Video", "Resume", "Photo", "Status",
+    ];
+    const rows = filtered.map((a) => [
+      format(new Date(a.created_at), "yyyy-MM-dd HH:mm"),
+      a.candidate_name, a.email, a.contact_no, a.alt_contact_no ?? "",
+      a.date_of_birth, a.subject, a.class_level ?? "",
+      a.highest_qualification, a.other_qualification ?? "",
+      a.current_organization ?? "", a.previous_organization ?? "",
+      a.total_experience, a.current_ctc ?? "", a.expected_ctc,
+      a.demo_video_link, a.resume_url ?? "", a.photo_url ?? "", a.status,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map(escapeCsv).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `arke-enquiries-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} enquiries`);
   };
 
   const filtered = apps.filter((a) => {
@@ -100,6 +140,7 @@ const AdminEducatorApplicationsPage = () => {
   const counts = {
     all: apps.length,
     pending: apps.filter((a) => a.status === "pending").length,
+    reviewed: apps.filter((a) => a.status === "reviewed").length,
     approved: apps.filter((a) => a.status === "approved").length,
     rejected: apps.filter((a) => a.status === "rejected").length,
   };
@@ -110,17 +151,18 @@ const AdminEducatorApplicationsPage = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-black font-display text-foreground">
-            <Briefcase className="h-6 w-6 text-primary" /> Educator Applications
+            <Briefcase className="h-6 w-6 text-primary" /> Educator Enquiries
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Review, approve, or reject educator applications submitted via the Career page.</p>
+          <p className="mt-1 text-sm text-muted-foreground">All "Join as an Educator" enquiries submitted via the ARKE landing page.</p>
         </div>
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
         {[
-          { label: "Total", value: counts.all, color: "text-primary" },
+          { label: "Total", value: counts.all, color: "text-foreground" },
           { label: "Pending", value: counts.pending, color: "text-warning" },
+          { label: "Reviewed", value: counts.reviewed, color: "text-primary" },
           { label: "Approved", value: counts.approved, color: "text-secondary" },
           { label: "Rejected", value: counts.rejected, color: "text-destructive" },
         ].map((s) => (
@@ -144,10 +186,14 @@ const AdminEducatorApplicationsPage = () => {
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="reviewed">Reviewed</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
+        <Button variant="outline" onClick={exportCsv} className="md:ml-auto">
+          <Download className="h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       {/* List */}
@@ -220,26 +266,21 @@ const AdminEducatorApplicationsPage = () => {
                         </a>
                       </Button>
                     )}
-                    {a.status === "pending" && (
-                      <>
-                        <Button
-                          size="sm"
-                          className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                          disabled={updatingId === a.id}
-                          onClick={() => updateStatus(a.id, "approved")}
-                        >
-                          {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={updatingId === a.id}
-                          onClick={() => updateStatus(a.id, "rejected")}
-                        >
-                          <X className="h-3.5 w-3.5" /> Reject
-                        </Button>
-                      </>
-                    )}
+                    <Select
+                      value={a.status}
+                      onValueChange={(v) => updateStatus(a.id, v as "pending" | "reviewed" | "approved" | "rejected")}
+                      disabled={updatingId === a.id}
+                    >
+                      <SelectTrigger className="w-[140px] h-9">
+                        {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SelectValue />}
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3 w-3" /> Pending</span></SelectItem>
+                        <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3 w-3" /> Reviewed</span></SelectItem>
+                        <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3 w-3" /> Approved</span></SelectItem>
+                        <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span></SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -307,24 +348,24 @@ const AdminEducatorApplicationsPage = () => {
                 )}
               </div>
 
-              {selected.status === "pending" && (
-                <div className="flex justify-end gap-2 pt-4 border-t border-border">
-                  <Button
-                    variant="destructive"
-                    disabled={updatingId === selected.id}
-                    onClick={() => updateStatus(selected.id, "rejected")}
-                  >
-                    <X className="h-4 w-4" /> Reject
-                  </Button>
-                  <Button
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                    disabled={updatingId === selected.id}
-                    onClick={() => updateStatus(selected.id, "approved")}
-                  >
-                    {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Approve
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center justify-between gap-2 pt-4 border-t border-border">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Update status</span>
+                <Select
+                  value={selected.status}
+                  onValueChange={(v) => updateStatus(selected.id, v as "pending" | "reviewed" | "approved" | "rejected")}
+                  disabled={updatingId === selected.id}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue />}
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span></SelectItem>
+                    <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Reviewed</span></SelectItem>
+                    <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Approved</span></SelectItem>
+                    <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span></SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </>
           )}
         </DialogContent>
