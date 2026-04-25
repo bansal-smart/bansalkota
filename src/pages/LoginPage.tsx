@@ -11,6 +11,14 @@ const LoginPage = () => {
   const [tab, setTab] = useState<"phone" | "email">("email");
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { country, setCountry } = useAppStore();
 
   const handleEmailLogin = async () => {
     if (!email || !password) {
@@ -40,14 +48,6 @@ const LoginPage = () => {
     if (result.redirected) return;
     navigate("/dashboard");
   };
-  const [showPassword, setShowPassword] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [countryCode, setCountryCode] = useState("+91");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { country, setCountry } = useAppStore();
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;
