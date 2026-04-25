@@ -75,6 +75,8 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        <GoalSetupCard />
+
         {/* Quick Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 stagger-children">
           {quickActions.map(qa => (
