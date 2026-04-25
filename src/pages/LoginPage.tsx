@@ -29,7 +29,7 @@ const LoginPage = () => {
   return (
     <div className="flex min-h-screen">
       {/* Left Panel */}
-      <div className="hidden w-[60%] bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] grid-texture p-12 lg:flex lg:flex-col lg:justify-center">
+      <div className="hidden w-[60%] p-12 lg:flex lg:flex-col lg:justify-center" style={{ background: "linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 18%) 50%, hsl(222 47% 15%) 100%)" }}>
         <div className="mx-auto max-w-md animate-fade-in-up">
           <div className="flex items-center gap-3 mb-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
@@ -37,7 +37,7 @@ const LoginPage = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black font-display text-white">ARAMBH CLASSES</h1>
-              <p className="text-sm text-white/60">Start Now, Reach Your Destination</p>
+              <p className="text-sm text-white/80">Start Now, Reach Your Destination</p>
             </div>
           </div>
 
@@ -48,16 +48,16 @@ const LoginPage = () => {
               "AI doubt solver — available 24/7",
             ].map((t) => (
               <div key={t} className="flex items-center gap-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/20">
-                  <Check className="h-4 w-4 text-secondary" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary/30">
+                  <Check className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-white/80">{t}</span>
+                <span className="text-sm font-medium text-white">{t}</span>
               </div>
             ))}
           </div>
 
-          <p className="mt-12 text-sm text-white/60">Join 50,000+ students already learning</p>
-          <p className="mt-4 text-xs text-white/40">Trusted by students from India & Dubai</p>
+          <p className="mt-12 text-sm text-white/85">Join 50,000+ students already learning</p>
+          <p className="mt-4 text-xs text-white/70">Trusted by students from India & Dubai</p>
 
           <Sparkles className="mt-8 h-6 w-6 text-accent animate-pulse" />
         </div>
