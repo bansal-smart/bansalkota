@@ -1,45 +1,20 @@
-import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, Flame, FlaskConical, Compass, BadgeCheck, BookOpen, Bot, BarChart3, Video, ArrowRight } from "lucide-react";
+import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, FlaskConical, Compass, BadgeCheck, BookOpen, Bot, BarChart3, Video, Calendar } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
 import GoalSetupCard from "@/components/GoalSetupCard";
+import OnboardingTracker from "@/components/OnboardingTracker";
 import { useAppStore } from "@/store/useAppStore";
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 const subjectIcons: Record<string, React.ElementType> = {
   Physics: Zap,
   Chemistry: FlaskConical,
   Maths: Compass,
+  Mathematics: Compass,
 };
-
-const scheduleData = [
-  { time: "09:00 AM", title: "Electrostatics & Capacitors", subject: "Physics", teacher: "Vikram Thapar", status: "completed", color: "from-primary to-primary-dark" },
-  { time: "11:30 AM", title: "Organic Chemistry Reactions", subject: "Chemistry", teacher: "Ananya Iyer", status: "missed", color: "from-secondary to-secondary-dark" },
-  { time: "03:00 PM", title: "Calculus Integration", subject: "Maths", teacher: "Dr. Siddharth Nair", status: "live", color: "from-accent to-primary" },
-  { time: "06:30 PM", title: "Modern Physics", subject: "Physics", teacher: "Vikram Thapar", status: "upcoming", color: "from-primary-dark to-accent" },
-];
-
-const trendData = [
-  { name: "Jun 7", you: 60, topper: 90, avg: 70 },
-  { name: "Jun 14", you: 68, topper: 92, avg: 70 },
-  { name: "Jun 21", you: 75, topper: 95, avg: 71 },
-  { name: "Jul 1", you: 82, topper: 100, avg: 70 },
-  { name: "Jul 14", you: 90, topper: 105, avg: 72 },
-  { name: "Jul 21", you: 95, topper: 110, avg: 70 },
-];
-
-const upcomingTests = [
-  { name: "JEE Main Mock #7", date: "Tomorrow", duration: "3hrs", questions: 90, status: "Register" },
-  { name: "Chemistry Chapter Test", date: "Apr 3", duration: "45min", questions: 30, status: "Enrolled" },
-  { name: "NEET Full Mock April", date: "Apr 5", duration: "3hrs", questions: 200, status: "Register" },
-];
-
-const educators = [
-  { name: "Vikram Thapar", subject: "Physics", followers: "12.5K", icon: Zap, color: "from-primary to-primary-dark" },
-  { name: "Ananya Iyer", subject: "Chemistry", followers: "9.8K", icon: FlaskConical, color: "from-secondary to-secondary-dark" },
-  { name: "Dr. Siddharth Nair", subject: "Mathematics", followers: "15.2K", icon: Compass, color: "from-accent to-primary" },
-];
 
 const quickActions = [
   { icon: Video, label: "Attend Class", desc: "Join live session", link: "/live-classes", gradient: "from-primary to-primary-dark" },
@@ -48,14 +23,13 @@ const quickActions = [
   { icon: BarChart3, label: "Analytics", desc: "View progress", link: "/analytics", gradient: "from-primary-dark to-accent" },
 ];
 
-const continueWatching = [
-  { title: "Electrostatics — Gauss's Law", teacher: "Vikram Thapar", progress: 72, subject: "Physics" },
-  { title: "Organic Chemistry — SN2 Reactions", teacher: "Ananya Iyer", progress: 45, subject: "Chemistry" },
-];
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 
 const StudentDashboard = () => {
   const { user } = useAppStore();
   const firstName = user?.full_name?.split(" ")[0] || "Student";
+  const data = useDashboardData();
 
   return (
     <div className="flex gap-0 pb-20 lg:pb-0">
@@ -71,10 +45,11 @@ const StudentDashboard = () => {
             <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">
               <PhoneCall className="h-3.5 w-3.5" /> Talk to Counsellor
             </button>
-            <button className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Enroll in Course</button>
+            <Link to="/courses" className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Enroll in Course</Link>
           </div>
         </div>
 
+        <OnboardingTracker />
         <GoalSetupCard />
 
         {/* Quick Actions */}
@@ -90,95 +65,114 @@ const StudentDashboard = () => {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4 stagger-children">
-          <StatCard icon={Zap} value="8 day" label="Current Streak" trend="↑ 3 from last week" stripeColor="primary" />
-          <StatCard icon={Target} value="84%" label="Overall Accuracy" trend="↑ 2.3% improvement" stripeColor="secondary" />
-          <StatCard icon={ClipboardCheck} value="23" label="Tests Completed" trend="↑ 5 this month" stripeColor="accent" />
-          <StatCard icon={Trophy} value="99.2%ile" label="All India Percentile" trend="↑ from 98.8" stripeColor="purple" />
+          <StatCard icon={Zap} value={`${data.streak} day${data.streak === 1 ? "" : "s"}`} label="Current Streak" trend={data.streak > 0 ? "Keep going!" : "Start today"} stripeColor="primary" />
+          <StatCard icon={Target} value={data.accuracyPct !== null ? `${data.accuracyPct}%` : "—"} label="Overall Accuracy" trend={data.accuracyPct !== null ? "Based on practice" : "No data yet"} stripeColor="secondary" />
+          <StatCard icon={ClipboardCheck} value={String(data.testsCompleted)} label="Tests Completed" trend={data.testsCompleted > 0 ? "Nice progress" : "Take your first"} stripeColor="accent" />
+          <StatCard icon={Trophy} value={data.percentile !== null ? `${data.percentile}%ile` : "—"} label="All India Percentile" trend={data.percentile !== null ? "Last 5 tests avg" : "No data yet"} stripeColor="purple" />
         </div>
 
         {/* Continue Watching */}
         <div className="rounded-2xl border border-border bg-card p-5 mb-6 animate-fade-in-up">
-          <SectionHeader title="Continue Watching" viewAllLink="/courses" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            {continueWatching.map(cw => (
-              <div key={cw.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover-lift cursor-pointer">
-                <div className="h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">{cw.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{cw.teacher}</p>
-                  <div className="mt-1.5 h-1.5 rounded-full bg-muted">
-                    <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${cw.progress}%` }} />
+          <SectionHeader title="Continue Watching" viewAllLink="/my-courses" />
+          {data.continueWatching.length === 0 ? (
+            <div className="py-8 text-center">
+              <BookOpen className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">Nothing in progress yet — <Link to="/courses" className="text-primary font-bold">browse courses</Link></p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {data.continueWatching.map(cw => (
+                <div key={cw.lesson_slug + cw.course_id} className="flex items-center gap-3 rounded-xl border border-border p-3 hover-lift cursor-pointer">
+                  <div className="h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                    <BookOpen className="h-5 w-5 text-primary" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{cw.lesson_title || cw.course_name || "Lesson"}</p>
+                    <p className="text-[10px] text-muted-foreground">{cw.educator_name || cw.subject || ""}</p>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-muted">
+                      <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${cw.progress_pct}%` }} />
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-primary">{cw.progress_pct}%</span>
                 </div>
-                <span className="text-[10px] font-bold text-primary">{cw.progress}%</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Today's Schedule */}
         <div className="rounded-2xl border border-border bg-card p-5 mb-6 animate-fade-in-up">
           <SectionHeader title="Today's Schedule" viewAllLink="/live-classes" />
-          <div className="space-y-3">
-            {scheduleData.map((cls) => {
-              const SubjectIcon = subjectIcons[cls.subject] || Zap;
-              return (
-                <div key={cls.title} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-background/50 transition-colors hover-lift">
-                  <div className={`h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br ${cls.color} flex items-center justify-center`}>
-                    <SubjectIcon className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold ${cls.status === 'live' ? 'text-destructive' : cls.status === 'missed' ? 'text-destructive' : cls.status === 'completed' ? 'text-muted-foreground' : 'text-primary'}`}>
-                        {cls.time}
-                      </span>
-                      {cls.status === 'live' && <LiveBadge />}
+          {data.todaySchedule.length === 0 ? (
+            <div className="py-8 text-center">
+              <Calendar className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">No classes today — <Link to="/live-classes" className="text-primary font-bold">view all classes</Link></p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.todaySchedule.map((cls) => {
+                const SubjectIcon = subjectIcons[cls.subject] || Zap;
+                const isLive = cls.status === "live";
+                const isCompleted = cls.status === "completed";
+                return (
+                  <div key={cls.id} className="flex items-center gap-3 rounded-xl border border-border p-3 hover:bg-background/50 transition-colors hover-lift">
+                    <div className="h-12 w-12 shrink-0 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                      <SubjectIcon className="h-5 w-5 text-white" />
                     </div>
-                    <p className="text-sm font-bold text-foreground truncate">{cls.title}</p>
-                    <p className="text-xs text-muted-foreground">{cls.teacher}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold ${isLive ? 'text-destructive' : isCompleted ? 'text-muted-foreground' : 'text-primary'}`}>
+                          {formatTime(cls.starts_at)}
+                        </span>
+                        {isLive && <LiveBadge />}
+                      </div>
+                      <p className="text-sm font-bold text-foreground truncate">{cls.title}</p>
+                      <p className="text-xs text-muted-foreground">{cls.educator_name}</p>
+                    </div>
+                    <div className="shrink-0">
+                      {isLive && (
+                        <Link to={`/live-classes/${cls.id}`} className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">Join Now</Link>
+                      )}
+                      {!isLive && !isCompleted && (
+                        <span className="text-xs font-medium text-muted-foreground">{cls.user_status === "registered" ? "Registered" : "Upcoming"}</span>
+                      )}
+                      {isCompleted && (
+                        <span className="text-xs font-medium text-muted-foreground">Recording ▶</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="shrink-0">
-                    {cls.status === "live" && (
-                      <button className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">Join Now</button>
-                    )}
-                    {cls.status === "upcoming" && (
-                      <button className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background transition-colors">Set Reminder</button>
-                    )}
-                    {cls.status === "completed" && (
-                      <span className="text-xs font-medium text-muted-foreground">Recording ▶</span>
-                    )}
-                    {cls.status === "missed" && (
-                      <span className="text-xs font-medium text-destructive">Missed</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Educators */}
         <div className="mb-6 animate-fade-in-up">
-          <SectionHeader title="Top Educators" viewAllLink="/educators" />
-          <div className="grid gap-4 sm:grid-cols-3">
-            {educators.map((edu) => (
-              <div key={edu.name} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover-lift">
-                <div className={`h-20 bg-gradient-to-br ${edu.color} flex items-center justify-center`}>
-                  <edu.icon className="h-8 w-8 text-white/80" />
+          <SectionHeader title="Your Educators" viewAllLink="/educators" />
+          {data.educators.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card py-8 text-center">
+              <Users className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">Follow educators to see them here — <Link to="/educators" className="text-primary font-bold">browse</Link></p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-3">
+              {data.educators.slice(0, 3).map((edu) => (
+                <div key={edu.name} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover-lift">
+                  <div className="h-20 bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                    <Users className="h-8 w-8 text-white/80" />
+                  </div>
+                  <div className="p-4 text-center">
+                    <p className="text-sm font-bold font-display text-foreground inline-flex items-center gap-1">
+                      {edu.name} <BadgeCheck className="h-4 w-4 text-primary" />
+                    </p>
+                    <p className="text-xs text-muted-foreground">{edu.subject || "Educator"}</p>
+                    <Link to="/educators" className="mt-3 inline-block w-full rounded-lg border border-primary px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">View</Link>
+                  </div>
                 </div>
-                <div className="p-4 text-center">
-                  <p className="text-sm font-bold font-display text-foreground inline-flex items-center gap-1">
-                    {edu.name} <BadgeCheck className="h-4 w-4 text-primary" />
-                  </p>
-                  <p className="text-xs text-muted-foreground">{edu.subject}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{edu.followers} followers</p>
-                  <button className="mt-3 w-full rounded-lg border border-primary px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">Follow</button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -190,122 +184,70 @@ const StudentDashboard = () => {
         <div className="space-y-3 mb-5">
           <div className="rounded-xl bg-gradient-to-br from-primary to-primary-dark p-4">
             <p className="text-xs font-medium text-white/80">All India Percentile</p>
-            <p className="text-3xl font-black font-display text-white">99.2</p>
-            <p className="text-xs font-medium text-white/80">Batch Rank #3</p>
+            <p className="text-3xl font-black font-display text-white">{data.percentile !== null ? data.percentile : "—"}</p>
+            <p className="text-xs font-medium text-white/80">{data.percentile !== null ? "Last 5 tests" : "No tests yet"}</p>
           </div>
           <div className="rounded-xl bg-gradient-to-br from-secondary to-secondary-dark p-4">
-            <p className="text-xs font-medium text-white/80">Centre Percentile</p>
-            <p className="text-3xl font-black font-display text-white">94.5</p>
-            <p className="text-xs font-medium text-white/80">Top 5.5%</p>
+            <p className="text-xs font-medium text-white/80">Overall Accuracy</p>
+            <p className="text-3xl font-black font-display text-white">{data.accuracyPct !== null ? `${data.accuracyPct}` : "—"}</p>
+            <p className="text-xs font-medium text-white/80">{data.accuracyPct !== null ? "From practice sessions" : "Start practicing"}</p>
           </div>
         </div>
 
         {/* Subject Performance */}
         <div className="rounded-xl border border-border p-4 mb-5">
           <p className="text-sm font-bold font-display text-foreground mb-3">Subject Performance</p>
-          {[
-            { subject: "Physics", pct: 87, color: "bg-primary" },
-            { subject: "Chemistry", pct: 79, color: "bg-secondary" },
-            { subject: "Mathematics", pct: 91, color: "bg-accent" },
-          ].map((s) => (
-            <div key={s.subject} className="mb-3 last:mb-0">
-              <div className="flex justify-between text-xs mb-1">
-                <span className="font-medium text-foreground">{s.subject}</span>
-                <span className="font-bold text-foreground">{s.pct}%</span>
+          {data.subjectPerformance.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Take a test to see breakdown</p>
+          ) : (
+            data.subjectPerformance.map((s, i) => (
+              <div key={s.subject} className="mb-3 last:mb-0">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="font-medium text-foreground">{s.subject}</span>
+                  <span className="font-bold text-foreground">{s.pct}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted">
+                  <div className={`h-2 rounded-full transition-all ${i % 3 === 0 ? 'bg-primary' : i % 3 === 1 ? 'bg-secondary' : 'bg-accent'}`} style={{ width: `${s.pct}%` }} />
+                </div>
               </div>
-              <div className="h-2 rounded-full bg-muted">
-                <div className={`h-2 rounded-full ${s.color} transition-all`} style={{ width: `${s.pct}%` }} />
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Score Trend */}
-        <div className="rounded-xl border border-border p-4 mb-5">
-          <p className="text-sm font-bold font-display text-foreground mb-3">Score Trend vs Topper</p>
-          <ResponsiveContainer width="100%" height={140}>
-            <LineChart data={trendData}>
-              <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-              <YAxis tick={{ fontSize: 9 }} />
-              <Tooltip contentStyle={{ fontSize: 11 }} />
-              <Legend wrapperStyle={{ fontSize: 10 }} />
-              <Line type="monotone" dataKey="you" stroke="hsl(24, 95%, 53%)" strokeWidth={2} dot={{ r: 2 }} name="You" />
-              <Line type="monotone" dataKey="topper" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 2 }} name="Topper" />
-              <Line type="monotone" dataKey="avg" stroke="hsl(215, 16%, 47%)" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Average" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {data.scoreTrend.some((p) => p.you > 0) && (
+          <div className="rounded-xl border border-border p-4 mb-5">
+            <p className="text-sm font-bold font-display text-foreground mb-3">Score Trend</p>
+            <ResponsiveContainer width="100%" height={140}>
+              <LineChart data={data.scoreTrend}>
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+                <YAxis tick={{ fontSize: 9 }} />
+                <Tooltip contentStyle={{ fontSize: 11 }} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Line type="monotone" dataKey="you" stroke="hsl(24, 95%, 53%)" strokeWidth={2} dot={{ r: 2 }} name="You" />
+                <Line type="monotone" dataKey="avg" stroke="hsl(215, 16%, 47%)" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Average" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Weak Topics */}
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 mb-5">
-          <p className="text-sm font-bold text-destructive flex items-center gap-1 mb-3">
-            <AlertTriangle className="h-4 w-4" /> Weak Topics
-          </p>
-          {[
-            { topic: "Thermodynamics", pct: 52 },
-            { topic: "Organic Reactions", pct: 61 },
-            { topic: "Rotational Motion", pct: 68 },
-          ].map((t) => (
-            <div key={t.topic} className="flex justify-between text-xs mb-2">
-              <span className="text-foreground">{t.topic}</span>
-              <span className={`font-bold ${t.pct < 65 ? 'text-destructive' : 'text-accent'}`}>{t.pct}%</span>
-            </div>
-          ))}
-          <button className="mt-2 w-full rounded-pill bg-destructive py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
-            Practice Weak Topics →
-          </button>
-        </div>
-
-        {/* Upcoming Tests */}
-        <div className="mb-5">
-          <p className="text-sm font-bold font-display text-foreground mb-3">Upcoming Tests</p>
-          <div className="space-y-2">
-            {upcomingTests.map((t) => (
-              <div key={t.name} className="flex items-center gap-3 rounded-lg border border-border p-3 hover-lift">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <ClipboardCheck className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.date} · {t.duration}</p>
-                </div>
-                <span className={`rounded-pill px-2 py-0.5 text-[10px] font-bold ${t.status === 'Enrolled' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'}`}>
-                  {t.status}
-                </span>
+        {data.weakTopics.length > 0 && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 mb-5">
+            <p className="text-sm font-bold text-destructive flex items-center gap-1 mb-3">
+              <AlertTriangle className="h-4 w-4" /> Weak Areas
+            </p>
+            {data.weakTopics.map((t) => (
+              <div key={t.topic} className="flex justify-between text-xs mb-2">
+                <span className="text-foreground">{t.topic}</span>
+                <span className={`font-bold ${t.pct < 65 ? 'text-destructive' : 'text-accent'}`}>{t.pct}%</span>
               </div>
             ))}
+            <Link to="/qbank" className="mt-2 block w-full rounded-pill bg-destructive py-2 text-center text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
+              Practice Now →
+            </Link>
           </div>
-        </div>
-
-        {/* Mini Calendar */}
-        <div className="rounded-xl border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-bold font-display text-foreground">March 2026</p>
-            <div className="flex gap-1">
-              <button className="rounded p-1 text-muted-foreground hover:bg-background">◂</button>
-              <button className="rounded p-1 text-muted-foreground hover:bg-background">▸</button>
-            </div>
-          </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-              <span key={i} className="font-bold text-muted-foreground py-1">{d}</span>
-            ))}
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
-              const isToday = day === 31;
-              const hasClass = [2, 5, 8, 12, 15, 19, 22, 26, 29, 31].includes(day);
-              return (
-                <button key={day} className={`relative py-1 text-xs rounded ${isToday ? 'bg-primary text-primary-foreground font-bold' : 'text-foreground hover:bg-background'}`}>
-                  {day}
-                  {hasClass && !isToday && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-secondary" />}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-2 flex items-center gap-3 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-secondary" /> Class</span>
-            <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Today</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
