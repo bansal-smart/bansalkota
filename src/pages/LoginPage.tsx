@@ -1,11 +1,45 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe } from "lucide-react";
+import { toast } from "sonner";
+import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"phone" | "email">("phone");
+  const [tab, setTab] = useState<"phone" | "email">("email");
+  const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleEmailLogin = async () => {
+    if (!email || !password) {
+      toast.error("Email and password are required");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    navigate("/dashboard");
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}/auth/callback`,
+    });
+    if (result.error) {
+      setGoogleLoading(false);
+      toast.error("Could not sign in with Google. Please try again.");
+      return;
+    }
+    if (result.redirected) return;
+    navigate("/dashboard");
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
