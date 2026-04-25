@@ -9,6 +9,21 @@ const SignupPage = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignUp = async () => {
+    setGoogleLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}/auth/callback`,
+    });
+    if (result.error) {
+      setGoogleLoading(false);
+      toast.error("Could not sign up with Google. Please try again.");
+      return;
+    }
+    if (result.redirected) return;
+    navigate("/dashboard");
+  };
   const [form, setForm] = useState({
     full_name: "",
     countryCode: "+91",
