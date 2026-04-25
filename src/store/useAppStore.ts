@@ -20,7 +20,7 @@ interface AppState {
   setCountry: (country: 'india' | 'dubai') => void;
 }
 
-const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('arambh-country') : null) as 'india' | 'dubai' | null;
+const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('arke-country') : null) as 'india' | 'dubai' | null;
 
 export const useAppStore = create<AppState>((set) => ({
   user: {
@@ -38,7 +38,7 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentGoal: (currentGoal) => set({ currentGoal }),
   setNotificationCount: (notificationCount) => set({ notificationCount }),
   setCountry: (country) => {
-    localStorage.setItem('arambh-country', country);
+    localStorage.setItem('arke-country', country);
     set({ country });
   },
 }));

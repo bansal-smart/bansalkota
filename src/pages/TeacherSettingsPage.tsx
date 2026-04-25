@@ -3,7 +3,7 @@ import { useState } from "react";
 
 const TeacherSettingsPage = () => {
   const [name, setName] = useState("Vikram Thapar");
-  const [email, setEmail] = useState("vikram@arambhclasses.com");
+  const [email, setEmail] = useState("vikram@arke.pro");
   const [phone, setPhone] = useState("+91 98765 43210");
   const [classNotif, setClassNotif] = useState(true);
   const [doubtNotif, setDoubtNotif] = useState(true);

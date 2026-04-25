@@ -16,7 +16,7 @@ import featureMobile from "@/assets/feature-mobile.png";
 import featureTest from "@/assets/feature-test.png";
 
 const faqs = [
-  { q: "What exams does Arambh cover?", a: "Arambh covers JEE Main, JEE Advanced, NEET, and Board Exams (CBSE & State Boards) for classes 11 and 12. We also offer foundation courses for class 9 and 10." },
+  { q: "What exams does Arke cover?", a: "Arke covers JEE Main, JEE Advanced, NEET, and Board Exams (CBSE & State Boards) for classes 11 and 12. We also offer foundation courses for class 9 and 10." },
   { q: "Can I attend classes from Dubai?", a: "Absolutely! Our live classes run on IST but recordings are available 24/7. Students from UAE, Oman, and other GCC countries study with us regularly." },
   { q: "How does the AI Doubt Solver work?", a: "Simply upload a photo of your question or type it out. Our AI analyzes the problem and gives you a step-by-step solution with explanations within seconds." },
   { q: "Is there a free trial?", a: "Yes! Our Explorer plan is completely free — you get access to 5 live classes, basic test series, and community doubt solving. No credit card required." },
@@ -52,7 +52,7 @@ const LandingPage = () => {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
               <Flame className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-black font-display gradient-text">ARAMBH</span>
+            <span className="text-xl font-black font-display gradient-text">ARKE</span>
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link to="/courses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Courses</Link>
@@ -318,7 +318,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Career with Arambh */}
+      {/* Career with Arke */}
       <section className="relative overflow-hidden py-16 md:py-24 bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)]">
         <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(circle at 70% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)' }} />
         <div className="absolute inset-0 grid-texture" />
@@ -328,7 +328,7 @@ const LandingPage = () => {
               <Briefcase className="h-4 w-4" /> We're Hiring Educators
             </span>
             <h2 className="mt-5 text-3xl font-black font-display text-white md:text-5xl">
-              Career with <span className="gradient-text">Arambh</span>
+              Career with <span className="gradient-text">Arke</span>
             </h2>
             <p className="mt-3 text-base text-white/80 md:text-lg">
               Join India & Dubai's fastest-growing edtech platform. Teach thousands, earn well, work flexibly.
@@ -373,7 +373,7 @@ const LandingPage = () => {
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3 stagger-children">
             {[
-              { name: "Aditya Rajan", exam: "JEE Advanced 2025", result: "AIR 342", quote: "Arambh's live classes and AI doubt solver helped me crack JEE Advanced. Vikram Sir's physics classes were a game changer!", avatar: "AR", tag: "IIT Bombay" },
+              { name: "Aditya Rajan", exam: "JEE Advanced 2025", result: "AIR 342", quote: "Arke's live classes and AI doubt solver helped me crack JEE Advanced. Vikram Sir's physics classes were a game changer!", avatar: "AR", tag: "IIT Bombay" },
               { name: "Ishita Bansal", exam: "NEET 2025", result: "AIR 156", quote: "The test series and analytics helped me identify my weak areas. Dr. Kavitha's biology classes were incredibly detailed.", avatar: "IB", tag: "AIIMS Delhi" },
               { name: "Karan Malhotra", exam: "JEE Main 2025", result: "99.8%ile", quote: "I loved the compete mode — battling peers kept me motivated. The 1-on-1 mentoring sessions were the real difference maker.", avatar: "KM", tag: "IIT Delhi" },
             ].map((s) => (
@@ -442,33 +442,33 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Why Arambh vs Traditional */}
+      {/* Why Arke vs Traditional */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
-            <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Why Arambh?</h2>
+            <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">Why Arke?</h2>
             <p className="mt-2 text-muted-foreground">See how we compare to traditional coaching</p>
           </div>
           <div className="mt-12 max-w-3xl mx-auto rounded-2xl border border-border bg-card overflow-hidden">
             <div className="grid grid-cols-3 bg-gradient-to-r from-primary to-accent text-center">
               <div className="p-4 text-sm font-bold text-white">Feature</div>
-              <div className="p-4 text-sm font-bold text-white">Arambh Classes</div>
+              <div className="p-4 text-sm font-bold text-white">Arke</div>
               <div className="p-4 text-sm font-bold text-white">Traditional Coaching</div>
             </div>
             {[
-              { feature: "Live + Recorded Classes", arambh: true, traditional: false },
-              { feature: "AI Doubt Solver (24/7)", arambh: true, traditional: false },
-              { feature: "1-on-1 Mentoring", arambh: true, traditional: false },
-              { feature: "Flexible Schedule", arambh: true, traditional: false },
-              { feature: "Smart Analytics & Tracking", arambh: true, traditional: false },
-              { feature: "Affordable Pricing", arambh: true, traditional: false },
-              { feature: "Compete with Peers (India Rank)", arambh: true, traditional: false },
-              { feature: "Learn from Anywhere", arambh: true, traditional: false },
+              { feature: "Live + Recorded Classes", arke: true, traditional: false },
+              { feature: "AI Doubt Solver (24/7)", arke: true, traditional: false },
+              { feature: "1-on-1 Mentoring", arke: true, traditional: false },
+              { feature: "Flexible Schedule", arke: true, traditional: false },
+              { feature: "Smart Analytics & Tracking", arke: true, traditional: false },
+              { feature: "Affordable Pricing", arke: true, traditional: false },
+              { feature: "Compete with Peers (India Rank)", arke: true, traditional: false },
+              { feature: "Learn from Anywhere", arke: true, traditional: false },
             ].map((row, i) => (
               <div key={row.feature} className={`grid grid-cols-3 text-center border-b border-border last:border-0 ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
                 <div className="p-3 text-xs font-medium text-foreground text-left pl-6">{row.feature}</div>
                 <div className="p-3 text-sm">
-                  {row.arambh ? <Check className="h-5 w-5 text-secondary mx-auto" /> : <span className="text-muted-foreground">—</span>}
+                  {row.arke ? <Check className="h-5 w-5 text-secondary mx-auto" /> : <span className="text-muted-foreground">—</span>}
                 </div>
                 <div className="p-3 text-sm">
                   {row.traditional ? <Check className="h-5 w-5 text-secondary mx-auto" /> : <span className="text-muted-foreground">✕</span>}
@@ -514,7 +514,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 text-center animate-fade-in-up relative z-10">
           <Sparkles className="mx-auto h-8 w-8 text-accent mb-4 animate-pulse" />
           <h2 className="text-3xl font-black font-display text-white md:text-5xl">Start Your Journey Today</h2>
-          <p className="mt-4 text-lg text-white/90 max-w-lg mx-auto">Join 50,000+ students already preparing with Arambh Classes. Your dream college is just one step away.</p>
+          <p className="mt-4 text-lg text-white/90 max-w-lg mx-auto">Join 50,000+ students already preparing with Arke. Your dream college is just one step away.</p>
           <Link to="/signup" className="mt-8 inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-10 py-4 text-lg font-bold text-white shadow-blue hover:opacity-90 hover:scale-105 transition-all">
             Start for Free <ArrowRight className="h-5 w-5" />
           </Link>
@@ -531,7 +531,7 @@ const LandingPage = () => {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
                   <Flame className="h-4 w-4 text-white" />
                 </div>
-                <span className="text-lg font-black font-display gradient-text">ARAMBH CLASSES</span>
+                <span className="text-lg font-black font-display gradient-text">ARKE</span>
               </div>
               <p className="text-sm text-white/60">Empowering students across India & Dubai to achieve their dream exam results.</p>
               <div className="flex gap-3 mt-4">
@@ -563,7 +563,7 @@ const LandingPage = () => {
               <div className="space-y-2 text-sm text-white/60">
                 <p>🇮🇳 New Delhi, India</p>
                 <p>🇦🇪 Dubai, UAE</p>
-                <p>support@arambhclasses.com</p>
+                <p>support@arke.pro</p>
               </div>
               <div className="mt-4 flex gap-2">
                 <div className="rounded-lg bg-white/10 px-3 py-2 text-[10px] font-bold text-white/80 hover:bg-white/20 cursor-pointer transition-colors">📱 App Store</div>
@@ -573,7 +573,7 @@ const LandingPage = () => {
           </div>
           <div className="mt-8 pt-6 border-t border-white/10">
             <p className="text-center text-xs text-white/50 flex items-center justify-center gap-1">
-              Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Students · © 2026 Arambh Classes
+              Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for Students · © 2026 Arke
             </p>
           </div>
         </div>
