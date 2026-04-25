@@ -1,50 +1,175 @@
-import { useState } from "react";
-import { Camera, Flame, Target, ClipboardCheck, Trophy, Award, Zap, BookOpen, Star, Crown, CheckCircle2, Shield } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Flame, Target, ClipboardCheck, Trophy, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
-const tabItems = ["Personal Info", "Subscription", "Achievements", "Settings"];
+const tabItems = ["Personal Info", "Subscription"];
 
-const achievements = [
-  { name: "First Streak", icon: Flame, earned: true, color: "bg-primary" },
-  { name: "First Test", icon: ClipboardCheck, earned: true, color: "bg-secondary" },
-  { name: "Top 100", icon: Trophy, earned: true, color: "bg-accent" },
-  { name: "Speed Solver", icon: Zap, earned: false, color: "bg-muted" },
-  { name: "Bookworm", icon: BookOpen, earned: false, color: "bg-muted" },
-  { name: "Perfect Score", icon: Target, earned: true, color: "bg-primary" },
-  { name: "Star Student", icon: Star, earned: false, color: "bg-muted" },
-  { name: "Champion", icon: Crown, earned: false, color: "bg-muted" },
-];
+const EXAMS = ["IIT JEE", "NEET", "Boards", "JEE + NEET", "Other"];
+const GOALS = ["IIT JEE", "NEET", "Boards", "JEE + NEET"];
 
 const ProfilePage = () => {
   const { user } = useAppStore();
+  const { user: authUser, refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    city: "",
+    country: "",
+    target_exam: "",
+    goal: "",
+    avatar_url: "",
+  });
+  const [stats, setStats] = useState({ streak: 0, tests: 0, accuracy: 0, percentile: 0 });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!authUser) return;
+    let active = true;
+    (async () => {
+      const [profileRes, streakRes, sessionsRes, testsRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", authUser.id).maybeSingle(),
+        supabase.rpc("get_user_streak", { _user_id: authUser.id }),
+        supabase.from("study_sessions").select("questions_attempted, questions_correct").eq("user_id", authUser.id),
+        supabase.from("test_attempts").select("percentile").eq("user_id", authUser.id).order("attempted_at", { ascending: false }).limit(5),
+      ]);
+      if (!active) return;
+      const p = profileRes.data;
+      if (p) {
+        setForm({
+          full_name: p.full_name || "",
+          phone: p.phone || "",
+          city: p.city || "",
+          country: p.country || "",
+          target_exam: p.target_exam || "",
+          goal: p.goal || "",
+          avatar_url: p.avatar_url || "",
+        });
+      }
+      const sessions = sessionsRes.data ?? [];
+      const att = sessions.reduce((s, r) => s + (r.questions_attempted ?? 0), 0);
+      const cor = sessions.reduce((s, r) => s + (r.questions_correct ?? 0), 0);
+      const tests = testsRes.data ?? [];
+      const pctile = tests.length > 0 ? tests.reduce((s, t) => s + (Number(t.percentile) || 0), 0) / tests.length : 0;
+      setStats({
+        streak: (streakRes.data as number) ?? 0,
+        tests: tests.length,
+        accuracy: att > 0 ? Math.round((cor / att) * 100) : 0,
+        percentile: Math.round(pctile * 10) / 10,
+      });
+      setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [authUser]);
+
+  const handleSave = async () => {
+    if (!authUser) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: form.full_name,
+        phone: form.phone,
+        city: form.city,
+        country: form.country,
+        target_exam: form.target_exam,
+        goal: form.goal,
+      })
+      .eq("user_id", authUser.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save profile");
+      return;
+    }
+    toast.success("Profile updated");
+    await refreshProfile();
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !authUser) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2MB");
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${authUser.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (upErr) {
+      setUploading(false);
+      toast.error("Upload failed");
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { error: dbErr } = await supabase
+      .from("profiles")
+      .update({ avatar_url: publicUrl })
+      .eq("user_id", authUser.id);
+    setUploading(false);
+    if (dbErr) {
+      toast.error("Saved upload but couldn't update profile");
+      return;
+    }
+    setForm((f) => ({ ...f, avatar_url: publicUrl }));
+    toast.success("Photo updated");
+    await refreshProfile();
+  };
+
+  const initials = form.full_name?.split(" ").map((n) => n[0]).join("").slice(0, 2) || "U";
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-20 lg:pb-0">
       {/* Profile Header */}
-      <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-white text-center">
+      <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-primary-foreground text-center">
         <div className="relative inline-block">
-          <div className="h-20 w-20 rounded-full bg-white/20 mx-auto flex items-center justify-center text-2xl font-bold">
-            {user?.full_name?.split(" ").map(n => n[0]).join("") || "U"}
+          <div className="h-20 w-20 rounded-full bg-white/20 mx-auto flex items-center justify-center text-2xl font-bold overflow-hidden">
+            {form.avatar_url ? (
+              <img src={form.avatar_url} alt={form.full_name} className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
-          <button className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-white flex items-center justify-center shadow"><Camera className="h-3.5 w-3.5 text-primary" /></button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-card flex items-center justify-center shadow disabled:opacity-60"
+          >
+            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5 text-primary" />}
+          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
         </div>
-        <h2 className="text-lg font-black font-display mt-3">{user?.full_name || "Student"}</h2>
+        <h2 className="text-lg font-black font-display mt-3">{form.full_name || "Student"}</h2>
         <div className="flex items-center justify-center gap-2 mt-1">
-          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">IIT JEE</span>
-          <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">Class 12</span>
+          {form.target_exam && <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{form.target_exam}</span>}
+          {form.goal && <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{form.goal}</span>}
         </div>
-        <p className="text-xs opacity-70 mt-1">New Delhi, India · Member since Jan 2026</p>
+        <p className="text-xs opacity-70 mt-1">{[form.city, form.country].filter(Boolean).join(", ") || user?.email}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-3 p-4">
         {[
-          { icon: Flame, value: "8 day", label: "Streak" },
-          { icon: ClipboardCheck, value: "23", label: "Tests" },
-          { icon: Target, value: "87%", label: "Accuracy" },
-          { icon: Trophy, value: "#3", label: "Rank" },
-        ].map(s => (
+          { icon: Flame, value: `${stats.streak}d`, label: "Streak" },
+          { icon: ClipboardCheck, value: String(stats.tests), label: "Tests" },
+          { icon: Target, value: stats.accuracy ? `${stats.accuracy}%` : "—", label: "Accuracy" },
+          { icon: Trophy, value: stats.percentile ? `${stats.percentile}` : "—", label: "Percentile" },
+        ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-3 text-center">
             <s.icon className="h-4 w-4 text-primary mx-auto mb-1" />
             <p className="text-sm font-bold text-foreground">{s.value}</p>
@@ -67,85 +192,82 @@ const ProfilePage = () => {
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
             <h3 className="text-sm font-bold font-display text-foreground">Personal Information</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                { label: "Full Name", value: user?.full_name || "" },
-                { label: "Email", value: user?.email || "" },
-                { label: "Phone", value: "+91 98765 43210" },
-                { label: "Date of Birth", value: "15 Mar 2008" },
-                { label: "City", value: "New Delhi" },
-                { label: "Target Exam", value: "IIT JEE" },
-              ].map(f => (
-                <div key={f.label}>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{f.label}</label>
-                  <input type="text" defaultValue={f.value} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary" />
-                </div>
-              ))}
+              <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+              <Field label="Email" value={user?.email || ""} disabled />
+              <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+              <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+              <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
+              <SelectField label="Target Exam" value={form.target_exam} options={EXAMS} onChange={(v) => setForm({ ...form, target_exam: v })} />
+              <SelectField label="Goal" value={form.goal} options={GOALS} onChange={(v) => setForm({ ...form, goal: v })} />
             </div>
-            <button className="rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors">Save Changes</button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Save Changes
+            </button>
           </div>
         )}
 
         {activeTab === 1 && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-primary/20 bg-primary-light p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <p className="text-sm font-bold text-foreground">Pro Plan</p>
-                  <p className="text-xs text-muted-foreground">Active until Dec 31, 2026</p>
-                </div>
-                <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">ACTIVE</span>
-              </div>
-              <div className="space-y-2 mb-4">
-                {[
-                  { label: "Lectures Watched", value: 45, total: 120 },
-                  { label: "Tests Taken", value: 23, total: 50 },
-                ].map(m => (
-                  <div key={m.label}>
-                    <div className="flex justify-between text-xs mb-1"><span className="text-foreground">{m.label}</span><span className="font-bold text-foreground">{m.value}/{m.total}</span></div>
-                    <div className="h-1.5 rounded-full bg-muted"><div className="h-1.5 rounded-full bg-primary" style={{ width: `${(m.value / m.total) * 100}%` }} /></div>
-                  </div>
-                ))}
-              </div>
-              <button className="rounded-xl bg-primary px-6 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors">Upgrade Plan</button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 2 && (
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <h3 className="text-sm font-bold font-display text-foreground mb-4">Achievements</h3>
-            <div className="grid grid-cols-4 gap-3">
-              {achievements.map(a => (
-                <div key={a.name} className={`rounded-xl p-3 text-center ${a.earned ? "" : "opacity-40"}`}>
-                  <div className={`h-12 w-12 rounded-full ${a.earned ? a.color : "bg-muted"} mx-auto flex items-center justify-center mb-2`}>
-                    <a.icon className={`h-5 w-5 ${a.earned ? "text-white" : "text-muted-foreground"}`} />
-                  </div>
-                  <p className="text-[10px] font-bold text-foreground">{a.name}</p>
-                  {a.earned && <CheckCircle2 className="h-3 w-3 text-secondary mx-auto mt-1" />}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 3 && (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-            <h3 className="text-sm font-bold font-display text-foreground">Settings</h3>
-            {[
-              { label: "Push Notifications", desc: "Receive test reminders and class alerts" },
-              { label: "Email Notifications", desc: "Weekly performance reports" },
-              { label: "Dark Mode", desc: "Coming soon" },
-            ].map(s => (
-              <div key={s.label} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                <div><p className="text-xs font-semibold text-foreground">{s.label}</p><p className="text-[10px] text-muted-foreground">{s.desc}</p></div>
-                <div className="h-5 w-9 rounded-full bg-primary relative cursor-pointer"><div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all" /></div>
-              </div>
-            ))}
+          <div className="rounded-2xl border border-border bg-card p-5 text-center">
+            <p className="text-sm text-muted-foreground">Subscription details coming soon</p>
           </div>
         )}
       </div>
     </div>
   );
 };
+
+const Field = ({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange?: (v: string) => void;
+  disabled?: boolean;
+}) => (
+  <div>
+    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</label>
+    <input
+      type="text"
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange?.(e.target.value)}
+      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+    />
+  </div>
+);
+
+const SelectField = ({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) => (
+  <div>
+    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</label>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+    >
+      <option value="">Select...</option>
+      {options.map((o) => (
+        <option key={o} value={o}>{o}</option>
+      ))}
+    </select>
+  </div>
+);
 
 export default ProfilePage;

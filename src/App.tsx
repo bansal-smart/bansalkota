@@ -28,6 +28,7 @@ import MyCoursesPage from "./pages/MyCoursesPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import LecturePlayerPage from "./pages/LecturePlayerPage";
 import ProfilePage from "./pages/ProfilePage";
+import NotificationsPage from "./pages/NotificationsPage";
 import EducatorsPage from "./pages/EducatorsPage";
 import SettingsPage from "./pages/SettingsPage";
 import StorePage from "./pages/StorePage";
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/my-courses" element={<MyCoursesPage />} />
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/store" element={<StorePage />} />

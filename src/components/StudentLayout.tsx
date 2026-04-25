@@ -1,9 +1,11 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Bell, Search, LogOut, Flame, BookMarked, GraduationCap } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Search, LogOut, Flame, BookMarked, GraduationCap } from "lucide-react";
 import GoalSelector from "@/components/GoalSelector";
 import LiveBadge from "@/components/LiveBadge";
+import NotificationBell from "@/components/NotificationBell";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/hooks/useNotifications";
 import { toast } from "sonner";
 
 const navItems = [
@@ -32,8 +34,9 @@ const accountItems = [
 const StudentLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, currentGoal, setCurrentGoal, notificationCount } = useAppStore();
+  const { user, currentGoal, setCurrentGoal } = useAppStore();
   const { signOut } = useAuth();
+  useNotifications();
 
   const handleLogout = async () => {
     await signOut();
@@ -132,17 +135,14 @@ const StudentLayout = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-background transition-colors">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                  {notificationCount}
-                </span>
+            <NotificationBell />
+            <Link to="/profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary overflow-hidden">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt={user.full_name} className="h-full w-full object-cover" />
+              ) : (
+                user?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'
               )}
-            </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
-              {user?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-            </div>
+            </Link>
           </div>
         </header>
 
