@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -37,16 +36,18 @@ const LoginPage = () => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/auth/callback`,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: "select_account" },
+      },
     });
-    if (result.error) {
+    if (error) {
       setGoogleLoading(false);
       toast.error("Could not sign in with Google. Please try again.");
-      return;
     }
-    if (result.redirected) return;
-    navigate("/dashboard");
+    // Browser will redirect to Google on success
   };
 
   const handleOtpChange = (index: number, value: string) => {
