@@ -1,4 +1,4 @@
-import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, FlaskConical, Compass, BadgeCheck, BookOpen, Bot, BarChart3, Video, Calendar } from "lucide-react";
+import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, FlaskConical, Compass, BadgeCheck, BookOpen, Bot, BarChart3, Video, Calendar, Users } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
