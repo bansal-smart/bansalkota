@@ -161,6 +161,30 @@ export type Database = {
         }
         Relationships: []
       }
+      educator_follows: {
+        Row: {
+          created_at: string
+          educator_name: string
+          educator_subject: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          educator_name: string
+          educator_subject?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          educator_name?: string
+          educator_subject?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -345,6 +369,119 @@ export type Database = {
           },
         ]
       }
+      live_class_attendance: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          joined_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          joined_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          joined_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_class_attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_classes: {
+        Row: {
+          created_at: string
+          educator_avatar: string | null
+          educator_name: string
+          ends_at: string | null
+          id: string
+          meeting_url: string | null
+          starts_at: string
+          status: string
+          subject: string
+          target_exam: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          educator_avatar?: string | null
+          educator_name: string
+          ends_at?: string | null
+          id?: string
+          meeting_url?: string | null
+          starts_at: string
+          status?: string
+          subject: string
+          target_exam?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          educator_avatar?: string | null
+          educator_name?: string
+          ends_at?: string | null
+          id?: string
+          meeting_url?: string | null
+          starts_at?: string
+          status?: string
+          subject?: string
+          target_exam?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -393,6 +530,39 @@ export type Database = {
         }
         Relationships: []
       }
+      study_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          minutes_studied: number
+          questions_attempted: number
+          questions_correct: number
+          session_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          minutes_studied?: number
+          questions_attempted?: number
+          questions_correct?: number
+          session_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          minutes_studied?: number
+          questions_attempted?: number
+          questions_correct?: number
+          session_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -414,6 +584,45 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      test_attempts: {
+        Row: {
+          attempted_at: string
+          correct_answers: number
+          created_at: string
+          id: string
+          percentile: number | null
+          score: number
+          subject: string | null
+          test_name: string
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          attempted_at?: string
+          correct_answers?: number
+          created_at?: string
+          id?: string
+          percentile?: number | null
+          score?: number
+          subject?: string | null
+          test_name: string
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          attempted_at?: string
+          correct_answers?: number
+          created_at?: string
+          id?: string
+          percentile?: number | null
+          score?: number
+          subject?: string | null
+          test_name?: string
+          total_questions?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -451,6 +660,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_user_streak: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
