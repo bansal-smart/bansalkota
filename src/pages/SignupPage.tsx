@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -13,16 +12,18 @@ const SignupPage = () => {
 
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/auth/callback`,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { prompt: "select_account" },
+      },
     });
-    if (result.error) {
+    if (error) {
       setGoogleLoading(false);
       toast.error("Could not sign up with Google. Please try again.");
-      return;
     }
-    if (result.redirected) return;
-    navigate("/dashboard");
+    // Browser will redirect to Google on success
   };
   const [form, setForm] = useState({
     full_name: "",
