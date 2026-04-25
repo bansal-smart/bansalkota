@@ -21,21 +21,18 @@ interface AppState {
 }
 
 const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('arke-country') : null) as 'india' | 'dubai' | null;
+const savedGoal = (typeof window !== 'undefined' ? localStorage.getItem('arke-goal') : null) || 'IIT JEE';
 
 export const useAppStore = create<AppState>((set) => ({
-  user: {
-    id: 'demo-user',
-    full_name: 'Aditya Rajan',
-    email: 'aditya@example.com',
-    role: 'student',
-    target_exam: 'jee',
-    avatar_url: undefined,
-  },
-  currentGoal: 'IIT JEE',
-  notificationCount: 3,
+  user: null,
+  currentGoal: savedGoal,
+  notificationCount: 0,
   country: savedCountry || 'india',
   setUser: (user) => set({ user }),
-  setCurrentGoal: (currentGoal) => set({ currentGoal }),
+  setCurrentGoal: (currentGoal) => {
+    if (typeof window !== 'undefined') localStorage.setItem('arke-goal', currentGoal);
+    set({ currentGoal });
+  },
   setNotificationCount: (notificationCount) => set({ notificationCount }),
   setCountry: (country) => {
     localStorage.setItem('arke-country', country);
