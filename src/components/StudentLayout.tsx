@@ -58,7 +58,7 @@ const StudentLayout = () => {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Flame className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-sm font-black font-display text-foreground">ARAMBH</span>
+            <span className="text-sm font-black font-display text-foreground">ARKE</span>
           </Link>
           <div className="mt-4">
             <GoalSelector value={currentGoal} onChange={setCurrentGoal} />

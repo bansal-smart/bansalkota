@@ -2,7 +2,7 @@ import { Settings, Globe, Palette, Shield, Bell, Database } from "lucide-react";
 import { useState } from "react";
 
 const AdminSettingsPage = () => {
-  const [siteName, setSiteName] = useState("Arambh Classes");
+  const [siteName, setSiteName] = useState("Arke");
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [registrations, setRegistrations] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);

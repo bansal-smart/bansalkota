@@ -4,11 +4,11 @@ import { Search, UserPlus, Download, MoreHorizontal, X, ChevronLeft, ChevronRigh
 const allUsers = [
   { id: 1, name: "Aditya Rajan", email: "aditya@gmail.com", phone: "+91 98765 43210", role: "student", plan: "Pro", country: "India", joined: "2025-12-01" },
   { id: 2, name: "Ishita Bansal", email: "ishita@gmail.com", phone: "+91 87654 32109", role: "student", plan: "Elite", country: "India", joined: "2025-11-15" },
-  { id: 3, name: "Vikram Thapar", email: "vikram.t@arambh.com", phone: "+91 76543 21098", role: "teacher", plan: "Pro", country: "India", joined: "2025-06-01" },
-  { id: 4, name: "Admin User", email: "admin@arambh.com", phone: "+91 99999 00000", role: "admin", plan: "Elite", country: "India", joined: "2025-01-01" },
+  { id: 3, name: "Vikram Thapar", email: "vikram.t@arke.pro", phone: "+91 76543 21098", role: "teacher", plan: "Pro", country: "India", joined: "2025-06-01" },
+  { id: 4, name: "Admin User", email: "admin@arke.pro", phone: "+91 99999 00000", role: "admin", plan: "Elite", country: "India", joined: "2025-01-01" },
   { id: 5, name: "Divya Nair", email: "divya@gmail.com", phone: "+971 50 123 4567", role: "student", plan: "Free", country: "Dubai", joined: "2026-01-10" },
   { id: 6, name: "Saurabh Pillai", email: "saurabh@outlook.com", phone: "+91 65432 10987", role: "student", plan: "Pro", country: "India", joined: "2026-02-14" },
-  { id: 7, name: "Meghna Joshi", email: "meghna@arambh.com", phone: "+91 54321 09876", role: "teacher", plan: "Pro", country: "India", joined: "2025-08-20" },
+  { id: 7, name: "Meghna Joshi", email: "meghna@arke.pro", phone: "+91 54321 09876", role: "teacher", plan: "Pro", country: "India", joined: "2025-08-20" },
   { id: 8, name: "Harsh Agarwal", email: "harsh@gmail.com", phone: "+91 43210 98765", role: "student", plan: "Free", country: "India", joined: "2026-03-01" },
 ];
 
