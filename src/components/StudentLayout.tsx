@@ -31,7 +31,19 @@ const accountItems = [
 
 const StudentLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, currentGoal, setCurrentGoal, notificationCount } = useAppStore();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Signed out");
+    navigate("/login");
+  };
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase()).join('')
+    : 'U';
 
   const NavLink = ({ item }: { item: { label: string; icon: React.ElementType; path: string; live?: boolean; badge?: number } }) => {
     const active = location.pathname === item.path;
