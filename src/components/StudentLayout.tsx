@@ -1,12 +1,13 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Bell, Search, LogOut, Flame, BookMarked } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Bell, Search, LogOut, Flame, BookMarked, GraduationCap } from "lucide-react";
 import GoalSelector from "@/components/GoalSelector";
 import LiveBadge from "@/components/LiveBadge";
 import { useAppStore } from "@/store/useAppStore";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
-  { label: "My Courses", icon: BookOpen, path: "/courses" },
+  { label: "My Learning", icon: BookOpen, path: "/my-courses" },
+  { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
   { label: "Live Classes", icon: Video, path: "/live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/tests" },
   { label: "QBank", icon: BookMarked, path: "/qbank" },
@@ -133,7 +134,7 @@ const StudentLayout = () => {
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card py-2 lg:hidden">
         {[
           { icon: Home, label: "Home", path: "/dashboard" },
-          { icon: BookOpen, label: "Courses", path: "/courses" },
+          { icon: BookOpen, label: "Learning", path: "/my-courses" },
           { icon: BookMarked, label: "QBank", path: "/qbank" },
           { icon: ClipboardCheck, label: "Tests", path: "/tests" },
           { icon: ShoppingBag, label: "Store", path: "/store" },

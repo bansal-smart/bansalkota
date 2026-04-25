@@ -7,6 +7,8 @@ import LandingPage from "./pages/LandingPage";
 import CareerPage from "./pages/CareerPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 import StudentLayout from "./components/StudentLayout";
 import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
@@ -22,6 +24,7 @@ import DoubtPage from "./pages/DoubtPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import CoursesPage from "./pages/CoursesPage";
+import MyCoursesPage from "./pages/MyCoursesPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import LecturePlayerPage from "./pages/LecturePlayerPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -67,6 +70,8 @@ const App = () => (
             <Route path="/career" element={<CareerPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) */}
             <Route path="/tests/:id/take" element={<TestTakingPage />} />
@@ -85,6 +90,7 @@ const App = () => (
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/my-courses" element={<MyCoursesPage />} />
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/educators" element={<EducatorsPage />} />
