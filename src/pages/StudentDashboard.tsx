@@ -2,6 +2,7 @@ import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, Flame, F
 import StatCard from "@/components/StatCard";
 import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
+import GoalSetupCard from "@/components/GoalSetupCard";
 import { useAppStore } from "@/store/useAppStore";
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
