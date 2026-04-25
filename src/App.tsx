@@ -22,6 +22,7 @@ import DoubtPage from "./pages/DoubtPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import CoursesPage from "./pages/CoursesPage";
+import MyCoursesPage from "./pages/MyCoursesPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import LecturePlayerPage from "./pages/LecturePlayerPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/my-courses" element={<MyCoursesPage />} />
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/educators" element={<EducatorsPage />} />
