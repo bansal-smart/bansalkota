@@ -1,8 +1,10 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Bell, Search, LogOut, Flame, BookMarked, GraduationCap } from "lucide-react";
 import GoalSelector from "@/components/GoalSelector";
 import LiveBadge from "@/components/LiveBadge";
 import { useAppStore } from "@/store/useAppStore";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
@@ -29,7 +31,19 @@ const accountItems = [
 
 const StudentLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, currentGoal, setCurrentGoal, notificationCount } = useAppStore();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Signed out");
+    navigate("/login");
+  };
+
+  const initials = user?.full_name
+    ? user.full_name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0]?.toUpperCase()).join('')
+    : 'U';
 
   const NavLink = ({ item }: { item: { label: string; icon: React.ElementType; path: string; live?: boolean; badge?: number } }) => {
     const active = location.pathname === item.path;
@@ -77,15 +91,22 @@ const StudentLayout = () => {
 
         <div className="border-t border-border p-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">
-              {user?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary overflow-hidden">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt={user.full_name} className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">{user?.full_name}</p>
+              <p className="text-xs font-semibold text-foreground truncate">{user?.full_name || 'Guest'}</p>
               <Link to="/profile" className="text-[10px] text-primary hover:underline">View Profile</Link>
             </div>
           </div>
-          <button className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
+          <button
+            onClick={handleLogout}
+            className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
             <LogOut className="h-3.5 w-3.5" /> Logout
           </button>
         </div>
