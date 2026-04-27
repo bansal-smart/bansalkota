@@ -129,9 +129,11 @@ const PublicLayout = () => {
             <div>
               <h4 className="text-sm font-bold mb-3 text-white">Company</h4>
               <div className="space-y-2">
+                <Link to="/about" className="block text-sm text-white/60 hover:text-white/90 transition-colors">About Us</Link>
                 <Link to="/career" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Careers</Link>
-                <a href="#" className="block text-sm text-white/60 hover:text-white/90 transition-colors">About</a>
-                <a href="#" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Contact</a>
+                <Link to="/contact" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Contact</Link>
+                <Link to="/privacy" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Privacy Policy</Link>
+                <Link to="/terms" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Terms of Service</Link>
               </div>
             </div>
             <div>

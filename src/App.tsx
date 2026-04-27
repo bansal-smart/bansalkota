@@ -59,6 +59,10 @@ import PublicLayout from "./components/PublicLayout";
 import TestsLandingPage from "./pages/TestsLandingPage";
 import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
 import PricingPage from "./pages/PricingPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
@@ -92,6 +96,10 @@ const App = () => (
               <Route path="/live-classes" element={<LiveClassesLandingPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
             </Route>
 
             {/* Student layout — public browse pages with student chrome (guests allowed) */}

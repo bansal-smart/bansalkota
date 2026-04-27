@@ -580,8 +580,14 @@ const LandingPage = () => {
             <div>
               <h4 className="text-sm font-bold mb-3 text-white">Company</h4>
               <div className="space-y-2">
-                {["About Us", "Contact", "Privacy Policy", "Terms of Service"].map(l => (
-                  <Link key={l} to="#" className="block text-sm text-white/60 hover:text-white/90 transition-colors">{l}</Link>
+                {[
+                  { label: "About Us", path: "/about" },
+                  { label: "Careers", path: "/career" },
+                  { label: "Contact", path: "/contact" },
+                  { label: "Privacy Policy", path: "/privacy" },
+                  { label: "Terms of Service", path: "/terms" },
+                ].map(l => (
+                  <Link key={l.path} to={l.path} className="block text-sm text-white/60 hover:text-white/90 transition-colors">{l.label}</Link>
                 ))}
               </div>
             </div>
