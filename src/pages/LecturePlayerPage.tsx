@@ -1,131 +1,285 @@
-import { useState } from "react";
-import { ArrowLeft, Play, Pause, SkipBack, SkipForward, Volume2, Maximize2, Settings, Download, Lock, CheckCircle2, ChevronDown } from "lucide-react";
-import { Link } from "react-router-dom";
-
-const chapters = [
-  {
-    name: "Mechanics", lectures: [
-      { title: "Introduction", duration: "12:30", status: "completed" },
-      { title: "Newton's Laws", duration: "45:00", status: "completed" },
-      { title: "Friction", duration: "38:20", status: "playing" },
-      { title: "Circular Motion", duration: "42:10", status: "locked" },
-    ],
-  },
-  {
-    name: "Thermodynamics", lectures: [
-      { title: "Heat & Temperature", duration: "35:00", status: "locked" },
-      { title: "Laws of Thermodynamics", duration: "48:00", status: "locked" },
-    ],
-  },
-];
-
-const speeds = ["0.5x", "0.75x", "1x", "1.25x", "1.5x", "2x"];
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Play, Pause, Loader2, Lock, CheckCircle2, ChevronDown } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useCourseDetail } from "@/hooks/useCourseDetail";
 
 const LecturePlayerPage = () => {
-  const [playing, setPlaying] = useState(false);
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { course, chapters, loading } = useCourseDetail(slug);
+
+  const [enrolledId, setEnrolledId] = useState<string | null>(null);
+  const [progressMap, setProgressMap] = useState<Record<string, { watched_seconds: number; is_completed: boolean }>>({});
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [expandedChapter, setExpandedChapter] = useState(0);
-  const [activeSpeed, setActiveSpeed] = useState(2);
-  const [progress] = useState(45);
+  const [playing, setPlaying] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [accessChecked, setAccessChecked] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lastSavedRef = useRef<number>(0);
+
+  const flatLessons = useMemo(() => chapters.flatMap((c) => c.lessons), [chapters]);
+  const activeLesson = flatLessons.find((l) => l.id === activeLessonId) ?? flatLessons[0];
+
+  // Check enrollment + load progress
+  useEffect(() => {
+    if (authLoading || loading || !course) return;
+    if (!user) {
+      navigate(`/courses/${slug}`);
+      return;
+    }
+    (async () => {
+      const { data: enr } = await supabase
+        .from("enrollments")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("course_id", course.id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!enr) {
+        toast.info("Enroll in this course to start learning");
+        navigate(`/courses/${slug}`);
+        return;
+      }
+      setEnrolledId(enr.id);
+
+      const { data: prog } = await supabase
+        .from("lesson_progress")
+        .select("lesson_slug, watched_seconds, is_completed")
+        .eq("user_id", user.id)
+        .eq("course_id", course.id);
+
+      const map: Record<string, { watched_seconds: number; is_completed: boolean }> = {};
+      (prog ?? []).forEach((p) => {
+        map[p.lesson_slug] = { watched_seconds: p.watched_seconds, is_completed: p.is_completed };
+      });
+      setProgressMap(map);
+      setAccessChecked(true);
+
+      // Pick first incomplete lesson
+      const next = flatLessons.find((l) => !map[l.slug]?.is_completed) ?? flatLessons[0];
+      if (next) setActiveLessonId(next.id);
+    })();
+  }, [authLoading, loading, course, user, slug, navigate, flatLessons]);
+
+  // Load lesson note when active lesson changes
+  useEffect(() => {
+    if (!user || !activeLesson) return;
+    supabase
+      .from("lesson_notes")
+      .select("content")
+      .eq("user_id", user.id)
+      .eq("lesson_id", activeLesson.id)
+      .maybeSingle()
+      .then(({ data }) => setNotes(data?.content ?? ""));
+  }, [user, activeLesson]);
+
+  const saveProgress = async (currentSec: number, completed = false) => {
+    if (!user || !activeLesson || !course) return;
+    const total = activeLesson.duration_seconds || 1;
+    await supabase.from("lesson_progress").upsert(
+      {
+        user_id: user.id,
+        course_id: course.id,
+        lesson_slug: activeLesson.slug,
+        lesson_title: activeLesson.title,
+        watched_seconds: Math.floor(currentSec),
+        total_seconds: total,
+        is_completed: completed,
+        last_watched_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,lesson_slug,course_id" } as never,
+    );
+
+    setProgressMap((m) => ({ ...m, [activeLesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } }));
+
+    if (completed) {
+      const completedCount = Object.values({ ...progressMap, [activeLesson.slug]: { watched_seconds: total, is_completed: true } }).filter((p) => p.is_completed).length;
+      const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
+      await supabase
+        .from("enrollments")
+        .update({
+          progress_percent: percent,
+          completed_lessons: completedCount,
+          last_lesson_title: activeLesson.title,
+          last_accessed_at: new Date().toISOString(),
+        })
+        .eq("id", enrolledId!);
+
+      // Log study session for streak / accuracy aggregates
+      await supabase.from("study_sessions").upsert(
+        {
+          user_id: user.id,
+          session_date: new Date().toISOString().slice(0, 10),
+          minutes_studied: Math.round(total / 60),
+        },
+        { onConflict: "user_id,session_date" } as never,
+      );
+    }
+  };
+
+  const onTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    const now = Date.now();
+    if (now - lastSavedRef.current > 5000) {
+      lastSavedRef.current = now;
+      saveProgress(v.currentTime, false);
+    }
+    if (v.duration && v.currentTime / v.duration >= 0.9 && !progressMap[activeLesson!.slug]?.is_completed) {
+      saveProgress(v.currentTime, true);
+      toast.success("Lesson completed!");
+    }
+  };
+
+  const saveNotes = async () => {
+    if (!user || !activeLesson) return;
+    await supabase
+      .from("lesson_notes")
+      .upsert({ user_id: user.id, lesson_id: activeLesson.id, content: notes }, { onConflict: "user_id,lesson_id" } as never);
+    toast.success("Notes saved");
+  };
+
+  if (loading || authLoading || !accessChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!course || !activeLesson) {
+    return (
+      <div className="p-10 text-center">
+        <h1 className="font-display text-xl font-black text-foreground">No content available</h1>
+        <Link to="/my-courses" className="mt-4 inline-block text-sm text-primary hover:underline">
+          Back to My Courses
+        </Link>
+      </div>
+    );
+  }
+
+  const completedCount = Object.values(progressMap).filter((p) => p.is_completed).length;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(222, 47%, 8%)" }}>
-      {/* Top Bar */}
       <header className="flex items-center justify-between px-4 py-3 bg-[hsl(var(--navy))]">
-        <div className="flex items-center gap-3">
-          <Link to="/courses/jee-physics-booster" className="text-white"><ArrowLeft className="h-5 w-5" /></Link>
-          <span className="text-sm font-bold text-white">JEE Physics Booster</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to={`/courses/${slug}`} className="text-white">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <span className="text-sm font-bold text-white truncate">{course.name}</span>
         </div>
-        <span className="text-xs text-white/60">Lecture 3/48</span>
+        <span className="text-xs text-white/60 shrink-0">
+          {completedCount}/{flatLessons.length}
+        </span>
       </header>
 
       <div className="flex flex-1 flex-col lg:flex-row">
-        {/* Video Area */}
         <div className="flex-1 flex flex-col">
-          {/* Video */}
-          <div className="relative aspect-video bg-black flex items-center justify-center">
-            <div className="text-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary/20 to-primary-dark/20 mx-auto flex items-center justify-center mb-3">
-                <Play className="h-8 w-8 text-white/50 ml-1" />
-              </div>
-              <p className="text-white/40 text-sm">Friction — Mechanics</p>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="absolute bottom-12 inset-x-0 px-4">
-              <div className="h-1 rounded-full bg-white/20 cursor-pointer">
-                <div className="h-1 rounded-full bg-primary" style={{ width: `${progress}%` }} />
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button><SkipBack className="h-4 w-4 text-white/80" /></button>
-                <button className="rounded-full bg-white/10 p-1"><SkipBack className="h-3 w-3 text-white/80" /></button>
-                <button onClick={() => setPlaying(!playing)} className="h-10 w-10 rounded-full bg-primary flex items-center justify-center hover:bg-primary-dark transition-colors">
-                  {playing ? <Pause className="h-5 w-5 text-white" /> : <Play className="h-5 w-5 text-white ml-0.5" />}
-                </button>
-                <button className="rounded-full bg-white/10 p-1"><SkipForward className="h-3 w-3 text-white/80" /></button>
-                <button><SkipForward className="h-4 w-4 text-white/80" /></button>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-white/60">17:12 / 38:20</span>
-                <div className="flex gap-0.5">
-                  {speeds.map((s, i) => (
-                    <button key={s} onClick={() => setActiveSpeed(i)} className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${i === activeSpeed ? "bg-primary text-white" : "text-white/50 hover:text-white/80"}`}>{s}</button>
-                  ))}
-                </div>
-                <button><Volume2 className="h-4 w-4 text-white/80" /></button>
-                <button><Settings className="h-4 w-4 text-white/80" /></button>
-                <button><Download className="h-4 w-4 text-white/80" /></button>
-                <button><Maximize2 className="h-4 w-4 text-white/80" /></button>
-              </div>
-            </div>
+          <div className="relative aspect-video bg-black">
+            {activeLesson.video_url ? (
+              <video
+                ref={videoRef}
+                key={activeLesson.id}
+                src={activeLesson.video_url}
+                controls
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onTimeUpdate={onTimeUpdate}
+                onLoadedMetadata={() => {
+                  const v = videoRef.current;
+                  const saved = progressMap[activeLesson.slug]?.watched_seconds;
+                  if (v && saved && saved < (activeLesson.duration_seconds || 0) - 10) {
+                    v.currentTime = saved;
+                  }
+                }}
+                className="absolute inset-0 h-full w-full"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">No video uploaded for this lesson</div>
+            )}
           </div>
 
-          {/* Below Video Tabs */}
-          <div className="flex gap-4 px-4 py-3 border-b border-white/10">
-            {["Notes", "Doubts", "Resources"].map((tab, i) => (
-              <button key={tab} className={`text-xs font-semibold ${i === 0 ? "text-primary" : "text-white/50 hover:text-white/80"}`}>{tab}</button>
-            ))}
-          </div>
-          <div className="flex-1 p-4">
-            <textarea placeholder="Take notes for this lecture..." className="w-full h-32 rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/80 placeholder:text-white/30 outline-none resize-none focus:border-primary/50" />
+          <div className="p-4 space-y-3">
+            <div>
+              <h2 className="text-base font-bold text-white">{activeLesson.title}</h2>
+              <p className="text-xs text-white/50">{Math.round(activeLesson.duration_seconds / 60)} min</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-white/80">Notes</p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onBlur={saveNotes}
+                placeholder="Take notes for this lesson..."
+                className="w-full h-32 rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/80 placeholder:text-white/30 outline-none resize-none focus:border-primary/50"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Curriculum Sidebar */}
         <div className="lg:w-[320px] border-l border-white/10 bg-[hsl(var(--navy2))] overflow-y-auto">
           <div className="p-4 border-b border-white/10">
             <h3 className="text-sm font-bold text-white">Course Content</h3>
-            <p className="text-[10px] text-white/50 mt-1">3 of 48 completed</p>
-            <div className="h-1.5 rounded-full bg-white/10 mt-2"><div className="h-1.5 rounded-full bg-secondary" style={{ width: "6%" }} /></div>
+            <p className="text-[10px] text-white/50 mt-1">
+              {completedCount} of {flatLessons.length} completed
+            </p>
+            <div className="h-1.5 rounded-full bg-white/10 mt-2">
+              <div
+                className="h-1.5 rounded-full bg-secondary transition-all"
+                style={{ width: `${flatLessons.length ? (completedCount / flatLessons.length) * 100 : 0}%` }}
+              />
+            </div>
           </div>
-          <div className="space-y-0">
-            {chapters.map((ch, ci) => (
-              <div key={ch.name}>
-                <button onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)} className="flex items-center justify-between w-full px-4 py-3 hover:bg-white/5 transition-colors">
-                  <span className="text-xs font-bold text-white">{ch.name} ({ch.lectures.length})</span>
-                  <ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${expandedChapter === ci ? "rotate-180" : ""}`} />
-                </button>
-                {expandedChapter === ci && (
-                  <div className="space-y-0">
-                    {ch.lectures.map((lec, li) => (
-                      <div key={lec.title} className={`flex items-center gap-3 px-4 py-2.5 text-xs ${lec.status === "playing" ? "bg-primary/10 border-l-2 border-primary" : "hover:bg-white/5"} transition-colors cursor-pointer`}>
-                        {lec.status === "completed" && <CheckCircle2 className="h-4 w-4 text-secondary shrink-0" />}
-                        {lec.status === "playing" && <Play className="h-4 w-4 text-primary shrink-0" />}
-                        {lec.status === "locked" && <Lock className="h-4 w-4 text-white/30 shrink-0" />}
+          {chapters.map((ch, ci) => (
+            <div key={ch.id}>
+              <button
+                onClick={() => setExpandedChapter(expandedChapter === ci ? -1 : ci)}
+                className="flex items-center justify-between w-full px-4 py-3 hover:bg-white/5 transition-colors"
+              >
+                <span className="text-xs font-bold text-white text-left">
+                  {ch.title} ({ch.lessons.length})
+                </span>
+                <ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${expandedChapter === ci ? "rotate-180" : ""}`} />
+              </button>
+              {expandedChapter === ci && (
+                <div>
+                  {ch.lessons.map((lec) => {
+                    const isActive = lec.id === activeLesson.id;
+                    const isDone = progressMap[lec.slug]?.is_completed;
+                    return (
+                      <button
+                        key={lec.id}
+                        onClick={() => setActiveLessonId(lec.id)}
+                        className={`flex items-center gap-3 px-4 py-2.5 text-xs w-full text-left ${
+                          isActive ? "bg-primary/10 border-l-2 border-primary" : "hover:bg-white/5"
+                        } transition-colors`}
+                      >
+                        {isDone ? (
+                          <CheckCircle2 className="h-4 w-4 text-secondary shrink-0" />
+                        ) : isActive && playing ? (
+                          <Pause className="h-4 w-4 text-primary shrink-0" />
+                        ) : (
+                          <Play className="h-4 w-4 text-white/60 shrink-0" />
+                        )}
                         <div className="flex-1 min-w-0">
-                          <p className={`font-medium ${lec.status === "locked" ? "text-white/30" : "text-white/80"}`}>{lec.title}</p>
-                          <p className="text-white/40 text-[10px]">{lec.duration}</p>
+                          <p className="font-medium text-white/80 truncate">{lec.title}</p>
+                          <p className="text-white/40 text-[10px]">{Math.round(lec.duration_seconds / 60)} min</p>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
