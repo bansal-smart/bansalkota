@@ -14,10 +14,46 @@ export type Database = {
   }
   public: {
     Tables: {
+      chapters: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          position: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          position?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           badge: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           discount_percent: number | null
           duration_hours: number | null
@@ -42,6 +78,7 @@ export type Database = {
         Insert: {
           badge?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           discount_percent?: number | null
           duration_hours?: number | null
@@ -66,6 +103,7 @@ export type Database = {
         Update: {
           badge?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           discount_percent?: number | null
           duration_hours?: number | null
@@ -319,6 +357,41 @@ export type Database = {
           },
         ]
       }
+      lesson_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lesson_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_notes_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           course_id: string
@@ -362,6 +435,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lesson_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          chapter_id: string
+          course_id: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          is_free_preview: boolean
+          position: number
+          slug: string
+          title: string
+          type: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          chapter_id: string
+          course_id: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          is_free_preview?: boolean
+          position?: number
+          slug: string
+          title: string
+          type?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          chapter_id?: string
+          course_id?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          is_free_preview?: boolean
+          position?: number
+          slug?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
@@ -492,8 +625,10 @@ export type Database = {
           full_name: string | null
           goal: string | null
           id: string
+          is_suspended: boolean
           onboarding_completed: boolean
           phone: string | null
+          plan: string
           target_exam: string | null
           updated_at: string
           user_id: string
@@ -507,8 +642,10 @@ export type Database = {
           full_name?: string | null
           goal?: string | null
           id?: string
+          is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
+          plan?: string
           target_exam?: string | null
           updated_at?: string
           user_id: string
@@ -522,8 +659,10 @@ export type Database = {
           full_name?: string | null
           goal?: string | null
           id?: string
+          is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
+          plan?: string
           target_exam?: string | null
           updated_at?: string
           user_id?: string
@@ -652,6 +791,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_user_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -687,7 +833,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "staff"
+      app_role: "admin" | "staff" | "student" | "teacher"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -815,7 +961,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff"],
+      app_role: ["admin", "staff", "student", "teacher"],
     },
   },
 } as const

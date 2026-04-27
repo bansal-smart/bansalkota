@@ -1,109 +1,240 @@
-import { useState } from "react";
-import { Search, UserPlus, Download, MoreHorizontal, X, ChevronLeft, ChevronRight } from "lucide-react";
-
-const allUsers = [
-  { id: 1, name: "Aditya Rajan", email: "aditya@gmail.com", phone: "+91 98765 43210", role: "student", plan: "Pro", country: "India", joined: "2025-12-01" },
-  { id: 2, name: "Ishita Bansal", email: "ishita@gmail.com", phone: "+91 87654 32109", role: "student", plan: "Elite", country: "India", joined: "2025-11-15" },
-  { id: 3, name: "Vikram Thapar", email: "vikram.t@arke.pro", phone: "+91 76543 21098", role: "teacher", plan: "Pro", country: "India", joined: "2025-06-01" },
-  { id: 4, name: "Admin User", email: "admin@arke.pro", phone: "+91 99999 00000", role: "admin", plan: "Elite", country: "India", joined: "2025-01-01" },
-  { id: 5, name: "Divya Nair", email: "divya@gmail.com", phone: "+971 50 123 4567", role: "student", plan: "Free", country: "Dubai", joined: "2026-01-10" },
-  { id: 6, name: "Saurabh Pillai", email: "saurabh@outlook.com", phone: "+91 65432 10987", role: "student", plan: "Pro", country: "India", joined: "2026-02-14" },
-  { id: 7, name: "Meghna Joshi", email: "meghna@arke.pro", phone: "+91 54321 09876", role: "teacher", plan: "Pro", country: "India", joined: "2025-08-20" },
-  { id: 8, name: "Harsh Agarwal", email: "harsh@gmail.com", phone: "+91 43210 98765", role: "student", plan: "Free", country: "India", joined: "2026-03-01" },
-];
+import { useMemo, useState } from "react";
+import { Search, UserPlus, Download, X, ChevronLeft, ChevronRight, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAdminUsers, type AdminUserRow } from "@/hooks/useAdminUsers";
 
 const roleBadge = (role: string) => {
-  const styles: Record<string, string> = { student: "bg-secondary/10 text-secondary", teacher: "bg-primary/10 text-primary", admin: "bg-destructive/10 text-destructive" };
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role]}`}>{role}</span>;
+  const styles: Record<string, string> = {
+    student: "bg-secondary/10 text-secondary",
+    teacher: "bg-primary/10 text-primary",
+    staff: "bg-accent/20 text-accent",
+    admin: "bg-destructive/10 text-destructive",
+  };
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.student}`}>{role}</span>;
 };
 
 const planBadge = (plan: string) => {
   const styles: Record<string, string> = { Free: "bg-muted text-muted-foreground", Pro: "bg-primary/10 text-primary", Elite: "bg-accent/20 text-accent" };
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${styles[plan]}`}>{plan}</span>;
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${styles[plan] ?? styles.Free}`}>{plan}</span>;
+};
+
+const exportCsv = (rows: AdminUserRow[]) => {
+  const header = ["Name", "Phone", "Role", "Plan", "Country", "Target Exam", "Suspended", "Joined"];
+  const lines = rows.map((u) =>
+    [u.full_name ?? "", u.phone ?? "", u.role, u.plan, u.country ?? "", u.target_exam ?? "", u.is_suspended ? "Yes" : "No", new Date(u.created_at).toISOString()]
+      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+      .join(","),
+  );
+  const csv = [header.join(","), ...lines].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 };
 
 const AdminUsersPage = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<number[]>([]);
-  const [drawerUser, setDrawerUser] = useState<typeof allUsers[0] | null>(null);
+  const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [drawerUser, setDrawerUser] = useState<AdminUserRow | null>(null);
+  const [bulkBody, setBulkBody] = useState("");
+  const [showBulk, setShowBulk] = useState(false);
 
-  const filtered = allUsers.filter(u => {
-    if (filter !== "all" && u.role !== filter) return false;
-    if (search && !u.name.toLowerCase().includes(search.toLowerCase()) && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const { rows, total, loading, pageSize, reload } = useAdminUsers(filter, search, page);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const allSelected = useMemo(() => rows.length > 0 && rows.every((r) => selected.includes(r.user_id)), [rows, selected]);
+
+  const toggleSuspend = async (u: AdminUserRow) => {
+    const { error } = await supabase.from("profiles").update({ is_suspended: !u.is_suspended }).eq("user_id", u.user_id);
+    if (error) return toast.error(error.message);
+    toast.success(u.is_suspended ? "User unsuspended" : "User suspended");
+    setDrawerUser(null);
+    reload();
+  };
+
+  const changeRole = async (u: AdminUserRow, role: AdminUserRow["role"]) => {
+    const { error } = await supabase.rpc("admin_set_user_role", { _user_id: u.user_id, _role: role });
+    if (error) return toast.error(error.message);
+    toast.success(`Role set to ${role}`);
+    setDrawerUser(null);
+    reload();
+  };
+
+  const sendBulkNotification = async () => {
+    if (!bulkBody.trim()) return toast.error("Enter a message");
+    const inserts = selected.map((uid) => ({ user_id: uid, title: "Update from Arke", body: bulkBody, type: "system" as const }));
+    const { error } = await supabase.from("notifications").insert(inserts);
+    if (error) return toast.error(error.message);
+    toast.success(`Sent to ${selected.length} user${selected.length === 1 ? "" : "s"}`);
+    setShowBulk(false);
+    setBulkBody("");
+    setSelected([]);
+  };
 
   return (
     <div className="p-4 lg:p-6 space-y-4 pb-24 lg:pb-6">
       <div className="flex items-center justify-between flex-wrap gap-3 animate-fade-in-up">
-        <h1 className="text-lg font-bold text-foreground">Users</h1>
-        <button className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-2 text-xs font-semibold text-primary-foreground"><UserPlus className="h-3.5 w-3.5" /> Invite User</button>
+        <div>
+          <h1 className="text-lg font-bold text-foreground">Users</h1>
+          <p className="text-xs text-muted-foreground">{total} total · live data</p>
+        </div>
+        <button
+          onClick={() => toast.info("Invite flow coming soon")}
+          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-2 text-xs font-semibold text-primary-foreground"
+        >
+          <UserPlus className="h-3.5 w-3.5" /> Invite User
+        </button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users..." className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
+          <input
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Search by name or phone..."
+            className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+          />
         </div>
-        <div className="flex gap-2">
-          {["all", "student", "teacher", "admin"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`rounded-lg px-3 py-2 text-xs font-medium capitalize ${filter === f ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}>{f === "all" ? "All" : `${f}s`}</button>
+        <div className="flex gap-2 flex-wrap">
+          {["all", "student", "teacher", "staff", "admin"].map((f) => (
+            <button
+              key={f}
+              onClick={() => {
+                setFilter(f);
+                setPage(0);
+              }}
+              className={`rounded-lg px-3 py-2 text-xs font-medium capitalize ${
+                filter === f ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"
+              }`}
+            >
+              {f === "all" ? "All" : `${f}s`}
+            </button>
           ))}
         </div>
       </div>
 
       {selected.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3">
+        <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3 flex-wrap">
           <span className="text-xs font-medium text-foreground">{selected.length} selected</span>
-          <button className="rounded-lg bg-background border border-border px-3 py-1 text-[10px] font-medium text-muted-foreground flex items-center gap-1"><Download className="h-3 w-3" /> Export CSV</button>
-          <button className="rounded-lg bg-background border border-border px-3 py-1 text-[10px] font-medium text-muted-foreground">Send Notification</button>
-          <button className="rounded-lg bg-background border border-border px-3 py-1 text-[10px] font-medium text-destructive">Suspend</button>
+          <button
+            onClick={() => exportCsv(rows.filter((r) => selected.includes(r.user_id)))}
+            className="rounded-lg bg-background border border-border px-3 py-1 text-[10px] font-medium text-muted-foreground flex items-center gap-1"
+          >
+            <Download className="h-3 w-3" /> Export CSV
+          </button>
+          <button
+            onClick={() => setShowBulk(true)}
+            className="rounded-lg bg-background border border-border px-3 py-1 text-[10px] font-medium text-muted-foreground"
+          >
+            Send Notification
+          </button>
         </div>
       )}
 
       <div className="rounded-xl border border-border bg-card overflow-x-auto animate-fade-in-up">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-border bg-background">
-              <th className="p-3"><input type="checkbox" className="rounded" onChange={(e) => setSelected(e.target.checked ? filtered.map(u => u.id) : [])} checked={selected.length === filtered.length && filtered.length > 0} /></th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
-              <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Email</th>
-              <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
-              <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Plan</th>
-              <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Country</th>
-              <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Joined</th>
-              <th className="p-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((u) => (
-              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-background/50 cursor-pointer" onClick={() => setDrawerUser(u)}>
-                <td className="p-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="rounded" checked={selected.includes(u.id)} onChange={(e) => setSelected(e.target.checked ? [...selected, u.id] : selected.filter(id => id !== u.id))} /></td>
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0">{u.name.split(' ').map(n => n[0]).join('')}</div>
-                    <span className="font-medium text-foreground">{u.name}</span>
-                  </div>
-                </td>
-                <td className="p-3 text-muted-foreground hidden sm:table-cell">{u.email}</td>
-                <td className="p-3">{roleBadge(u.role)}</td>
-                <td className="p-3 hidden md:table-cell">{planBadge(u.plan)}</td>
-                <td className="p-3 text-muted-foreground hidden lg:table-cell">{u.country}</td>
-                <td className="p-3 text-muted-foreground hidden lg:table-cell">{u.joined}</td>
-                <td className="p-3"><MoreHorizontal className="h-4 w-4 text-muted-foreground" /></td>
+        {loading ? (
+          <div className="flex h-40 items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">No users match your filters.</div>
+        ) : (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border bg-background">
+                <th className="p-3">
+                  <input
+                    type="checkbox"
+                    className="rounded"
+                    onChange={(e) => setSelected(e.target.checked ? rows.map((u) => u.user_id) : [])}
+                    checked={allSelected}
+                  />
+                </th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Phone</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Plan</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Country</th>
+                <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Joined</th>
+                <th className="p-3"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((u) => (
+                <tr key={u.user_id} className="border-b border-border last:border-0 hover:bg-background/50 cursor-pointer" onClick={() => setDrawerUser(u)}>
+                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="rounded"
+                      checked={selected.includes(u.user_id)}
+                      onChange={(e) => setSelected(e.target.checked ? [...selected, u.user_id] : selected.filter((id) => id !== u.user_id))}
+                    />
+                  </td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0 overflow-hidden">
+                        {u.avatar_url ? (
+                          <img src={u.avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          (u.full_name ?? "U")
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground truncate">{u.full_name || "Unnamed user"}</p>
+                        {u.is_suspended && <span className="text-[9px] font-bold text-destructive uppercase">Suspended</span>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-muted-foreground hidden sm:table-cell">{u.phone || "—"}</td>
+                  <td className="p-3">{roleBadge(u.role)}</td>
+                  <td className="p-3 hidden md:table-cell">{planBadge(u.plan)}</td>
+                  <td className="p-3 text-muted-foreground hidden lg:table-cell">{u.country || "—"}</td>
+                  <td className="p-3 text-muted-foreground hidden lg:table-cell">{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {u.is_suspended ? <ShieldOff className="h-4 w-4 text-destructive" /> : <ShieldCheck className="h-4 w-4 text-secondary" />}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Showing {filtered.length} of {allUsers.length} users</span>
+        <span className="text-xs text-muted-foreground">
+          Page {page + 1} of {totalPages} · {rows.length} of {total}
+        </span>
         <div className="flex gap-1">
-          <button className="rounded-lg border border-border p-2 text-muted-foreground"><ChevronLeft className="h-3.5 w-3.5" /></button>
-          <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">1</button>
-          <button className="rounded-lg border border-border p-2 text-muted-foreground"><ChevronRight className="h-3.5 w-3.5" /></button>
+          <button
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">{page + 1}</span>
+          <button
+            disabled={page + 1 >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-40"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
@@ -113,28 +244,92 @@ const AdminUsersPage = () => {
           <div className="relative w-full max-w-sm bg-card shadow-xl border-l border-border overflow-y-auto animate-slide-in-right">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h2 className="text-sm font-bold text-foreground">User Details</h2>
-              <button onClick={() => setDrawerUser(null)}><X className="h-4 w-4 text-muted-foreground" /></button>
+              <button onClick={() => setDrawerUser(null)}>
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
             </div>
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary">{drawerUser.name.split(' ').map(n => n[0]).join('')}</div>
-                <div>
-                  <p className="text-sm font-bold text-foreground">{drawerUser.name}</p>
-                  <p className="text-xs text-muted-foreground">{drawerUser.email}</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary overflow-hidden">
+                  {drawerUser.avatar_url ? (
+                    <img src={drawerUser.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (drawerUser.full_name ?? "U")
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-foreground truncate">{drawerUser.full_name || "Unnamed user"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{drawerUser.phone || "No phone"}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {[{ label: "Role", value: drawerUser.role }, { label: "Plan", value: drawerUser.plan }, { label: "Phone", value: drawerUser.phone }, { label: "Country", value: drawerUser.country }, { label: "Joined", value: drawerUser.joined }].map((f) => (
+                {[
+                  { label: "Role", value: drawerUser.role },
+                  { label: "Plan", value: drawerUser.plan },
+                  { label: "Target exam", value: drawerUser.target_exam ?? "—" },
+                  { label: "Country", value: drawerUser.country ?? "—" },
+                  { label: "City", value: drawerUser.city ?? "—" },
+                  { label: "Joined", value: new Date(drawerUser.created_at).toLocaleDateString() },
+                ].map((f) => (
                   <div key={f.label}>
                     <p className="text-[10px] text-muted-foreground uppercase">{f.label}</p>
                     <p className="text-xs font-medium text-foreground capitalize">{f.value}</p>
                   </div>
                 ))}
               </div>
-              <div className="flex gap-2">
-                <button className="flex-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground">Edit Role</button>
-                <button className="flex-1 rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive">Suspend</button>
+
+              <div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Change role</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {(["student", "teacher", "staff", "admin"] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => changeRole(drawerUser, r)}
+                      disabled={drawerUser.role === r}
+                      className="rounded-lg border border-border px-3 py-1.5 text-[11px] font-medium text-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 capitalize"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <button
+                onClick={() => toggleSuspend(drawerUser)}
+                className={`w-full rounded-lg border px-3 py-2 text-xs font-medium ${
+                  drawerUser.is_suspended ? "border-secondary/30 text-secondary" : "border-destructive/30 text-destructive"
+                }`}
+              >
+                {drawerUser.is_suspended ? "Unsuspend user" : "Suspend user"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulk && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowBulk(false)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-3">
+            <h2 className="text-sm font-bold text-foreground">Send notification to {selected.length} users</h2>
+            <textarea
+              value={bulkBody}
+              onChange={(e) => setBulkBody(e.target.value)}
+              rows={4}
+              placeholder="Type your announcement..."
+              className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none focus:border-primary resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowBulk(false)} className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground">
+                Cancel
+              </button>
+              <button onClick={sendBulkNotification} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">
+                Send
+              </button>
             </div>
           </div>
         </div>
