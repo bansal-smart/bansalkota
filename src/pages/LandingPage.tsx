@@ -64,10 +64,31 @@ const LandingPage = () => {
             <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-sm font-semibold text-foreground hover:text-primary transition-colors">Login</Link>
-            <Link to="/signup" className="rounded-pill bg-gradient-to-r from-primary to-accent px-5 py-2 text-sm font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-opacity">
-              Start Free
-            </Link>
+            {user ? (
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 rounded-pill border border-border bg-card px-2 py-1 pr-4 hover:border-primary/50 transition-colors"
+                aria-label="Go to dashboard"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-xs font-black text-primary-foreground overflow-hidden">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.full_name} className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                </div>
+                <span className="text-sm font-semibold text-foreground hidden sm:inline truncate max-w-[120px]">
+                  {user.full_name?.split(' ')[0] || 'Account'}
+                </span>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-semibold text-foreground hover:text-primary transition-colors">Login</Link>
+                <Link to="/signup" className="rounded-pill bg-gradient-to-r from-primary to-accent px-5 py-2 text-sm font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-opacity">
+                  Start Free
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
