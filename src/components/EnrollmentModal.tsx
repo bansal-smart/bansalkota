@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Check, CreditCard, Smartphone, Building, Lock, PartyPopper, AlertCircle, Info, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, PartyPopper, AlertCircle, Info, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -15,62 +15,50 @@ interface EnrollmentModalProps {
 
 const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onEnrolled }: EnrollmentModalProps) => {
   const { user } = useAuth();
-  const [step, setStep] = useState<"plan" | "payment" | "success" | "error">("plan");
-  const [selectedPlan, setSelectedPlan] = useState("course");
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [step, setStep] = useState<"plan" | "success" | "error">("plan");
   const [submitting, setSubmitting] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
 
-  const plans = [
-    { id: "monthly", label: "Monthly", price: `₹${Math.round(coursePrice / 6).toLocaleString()}/mo`, desc: "Cancel anytime", recommended: false },
-    { id: "annual", label: "Annual", price: `₹${Math.round(coursePrice * 0.7).toLocaleString()}/yr`, desc: "SAVE 30%", recommended: true },
-    { id: "course", label: "This Course Only", price: `₹${coursePrice.toLocaleString()}`, desc: "One-time payment", recommended: false },
-  ];
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .then(({ data }) => {
+        const roles = (data ?? []).map((r) => r.role);
+        setIsStaff(roles.includes("staff") || roles.includes("admin"));
+      });
+  }, [user]);
 
   if (!open) return null;
-
-  const handlePay = async () => {
-    if (!user) {
-      toast.error("Please sign in first");
-      return;
-    }
-    setSubmitting(true);
-
-    // Demo: skip real gateway, write enrollment + notification directly
-    const { error: enrollErr } = await supabase
-      .from("enrollments")
-      .upsert(
-        { user_id: user.id, course_id: courseId, is_active: true, last_accessed_at: new Date().toISOString() },
-        { onConflict: "user_id,course_id" } as never,
-      );
-
-    if (enrollErr) {
-      // upsert may not have unique constraint — fallback to insert
-      const { error: insertErr } = await supabase
-        .from("enrollments")
-        .insert({ user_id: user.id, course_id: courseId, is_active: true, last_accessed_at: new Date().toISOString() });
-      if (insertErr && !insertErr.message.includes("duplicate")) {
-        console.error(insertErr);
-        setStep("error");
-        setSubmitting(false);
-        return;
-      }
-    }
-
-    await supabase.from("notifications").insert({
-      user_id: user.id,
-      title: "You're enrolled!",
-      body: `Welcome to ${courseName}. Start learning anytime from My Courses.`,
-      type: "course",
-      link: `/my-courses`,
-    });
-
-    setSubmitting(false);
-    setStep("success");
-  };
 
   const close = () => {
     setStep("plan");
     onClose();
+  };
+
+  const handleStaffDemoEnroll = async () => {
+    if (!user) return;
+    setSubmitting(true);
+    const { error } = await supabase
+      .from("enrollments")
+      .insert({ user_id: user.id, course_id: courseId, is_active: true, last_accessed_at: new Date().toISOString() });
+    if (error && !error.message.includes("duplicate")) {
+      console.error(error);
+      setStep("error");
+      setSubmitting(false);
+      return;
+    }
+    await supabase.from("notifications").insert({
+      user_id: user.id,
+      title: "You're enrolled (staff demo)",
+      body: `Welcome to ${courseName}.`,
+      type: "course",
+      link: `/my-courses`,
+    });
+    setSubmitting(false);
+    setStep("success");
   };
 
   return (
@@ -82,84 +70,41 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
         </button>
 
         {step === "plan" && (
-          <div className="p-5 space-y-4">
+          <div className="p-6 space-y-5 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 mx-auto">
+              <Info className="h-8 w-8 text-amber-600" />
+            </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Enroll in Course</h2>
-              <p className="text-xs text-muted-foreground mt-1">{courseName}</p>
-            </div>
-
-            <div className="space-y-2">
-              {plans.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedPlan(p.id)}
-                  className={`w-full flex items-center gap-3 rounded-xl border-2 p-3.5 text-left transition-all ${
-                    selectedPlan === p.id ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
-                  }`}
-                >
-                  <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 shrink-0 ${selectedPlan === p.id ? "border-primary bg-primary" : "border-muted"}`}>
-                    {selectedPlan === p.id && <Check className="h-3 w-3 text-primary-foreground" />}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-foreground">{p.label}</span>
-                      {p.recommended && <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold text-primary-foreground">RECOMMENDED</span>}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{p.desc}</p>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{p.price}</span>
-                </button>
-              ))}
-            </div>
-
-            <button onClick={() => setStep("payment")} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
-              Continue to Payment
-            </button>
-          </div>
-        )}
-
-        {step === "payment" && (
-          <div className="p-5 space-y-4">
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 flex items-start gap-2">
-              <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                <strong>Demo checkout</strong> — payment gateway not connected yet. Clicking Pay will enroll you instantly so you can try the full experience.
+              <h2 className="text-lg font-bold text-foreground">Payment integration is not yet implemented</h2>
+              <p className="text-xs text-muted-foreground mt-2">
+                Enrollment for <span className="font-semibold text-foreground">{courseName}</span> ({`₹${coursePrice.toLocaleString()}`}) requires a
+                payment gateway. Razorpay (India) and Stripe (Dubai) will be wired in next.
               </p>
             </div>
 
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 flex items-center justify-between">
-              <span className="text-xs font-medium text-foreground">{plans.find((p) => p.id === selectedPlan)?.label}</span>
-              <span className="text-sm font-bold text-primary">{plans.find((p) => p.id === selectedPlan)?.price}</span>
+            <div className="rounded-lg bg-muted/40 p-3 text-left">
+              <p className="text-[11px] font-bold text-foreground uppercase mb-1">Coming soon</p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Razorpay UPI / Card / Netbanking (India)</li>
+                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Stripe Card payments (Dubai)</li>
+                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Auto-receipt emails + invoice download</li>
+              </ul>
             </div>
 
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-2">Payment Method</p>
-              <div className="space-y-2">
-                {[
-                  { id: "card", label: "Credit / Debit Card", icon: CreditCard },
-                  { id: "upi", label: "UPI", icon: Smartphone },
-                  { id: "netbanking", label: "Net Banking", icon: Building },
-                ].map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setPaymentMethod(m.id)}
-                    className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left ${paymentMethod === m.id ? "border-primary bg-primary/5" : "border-border"}`}
-                  >
-                    <m.icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-foreground">{m.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              disabled={submitting}
-              onClick={handlePay}
-              className="w-full rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
-              {submitting ? "Processing..." : `Pay ${plans.find((p) => p.id === selectedPlan)?.price}`}
+            <button onClick={close} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
+              Got it
             </button>
+
+            {isStaff && (
+              <button
+                onClick={handleStaffDemoEnroll}
+                disabled={submitting}
+                className="w-full rounded-lg border border-dashed border-primary/40 px-4 py-2 text-[11px] font-medium text-primary disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                Staff: Demo enroll without payment
+              </button>
+            )}
           </div>
         )}
 
@@ -189,7 +134,7 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
             </div>
             <h2 className="text-lg font-bold text-foreground">Enrollment Failed</h2>
             <p className="text-sm text-muted-foreground">Something went wrong. Please try again.</p>
-            <button onClick={() => setStep("payment")} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
+            <button onClick={() => setStep("plan")} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
               Retry
             </button>
           </div>

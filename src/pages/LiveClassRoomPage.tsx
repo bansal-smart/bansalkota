@@ -1,114 +1,238 @@
-import { useState } from "react";
-import { ArrowLeft, Eye, Volume2, Maximize2, MoreVertical, Send, Image, ThumbsUp, Heart, Flame, MessageCircle, Mic, MicOff, Video as VideoIcon, Users, Pin, HelpCircle, Settings, LogOut } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Send, Users, Loader2, ExternalLink } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useAppStore } from "@/store/useAppStore";
+import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
 
-const chatMessages = [
-  { name: "Aditya", message: "Sir, I have a doubt in this question I posted in doubts tab", color: "bg-primary" },
-  { name: "Ishita", message: "Sir you teach it so well!", color: "bg-secondary" },
-  { name: "Karan", message: "Please explain the derivation again", color: "bg-accent" },
-  { name: "Vikram Sir", message: "Let me explain step by step...", color: "bg-[hsl(var(--navy))]", isTeacher: true },
-  { name: "Divya", message: "Got it! Thank you sir", color: "bg-destructive" },
-  { name: "Harsh", message: "Can you share the notes for this topic?", color: "bg-primary" },
-  { name: "Vikram Sir", message: "Notes will be uploaded after class", color: "bg-[hsl(var(--navy))]", isTeacher: true },
-  { name: "Nisha", message: "When is the next test on this chapter?", color: "bg-secondary" },
-];
+type ClassRow = {
+  id: string;
+  title: string;
+  subject: string;
+  educator_name: string;
+  status: string;
+  meeting_url: string | null;
+  recording_url: string | null;
+  starts_at: string;
+};
+
+type Message = {
+  id: string;
+  user_id: string;
+  display_name: string;
+  is_teacher: boolean;
+  message: string;
+  created_at: string;
+};
 
 const LiveClassRoomPage = () => {
-  const [message, setMessage] = useState("");
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const storeUser = useAppStore((s) => s.user);
+  const [cls, setCls] = useState<ClassRow | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState("");
+  const [participants, setParticipants] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      const { data } = await supabase.from("live_classes").select("*").eq("id", id).maybeSingle();
+      setCls(data as ClassRow | null);
+
+      const { data: msgs } = await supabase
+        .from("live_class_messages")
+        .select("*")
+        .eq("class_id", id)
+        .order("created_at", { ascending: true });
+      setMessages((msgs ?? []) as Message[]);
+
+      // Auto-attendance: upsert
+      if (user) {
+        await supabase.from("live_class_attendance").upsert(
+          {
+            class_id: id,
+            user_id: user.id,
+            joined_at: new Date().toISOString(),
+            status: "joined",
+          },
+          { onConflict: "class_id,user_id" } as never,
+        );
+      }
+
+      const { count } = await supabase
+        .from("live_class_attendance")
+        .select("*", { count: "exact", head: true })
+        .eq("class_id", id);
+      setParticipants(count ?? 0);
+
+      setLoading(false);
+    })();
+
+    const channel = supabase
+      .channel(`class-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
+        (payload) => setMessages((prev) => [...prev, payload.new as Message]),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
+        async () => {
+          const { count } = await supabase
+            .from("live_class_attendance")
+            .select("*", { count: "exact", head: true })
+            .eq("class_id", id);
+          setParticipants(count ?? 0);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, user]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!user || !id || !text.trim()) return;
+    const display = storeUser?.full_name || user.email?.split("@")[0] || "Student";
+    const { error } = await supabase.from("live_class_messages").insert({
+      class_id: id,
+      user_id: user.id,
+      display_name: display,
+      is_teacher: false,
+      message: text.trim(),
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setText("");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!cls) {
+    return (
+      <div className="p-10 text-center">
+        <p className="text-sm text-muted-foreground">Class not found.</p>
+        <Link to="/live-classes" className="mt-4 inline-block text-sm text-primary hover:underline">
+          Back to live classes
+        </Link>
+      </div>
+    );
+  }
+
+  const isLive = cls.status === "live";
+  const videoSrc = cls.recording_url || cls.meeting_url;
 
   return (
     <div className="pb-20 lg:pb-0">
-      <div className="bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))] px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="text-white"><ArrowLeft className="h-5 w-5" /></Link>
-          <div>
-            <p className="text-sm font-bold text-white">Electrostatics & Capacitors</p>
-            <p className="text-[10px] text-white/60">Physics — Vikram Thapar</p>
+      <div className="bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))] px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to="/live-classes" className="text-white">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-white truncate">{cls.title}</p>
+            <p className="text-[10px] text-white/60">{cls.subject} — {cls.educator_name}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <LiveBadge />
-          <span className="text-xs text-white/70">01:23:45</span>
+          {isLive && <LiveBadge />}
+          <span className="flex items-center gap-1 text-xs text-white/70">
+            <Users className="h-3 w-3" /> {participants}
+          </span>
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row">
         <div className="flex-1">
           <div className="relative aspect-video bg-[#0a0a0a] flex items-center justify-center">
-            <div className="text-center">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent mx-auto flex items-center justify-center mb-3">
-                <span className="text-2xl font-bold text-white">VT</span>
+            {videoSrc ? (
+              <iframe
+                src={videoSrc}
+                title={cls.title}
+                allow="camera; microphone; fullscreen; display-capture"
+                className="absolute inset-0 h-full w-full"
+              />
+            ) : (
+              <div className="text-center text-white/60">
+                <p className="text-sm">No meeting link available yet.</p>
+                <p className="text-xs mt-1">Check back when the class goes live.</p>
               </div>
-              <p className="text-white/60 text-sm">Vikram Thapar is presenting</p>
-            </div>
-            <div className="absolute top-3 left-3"><LiveBadge /></div>
-            <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-[10px] text-white">
-              <Eye className="h-3 w-3" /> 847 watching
-            </div>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-2">
-              {[{ icon: Users, label: "Participants" }, { icon: Pin, label: "Pin" }, { icon: HelpCircle, label: "Doubts" }, { icon: Settings, label: "Settings" }, { icon: LogOut, label: "Exit" }].map(b => (
-                <button key={b.label} className="h-9 w-9 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors" title={b.label}>
-                  <b.icon className="h-4 w-4 text-foreground" />
-                </button>
-              ))}
-            </div>
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <LiveBadge />
-                <span className="text-xs text-white/70">Vikram Thapar — Physics</span>
-                <span className="text-xs text-white/50"><Eye className="inline h-3 w-3 mr-0.5" />847</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {[MicOff, VideoIcon, Volume2, Maximize2, MoreVertical].map((Icon, i) => (
-                  <button key={i} className="p-1.5 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"><Icon className="h-4 w-4" /></button>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
+          {videoSrc && (
+            <a
+              href={videoSrc}
+              target="_blank"
+              rel="noreferrer"
+              className="m-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/30"
+            >
+              <ExternalLink className="h-3 w-3" /> Open meeting in new tab
+            </a>
+          )}
         </div>
 
-        <div className="lg:w-[340px] border-l border-border bg-card flex flex-col h-[50vh] lg:h-[calc(100vh-57px-48px)]">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-primary" />
-              <span className="text-sm font-bold text-foreground">Live Chat</span>
-            </div>
-            <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">847 live</span>
+        <aside className="lg:w-[340px] border-t lg:border-t-0 lg:border-l border-border bg-card flex flex-col h-[60vh] lg:h-auto">
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-sm font-bold text-foreground">Live chat</p>
+            <p className="text-[10px] text-muted-foreground">{messages.length} messages</p>
           </div>
-
-          <div className="px-4 py-2 text-[10px] text-secondary">
-            <p>Harsh, Nisha, Tanvi & 16 others joined</p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 space-y-3 py-2">
-            {chatMessages.map((msg, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <div className={`h-6 w-6 shrink-0 rounded-full ${msg.color} flex items-center justify-center text-[10px] font-bold text-white`}>
-                  {msg.name[0]}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {messages.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-6">No messages yet — say hello!</p>
+            ) : (
+              messages.map((m) => (
+                <div key={m.id} className="flex items-start gap-2">
+                  <div className={`h-7 w-7 shrink-0 rounded-full text-[10px] font-bold flex items-center justify-center ${m.is_teacher ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
+                    {m.display_name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold text-foreground">
+                      {m.display_name}
+                      {m.is_teacher && <span className="ml-1 text-[9px] font-bold text-primary">TEACHER</span>}
+                    </p>
+                    <p className="text-xs text-foreground break-words">{m.message}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className={`text-xs font-bold ${msg.isTeacher ? "text-primary" : "text-foreground"}`}>
-                    {msg.name} {msg.isTeacher && <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-[8px] font-bold text-primary">TEACHER</span>}
-                  </span>
-                  <p className="text-xs text-muted-foreground mt-0.5">{msg.message}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
+            <div ref={chatEndRef} />
           </div>
-
-          <div className="flex gap-2 px-4 py-2 border-t border-border">
-            {[ThumbsUp, Heart, Flame].map((Icon, i) => (
-              <button key={i} className="p-1.5 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"><Icon className="h-4 w-4" /></button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 px-4 py-3 border-t border-border">
-            <button className="text-muted-foreground hover:text-foreground"><Image className="h-5 w-5" /></button>
-            <input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Type your doubt here" className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary" />
-            <button className="rounded-lg bg-gradient-to-r from-primary to-accent p-2 text-primary-foreground hover:opacity-90 transition-opacity"><Send className="h-4 w-4" /></button>
-          </div>
-        </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
+            className="p-3 border-t border-border flex gap-2"
+          >
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
+            />
+            <button type="submit" className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </form>
+        </aside>
       </div>
     </div>
   );
