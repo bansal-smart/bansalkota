@@ -127,6 +127,89 @@ export type Database = {
         }
         Relationships: []
       }
+      doubt_answers: {
+        Row: {
+          answer_text: string
+          created_at: string
+          doubt_id: string
+          helpful_count: number | null
+          id: string
+          image_url: string | null
+          responder_id: string
+          responder_role: string
+        }
+        Insert: {
+          answer_text: string
+          created_at?: string
+          doubt_id: string
+          helpful_count?: number | null
+          id?: string
+          image_url?: string | null
+          responder_id: string
+          responder_role: string
+        }
+        Update: {
+          answer_text?: string
+          created_at?: string
+          doubt_id?: string
+          helpful_count?: number | null
+          id?: string
+          image_url?: string | null
+          responder_id?: string
+          responder_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doubt_answers_doubt_id_fkey"
+            columns: ["doubt_id"]
+            isOneToOne: false
+            referencedRelation: "doubts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doubts: {
+        Row: {
+          ai_answer: string | null
+          assigned_teacher_id: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          question_text: string
+          status: string
+          subject: string
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_answer?: string | null
+          assigned_teacher_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          question_text: string
+          status?: string
+          subject: string
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_answer?: string | null
+          assigned_teacher_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          question_text?: string
+          status?: string
+          subject?: string
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       educator_applications: {
         Row: {
           alt_contact_no: string | null
@@ -537,14 +620,57 @@ export type Database = {
           },
         ]
       }
+      live_class_messages: {
+        Row: {
+          class_id: string
+          created_at: string
+          display_name: string
+          id: string
+          is_teacher: boolean
+          message: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_teacher?: boolean
+          message: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_teacher?: boolean
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_class_messages_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_classes: {
         Row: {
+          course_id: string | null
           created_at: string
+          created_by: string | null
+          description: string | null
           educator_avatar: string | null
           educator_name: string
           ends_at: string | null
           id: string
+          max_participants: number | null
           meeting_url: string | null
+          recording_url: string | null
           starts_at: string
           status: string
           subject: string
@@ -553,12 +679,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
+          created_by?: string | null
+          description?: string | null
           educator_avatar?: string | null
           educator_name: string
           ends_at?: string | null
           id?: string
+          max_participants?: number | null
           meeting_url?: string | null
+          recording_url?: string | null
           starts_at: string
           status?: string
           subject: string
@@ -567,12 +698,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          course_id?: string | null
           created_at?: string
+          created_by?: string | null
+          description?: string | null
           educator_avatar?: string | null
           educator_name?: string
           ends_at?: string | null
           id?: string
+          max_participants?: number | null
           meeting_url?: string | null
+          recording_url?: string | null
           starts_at?: string
           status?: string
           subject?: string
@@ -728,40 +864,195 @@ export type Database = {
       }
       test_attempts: {
         Row: {
+          answers: Json | null
           attempted_at: string
           correct_answers: number
           created_at: string
           id: string
+          metadata: Json | null
           percentile: number | null
+          question_statuses: Json | null
           score: number
+          started_at: string | null
+          status: string
           subject: string | null
+          submitted_at: string | null
+          test_id: string | null
           test_name: string
+          time_spent_seconds: number | null
           total_questions: number
           user_id: string
         }
         Insert: {
+          answers?: Json | null
           attempted_at?: string
           correct_answers?: number
           created_at?: string
           id?: string
+          metadata?: Json | null
           percentile?: number | null
+          question_statuses?: Json | null
           score?: number
+          started_at?: string | null
+          status?: string
           subject?: string | null
+          submitted_at?: string | null
+          test_id?: string | null
           test_name: string
+          time_spent_seconds?: number | null
           total_questions?: number
           user_id: string
         }
         Update: {
+          answers?: Json | null
           attempted_at?: string
           correct_answers?: number
           created_at?: string
           id?: string
+          metadata?: Json | null
           percentile?: number | null
+          question_statuses?: Json | null
           score?: number
+          started_at?: string | null
+          status?: string
           subject?: string | null
+          submitted_at?: string | null
+          test_id?: string | null
           test_name?: string
+          time_spent_seconds?: number | null
           total_questions?: number
           user_id?: string
+        }
+        Relationships: []
+      }
+      test_questions: {
+        Row: {
+          correct_answer: Json
+          created_at: string
+          difficulty: string | null
+          explanation: string | null
+          id: string
+          marks_correct: number | null
+          marks_wrong: number | null
+          options: Json
+          position: number
+          question_image_url: string | null
+          question_text: string
+          question_type: string
+          subject: string | null
+          test_id: string
+          topic: string | null
+        }
+        Insert: {
+          correct_answer: Json
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          marks_correct?: number | null
+          marks_wrong?: number | null
+          options?: Json
+          position?: number
+          question_image_url?: string | null
+          question_text: string
+          question_type?: string
+          subject?: string | null
+          test_id: string
+          topic?: string | null
+        }
+        Update: {
+          correct_answer?: Json
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          marks_correct?: number | null
+          marks_wrong?: number | null
+          options?: Json
+          position?: number
+          question_image_url?: string | null
+          question_text?: string
+          question_type?: string
+          subject?: string | null
+          test_id?: string
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          correct_marks: number
+          course_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_minutes: number
+          ends_at: string | null
+          exam_pattern: string
+          id: string
+          is_published: boolean
+          slug: string
+          starts_at: string | null
+          subjects: string[] | null
+          test_type: string
+          title: string
+          total_marks: number
+          total_questions: number
+          updated_at: string
+          visibility: string
+          wrong_marks: number
+        }
+        Insert: {
+          correct_marks?: number
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number
+          ends_at?: string | null
+          exam_pattern?: string
+          id?: string
+          is_published?: boolean
+          slug: string
+          starts_at?: string | null
+          subjects?: string[] | null
+          test_type?: string
+          title: string
+          total_marks?: number
+          total_questions?: number
+          updated_at?: string
+          visibility?: string
+          wrong_marks?: number
+        }
+        Update: {
+          correct_marks?: number
+          course_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_minutes?: number
+          ends_at?: string | null
+          exam_pattern?: string
+          id?: string
+          is_published?: boolean
+          slug?: string
+          starts_at?: string | null
+          subjects?: string[] | null
+          test_type?: string
+          title?: string
+          total_marks?: number
+          total_questions?: number
+          updated_at?: string
+          visibility?: string
+          wrong_marks?: number
         }
         Relationships: []
       }
@@ -831,6 +1122,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "staff" | "student" | "teacher"

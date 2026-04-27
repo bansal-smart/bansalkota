@@ -1,170 +1,135 @@
-import { Trophy, Target, TrendingUp, ArrowRight, BarChart3, RotateCcw, Share2, Home, Brain } from "lucide-react";
-import { Link } from "react-router-dom";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useEffect, useState } from "react";
+import { Trophy, Target, TrendingUp, RotateCcw, Home, Loader2 } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
-const comparisonData = [
-  { name: "Mock 2", you: 180, topper: 320, avg: 200 },
-  { name: "Mock 3", you: 210, topper: 330, avg: 205 },
-  { name: "Mock 5", you: 240, topper: 340, avg: 210 },
-  { name: "Mock 7", you: 260, topper: 335, avg: 208 },
-  { name: "Mock 9", you: 285, topper: 345, avg: 215 },
-  { name: "Mock 12", you: 304, topper: 348, avg: 212 },
-];
+type SubjectStat = { total: number; correct: number; attempted: number; score: number };
 
-const subjects = [
-  { name: "Physics", attempted: "30/30", correct: 28, incorrect: 2, score: "110/120", accuracy: 93 },
-  { name: "Chemistry", attempted: "28/30", correct: 24, incorrect: 4, score: "92/120", accuracy: 86 },
-  { name: "Mathematics", attempted: "25/30", correct: 22, incorrect: 3, score: "85/120", accuracy: 88 },
-];
+const TestResultPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState<{ id: string; test_name: string; score: number; total_questions: number; correct_answers: number; percentile: number | null; time_spent_seconds: number; test_id: string | null } | null>(null);
+  const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
 
-const chapters = [
-  { name: "Electricity & Magnetism", strength: 5 },
-  { name: "Optics & Waves", strength: 4 },
-  { name: "Newton's Laws", strength: 3 },
-  { name: "Current Electricity", strength: 2 },
-  { name: "Thermodynamics", strength: 1 },
-];
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("test_attempts")
+        .select("id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers")
+        .eq("id", id)
+        .maybeSingle();
+      if (!data) {
+        setLoading(false);
+        return;
+      }
+      setAttempt(data);
 
-const weakTopics = [
-  { topic: "Thermodynamics", accuracy: 52 },
-  { topic: "Rotational Motion", accuracy: 61 },
-  { topic: "P-Block Chemistry", accuracy: 64 },
-];
+      // Build subject breakdown from questions + answers
+      if (data.test_id) {
+        const { data: qs } = await supabase
+          .from("test_questions")
+          .select("id, subject, correct_answer, marks_correct, marks_wrong")
+          .eq("test_id", data.test_id);
+        const ans = (data.answers ?? {}) as Record<string, { selected: number | null }>;
+        const breakdown: Record<string, SubjectStat> = {};
+        (qs ?? []).forEach((q) => {
+          const subj = q.subject ?? "General";
+          if (!breakdown[subj]) breakdown[subj] = { total: 0, correct: 0, attempted: 0, score: 0 };
+          breakdown[subj].total += 1;
+          const userSel = ans[q.id]?.selected;
+          if (userSel != null) {
+            breakdown[subj].attempted += 1;
+            if (q.correct_answer === userSel) {
+              breakdown[subj].correct += 1;
+              breakdown[subj].score += Number(q.marks_correct ?? 4);
+            } else {
+              breakdown[subj].score += Number(q.marks_wrong ?? -1);
+            }
+          }
+        });
+        setSubjects(breakdown);
+      }
+      setLoading(false);
+    })();
+  }, [id]);
 
-const TestResultPage = () => (
-  <div className="pb-20 lg:pb-0">
-    {/* Hero */}
-    <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-center">
-      <h1 className="text-2xl font-black font-display text-white mb-4">Your Result</h1>
-      <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
-        <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-          <p className="text-[10px] font-medium text-white/80">Total Score</p>
-          <p className="text-2xl font-black font-display text-white">104</p>
-          <p className="text-xs text-white/70">/ 360</p>
-        </div>
-        <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-          <p className="text-[10px] font-medium text-white/80">Correct</p>
-          <p className="text-2xl font-black font-display text-secondary">+112</p>
-        </div>
-        <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-          <p className="text-[10px] font-medium text-white/80">Incorrect</p>
-          <p className="text-2xl font-black font-display text-destructive">-8</p>
-        </div>
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
       </div>
-      <div className="mt-4 flex justify-center gap-6">
-        <div><p className="text-3xl font-black font-display text-secondary">87%</p><p className="text-xs text-white/70">Accuracy</p></div>
-        <div><p className="text-3xl font-black font-display text-white">83/90</p><p className="text-xs text-white/70">Attempted</p></div>
-      </div>
-    </div>
+    );
+  }
+  if (!attempt) {
+    return <div className="p-10 text-center text-sm text-muted-foreground">Result not found.</div>;
+  }
 
-    {/* Rank Strip */}
-    <div className="bg-[hsl(var(--navy))] grid-texture px-4 py-4">
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div><p className="text-[10px] text-white/70 mb-1">Batch Rank</p><p className="text-lg font-black font-display text-accent"><Trophy className="inline h-4 w-4 mr-1" />#3</p></div>
-        <div className="border-x border-white/10"><p className="text-[10px] text-white/70 mb-1">Centre %ile</p><p className="text-lg font-black font-display text-secondary">94.5</p></div>
-        <div><p className="text-[10px] text-white/70 mb-1">All India %ile</p><p className="text-lg font-black font-display text-accent">99.8</p></div>
-      </div>
-    </div>
+  const accuracy = attempt.total_questions > 0 ? Math.round((attempt.correct_answers / attempt.total_questions) * 100) : 0;
+  const minutes = Math.floor(attempt.time_spent_seconds / 60);
 
-    <div className="p-4 lg:p-6 space-y-5">
-      {/* Subject Breakdown */}
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h3 className="text-sm font-bold font-display text-foreground mb-4">Subject-wise Performance</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead><tr className="border-b border-border">{["Subject", "Attempted", "Correct", "Incorrect", "Score", "Accuracy"].map(h => <th key={h} className="p-2 text-left font-bold text-muted-foreground">{h}</th>)}</tr></thead>
-            <tbody>
-              {subjects.map(s => (
-                <tr key={s.name} className="border-b border-border last:border-0">
-                  <td className="p-2 font-semibold text-foreground">{s.name}</td>
-                  <td className="p-2 text-muted-foreground">{s.attempted}</td>
-                  <td className="p-2 text-secondary font-bold">{s.correct}</td>
-                  <td className="p-2 text-destructive font-bold">{s.incorrect}</td>
-                  <td className="p-2 font-bold text-foreground">{s.score}</td>
-                  <td className="p-2 font-bold text-primary">{s.accuracy}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  return (
+    <div className="pb-20 lg:pb-0">
+      <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-center">
+        <h1 className="text-2xl font-black font-display text-white mb-4">{attempt.test_name}</h1>
+        <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
+          <div className="rounded-xl bg-white/15 backdrop-blur p-3">
+            <Trophy className="h-5 w-5 text-white mx-auto mb-1" />
+            <p className="text-xl font-black text-white">{Number(attempt.score).toFixed(1)}</p>
+            <p className="text-[10px] text-white/80">Score</p>
+          </div>
+          <div className="rounded-xl bg-white/15 backdrop-blur p-3">
+            <Target className="h-5 w-5 text-white mx-auto mb-1" />
+            <p className="text-xl font-black text-white">{accuracy}%</p>
+            <p className="text-[10px] text-white/80">Accuracy</p>
+          </div>
+          <div className="rounded-xl bg-white/15 backdrop-blur p-3">
+            <TrendingUp className="h-5 w-5 text-white mx-auto mb-1" />
+            <p className="text-xl font-black text-white">{attempt.percentile != null ? `${attempt.percentile}%` : "—"}</p>
+            <p className="text-[10px] text-white/80">Percentile</p>
+          </div>
         </div>
-        <div className="mt-4 space-y-2">
-          {subjects.map(s => (
-            <div key={s.name}>
-              <div className="flex justify-between text-xs mb-1"><span className="text-foreground font-medium">{s.name}</span><span className="font-bold text-foreground">{s.accuracy}%</span></div>
-              <div className="h-2 rounded-full bg-muted"><div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${s.accuracy}%` }} /></div>
+        <p className="text-xs text-white/70 mt-3">Completed in {minutes} min</p>
+      </div>
+
+      <div className="p-4 lg:p-6 space-y-5">
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-sm font-bold text-foreground mb-3">Subject-wise Breakdown</h2>
+          {Object.keys(subjects).length === 0 ? (
+            <p className="text-xs text-muted-foreground">No subject data available.</p>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(subjects).map(([subj, stat]) => {
+                const acc = stat.attempted > 0 ? Math.round((stat.correct / stat.attempted) * 100) : 0;
+                return (
+                  <div key={subj} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="font-semibold text-foreground">{subj}</span>
+                      <span className="text-muted-foreground">
+                        {stat.correct}/{stat.total} correct · {Number(stat.score).toFixed(1)} marks
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${acc}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
-      </div>
 
-      {/* Chapter-wise */}
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h3 className="text-sm font-bold font-display text-foreground mb-4">Chapter-wise Performance</h3>
-        <div className="space-y-3">
-          {chapters.map(ch => (
-            <div key={ch.name} className="flex items-center justify-between">
-              <span className="text-xs font-medium text-foreground">{ch.name}</span>
-              <div className="flex gap-1">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <span key={i} className={`h-2.5 w-2.5 rounded-full ${i < ch.strength ? (ch.strength >= 4 ? "bg-secondary" : ch.strength >= 3 ? "bg-accent" : "bg-destructive") : "bg-muted"}`} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Comparison Graph */}
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h3 className="text-sm font-bold font-display text-foreground mb-4">Your Performance vs Others</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={comparisonData}>
-            <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-            <YAxis tick={{ fontSize: 10 }} domain={[0, 360]} />
-            <Tooltip contentStyle={{ fontSize: 11 }} />
-            <Legend wrapperStyle={{ fontSize: 10 }} />
-            <Line type="monotone" dataKey="you" stroke="hsl(24,95%,53%)" strokeWidth={2} dot={{ r: 3 }} name="You" />
-            <Line type="monotone" dataKey="topper" stroke="hsl(38,92%,50%)" strokeWidth={2} dot={{ r: 3 }} name="Topper" />
-            <Line type="monotone" dataKey="avg" stroke="hsl(215,16%,47%)" strokeWidth={1} strokeDasharray="4 4" dot={false} name="Average" />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* AI Insight */}
-      <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Brain className="h-5 w-5 text-primary" />
-          <h3 className="text-sm font-bold text-foreground">AI Analysis</h3>
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">Based on your performance, focus on:</p>
-        <ul className="space-y-1.5">
-          {weakTopics.map(t => (
-            <li key={t.topic} className="flex items-center justify-between text-xs">
-              <span className="text-foreground font-medium">{t.topic}</span>
-              <span className="font-bold text-destructive">{t.accuracy}% accuracy</span>
-            </li>
-          ))}
-        </ul>
-        <button className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors">
-          Get AI Study Plan <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* Actions */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { icon: BarChart3, label: "Detailed Analysis", variant: "primary" },
-          { icon: RotateCcw, label: "Reattempt", variant: "outline" },
-          { icon: Share2, label: "Share Score", variant: "outline" },
-          { icon: Home, label: "Back to Home", variant: "outline" },
-        ].map(a => (
-          <Link key={a.label} to={a.variant === "outline" && a.label === "Back to Home" ? "/dashboard" : "#"} className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition-colors ${a.variant === "primary" ? "bg-primary text-primary-foreground hover:bg-primary-dark" : "border border-border text-foreground hover:bg-muted/30"}`}>
-            <a.icon className="h-3.5 w-3.5" /> {a.label}
+        <div className="flex gap-3">
+          <Link to="/tests" className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground text-center inline-flex items-center justify-center gap-1">
+            <RotateCcw className="h-3.5 w-3.5" /> Back to Tests
           </Link>
-        ))}
+          <Link to="/dashboard" className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground text-center inline-flex items-center justify-center gap-1">
+            <Home className="h-3.5 w-3.5" /> Dashboard
+          </Link>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default TestResultPage;
