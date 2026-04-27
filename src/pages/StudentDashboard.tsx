@@ -17,8 +17,8 @@ const subjectIcons: Record<string, React.ElementType> = {
 };
 
 const quickActions = [
-  { icon: Video, label: "Attend Class", desc: "Join live session", link: "/live-classes", gradient: "from-primary to-primary-dark" },
-  { icon: ClipboardCheck, label: "Take Test", desc: "Start a mock test", link: "/tests", gradient: "from-secondary to-secondary-dark" },
+  { icon: Video, label: "Attend Class", desc: "Join live session", link: "/my-live-classes", gradient: "from-primary to-primary-dark" },
+  { icon: ClipboardCheck, label: "Take Test", desc: "Start a mock test", link: "/my-tests", gradient: "from-secondary to-secondary-dark" },
   { icon: Bot, label: "Ask Doubt", desc: "AI doubt solver", link: "/doubts", gradient: "from-accent to-primary" },
   { icon: BarChart3, label: "Analytics", desc: "View progress", link: "/analytics", gradient: "from-primary-dark to-accent" },
 ];
