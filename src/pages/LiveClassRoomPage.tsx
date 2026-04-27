@@ -130,7 +130,7 @@ const LiveClassRoomPage = () => {
     return (
       <div className="p-10 text-center">
         <p className="text-sm text-muted-foreground">Class not found.</p>
-        <Link to="/live-classes" className="mt-4 inline-block text-sm text-primary hover:underline">
+        <Link to="/my-live-classes" className="mt-4 inline-block text-sm text-primary hover:underline">
           Back to live classes
         </Link>
       </div>
@@ -144,7 +144,7 @@ const LiveClassRoomPage = () => {
     <div className="pb-20 lg:pb-0">
       <div className="bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))] px-4 py-3 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <Link to="/live-classes" className="text-white">
+          <Link to="/my-live-classes" className="text-white">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="min-w-0">

@@ -57,7 +57,7 @@ const TestTakingPage = () => {
         .maybeSingle();
       if (!t) {
         toast.error("Test not found");
-        navigate("/tests");
+        navigate("/my-tests");
         return;
       }
       setTest(t);
@@ -279,7 +279,7 @@ const TestTakingPage = () => {
           <button onClick={startAttempt} className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground">
             Start Test
           </button>
-          <Link to="/tests" className="block text-center text-xs text-muted-foreground hover:text-foreground">
+          <Link to="/my-tests" className="block text-center text-xs text-muted-foreground hover:text-foreground">
             Back to test list
           </Link>
         </div>
