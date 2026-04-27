@@ -89,12 +89,12 @@ const App = () => (
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/tests" element={<TestsLandingPage />} />
               <Route path="/live-classes" element={<LiveClassesLandingPage />} />
+              <Route path="/educators" element={<EducatorsPage />} />
             </Route>
 
             {/* Student layout — public browse pages with student chrome (guests allowed) */}
             <Route element={<StudentLayout />}>
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
-              <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/store" element={<StorePage />} />
             </Route>
 

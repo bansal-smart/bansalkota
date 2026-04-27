@@ -14,6 +14,7 @@ const PublicLayout = () => {
     { label: "Tests", path: "/tests" },
     { label: "Live Classes", path: "/live-classes" },
     { label: "Educators", path: "/educators" },
+    { label: "Pricing", path: "/#pricing" },
   ];
 
   return (
