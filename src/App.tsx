@@ -55,6 +55,9 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import StaffDashboardPage from "./pages/StaffDashboardPage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ProtectedStudentRoute from "./components/ProtectedStudentRoute";
+import PublicLayout from "./components/PublicLayout";
+import TestsLandingPage from "./pages/TestsLandingPage";
+import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
@@ -81,9 +84,15 @@ const App = () => (
               <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
             </Route>
 
-            {/* Student layout — public browse pages (guests allowed) */}
-            <Route element={<StudentLayout />}>
+            {/* Public marketing pages (PublicLayout: own navbar + footer) */}
+            <Route element={<PublicLayout />}>
               <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/tests" element={<TestsLandingPage />} />
+              <Route path="/live-classes" element={<LiveClassesLandingPage />} />
+            </Route>
+
+            {/* Student layout — public browse pages with student chrome (guests allowed) */}
+            <Route element={<StudentLayout />}>
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/store" element={<StorePage />} />
@@ -93,9 +102,9 @@ const App = () => (
             <Route element={<ProtectedStudentRoute />}>
               <Route element={<StudentLayout />}>
                 <Route path="/dashboard" element={<StudentDashboard />} />
-                <Route path="/tests" element={<TestListPage />} />
+                <Route path="/my-tests" element={<TestListPage />} />
                 <Route path="/tests/:id/result" element={<TestResultPage />} />
-                <Route path="/live-classes" element={<LiveClassesListPage />} />
+                <Route path="/my-live-classes" element={<LiveClassesListPage />} />
                 <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
                 <Route path="/qbank" element={<QBankPage />} />
                 <Route path="/compete" element={<CompetePage />} />
