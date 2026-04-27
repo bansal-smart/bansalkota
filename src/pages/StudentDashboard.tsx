@@ -17,8 +17,8 @@ const subjectIcons: Record<string, React.ElementType> = {
 };
 
 const quickActions = [
-  { icon: Video, label: "Attend Class", desc: "Join live session", link: "/live-classes", gradient: "from-primary to-primary-dark" },
-  { icon: ClipboardCheck, label: "Take Test", desc: "Start a mock test", link: "/tests", gradient: "from-secondary to-secondary-dark" },
+  { icon: Video, label: "Attend Class", desc: "Join live session", link: "/my-live-classes", gradient: "from-primary to-primary-dark" },
+  { icon: ClipboardCheck, label: "Take Test", desc: "Start a mock test", link: "/my-tests", gradient: "from-secondary to-secondary-dark" },
   { icon: Bot, label: "Ask Doubt", desc: "AI doubt solver", link: "/doubts", gradient: "from-accent to-primary" },
   { icon: BarChart3, label: "Analytics", desc: "View progress", link: "/analytics", gradient: "from-primary-dark to-accent" },
 ];
@@ -102,11 +102,11 @@ const StudentDashboard = () => {
 
         {/* Today's Schedule */}
         <div className="rounded-2xl border border-border bg-card p-5 mb-6 animate-fade-in-up">
-          <SectionHeader title="Today's Schedule" viewAllLink="/live-classes" />
+          <SectionHeader title="Today's Schedule" viewAllLink="/my-live-classes" />
           {data.todaySchedule.length === 0 ? (
             <div className="py-8 text-center">
               <Calendar className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">No classes today — <Link to="/live-classes" className="text-primary font-bold">view all classes</Link></p>
+              <p className="text-xs text-muted-foreground">No classes today — <Link to="/my-live-classes" className="text-primary font-bold">view all classes</Link></p>
             </div>
           ) : (
             <div className="space-y-3">

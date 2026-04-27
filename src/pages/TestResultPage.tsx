@@ -120,7 +120,7 @@ const TestResultPage = () => {
         </div>
 
         <div className="flex gap-3">
-          <Link to="/tests" className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground text-center inline-flex items-center justify-center gap-1">
+          <Link to="/my-tests" className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground text-center inline-flex items-center justify-center gap-1">
             <RotateCcw className="h-3.5 w-3.5" /> Back to Tests
           </Link>
           <Link to="/dashboard" className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground text-center inline-flex items-center justify-center gap-1">

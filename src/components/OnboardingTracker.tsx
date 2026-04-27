@@ -58,7 +58,7 @@ const OnboardingTracker = () => {
           label: "Register for a live class",
           desc: "Join your first session",
           icon: Video,
-          link: "/live-classes",
+          link: "/my-live-classes",
           done: (attendanceRes.count ?? 0) > 0,
         },
         {
@@ -74,7 +74,7 @@ const OnboardingTracker = () => {
           label: "Attempt your first test",
           desc: "Benchmark yourself",
           icon: ClipboardCheck,
-          link: "/tests",
+          link: "/my-tests",
           done: (testRes.count ?? 0) > 0,
         },
       ];
