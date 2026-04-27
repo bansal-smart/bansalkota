@@ -178,20 +178,23 @@ const LandingPage = () => {
             <h2 className="text-3xl font-black font-display text-foreground md:text-4xl">How It Works</h2>
             <p className="mt-2 text-muted-foreground">Get started in 3 simple steps</p>
           </div>
-          <div className="mt-12 grid gap-8 md:grid-cols-3 stagger-children relative">
-            <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 border-t-2 border-dashed border-primary/30" />
+          <div className="mt-12 grid gap-6 md:grid-cols-3 stagger-children relative">
+            <div className="hidden md:block absolute top-20 left-[20%] right-[20%] h-0.5 border-t-2 border-dashed border-primary/30 z-0" />
             {[
               { step: "1", icon: User, title: "Sign Up Free", desc: "Create your account in under 30 seconds. Choose your exam goal and get a personalized dashboard." },
               { step: "2", icon: BookOpen, title: "Choose Your Course", desc: "Browse courses by subject or goal. Enroll in live batches, 1-on-1 mentoring, or recorded lectures." },
               { step: "3", icon: Rocket, title: "Start Learning", desc: "Attend live classes, take tests, ask doubts via AI, and track your progress with analytics." },
             ].map((s) => (
-              <div key={s.step} className="relative text-center hover-lift">
-                <div className="relative z-10 mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg mb-5">
+              <div
+                key={s.step}
+                className="relative z-10 flex h-full flex-col items-center text-center rounded-2xl border border-border bg-background p-8 shadow-sm hover-lift"
+              >
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg mb-5">
                   <s.icon className="h-7 w-7 text-white" />
                   <span className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-black text-primary shadow border-2 border-primary">{s.step}</span>
                 </div>
                 <h3 className="text-lg font-bold font-display text-foreground">{s.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">{s.desc}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
               </div>
             ))}
           </div>
