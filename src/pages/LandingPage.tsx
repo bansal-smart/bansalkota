@@ -380,14 +380,13 @@ const LandingPage = () => {
           </div>
 
           <div className="mt-12 text-center">
-            <EducatorApplicationDialog
-              trigger={
-                <button className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-10 py-4 text-lg font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-all hover:scale-105">
-                  Join Us <ArrowRight className="h-5 w-5" />
-                </button>
-              }
-            />
-            <p className="mt-4 text-sm text-white/60">Application takes ~5 minutes • Response within 48 hours</p>
+            <Link
+              to="/career"
+              className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-10 py-4 text-lg font-bold text-primary-foreground shadow-blue hover:opacity-90 transition-all hover:scale-105"
+            >
+              Join Us <ArrowRight className="h-5 w-5" />
+            </Link>
+            <p className="mt-4 text-sm text-white/60">Explore open roles • Response within 48 hours</p>
           </div>
         </div>
       </section>
