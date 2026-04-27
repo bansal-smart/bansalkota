@@ -24,8 +24,11 @@ const faqs = [
 ];
 
 const LandingPage = () => {
-  const { country, setCountry } = useAppStore();
+  const { country, setCountry, user } = useAppStore();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const initials = user?.full_name
+    ? user.full_name.split(' ').filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join('')
+    : 'U';
 
   return (
     <div className="min-h-screen bg-background">
