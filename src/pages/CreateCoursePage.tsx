@@ -1,100 +1,274 @@
 import { useState } from "react";
-import { Plus, GripVertical, Trash2, Upload, Video, FileText, HelpCircle, IndianRupee } from "lucide-react";
+import { Plus, GripVertical, Trash2, Upload, Video, IndianRupee, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+
+type DraftLecture = { title: string; durationMin: number };
+type DraftChapter = { title: string; lectures: DraftLecture[] };
 
 const CreateCoursePage = () => {
-  const [chapters, setChapters] = useState([
-    { title: "Introduction to Mechanics", lectures: [
-      { title: "What is Mechanics?", duration: "15 min", type: "video" },
-      { title: "Units & Dimensions", duration: "25 min", type: "video" },
-    ]},
-    { title: "Newton's Laws of Motion", lectures: [
-      { title: "First Law — Inertia", duration: "20 min", type: "video" },
-    ]},
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [shortDesc, setShortDesc] = useState("");
+  const [description, setDescription] = useState("");
+  const [exam, setExam] = useState("JEE");
+  const [subject, setSubject] = useState("Physics");
+  const [price, setPrice] = useState<number>(0);
+  const [originalPrice, setOriginalPrice] = useState<number>(0);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [chapters, setChapters] = useState<DraftChapter[]>([
+    { title: "Chapter 1", lectures: [{ title: "Introduction", durationMin: 15 }] },
   ]);
+
+  const addChapter = () => setChapters([...chapters, { title: `Chapter ${chapters.length + 1}`, lectures: [] }]);
+  const removeChapter = (i: number) => setChapters(chapters.filter((_, j) => j !== i));
+  const addLecture = (ci: number) => {
+    const c = [...chapters];
+    c[ci].lectures.push({ title: "New lecture", durationMin: 10 });
+    setChapters(c);
+  };
+  const removeLecture = (ci: number, li: number) => {
+    const c = [...chapters];
+    c[ci].lectures.splice(li, 1);
+    setChapters(c);
+  };
+
+  const submit = async (publish: boolean) => {
+    if (!user) return toast.error("Please sign in");
+    if (!name.trim()) return toast.error("Course title is required");
+    if (chapters.length === 0) return toast.error("Add at least one chapter");
+
+    setSubmitting(true);
+
+    let thumbnailUrl: string | null = null;
+    if (thumbnailFile) {
+      const path = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
+      const { error: upErr } = await supabase.storage.from("educator-uploads").upload(path, thumbnailFile);
+      if (upErr) {
+        toast.error("Thumbnail upload failed");
+        setSubmitting(false);
+        return;
+      }
+      thumbnailUrl = supabase.storage.from("educator-uploads").getPublicUrl(path).data.publicUrl;
+    }
+
+    const baseSlug = slugify(name) || `course-${Date.now()}`;
+    const slug = `${baseSlug}-${Date.now().toString(36)}`;
+
+    const educatorName =
+      ((user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "Educator").trim();
+
+    const { data: course, error: courseErr } = await supabase
+      .from("courses")
+      .insert({
+        name,
+        slug,
+        description: description || shortDesc,
+        subject,
+        target_exam: exam,
+        educator_name: educatorName,
+        price,
+        original_price: originalPrice || null,
+        discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+        thumbnail_url: thumbnailUrl,
+        is_published: publish,
+        created_by: user.id,
+      })
+      .select("id, slug")
+      .single();
+
+    if (courseErr || !course) {
+      console.error(courseErr);
+      toast.error(courseErr?.message ?? "Could not create course");
+      setSubmitting(false);
+      return;
+    }
+
+    // Insert chapters + lessons
+    let totalSecs = 0;
+    let totalLessons = 0;
+    for (let ci = 0; ci < chapters.length; ci++) {
+      const ch = chapters[ci];
+      const { data: chapterRow, error: chapterErr } = await supabase
+        .from("chapters")
+        .insert({ course_id: course.id, title: ch.title || `Chapter ${ci + 1}`, position: ci })
+        .select("id")
+        .single();
+      if (chapterErr || !chapterRow) {
+        toast.error("Failed creating chapter");
+        setSubmitting(false);
+        return;
+      }
+      const lessonRows = ch.lectures.map((l, li) => ({
+        course_id: course.id,
+        chapter_id: chapterRow.id,
+        slug: `${ci}-${li}-${slugify(l.title) || "lesson"}`,
+        title: l.title || `Lesson ${li + 1}`,
+        position: li,
+        duration_seconds: Math.max(60, l.durationMin * 60),
+        is_free_preview: ci === 0 && li === 0,
+        type: "video",
+      }));
+      lessonRows.forEach((l) => {
+        totalSecs += l.duration_seconds;
+        totalLessons += 1;
+      });
+      if (lessonRows.length) {
+        await supabase.from("lessons").insert(lessonRows);
+      }
+    }
+
+    await supabase
+      .from("courses")
+      .update({ total_lessons: totalLessons, duration_hours: Math.max(1, Math.round(totalSecs / 3600)) })
+      .eq("id", course.id);
+
+    toast.success(publish ? "Course published!" : "Draft saved");
+    setSubmitting(false);
+    navigate("/teacher/courses");
+  };
 
   return (
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">Create New Course</h1>
 
-      {/* Section 1: Basic Info */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Basic Information</h2>
         <div>
           <label className="text-xs font-semibold text-foreground">Course Title</label>
-          <input className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="e.g. JEE Physics Booster 2026" />
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="e.g. JEE Physics Booster 2027"
+          />
         </div>
         <div>
           <label className="text-xs font-semibold text-foreground">Short Description</label>
-          <input maxLength={150} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" placeholder="150 chars max" />
+          <input
+            value={shortDesc}
+            onChange={(e) => setShortDesc(e.target.value)}
+            maxLength={150}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+            placeholder="150 chars max"
+          />
         </div>
         <div>
           <label className="text-xs font-semibold text-foreground">Full Description</label>
-          <textarea rows={4} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none" placeholder="Detailed course description..." />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
+            placeholder="Detailed course description..."
+          />
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-semibold text-foreground">Exam Type</label>
-            <select className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"><option>JEE</option><option>NEET</option><option>Class 11</option><option>Class 12</option></select>
+            <label className="text-xs font-semibold text-foreground">Exam</label>
+            <select value={exam} onChange={(e) => setExam(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              <option>JEE</option>
+              <option>NEET</option>
+              <option>Class 11</option>
+              <option>Class 12</option>
+            </select>
           </div>
           <div>
             <label className="text-xs font-semibold text-foreground">Subject</label>
-            <select className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"><option>Physics</option><option>Chemistry</option><option>Mathematics</option><option>Biology</option></select>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground">Language</label>
-            <select className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"><option>English</option><option>Hindi</option><option>Hinglish</option></select>
+            <select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              <option>Physics</option>
+              <option>Chemistry</option>
+              <option>Maths</option>
+              <option>Biology</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Section 2: Media */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Media</h2>
-        <div>
-          <label className="text-xs font-semibold text-foreground">Thumbnail (16:9)</label>
-          <div className="mt-1 rounded-lg border-2 border-dashed border-border bg-background p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+        <h2 className="text-sm font-bold text-foreground">Thumbnail</h2>
+        <label className="block">
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)} />
+          <div className="rounded-lg border-2 border-dashed border-border bg-background p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">Drag & drop or click to upload</p>
-            <p className="text-[10px] text-muted2 mt-1">Min 800×450, JPG/PNG</p>
+            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : "Click to upload thumbnail"}</p>
           </div>
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-foreground">Intro Video URL</label>
-          <input className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" placeholder="YouTube or Vimeo link" />
-        </div>
+        </label>
       </div>
 
-      {/* Section 3: Curriculum */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-foreground">Curriculum</h2>
-          <button onClick={() => setChapters([...chapters, { title: "", lectures: [] }])} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"><Plus className="h-3 w-3" /> Add Chapter</button>
+          <button onClick={addChapter} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+            <Plus className="h-3 w-3" /> Add Chapter
+          </button>
         </div>
         <div className="space-y-3">
           {chapters.map((ch, ci) => (
             <div key={ci} className="rounded-lg border border-border p-3">
               <div className="flex items-center gap-2 mb-2">
                 <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                <input value={ch.title} onChange={(e) => { const c = [...chapters]; c[ci].title = e.target.value; setChapters(c); }} className="flex-1 text-sm font-semibold bg-transparent outline-none text-foreground" placeholder="Chapter title" />
-                <Trash2 className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-destructive shrink-0" onClick={() => setChapters(chapters.filter((_, j) => j !== ci))} />
+                <input
+                  value={ch.title}
+                  onChange={(e) => {
+                    const c = [...chapters];
+                    c[ci].title = e.target.value;
+                    setChapters(c);
+                  }}
+                  className="flex-1 text-sm font-semibold bg-transparent outline-none text-foreground"
+                  placeholder="Chapter title"
+                />
+                <Trash2 className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-destructive shrink-0" onClick={() => removeChapter(ci)} />
               </div>
               <div className="ml-6 space-y-1.5">
                 {ch.lectures.map((lec, li) => (
                   <div key={li} className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-xs">
-                    {lec.type === "video" ? <Video className="h-3.5 w-3.5 text-primary shrink-0" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                    <span className="flex-1 text-foreground">{lec.title}</span>
-                    <span className="text-muted-foreground">{lec.duration}</span>
-                    <Trash2 className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-destructive" />
+                    <Video className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <input
+                      value={lec.title}
+                      onChange={(e) => {
+                        const c = [...chapters];
+                        c[ci].lectures[li].title = e.target.value;
+                        setChapters(c);
+                      }}
+                      className="flex-1 bg-transparent outline-none text-foreground"
+                      placeholder="Lecture title"
+                    />
+                    <input
+                      type="number"
+                      value={lec.durationMin}
+                      onChange={(e) => {
+                        const c = [...chapters];
+                        c[ci].lectures[li].durationMin = Number(e.target.value) || 0;
+                        setChapters(c);
+                      }}
+                      className="w-14 bg-transparent outline-none text-muted-foreground text-right"
+                    />
+                    <span className="text-muted-foreground">min</span>
+                    <Trash2 className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-destructive" onClick={() => removeLecture(ci, li)} />
                   </div>
                 ))}
-                <button onClick={() => { const c = [...chapters]; c[ci].lectures.push({ title: "", duration: "0 min", type: "video" }); setChapters(c); }} className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline ml-1"><Plus className="h-3 w-3" /> Add Lecture</button>
+                <button onClick={() => addLecture(ci)} className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline ml-1">
+                  <Plus className="h-3 w-3" /> Add Lecture
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Section 4: Pricing */}
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Pricing</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -102,38 +276,46 @@ const CreateCoursePage = () => {
             <label className="text-xs font-semibold text-foreground">Price</label>
             <div className="mt-1 flex items-center rounded-lg border border-border bg-background">
               <IndianRupee className="h-4 w-4 text-muted-foreground ml-3" />
-              <input type="number" className="flex-1 bg-transparent px-2 py-2 text-sm outline-none" placeholder="1300" />
-              <select className="bg-transparent text-xs text-muted-foreground pr-2 outline-none"><option>Monthly</option><option>One-time</option><option>Free</option></select>
+              <input
+                type="number"
+                value={price || ""}
+                onChange={(e) => setPrice(Number(e.target.value) || 0)}
+                className="flex-1 bg-transparent px-2 py-2 text-sm outline-none"
+                placeholder="1300"
+              />
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-foreground">Original Price (for discount)</label>
+            <label className="text-xs font-semibold text-foreground">Original Price (optional)</label>
             <div className="mt-1 flex items-center rounded-lg border border-border bg-background">
               <IndianRupee className="h-4 w-4 text-muted-foreground ml-3" />
-              <input type="number" className="flex-1 bg-transparent px-2 py-2 text-sm outline-none" placeholder="2500" />
+              <input
+                type="number"
+                value={originalPrice || ""}
+                onChange={(e) => setOriginalPrice(Number(e.target.value) || 0)}
+                className="flex-1 bg-transparent px-2 py-2 text-sm outline-none"
+                placeholder="2500"
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Section 5: Settings */}
-      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-        <h2 className="text-sm font-bold text-foreground">Settings</h2>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-foreground">Public preview for 1st lecture</span>
-          <div className="w-10 h-5 rounded-full bg-primary relative cursor-pointer"><div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-white" /></div>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-foreground">Certificate on completion</span>
-          <div className="w-10 h-5 rounded-full bg-muted relative cursor-pointer"><div className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white" /></div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
       <div className="flex gap-3">
-        <button className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground">Save Draft</button>
-        <button className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground">Preview</button>
-        <button className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground">Publish Course</button>
+        <button
+          disabled={submitting}
+          onClick={() => submit(false)}
+          className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-50"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save Draft"}
+        </button>
+        <button
+          disabled={submitting}
+          onClick={() => submit(true)}
+          className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
+        >
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Publish Course"}
+        </button>
       </div>
     </div>
   );
