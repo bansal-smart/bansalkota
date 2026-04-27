@@ -75,43 +75,53 @@ const App = () => (
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
-            {/* Immersive full-screen pages (no sidebar/bottom nav) */}
-            <Route path="/tests/:id/take" element={<TestTakingPage />} />
-            <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
+            {/* Immersive full-screen pages (no sidebar/bottom nav) — require auth */}
+            <Route element={<ProtectedStudentRoute />}>
+              <Route path="/tests/:id/take" element={<TestTakingPage />} />
+              <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
+            </Route>
 
-            {/* Student layout pages */}
+            {/* Student layout — public browse pages (guests allowed) */}
             <Route element={<StudentLayout />}>
-              <Route path="/dashboard" element={<StudentDashboard />} />
-              <Route path="/tests" element={<TestListPage />} />
-              <Route path="/tests/:id/result" element={<TestResultPage />} />
-              <Route path="/live-classes" element={<LiveClassesListPage />} />
-              <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
-              <Route path="/qbank" element={<QBankPage />} />
-              <Route path="/compete" element={<CompetePage />} />
-              <Route path="/doubts" element={<DoubtPage />} />
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/my-courses" element={<MyCoursesPage />} />
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/store" element={<StorePage />} />
             </Route>
 
-            {/* Teacher layout pages */}
-            <Route element={<TeacherLayout />}>
-              <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-              <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
-              <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
-              <Route path="/teacher/tests/create" element={<CreateTestPage />} />
-              <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
-              <Route path="/teacher/students" element={<TeacherStudentsPage />} />
-              <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
-              <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
-              <Route path="/teacher/courses/create" element={<CreateCoursePage />} />
+            {/* Student layout — protected personal pages (login required) */}
+            <Route element={<ProtectedStudentRoute />}>
+              <Route element={<StudentLayout />}>
+                <Route path="/dashboard" element={<StudentDashboard />} />
+                <Route path="/tests" element={<TestListPage />} />
+                <Route path="/tests/:id/result" element={<TestResultPage />} />
+                <Route path="/live-classes" element={<LiveClassesListPage />} />
+                <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
+                <Route path="/qbank" element={<QBankPage />} />
+                <Route path="/compete" element={<CompetePage />} />
+                <Route path="/doubts" element={<DoubtPage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/my-courses" element={<MyCoursesPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+            </Route>
+
+            {/* Teacher layout — protected (login required) */}
+            <Route element={<ProtectedStudentRoute />}>
+              <Route element={<TeacherLayout />}>
+                <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+                <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
+                <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
+                <Route path="/teacher/tests/create" element={<CreateTestPage />} />
+                <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
+                <Route path="/teacher/students" element={<TeacherStudentsPage />} />
+                <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
+                <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
+                <Route path="/teacher/courses/create" element={<CreateCoursePage />} />
+              </Route>
             </Route>
 
             {/* Staff auth */}
