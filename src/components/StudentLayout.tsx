@@ -12,8 +12,8 @@ const navItems = [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "My Learning", icon: BookOpen, path: "/my-courses" },
   { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
-  { label: "Live Classes", icon: Video, path: "/live-classes", live: true },
-  { label: "Tests", icon: ClipboardCheck, path: "/tests" },
+  { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
+  { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
   { label: "QBank", icon: BookMarked, path: "/qbank" },
   { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: 3 },
 ];
@@ -157,7 +157,7 @@ const StudentLayout = () => {
           { icon: Home, label: "Home", path: "/dashboard" },
           { icon: BookOpen, label: "Learning", path: "/my-courses" },
           { icon: BookMarked, label: "QBank", path: "/qbank" },
-          { icon: ClipboardCheck, label: "Tests", path: "/tests" },
+          { icon: ClipboardCheck, label: "Tests", path: "/my-tests" },
           { icon: ShoppingBag, label: "Store", path: "/store" },
         ].map((item) => {
           const active = location.pathname === item.path;
