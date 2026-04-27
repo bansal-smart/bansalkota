@@ -1,5 +1,6 @@
-import { ShoppingBag, Star, Users, Clock, Check, Search } from "lucide-react";
+import { ShoppingBag, Star, Clock, Check, Search } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const courses = [
   { id: 1, title: "JEE Advanced Complete Physics", teacher: "Vikram Thapar", price: 4999, originalPrice: 8999, rating: 4.9, students: 3200, duration: "120+ hrs", features: ["Live classes", "Test series", "Doubt support"], color: "from-blue-500 to-blue-600", tag: "Bestseller" },
@@ -56,7 +57,12 @@ const StorePage = () => {
                 <span className="text-xs text-muted-foreground line-through">₹{course.originalPrice.toLocaleString()}</span>
                 <span className="text-xs font-bold text-secondary">{Math.round((1 - course.price / course.originalPrice) * 100)}% off</span>
               </div>
-              <button className="w-full mt-3 rounded-lg bg-primary py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Enroll Now</button>
+              <button
+                onClick={() => toast.info("Payment integration is not yet implemented", { description: "Checkout will be enabled in a future update." })}
+                className="w-full mt-3 rounded-lg bg-primary py-2.5 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                Enroll Now
+              </button>
             </div>
           </div>
         ))}
