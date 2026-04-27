@@ -58,6 +58,7 @@ import ProtectedStudentRoute from "./components/ProtectedStudentRoute";
 import PublicLayout from "./components/PublicLayout";
 import TestsLandingPage from "./pages/TestsLandingPage";
 import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
+import PricingPage from "./pages/PricingPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
@@ -90,6 +91,7 @@ const App = () => (
               <Route path="/tests" element={<TestsLandingPage />} />
               <Route path="/live-classes" element={<LiveClassesLandingPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
             </Route>
 
             {/* Student layout — public browse pages with student chrome (guests allowed) */}

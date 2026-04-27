@@ -62,7 +62,7 @@ const LandingPage = () => {
             <Link to="/tests" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Tests</Link>
             <Link to="/live-classes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Live Classes</Link>
             <Link to="/educators" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Educators</Link>
-            <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+            <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
