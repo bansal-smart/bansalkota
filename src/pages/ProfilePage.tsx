@@ -136,30 +136,33 @@ const ProfilePage = () => {
   return (
     <div className="pb-20 lg:pb-0">
       {/* Profile Header */}
-      <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-primary-foreground text-center">
-        <div className="relative inline-block">
-          <div className="h-20 w-20 rounded-full bg-white/20 mx-auto flex items-center justify-center text-2xl font-bold overflow-hidden">
-            {form.avatar_url ? (
-              <img src={form.avatar_url} alt={form.full_name} className="h-full w-full object-cover" />
-            ) : (
-              initials
-            )}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary-dark p-8 text-center">
+        <div className="absolute inset-0 grid-texture opacity-40 pointer-events-none" />
+        <div className="relative">
+          <div className="relative inline-block">
+            <div className="h-20 w-20 rounded-full bg-white/25 ring-4 ring-white/30 mx-auto flex items-center justify-center text-2xl font-black text-white overflow-hidden">
+              {form.avatar_url ? (
+                <img src={form.avatar_url} alt={form.full_name} className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-white flex items-center justify-center shadow-md disabled:opacity-60"
+            >
+              {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5 text-primary" />}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
           </div>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-card flex items-center justify-center shadow disabled:opacity-60"
-          >
-            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /> : <Camera className="h-3.5 w-3.5 text-primary" />}
-          </button>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+          <h2 className="text-xl font-black font-display mt-3 text-white drop-shadow-sm">{form.full_name || "Student"}</h2>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            {form.target_exam && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">{form.target_exam}</span>}
+            {form.goal && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">{form.goal}</span>}
+          </div>
+          <p className="text-xs text-white/90 mt-2 font-medium">{[form.city, form.country].filter(Boolean).join(", ") || user?.email}</p>
         </div>
-        <h2 className="text-lg font-black font-display mt-3">{form.full_name || "Student"}</h2>
-        <div className="flex items-center justify-center gap-2 mt-1">
-          {form.target_exam && <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{form.target_exam}</span>}
-          {form.goal && <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold">{form.goal}</span>}
-        </div>
-        <p className="text-xs opacity-70 mt-1">{[form.city, form.country].filter(Boolean).join(", ") || user?.email}</p>
       </div>
 
       {/* Stats */}
