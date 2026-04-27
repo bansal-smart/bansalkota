@@ -1,4 +1,4 @@
-import { ShoppingBag, Star, Clock, Check, Search, Info } from "lucide-react";
+import { ShoppingBag, Star, Clock, Check, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
