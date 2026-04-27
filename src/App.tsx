@@ -54,6 +54,7 @@ import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage
 import AdminLoginPage from "./pages/AdminLoginPage";
 import StaffDashboardPage from "./pages/StaffDashboardPage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import ProtectedStudentRoute from "./components/ProtectedStudentRoute";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
