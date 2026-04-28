@@ -36,6 +36,13 @@ const exportCsv = (rows: AdminUserRow[]) => {
   URL.revokeObjectURL(url);
 };
 
+const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
+  student: "Can access their own dashboard, courses, tests, and progress only.",
+  teacher: "Can manage their own courses, live classes, and answer student doubts.",
+  staff: "Full access to the admin portal — manage users, content, payments, and notifications.",
+  admin: "Highest privilege — everything staff can do, plus role assignment and destructive actions.",
+};
+
 const AdminUsersPage = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -44,6 +51,8 @@ const AdminUsersPage = () => {
   const [drawerUser, setDrawerUser] = useState<AdminUserRow | null>(null);
   const [bulkBody, setBulkBody] = useState("");
   const [showBulk, setShowBulk] = useState(false);
+  const [pendingRole, setPendingRole] = useState<AdminUserRow["role"] | null>(null);
+  const [savingRole, setSavingRole] = useState(false);
 
   const { rows, total, loading, pageSize, reload } = useAdminUsers(filter, search, page);
 
@@ -59,10 +68,20 @@ const AdminUsersPage = () => {
     reload();
   };
 
-  const changeRole = async (u: AdminUserRow, role: AdminUserRow["role"]) => {
-    const { error } = await supabase.rpc("admin_set_user_role", { _user_id: u.user_id, _role: role });
-    if (error) return toast.error(error.message);
-    toast.success(`Role set to ${role}`);
+  const confirmChangeRole = async () => {
+    if (!drawerUser || !pendingRole) return;
+    setSavingRole(true);
+    const { error } = await supabase.rpc("admin_set_user_role", {
+      _user_id: drawerUser.user_id,
+      _role: pendingRole,
+    });
+    setSavingRole(false);
+    if (error) {
+      toast.error("Could not update role", { description: error.message });
+      return;
+    }
+    toast.success(`Role updated to ${pendingRole}`);
+    setPendingRole(null);
     setDrawerUser(null);
     reload();
   };
