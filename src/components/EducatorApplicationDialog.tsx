@@ -277,15 +277,24 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
               )} />
               <FormField control={form.control} name="class_level" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Class Level *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select class to teach" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CLASS_LEVELS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Class Level * <span className="text-xs text-muted-foreground font-normal">(select all that apply)</span></FormLabel>
+                  <div className="grid grid-cols-2 gap-2 rounded-md border border-input p-3">
+                    {CLASS_LEVELS.map((c) => {
+                      const checked = field.value?.includes(c) ?? false;
+                      return (
+                        <label key={c} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              const curr = field.value ?? [];
+                              field.onChange(v ? [...curr, c] : curr.filter((x: string) => x !== c));
+                            }}
+                          />
+                          <span>{c}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />
