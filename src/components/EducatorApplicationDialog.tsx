@@ -28,7 +28,7 @@ const schema = z.object({
   contact_no: z.string().trim().min(7, "Enter a valid contact number").max(20),
   alt_contact_no: z.string().trim().max(20).optional().or(z.literal("")),
   subject: z.string().min(1, "Select a subject"),
-  class_level: z.string().min(1, "Select a class level"),
+  class_level: z.array(z.string()).min(1, "Select at least one class level"),
   highest_qualification: z.string().trim().min(2, "Required").max(100),
   other_qualification: z.string().trim().max(200).optional().or(z.literal("")),
   current_organization: z.string().trim().max(150).optional().or(z.literal("")),
@@ -63,7 +63,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const SUBJECTS = ["Physics", "Chemistry", "Biology", "Mathematics", "Science"];
-const CLASS_LEVELS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"];
+const CLASS_LEVELS = ["Class 11", "Class 12", "Dropper"];
 
 interface Props {
   trigger: React.ReactNode;
@@ -83,7 +83,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
       contact_no: "",
       alt_contact_no: "",
       subject: "",
-      class_level: "",
+      class_level: [],
       highest_qualification: "",
       other_qualification: "",
       current_organization: "",
@@ -276,15 +276,30 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
               )} />
               <FormField control={form.control} name="class_level" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Class Level *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select class to teach" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CLASS_LEVELS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Class Level * <span className="text-xs font-normal text-muted-foreground">(select all that apply)</span></FormLabel>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {CLASS_LEVELS.map((c) => {
+                      const checked = (field.value ?? []).includes(c);
+                      return (
+                        <button
+                          type="button"
+                          key={c}
+                          onClick={() => {
+                            const cur = field.value ?? [];
+                            field.onChange(checked ? cur.filter((v) => v !== c) : [...cur, c]);
+                          }}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full border text-sm transition-colors",
+                            checked
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card text-foreground border-border hover:border-primary/60"
+                          )}
+                        >
+                          {c}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />
