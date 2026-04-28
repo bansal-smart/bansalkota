@@ -383,7 +383,7 @@ const AdminEducatorApplicationsPage = () => {
                 <Field icon={Phone} label="Alt. Contact" value={selected.alt_contact_no || "—"} />
                 <Field icon={CalIcon} label="Date of Birth" value={format(new Date(selected.date_of_birth), "dd MMM yyyy")} />
                 <Field icon={GraduationCap} label="Subject" value={selected.subject} />
-                <Field icon={GraduationCap} label="Class Level" value={selected.class_level || "—"} />
+                <Field icon={GraduationCap} label="Class Level" value={selected.class_level && selected.class_level.length > 0 ? selected.class_level.join(", ") : "—"} />
                 <Field icon={GraduationCap} label="Highest Qualification" value={selected.highest_qualification} />
                 <Field icon={GraduationCap} label="Other Qualification" value={selected.other_qualification || "—"} />
                 <Field icon={Building2} label="Current Organization" value={selected.current_organization || "—"} />
