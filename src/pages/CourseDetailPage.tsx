@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Play,
   CheckCircle2,
@@ -15,6 +15,8 @@ import {
   ClipboardCheck,
   Timer,
   AlertCircle,
+  Download,
+  ArrowRight,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -31,27 +33,84 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+type EnrollmentInfo = {
+  id: string;
+  progress_percent: number;
+  completed_lessons: number;
+  last_lesson_title: string | null;
+  last_accessed_at: string | null;
+};
+
+const formatBytes = (bytes: number | null) => {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const formatRelative = (iso: string | null) => {
+  if (!iso) return "";
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  return `${Math.floor(diff / 86400)} days ago`;
+};
+
 const CourseDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { course, chapters, loading } = useCourseDetail(slug);
+  const { course, chapters, pdfs, loading } = useCourseDetail(slug);
   const [activeTab, setActiveTab] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState(0);
-  const [enrolled, setEnrolled] = useState(false);
+  const [enrollment, setEnrollment] = useState<EnrollmentInfo | null>(null);
   const [enrollOpen, setEnrollOpen] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [completedSlugs, setCompletedSlugs] = useState<Set<string>>(new Set());
 
+  const enrolled = !!enrollment;
+
+  // Load enrollment + lesson progress
   useEffect(() => {
-    if (!user || !course) return;
-    supabase
-      .from("enrollments")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("course_id", course.id)
-      .eq("is_active", true)
-      .maybeSingle()
-      .then(({ data }) => setEnrolled(!!data));
+    if (!user || !course) {
+      setEnrollment(null);
+      setCompletedSlugs(new Set());
+      return;
+    }
+    (async () => {
+      const { data: enr } = await supabase
+        .from("enrollments")
+        .select("id, progress_percent, completed_lessons, last_lesson_title, last_accessed_at")
+        .eq("user_id", user.id)
+        .eq("course_id", course.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      setEnrollment(enr as EnrollmentInfo | null);
+
+      if (enr) {
+        const { data: prog } = await supabase
+          .from("lesson_progress")
+          .select("lesson_slug, is_completed")
+          .eq("user_id", user.id)
+          .eq("course_id", course.id);
+        setCompletedSlugs(new Set((prog ?? []).filter((p) => p.is_completed).map((p) => p.lesson_slug)));
+      }
+    })();
   }, [user, course]);
+
+  const flatLessons = useMemo(() => chapters.flatMap((c) => c.lessons), [chapters]);
+  const totalLessons = flatLessons.length;
+  const completedCount = flatLessons.filter((l) => completedSlugs.has(l.slug)).length;
+  const totalSeconds = flatLessons.reduce((s, l) => s + (l.duration_seconds || 0), 0);
+  const completedSeconds = flatLessons
+    .filter((l) => completedSlugs.has(l.slug))
+    .reduce((s, l) => s + (l.duration_seconds || 0), 0);
+  const totalMinutes = Math.round(totalSeconds / 60);
+  const totalHours = course?.duration_hours || Math.max(1, Math.floor(totalMinutes / 60));
+  const completedHours = (completedSeconds / 3600).toFixed(1);
+  const remainingHours = ((totalSeconds - completedSeconds) / 3600).toFixed(1);
+  const progressPercent = enrollment?.progress_percent ?? 0;
 
   if (loading) {
     return (
@@ -72,31 +131,27 @@ const CourseDetailPage = () => {
     );
   }
 
-  const totalLessons = chapters.reduce((sum, ch) => sum + ch.lessons.length, 0);
-  const totalMinutes = Math.round(
-    chapters.reduce((sum, ch) => sum + ch.lessons.reduce((s, l) => s + l.duration_seconds, 0), 0) /
-      60,
-  );
-  const totalHours = course.duration_hours || Math.max(1, Math.floor(totalMinutes / 60));
-
   const initials = course.educator_name
-    ? course.educator_name
-        .split(" ")
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((n) => n[0]?.toUpperCase())
-        .join("")
+    ? course.educator_name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("")
     : "ED";
 
   const tabs = ["About", "Lectures", "Tests", "PDF Notes", "Time"];
 
-  const stats = [
-    { value: String(totalLessons || 32), label: "Lectures" },
-    { value: "12", label: "Tests" },
-    { value: "18", label: "PDFs" },
-    { value: `${totalHours}h`, label: "Total Time" },
-    { value: `${Number(course.rating || 4.8).toFixed(1)}★`, label: "Rating" },
-  ];
+  const stats = enrolled
+    ? [
+        { value: String(totalLessons || 32), label: "Lectures" },
+        { value: "12", label: "Tests" },
+        { value: String(pdfs.length || 18), label: "PDFs" },
+        { value: `${totalHours}h`, label: "Total Time" },
+        { value: `${progressPercent}%`, label: "Progress" },
+      ]
+    : [
+        { value: String(totalLessons || 32), label: "Lectures" },
+        { value: "12", label: "Tests" },
+        { value: String(pdfs.length || 18), label: "PDFs" },
+        { value: `${totalHours}h`, label: "Total Time" },
+        { value: `${Number(course.rating || 4.8).toFixed(1)}★`, label: "Rating" },
+      ];
 
   const whatYoullLearn = [
     "Core fundamentals and theory",
@@ -118,7 +173,7 @@ const CourseDetailPage = () => {
   const includes = [
     `${totalLessons || 32} video lectures`,
     "12 practice tests",
-    "18 PDF notes",
+    `${pdfs.length || 18} PDF notes`,
     "Lifetime access",
     "Certificate of completion",
   ];
@@ -134,6 +189,24 @@ const CourseDetailPage = () => {
       return;
     }
     setEnrollOpen(true);
+  };
+
+  const handleConfirmEnroll = async () => {
+    if (!user || !course) return;
+    setEnrolling(true);
+    const { data, error } = await supabase
+      .from("enrollments")
+      .insert({ user_id: user.id, course_id: course.id, is_active: true })
+      .select("id, progress_percent, completed_lessons, last_lesson_title, last_accessed_at")
+      .maybeSingle();
+    setEnrolling(false);
+    if (error) {
+      toast.error(error.message || "Could not enroll");
+      return;
+    }
+    setEnrollment(data as EnrollmentInfo);
+    setEnrollOpen(false);
+    toast.success("You're enrolled! Start learning anytime.");
   };
 
   const discount =
@@ -155,22 +228,16 @@ const CourseDetailPage = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-6 items-start">
-            {/* Thumbnail */}
             <div className="w-full md:w-72 shrink-0">
               <div className="aspect-video rounded-2xl border-2 border-dashed border-border bg-card flex items-center justify-center overflow-hidden">
                 {course.thumbnail_url ? (
-                  <img
-                    src={course.thumbnail_url}
-                    alt={course.name}
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={course.thumbnail_url} alt={course.name} className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-xs text-muted-foreground">course image</span>
                 )}
               </div>
             </div>
 
-            {/* Title + meta */}
             <div className="flex-1 min-w-0">
               <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase mb-2">
                 {course.subject}
@@ -180,9 +247,7 @@ const CourseDetailPage = () => {
                 {course.name}
               </h1>
               {course.description && (
-                <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                  {course.description}
-                </p>
+                <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{course.description}</p>
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
@@ -204,9 +269,11 @@ const CourseDetailPage = () => {
                     {course.badge}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full bg-secondary" /> Ongoing
-                </span>
+                {enrolled && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-secondary/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
+                    <CheckCircle2 className="h-3 w-3" /> Enrolled
+                  </span>
+                )}
               </div>
 
               <div className="mt-4 flex items-center gap-2">
@@ -227,7 +294,6 @@ const CourseDetailPage = () => {
       {/* Body */}
       <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
         <div className="min-w-0">
-          {/* Tabs */}
           <div className="flex gap-6 border-b border-border overflow-x-auto">
             {tabs.map((tab, i) => (
               <button
@@ -249,30 +315,28 @@ const CourseDetailPage = () => {
             <div className="mt-6 space-y-8">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                 {stats.map((s) => (
-                  <div
-                    key={s.label}
-                    className="rounded-2xl border border-border bg-card p-4 text-center"
-                  >
+                  <div key={s.label} className="rounded-2xl border border-border bg-card p-4 text-center">
                     <p className="font-display text-2xl font-black text-foreground">{s.value}</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
+                    {s.label === "Progress" && (
+                      <div className="h-1 rounded-full bg-muted mt-2 overflow-hidden">
+                        <div className="h-1 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
               <div>
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-2">
-                  About this course
-                </h3>
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-2">About this course</h3>
                 <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
                   {course.description ||
-                    "Full course description text explaining the scope, depth, and approach of this course. Students will learn everything from foundational principles to advanced applications through a mix of video lectures, practice tests, and downloadable notes."}
+                    "Full course description text explaining the scope, depth, and approach of this course."}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-3">
-                  What you'll learn
-                </h3>
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-3">What you'll learn</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                   {whatYoullLearn.map((item) => (
                     <div key={item} className="flex items-start gap-2 text-sm text-foreground">
@@ -284,9 +348,7 @@ const CourseDetailPage = () => {
               </div>
 
               <div>
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-3">
-                  Requirements
-                </h3>
+                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-3">Requirements</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
                   {requirements.map((item) => (
                     <div key={item} className="flex items-start gap-2 text-sm text-foreground">
@@ -301,7 +363,35 @@ const CourseDetailPage = () => {
 
           {/* Lectures */}
           {activeTab === 1 && (
-            <div className="mt-6 space-y-2">
+            <div className="mt-6 space-y-4">
+              {enrolled && (
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between mb-2 gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-foreground">Your progress</p>
+                      <p className="text-xs text-muted-foreground">
+                        {completedCount} of {totalLessons} lessons completed
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/courses/${course.slug}/learn`)}
+                      className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0"
+                    >
+                      Continue Learning <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>{progressPercent}% complete</span>
+                    {enrollment?.last_lesson_title && (
+                      <span className="truncate ml-2">Last watched: {enrollment.last_lesson_title}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {chapters.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No lectures published yet.</p>
               ) : (
@@ -314,34 +404,32 @@ const CourseDetailPage = () => {
                       <span className="text-sm font-bold text-foreground text-left">{ch.title}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-muted-foreground">{ch.lessons.length} lessons</span>
-                        <ChevronDown
-                          className={`h-4 w-4 text-muted-foreground transition-transform ${
-                            expandedChapter === i ? "rotate-180" : ""
-                          }`}
-                        />
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expandedChapter === i ? "rotate-180" : ""}`} />
                       </div>
                     </button>
                     {expandedChapter === i && (
                       <div className="border-t border-border px-4 py-2 space-y-1">
-                        {ch.lessons.map((l) => (
-                          <div
-                            key={l.id}
-                            className="flex items-center gap-2 text-sm text-muted-foreground py-2 pl-2"
-                          >
-                            {enrolled || l.is_free_preview ? (
-                              <Play className="h-3.5 w-3.5 text-primary" />
-                            ) : (
-                              <Lock className="h-3.5 w-3.5" />
-                            )}
-                            <span className="flex-1 text-foreground">{l.title}</span>
-                            <span className="text-xs">{Math.round(l.duration_seconds / 60)} min</span>
-                            {l.is_free_preview && (
-                              <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
-                                FREE
+                        {ch.lessons.map((l) => {
+                          const isDone = completedSlugs.has(l.slug);
+                          return (
+                            <div key={l.id} className="flex items-center gap-2 text-sm py-2 pl-2">
+                              {isDone ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-secondary" />
+                              ) : enrolled || l.is_free_preview ? (
+                                <Play className="h-3.5 w-3.5 text-primary" />
+                              ) : (
+                                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                              )}
+                              <span className={`flex-1 ${isDone ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                                {l.title}
                               </span>
-                            )}
-                          </div>
-                        ))}
+                              <span className="text-xs text-muted-foreground">{Math.round(l.duration_seconds / 60)} min</span>
+                              {l.is_free_preview && (
+                                <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">FREE</span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -350,19 +438,102 @@ const CourseDetailPage = () => {
             </div>
           )}
 
-          {/* Tests / PDFs / Time placeholders */}
+          {/* Tests */}
           {activeTab === 2 && (
             <EmptyTab icon={ClipboardCheck} title="Practice Tests" description="Topic-wise and full-length mock tests will appear here once published." />
           )}
+
+          {/* PDF Notes */}
           {activeTab === 3 && (
-            <EmptyTab icon={FileText} title="PDF Notes" description="Downloadable notes and formula sheets will be available here." />
+            <div className="mt-6">
+              {pdfs.length === 0 ? (
+                <EmptyTab icon={FileText} title="PDF Notes" description="Downloadable notes and formula sheets will appear here once your educator uploads them." />
+              ) : (
+                <div className="space-y-2">
+                  {pdfs.map((pdf) => {
+                    const canDownload = enrolled;
+                    return (
+                      <div
+                        key={pdf.id}
+                        className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-foreground truncate">{pdf.title}</p>
+                          <p className="text-[11px] text-muted-foreground">PDF{pdf.size_bytes ? ` · ${formatBytes(pdf.size_bytes)}` : ""}</p>
+                        </div>
+                        {canDownload ? (
+                          <a
+                            href={pdf.file_url}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0"
+                          >
+                            <Download className="h-3.5 w-3.5" /> Download
+                          </a>
+                        ) : (
+                          <span className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground shrink-0">
+                            <Lock className="h-3.5 w-3.5" /> Enroll to download
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           )}
+
+          {/* Time */}
           {activeTab === 4 && (
-            <EmptyTab icon={Timer} title="Course Schedule" description="Live class schedule and session timings will be listed here." />
+            <div className="mt-6">
+              {enrolled ? (
+                <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+                  <div>
+                    <h3 className="font-display text-lg font-black text-foreground">Time Tracker</h3>
+                    <p className="text-xs text-muted-foreground">Your progress through this course</p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <TimeStat label="Total" value={`${totalHours}h`} />
+                    <TimeStat label="Completed" value={`${completedHours}h`} accent="text-secondary" />
+                    <TimeStat label="Remaining" value={`${remainingHours}h`} />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="font-semibold text-foreground">{progressPercent}% complete</span>
+                      <span className="text-muted-foreground">{completedCount}/{totalLessons} lessons</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
+                    </div>
+                  </div>
+
+                  {enrollment?.last_accessed_at && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Timer className="h-3.5 w-3.5" /> Last accessed {formatRelative(enrollment.last_accessed_at)}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => navigate(`/courses/${course.slug}/learn`)}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary-dark transition-colors"
+                  >
+                    Continue Learning <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <EmptyTab icon={Timer} title="Track your time" description="Enroll in this course to start tracking your study time and progress." />
+              )}
+            </div>
           )}
         </div>
 
-        {/* Sticky purchase card */}
+        {/* Sticky purchase / progress card */}
         <aside className="lg:sticky lg:top-24 self-start">
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
             <div className="aspect-video rounded-xl border-2 border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground overflow-hidden">
@@ -373,41 +544,74 @@ const CourseDetailPage = () => {
               )}
             </div>
 
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <span className="font-display text-3xl font-black text-foreground">
-                ₹{Number(course.price).toLocaleString()}
-              </span>
-              {course.original_price && course.original_price > course.price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  ₹{Number(course.original_price).toLocaleString()}
-                </span>
-              )}
-              {discount > 0 && (
-                <span className="ml-auto rounded-full bg-secondary/10 px-2 py-0.5 text-[11px] font-bold text-secondary">
-                  {discount}% OFF
-                </span>
-              )}
-            </div>
+            {enrolled ? (
+              <>
+                <div className="flex items-center gap-2 rounded-xl bg-secondary/10 px-3 py-2 text-secondary">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="text-sm font-bold">You're enrolled</span>
+                </div>
 
-            <p className="flex items-center gap-1.5 text-[11px] text-destructive">
-              <AlertCircle className="h-3 w-3" /> 2 days left at this price
-            </p>
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="font-semibold text-foreground">{progressPercent}% complete</span>
+                    <span className="text-muted-foreground">{completedCount}/{totalLessons}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
 
-            <button
-              onClick={handleEnrollClick}
-              className="w-full rounded-xl bg-foreground py-3 text-sm font-bold text-background hover:opacity-90 transition-opacity"
-            >
-              {enrolled ? "Continue Learning →" : "Enroll Now →"}
-            </button>
+                <button
+                  onClick={() => navigate(`/courses/${course.slug}/learn`)}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-foreground py-3 text-sm font-bold text-background hover:opacity-90 transition-opacity"
+                >
+                  Continue Learning <ArrowRight className="h-4 w-4" />
+                </button>
 
-            <button className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors flex items-center justify-center gap-2">
-              <Heart className="h-4 w-4" /> Add to Wishlist
-            </button>
+                <button
+                  disabled
+                  className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground bg-muted/30 cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" /> Enrolled
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="font-display text-3xl font-black text-foreground">
+                    ₹{Number(course.price).toLocaleString()}
+                  </span>
+                  {course.original_price && course.original_price > course.price && (
+                    <span className="text-sm text-muted-foreground line-through">
+                      ₹{Number(course.original_price).toLocaleString()}
+                    </span>
+                  )}
+                  {discount > 0 && (
+                    <span className="ml-auto rounded-full bg-secondary/10 px-2 py-0.5 text-[11px] font-bold text-secondary">
+                      {discount}% OFF
+                    </span>
+                  )}
+                </div>
+
+                <p className="flex items-center gap-1.5 text-[11px] text-destructive">
+                  <AlertCircle className="h-3 w-3" /> 2 days left at this price
+                </p>
+
+                <button
+                  onClick={handleEnrollClick}
+                  className="w-full rounded-xl bg-foreground py-3 text-sm font-bold text-background hover:opacity-90 transition-opacity"
+                >
+                  Enroll Now →
+                </button>
+
+                <button className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors flex items-center justify-center gap-2">
+                  <Heart className="h-4 w-4" /> Add to Wishlist
+                </button>
+              </>
+            )}
 
             <div className="pt-3 border-t border-border space-y-2">
-              <p className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">
-                This course includes
-              </p>
+              <p className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">This course includes</p>
               {includes.map((item) => (
                 <div key={item} className="flex items-center gap-2 text-xs text-foreground">
                   <CheckCircle2 className="h-3.5 w-3.5 text-secondary" />
@@ -425,37 +629,34 @@ const CourseDetailPage = () => {
       </div>
 
       {/* Payment coming soon dialog */}
-      <Dialog open={enrollOpen} onOpenChange={setEnrollOpen}>
+      <Dialog open={enrollOpen} onOpenChange={(o) => !enrolling && setEnrollOpen(o)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display">Payments coming soon</DialogTitle>
             <DialogDescription>
-              Online payment integration is not yet enabled. To enroll in{" "}
-              <span className="font-semibold text-foreground">{course.name}</span>, please contact
-              our support team and we'll get you set up manually.
+              Online payment integration is not yet enabled. For now, you can confirm your enrollment in{" "}
+              <span className="font-semibold text-foreground">{course.name}</span> in demo mode and start
+              learning right away. Reach out to support for the actual payment flow.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl bg-muted/40 p-3 text-xs text-foreground space-y-1">
             <p>
               <span className="text-muted-foreground">Email:</span>{" "}
-              <a className="text-primary font-semibold" href="mailto:support@arke.pro">
-                support@arke.pro
-              </a>
+              <a className="text-primary font-semibold" href="mailto:support@arke.pro">support@arke.pro</a>
             </p>
-            <p>
-              <span className="text-muted-foreground">Course:</span> {course.name}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Price:</span> ₹
-              {Number(course.price).toLocaleString()}
-            </p>
+            <p><span className="text-muted-foreground">Course:</span> {course.name}</p>
+            <p><span className="text-muted-foreground">Price:</span> ₹{Number(course.price).toLocaleString()}</p>
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setEnrollOpen(false)}>
-              Close
-            </Button>
-            <Button asChild>
+            <Button variant="outline" asChild disabled={enrolling}>
               <Link to="/contact">Contact Support</Link>
+            </Button>
+            <Button onClick={handleConfirmEnroll} disabled={enrolling}>
+              {enrolling ? (
+                <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Enrolling…</>
+              ) : (
+                <>Mark as Enrolled (Demo)</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -463,6 +664,13 @@ const CourseDetailPage = () => {
     </div>
   );
 };
+
+const TimeStat = ({ label, value, accent }: { label: string; value: string; accent?: string }) => (
+  <div className="rounded-xl border border-border bg-background/50 p-3 text-center">
+    <p className={`font-display text-xl font-black ${accent ?? "text-foreground"}`}>{value}</p>
+    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{label}</p>
+  </div>
+);
 
 const EmptyTab = ({
   icon: Icon,
