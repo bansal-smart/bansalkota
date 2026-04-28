@@ -53,6 +53,9 @@ import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import StaffDashboardPage from "./pages/StaffDashboardPage";
+import AdminEnquiriesPage from "./pages/AdminEnquiriesPage";
+import AdminCourseContentPage from "./pages/AdminCourseContentPage";
+import AdminReportsPage from "./pages/AdminReportsPage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ProtectedStudentRoute from "./components/ProtectedStudentRoute";
 import PublicLayout from "./components/PublicLayout";
@@ -165,6 +168,9 @@ const App = () => (
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
               <Route path="/admin/educator-applications" element={<AdminEducatorApplicationsPage />} />
+              <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
+              <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
+              <Route path="/admin/reports" element={<AdminReportsPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />

@@ -1,11 +1,14 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, LogOut, Flame, CircleDot, Briefcase } from "lucide-react";
+import { LayoutDashboard, LogOut, Flame, CircleDot, Briefcase, Inbox, FileText, Flag } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 const navItems = [
-  { label: "Enquiries Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+  { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
+  { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
+  { label: "Course Content", icon: FileText, path: "/admin/course-content" },
+  { label: "Reports", icon: Flag, path: "/admin/reports" },
 ];
 
 const AdminLayout = () => {
