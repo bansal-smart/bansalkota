@@ -1,55 +1,97 @@
-# Navbar restructure, hero copy update, new mentorship & admissions pages
+# Staff Dashboard: Enquiries, Course Content, Reports
 
-## 1. Navbar — both `PublicLayout.tsx` and `LandingPage.tsx`
-Replace the 5 nav items with exactly 3:
-- **Courses** → `/courses` (existing)
-- **Mentorship** → `/mentorship` (new page)
-- **Admission/Scholarship** → `/admissions` (new page, replaces Pricing link)
+Add three new modules to the staff panel (`/admin/*`) so staff can:
+1. Manage **general enquiries** submitted from public pages (Contact / Admissions / Mentorship).
+2. Upload and manage **course content** (PDFs, notes) inside a specific course.
+3. Manage **student reports** about teachers/mentors with status workflow.
 
-Remove: Tests, Live Classes, Educators, Pricing from the nav (routes stay alive in case of direct links; only the navbar links change).
+---
 
-The footer "Explore" column auto-updates because it maps over the same `navItems` array in `PublicLayout.tsx`.
+## 1. Database (new migration)
 
-## 2. Footer — `PublicLayout.tsx`
-Add **"Join as mentor"** link under the Company column (or as a dedicated item), routing to `/career`.
+### `enquiries` table
+Captures public form submissions (Contact us, Admission/Scholarship enquiry, Mentorship enquiry).
+- `id`, `name`, `email`, `phone`, `message`, `source` (`contact` | `admission` | `mentorship` | `other`), `region` (`india` | `dubai`), `status` (`new` | `in_progress` | `resolved` | `closed`), `assigned_to` (uuid, staff), `staff_notes` (text), `created_at`, `updated_at`.
+- RLS: `INSERT` allowed for `anon` + `authenticated` (public submission). `SELECT/UPDATE` only for `staff`/`admin` via `has_role()`.
+- Duplicate guard: function `enquiry_recently_submitted(_email, _phone)` mirroring the educator pattern (blocks resubmission within 24h).
 
-## 3. Hero copy — `LandingPage.tsx`
-- Replace tagline `"JEE · NEET · Board Exams | India & Dubai"` with `"Schooling · Olympiads · Competitive Exams"`.
-- Replace the 3 stat chips:
-  - `Users` icon → **Global Presence**
-  - `Monitor` icon → **Live Classes**
-  - `Award` icon → **Unleashing Potential**
+### `course_resources` table
+Per-course PDFs/notes (we already have `course_pdfs`, but it lacks resource type, description, visibility, chapter scoping). Add a richer table:
+- `id`, `course_id` (uuid), `chapter_id` (uuid, nullable — for chapter-level scoping), `title`, `description`, `resource_type` (`pdf` | `notes` | `worksheet` | `solution` | `other`), `file_url`, `file_size_bytes`, `mime_type`, `is_published` (bool), `position` (int), `uploaded_by` (uuid), `created_at`, `updated_at`.
+- RLS: staff/admin manage all; teachers manage resources of their own courses; enrolled students (and anyone for published courses) can `SELECT` rows where `is_published = true`.
+- Storage: reuse the existing public `educator-uploads` bucket with a `course-resources/{course_id}/` prefix, OR add a new `course-resources` bucket (private with signed URLs). Recommended: **new private bucket** + storage RLS keyed off enrollment / staff role.
 
-## 4. New page: `MentorshipPage.tsx` (route `/mentorship`)
-A polished marketing page with these sections, using existing design tokens (orange/navy, Mulish/Plus Jakarta Sans, Lucide icons, no emojis):
+### `reports` table
+Student → teacher/mentor reports.
+- `id`, `reporter_id` (uuid, student), `reported_user_id` (uuid, nullable), `reported_name` (text — for mentors not in `auth.users`), `reported_role` (`teacher` | `mentor` | `staff` | `other`), `category` (`misconduct` | `inappropriate_content` | `no_show` | `payment` | `other`), `subject` (text), `description` (text), `evidence_url` (text, nullable), `status` (`pending` | `in_progress` | `resolved` | `dismissed`), `resolution_notes` (text), `handled_by` (uuid, staff), `created_at`, `updated_at`.
+- RLS: students `INSERT` their own report and `SELECT` only their own; staff/admin can `SELECT`/`UPDATE` everything.
+- Trigger: notify the student (`notifications` table) on status change.
 
-1. **Hero band** — "Mentorship by IITians, IIMians & AIIMS doctors" with badge chips for IIT Delhi, Bombay, Kharagpur, Madras, Kanpur, Roorkee, IIM, AIIMS.
-2. **Built by toppers, for toppers** — Statement that the platform is programmed and designed directly by IITians, IIMians and AIIMS alumni. Three cards (GraduationCap / Briefcase / Stethoscope-style icons).
-3. **The biggest problem: Illusions** — Highlight card explaining that during preparation students fall into illusions (wrong direction, wrong shortcuts, false confidence) and how 1:1 mentorship dissolves them.
-4. **Fortnightly Google Meet with your IITian mentor** — Feature block: every 15 days, a direct Google Meet call with the assigned IITian mentor for non-academic guidance (motivation, time management, college life, doubts about strategy). Calendar/Video icons.
-5. **How it works** — 4-step strip: Enroll → Get matched with an IITian mentor → Connect every 15 days on Google Meet → Resolve illusions, stay on track.
-6. **CTA** — "Book Your Mentor" → `/signup`.
+---
 
-## 5. New page: `AdmissionsPage.tsx` (route `/admissions`)
-Replaces Pricing in the navbar. Sections:
+## 2. Public-side wiring (small additions)
 
-1. **Hero** — "Admissions & Scholarships" subtitle "Find the right program and apply for merit-based scholarships."
-2. **Admission steps** — 4-step process (Choose Program → Submit Application → Scholarship Test → Confirm Seat).
-3. **Scholarship tiers** — 3 cards (Bronze 25%, Silver 50%, Gold 100%) with eligibility criteria and Lucide trophy/medal icons.
-4. **Eligibility & Documents** — Two-column checklist.
-5. **CTA** — "Apply Now" → `/signup` and "Talk to counsellor" → `/contact`.
+- **Contact / Admissions / Mentorship pages**: replace existing form handlers (or add forms where missing) so submissions insert into `enquiries` with the correct `source` value, with zod validation and the duplicate-check RPC.
+- **Student "Report" entry point**: add a "Report" button on Educator detail / Mentor card / Live Class room (teacher header) that opens a small dialog inserting into `reports`.
 
-## 6. Routing — `App.tsx`
-Add inside the existing `PublicLayout` route block:
-```tsx
-<Route path="/mentorship" element={<MentorshipPage />} />
-<Route path="/admissions" element={<AdmissionsPage />} />
-```
-Existing `/pricing`, `/tests`, `/live-classes`, `/educators` routes remain (just unlinked from navbar).
+---
 
-## Files touched
-- edit `src/components/PublicLayout.tsx` (navItems + footer link)
-- edit `src/pages/LandingPage.tsx` (inline navbar links + hero copy/stats)
-- create `src/pages/MentorshipPage.tsx`
-- create `src/pages/AdmissionsPage.tsx`
-- edit `src/App.tsx` (two new routes + imports)
+## 3. Staff UI (new pages + sidebar entries)
+
+Update `src/components/AdminLayout.tsx` `navItems` to add:
+- Enquiries (`/admin/enquiries`) — `Inbox` icon
+- Course Content (`/admin/course-content`) — `FileText` icon
+- Reports (`/admin/reports`) — `Flag` icon
+
+Rename current "Enquiries Dashboard" → "Overview" (it shows educator applications; keep as-is).
+
+### `src/pages/AdminEnquiriesPage.tsx`
+- Table of all enquiries with filters: `status`, `source`, `region`, search.
+- Row actions: open detail drawer with full message, assign to self, change status (dropdown: new / in_progress / resolved / closed), add staff note.
+- Stat tiles: total, new, in_progress, resolved this week.
+
+### `src/pages/AdminCourseContentPage.tsx`
+- **Step 1**: Course picker (search + select from `courses` table).
+- **Step 2**: Once a course is selected, show:
+  - Optional chapter filter (from `chapters` table).
+  - Existing resources list (title, type badge, size, published toggle, edit, delete).
+  - "Upload resource" button → dialog with: title, description, resource_type, chapter (optional), file (PDF / DOC / DOCX / image, max 25 MB), publish toggle.
+  - Upload to `course-resources` bucket → insert row in `course_resources`.
+- Validation via zod; show progress; success/error toasts.
+
+### `src/pages/AdminReportsPage.tsx`
+- Table with filters: `status`, `category`, `reported_role`, search.
+- Severity-style badges (reuse pattern from `AdminModerationPage`).
+- Row → detail drawer: full description, reporter info, evidence link, status dropdown (`pending` / `in_progress` / `resolved` / `dismissed`), resolution notes textarea, "Save & notify reporter" button (writes back + creates a `notifications` row for the student).
+
+### Routing (`src/App.tsx`)
+Register the three new routes inside the existing protected `AdminLayout` block.
+
+---
+
+## 4. Technical notes
+
+- Reuse existing helpers: `has_role()`, `update_updated_at_column()` trigger.
+- New RPC `submit_enquiry(_payload jsonb)` is **not** needed — direct insert with RLS is enough; add a `BEFORE INSERT` trigger to enforce 24h dedupe by `(lower(email), phone, source)`.
+- For storage RLS on `course-resources`, allow:
+  - `INSERT/UPDATE/DELETE` for staff/admin and the course's `created_by` (teacher).
+  - `SELECT` for staff/admin, course owner, and any authenticated user with an active row in `enrollments` for that `course_id`.
+- All new pages follow the existing card/badge styling and Lucide icons (no emojis), per project memory.
+- Type-check after implementation.
+
+---
+
+## Files to create / edit
+
+**Create**
+- `supabase/migrations/<ts>_staff_modules.sql` — three tables, RLS, triggers, dedupe function, storage bucket + policies.
+- `src/pages/AdminEnquiriesPage.tsx`
+- `src/pages/AdminCourseContentPage.tsx`
+- `src/pages/AdminReportsPage.tsx`
+- `src/components/ReportDialog.tsx` (reusable — opened from educator/mentor/live-class views)
+
+**Edit**
+- `src/components/AdminLayout.tsx` — add 3 sidebar entries.
+- `src/App.tsx` — register 3 routes.
+- `src/pages/ContactPage.tsx`, `src/pages/AdmissionsPage.tsx`, `src/pages/MentorshipPage.tsx` — wire submission forms to `enquiries`.
+- One or two student-facing pages (e.g., `EducatorsPage.tsx`, `LiveClassRoomPage.tsx`) — add "Report" button using `ReportDialog`.

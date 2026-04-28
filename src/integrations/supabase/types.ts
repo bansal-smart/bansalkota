@@ -82,6 +82,57 @@ export type Database = {
         }
         Relationships: []
       }
+      course_resources: {
+        Row: {
+          chapter_id: string | null
+          course_id: string
+          created_at: string
+          description: string | null
+          file_size_bytes: number | null
+          file_url: string
+          id: string
+          is_published: boolean
+          mime_type: string | null
+          position: number
+          resource_type: string
+          title: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          chapter_id?: string | null
+          course_id: string
+          created_at?: string
+          description?: string | null
+          file_size_bytes?: number | null
+          file_url: string
+          id?: string
+          is_published?: boolean
+          mime_type?: string | null
+          position?: number
+          resource_type?: string
+          title: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          chapter_id?: string | null
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          file_size_bytes?: number | null
+          file_url?: string
+          id?: string
+          is_published?: boolean
+          mime_type?: string | null
+          position?: number
+          resource_type?: string
+          title?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           badge: string | null
@@ -423,6 +474,51 @@ export type Database = {
           id?: string
           token?: string
           used_at?: string | null
+        }
+        Relationships: []
+      }
+      enquiries: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          region: string | null
+          source: string
+          staff_notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          region?: string | null
+          source?: string
+          staff_notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          region?: string | null
+          source?: string
+          staff_notes?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -838,6 +934,57 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          evidence_url: string | null
+          handled_by: string | null
+          id: string
+          reported_name: string
+          reported_role: string
+          reported_user_id: string | null
+          reporter_id: string
+          resolution_notes: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          evidence_url?: string | null
+          handled_by?: string | null
+          id?: string
+          reported_name: string
+          reported_role?: string
+          reported_user_id?: string | null
+          reporter_id: string
+          resolution_notes?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          evidence_url?: string | null
+          handled_by?: string | null
+          id?: string
+          reported_name?: string
+          reported_role?: string
+          reported_user_id?: string | null
+          reporter_id?: string
+          resolution_notes?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           created_at: string
@@ -1133,6 +1280,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      enquiry_recently_submitted: {
+        Args: { _email: string; _phone: string }
+        Returns: boolean
       }
       get_user_streak: { Args: { _user_id: string }; Returns: number }
       has_role: {
