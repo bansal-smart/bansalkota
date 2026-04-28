@@ -23,9 +23,19 @@ export type ChapterRow = {
   lessons: LessonRow[];
 };
 
+export type CoursePdfRow = {
+  id: string;
+  course_id: string;
+  title: string;
+  file_url: string;
+  size_bytes: number | null;
+  position: number;
+};
+
 export const useCourseDetail = (slug: string | undefined) => {
   const [course, setCourse] = useState<CourseRow | null>(null);
   const [chapters, setChapters] = useState<ChapterRow[]>([]);
+  const [pdfs, setPdfs] = useState<CoursePdfRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +52,7 @@ export const useCourseDetail = (slug: string | undefined) => {
       if (!courseData) {
         setCourse(null);
         setChapters([]);
+        setPdfs([]);
         setLoading(false);
         return;
       }
@@ -67,10 +78,18 @@ export const useCourseDetail = (slug: string | undefined) => {
         lessons: ((lessons ?? []) as LessonRow[]).filter((l) => l.chapter_id === c.id),
       }));
       setChapters(grouped);
+
+      const { data: pdfData } = await supabase
+        .from("course_pdfs")
+        .select("id, course_id, title, file_url, size_bytes, position")
+        .eq("course_id", courseData.id)
+        .order("position");
+      setPdfs((pdfData ?? []) as CoursePdfRow[]);
+
       setLoading(false);
     };
     load();
   }, [slug]);
 
-  return { course, chapters, loading };
+  return { course, chapters, pdfs, loading };
 };
