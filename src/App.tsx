@@ -83,6 +83,7 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/access-denied" element={<AccessDeniedPage />} />
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — require auth */}
             <Route element={<ProtectedStudentRoute />}>
