@@ -13,6 +13,7 @@ const PublicLayout = () => {
     { label: "Courses", path: "/courses" },
     { label: "Mentorship", path: "/mentorship" },
     { label: "Admission/Scholarship", path: "/admissions" },
+    { label: "Association", path: "/association" },
   ];
 
   return (
