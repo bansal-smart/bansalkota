@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
@@ -8,15 +8,32 @@ import { useAuth } from "@/context/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { session, isStaff, roleReady, loading, signIn } = useAuth();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
+  const { session, user, isStaff, roleReady, loading, signIn } = useAuth();
 
   // If already authenticated, send to the right portal based on role.
   // Wait until roleReady so a staff user isn't briefly sent to /dashboard
   // before the role is resolved.
   useEffect(() => {
     if (loading || !session || !roleReady) return;
-    navigate(isStaff ? "/admin/dashboard" : "/dashboard", { replace: true });
-  }, [loading, session, roleReady, isStaff, navigate]);
+    const mustChange = Boolean(
+      (user?.app_metadata as Record<string, unknown> | undefined)?.must_change_password,
+    );
+    if (mustChange) {
+      navigate("/auth/change-password", { replace: true });
+      return;
+    }
+    if (isStaff) {
+      navigate("/admin/dashboard", { replace: true });
+      return;
+    }
+    if (redirectTo) {
+      navigate(redirectTo, { replace: true });
+      return;
+    }
+    navigate("/dashboard", { replace: true });
+  }, [loading, session, user, roleReady, isStaff, navigate, redirectTo]);
 
   const [tab, setTab] = useState<"phone" | "email">("email");
   const [submitting, setSubmitting] = useState(false);
