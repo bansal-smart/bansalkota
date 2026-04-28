@@ -36,7 +36,15 @@ const schema = z.object({
   total_experience: z.coerce.number().min(0, "Must be 0 or more").max(60),
   current_ctc: z.coerce.number().min(0).optional().or(z.nan().transform(() => undefined)),
   expected_ctc: z.coerce.number().min(0, "Required").max(10000000),
-  demo_video_link: z.string().trim().url("Enter a valid URL").max(500),
+  demo_video_link: z
+    .string()
+    .trim()
+    .url("Enter a valid URL")
+    .max(500)
+    .refine(
+      (url) => /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/|live\/)[\w-]{11}|youtu\.be\/[\w-]{11})/i.test(url),
+      "Only YouTube video links are allowed (e.g. https://youtube.com/watch?v=... or https://youtu.be/...)"
+    ),
   photo: z
     .instanceof(FileList)
     .refine((f) => f.length > 0, "Photo is required")
