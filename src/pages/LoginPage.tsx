@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { session, isStaff, loading } = useAuth();
+
+  // If already authenticated, send to the right portal based on role.
+  useEffect(() => {
+    if (loading || !session) return;
+    navigate(isStaff ? "/admin/dashboard" : "/dashboard", { replace: true });
+  }, [loading, session, isStaff, navigate]);
   const [tab, setTab] = useState<"phone" | "email">("email");
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -25,13 +33,21 @@ const LoginPage = () => {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      setSubmitting(false);
+      toast.error(error?.message ?? "Sign-in failed");
       return;
     }
-    navigate("/dashboard");
+    // Check role to route to the correct portal
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id);
+    const roles = (roleRows ?? []).map((r) => r.role);
+    const staff = roles.includes("staff") || roles.includes("admin");
+    setSubmitting(false);
+    navigate(staff ? "/admin/dashboard" : "/dashboard", { replace: true });
   };
 
   const handleGoogleSignIn = async () => {

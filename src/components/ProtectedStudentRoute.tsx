@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const ProtectedStudentRoute = () => {
-  const { session, loading } = useAuth();
+  const { session, isStaff, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -16,6 +16,11 @@ const ProtectedStudentRoute = () => {
 
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Staff/admin users do not belong in the student portal — send them to admin.
+  if (isStaff) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <Outlet />;
