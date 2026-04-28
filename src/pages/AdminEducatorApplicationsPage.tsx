@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye, Download, Clock } from "lucide-react";
+import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye, Download, Clock, KeyRound, Copy, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 type Application = {
   id: string;
@@ -38,7 +38,22 @@ const statusVariants: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-warning/15 text-warning border-warning/30" },
   reviewed: { label: "Reviewed", className: "bg-primary/15 text-primary border-primary/30" },
   approved: { label: "Approved", className: "bg-secondary/15 text-secondary border-secondary/30" },
+  credentials_sent: { label: "Credentials Sent", className: "bg-accent/15 text-accent border-accent/30" },
   rejected: { label: "Rejected", className: "bg-destructive/15 text-destructive border-destructive/30" },
+};
+
+type AppStatus = "pending" | "reviewed" | "approved" | "credentials_sent" | "rejected";
+
+const generateTempPassword = (length = 12) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const symbols = "!@#$%&*";
+  const arr = new Uint32Array(length);
+  crypto.getRandomValues(arr);
+  let pwd = "";
+  for (let i = 0; i < length - 2; i++) pwd += chars[arr[i] % chars.length];
+  pwd += symbols[arr[length - 2] % symbols.length];
+  pwd += String(arr[length - 1] % 10);
+  return pwd;
 };
 
 const escapeCsv = (val: unknown) => {
@@ -55,6 +70,12 @@ const AdminEducatorApplicationsPage = () => {
   const [search, setSearch] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Application | null>(null);
+
+  // Credential generation dialog state
+  const [credApp, setCredApp] = useState<Application | null>(null);
+  const [tempPassword, setTempPassword] = useState("");
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisioned, setProvisioned] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -75,7 +96,7 @@ const AdminEducatorApplicationsPage = () => {
     load();
   }, []);
 
-  const updateStatus = async (id: string, status: "pending" | "reviewed" | "approved" | "rejected") => {
+  const updateStatus = async (id: string, status: AppStatus) => {
     setUpdatingId(id);
     const { error } = await supabase
       .from("educator_applications")
@@ -90,6 +111,42 @@ const AdminEducatorApplicationsPage = () => {
       if (selected?.id === id) setSelected({ ...selected, status });
     }
     setUpdatingId(null);
+  };
+
+  const openCredentialDialog = (app: Application) => {
+    setCredApp(app);
+    setTempPassword(generateTempPassword());
+    setProvisioned(false);
+  };
+
+  const provisionTeacher = async () => {
+    if (!credApp) return;
+    setProvisioning(true);
+    const { data, error } = await supabase.functions.invoke("provision-teacher", {
+      body: { application_id: credApp.id, password: tempPassword },
+    });
+    setProvisioning(false);
+    if (error || (data as { error?: string })?.error) {
+      const msg = (data as { error?: string })?.error || error?.message || "Could not generate credentials";
+      toast.error(msg);
+      return;
+    }
+    toast.success("Teacher account ready. Share the credentials with the candidate.");
+    setProvisioned(true);
+    setApps((prev) =>
+      prev.map((a) => (a.id === credApp.id ? { ...a, status: "credentials_sent" } : a)),
+    );
+  };
+
+  const copyCredentials = async () => {
+    if (!credApp) return;
+    const text = `ARKE Teacher Login\nEmail: ${credApp.email}\nTemporary Password: ${tempPassword}\nLogin: ${window.location.origin}/login\n\nYou will be asked to set a new password on first login.`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Credentials copied to clipboard");
+    } catch {
+      toast.error("Could not copy. Please copy manually.");
+    }
   };
 
   const exportCsv = () => {
@@ -255,7 +312,7 @@ const AdminEducatorApplicationsPage = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     <Button size="sm" variant="outline" onClick={() => setSelected(a)}>
                       <Eye className="h-3.5 w-3.5" /> View
                     </Button>
@@ -266,18 +323,29 @@ const AdminEducatorApplicationsPage = () => {
                         </a>
                       </Button>
                     )}
+                    {(a.status === "approved" || a.status === "credentials_sent") && (
+                      <Button
+                        size="sm"
+                        variant={a.status === "credentials_sent" ? "outline" : "default"}
+                        onClick={() => openCredentialDialog(a)}
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        {a.status === "credentials_sent" ? "Re-issue" : "Generate Login"}
+                      </Button>
+                    )}
                     <Select
                       value={a.status}
-                      onValueChange={(v) => updateStatus(a.id, v as "pending" | "reviewed" | "approved" | "rejected")}
+                      onValueChange={(v) => updateStatus(a.id, v as AppStatus)}
                       disabled={updatingId === a.id}
                     >
-                      <SelectTrigger className="w-[140px] h-9">
+                      <SelectTrigger className="w-[160px] h-9">
                         {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SelectValue />}
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3 w-3" /> Pending</span></SelectItem>
                         <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3 w-3" /> Reviewed</span></SelectItem>
                         <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3 w-3" /> Approved</span></SelectItem>
+                        <SelectItem value="credentials_sent"><span className="flex items-center gap-2"><KeyRound className="h-3 w-3" /> Credentials Sent</span></SelectItem>
                         <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span></SelectItem>
                       </SelectContent>
                     </Select>
@@ -348,24 +416,132 @@ const AdminEducatorApplicationsPage = () => {
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-4 border-t border-border">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Update status</span>
-                <Select
-                  value={selected.status}
-                  onValueChange={(v) => updateStatus(selected.id, v as "pending" | "reviewed" | "approved" | "rejected")}
-                  disabled={updatingId === selected.id}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue />}
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span></SelectItem>
-                    <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Reviewed</span></SelectItem>
-                    <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Approved</span></SelectItem>
-                    <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span></SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-border">
+                <div className="flex items-center gap-2">
+                  {(selected.status === "approved" || selected.status === "credentials_sent") && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        openCredentialDialog(selected);
+                        setSelected(null);
+                      }}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      {selected.status === "credentials_sent" ? "Re-issue Login" : "Generate Login"}
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
+                  <Select
+                    value={selected.status}
+                    onValueChange={(v) => updateStatus(selected.id, v as AppStatus)}
+                    disabled={updatingId === selected.id}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue />}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span></SelectItem>
+                      <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Reviewed</span></SelectItem>
+                      <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Approved</span></SelectItem>
+                      <SelectItem value="credentials_sent"><span className="flex items-center gap-2"><KeyRound className="h-3.5 w-3.5" /> Credentials Sent</span></SelectItem>
+                      <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span></SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Credential generation dialog */}
+      <Dialog
+        open={!!credApp}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCredApp(null);
+            setProvisioned(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {credApp && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 font-display">
+                  <KeyRound className="h-5 w-5 text-primary" /> Generate Teacher Login
+                </DialogTitle>
+                <DialogDescription>
+                  Creates a teacher account for <span className="font-semibold text-foreground">{credApp.candidate_name}</span>.
+                  They'll be required to set a new password on first login.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Login Email</label>
+                  <div className="mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground">
+                    {credApp.email}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Temporary Password</label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      value={tempPassword}
+                      onChange={(e) => setTempPassword(e.target.value)}
+                      className="font-mono text-sm"
+                      disabled={provisioning}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setTempPassword(generateTempPassword())}
+                      disabled={provisioning}
+                      title="Regenerate"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Minimum 8 characters. Share via call or WhatsApp — never email.
+                  </p>
+                </div>
+
+                {provisioned && (
+                  <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-secondary" /> Account ready
+                    </p>
+                    <p className="mt-1 text-muted-foreground">
+                      Copy the credentials and share them with the candidate. They'll set a new password on first login.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="mt-4 gap-2 sm:gap-2">
+                <Button variant="outline" onClick={copyCredentials}>
+                  <Copy className="h-4 w-4" /> Copy
+                </Button>
+                {!provisioned ? (
+                  <Button onClick={provisionTeacher} disabled={provisioning || tempPassword.length < 8}>
+                    {provisioning ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</>
+                    ) : (
+                      <><Send className="h-4 w-4" /> Create Account</>
+                    )}
+                  </Button>
+                ) : (
+                  <Button onClick={() => { setCredApp(null); setProvisioned(false); }}>
+                    Done
+                  </Button>
+                )}
+              </DialogFooter>
             </>
           )}
         </DialogContent>

@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import ForceChangePasswordPage from "./pages/ForceChangePasswordPage";
 import StudentLayout from "./components/StudentLayout";
 import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
@@ -89,6 +90,7 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — require auth */}

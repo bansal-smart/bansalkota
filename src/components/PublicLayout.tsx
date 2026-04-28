@@ -131,6 +131,7 @@ const PublicLayout = () => {
                 <Link to="/about" className="block text-sm text-white/60 hover:text-white/90 transition-colors">About Us</Link>
                 <Link to="/career" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Careers</Link>
                 <Link to="/career" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Join as mentor</Link>
+                <Link to="/career" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Join as teacher</Link>
                 <Link to="/contact" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Contact</Link>
                 <Link to="/privacy" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Terms of Service</Link>
