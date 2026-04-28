@@ -162,7 +162,7 @@ const AdminEducatorApplicationsPage = () => {
     const rows = filtered.map((a) => [
       format(new Date(a.created_at), "yyyy-MM-dd HH:mm"),
       a.candidate_name, a.email, a.contact_no, a.alt_contact_no ?? "",
-      a.date_of_birth, a.subject, a.class_level ?? "",
+      a.date_of_birth, a.subject, (a.class_level ?? []).join(", "),
       a.highest_qualification, a.other_qualification ?? "",
       a.current_organization ?? "", a.previous_organization ?? "",
       a.total_experience, a.current_ctc ?? "", a.expected_ctc,
