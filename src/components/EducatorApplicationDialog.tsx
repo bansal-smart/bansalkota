@@ -107,6 +107,22 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
+      // Duplicate check: same email or contact_no already submitted
+      const { data: existing, error: dupErr } = await supabase
+        .from("educator_applications")
+        .select("id, email, contact_no")
+        .or(`email.eq.${values.email},contact_no.eq.${values.contact_no}`)
+        .limit(1);
+
+      if (dupErr) throw dupErr;
+      if (existing && existing.length > 0) {
+        toast.error("Application already submitted", {
+          description: "An application with this email or contact number already exists. Our team will get back to you soon.",
+        });
+        setSubmitting(false);
+        return;
+      }
+
       const photoFile = values.photo[0];
       const resumeFile = values.resume[0];
 
