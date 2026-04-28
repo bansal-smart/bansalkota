@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
@@ -28,7 +29,7 @@ const schema = z.object({
   contact_no: z.string().trim().min(7, "Enter a valid contact number").max(20),
   alt_contact_no: z.string().trim().max(20).optional().or(z.literal("")),
   subject: z.string().min(1, "Select a subject"),
-  class_level: z.string().min(1, "Select a class level"),
+  class_level: z.array(z.string()).min(1, "Select at least one class level"),
   highest_qualification: z.string().trim().min(2, "Required").max(100),
   other_qualification: z.string().trim().max(200).optional().or(z.literal("")),
   current_organization: z.string().trim().max(150).optional().or(z.literal("")),
@@ -63,7 +64,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const SUBJECTS = ["Physics", "Chemistry", "Biology", "Mathematics", "Science"];
-const CLASS_LEVELS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"];
+const CLASS_LEVELS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
 
 interface Props {
   trigger: React.ReactNode;
@@ -83,7 +84,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
       contact_no: "",
       alt_contact_no: "",
       subject: "",
-      class_level: "",
+      class_level: [],
       highest_qualification: "",
       other_qualification: "",
       current_organization: "",
@@ -276,15 +277,24 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
               )} />
               <FormField control={form.control} name="class_level" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Class Level *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select class to teach" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CLASS_LEVELS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Class Level * <span className="text-xs text-muted-foreground font-normal">(select all that apply)</span></FormLabel>
+                  <div className="grid grid-cols-2 gap-2 rounded-md border border-input p-3">
+                    {CLASS_LEVELS.map((c) => {
+                      const checked = field.value?.includes(c) ?? false;
+                      return (
+                        <label key={c} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              const curr = field.value ?? [];
+                              field.onChange(v ? [...curr, c] : curr.filter((x: string) => x !== c));
+                            }}
+                          />
+                          <span>{c}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />

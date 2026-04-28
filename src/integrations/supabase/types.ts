@@ -298,7 +298,7 @@ export type Database = {
         Row: {
           alt_contact_no: string | null
           candidate_name: string
-          class_level: string | null
+          class_level: string[] | null
           contact_no: string
           created_at: string
           credentials_sent_at: string | null
@@ -322,7 +322,7 @@ export type Database = {
         Insert: {
           alt_contact_no?: string | null
           candidate_name: string
-          class_level?: string | null
+          class_level?: string[] | null
           contact_no: string
           created_at?: string
           credentials_sent_at?: string | null
@@ -346,7 +346,7 @@ export type Database = {
         Update: {
           alt_contact_no?: string | null
           candidate_name?: string
-          class_level?: string | null
+          class_level?: string[] | null
           contact_no?: string
           created_at?: string
           credentials_sent_at?: string | null
