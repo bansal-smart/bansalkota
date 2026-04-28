@@ -582,6 +582,7 @@ const LandingPage = () => {
                 {[
                   { label: "About Us", path: "/about" },
                   { label: "Careers", path: "/career" },
+                  { label: "Join as educator", path: "/career" },
                   { label: "Contact", path: "/contact" },
                   { label: "Privacy Policy", path: "/privacy" },
                   { label: "Terms of Service", path: "/terms" },
