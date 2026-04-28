@@ -61,6 +61,7 @@ const LandingPage = () => {
             <Link to="/courses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Courses</Link>
             <Link to="/mentorship" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Mentorship</Link>
             <Link to="/admissions" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Admission/Scholarship</Link>
+            <Link to="/association" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Association</Link>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
