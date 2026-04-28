@@ -1,21 +1,57 @@
 import { useState } from "react";
-import { Mail, Phone, MapPin, MessageCircle, Send, Clock, Globe, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Send, Clock, Globe, CheckCircle2, Loader2 } from "lucide-react";
+import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+const contactSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(100),
+  email: z.string().trim().email("Invalid email").max(255),
+  phone: z.string().trim().min(7, "Phone is required").max(20),
+  subject: z.string().trim().max(150).optional().or(z.literal("")),
+  message: z.string().trim().min(10, "Please share a few details").max(2000),
+});
 
 const ContactPage = () => {
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) {
-      toast({ title: "Please fill in all required fields", variant: "destructive" });
+    const parsed = contactSchema.safeParse(form);
+    if (!parsed.success) {
+      toast({ title: parsed.error.issues[0].message, variant: "destructive" });
       return;
     }
-    setSubmitted(true);
-    toast({ title: "Message sent!", description: "We'll get back to you within 24 hours." });
-    setForm({ name: "", email: "", subject: "", message: "" });
-    setTimeout(() => setSubmitted(false), 4000);
+    setSubmitting(true);
+    try {
+      const { data: dup } = await supabase.rpc("enquiry_recently_submitted", {
+        _email: parsed.data.email,
+        _phone: parsed.data.phone,
+      });
+      if (dup) {
+        toast({ title: "We already have your enquiry", description: "Our team will reach out shortly. Please wait 24 hours before resubmitting.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      const { error } = await supabase.from("enquiries").insert({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        message: parsed.data.subject ? `[${parsed.data.subject}]\n\n${parsed.data.message}` : parsed.data.message,
+        source: "contact",
+      });
+      if (error) throw error;
+      setSubmitted(true);
+      toast({ title: "Message sent!", description: "We'll get back to you within 24 hours." });
+      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+      setTimeout(() => setSubmitted(false), 4000);
+    } catch (err) {
+      toast({ title: "Something went wrong", description: err instanceof Error ? err.message : "Please try again", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const offices = [
@@ -107,15 +143,27 @@ const ContactPage = () => {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Subject</label>
-                <input
-                  type="text"
-                  value={form.subject}
-                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
-                  placeholder="How can we help?"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Phone *</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Subject</label>
+                  <input
+                    type="text"
+                    value={form.subject}
+                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none"
+                    placeholder="How can we help?"
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Message *</label>
@@ -129,17 +177,15 @@ const ContactPage = () => {
               </div>
               <button
                 type="submit"
-                disabled={submitted}
+                disabled={submitted || submitting}
                 className="inline-flex items-center gap-2 rounded-pill bg-gradient-to-r from-primary to-accent px-8 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {submitted ? (
-                  <>
-                    <CheckCircle2 className="h-4 w-4" /> Sent
-                  </>
+                {submitting ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+                ) : submitted ? (
+                  <><CheckCircle2 className="h-4 w-4" /> Sent</>
                 ) : (
-                  <>
-                    Send Message <Send className="h-4 w-4" />
-                  </>
+                  <>Send Message <Send className="h-4 w-4" /></>
                 )}
               </button>
             </form>
