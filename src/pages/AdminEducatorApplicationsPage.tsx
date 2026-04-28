@@ -416,24 +416,132 @@ const AdminEducatorApplicationsPage = () => {
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-4 border-t border-border">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Update status</span>
-                <Select
-                  value={selected.status}
-                  onValueChange={(v) => updateStatus(selected.id, v as "pending" | "reviewed" | "approved" | "rejected")}
-                  disabled={updatingId === selected.id}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue />}
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span></SelectItem>
-                    <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Reviewed</span></SelectItem>
-                    <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Approved</span></SelectItem>
-                    <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span></SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-border">
+                <div className="flex items-center gap-2">
+                  {(selected.status === "approved" || selected.status === "credentials_sent") && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        openCredentialDialog(selected);
+                        setSelected(null);
+                      }}
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      {selected.status === "credentials_sent" ? "Re-issue Login" : "Generate Login"}
+                    </Button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</span>
+                  <Select
+                    value={selected.status}
+                    onValueChange={(v) => updateStatus(selected.id, v as AppStatus)}
+                    disabled={updatingId === selected.id}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      {updatingId === selected.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectValue />}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3.5 w-3.5" /> Pending</span></SelectItem>
+                      <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3.5 w-3.5" /> Reviewed</span></SelectItem>
+                      <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Approved</span></SelectItem>
+                      <SelectItem value="credentials_sent"><span className="flex items-center gap-2"><KeyRound className="h-3.5 w-3.5" /> Credentials Sent</span></SelectItem>
+                      <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3.5 w-3.5" /> Rejected</span></SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Credential generation dialog */}
+      <Dialog
+        open={!!credApp}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCredApp(null);
+            setProvisioned(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          {credApp && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 font-display">
+                  <KeyRound className="h-5 w-5 text-primary" /> Generate Teacher Login
+                </DialogTitle>
+                <DialogDescription>
+                  Creates a teacher account for <span className="font-semibold text-foreground">{credApp.candidate_name}</span>.
+                  They'll be required to set a new password on first login.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-2">
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Login Email</label>
+                  <div className="mt-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground">
+                    {credApp.email}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Temporary Password</label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Input
+                      value={tempPassword}
+                      onChange={(e) => setTempPassword(e.target.value)}
+                      className="font-mono text-sm"
+                      disabled={provisioning}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={() => setTempPassword(generateTempPassword())}
+                      disabled={provisioning}
+                      title="Regenerate"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Minimum 8 characters. Share via call or WhatsApp — never email.
+                  </p>
+                </div>
+
+                {provisioned && (
+                  <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
+                    <p className="font-semibold flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 text-secondary" /> Account ready
+                    </p>
+                    <p className="mt-1 text-muted-foreground">
+                      Copy the credentials and share them with the candidate. They'll set a new password on first login.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="mt-4 gap-2 sm:gap-2">
+                <Button variant="outline" onClick={copyCredentials}>
+                  <Copy className="h-4 w-4" /> Copy
+                </Button>
+                {!provisioned ? (
+                  <Button onClick={provisionTeacher} disabled={provisioning || tempPassword.length < 8}>
+                    {provisioning ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</>
+                    ) : (
+                      <><Send className="h-4 w-4" /> Create Account</>
+                    )}
+                  </Button>
+                ) : (
+                  <Button onClick={() => { setCredApp(null); setProvisioned(false); }}>
+                    Done
+                  </Button>
+                )}
+              </DialogFooter>
             </>
           )}
         </DialogContent>
