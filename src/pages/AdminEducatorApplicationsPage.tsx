@@ -295,7 +295,7 @@ const AdminEducatorApplicationsPage = () => {
                     <div>
                       <p className="text-muted-foreground">Subject</p>
                       <p className="font-semibold text-foreground flex items-center gap-1"><GraduationCap className="h-3 w-3 text-primary" />{a.subject}</p>
-                      {a.class_level && <p className="text-[10px] text-muted-foreground mt-0.5">{a.class_level}</p>}
+                      {a.class_level && a.class_level.length > 0 && <p className="text-[10px] text-muted-foreground mt-0.5">{a.class_level.join(", ")}</p>}
                     </div>
                     <div>
                       <p className="text-muted-foreground">Experience</p>
