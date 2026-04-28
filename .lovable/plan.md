@@ -1,114 +1,102 @@
-# Course Detail: Enrollment State, PDF Downloads, Progress Tracker
+# Plan: Student Dashboard PRD for Mobile APP
 
-Three tightly-related improvements to `CourseDetailPage.tsx`, plus a small schema addition for PDF notes.
+Create a single, comprehensive Product Requirements Document at `/mnt/documents/Student-Dashboard-Mobile-APP-PRD.md` that the mobile team can use to build the Student Dashboard inside the existing APP. The PRD mirrors the web Student portal (already live at `/dashboard` and related routes) and defines the entry point: a **Dashboard** button on the Profile screen visible only to students.
 
----
+## What the PRD will cover
 
-## 1. Enrolled state after confirming the dialog
+### 1. Document header
+- Product: Arke Student Mobile APP — Dashboard Module
+- Owner, version (v1.0), date (April 28, 2026), status (Draft)
+- Related web routes that this mirrors
 
-The "Payments coming soon" dialog currently just closes. We'll add a **"I've paid — mark me enrolled"** confirmation flow so the demo experience is complete:
+### 2. Goals & non-goals
+- Bring full student learning experience into the APP (parity with web)
+- Entry from Profile screen → Dashboard button (students only, role-gated)
+- Non-goals: Teacher portal, Admin portal, payment gateway changes
 
-- The dialog gets a primary action `Mark as Enrolled (Demo)` next to "Contact Support".
-- On click: `INSERT` into `enrollments` (`user_id`, `course_id`, `is_active=true`) — RLS already allows users to insert their own.
-- Local `enrolled` state flips to `true`, dialog closes, success toast.
-- Sticky purchase card button changes to a disabled `✓ Enrolled` pill plus a separate `Continue Learning →` button that navigates to `/courses/:slug/learn`.
-- Existing enrollment check on page load already handles returning users.
+### 3. User personas & access rules
+- Only `role = 'student'` users see the Dashboard button
+- Teachers/Admins do not see it (role check via `user_roles` table, server-verified)
+- Unauthenticated users → redirected to login
 
-This keeps everything client-side / RLS-safe with no edge function needed.
+### 4. Entry point spec (Profile screen)
+- Button placement, label ("Dashboard"), icon (LayoutDashboard from Lucide)
+- Visibility rule, tap behavior, deep link (`arke://dashboard` or in-app route)
 
----
+### 5. Information architecture — Tabs / Screens
+Maps every Student web route to a mobile screen, grouped to match the web sidebar:
 
-## 2. PDF Notes tab — real downloads
+**Main**
+- Home (`/dashboard`) — streak, continue learning, today's classes, recommended
+- My Learning (`/my-courses`) — enrolled courses, progress
+- Browse Courses (`/courses`) — catalog, filters, View Detail / Enroll Now
+- Course Detail (`/courses/:slug`) — hero, tabs (About, Lectures, Tests, PDF Notes, Schedule), sticky purchase card, demo enroll dialog
+- Live Classes (`/my-live-classes`) — upcoming/live/past, join CTA, live badge
+- Live Class Room (`/live-classes/:id`) — immersive player
+- Tests (`/my-tests`) — test list, status, scores
+- Test Taking (`/tests/:id/take`) — immersive, auto-save, timer
+- Test Result (`/tests/:id/result`) — score, breakdown
+- QBank (`/qbank`) — question bank by subject
+- Doubts (`/doubts`) — AI Doubt Solver + ask history
 
-### Schema change (one migration)
-Add a new table:
+**Explore**
+- Educators, Compete, My Analytics, Leaderboard
 
-```sql
-create table public.course_pdfs (
-  id uuid primary key default gen_random_uuid(),
-  course_id uuid not null,
-  title text not null,
-  file_url text not null,
-  size_bytes bigint,
-  position int not null default 0,
-  created_at timestamptz not null default now()
-);
-alter table public.course_pdfs enable row level security;
+**Account**
+- Profile, Settings, Store, Notifications
 
--- Anyone can view PDFs of published courses
-create policy "View pdfs of published courses" on public.course_pdfs
-for select using (exists (
-  select 1 from public.courses c
-  where c.id = course_pdfs.course_id and c.is_published = true
-));
+For each screen: purpose, key data, primary actions, empty/loading/error states.
 
--- Staff/teachers manage
-create policy "Staff manage pdfs" on public.course_pdfs
-for all to authenticated
-using (has_role(auth.uid(),'staff') or has_role(auth.uid(),'admin'))
-with check (has_role(auth.uid(),'staff') or has_role(auth.uid(),'admin'));
+### 6. Bottom navigation (mobile)
+Mirrors the web mobile bottom nav: Home / Learning / QBank / Tests / Store. Other screens accessed via Home cards, drawer, or Profile.
 
-create policy "Teachers manage pdfs of own courses" on public.course_pdfs
-for all to authenticated
-using (exists (select 1 from public.courses c where c.id = course_pdfs.course_id and c.created_by = auth.uid()))
-with check (exists (select 1 from public.courses c where c.id = course_pdfs.course_id and c.created_by = auth.uid()));
+### 7. Functional requirements
+- Auth: reuse existing Supabase session; derive `isStudent` from `user_roles`
+- Region awareness (India INR / Dubai AED) persisted per user
+- Goal selector (IIT JEE, NEET, etc.) carried into screens
+- Notifications bell with unread count and realtime updates
+- Course enrollment demo flow (dialog → insert into `enrollments`) until payment SDK lands
+- PDF Notes: download gated by enrollment
+- Progress tracking from `lesson_progress` → `enrollments.progress_percent`
+
+### 8. Non-functional requirements
+- Offline-friendly cache for course list, last test result
+- Dark/light theme parity with web (Primary `#F97316`, Navy `#1E293B`, bg `#FFFBF5`)
+- Fonts: Mulish (headings), Plus Jakarta Sans (body)
+- Lucide icons only, no emojis
+- Performance budgets, accessibility (contrast, hit targets ≥44pt)
+
+### 9. Data & API contracts
+- Reuses existing Supabase tables: `profiles`, `user_roles`, `courses`, `enrollments`, `lesson_progress`, `live_classes`, `tests`, `test_attempts`, `course_pdfs`, `notifications`, `doubts`
+- Lists each screen's queries (table + key columns + RLS expectation)
+- Edge functions reused: `ai-doubt-solver`
+
+### 10. Navigation map (ASCII)
+```text
+Profile
+  └── [Dashboard] ──► Home
+                        ├── Bottom Nav: Home | Learning | QBank | Tests | Store
+                        └── More (drawer): Live, Doubts, Educators,
+                                           Compete, Analytics, Leaderboard,
+                                           Notifications, Settings
 ```
 
-### `useCourseDetail` hook
-Also fetch `course_pdfs` for the course and return `pdfs: CoursePdfRow[]`.
+### 11. Acceptance criteria
+- Dashboard button appears only for students
+- All listed screens render with real data from existing backend
+- Role gating prevents teachers/admins from opening Dashboard
+- Theme, fonts, and icons match brand spec
+- Course enroll demo dialog works end-to-end
 
-### CourseDetailPage — `PDF Notes` tab
-- If `pdfs.length === 0`: keep the empty state.
-- Otherwise: render a list of cards, each with:
-  - File icon, title, size (formatted from `size_bytes`).
-  - **Download** button (Lucide `Download` icon) — anchor `<a href={file_url} download target="_blank" rel="noopener">`.
-- Free preview rule: PDFs are gated — show download only if `enrolled`, otherwise show a `Lock` icon and "Enroll to download" text.
+### 12. Open questions / future work
+- Native vs WebView per screen (recommendation: native shell + WebView for immersive Test Taking & Lecture Player initially, full native phase 2)
+- Push notification provider
+- Razorpay (India) / Stripe (Dubai) SDK integration timing
 
-No upload UI in this change (admin upload can come later); URLs can be seeded by staff via existing `educator-uploads` bucket.
+### 13. Appendix
+- Glossary
+- Reference web routes table
+- Brand tokens
 
----
-
-## 3. Progress tracker on the detail page
-
-### Data
-The `enrollments` table already stores `progress_percent`, `completed_lessons`, and `last_lesson_title`. The lecture player already updates these on completion. We just need to read and display them.
-
-### Hook
-In `CourseDetailPage`'s existing enrollment query, also select `progress_percent, completed_lessons, last_lesson_title, last_accessed_at`. Store as `enrollment` object instead of just a boolean.
-
-### UI additions
-
-**Stats grid (About tab)** — when enrolled, replace the static "Rating" card with a **Progress** card showing `{progress_percent}%` and a small horizontal bar.
-
-**Lectures tab header (new)** — when enrolled, render a progress strip above the chapter list:
-```
-████████░░░░  45%   ·   12 of 26 lessons completed
-Last watched: Newton's Third Law
-[Continue Learning →]
-```
-
-**Time tab** — replace its current placeholder with a real summary when enrolled:
-- Total content: `{totalHours} hrs`
-- Completed: `{completedHours} hrs` (computed from completed lessons' `duration_seconds`)
-- Remaining: `{remainingHours} hrs`
-- Progress bar
-- Last accessed timestamp (relative, e.g. "2 hours ago")
-
-**Sidebar card** — when enrolled, the Enroll button area shows the progress bar + `Continue Learning →` instead of price.
-
-Per-lesson check marks in the Lectures accordion: use the same `lesson_progress` query the player uses (filtered to `is_completed = true`) so completed lessons show a green `CheckCircle2` instead of `Play`.
-
----
-
-## Files touched
-
-- **migration**: create `course_pdfs` table + RLS
-- `src/hooks/useCourseDetail.ts` — fetch `pdfs`, fetch `lesson_progress` for enrolled user, return them
-- `src/pages/CourseDetailPage.tsx` — enrolled state UX, PDF list, progress UI in About / Lectures / Time tabs and sidebar
-- No changes to `LecturePlayerPage.tsx` (already writes the data we now read)
-
-## Out of scope
-
-- Real payment gateway
-- Admin UI to upload course PDFs (URLs can be inserted manually for now)
-- Server-recomputed progress (we trust the player's writes)
+## Deliverable
+A single markdown file at `/mnt/documents/Student-Dashboard-Mobile-APP-PRD.md` that the mobile team can hand to engineers to start implementation. After approval I will write the file using `code--write` and surface it via a `presentation-artifact` tag for download.
