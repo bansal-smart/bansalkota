@@ -36,7 +36,15 @@ const schema = z.object({
   total_experience: z.coerce.number().min(0, "Must be 0 or more").max(60),
   current_ctc: z.coerce.number().min(0).optional().or(z.nan().transform(() => undefined)),
   expected_ctc: z.coerce.number().min(0, "Required").max(10000000),
-  demo_video_link: z.string().trim().url("Enter a valid URL").max(500),
+  demo_video_link: z
+    .string()
+    .trim()
+    .url("Enter a valid URL")
+    .max(500)
+    .refine(
+      (url) => /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/|live\/)[\w-]{11}|youtu\.be\/[\w-]{11})([&?#].*)?$/i.test(url),
+      "Only YouTube video links are allowed (e.g. https://youtube.com/watch?v=... or https://youtu.be/...)"
+    ),
   photo: z
     .instanceof(FileList)
     .refine((f) => f.length > 0, "Photo is required")
@@ -99,6 +107,21 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
+      // Duplicate check: same email or contact_no already submitted
+      const { data: alreadyExists, error: dupErr } = await supabase.rpc(
+        "educator_application_exists",
+        { _email: values.email, _contact_no: values.contact_no }
+      );
+
+      if (dupErr) throw dupErr;
+      if (alreadyExists) {
+        toast.error("Application already submitted", {
+          description: "An application with this email or contact number already exists. Our team will get back to you soon.",
+        });
+        setSubmitting(false);
+        return;
+      }
+
       const photoFile = values.photo[0];
       const resumeFile = values.resume[0];
 

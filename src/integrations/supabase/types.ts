@@ -1126,6 +1126,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      educator_application_exists: {
+        Args: { _contact_no: string; _email: string }
+        Returns: boolean
+      }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
