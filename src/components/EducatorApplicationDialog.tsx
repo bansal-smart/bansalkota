@@ -84,7 +84,7 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
       contact_no: "",
       alt_contact_no: "",
       subject: "",
-      class_level: "",
+      class_level: [],
       highest_qualification: "",
       other_qualification: "",
       current_organization: "",
