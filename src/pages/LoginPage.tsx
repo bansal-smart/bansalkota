@@ -33,13 +33,21 @@ const LoginPage = () => {
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
-    if (error) {
-      toast.error(error.message);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      setSubmitting(false);
+      toast.error(error?.message ?? "Sign-in failed");
       return;
     }
-    navigate("/dashboard");
+    // Check role to route to the correct portal
+    const { data: roleRows } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id);
+    const roles = (roleRows ?? []).map((r) => r.role);
+    const staff = roles.includes("staff") || roles.includes("admin");
+    setSubmitting(false);
+    navigate(staff ? "/admin/dashboard" : "/dashboard", { replace: true });
   };
 
   const handleGoogleSignIn = async () => {
