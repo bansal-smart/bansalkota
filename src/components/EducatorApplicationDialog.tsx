@@ -276,15 +276,30 @@ const EducatorApplicationDialog = ({ trigger }: Props) => {
               )} />
               <FormField control={form.control} name="class_level" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Class Level *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger><SelectValue placeholder="Select class to teach" /></SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {CLASS_LEVELS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Class Level * <span className="text-xs font-normal text-muted-foreground">(select all that apply)</span></FormLabel>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {CLASS_LEVELS.map((c) => {
+                      const checked = (field.value ?? []).includes(c);
+                      return (
+                        <button
+                          type="button"
+                          key={c}
+                          onClick={() => {
+                            const cur = field.value ?? [];
+                            field.onChange(checked ? cur.filter((v) => v !== c) : [...cur, c]);
+                          }}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full border text-sm transition-colors",
+                            checked
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card text-foreground border-border hover:border-primary/60"
+                          )}
+                        >
+                          {c}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />
