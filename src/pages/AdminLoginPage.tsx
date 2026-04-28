@@ -45,7 +45,8 @@ const AdminLoginPage = () => {
       return;
     }
     toast.success("Welcome back");
-    navigate(from, { replace: true });
+    // The redirect effect above handles role-based navigation once roleReady
+    // flips true (signIn already resolved it server-side).
   };
 
   return (
