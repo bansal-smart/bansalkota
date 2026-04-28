@@ -301,6 +301,7 @@ export type Database = {
           class_level: string | null
           contact_no: string
           created_at: string
+          credentials_sent_at: string | null
           current_ctc: number | null
           current_organization: string | null
           date_of_birth: string
@@ -324,6 +325,7 @@ export type Database = {
           class_level?: string | null
           contact_no: string
           created_at?: string
+          credentials_sent_at?: string | null
           current_ctc?: number | null
           current_organization?: string | null
           date_of_birth: string
@@ -347,6 +349,7 @@ export type Database = {
           class_level?: string | null
           contact_no?: string
           created_at?: string
+          credentials_sent_at?: string | null
           current_ctc?: number | null
           current_organization?: string | null
           date_of_birth?: string
