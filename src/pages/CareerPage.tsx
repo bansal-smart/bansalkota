@@ -16,10 +16,13 @@ import {
   Award,
   Coffee,
   Target,
+  LogIn,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import EducatorApplicationDialog from "@/components/EducatorApplicationDialog";
+import { useAuth } from "@/context/AuthContext";
 import arkeLogo from "@/assets/arke-logo.jpeg";
 
 const openings = [
