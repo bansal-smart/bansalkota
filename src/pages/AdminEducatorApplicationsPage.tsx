@@ -71,6 +71,12 @@ const AdminEducatorApplicationsPage = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Application | null>(null);
 
+  // Credential generation dialog state
+  const [credApp, setCredApp] = useState<Application | null>(null);
+  const [tempPassword, setTempPassword] = useState("");
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisioned, setProvisioned] = useState(false);
+
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -90,7 +96,7 @@ const AdminEducatorApplicationsPage = () => {
     load();
   }, []);
 
-  const updateStatus = async (id: string, status: "pending" | "reviewed" | "approved" | "rejected") => {
+  const updateStatus = async (id: string, status: AppStatus) => {
     setUpdatingId(id);
     const { error } = await supabase
       .from("educator_applications")
@@ -105,6 +111,42 @@ const AdminEducatorApplicationsPage = () => {
       if (selected?.id === id) setSelected({ ...selected, status });
     }
     setUpdatingId(null);
+  };
+
+  const openCredentialDialog = (app: Application) => {
+    setCredApp(app);
+    setTempPassword(generateTempPassword());
+    setProvisioned(false);
+  };
+
+  const provisionTeacher = async () => {
+    if (!credApp) return;
+    setProvisioning(true);
+    const { data, error } = await supabase.functions.invoke("provision-teacher", {
+      body: { application_id: credApp.id, password: tempPassword },
+    });
+    setProvisioning(false);
+    if (error || (data as { error?: string })?.error) {
+      const msg = (data as { error?: string })?.error || error?.message || "Could not generate credentials";
+      toast.error(msg);
+      return;
+    }
+    toast.success("Teacher account ready. Share the credentials with the candidate.");
+    setProvisioned(true);
+    setApps((prev) =>
+      prev.map((a) => (a.id === credApp.id ? { ...a, status: "credentials_sent" } : a)),
+    );
+  };
+
+  const copyCredentials = async () => {
+    if (!credApp) return;
+    const text = `ARKE Teacher Login\nEmail: ${credApp.email}\nTemporary Password: ${tempPassword}\nLogin: ${window.location.origin}/login\n\nYou will be asked to set a new password on first login.`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Credentials copied to clipboard");
+    } catch {
+      toast.error("Could not copy. Please copy manually.");
+    }
   };
 
   const exportCsv = () => {
