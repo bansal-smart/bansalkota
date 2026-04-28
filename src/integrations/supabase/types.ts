@@ -49,6 +49,39 @@ export type Database = {
           },
         ]
       }
+      course_pdfs: {
+        Row: {
+          course_id: string
+          created_at: string
+          file_url: string
+          id: string
+          position: number
+          size_bytes: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          file_url: string
+          id?: string
+          position?: number
+          size_bytes?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          file_url?: string
+          id?: string
+          position?: number
+          size_bytes?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           badge: string | null
