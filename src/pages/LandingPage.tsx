@@ -59,10 +59,8 @@ const LandingPage = () => {
           </Link>
           <div className="hidden items-center gap-8 md:flex">
             <Link to="/courses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Courses</Link>
-            <Link to="/tests" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Tests</Link>
-            <Link to="/live-classes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Live Classes</Link>
-            <Link to="/educators" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Educators</Link>
-            <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+            <Link to="/mentorship" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Mentorship</Link>
+            <Link to="/admissions" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Admission/Scholarship</Link>
           </div>
           <div className="flex items-center gap-3">
             {user ? (
@@ -110,7 +108,7 @@ const LandingPage = () => {
                 <span className="block text-4xl font-black text-white md:text-5xl lg:text-6xl">Start Your Journey,</span>
                 <span className="block text-4xl font-black md:text-5xl lg:text-6xl gradient-text">Reach Your Goals</span>
               </h1>
-              <p className="mt-4 text-lg font-semibold text-white/90">JEE · NEET · Board Exams | India & Dubai</p>
+              <p className="mt-4 text-lg font-semibold text-white/90">Schooling · Olympiads · Competitive Exams</p>
               <p className="mt-3 max-w-md text-base text-white/70 leading-relaxed">
                 Master your exams with live classes from top educators, AI-powered doubt solving, and smart test analytics.
               </p>
@@ -123,9 +121,9 @@ const LandingPage = () => {
                 </button>
               </div>
               <div className="mt-10 flex flex-wrap items-center gap-6 text-sm text-white/80">
-                <span className="inline-flex items-center gap-1.5 font-semibold"><Users className="h-4 w-4 text-primary" /> 50,000+ Students</span>
-                <span className="inline-flex items-center gap-1.5 font-semibold"><Monitor className="h-4 w-4 text-primary" /> 500+ Live Classes</span>
-                <span className="inline-flex items-center gap-1.5 font-semibold"><Award className="h-4 w-4 text-primary" /> 99% Results</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Globe className="h-4 w-4 text-primary" /> Global Presence</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Monitor className="h-4 w-4 text-primary" /> Live Classes</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold"><Award className="h-4 w-4 text-primary" /> Unleashing Potential</span>
               </div>
             </div>
             <div className="relative hidden md:block animate-fade-in-up" style={{ animationDelay: '0.2s' }}>

@@ -11,10 +11,8 @@ const PublicLayout = () => {
 
   const navItems = [
     { label: "Courses", path: "/courses" },
-    { label: "Tests", path: "/tests" },
-    { label: "Live Classes", path: "/live-classes" },
-    { label: "Educators", path: "/educators" },
-    { label: "Pricing", path: "/pricing" },
+    { label: "Mentorship", path: "/mentorship" },
+    { label: "Admission/Scholarship", path: "/admissions" },
   ];
 
   return (
@@ -131,6 +129,7 @@ const PublicLayout = () => {
               <div className="space-y-2">
                 <Link to="/about" className="block text-sm text-white/60 hover:text-white/90 transition-colors">About Us</Link>
                 <Link to="/career" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Careers</Link>
+                <Link to="/career" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Join as mentor</Link>
                 <Link to="/contact" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Contact</Link>
                 <Link to="/privacy" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Privacy Policy</Link>
                 <Link to="/terms" className="block text-sm text-white/60 hover:text-white/90 transition-colors">Terms of Service</Link>
