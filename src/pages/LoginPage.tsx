@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { session, isStaff, loading } = useAuth();
+
+  // If already authenticated, send to the right portal based on role.
+  useEffect(() => {
+    if (loading || !session) return;
+    navigate(isStaff ? "/admin/dashboard" : "/dashboard", { replace: true });
+  }, [loading, session, isStaff, navigate]);
   const [tab, setTab] = useState<"phone" | "email">("email");
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
