@@ -210,7 +210,7 @@ const CareerPage = () => {
                   size="lg"
                   variant="outline"
                   onClick={handleTeacherLogin}
-                  className="w-full sm:w-auto h-13 sm:h-14 px-6 text-base font-semibold border-primary/40 hover:border-primary hover:bg-primary/5 transition-all"
+                  className="w-full sm:w-auto h-13 sm:h-14 px-6 text-base font-semibold text-primary border-primary/40 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all"
                 >
                   <LogIn className="mr-2 h-5 w-5" />
                   Already a teacher? Login
@@ -410,7 +410,7 @@ const CareerPage = () => {
                   size="lg"
                   variant="outline"
                   onClick={handleTeacherLogin}
-                  className="w-full sm:w-auto h-13 sm:h-14 px-6 text-base font-semibold border-primary/40 hover:border-primary hover:bg-primary/5 transition-all"
+                  className="w-full sm:w-auto h-13 sm:h-14 px-6 text-base font-semibold text-primary border-primary/40 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all"
                 >
                   <LogIn className="mr-2 h-5 w-5" />
                   Already a teacher? Login
