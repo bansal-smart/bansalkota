@@ -19,7 +19,7 @@ type Application = {
   contact_no: string;
   alt_contact_no: string | null;
   subject: string;
-  class_level: string | null;
+  class_level: string[] | null;
   highest_qualification: string;
   other_qualification: string | null;
   current_organization: string | null;
