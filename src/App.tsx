@@ -61,6 +61,7 @@ import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
 import PricingPage from "./pages/PricingPage";
 import MentorshipPage from "./pages/MentorshipPage";
 import AdmissionsPage from "./pages/AdmissionsPage";
+import AssociationPage from "./pages/AssociationPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
