@@ -34,9 +34,16 @@ const AuthCallbackPage = () => {
       }
 
       if (data.session) {
+        // Route to the correct portal based on role
+        const { data: roleRows } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.session.user.id);
+        const roles = (roleRows ?? []).map((r) => r.role);
+        const staff = roles.includes("staff") || roles.includes("admin");
         setStatus("success");
-        setMessage("Your email has been verified. Redirecting...");
-        setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+        setMessage("You're signed in. Redirecting...");
+        setTimeout(() => navigate(staff ? "/admin/dashboard" : "/dashboard", { replace: true }), 1200);
       } else {
         // No active session yet — the link may still be valid; ask user to log in.
         setStatus("success");
