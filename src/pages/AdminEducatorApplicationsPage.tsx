@@ -312,7 +312,7 @@ const AdminEducatorApplicationsPage = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     <Button size="sm" variant="outline" onClick={() => setSelected(a)}>
                       <Eye className="h-3.5 w-3.5" /> View
                     </Button>
@@ -323,18 +323,29 @@ const AdminEducatorApplicationsPage = () => {
                         </a>
                       </Button>
                     )}
+                    {(a.status === "approved" || a.status === "credentials_sent") && (
+                      <Button
+                        size="sm"
+                        variant={a.status === "credentials_sent" ? "outline" : "default"}
+                        onClick={() => openCredentialDialog(a)}
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        {a.status === "credentials_sent" ? "Re-issue" : "Generate Login"}
+                      </Button>
+                    )}
                     <Select
                       value={a.status}
-                      onValueChange={(v) => updateStatus(a.id, v as "pending" | "reviewed" | "approved" | "rejected")}
+                      onValueChange={(v) => updateStatus(a.id, v as AppStatus)}
                       disabled={updatingId === a.id}
                     >
-                      <SelectTrigger className="w-[140px] h-9">
+                      <SelectTrigger className="w-[160px] h-9">
                         {updatingId === a.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SelectValue />}
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending"><span className="flex items-center gap-2"><Clock className="h-3 w-3" /> Pending</span></SelectItem>
                         <SelectItem value="reviewed"><span className="flex items-center gap-2"><Eye className="h-3 w-3" /> Reviewed</span></SelectItem>
                         <SelectItem value="approved"><span className="flex items-center gap-2"><Check className="h-3 w-3" /> Approved</span></SelectItem>
+                        <SelectItem value="credentials_sent"><span className="flex items-center gap-2"><KeyRound className="h-3 w-3" /> Credentials Sent</span></SelectItem>
                         <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span></SelectItem>
                       </SelectContent>
                     </Select>
