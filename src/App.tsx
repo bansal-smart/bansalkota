@@ -63,6 +63,7 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
+import AccessDeniedPage from "./pages/AccessDeniedPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/access-denied" element={<AccessDeniedPage />} />
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — require auth */}
             <Route element={<ProtectedStudentRoute />}>

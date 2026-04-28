@@ -8,13 +8,16 @@ import { useAuth } from "@/context/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { session, isStaff, loading } = useAuth();
+  const { session, isStaff, roleReady, loading, signIn } = useAuth();
 
   // If already authenticated, send to the right portal based on role.
+  // Wait until roleReady so a staff user isn't briefly sent to /dashboard
+  // before the role is resolved.
   useEffect(() => {
-    if (loading || !session) return;
+    if (loading || !session || !roleReady) return;
     navigate(isStaff ? "/admin/dashboard" : "/dashboard", { replace: true });
-  }, [loading, session, isStaff, navigate]);
+  }, [loading, session, roleReady, isStaff, navigate]);
+
   const [tab, setTab] = useState<"phone" | "email">("email");
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -33,21 +36,15 @@ const LoginPage = () => {
       return;
     }
     setSubmitting(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !data.user) {
-      setSubmitting(false);
-      toast.error(error?.message ?? "Sign-in failed");
+    // signIn() resolves the user's role server-side before returning, so the
+    // redirect effect above will fire with the correct destination as soon as
+    // roleReady flips true.
+    const { error } = await signIn(email.trim(), password);
+    setSubmitting(false);
+    if (error) {
+      toast.error(error);
       return;
     }
-    // Check role to route to the correct portal
-    const { data: roleRows } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", data.user.id);
-    const roles = (roleRows ?? []).map((r) => r.role);
-    const staff = roles.includes("staff") || roles.includes("admin");
-    setSubmitting(false);
-    navigate(staff ? "/admin/dashboard" : "/dashboard", { replace: true });
   };
 
   const handleGoogleSignIn = async () => {

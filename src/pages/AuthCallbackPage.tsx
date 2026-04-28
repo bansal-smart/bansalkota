@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 type Status = "loading" | "success" | "error";
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
+  const { refreshRole } = useAuth();
   const [status, setStatus] = useState<Status>("loading");
   const [message, setMessage] = useState<string>("");
 
@@ -34,13 +36,9 @@ const AuthCallbackPage = () => {
       }
 
       if (data.session) {
-        // Route to the correct portal based on role
-        const { data: roleRows } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.session.user.id);
-        const roles = (roleRows ?? []).map((r) => r.role);
-        const staff = roles.includes("staff") || roles.includes("admin");
+        // Server-verified role lookup so Google sign-in lands in the right
+        // portal (staff/admin → /admin/dashboard, students → /dashboard).
+        const staff = await refreshRole();
         setStatus("success");
         setMessage("You're signed in. Redirecting...");
         setTimeout(() => navigate(staff ? "/admin/dashboard" : "/dashboard", { replace: true }), 1200);

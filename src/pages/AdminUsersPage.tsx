@@ -36,6 +36,13 @@ const exportCsv = (rows: AdminUserRow[]) => {
   URL.revokeObjectURL(url);
 };
 
+const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
+  student: "Can access their own dashboard, courses, tests, and progress only.",
+  teacher: "Can manage their own courses, live classes, and answer student doubts.",
+  staff: "Full access to the admin portal — manage users, content, payments, and notifications.",
+  admin: "Highest privilege — everything staff can do, plus role assignment and destructive actions.",
+};
+
 const AdminUsersPage = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -44,6 +51,8 @@ const AdminUsersPage = () => {
   const [drawerUser, setDrawerUser] = useState<AdminUserRow | null>(null);
   const [bulkBody, setBulkBody] = useState("");
   const [showBulk, setShowBulk] = useState(false);
+  const [pendingRole, setPendingRole] = useState<AdminUserRow["role"] | null>(null);
+  const [savingRole, setSavingRole] = useState(false);
 
   const { rows, total, loading, pageSize, reload } = useAdminUsers(filter, search, page);
 
@@ -59,10 +68,20 @@ const AdminUsersPage = () => {
     reload();
   };
 
-  const changeRole = async (u: AdminUserRow, role: AdminUserRow["role"]) => {
-    const { error } = await supabase.rpc("admin_set_user_role", { _user_id: u.user_id, _role: role });
-    if (error) return toast.error(error.message);
-    toast.success(`Role set to ${role}`);
+  const confirmChangeRole = async () => {
+    if (!drawerUser || !pendingRole) return;
+    setSavingRole(true);
+    const { error } = await supabase.rpc("admin_set_user_role", {
+      _user_id: drawerUser.user_id,
+      _role: pendingRole,
+    });
+    setSavingRole(false);
+    if (error) {
+      toast.error("Could not update role", { description: error.message });
+      return;
+    }
+    toast.success(`Role updated to ${pendingRole}`);
+    setPendingRole(null);
     setDrawerUser(null);
     reload();
   };
@@ -282,19 +301,33 @@ const AdminUsersPage = () => {
                 ))}
               </div>
 
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">Change role</p>
-                <div className="flex gap-1.5 flex-wrap">
-                  {(["student", "teacher", "staff", "admin"] as const).map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => changeRole(drawerUser, r)}
-                      disabled={drawerUser.role === r}
-                      className="rounded-lg border border-border px-3 py-1.5 text-[11px] font-medium text-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted/40 capitalize"
-                    >
-                      {r}
-                    </button>
-                  ))}
+              <div className="rounded-lg border border-border bg-background/50 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Role &amp; access</p>
+                  {roleBadge(drawerUser.role)}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
+                  {ROLE_DESCRIPTIONS[drawerUser.role]}
+                </p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Change role to</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(["student", "teacher", "staff", "admin"] as const).map((r) => {
+                    const isCurrent = drawerUser.role === r;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => setPendingRole(r)}
+                        disabled={isCurrent}
+                        className={`rounded-lg border px-3 py-2 text-[11px] font-semibold capitalize transition-colors ${
+                          isCurrent
+                            ? "border-primary/30 bg-primary/5 text-primary cursor-not-allowed"
+                            : "border-border text-foreground hover:bg-muted/40"
+                        }`}
+                      >
+                        {isCurrent ? `${r} (current)` : r}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -305,6 +338,53 @@ const AdminUsersPage = () => {
                 }`}
               >
                 {drawerUser.is_suspended ? "Unsuspend user" : "Suspend user"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingRole && drawerUser && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !savingRole && setPendingRole(null)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-foreground">Confirm role change</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Change <span className="font-semibold text-foreground">{drawerUser.full_name || "this user"}</span>'s
+                  role from <span className="capitalize font-semibold text-foreground">{drawerUser.role}</span> to{" "}
+                  <span className="capitalize font-semibold text-primary">{pendingRole}</span>?
+                </p>
+              </div>
+            </div>
+            <div className="rounded-lg bg-muted/40 p-3 text-[11px] text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-foreground capitalize mb-1">{pendingRole} access</p>
+              {ROLE_DESCRIPTIONS[pendingRole]}
+            </div>
+            {(pendingRole === "admin" || pendingRole === "staff") && drawerUser.role === "student" && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-[11px] text-destructive">
+                <strong>Heads up:</strong> Granting {pendingRole} access removes student-portal access for this user. They will be redirected to the admin dashboard on their next sign-in.
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                disabled={savingRole}
+                onClick={() => setPendingRole(null)}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={savingRole}
+                onClick={confirmChangeRole}
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+              >
+                {savingRole && <Loader2 className="h-3 w-3 animate-spin" />}
+                Confirm change
               </button>
             </div>
           </div>
