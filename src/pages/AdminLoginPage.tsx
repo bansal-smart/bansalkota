@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 
 const AdminLoginPage = () => {
-  const { signIn, session, isStaff, loading } = useAuth();
+  const { signIn, session, isStaff, roleReady, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/admin/dashboard";
@@ -19,10 +19,17 @@ const AdminLoginPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && session && isStaff) {
+    if (loading || !session || !roleReady) return;
+    if (isStaff) {
       navigate(from, { replace: true });
+    } else {
+      // Signed in but not staff — show the friendly access-denied page.
+      navigate("/access-denied", {
+        replace: true,
+        state: { reason: "student-tried-admin", from: location.pathname },
+      });
     }
-  }, [loading, session, isStaff, navigate, from]);
+  }, [loading, session, roleReady, isStaff, navigate, from, location.pathname]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
