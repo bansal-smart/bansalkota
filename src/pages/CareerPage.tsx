@@ -394,17 +394,28 @@ const CareerPage = () => {
               Send us your application — even if your subject isn't listed. Great educators always have a place here.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3">
-              <EducatorApplicationDialog
-                trigger={
-                  <Button
-                    size="lg"
-                    className="w-full sm:w-auto h-13 sm:h-14 px-10 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
-                  >
-                    Apply Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                }
-              />
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <EducatorApplicationDialog
+                  trigger={
+                    <Button
+                      size="lg"
+                      className="w-full sm:w-auto h-13 sm:h-14 px-10 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                    >
+                      Apply Now
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  }
+                />
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleTeacherLogin}
+                  className="w-full sm:w-auto h-13 sm:h-14 px-6 text-base font-semibold border-primary/40 hover:border-primary hover:bg-primary/5 transition-all"
+                >
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Already a teacher? Login
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3" />
                 Takes ~3 minutes · Reviewed within 48 hours
