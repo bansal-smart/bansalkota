@@ -28,7 +28,7 @@ const schema = z.object({
   contact_no: z.string().trim().min(7, "Enter a valid contact number").max(20),
   alt_contact_no: z.string().trim().max(20).optional().or(z.literal("")),
   subject: z.string().min(1, "Select a subject"),
-  class_level: z.string().min(1, "Select a class level"),
+  class_level: z.array(z.string()).min(1, "Select at least one class level"),
   highest_qualification: z.string().trim().min(2, "Required").max(100),
   other_qualification: z.string().trim().max(200).optional().or(z.literal("")),
   current_organization: z.string().trim().max(150).optional().or(z.literal("")),
