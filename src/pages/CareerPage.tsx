@@ -127,6 +127,17 @@ const benefits = [
 ];
 
 const CareerPage = () => {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+
+  const handleTeacherLogin = () => {
+    if (session) {
+      navigate("/teacher/dashboard");
+    } else {
+      navigate("/login?redirect=/teacher/dashboard");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Top Bar */}
