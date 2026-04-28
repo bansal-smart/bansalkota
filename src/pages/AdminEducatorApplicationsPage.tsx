@@ -38,7 +38,22 @@ const statusVariants: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-warning/15 text-warning border-warning/30" },
   reviewed: { label: "Reviewed", className: "bg-primary/15 text-primary border-primary/30" },
   approved: { label: "Approved", className: "bg-secondary/15 text-secondary border-secondary/30" },
+  credentials_sent: { label: "Credentials Sent", className: "bg-accent/15 text-accent border-accent/30" },
   rejected: { label: "Rejected", className: "bg-destructive/15 text-destructive border-destructive/30" },
+};
+
+type AppStatus = "pending" | "reviewed" | "approved" | "credentials_sent" | "rejected";
+
+const generateTempPassword = (length = 12) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const symbols = "!@#$%&*";
+  const arr = new Uint32Array(length);
+  crypto.getRandomValues(arr);
+  let pwd = "";
+  for (let i = 0; i < length - 2; i++) pwd += chars[arr[i] % chars.length];
+  pwd += symbols[arr[length - 2] % symbols.length];
+  pwd += String(arr[length - 1] % 10);
+  return pwd;
 };
 
 const escapeCsv = (val: unknown) => {
