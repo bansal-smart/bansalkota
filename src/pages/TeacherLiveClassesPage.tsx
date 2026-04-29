@@ -67,10 +67,26 @@ const TeacherLiveClassesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  const buildMeetingUrl = (courseName: string) => {
+    const slug = courseName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "class";
+    const suffix = Math.random().toString(36).slice(2, 8);
+    return `https://meet.jit.si/arke-${slug}-${suffix}`;
+  };
+
   const handleCourseChange = (id: string) => {
     setCourseId(id);
     const c = courses.find((x) => x.id === id);
     if (c?.subject) setSubject(c.subject);
+    if (c) {
+      // Auto-fill meeting URL only if empty or previously auto-generated
+      if (!meetingUrl || meetingUrl.startsWith("https://meet.jit.si/arke-")) {
+        setMeetingUrl(buildMeetingUrl(c.name));
+      }
+    }
   };
 
   const submit = async () => {
