@@ -75,51 +75,60 @@ const TeacherCoursesPage = () => {
           <p className="mt-1 text-sm text-muted-foreground">Click New Course to publish your first batch.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {courses.map((c) => (
-            <div key={c.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-4 flex-wrap">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shrink-0">
-                  <BookOpen className="h-6 w-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-bold text-foreground">{c.name}</h3>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        c.is_published ? "bg-secondary/20 text-secondary" : "bg-muted text-muted-foreground"
-                      }`}
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="space-y-4 p-4">
+            {paged.map((c) => (
+              <div key={c.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
+                <div className="flex items-start gap-4 flex-wrap">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shrink-0">
+                    <BookOpen className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-foreground">{c.name}</h3>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          c.is_published ? "bg-secondary/20 text-secondary" : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {c.is_published ? "Published" : "Draft"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" /> {(c.total_enrolled ?? 0).toLocaleString()} students
+                      </span>
+                      <span>{c.total_lessons} lectures</span>
+                      <span>{c.subject}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link
+                      to={`/courses/${c.slug}`}
+                      className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted transition-colors"
+                      title="Preview"
                     >
-                      {c.is_published ? "Published" : "Draft"}
-                    </span>
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => togglePublish(c)}
+                      className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted transition-colors"
+                      title={c.is_published ? "Unpublish" : "Publish"}
+                    >
+                      {c.is_published ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                    </button>
                   </div>
-                  <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" /> {(c.total_enrolled ?? 0).toLocaleString()} students
-                    </span>
-                    <span>{c.total_lessons} lectures</span>
-                    <span>{c.subject}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Link
-                    to={`/courses/${c.slug}`}
-                    className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted transition-colors"
-                    title="Preview"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Link>
-                  <button
-                    onClick={() => togglePublish(c)}
-                    className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted transition-colors"
-                    title={c.is_published ? "Unpublish" : "Publish"}
-                  >
-                    {c.is_published ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>
