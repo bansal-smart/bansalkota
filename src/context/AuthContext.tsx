@@ -3,10 +3,19 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 
+export type UserRole = "student" | "teacher" | "staff" | "admin";
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
+  /** True if the user has the 'staff' or 'admin' role. */
   isStaff: boolean;
+  /** True if the user has the 'teacher' role (and is not staff/admin). */
+  isTeacher: boolean;
+  /** True if the user has no elevated role (default student). */
+  isStudent: boolean;
+  /** The resolved primary role of the current user, or null when signed out. */
+  role: UserRole | null;
   /**
    * True once we've finished resolving the user's role from the server for the
    * current session. Use this in route guards to avoid flickering or wrong
