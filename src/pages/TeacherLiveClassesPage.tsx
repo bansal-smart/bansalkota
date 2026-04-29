@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
 
+type TeacherCourse = { id: string; name: string; subject: string };
+
 type LiveClass = {
   id: string;
   title: string;
@@ -16,15 +18,19 @@ type LiveClass = {
   ends_at: string | null;
   meeting_url: string | null;
   description: string | null;
+  course_id: string | null;
+  courses: { name: string } | null;
 };
 
 const TeacherLiveClassesPage = () => {
   const { user } = useAuth();
   const [classes, setClasses] = useState<LiveClass[]>([]);
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
+  const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("Physics");
   const [startsAt, setStartsAt] = useState("");
@@ -38,20 +44,38 @@ const TeacherLiveClassesPage = () => {
     setLoading(true);
     const { data } = await supabase
       .from("live_classes")
-      .select("id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description")
+      .select("id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, course_id, courses(name)")
       .eq("created_by", user.id)
       .order("starts_at", { ascending: false });
-    setClasses((data ?? []) as LiveClass[]);
+    setClasses((data ?? []) as unknown as LiveClass[]);
     setLoading(false);
+  };
+
+  const loadCourses = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("courses")
+      .select("id, name, subject")
+      .eq("created_by", user.id)
+      .order("created_at", { ascending: false });
+    setCourses((data ?? []) as TeacherCourse[]);
   };
 
   useEffect(() => {
     load();
+    loadCourses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  const handleCourseChange = (id: string) => {
+    setCourseId(id);
+    const c = courses.find((x) => x.id === id);
+    if (c?.subject) setSubject(c.subject);
+  };
+
   const submit = async () => {
     if (!user) return;
+    if (!courseId) return toast.error("Please select a course");
     if (!title.trim() || !startsAt) return toast.error("Title and start time required");
     setSubmitting(true);
     const startISO = new Date(startsAt).toISOString();
@@ -67,6 +91,7 @@ const TeacherLiveClassesPage = () => {
       description: description || null,
       status: "scheduled",
       created_by: user.id,
+      course_id: courseId,
     });
     if (error) {
       toast.error(error.message);
@@ -75,6 +100,7 @@ const TeacherLiveClassesPage = () => {
     }
     toast.success("Class scheduled");
     setShowCreate(false);
+    setCourseId("");
     setTitle("");
     setStartsAt("");
     setMeetingUrl("");
@@ -149,7 +175,7 @@ const TeacherLiveClassesPage = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-foreground">{c.title}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {c.subject} · <Calendar className="inline h-3 w-3" /> {new Date(c.starts_at).toLocaleString()}
+                    {c.courses?.name ? `${c.courses.name} · ` : ""}{c.subject} · <Calendar className="inline h-3 w-3" /> {new Date(c.starts_at).toLocaleString()}
                   </p>
                   {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
                 </div>
@@ -187,6 +213,27 @@ const TeacherLiveClassesPage = () => {
               </button>
             </div>
             <div>
+              <label className="text-xs font-semibold text-foreground">Course</label>
+              {courses.length === 0 ? (
+                <p className="mt-1 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                  Create a course first to schedule a live class for it.
+                </p>
+              ) : (
+                <select
+                  value={courseId}
+                  onChange={(e) => handleCourseChange(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+                >
+                  <option value="">Select a course</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div>
               <label className="text-xs font-semibold text-foreground">Title</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
             </div>
@@ -218,7 +265,7 @@ const TeacherLiveClassesPage = () => {
               <label className="text-xs font-semibold text-foreground">Description (optional)</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background p-3 text-sm outline-none resize-none" />
             </div>
-            <button disabled={submitting} onClick={submit} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button disabled={submitting || courses.length === 0} onClick={submit} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Schedule"}
             </button>
           </div>
