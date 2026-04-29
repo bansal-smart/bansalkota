@@ -20,6 +20,8 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
   const [serverChecked, setServerChecked] = useState(false);
   const [serverIsStaff, setServerIsStaff] = useState(false);
 
+  // Verify role server-side once per session — not on every navigation —
+  // so moving between admin tabs doesn't unmount the layout/sidebar.
   useEffect(() => {
     let active = true;
     if (!session) {
@@ -35,7 +37,7 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
     return () => {
       active = false;
     };
-  }, [session, location.pathname, refreshRole]);
+  }, [session, refreshRole]);
 
   if (loading || !roleReady || !serverChecked) {
     return (
