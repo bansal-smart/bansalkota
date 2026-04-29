@@ -1,93 +1,73 @@
-## Goal
+## Problem
 
-Make the teacher portal fully dynamic: connect Students, Analytics, Settings, and the dashboard's upcoming classes + earnings card to real Supabase data, replacing all mock data. Add Join/Start actions for live classes and a clear "Earnings (soon)" placeholder with a payouts setup request.
+The app currently only distinguishes "staff/admin" vs "everyone else (treated as student)". Teachers (`user_roles.role = 'teacher'`) are treated as students:
 
-## 1. Dashboard — Upcoming classes Join/Start buttons
+- After login, teachers are sent to `/dashboard` (student portal) instead of `/teacher/dashboard`.
+- `/teacher/*` routes are wrapped in `ProtectedStudentRoute`, which only checks "logged in & not staff" — a real student could visit `/teacher/dashboard`.
+- `/dashboard` (student) is reachable by teachers because the guard never checks for a teacher role.
 
-In `src/pages/TeacherDashboard.tsx`:
-- Replace the current `Edit` / `Start Now` link with a smarter action per class:
-  - If `status === 'live'` AND `meeting_url` exists → "Join Live" button that opens `meeting_url` in a new tab.
-  - If upcoming (starts within 15 min) AND `meeting_url` exists → "Start Class" button that opens `meeting_url` and updates status to `live` (best effort via `update` on `live_classes`).
-  - If no `meeting_url` → "Add Link" link to `/teacher/live-classes`.
-  - Otherwise → "Edit" link (existing fallback).
-- Keep the in-app `/live/:id` route as a secondary text link "Open Room" beside the primary action.
+Your account `lakshaysaxena2217@gmail.com` has `role = 'teacher'` in the database — confirmed via query — so the data is correct; only the frontend role logic is wrong.
 
-## 2. Dashboard — Earnings (soon) card
+## Fix
 
-Replace the current "Earnings This Month — Sample" card with a clearly labeled placeholder:
-- Title: "Earnings (coming soon)" with a small Lucide `Clock`/`Wallet` icon.
-- Body: short note that payouts are not yet enabled and are tracked manually for now.
-- Primary button: "Request Payouts Setup" → inserts a row into `enquiries` table with `source='payout_setup'`, prefilled name/email/phone from teacher's profile, message "Please enable payouts for my account." On success show toast "Request sent — our team will reach out within 2 business days." Disable button + show "Request submitted" if a payout enquiry already exists for this teacher email.
-- Remove the static `dailyEarnings` chart entirely (no fake numbers).
+### 1. Track the teacher role in `AuthContext`
 
-## 3. Students tab — fully dynamic
+Extend `AuthContext` to resolve and expose all three roles per session:
 
-Rewrite `src/pages/TeacherStudentsPage.tsx` using a new hook `src/hooks/useTeacherStudents.ts`:
+- `isStudent`, `isTeacher`, `isStaff` (staff covers admin)
+- `role: 'student' | 'teacher' | 'staff' | 'admin' | null`
+- Keep `roleReady` flag (already exists) to gate guards/redirects until the server check resolves.
 
-Data flow:
-1. Fetch courses where `created_by = auth.uid()` → list of `course_ids` with names.
-2. Fetch `enrollments` for those courses (`user_id, course_id, progress_percent, completed_lessons, last_accessed_at, created_at`).
-3. Fetch `profiles` for those `user_id`s (`full_name, target_exam, avatar_url`).
-4. Fetch `test_attempts` for those `user_id`s where `test_id` belongs to teacher's tests; aggregate per student → `testsCompleted` (count of submitted) and `avgScore` (mean of `score / total_marks * 100`).
+The role check uses the existing `has_role` SECURITY DEFINER RPC for `teacher`, `staff`, `admin`. Defaults to `student` when none match.
 
-Render:
-- Header stats: Total students (unique enrollments), Avg progress (mean of `progress_percent`), Avg score (mean across attempts).
-- Search box filters by name/course.
-- Table rows show: avatar/initials, name, course/batch (course name), progress bar from `progress_percent`, avg score, tests completed, last active (`last_accessed_at` formatted relatively).
-- Empty state when teacher has no enrollments.
-- Skeleton loaders while fetching.
+### 2. Add a generic `ProtectedRoute`
 
-## 4. Analytics tab — dynamic
+Create `src/components/ProtectedRoute.tsx` that accepts `allow={['teacher']}` (or `'student'`, `'staff'`).
 
-Rewrite `src/pages/TeacherAnalyticsPage.tsx` using a new hook `src/hooks/useTeacherAnalytics.ts`:
+Behaviour:
+- While `loading || !roleReady` → show centered spinner.
+- No session → redirect to `/login` (or `/admin/login` for staff routes), preserving destination.
+- Logged in but role not in `allow` → redirect to that user's correct home (`/teacher/dashboard`, `/dashboard`, or `/admin/dashboard`), so they're never stuck on `/access-denied` for honest mistakes.
 
-Stat cards:
-- Total Students = unique enrollment user_ids.
-- Total Revenue = sum of `courses.price * total_enrolled` across teacher's published courses (labelled "Estimated, gross"). If 0, show "—".
-- Lecture Views = count of `lesson_progress` rows for lessons in teacher's courses (proxy for views).
-- Avg Test Score = mean of `(score/total_marks)*100` across `test_attempts` for teacher's tests.
+Refactor existing `ProtectedStudentRoute` and `ProtectedAdminRoute` to thin wrappers around `ProtectedRoute` so behaviour stays consistent.
 
-Charts:
-- Engagement (last 7 days): per day, count of `lesson_progress` rows (`last_watched_at`) as `views` and count of `doubts` (created_at, subject in teacher subjects OR assigned_teacher_id = teacher) as `doubts`.
-- Revenue trend (last 6 months): per month, sum of `enrollments.created_at` × matching `courses.price`. Labelled "Estimated".
-- Course Distribution (Pie): teacher's courses by `total_enrolled` share; color cycled from theme palette.
-- Top Performing Students: top 4 students by avg test score across teacher's tests.
+### 3. Wire `/teacher/*` routes to a teacher guard
 
-Empty / loading states for each card and chart.
+In `App.tsx`, swap `ProtectedStudentRoute` → `ProtectedRoute allow={['teacher']}` for the teacher block. Similarly tighten `/dashboard` and other student-only routes to `allow={['student']}` so teachers can't accidentally land there.
 
-## 5. Settings tab — dynamic
+### 4. Fix the post-login redirect in `LoginPage`
 
-Rewrite `src/pages/TeacherSettingsPage.tsx`:
+Currently:
+```
+if (isStaff) → /admin/dashboard
+else         → /dashboard
+```
 
-Profile section:
-- Load `full_name`, `phone` from `profiles` and `email` from `auth.user`.
-- Save → `update profiles set full_name, phone where user_id = auth.uid()`. Toast on success.
+Change to:
+```
+if (isStaff)        → /admin/dashboard
+else if (isTeacher) → /teacher/dashboard
+else                → /dashboard
+```
 
-Payout Settings section:
-- Replace hardcoded "HDFC ****4521" with a clear "Payouts not yet configured" empty state.
-- Button "Request Payouts Setup" reuses the same `enquiries` insert as the dashboard card.
+Same logic applied wherever else a default landing route is computed (e.g. `Index.tsx` if it auto-redirects).
 
-Notifications section:
-- Persist toggles in `localStorage` keyed by user id (no schema change). Note: a future migration could move this to a `user_preferences` table.
+### 5. Self-heal current session
 
-Security section:
-- "Change Password" → call `supabase.auth.updateUser({ password })` via a small dialog with current/new password fields and confirmation. On success, toast and sign out.
+You're already signed in, so once the new role check ships, your session will pick up `isTeacher = true` on next page load and you'll be redirected to `/teacher/dashboard` from `/login` and from any student-only page.
 
-## 6. Files
+## Files Touched
 
-Create:
-- `src/hooks/useTeacherStudents.ts`
-- `src/hooks/useTeacherAnalytics.ts`
+- `src/context/AuthContext.tsx` — add teacher detection + expose `isTeacher`, `isStudent`, `role`.
+- `src/components/ProtectedRoute.tsx` — new generic role-based guard.
+- `src/components/ProtectedStudentRoute.tsx` — refactor to delegate to `ProtectedRoute`.
+- `src/components/ProtectedAdminRoute.tsx` — refactor to delegate to `ProtectedRoute`.
+- `src/App.tsx` — apply correct `allow` lists to teacher and student route blocks.
+- `src/pages/LoginPage.tsx` — branch redirect on `isTeacher`.
+- `src/pages/Index.tsx` — same branching if it auto-redirects.
 
-Edit:
-- `src/pages/TeacherDashboard.tsx` (Join/Start buttons, replace earnings card)
-- `src/hooks/useTeacherDashboard.ts` (no changes needed; already exposes `meeting_url`)
-- `src/pages/TeacherStudentsPage.tsx` (full rewrite, dynamic)
-- `src/pages/TeacherAnalyticsPage.tsx` (full rewrite, dynamic)
-- `src/pages/TeacherSettingsPage.tsx` (dynamic profile, payout request, password change)
+## Out of Scope
 
-No database migrations required — all data sourced from existing tables (`profiles`, `courses`, `enrollments`, `lesson_progress`, `test_attempts`, `tests`, `live_classes`, `doubts`, `enquiries`).
-
-## Notes on labelling
-
-Revenue and views are labelled "Estimated" since true payment/view tracking isn't yet implemented. This keeps the dashboard honest while still being useful and dynamic.
+- Changing database roles or RLS — already correct.
+- Touching admin login flow — already protected and working.
+- UI redesign of `/access-denied` — keep as the fallback for hard mismatches (e.g. signed-out users hitting `/teacher/*`).
