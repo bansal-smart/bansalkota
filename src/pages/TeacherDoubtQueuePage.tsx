@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Send, Loader2, MessageCircle } from "lucide-react";
+import { Send, Loader2, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
 
 type Doubt = {
   id: string;
@@ -44,6 +45,7 @@ const TeacherDoubtQueuePage = () => {
   }, []);
 
   const filtered = filter === "all" ? doubts : doubts.filter((d) => (filter === "pending" ? d.status !== "answered" : d.status === "answered"));
+  const { page, setPage, totalPages, paged, total } = usePagination(filtered, 10);
 
   const sendAnswer = async () => {
     if (!user || !selected || !answer.trim()) return;
