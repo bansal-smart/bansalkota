@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -8,38 +7,17 @@ import { useAuth } from "@/context/AuthContext";
  *
  * Behaviour:
  * - Not signed in → redirect to /admin/login (preserving the original destination).
- * - Signed in as a student → friendly /access-denied page explaining why.
+ * - Signed in but not staff/admin → redirect to the user's correct portal home.
  * - Signed in as staff/admin → render the route.
  *
- * The role check is verified server-side via the `has_role` RPC, so a student
- * cannot grant themselves admin access by editing local state or URLs.
+ * The role check is verified server-side via the `has_role` RPC, so a non-staff
+ * user cannot grant themselves admin access by editing local state or URLs.
  */
 const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, isStaff, roleReady, loading, refreshRole } = useAuth();
+  const { session, role, isStaff, roleReady, loading } = useAuth();
   const location = useLocation();
-  const [serverChecked, setServerChecked] = useState(false);
-  const [serverIsStaff, setServerIsStaff] = useState(false);
 
-  // Verify role server-side once per session — not on every navigation —
-  // so moving between admin tabs doesn't unmount the layout/sidebar.
-  useEffect(() => {
-    let active = true;
-    if (!session) {
-      setServerChecked(true);
-      return;
-    }
-    setServerChecked(false);
-    refreshRole().then((staff) => {
-      if (!active) return;
-      setServerIsStaff(staff);
-      setServerChecked(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, [session, refreshRole]);
-
-  if (loading || !roleReady || !serverChecked) {
+  if (loading || (session && !roleReady)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -51,15 +29,11 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  // Authenticated but not staff → student tried to access /admin
-  if (!isStaff && !serverIsStaff) {
-    return (
-      <Navigate
-        to="/access-denied"
-        state={{ reason: "student-tried-admin", from: location.pathname }}
-        replace
-      />
-    );
+  if (!isStaff) {
+    // Non-staff: bounce to their correct portal home.
+    const home =
+      role === "teacher" ? "/teacher/dashboard" : "/dashboard";
+    return <Navigate to={home} replace />;
   }
 
   return <>{children}</>;
