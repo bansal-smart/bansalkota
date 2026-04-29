@@ -65,13 +65,13 @@ const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }:
 
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">VT</div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">{initials}</div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">Vikram Thapar</p>
-            <p className="text-[10px] text-muted-foreground">Physics Educator</p>
+            <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
+            <p className="text-[10px] text-muted-foreground">Educator</p>
           </div>
         </div>
-        <button className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
+        <button onClick={onLogout} className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
           <LogOut className="h-3.5 w-3.5" /> Logout
         </button>
       </div>
