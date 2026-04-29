@@ -14,6 +14,8 @@ const ForceChangePasswordPage = () => {
   const [show, setShow] = useState(false);
 
   // If no session, send to login. If flag is not set, send to dashboard.
+  // If the user has already updated their password before (updated_at is well
+  // after created_at) but the flag is stale, clear it automatically and exit.
   useEffect(() => {
     if (loading) return;
     if (!session) {
@@ -25,6 +27,22 @@ const ForceChangePasswordPage = () => {
     );
     if (!mustChange) {
       navigate("/teacher/dashboard", { replace: true });
+      return;
+    }
+
+    // Stale-flag recovery: if the auth user was updated more than 60s after
+    // creation, they have already changed their password at least once. The
+    // edge function call must have failed previously — clear it now.
+    const createdAt = user?.created_at ? new Date(user.created_at).getTime() : 0;
+    const updatedAt = user?.updated_at ? new Date(user.updated_at).getTime() : 0;
+    if (createdAt && updatedAt && updatedAt - createdAt > 60_000) {
+      (async () => {
+        const { error } = await supabase.functions.invoke("clear-password-flag");
+        if (!error) {
+          await supabase.auth.refreshSession();
+          navigate("/teacher/dashboard", { replace: true });
+        }
+      })();
     }
   }, [loading, session, user, navigate]);
 
