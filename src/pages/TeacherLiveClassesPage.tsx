@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
 
+type TeacherCourse = { id: string; name: string; subject: string };
+
 type LiveClass = {
   id: string;
   title: string;
@@ -16,15 +18,19 @@ type LiveClass = {
   ends_at: string | null;
   meeting_url: string | null;
   description: string | null;
+  course_id: string | null;
+  courses: { name: string } | null;
 };
 
 const TeacherLiveClassesPage = () => {
   const { user } = useAuth();
   const [classes, setClasses] = useState<LiveClass[]>([]);
+  const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
+  const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("Physics");
   const [startsAt, setStartsAt] = useState("");
@@ -38,20 +44,38 @@ const TeacherLiveClassesPage = () => {
     setLoading(true);
     const { data } = await supabase
       .from("live_classes")
-      .select("id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description")
+      .select("id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, course_id, courses(name)")
       .eq("created_by", user.id)
       .order("starts_at", { ascending: false });
-    setClasses((data ?? []) as LiveClass[]);
+    setClasses((data ?? []) as unknown as LiveClass[]);
     setLoading(false);
+  };
+
+  const loadCourses = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("courses")
+      .select("id, name, subject")
+      .eq("created_by", user.id)
+      .order("created_at", { ascending: false });
+    setCourses((data ?? []) as TeacherCourse[]);
   };
 
   useEffect(() => {
     load();
+    loadCourses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  const handleCourseChange = (id: string) => {
+    setCourseId(id);
+    const c = courses.find((x) => x.id === id);
+    if (c?.subject) setSubject(c.subject);
+  };
+
   const submit = async () => {
     if (!user) return;
+    if (!courseId) return toast.error("Please select a course");
     if (!title.trim() || !startsAt) return toast.error("Title and start time required");
     setSubmitting(true);
     const startISO = new Date(startsAt).toISOString();
@@ -67,6 +91,7 @@ const TeacherLiveClassesPage = () => {
       description: description || null,
       status: "scheduled",
       created_by: user.id,
+      course_id: courseId,
     });
     if (error) {
       toast.error(error.message);
@@ -75,6 +100,7 @@ const TeacherLiveClassesPage = () => {
     }
     toast.success("Class scheduled");
     setShowCreate(false);
+    setCourseId("");
     setTitle("");
     setStartsAt("");
     setMeetingUrl("");
