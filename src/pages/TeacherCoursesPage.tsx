@@ -47,6 +47,8 @@ const TeacherCoursesPage = () => {
     load();
   };
 
+  const { page, setPage, totalPages, paged, total, pageSize } = usePagination(courses, 8);
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-center justify-between">
