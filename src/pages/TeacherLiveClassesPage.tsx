@@ -213,6 +213,27 @@ const TeacherLiveClassesPage = () => {
               </button>
             </div>
             <div>
+              <label className="text-xs font-semibold text-foreground">Course</label>
+              {courses.length === 0 ? (
+                <p className="mt-1 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                  Create a course first to schedule a live class for it.
+                </p>
+              ) : (
+                <select
+                  value={courseId}
+                  onChange={(e) => handleCourseChange(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+                >
+                  <option value="">Select a course</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div>
               <label className="text-xs font-semibold text-foreground">Title</label>
               <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
             </div>
