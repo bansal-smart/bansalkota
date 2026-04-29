@@ -10,11 +10,11 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect");
-  const { session, user, isStaff, roleReady, loading, signIn } = useAuth();
+  const { session, user, isStaff, isTeacher, roleReady, loading, signIn } = useAuth();
 
   // If already authenticated, send to the right portal based on role.
-  // Wait until roleReady so a staff user isn't briefly sent to /dashboard
-  // before the role is resolved.
+  // Wait until roleReady so a staff/teacher user isn't briefly sent to
+  // /dashboard before the role is resolved.
   useEffect(() => {
     if (loading || !session || !roleReady) return;
     const mustChange = Boolean(
@@ -28,12 +28,16 @@ const LoginPage = () => {
       navigate("/admin/dashboard", { replace: true });
       return;
     }
+    if (isTeacher) {
+      navigate("/teacher/dashboard", { replace: true });
+      return;
+    }
     if (redirectTo) {
       navigate(redirectTo, { replace: true });
       return;
     }
     navigate("/dashboard", { replace: true });
-  }, [loading, session, user, roleReady, isStaff, navigate, redirectTo]);
+  }, [loading, session, user, roleReady, isStaff, isTeacher, navigate, redirectTo]);
 
   const [tab, setTab] = useState<"phone" | "email">("email");
   const [submitting, setSubmitting] = useState(false);
