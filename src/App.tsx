@@ -93,8 +93,8 @@ const App = () => (
             <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-            {/* Immersive full-screen pages (no sidebar/bottom nav) — require auth */}
-            <Route element={<ProtectedStudentRoute />}>
+            {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
+            <Route element={<ProtectedRoute allow={["student"]} />}>
               <Route path="/tests/:id/take" element={<TestTakingPage />} />
               <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
             </Route>
