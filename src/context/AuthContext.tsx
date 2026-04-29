@@ -3,10 +3,19 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 
+export type UserRole = "student" | "teacher" | "staff" | "admin";
+
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
+  /** True if the user has the 'staff' or 'admin' role. */
   isStaff: boolean;
+  /** True if the user has the 'teacher' role (and is not staff/admin). */
+  isTeacher: boolean;
+  /** True if the user has no elevated role (default student). */
+  isStudent: boolean;
+  /** The resolved primary role of the current user, or null when signed out. */
+  role: UserRole | null;
   /**
    * True once we've finished resolving the user's role from the server for the
    * current session. Use this in route guards to avoid flickering or wrong
@@ -29,7 +38,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [isStaff, setIsStaff] = useState(false);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [roleReady, setRoleReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const setStoreUser = useAppStore((s) => s.setUser);
@@ -38,40 +47,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // multiple sign-in events fire in quick succession.
   const lastRoleUserId = useRef<string | null>(null);
 
+  const isStaff = role === "staff" || role === "admin";
+  const isTeacher = role === "teacher";
+  const isStudent = role === "student";
+
   /**
    * Server-verified role check. Calls the `has_role` security-definer RPC for
-   * both 'staff' and 'admin' so the answer comes from the database (not from a
-   * client-side query that could be tampered with).
+   * 'admin', 'staff', and 'teacher' so the answer comes from the database (not
+   * from a client-side query that could be tampered with). Defaults to
+   * 'student' when none of the elevated roles match.
    */
-  const resolveRoleFromServer = useCallback(async (userId: string): Promise<boolean> => {
+  const resolveRoleFromServer = useCallback(async (userId: string): Promise<UserRole> => {
     try {
-      const [{ data: isStaffRpc }, { data: isAdminRpc }] = await Promise.all([
-        supabase.rpc("has_role", { _user_id: userId, _role: "staff" }),
+      const [adminRes, staffRes, teacherRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "staff" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "teacher" }),
       ]);
-      return Boolean(isStaffRpc) || Boolean(isAdminRpc);
+      if (adminRes.data) return "admin";
+      if (staffRes.data) return "staff";
+      if (teacherRes.data) return "teacher";
+      return "student";
     } catch (err) {
       console.error("Failed to resolve role:", err);
-      // Fall back to direct table read (RLS still applies — users can only read
-      // their own roles), so we degrade safely instead of hard-failing.
+      // Fall back to direct table read (RLS still applies — users can only
+      // read their own roles), so we degrade safely instead of hard-failing.
       const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
-      const roles = (data ?? []).map((r) => r.role);
-      return roles.includes("staff") || roles.includes("admin");
+      const roles = (data ?? []).map((r) => r.role as UserRole);
+      if (roles.includes("admin")) return "admin";
+      if (roles.includes("staff")) return "staff";
+      if (roles.includes("teacher")) return "teacher";
+      return "student";
     }
   }, []);
 
   const checkRole = useCallback(
-    async (userId: string) => {
+    async (userId: string): Promise<boolean> => {
       lastRoleUserId.current = userId;
-      const staff = await resolveRoleFromServer(userId);
+      const resolved = await resolveRoleFromServer(userId);
       // Guard against a race where another sign-in/out happened while we were awaiting
-      if (lastRoleUserId.current !== userId) return staff;
-      setIsStaff(staff);
+      if (lastRoleUserId.current !== userId) {
+        return resolved === "staff" || resolved === "admin";
+      }
+      setRole(resolved);
       setRoleReady(true);
-      return staff;
+      return resolved === "staff" || resolved === "admin";
     },
     [resolveRoleFromServer],
   );
@@ -111,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u) {
       lastRoleUserId.current = null;
-      setIsStaff(false);
+      setRole(null);
       setRoleReady(true);
       return false;
     }
@@ -131,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 0);
       } else {
         lastRoleUserId.current = null;
-        setIsStaff(false);
+        setRole(null);
         setRoleReady(true); // No user = role question is "resolved"
         setStoreUser(null);
       }
@@ -175,6 +198,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         session,
         user: session?.user ?? null,
         isStaff,
+        isTeacher,
+        isStudent,
+        role,
         roleReady,
         loading,
         signIn,

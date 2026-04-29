@@ -58,7 +58,7 @@ import AdminEnquiriesPage from "./pages/AdminEnquiriesPage";
 import AdminCourseContentPage from "./pages/AdminCourseContentPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
-import ProtectedStudentRoute from "./components/ProtectedStudentRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 import PublicLayout from "./components/PublicLayout";
 import TestsLandingPage from "./pages/TestsLandingPage";
 import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
@@ -93,8 +93,8 @@ const App = () => (
             <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-            {/* Immersive full-screen pages (no sidebar/bottom nav) — require auth */}
-            <Route element={<ProtectedStudentRoute />}>
+            {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
+            <Route element={<ProtectedRoute allow={["student"]} />}>
               <Route path="/tests/:id/take" element={<TestTakingPage />} />
               <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
             </Route>
@@ -121,8 +121,8 @@ const App = () => (
               <Route path="/store" element={<StorePage />} />
             </Route>
 
-            {/* Student layout — protected personal pages (login required) */}
-            <Route element={<ProtectedStudentRoute />}>
+            {/* Student layout — students only */}
+            <Route element={<ProtectedRoute allow={["student"]} />}>
               <Route element={<StudentLayout />}>
                 <Route path="/dashboard" element={<StudentDashboard />} />
                 <Route path="/my-tests" element={<TestListPage />} />
@@ -141,8 +141,8 @@ const App = () => (
               </Route>
             </Route>
 
-            {/* Teacher layout — protected (login required) */}
-            <Route element={<ProtectedStudentRoute />}>
+            {/* Teacher layout — teachers only */}
+            <Route element={<ProtectedRoute allow={["teacher"]} />}>
               <Route element={<TeacherLayout />}>
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
                 <Route path="/teacher/courses" element={<TeacherCoursesPage />} />

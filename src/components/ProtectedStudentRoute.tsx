@@ -1,73 +1,9 @@
-import { useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import ProtectedRoute from "./ProtectedRoute";
 
 /**
- * Guards student-only routes (e.g. /dashboard, /profile, /my-courses).
- *
- * Behaviour:
- * - Not signed in → redirect to /login (preserving the original destination).
- * - Signed in but staff/admin → friendly /access-denied page (staff portal user
- *   shouldn't see the student UI).
- * - Signed in as a student → render the route.
- *
- * The role check uses {@link useAuth#refreshRole}, which calls the server's
- * `has_role` security-definer function. This means the answer is verified by
- * the database, not just trusted from local state, so manually changing URLs
- * cannot bypass it.
+ * Backwards-compatible alias: protects student-only routes.
+ * New code should use <ProtectedRoute allow={["student"]} /> directly.
  */
-const ProtectedStudentRoute = () => {
-  const { session, isStaff, roleReady, loading, refreshRole } = useAuth();
-  const location = useLocation();
-  const [serverChecked, setServerChecked] = useState(false);
-  const [serverIsStaff, setServerIsStaff] = useState(false);
-
-  // Re-verify role server-side once per session (not on every navigation), so
-  // moving between sibling routes doesn't unmount the layout/sidebar. The
-  // check still runs on first mount and whenever the session changes, so a
-  // tampered local state cannot grant access.
-  useEffect(() => {
-    let active = true;
-    if (!session) {
-      setServerChecked(true);
-      return;
-    }
-    setServerChecked(false);
-    refreshRole().then((staff) => {
-      if (!active) return;
-      setServerIsStaff(staff);
-      setServerChecked(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, [session, refreshRole]);
-
-  if (loading || !roleReady || !serverChecked) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  // Staff/admin do not belong in the student portal — show a friendly page.
-  if (isStaff || serverIsStaff) {
-    return (
-      <Navigate
-        to="/access-denied"
-        state={{ reason: "staff-tried-student", from: location.pathname }}
-        replace
-      />
-    );
-  }
-
-  return <Outlet />;
-};
+const ProtectedStudentRoute = () => <ProtectedRoute allow={["student"]} />;
 
 export default ProtectedStudentRoute;
