@@ -138,15 +138,34 @@ const AdminEducatorApplicationsPage = () => {
     );
   };
 
+  const buildCredentialsText = () => {
+    if (!credApp) return "";
+    return `ARKE Teacher Login\n==================\n\nName: ${credApp.candidate_name}\nEmail: ${credApp.email}\nTemporary Password: ${tempPassword}\nLogin URL: ${window.location.origin}/login\n\nNote: You will be asked to set a new password on first login.\nGenerated: ${format(new Date(), "dd MMM yyyy, HH:mm")}\n`;
+  };
+
   const copyCredentials = async () => {
     if (!credApp) return;
-    const text = `ARKE Teacher Login\nEmail: ${credApp.email}\nTemporary Password: ${tempPassword}\nLogin: ${window.location.origin}/login\n\nYou will be asked to set a new password on first login.`;
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(buildCredentialsText());
       toast.success("Credentials copied to clipboard");
     } catch {
       toast.error("Could not copy. Please copy manually.");
     }
+  };
+
+  const downloadCredentialsTxt = () => {
+    if (!credApp) return;
+    const blob = new Blob([buildCredentialsText()], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeName = credApp.candidate_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    link.download = `arke-teacher-credentials-${safeName}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Credentials downloaded");
   };
 
   const exportCsv = () => {
