@@ -1,8 +1,12 @@
-import { Users, BookOpen, MessageCircle, Star, Video, Clock, IndianRupee, ArrowRight, AlertCircle, ClipboardCheck, Calendar, Bot, BarChart3 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from "recharts";
+import { Users, BookOpen, MessageCircle, Star, Video, Clock, Wallet, ArrowRight, AlertCircle, ClipboardCheck, Calendar, Bot, BarChart3, ExternalLink } from "lucide-react";
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Bar } from "recharts";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useTeacherDashboard } from "@/hooks/useTeacherDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -35,14 +39,46 @@ const formatRelativeTime = (iso: string) => {
   return `${days}d ago`;
 };
 
-// Static earnings sample (no payouts data model yet)
-const dailyEarnings = [
-  { day: "Mon", amount: 6200 }, { day: "Tue", amount: 7800 }, { day: "Wed", amount: 5400 },
-  { day: "Thu", amount: 8900 }, { day: "Fri", amount: 7100 }, { day: "Sat", amount: 6800 }, { day: "Sun", amount: 5900 },
-];
-
 const TeacherDashboard = () => {
   const { loading, greetingName, newToday, stats, upcomingClasses, pendingDoubts, scoreDistribution, lastTestTitle } = useTeacherDashboard();
+  const { user } = useAuth();
+  const [payoutRequested, setPayoutRequested] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+
+  const requestPayoutSetup = async () => {
+    if (!user) return;
+    setRequesting(true);
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const { error } = await supabase.from("enquiries").insert({
+        source: "payout_setup",
+        name: profile?.full_name || greetingName || "Teacher",
+        email: user.email || "",
+        phone: profile?.phone || null,
+        message: "Please enable payouts for my account.",
+      });
+      if (error) throw error;
+      setPayoutRequested(true);
+      toast({ title: "Request sent", description: "Our team will reach out within 2 business days." });
+    } catch (e: any) {
+      toast({ title: "Could not submit", description: e.message ?? "Try again", variant: "destructive" });
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  const openMeeting = async (cls: typeof upcomingClasses[number]) => {
+    if (!cls.meeting_url) return;
+    if (cls.status !== "live") {
+      // best-effort mark as live
+      await supabase.from("live_classes").update({ status: "live" }).eq("id", cls.id);
+    }
+    window.open(cls.meeting_url, "_blank", "noopener,noreferrer");
+  };
 
   const statCards = [
     { label: "Total Students", value: stats.totalStudents.toString(), icon: Users, change: stats.newThisWeek > 0 ? `+${stats.newThisWeek} new this week` : "No new this week", color: "text-primary" },
@@ -124,10 +160,16 @@ const TeacherDashboard = () => {
                         <p className="text-xs font-medium text-foreground">{formatTime(c.starts_at)}</p>
                         <p className="text-[10px] text-muted-foreground">{formatRelativeDay(c.starts_at)}</p>
                       </div>
-                      {isLive ? (
-                        <Link to={`/live/${c.id}`} className="shrink-0 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">Start Now</Link>
+                      {isLive && c.meeting_url ? (
+                        <button onClick={() => openMeeting(c)} className="shrink-0 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:opacity-90 inline-flex items-center gap-1">
+                          <Video className="h-3 w-3" /> Join Live
+                        </button>
+                      ) : c.meeting_url ? (
+                        <button onClick={() => openMeeting(c)} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3" /> Start
+                        </button>
                       ) : (
-                        <Link to="/teacher/live-classes" className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background">Edit</Link>
+                        <Link to="/teacher/live-classes" className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background">Add Link</Link>
                       )}
                     </div>
                   );
@@ -197,18 +239,22 @@ const TeacherDashboard = () => {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-sm font-bold text-foreground">Earnings This Month</h2>
-              <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Sample</span>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Wallet className="h-4 w-4 text-secondary" /> Earnings (coming soon)
+              </h2>
+              <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Beta</span>
             </div>
-            <p className="text-2xl font-bold text-secondary mb-3 flex items-center gap-1"><IndianRupee className="h-5 w-5" />48,200</p>
-            <ResponsiveContainer width="100%" height={100}>
-              <BarChart data={dailyEarnings}>
-                <Bar dataKey="amount" fill="hsl(160,93%,39%)" radius={[4, 4, 0, 0]} />
-                <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Earnings']} />
-              </BarChart>
-            </ResponsiveContainer>
-            <p className="mt-2 text-[10px] text-muted-foreground">Payouts dashboard coming soon.</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Automated payouts aren't enabled yet. For now, your earnings are tracked manually by our finance team. Request setup to start receiving direct transfers.
+            </p>
+            <button
+              onClick={requestPayoutSetup}
+              disabled={requesting || payoutRequested}
+              className="w-full rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {payoutRequested ? "Request submitted" : requesting ? "Sending..." : "Request Payouts Setup"}
+            </button>
           </div>
         </div>
       </div>
