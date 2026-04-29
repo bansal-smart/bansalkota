@@ -139,31 +139,40 @@ const TeacherLiveClassesPage = () => {
           <p className="text-sm text-foreground">No {tab} classes.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((c) => (
-            <div key={c.id} className="rounded-xl border border-border bg-card p-4 flex items-start gap-4 flex-wrap">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                <Video className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-foreground">{c.title}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {c.subject} · <Calendar className="inline h-3 w-3" /> {new Date(c.starts_at).toLocaleString()}
-                </p>
-                {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
-              </div>
-              <div className="flex gap-2">
-                {c.status !== "completed" && (
-                  <button onClick={() => markComplete(c.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                    Mark complete
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="space-y-3 p-3">
+            {paged.map((c) => (
+              <div key={c.id} className="rounded-xl border border-border bg-card p-4 flex items-start gap-4 flex-wrap">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                  <Video className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-foreground">{c.title}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {c.subject} · <Calendar className="inline h-3 w-3" /> {new Date(c.starts_at).toLocaleString()}
+                  </p>
+                  {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
+                </div>
+                <div className="flex gap-2">
+                  {c.status !== "completed" && (
+                    <button onClick={() => markComplete(c.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      Mark complete
+                    </button>
+                  )}
+                  <button onClick={() => remove(c.id)} className="rounded-lg border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/5">
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                )}
-                <button onClick={() => remove(c.id)} className="rounded-lg border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/5">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+          />
         </div>
       )}
 
