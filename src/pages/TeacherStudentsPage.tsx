@@ -2,6 +2,8 @@ import { Search, Clock, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTeacherStudents } from "@/hooks/useTeacherStudents";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 const formatRelative = (iso: string | null) => {
   if (!iso) return "—";
@@ -27,6 +29,7 @@ const TeacherStudentsPage = () => {
       ),
     [students, search],
   );
+  const { page, setPage, totalPages, paged, total, pageSize } = usePagination(filtered, 10);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -86,7 +89,7 @@ const TeacherStudentsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s) => (
+                {paged.map((s) => (
                   <tr key={s.user_id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -128,6 +131,13 @@ const TeacherStudentsPage = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+            />
           </div>
         )}
       </div>

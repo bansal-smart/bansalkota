@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Send, Loader2, MessageCircle } from "lucide-react";
+import { Send, Loader2, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
 
 type Doubt = {
   id: string;
@@ -44,6 +45,7 @@ const TeacherDoubtQueuePage = () => {
   }, []);
 
   const filtered = filter === "all" ? doubts : doubts.filter((d) => (filter === "pending" ? d.status !== "answered" : d.status === "answered"));
+  const { page, setPage, totalPages, paged, total } = usePagination(filtered, 10);
 
   const sendAnswer = async () => {
     if (!user || !selected || !answer.trim()) return;
@@ -95,7 +97,7 @@ const TeacherDoubtQueuePage = () => {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filtered.map((d) => (
+            {paged.map((d) => (
               <button
                 key={d.id}
                 onClick={() => {
@@ -112,6 +114,27 @@ const TeacherDoubtQueuePage = () => {
                 <p className="text-[10px] text-muted-foreground mt-1">{new Date(d.created_at).toLocaleString()}</p>
               </button>
             ))}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 p-3 bg-card">
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                  className="rounded-md border border-border px-2 py-1 text-xs disabled:opacity-40 inline-flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-3 w-3" /> Prev
+                </button>
+                <span className="text-[10px] text-muted-foreground">
+                  Page {page} of {totalPages} · {total} total
+                </span>
+                <button
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                  className="rounded-md border border-border px-2 py-1 text-xs disabled:opacity-40 inline-flex items-center gap-1"
+                >
+                  Next <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
