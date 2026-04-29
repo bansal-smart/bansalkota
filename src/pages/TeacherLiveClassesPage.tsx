@@ -265,7 +265,7 @@ const TeacherLiveClassesPage = () => {
               <label className="text-xs font-semibold text-foreground">Description (optional)</label>
               <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background p-3 text-sm outline-none resize-none" />
             </div>
-            <button disabled={submitting} onClick={submit} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button disabled={submitting || courses.length === 0} onClick={submit} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Schedule"}
             </button>
           </div>
