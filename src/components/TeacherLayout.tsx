@@ -1,13 +1,20 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, LogOut, Flame, PlusCircle } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
 type NavItem = { label: string; icon: typeof Home; path: string; badge?: number };
 
-const TeacherSidebar = memo(({ pendingDoubts }: { pendingDoubts: number }) => {
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "T";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }: { pendingDoubts: number; displayName: string; initials: string; onLogout: () => void }) => {
   const location = useLocation();
   const navItems: NavItem[] = [
     { label: "Dashboard", icon: Home, path: "/teacher/dashboard" },
@@ -58,13 +65,13 @@ const TeacherSidebar = memo(({ pendingDoubts }: { pendingDoubts: number }) => {
 
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">VT</div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">{initials}</div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">Vikram Thapar</p>
-            <p className="text-[10px] text-muted-foreground">Physics Educator</p>
+            <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
+            <p className="text-[10px] text-muted-foreground">Educator</p>
           </div>
         </div>
-        <button className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
+        <button onClick={onLogout} className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
           <LogOut className="h-3.5 w-3.5" /> Logout
         </button>
       </div>
@@ -74,8 +81,26 @@ const TeacherSidebar = memo(({ pendingDoubts }: { pendingDoubts: number }) => {
 TeacherSidebar.displayName = "TeacherSidebar";
 
 const TeacherLayout = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const storeUser = useAppStore((s) => s.user);
+  const navigate = useNavigate();
   const [pendingDoubts, setPendingDoubts] = useState(0);
+
+  const displayName = useMemo(() => {
+    return (
+      storeUser?.full_name?.trim() ||
+      (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+      user?.email?.split("@")[0] ||
+      "Teacher"
+    );
+  }, [storeUser?.full_name, user?.user_metadata, user?.email]);
+
+  const initials = useMemo(() => getInitials(displayName), [displayName]);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -100,7 +125,7 @@ const TeacherLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <TeacherSidebar pendingDoubts={pendingDoubts} />
+      <TeacherSidebar pendingDoubts={pendingDoubts} displayName={displayName} initials={initials} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
@@ -125,7 +150,7 @@ const TeacherLayout = () => {
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">{pendingDoubts}</span>
               )}
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">VT</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary" title={displayName}>{initials}</div>
           </div>
         </header>
 
