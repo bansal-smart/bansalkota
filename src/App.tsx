@@ -58,7 +58,7 @@ import AdminEnquiriesPage from "./pages/AdminEnquiriesPage";
 import AdminCourseContentPage from "./pages/AdminCourseContentPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
-import ProtectedStudentRoute from "./components/ProtectedStudentRoute";
+import ProtectedRoute from "./components/ProtectedRoute";
 import PublicLayout from "./components/PublicLayout";
 import TestsLandingPage from "./pages/TestsLandingPage";
 import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
