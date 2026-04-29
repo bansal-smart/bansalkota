@@ -3,6 +3,8 @@ import { Video, Plus, Calendar, Loader2, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type LiveClass = {
   id: string;
@@ -96,6 +98,7 @@ const TeacherLiveClassesPage = () => {
   const filtered = classes.filter((c) =>
     tab === "upcoming" ? c.status !== "completed" : c.status === "completed",
   );
+  const { page, setPage, totalPages, paged, total, pageSize } = usePagination(filtered, 8);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
