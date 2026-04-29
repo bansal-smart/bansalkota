@@ -23,8 +23,10 @@ const ProtectedStudentRoute = () => {
   const [serverChecked, setServerChecked] = useState(false);
   const [serverIsStaff, setServerIsStaff] = useState(false);
 
-  // Re-verify the role server-side every time we land on a protected student
-  // route, so a tampered local state can't grant access.
+  // Re-verify role server-side once per session (not on every navigation), so
+  // moving between sibling routes doesn't unmount the layout/sidebar. The
+  // check still runs on first mount and whenever the session changes, so a
+  // tampered local state cannot grant access.
   useEffect(() => {
     let active = true;
     if (!session) {
@@ -40,7 +42,7 @@ const ProtectedStudentRoute = () => {
     return () => {
       active = false;
     };
-  }, [session, location.pathname, refreshRole]);
+  }, [session, refreshRole]);
 
   if (loading || !roleReady || !serverChecked) {
     return (
