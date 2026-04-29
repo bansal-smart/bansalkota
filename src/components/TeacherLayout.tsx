@@ -1,13 +1,20 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, LogOut, Flame, PlusCircle } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
 type NavItem = { label: string; icon: typeof Home; path: string; badge?: number };
 
-const TeacherSidebar = memo(({ pendingDoubts }: { pendingDoubts: number }) => {
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "T";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }: { pendingDoubts: number; displayName: string; initials: string; onLogout: () => void }) => {
   const location = useLocation();
   const navItems: NavItem[] = [
     { label: "Dashboard", icon: Home, path: "/teacher/dashboard" },
