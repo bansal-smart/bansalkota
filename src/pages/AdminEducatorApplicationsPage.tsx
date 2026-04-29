@@ -543,9 +543,12 @@ const AdminEducatorApplicationsPage = () => {
                 )}
               </div>
 
-              <DialogFooter className="mt-4 gap-2 sm:gap-2">
+              <DialogFooter className="mt-4 gap-2 sm:gap-2 flex-wrap">
                 <Button variant="outline" onClick={copyCredentials}>
                   <Copy className="h-4 w-4" /> Copy
+                </Button>
+                <Button variant="outline" onClick={downloadCredentialsTxt}>
+                  <Download className="h-4 w-4" /> Download .txt
                 </Button>
                 {!provisioned ? (
                   <Button onClick={provisionTeacher} disabled={provisioning || tempPassword.length < 8}>
