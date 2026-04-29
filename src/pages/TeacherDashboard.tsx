@@ -1,8 +1,12 @@
-import { Users, BookOpen, MessageCircle, Star, Video, Clock, IndianRupee, ArrowRight, AlertCircle, ClipboardCheck, Calendar, Bot, BarChart3 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from "recharts";
+import { Users, BookOpen, MessageCircle, Star, Video, Clock, Wallet, ArrowRight, AlertCircle, ClipboardCheck, Calendar, Bot, BarChart3, ExternalLink } from "lucide-react";
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Bar } from "recharts";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useTeacherDashboard } from "@/hooks/useTeacherDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -35,14 +39,46 @@ const formatRelativeTime = (iso: string) => {
   return `${days}d ago`;
 };
 
-// Static earnings sample (no payouts data model yet)
-const dailyEarnings = [
-  { day: "Mon", amount: 6200 }, { day: "Tue", amount: 7800 }, { day: "Wed", amount: 5400 },
-  { day: "Thu", amount: 8900 }, { day: "Fri", amount: 7100 }, { day: "Sat", amount: 6800 }, { day: "Sun", amount: 5900 },
-];
-
 const TeacherDashboard = () => {
   const { loading, greetingName, newToday, stats, upcomingClasses, pendingDoubts, scoreDistribution, lastTestTitle } = useTeacherDashboard();
+  const { user } = useAuth();
+  const [payoutRequested, setPayoutRequested] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+
+  const requestPayoutSetup = async () => {
+    if (!user) return;
+    setRequesting(true);
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const { error } = await supabase.from("enquiries").insert({
+        source: "payout_setup",
+        name: profile?.full_name || greetingName || "Teacher",
+        email: user.email || "",
+        phone: profile?.phone || null,
+        message: "Please enable payouts for my account.",
+      });
+      if (error) throw error;
+      setPayoutRequested(true);
+      toast({ title: "Request sent", description: "Our team will reach out within 2 business days." });
+    } catch (e: any) {
+      toast({ title: "Could not submit", description: e.message ?? "Try again", variant: "destructive" });
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  const openMeeting = async (cls: typeof upcomingClasses[number]) => {
+    if (!cls.meeting_url) return;
+    if (cls.status !== "live") {
+      // best-effort mark as live
+      await supabase.from("live_classes").update({ status: "live" }).eq("id", cls.id);
+    }
+    window.open(cls.meeting_url, "_blank", "noopener,noreferrer");
+  };
 
   const statCards = [
     { label: "Total Students", value: stats.totalStudents.toString(), icon: Users, change: stats.newThisWeek > 0 ? `+${stats.newThisWeek} new this week` : "No new this week", color: "text-primary" },
