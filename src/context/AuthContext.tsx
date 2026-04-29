@@ -134,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u) {
       lastRoleUserId.current = null;
-      setIsStaff(false);
+      setRole(null);
       setRoleReady(true);
       return false;
     }
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }, 0);
       } else {
         lastRoleUserId.current = null;
-        setIsStaff(false);
+        setRole(null);
         setRoleReady(true); // No user = role question is "resolved"
         setStoreUser(null);
       }
