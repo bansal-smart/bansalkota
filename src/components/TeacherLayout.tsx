@@ -81,8 +81,26 @@ const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }:
 TeacherSidebar.displayName = "TeacherSidebar";
 
 const TeacherLayout = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const storeUser = useAppStore((s) => s.user);
+  const navigate = useNavigate();
   const [pendingDoubts, setPendingDoubts] = useState(0);
+
+  const displayName = useMemo(() => {
+    return (
+      storeUser?.full_name?.trim() ||
+      (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+      user?.email?.split("@")[0] ||
+      "Teacher"
+    );
+  }, [storeUser?.full_name, user?.user_metadata, user?.email]);
+
+  const initials = useMemo(() => getInitials(displayName), [displayName]);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -107,7 +125,7 @@ const TeacherLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <TeacherSidebar pendingDoubts={pendingDoubts} />
+      <TeacherSidebar pendingDoubts={pendingDoubts} displayName={displayName} initials={initials} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
