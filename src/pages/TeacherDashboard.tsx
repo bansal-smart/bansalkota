@@ -160,10 +160,16 @@ const TeacherDashboard = () => {
                         <p className="text-xs font-medium text-foreground">{formatTime(c.starts_at)}</p>
                         <p className="text-[10px] text-muted-foreground">{formatRelativeDay(c.starts_at)}</p>
                       </div>
-                      {isLive ? (
-                        <Link to={`/live/${c.id}`} className="shrink-0 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground">Start Now</Link>
+                      {isLive && c.meeting_url ? (
+                        <button onClick={() => openMeeting(c)} className="shrink-0 rounded-lg bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:opacity-90 inline-flex items-center gap-1">
+                          <Video className="h-3 w-3" /> Join Live
+                        </button>
+                      ) : c.meeting_url ? (
+                        <button onClick={() => openMeeting(c)} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3" /> Start
+                        </button>
                       ) : (
-                        <Link to="/teacher/live-classes" className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background">Edit</Link>
+                        <Link to="/teacher/live-classes" className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background">Add Link</Link>
                       )}
                     </div>
                   );
