@@ -239,18 +239,22 @@ const TeacherDashboard = () => {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-sm font-bold text-foreground">Earnings This Month</h2>
-              <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Sample</span>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <Wallet className="h-4 w-4 text-secondary" /> Earnings (coming soon)
+              </h2>
+              <span className="text-[9px] uppercase tracking-wide text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Beta</span>
             </div>
-            <p className="text-2xl font-bold text-secondary mb-3 flex items-center gap-1"><IndianRupee className="h-5 w-5" />48,200</p>
-            <ResponsiveContainer width="100%" height={100}>
-              <BarChart data={dailyEarnings}>
-                <Bar dataKey="amount" fill="hsl(160,93%,39%)" radius={[4, 4, 0, 0]} />
-                <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Earnings']} />
-              </BarChart>
-            </ResponsiveContainer>
-            <p className="mt-2 text-[10px] text-muted-foreground">Payouts dashboard coming soon.</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Automated payouts aren't enabled yet. For now, your earnings are tracked manually by our finance team. Request setup to start receiving direct transfers.
+            </p>
+            <button
+              onClick={requestPayoutSetup}
+              disabled={requesting || payoutRequested}
+              className="w-full rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {payoutRequested ? "Request submitted" : requesting ? "Sending..." : "Request Payouts Setup"}
+            </button>
           </div>
         </div>
       </div>
