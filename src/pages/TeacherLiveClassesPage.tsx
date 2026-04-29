@@ -175,7 +175,7 @@ const TeacherLiveClassesPage = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-foreground">{c.title}</h3>
                   <p className="text-xs text-muted-foreground">
-                    {c.subject} · <Calendar className="inline h-3 w-3" /> {new Date(c.starts_at).toLocaleString()}
+                    {c.courses?.name ? `${c.courses.name} · ` : ""}{c.subject} · <Calendar className="inline h-3 w-3" /> {new Date(c.starts_at).toLocaleString()}
                   </p>
                   {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
                 </div>
