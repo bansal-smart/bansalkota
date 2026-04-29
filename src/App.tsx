@@ -141,8 +141,8 @@ const App = () => (
               </Route>
             </Route>
 
-            {/* Teacher layout — protected (login required) */}
-            <Route element={<ProtectedStudentRoute />}>
+            {/* Teacher layout — teachers only */}
+            <Route element={<ProtectedRoute allow={["teacher"]} />}>
               <Route element={<TeacherLayout />}>
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
                 <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
