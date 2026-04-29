@@ -1,12 +1,120 @@
-import { Settings, User, CreditCard, Bell, Shield } from "lucide-react";
-import { useState } from "react";
+import { Settings, User, Wallet, Bell, Shield } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const TeacherSettingsPage = () => {
-  const [name, setName] = useState("Vikram Thapar");
-  const [email, setEmail] = useState("vikram@arke.pro");
-  const [phone, setPhone] = useState("+91 98765 43210");
+  const { user } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const [classNotif, setClassNotif] = useState(true);
   const [doubtNotif, setDoubtNotif] = useState(true);
+
+  const [requestingPayout, setRequestingPayout] = useState(false);
+  const [payoutRequested, setPayoutRequested] = useState(false);
+
+  const [pwOpen, setPwOpen] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setEmail(user.email || "");
+    const prefKey = `teacher_notif_${user.id}`;
+    const stored = localStorage.getItem(prefKey);
+    if (stored) {
+      try {
+        const p = JSON.parse(stored);
+        setClassNotif(!!p.classNotif);
+        setDoubtNotif(!!p.doubtNotif);
+      } catch {}
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setName(data?.full_name || "");
+      setPhone(data?.phone || "");
+      setProfileLoading(false);
+    })();
+  }, [user]);
+
+  const saveProfile = async () => {
+    if (!user) return;
+    setSavingProfile(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: name, phone })
+      .eq("user_id", user.id);
+    setSavingProfile(false);
+    if (error) {
+      toast({ title: "Failed to save", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Profile updated" });
+    }
+  };
+
+  const persistNotif = (next: { classNotif: boolean; doubtNotif: boolean }) => {
+    if (!user) return;
+    localStorage.setItem(`teacher_notif_${user.id}`, JSON.stringify(next));
+  };
+
+  const requestPayoutSetup = async () => {
+    if (!user) return;
+    setRequestingPayout(true);
+    const { error } = await supabase.from("enquiries").insert({
+      source: "payout_setup",
+      name: name || "Teacher",
+      email: user.email || "",
+      phone: phone || null,
+      message: "Please enable payouts for my account.",
+    });
+    setRequestingPayout(false);
+    if (error) {
+      toast({ title: "Could not submit", description: error.message, variant: "destructive" });
+    } else {
+      setPayoutRequested(true);
+      toast({ title: "Request sent", description: "Our team will reach out within 2 business days." });
+    }
+  };
+
+  const changePassword = async () => {
+    if (newPw.length < 8) {
+      toast({ title: "Password too short", description: "Use at least 8 characters.", variant: "destructive" });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+    setPwSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    setPwSaving(false);
+    if (error) {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+    } else {
+      setPwOpen(false);
+      setNewPw("");
+      setConfirmPw("");
+      toast({ title: "Password updated" });
+    }
+  };
 
   const Toggle = ({ on, toggle }: { on: boolean; toggle: () => void }) => (
     <button onClick={toggle} className={`relative h-6 w-11 rounded-full transition-colors ${on ? "bg-primary" : "bg-muted"}`}>
@@ -17,44 +125,165 @@ const TeacherSettingsPage = () => {
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-2xl">
       <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white">
-        <div className="flex items-center gap-3"><Settings className="h-7 w-7" /><h1 className="text-2xl font-black font-display">Settings</h1></div>
+        <div className="flex items-center gap-3">
+          <Settings className="h-7 w-7" />
+          <h1 className="text-2xl font-black font-display">Settings</h1>
+        </div>
         <p className="text-white/90 text-sm mt-1">Manage your teacher profile and preferences</p>
       </div>
 
       <div className="space-y-4">
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><User className="h-4 w-4 text-primary" /> Profile</h3>
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+            <User className="h-4 w-4 text-primary" /> Profile
+          </h3>
           <div className="space-y-3">
-            <div><label className="text-xs font-medium text-muted-foreground">Full Name</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary" /></div>
-            <div><label className="text-xs font-medium text-muted-foreground">Email</label><input value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary" /></div>
-            <div><label className="text-xs font-medium text-muted-foreground">Phone</label><input value={phone} onChange={e => setPhone(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary" /></div>
-            <button className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Save Changes</button>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Full Name</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={profileLoading}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Email</label>
+              <input
+                value={email}
+                disabled
+                className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground outline-none cursor-not-allowed"
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">Email is tied to your account and can't be changed here.</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Phone</label>
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={profileLoading}
+                placeholder="+91 ..."
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
+            <button
+              onClick={saveProfile}
+              disabled={savingProfile || profileLoading}
+              className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+            >
+              {savingProfile ? "Saving..." : "Save Changes"}
+            </button>
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4 text-primary" /> Payout Settings</h3>
-          <p className="text-xs text-muted-foreground mb-2">Your earnings are transferred monthly to your registered bank account.</p>
-          <div className="rounded-lg bg-muted p-3">
-            <p className="text-xs text-muted-foreground">Bank: HDFC Bank ****4521</p>
-            <p className="text-xs text-muted-foreground mt-1">Next payout: April 1, 2026</p>
-          </div>
-          <button className="mt-3 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors">Update Bank Details</button>
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-2">
+            <Wallet className="h-4 w-4 text-primary" /> Payouts
+          </h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Automated payouts aren't configured yet. Request setup and our finance team will collect your bank details and onboard you within 2 business days.
+          </p>
+          <button
+            onClick={requestPayoutSetup}
+            disabled={requestingPayout || payoutRequested}
+            className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+          >
+            {payoutRequested ? "Request submitted" : requestingPayout ? "Sending..." : "Request Payouts Setup"}
+          </button>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><Bell className="h-4 w-4 text-primary" /> Notifications</h3>
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+            <Bell className="h-4 w-4 text-primary" /> Notifications
+          </h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between"><div><p className="text-sm text-foreground">Class Reminders</p><p className="text-xs text-muted-foreground">30 min before class starts</p></div><Toggle on={classNotif} toggle={() => setClassNotif(!classNotif)} /></div>
-            <div className="flex items-center justify-between"><div><p className="text-sm text-foreground">New Doubts</p><p className="text-xs text-muted-foreground">Get notified for student doubts</p></div><Toggle on={doubtNotif} toggle={() => setDoubtNotif(!doubtNotif)} /></div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-foreground">Class Reminders</p>
+                <p className="text-xs text-muted-foreground">30 min before class starts</p>
+              </div>
+              <Toggle
+                on={classNotif}
+                toggle={() => {
+                  const v = !classNotif;
+                  setClassNotif(v);
+                  persistNotif({ classNotif: v, doubtNotif });
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-foreground">New Doubts</p>
+                <p className="text-xs text-muted-foreground">Get notified for student doubts</p>
+              </div>
+              <Toggle
+                on={doubtNotif}
+                toggle={() => {
+                  const v = !doubtNotif;
+                  setDoubtNotif(v);
+                  persistNotif({ classNotif, doubtNotif: v });
+                }}
+              />
+            </div>
           </div>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><Shield className="h-4 w-4 text-primary" /> Security</h3>
-          <button className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Change Password</button>
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
+            <Shield className="h-4 w-4 text-primary" /> Security
+          </h3>
+          <button
+            onClick={() => setPwOpen(true)}
+            className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            Change Password
+          </button>
         </div>
       </div>
+
+      <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>Choose a new password (at least 8 characters).</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">New Password</label>
+              <input
+                type="password"
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Confirm Password</label>
+              <input
+                type="password"
+                value={confirmPw}
+                onChange={(e) => setConfirmPw(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              onClick={() => setPwOpen(false)}
+              className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={changePassword}
+              disabled={pwSaving}
+              className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {pwSaving ? "Saving..." : "Update Password"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
