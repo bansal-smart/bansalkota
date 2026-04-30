@@ -77,8 +77,24 @@ const CreateTestPage = () => {
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [bankSheetOpen, setBankSheetOpen] = useState(false);
+  const [courseId, setCourseId] = useState<string>("");
+  const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  useEffect(() => {
+    if (!user) return;
+    let ignore = false;
+    (async () => {
+      const { data } = await supabase
+        .from("courses")
+        .select("id,name")
+        .eq("created_by", user.id)
+        .order("created_at", { ascending: false });
+      if (!ignore) setMyCourses(data ?? []);
+    })();
+    return () => { ignore = true; };
+  }, [user]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
@@ -124,6 +140,7 @@ const CreateTestPage = () => {
         total_marks: validQ.length * correctMarks,
         is_published: publish,
         created_by: user.id,
+        course_id: courseId || null,
       })
       .select("id")
       .single();
@@ -178,6 +195,20 @@ const CreateTestPage = () => {
             <option value="neet">NEET</option>
             <option value="custom">Custom</option>
           </select>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-foreground">Associate with Course (optional)</label>
+          <select
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+          >
+            <option value="">Standalone test (not linked to any course)</option>
+            {myCourses.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-muted-foreground">Linked tests will appear inside the selected course for enrolled students.</p>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
