@@ -19,13 +19,13 @@ type StudentNavItem = {
   badge?: number;
 };
 
-const navItems: StudentNavItem[] = [
+const buildNavItems = (doubtCount: number): StudentNavItem[] => [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "My Learning", icon: BookOpen, path: "/my-courses" },
   { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
   { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
-  { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: 3 },
+  { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: doubtCount || undefined },
 ];
 
 const exploreItems: StudentNavItem[] = [
