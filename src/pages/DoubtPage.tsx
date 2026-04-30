@@ -215,15 +215,15 @@ const DoubtCard = ({ doubt, expanded, onToggle }: { doubt: DoubtRow; expanded: b
         <div className="mt-3 space-y-3 pt-3 border-t border-border">
           {doubt.image_url && <img src={doubt.image_url} alt="Doubt" className="rounded-lg max-h-48" />}
           {doubt.ai_answer && (
-            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-1">
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-2">
               <p className="text-[11px] font-bold text-primary uppercase flex items-center gap-1"><Brain className="h-3 w-3" /> AI answer</p>
-              <p className="text-xs text-foreground whitespace-pre-line">{doubt.ai_answer}</p>
+              <FormattedAnswer content={doubt.ai_answer} tone="primary" className="text-xs" />
             </div>
           )}
           {teacherAnswers.map((a) => (
-            <div key={a.id} className="rounded-lg bg-secondary/5 border border-secondary/20 p-3 space-y-1">
+            <div key={a.id} className="rounded-lg bg-secondary/5 border border-secondary/20 p-3 space-y-2">
               <p className="text-[11px] font-bold text-secondary uppercase">{a.responder_role} answer</p>
-              <p className="text-xs text-foreground whitespace-pre-line">{a.answer_text}</p>
+              <FormattedAnswer content={a.answer_text} tone="secondary" className="text-xs" />
             </div>
           ))}
           {!doubt.ai_answer && teacherAnswers.length === 0 && (
