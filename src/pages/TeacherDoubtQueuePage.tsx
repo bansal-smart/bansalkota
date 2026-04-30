@@ -21,6 +21,7 @@ type Doubt = {
 const TeacherDoubtQueuePage = () => {
   const { user } = useAuth();
   const [doubts, setDoubts] = useState<Doubt[]>([]);
+  const [studentNames, setStudentNames] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<"all" | "pending" | "answered">("pending");
   const [selected, setSelected] = useState<Doubt | null>(null);
   const [answer, setAnswer] = useState("");
@@ -30,7 +31,20 @@ const TeacherDoubtQueuePage = () => {
   const load = async () => {
     setLoading(true);
     const { data } = await supabase.from("doubts").select("*").order("created_at", { ascending: false });
-    setDoubts((data ?? []) as Doubt[]);
+    const list = (data ?? []) as Doubt[];
+    setDoubts(list);
+    const ids = Array.from(new Set(list.map((d) => d.user_id)));
+    if (ids.length) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
+      const map: Record<string, string> = {};
+      (profiles ?? []).forEach((p: any) => {
+        map[p.user_id] = p.full_name || "Student";
+      });
+      setStudentNames(map);
+    }
     setLoading(false);
   };
 
@@ -111,7 +125,8 @@ const TeacherDoubtQueuePage = () => {
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">{d.subject}</span>
                   <span className="text-[10px] text-muted-foreground capitalize ml-auto">{d.status.replace("_", " ")}</span>
                 </div>
-                <p className="text-xs text-foreground line-clamp-2">{d.question_text}</p>
+                <p className="text-[11px] font-semibold text-foreground truncate">{studentNames[d.user_id] || "Student"}</p>
+                <p className="text-xs text-foreground line-clamp-2 mt-0.5">{d.question_text}</p>
                 <p className="text-[10px] text-muted-foreground mt-1">{new Date(d.created_at).toLocaleString()}</p>
               </button>
             ))}
@@ -148,6 +163,15 @@ const TeacherDoubtQueuePage = () => {
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{selected.subject}</span>
                 {selected.topic && <span className="text-[10px] text-muted-foreground">{selected.topic}</span>}
                 <span className="text-[10px] text-muted-foreground capitalize ml-auto">{selected.status.replace("_", " ")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-light text-[10px] font-bold text-primary">
+                  {(studentNames[selected.user_id] || "S").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-foreground">{studentNames[selected.user_id] || "Student"}</p>
+                  <p className="text-[10px] text-muted-foreground">Asked {new Date(selected.created_at).toLocaleString()}</p>
+                </div>
               </div>
               <p className="text-sm text-foreground whitespace-pre-line break-words">{selected.question_text}</p>
               {selected.image_url && (

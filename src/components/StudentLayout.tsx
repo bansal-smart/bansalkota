@@ -8,6 +8,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useDoubts } from "@/hooks/useDoubts";
 import { toast } from "sonner";
 
 type StudentNavItem = {
@@ -18,13 +19,13 @@ type StudentNavItem = {
   badge?: number;
 };
 
-const navItems: StudentNavItem[] = [
+const buildNavItems = (doubtCount: number): StudentNavItem[] => [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "My Learning", icon: BookOpen, path: "/my-courses" },
   { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
   { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
-  { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: 3 },
+  { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: doubtCount || undefined },
 ];
 
 const exploreItems: StudentNavItem[] = [
@@ -47,10 +48,12 @@ type SidebarProps = {
   currentGoal: string;
   setCurrentGoal: (g: string) => void;
   onLogout: () => void;
+  doubtCount: number;
 };
 
 // Isolated, memoized sidebar — re-renders only when its props or pathname change.
-const StudentSidebar = memo(({ fullName, avatarUrl, initials, currentGoal, setCurrentGoal, onLogout }: SidebarProps) => {
+const StudentSidebar = memo(({ fullName, avatarUrl, initials, currentGoal, setCurrentGoal, onLogout, doubtCount }: SidebarProps) => {
+  const navItems = buildNavItems(doubtCount);
   const { pathname } = useLocation();
 
   const renderItem = (item: StudentNavItem) => {
@@ -183,6 +186,8 @@ const StudentLayout = () => {
   const { user, currentGoal, setCurrentGoal } = useAppStore();
   const { signOut } = useAuth();
   useNotifications();
+  const { doubts } = useDoubts("mine");
+  const pendingDoubtCount = doubts.filter((d) => d.status !== "answered").length;
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -204,6 +209,7 @@ const StudentLayout = () => {
         currentGoal={currentGoal}
         setCurrentGoal={setCurrentGoal}
         onLogout={handleLogout}
+        doubtCount={pendingDoubtCount}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
