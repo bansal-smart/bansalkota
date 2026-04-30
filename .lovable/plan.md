@@ -1,156 +1,118 @@
 ## Goal
 
-1. Remove the Question Bank from the **Student** panel.
-2. Add a real **Question Bank** to the **Teacher** panel — a persistent library of MCQs the teacher (and other teachers/staff) can build and reuse.
-3. Update **Create Test** so it opens the Question Bank in the right half of the screen, where the teacher can **drag-and-drop** questions into the test on the left.
-4. Audit **all pages, tables and dashboards** so they render correctly on **tablet (≥768px)** and **desktop (≥1024px)** widths. Mobile is out of scope per your message.
+1. Give teachers a real "Go Live" classroom page where they host the class in realtime alongside students (video, live chat, attendee count, start/end controls).
+2. Make the student-side live class room and dashboards/tables fully responsive across desktop and tablet sizes (>=768px).
+3. Confirm Question Bank tab is gone from the student's panel (it already is — no further work needed there beyond a final sweep).
 
 ---
 
-## 1. Database — new `question_bank` table
+## 1. Teacher Live Classroom (new realtime host page)
 
-A new table to store reusable questions independent of any single test.
+Currently `TeacherLiveClassesPage` is only a scheduler/CRUD list — there is no page where the teacher actually hosts the class. Students already have `LiveClassRoomPage` at `/live-classes/:id` with chat, attendance count, and embedded meeting iframe. Teachers need an equivalent host room.
 
+### New page: `src/pages/TeacherLiveClassRoomPage.tsx`
+
+Route: `/teacher/live-classes/:id` (inside `TeacherLayout` + `ProtectedRoute allow={["teacher"]}`).
+
+Layout (split-pane on desktop/tablet, stacked on smaller):
 ```text
-question_bank
-  id              uuid pk
-  created_by      uuid (auth.uid)
-  subject         text   (Physics / Chemistry / Mathematics / Biology)
-  topic           text
-  difficulty      text   (easy / medium / hard)
-  question_text   text
-  question_image_url text nullable
-  options         jsonb  ([{id, text}, …])
-  correct_answer  jsonb  (index or array of indices)
-  explanation     text nullable
-  marks_correct   numeric default 4
-  marks_wrong     numeric default -1
-  tags            text[] default '{}'
-  is_public       boolean default true   -- visible to all teachers/staff
-  created_at      timestamptz
-  updated_at      timestamptz
++-----------------------------------------------+----------------+
+| [Back]  Title  [LIVE badge]   [Start][End]    |  Live chat     |
+|                                               |  (teacher tag) |
+| +-------------------------------------------+ |  participants  |
+| | Embedded meeting iframe (meeting_url)     | |  + msg list    |
+| | Aspect 16:9                               | |  + composer    |
+| +-------------------------------------------+ |                |
+| Class info: subject, course, scheduled time   |                |
+| Attendees panel (collapsible): list + count   |                |
++-----------------------------------------------+----------------+
 ```
 
-RLS policies:
-- **SELECT**: any authenticated teacher/staff/admin.
-- **INSERT / UPDATE / DELETE**: row owner (`created_by = auth.uid()`) OR staff/admin.
+Reuses the existing tables — no schema change required:
+- `live_classes` (status, meeting_url, recording_url)
+- `live_class_messages` (realtime chat — already in `supabase_realtime` publication)
+- `live_class_attendance` (joined students)
 
-Keep the existing `test_questions` table unchanged — drag-and-drop simply copies the question into `test_questions` on save (so a test stays self-contained even if the bank entry changes later).
+Behavior:
+- **Auth gate**: only the `created_by` teacher (or staff) can open the host page; otherwise redirect with toast.
+- **Start class**: button updates `live_classes.status` from `scheduled` → `live` and stamps a `started_at` (reuse `starts_at` if needed; no new column). Triggers the existing realtime channel so students immediately see "Live now" on `LiveClassesListPage` (already wired via `useLiveClasses`).
+- **End class**: sets `status` → `completed` and optionally accepts a `recording_url` input that gets saved.
+- **Live chat**: identical Supabase channel as the student page but inserts with `is_teacher: true` so messages render with the TEACHER pill already supported in `LiveClassRoomPage`.
+- **Attendees**: `select` from `live_class_attendance` joined to `profiles` for names; live-updated via the same `postgres_changes` channel that the student page uses. Shows count + scrollable list.
+- **Meeting frame**: same iframe pattern (`meeting_url`) with "Open in new tab" fallback. The teacher is the host inside Jitsi/Meet/Zoom — we don't try to control video from React.
 
-A small seed (≈20 sample questions across Physics / Chem / Math / Bio) will be inserted so the bank isn't empty on first load.
+### Wiring
 
----
+- Add route in `src/App.tsx` under the teacher block:
+  ```
+  <Route path="/teacher/live-classes/:id" element={<TeacherLiveClassRoomPage />} />
+  ```
+- In `TeacherLiveClassesPage.tsx`, add a primary action on each row:
+  - "Go Live" button (when `status === scheduled` and starts within 15 min, or always allow) → navigates to `/teacher/live-classes/:id`.
+  - "Resume" when `status === live`.
+  - Existing "Mark complete" / delete remain.
 
-## 2. Student panel — remove QBank
+### Realtime + RLS notes
 
-- Delete the `/qbank` route from `App.tsx`.
-- Remove the **QBank** entries from `StudentLayout.tsx` (desktop sidebar `navItems` and mobile bottom nav). Replace mobile slot with **Doubts**.
-- Remove the QBank quick-action card from `StudentDashboard.tsx` (line ~246).
-- Delete `src/pages/QBankPage.tsx`.
-
-The marketing copy mentioning "Question Bank" on `LandingPage` / course features stays — it's a feature description, not navigation.
-
----
-
-## 3. Teacher panel — new Question Bank page
-
-New route: `/teacher/question-bank` → `TeacherQuestionBankPage.tsx`. Sidebar entry added between **Create Test** and **Doubt Queue**, icon `BookMarked`.
-
-Page layout (desktop ≥1024px):
-
-```text
-┌─ Filters bar ─────────────────────────────────────────────┐
-│ [Subject ▾] [Topic ▾] [Difficulty ▾] [Search] [+ New Q]   │
-├──────────────────────────────────────────────────────────┤
-│ Question cards grid (2-col @md, 3-col @xl)                │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                 │
-│  │ Q text…  │  │ Q text…  │  │ Q text…  │                 │
-│  │ Phys·Med │  │ Chem·Hard│  │ Math·Easy│                 │
-│  │ [edit][⋯]│  │ [edit][⋯]│  │ [edit][⋯]│                 │
-│  └──────────┘  └──────────┘  └──────────┘                 │
-└──────────────────────────────────────────────────────────┘
-```
-
-Features:
-- Add / edit / delete a question (modal form: subject, topic, difficulty, text, 4 options, correct answer, explanation, tags).
-- Filter by subject, topic, difficulty; full-text search across `question_text`.
-- Pagination (20 per page) using existing `usePagination` hook.
-
-A small `useQuestionBank` hook (mirroring `useCourses`) handles fetch + filters + realtime refresh.
+The `live_classes` UPDATE policy already restricts to teachers/staff (see migration `20260427070429`). `live_class_messages` INSERT policy permits authenticated users; teacher messages just set `is_teacher: true` client-side, mirroring the existing student flow. No new migration needed.
 
 ---
 
-## 4. Create Test — split layout with drag-and-drop
+## 2. Question Bank in the student panel
 
-`CreateTestPage.tsx` is rewritten to a **two-pane layout** on screens ≥`lg`:
+Already removed in the prior change set:
+- `StudentLayout.tsx` nav lists (Main / Explore / Account) contain no QBank entry.
+- `StudentDashboard.tsx` quick actions don't reference it.
+- `App.tsx` has no `/qbank` route; `src/pages/QBankPage.tsx` was deleted.
 
-```text
-┌────────────── Create Test ──────────────────────────────────┐
-│ Left pane (50%, scrollable)        │ Right pane (50%)       │
-│                                    │                        │
-│ Basic setup (title, type, …)       │ Question Bank          │
-│                                    │  Filters + search      │
-│ Questions in this test             │  Draggable Q cards     │
-│  ┌─ drop zone ──────────────────┐  │   ┌──────────┐         │
-│  │ 1. Q text…  (from bank)  ✕   │  │   │ Q text…  │ drag→   │
-│  │ 2. Q text…  (manual)     ✕   │  │   └──────────┘         │
-│  │ + Add manual question        │  │   ┌──────────┐         │
-│  └──────────────────────────────┘  │   │ Q text…  │         │
-│                                    │   └──────────┘         │
-│ [ Save Draft ]   [ Publish Test ]  │                        │
-└────────────────────────────────────┴────────────────────────┘
-```
-
-- DnD via `@dnd-kit/core` (already a common shadcn-friendly choice; will be added).
-- Drop a bank question into the test → it's pushed into the local `questions` array (snapshot copy of all fields, so future bank edits don't mutate the test).
-- Existing manual "Add Question" form still available inside the left pane for ad-hoc questions.
-- Reorder questions inside the test via drag handle (`@dnd-kit/sortable`).
-- Below `lg` (tablet portrait / smaller), the right pane collapses into a **"Open Question Bank"** drawer (`Sheet` component) so the form stays usable.
-
-Submit logic in `submit()` is unchanged — it still inserts rows into `tests` + `test_questions`.
+Action: do a final `rg` sweep before finishing to ensure no leftover student-facing reference remains. (Currently only teacher routes/components reference Question Bank, plus a marketing string in `StorePage.tsx` — that's fine.) No code change expected here unless the sweep finds something stray.
 
 ---
 
-## 5. Responsiveness audit (tablet + desktop)
+## 3. Responsive sweep (desktop + tablet)
 
-Target breakpoints: **md = 768px (tablet)** and **lg = 1024px (desktop)**. Mobile (<768) is left as-is per your scope.
+Target widths: 768, 820, 1024, 1280, 1366, 1536, 1920. Mobile (<768) is explicitly out of scope per user note.
 
-Pass over each page/table/dashboard and apply consistent fixes:
+### Student dashboard (`StudentDashboard.tsx`)
+- Right "My Performance" panel currently shows only at `xl` (>=1280). At 1024-1279 the dashboard feels empty on the right and the main column stretches too wide. Switch to `lg:block w-[260px]` so the panel appears from 1024px+.
+- Convert quick actions / stats grids to clean breakpoints: `grid-cols-2 md:grid-cols-4` for both rows so tablets show all four side-by-side.
+- "Continue Watching" and "Educators" grids: `sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3` — already mostly there, normalize to `md:` breakpoints.
+- Header greeting row: ensure CTAs wrap cleanly with `flex-wrap` and shrink CTA padding at `md`.
 
-- **Tables** (`AdminUsersPage`, `AdminPaymentsPage`, `AdminCoursesPage`, `AdminTestsPage`, `AdminLiveClassesPage`, `AdminEnquiriesPage`, `AdminEducatorApplicationsPage`, `AdminReportsPage`, `TeacherStudentsPage`, `TeacherCoursesPage`, `TeacherLiveClassesPage`):
-  - Wrap in `overflow-x-auto` with a min-width so columns don't crush.
-  - Hide non-essential columns on `md` (`hidden lg:table-cell`); keep core columns visible.
-  - Convert action button rows from wrapping into a single-row `flex-nowrap` with truncated labels (icon-only on `md`).
+### Student Live Classroom (`LiveClassRoomPage.tsx`)
+- Currently the chat sidebar only splits at `lg`. Drop to `md:` so tablets get the side-by-side video+chat experience: `flex-col md:flex-row`, `md:w-[300px] lg:w-[340px]`.
+- Constrain the video container `max-h-[calc(100vh-120px)]` on `md+` so 16:9 doesn't push the chat off-screen on shorter tablets.
 
-- **Dashboards** (`StudentDashboard`, `TeacherDashboard`, `AdminDashboard`, `StaffDashboardPage`, `TeacherAnalyticsPage`, `AnalyticsPage`):
-  - Stat cards: `grid-cols-2 md:grid-cols-3 xl:grid-cols-4`.
-  - Charts: wrap in `ResponsiveContainer` (already the case for most); ensure parent has fixed `h-[260px] md:h-[320px]`.
-  - Side panels (e.g. "Pending approvals", "Upcoming classes") move from full-width on tablet to a 2-column grid on `xl`.
+### Teacher pages
+- `TeacherLiveClassesPage`: list cards already wrap; tighten action buttons to wrap on tablet. Add the new "Go Live" button.
+- `TeacherDashboard`, `TeacherStudentsPage`, `TeacherAnalyticsPage`, `TeacherCoursesPage`: confirm any data tables wrap in `overflow-x-auto` containers and stat grids use `md:grid-cols-2 lg:grid-cols-4`.
+- `CreateTestPage`: already split at `lg`. Add a `md:` sheet trigger so tablets between 768-1023 can open the question bank as a side sheet (existing `Sheet` component already used for mobile — just lower its breakpoint to `lg:hidden` from `md:hidden` if needed).
 
-- **Forms** (`CreateTestPage`, `CreateCoursePage`, `TeacherSettingsPage`, `AdminSettingsPage`, `LoginPage`, `SignupPage`):
-  - Field grids: `grid-cols-1 md:grid-cols-2`.
-  - Containers: replace fixed `max-w-3xl mx-auto` with `max-w-3xl xl:max-w-5xl mx-auto` so wide screens use the space.
+### Admin
+- `AdminDashboard`, `AdminUsersPage`, `AdminPaymentsPage`, etc.: ensure `<table>` wrappers use `overflow-x-auto`, and stat grids step `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`. Quick visual pass — most are already correct.
 
-- **Layouts** (`TeacherLayout`, `StudentLayout`, `AdminLayout`):
-  - Sidebar already `hidden lg:flex` (good); ensure header search collapses to icon-only at `md`.
-  - Main content `px-4 md:px-6 xl:px-10` for consistent gutters.
+### Verification
 
-- **Course / lesson grids** (`CoursesPage`, `MyCoursesPage`, `EducatorsPage`, `LiveClassesListPage`, `TestListPage`):
-  - `grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`.
-
-A short checklist comment at the top of each touched file documents the breakpoints used, so future edits stay consistent.
+After implementation, use the browser tool at viewports 768x1024, 1024x768, 1280x720, 1366x768, 1536x864 to spot-check:
+1. `/dashboard` (student)
+2. `/my-live-classes` and a `/live-classes/:id` room
+3. `/teacher/dashboard`, `/teacher/live-classes`, `/teacher/live-classes/:id` (new)
+4. `/teacher/tests/create`
+5. `/admin/dashboard`, `/admin/users`
 
 ---
 
-## Tech notes
+## Files to create / edit
 
-- New dep: `@dnd-kit/core` + `@dnd-kit/sortable` (~12 kB gz). No other infra changes.
-- `supabase/migrations/<ts>_add_question_bank.sql` adds the table, RLS, and seed rows.
-- `src/integrations/supabase/types.ts` is regenerated automatically.
-- New files:
-  - `src/pages/TeacherQuestionBankPage.tsx`
-  - `src/components/QuestionBankPanel.tsx` (shared between the standalone page and the Create Test right-pane)
-  - `src/components/QuestionEditorDialog.tsx`
-  - `src/hooks/useQuestionBank.ts`
-- Edited files: `App.tsx`, `TeacherLayout.tsx`, `StudentLayout.tsx`, `StudentDashboard.tsx`, `CreateTestPage.tsx`, plus the responsiveness pass listed above.
-- Deleted: `src/pages/QBankPage.tsx`.
+**Create**
+- `src/pages/TeacherLiveClassRoomPage.tsx` — new realtime host room.
+
+**Edit**
+- `src/App.tsx` — add `/teacher/live-classes/:id` route + import.
+- `src/pages/TeacherLiveClassesPage.tsx` — add "Go Live" / "Resume" buttons linking to the host page; minor responsive tidy.
+- `src/pages/LiveClassRoomPage.tsx` — drop chat-split breakpoint from `lg` to `md`.
+- `src/pages/StudentDashboard.tsx` — show right panel from `lg:` instead of `xl:`, normalize grid breakpoints.
+- `src/pages/CreateTestPage.tsx` — verify `Sheet` trigger behavior on tablet.
+- Light responsive touch-ups (only if the QA pass reveals issues) on: `TeacherDashboard.tsx`, `TeacherStudentsPage.tsx`, `TeacherAnalyticsPage.tsx`, `AdminDashboard.tsx`, `AdminUsersPage.tsx`.
+
+**No DB migration needed** — `live_classes`, `live_class_messages`, `live_class_attendance` already exist with RLS + realtime publication.
