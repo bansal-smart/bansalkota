@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, LogOut, Flame, CircleDot, Briefcase, Inbox, FileText, Flag } from "lucide-react";
+import { LayoutDashboard, Flame, CircleDot, Briefcase, Inbox, FileText, Flag } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
