@@ -122,7 +122,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
       </div>
 
       {/* Questions list */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {loading ? (
           <p className="text-center text-xs text-muted-foreground py-6">Loading…</p>
         ) : questions.length === 0 ? (
