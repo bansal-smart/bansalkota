@@ -150,6 +150,7 @@ export type Database = {
           original_price: number | null
           price: number
           rating: number | null
+          requirements: string[]
           slug: string
           subject: string
           tags: string[] | null
@@ -158,6 +159,7 @@ export type Database = {
           total_enrolled: number | null
           total_lessons: number | null
           updated_at: string
+          what_youll_learn: string[]
         }
         Insert: {
           badge?: string | null
@@ -175,6 +177,7 @@ export type Database = {
           original_price?: number | null
           price?: number
           rating?: number | null
+          requirements?: string[]
           slug: string
           subject: string
           tags?: string[] | null
@@ -183,6 +186,7 @@ export type Database = {
           total_enrolled?: number | null
           total_lessons?: number | null
           updated_at?: string
+          what_youll_learn?: string[]
         }
         Update: {
           badge?: string | null
@@ -200,6 +204,7 @@ export type Database = {
           original_price?: number | null
           price?: number
           rating?: number | null
+          requirements?: string[]
           slug?: string
           subject?: string
           tags?: string[] | null
@@ -208,6 +213,7 @@ export type Database = {
           total_enrolled?: number | null
           total_lessons?: number | null
           updated_at?: string
+          what_youll_learn?: string[]
         }
         Relationships: []
       }
