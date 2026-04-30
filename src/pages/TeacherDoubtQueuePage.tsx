@@ -69,8 +69,8 @@ const TeacherDoubtQueuePage = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-57px)]">
-      <div className="lg:w-[380px] border-r border-border bg-card overflow-y-auto">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-57px)] min-w-0">
+      <div className="md:w-[300px] lg:w-[340px] xl:w-[380px] shrink-0 border-b md:border-b-0 md:border-r border-border bg-card overflow-y-auto max-h-[40vh] md:max-h-none">
         <div className="p-4 border-b border-border">
           <h1 className="text-lg font-bold text-foreground">Doubt Queue</h1>
           <div className="flex gap-2 mt-3">
