@@ -189,7 +189,7 @@ const LiveClassRoomPage = () => {
           )}
         </div>
 
-        <aside className="lg:w-[340px] border-t lg:border-t-0 lg:border-l border-border bg-card flex flex-col h-[60vh] lg:h-auto">
+        <aside className="md:w-[300px] lg:w-[340px] border-t md:border-t-0 md:border-l border-border bg-card flex flex-col h-[60vh] md:h-auto">
           <div className="px-4 py-3 border-b border-border">
             <p className="text-sm font-bold text-foreground">Live chat</p>
             <p className="text-[10px] text-muted-foreground">{messages.length} messages</p>
