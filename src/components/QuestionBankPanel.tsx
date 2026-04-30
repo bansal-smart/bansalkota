@@ -1,0 +1,154 @@
+import { useState, useMemo } from "react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked } from "lucide-react";
+import { useDraggable } from "@dnd-kit/core";
+import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
+import QuestionEditorDialog from "./QuestionEditorDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+const SUBJECTS = ["All", "Physics", "Chemistry", "Mathematics", "Biology"];
+const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
+
+const difficultyColor = (d: string) => {
+  if (d === "easy") return "bg-emerald-100 text-emerald-700";
+  if (d === "hard") return "bg-rose-100 text-rose-700";
+  return "bg-amber-100 text-amber-700";
+};
+
+type CardProps = {
+  q: BankQuestion;
+  draggable?: boolean;
+  onEdit?: (q: BankQuestion) => void;
+  onDelete?: (q: BankQuestion) => void;
+  compact?: boolean;
+};
+
+const QuestionCard = ({ q, draggable, onEdit, onDelete, compact }: CardProps) => {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `bank-${q.id}`,
+    data: { question: q },
+    disabled: !draggable,
+  });
+
+  return (
+    <div
+      ref={draggable ? setNodeRef : undefined}
+      className={`rounded-xl border border-border bg-card p-3 hover:border-primary/40 transition-all ${isDragging ? "opacity-40" : ""} ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+      {...(draggable ? attributes : {})}
+      {...(draggable ? listeners : {})}
+    >
+      <div className="flex items-start gap-2">
+        {draggable && <GripVertical className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">{q.subject}</span>
+            {q.topic && <span className="text-[10px] font-medium text-muted-foreground">{q.topic}</span>}
+            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
+          </div>
+          <p className={`text-foreground ${compact ? "text-xs line-clamp-2" : "text-sm line-clamp-3"}`}>{q.question_text}</p>
+        </div>
+        {(onEdit || onDelete) && (
+          <div className="flex flex-col gap-1 shrink-0">
+            {onEdit && (
+              <button onClick={() => onEdit(q)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
+                <Edit2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onDelete && (
+              <button onClick={() => onDelete(q)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+type Props = {
+  /** When true, cards are draggable into a drop zone (used in CreateTestPage). */
+  draggable?: boolean;
+  /** When true, shows manage controls (edit/delete/new). */
+  manage?: boolean;
+  /** When true, compact card layout for narrow side panels. */
+  compact?: boolean;
+  className?: string;
+};
+
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, className = "" }: Props) => {
+  const [subject, setSubject] = useState("All");
+  const [difficulty, setDifficulty] = useState("All");
+  const [search, setSearch] = useState("");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<BankQuestion | null>(null);
+
+  const filters = useMemo(() => ({ subject, difficulty, search }), [subject, difficulty, search]);
+  const { questions, loading, reload } = useQuestionBank(filters);
+
+  const handleDelete = async (q: BankQuestion) => {
+    if (!confirm("Delete this question?")) return;
+    const { error } = await supabase.from("question_bank").delete().eq("id", q.id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    reload();
+  };
+
+  return (
+    <div className={`flex flex-col h-full min-h-0 ${className}`}>
+      {/* Filters */}
+      <div className="space-y-2 p-3 border-b border-border bg-card sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <BookMarked className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold text-foreground flex-1">Question Bank</h3>
+          {manage && (
+            <button onClick={() => { setEditing(null); setEditorOpen(true); }} className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground">
+              <Plus className="h-3 w-3" /> New
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5">
+          <Search className="h-3.5 w-3.5 text-muted-foreground" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions..." className="flex-1 bg-transparent text-xs outline-none" />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <select value={subject} onChange={(e) => setSubject(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none">
+            {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none">
+            {DIFFICULTIES.map((d) => <option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Questions list */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {loading ? (
+          <p className="text-center text-xs text-muted-foreground py-6">Loading…</p>
+        ) : questions.length === 0 ? (
+          <p className="text-center text-xs text-muted-foreground py-6">No questions found.</p>
+        ) : (
+          <>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{questions.length} questions{draggable ? " · drag to add" : ""}</p>
+            <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
+              {questions.map((q) => (
+                <QuestionCard
+                  key={q.id}
+                  q={q}
+                  draggable={draggable}
+                  compact={compact}
+                  onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
+                  onDelete={manage ? handleDelete : undefined}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
+      <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
+    </div>
+  );
+};
+
+export default QuestionBankPanel;
