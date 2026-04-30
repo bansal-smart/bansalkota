@@ -22,14 +22,13 @@ type StudentNavItem = {
 const buildNavItems = (doubtCount: number): StudentNavItem[] => [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "My Learning", icon: BookOpen, path: "/my-courses" },
-  { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
+  { label: "Browse Courses", icon: GraduationCap, path: "/explore-courses" },
   { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
   { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: doubtCount || undefined },
 ];
 
 const exploreItems: StudentNavItem[] = [
-  { label: "Educators", icon: Users, path: "/educators" },
   { label: "Compete", icon: Swords, path: "/compete" },
   { label: "My Analytics", icon: BarChart3, path: "/analytics" },
   { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
@@ -38,7 +37,6 @@ const exploreItems: StudentNavItem[] = [
 const accountItems: StudentNavItem[] = [
   { label: "Profile", icon: User, path: "/profile" },
   { label: "Settings", icon: Settings, path: "/settings" },
-  { label: "Store", icon: ShoppingBag, path: "/store" },
 ];
 
 type SidebarProps = {
