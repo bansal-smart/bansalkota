@@ -125,7 +125,8 @@ const TeacherDoubtQueuePage = () => {
                   <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary">{d.subject}</span>
                   <span className="text-[10px] text-muted-foreground capitalize ml-auto">{d.status.replace("_", " ")}</span>
                 </div>
-                <p className="text-xs text-foreground line-clamp-2">{d.question_text}</p>
+                <p className="text-[11px] font-semibold text-foreground truncate">{studentNames[d.user_id] || "Student"}</p>
+                <p className="text-xs text-foreground line-clamp-2 mt-0.5">{d.question_text}</p>
                 <p className="text-[10px] text-muted-foreground mt-1">{new Date(d.created_at).toLocaleString()}</p>
               </button>
             ))}
