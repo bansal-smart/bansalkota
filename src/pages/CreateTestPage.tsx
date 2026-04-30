@@ -277,14 +277,14 @@ const CreateTestPage = () => {
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex h-[calc(100vh-57px)]">
+      <div className="flex">
         {/* Left pane (form) */}
-        <div className="flex-1 lg:w-1/2 lg:flex-none overflow-y-auto px-4 md:px-6 xl:px-8 py-4 pb-24">
+        <div className="flex-1 lg:w-1/2 lg:flex-none px-4 md:px-6 xl:px-8 py-4">
           <div className="max-w-3xl mx-auto">{LeftPane}</div>
         </div>
 
-        {/* Right pane (Question Bank) — desktop only */}
-        <aside className="hidden lg:flex lg:w-1/2 border-l border-border bg-muted/30 flex-col">
+        {/* Right pane (Question Bank) — desktop only, sticky with its own scroll */}
+        <aside className="hidden lg:flex lg:w-1/2 border-l border-border bg-muted/30 flex-col sticky top-[57px] self-start h-[calc(100vh-57px)]">
           <QuestionBankPanel draggable compact />
         </aside>
       </div>
