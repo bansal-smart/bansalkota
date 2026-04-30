@@ -31,6 +31,23 @@ const CreateCoursePage = () => {
   const [chapters, setChapters] = useState<DraftChapter[]>([
     { title: "Chapter 1", lectures: [{ title: "Introduction", durationMin: 15 }] },
   ]);
+  const [learnItems, setLearnItems] = useState<string[]>([]);
+  const [learnInput, setLearnInput] = useState("");
+  const [reqItems, setReqItems] = useState<string[]>([]);
+  const [reqInput, setReqInput] = useState("");
+
+  const addLearn = () => {
+    const v = learnInput.trim();
+    if (!v) return;
+    setLearnItems([...learnItems, v]);
+    setLearnInput("");
+  };
+  const addReq = () => {
+    const v = reqInput.trim();
+    if (!v) return;
+    setReqItems([...reqItems, v]);
+    setReqInput("");
+  };
 
   const addChapter = () => setChapters([...chapters, { title: `Chapter ${chapters.length + 1}`, lectures: [] }]);
   const removeChapter = (i: number) => setChapters(chapters.filter((_, j) => j !== i));
