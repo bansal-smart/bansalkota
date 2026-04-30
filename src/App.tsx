@@ -39,6 +39,7 @@ import TeacherDoubtQueuePage from "./pages/TeacherDoubtQueuePage";
 import CreateCoursePage from "./pages/CreateCoursePage";
 import TeacherCoursesPage from "./pages/TeacherCoursesPage";
 import TeacherLiveClassesPage from "./pages/TeacherLiveClassesPage";
+import TeacherLiveClassRoomPage from "./pages/TeacherLiveClassRoomPage";
 import TeacherStudentsPage from "./pages/TeacherStudentsPage";
 import TeacherAnalyticsPage from "./pages/TeacherAnalyticsPage";
 import TeacherSettingsPage from "./pages/TeacherSettingsPage";
@@ -147,6 +148,7 @@ const App = () => (
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
                 <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
                 <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
+                <Route path="/teacher/live-classes/:id" element={<TeacherLiveClassRoomPage />} />
                 <Route path="/teacher/tests/create" element={<CreateTestPage />} />
                 <Route path="/teacher/question-bank" element={<TeacherQuestionBankPage />} />
                 <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
