@@ -117,10 +117,8 @@ const App = () => (
               <Route path="/terms" element={<TermsOfServicePage />} />
             </Route>
 
-            {/* Student layout — store kept inside student chrome */}
-            <Route element={<StudentLayout />}>
-              <Route path="/store" element={<StorePage />} />
-            </Route>
+            {/* Legacy /store redirect */}
+            <Route path="/store" element={<Navigate to="/explore-courses" replace />} />
 
             {/* Student layout — students only */}
             <Route element={<ProtectedRoute allow={["student"]} />}>
@@ -136,6 +134,7 @@ const App = () => (
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/my-courses" element={<MyCoursesPage />} />
+                <Route path="/explore-courses" element={<StorePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

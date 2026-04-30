@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Search, Flame, GraduationCap } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Swords, BarChart3, Trophy, User, Settings, Search, Flame, GraduationCap } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback } from "react";
 import GoalSelector from "@/components/GoalSelector";
@@ -22,14 +22,13 @@ type StudentNavItem = {
 const buildNavItems = (doubtCount: number): StudentNavItem[] => [
   { label: "Home", icon: Home, path: "/dashboard" },
   { label: "My Learning", icon: BookOpen, path: "/my-courses" },
-  { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
+  { label: "Browse Courses", icon: GraduationCap, path: "/explore-courses" },
   { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
   { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: doubtCount || undefined },
 ];
 
 const exploreItems: StudentNavItem[] = [
-  { label: "Educators", icon: Users, path: "/educators" },
   { label: "Compete", icon: Swords, path: "/compete" },
   { label: "My Analytics", icon: BarChart3, path: "/analytics" },
   { label: "Leaderboard", icon: Trophy, path: "/leaderboard" },
@@ -38,7 +37,6 @@ const exploreItems: StudentNavItem[] = [
 const accountItems: StudentNavItem[] = [
   { label: "Profile", icon: User, path: "/profile" },
   { label: "Settings", icon: Settings, path: "/settings" },
-  { label: "Store", icon: ShoppingBag, path: "/store" },
 ];
 
 type SidebarProps = {
@@ -77,7 +75,7 @@ const StudentSidebar = memo(({ fullName, avatarUrl, initials, currentGoal, setCu
   };
 
   return (
-    <aside className="hidden lg:flex w-[220px] flex-col border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">
+    <aside className="hidden lg:flex w-[220px] flex-col border-r border-border bg-card sticky top-0 h-screen overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="p-4">
         <Link to="/dashboard" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -126,9 +124,9 @@ const StudentMobileNav = memo(() => {
   const items = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: BookOpen, label: "Learning", path: "/my-courses" },
+    { icon: GraduationCap, label: "Browse", path: "/explore-courses" },
     { icon: MessageCircle, label: "Doubts", path: "/doubts" },
     { icon: ClipboardCheck, label: "Tests", path: "/my-tests" },
-    { icon: ShoppingBag, label: "Store", path: "/store" },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card py-2 lg:hidden">
@@ -215,7 +213,7 @@ const StudentLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <StudentHeader fullName={fullName} avatarUrl={user?.avatar_url} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Outlet />
         </main>
       </div>
