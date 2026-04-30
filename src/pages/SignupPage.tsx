@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SignupPage = () => {
@@ -115,6 +115,9 @@ const SignupPage = () => {
       {/* Right Panel */}
       <div className="flex flex-1 items-center justify-center bg-card p-8 overflow-y-auto">
         <div className="w-full max-w-sm">
+          <Link to="/" className="inline-flex items-center gap-1.5 mb-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back to home
+          </Link>
           <h2 className="text-2xl font-black font-display text-foreground">Create Account</h2>
           <p className="mt-1 text-sm text-muted-foreground">Start your preparation journey</p>
 

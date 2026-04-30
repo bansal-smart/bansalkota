@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Flame, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowLeft, Flame, Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,9 @@ const AdminLoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4" style={{ background: "linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 18%) 100%)" }}>
       <div className="w-full max-w-md">
+        <Link to="/" className="inline-flex items-center gap-1.5 mb-4 text-sm font-medium text-white/80 hover:text-white transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Back to home
+        </Link>
         <Link to="/" className="flex items-center justify-center gap-2 mb-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-5 w-5 text-primary-foreground" />
