@@ -164,6 +164,15 @@ const TeacherDoubtQueuePage = () => {
                 {selected.topic && <span className="text-[10px] text-muted-foreground">{selected.topic}</span>}
                 <span className="text-[10px] text-muted-foreground capitalize ml-auto">{selected.status.replace("_", " ")}</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-light text-[10px] font-bold text-primary">
+                  {(studentNames[selected.user_id] || "S").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-foreground">{studentNames[selected.user_id] || "Student"}</p>
+                  <p className="text-[10px] text-muted-foreground">Asked {new Date(selected.created_at).toLocaleString()}</p>
+                </div>
+              </div>
               <p className="text-sm text-foreground whitespace-pre-line break-words">{selected.question_text}</p>
               {selected.image_url && (
                 <div className="relative inline-block">
