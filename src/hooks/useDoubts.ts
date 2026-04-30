@@ -40,8 +40,18 @@ export const useDoubts = (mode: "mine" | "all" = "mine") => {
       .on("postgres_changes", { event: "*", schema: "public", table: "doubts" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "doubt_answers" }, () => load())
       .subscribe();
+
+    // Safety net: refetch when tab regains focus, in case a realtime event was missed.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    window.addEventListener("focus", load);
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener("focus", load);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [user, mode]);
 
