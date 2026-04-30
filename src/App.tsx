@@ -19,7 +19,7 @@ import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
-import QBankPage from "./pages/QBankPage";
+import TeacherQuestionBankPage from "./pages/TeacherQuestionBankPage";
 import CompetePage from "./pages/CompetePage";
 import DoubtPage from "./pages/DoubtPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -129,7 +129,7 @@ const App = () => (
                 <Route path="/tests/:id/result" element={<TestResultPage />} />
                 <Route path="/my-live-classes" element={<LiveClassesListPage />} />
                 <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
-                <Route path="/qbank" element={<QBankPage />} />
+                
                 <Route path="/compete" element={<CompetePage />} />
                 <Route path="/doubts" element={<DoubtPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
@@ -148,6 +148,7 @@ const App = () => (
                 <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
                 <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
                 <Route path="/teacher/tests/create" element={<CreateTestPage />} />
+                <Route path="/teacher/question-bank" element={<TeacherQuestionBankPage />} />
                 <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
                 <Route path="/teacher/students" element={<TeacherStudentsPage />} />
                 <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
