@@ -124,9 +124,9 @@ const StudentMobileNav = memo(() => {
   const items = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: BookOpen, label: "Learning", path: "/my-courses" },
+    { icon: GraduationCap, label: "Browse", path: "/explore-courses" },
     { icon: MessageCircle, label: "Doubts", path: "/doubts" },
     { icon: ClipboardCheck, label: "Tests", path: "/my-tests" },
-    { icon: ShoppingBag, label: "Store", path: "/store" },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-card py-2 lg:hidden">
