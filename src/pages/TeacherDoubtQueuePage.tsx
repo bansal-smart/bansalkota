@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
+import { FormattedAnswer } from "@/components/FormattedAnswer";
 
 type Doubt = {
   id: string;
@@ -68,8 +69,8 @@ const TeacherDoubtQueuePage = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-57px)]">
-      <div className="lg:w-[380px] border-r border-border bg-card overflow-y-auto">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-57px)] min-w-0">
+      <div className="md:w-[300px] lg:w-[340px] xl:w-[380px] shrink-0 border-b md:border-b-0 md:border-r border-border bg-card overflow-y-auto max-h-[40vh] md:max-h-none">
         <div className="p-4 border-b border-border">
           <h1 className="text-lg font-bold text-foreground">Doubt Queue</h1>
           <div className="flex gap-2 mt-3">
@@ -139,31 +140,32 @@ const TeacherDoubtQueuePage = () => {
         )}
       </div>
 
-      <div className="flex-1 flex flex-col bg-background">
+      <div className="flex-1 min-w-0 flex flex-col bg-background overflow-y-auto">
         {selected ? (
           <>
-            <div className="p-5 border-b border-border bg-card space-y-3">
-              <div className="flex items-center gap-2">
+            <div className="p-4 md:p-5 border-b border-border bg-card space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{selected.subject}</span>
-                <span className="text-[10px] text-muted-foreground capitalize">{selected.status.replace("_", " ")}</span>
+                {selected.topic && <span className="text-[10px] text-muted-foreground">{selected.topic}</span>}
+                <span className="text-[10px] text-muted-foreground capitalize ml-auto">{selected.status.replace("_", " ")}</span>
               </div>
-              <p className="text-sm text-foreground whitespace-pre-line">{selected.question_text}</p>
-              {selected.image_url && <img src={selected.image_url} alt="Doubt" className="rounded-lg max-h-64" />}
+              <p className="text-sm text-foreground whitespace-pre-line break-words">{selected.question_text}</p>
+              {selected.image_url && <img src={selected.image_url} alt="Doubt" className="rounded-lg max-h-64 object-contain" />}
               {selected.ai_answer && (
-                <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                  <p className="text-[10px] font-bold text-primary uppercase mb-1">AI suggested answer</p>
-                  <p className="text-xs text-foreground whitespace-pre-line">{selected.ai_answer}</p>
+                <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-primary uppercase">AI suggested answer</p>
+                  <FormattedAnswer content={selected.ai_answer} tone="primary" className="text-xs md:text-sm" />
                 </div>
               )}
             </div>
-            <div className="p-5 space-y-3 flex-1">
-              <p className="text-xs font-semibold text-foreground">Your answer</p>
+            <div className="p-4 md:p-5 space-y-3 flex-1">
+              <p className="text-xs font-semibold text-foreground">Your answer (markdown supported)</p>
               <textarea
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 rows={6}
-                placeholder="Type your detailed answer..."
-                className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none resize-none focus:border-primary"
+                placeholder="Type your detailed answer... You can use **bold**, lists, and steps."
+                className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none resize-y focus:border-primary"
               />
               <button
                 disabled={submitting || !answer.trim()}
@@ -176,7 +178,7 @@ const TeacherDoubtQueuePage = () => {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Select a doubt to answer</div>
+          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground p-6 text-center">Select a doubt from the list to view and answer</div>
         )}
       </div>
     </div>
