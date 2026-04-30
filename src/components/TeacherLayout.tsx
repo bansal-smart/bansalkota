@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, LogOut, Flame, PlusCircle, BookMarked } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, Flame, PlusCircle, BookMarked } from "lucide-react";
+import LogoutButton from "@/components/LogoutButton";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,9 +73,7 @@ const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }:
             <p className="text-[10px] text-muted-foreground">Educator</p>
           </div>
         </div>
-        <button onClick={onLogout} className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors">
-          <LogOut className="h-3.5 w-3.5" /> Logout
-        </button>
+        <LogoutButton onConfirm={onLogout} />
       </div>
     </aside>
   );

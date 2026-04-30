@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, LogOut, Flame, CircleDot, Briefcase, Inbox, FileText, Flag } from "lucide-react";
+import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -65,12 +66,10 @@ const AdminSidebar = memo(({ email, initials, onLogout }: SidebarProps) => {
             <p className="text-[10px] text-white/50">Staff Member</p>
           </div>
         </div>
-        <button
-          onClick={onLogout}
+        <LogoutButton
+          onConfirm={onLogout}
           className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-        >
-          <LogOut className="h-3.5 w-3.5" /> Logout
-        </button>
+        />
       </div>
     </aside>
   );
@@ -87,12 +86,11 @@ const AdminHeader = memo(({ initials, onLogout }: { initials: string; onLogout: 
         <CircleDot className="h-3 w-3" />
         <span className="font-medium">Connected</span>
       </div>
-      <button
-        onClick={onLogout}
+      <LogoutButton
+        onConfirm={onLogout}
+        variant="compact"
         className="lg:hidden flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
-      >
-        <LogOut className="h-3.5 w-3.5" /> Logout
-      </button>
+      />
       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
         {initials}
       </div>
