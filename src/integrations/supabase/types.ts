@@ -945,6 +945,63 @@ export type Database = {
         }
         Relationships: []
       }
+      question_bank: {
+        Row: {
+          correct_answer: Json
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          explanation: string | null
+          id: string
+          is_public: boolean
+          marks_correct: number
+          marks_wrong: number
+          options: Json
+          question_image_url: string | null
+          question_text: string
+          subject: string
+          tags: string[]
+          topic: string | null
+          updated_at: string
+        }
+        Insert: {
+          correct_answer: Json
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_public?: boolean
+          marks_correct?: number
+          marks_wrong?: number
+          options?: Json
+          question_image_url?: string | null
+          question_text: string
+          subject: string
+          tags?: string[]
+          topic?: string | null
+          updated_at?: string
+        }
+        Update: {
+          correct_answer?: Json
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_public?: boolean
+          marks_correct?: number
+          marks_wrong?: number
+          options?: Json
+          question_image_url?: string | null
+          question_text?: string
+          subject?: string
+          tags?: string[]
+          topic?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           category: string
