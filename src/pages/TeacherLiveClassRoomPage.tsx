@@ -165,9 +165,14 @@ const TeacherLiveClassRoomPage = () => {
   const endClass = async () => {
     if (!cls) return;
     setBusy(true);
-    const payload: Record<string, unknown> = { status: "completed", ends_at: new Date().toISOString() };
-    if (recordingUrl.trim()) payload.recording_url = recordingUrl.trim();
-    const { error } = await supabase.from("live_classes").update(payload).eq("id", cls.id);
+    const { error } = await supabase
+      .from("live_classes")
+      .update({
+        status: "completed",
+        ends_at: new Date().toISOString(),
+        recording_url: recordingUrl.trim() || null,
+      })
+      .eq("id", cls.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Class ended");
