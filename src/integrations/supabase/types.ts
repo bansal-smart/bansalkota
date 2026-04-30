@@ -1376,6 +1376,7 @@ export type Database = {
         }
         Returns: number
       }
+      pick_teacher_for_doubt: { Args: never; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
