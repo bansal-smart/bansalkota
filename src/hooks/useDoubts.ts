@@ -36,7 +36,7 @@ export const useDoubts = (mode: "mine" | "all" = "mine") => {
     load();
 
     const channel = supabase
-      .channel(`doubts-${mode}`)
+      .channel(`doubts-${mode}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "doubts" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "doubt_answers" }, () => load())
       .subscribe();
