@@ -52,7 +52,8 @@ type SidebarProps = {
 };
 
 // Isolated, memoized sidebar — re-renders only when its props or pathname change.
-const StudentSidebar = memo(({ fullName, avatarUrl, initials, currentGoal, setCurrentGoal, onLogout }: SidebarProps) => {
+const StudentSidebar = memo(({ fullName, avatarUrl, initials, currentGoal, setCurrentGoal, onLogout, doubtCount }: SidebarProps) => {
+  const navItems = buildNavItems(doubtCount);
   const { pathname } = useLocation();
 
   const renderItem = (item: StudentNavItem) => {
