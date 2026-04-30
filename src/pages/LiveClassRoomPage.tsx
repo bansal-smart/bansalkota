@@ -160,7 +160,7 @@ const LiveClassRoomPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row">
+      <div className="flex flex-col md:flex-row">
         <div className="flex-1">
           <div className="relative aspect-video bg-[#0a0a0a] flex items-center justify-center">
             {videoSrc ? (
