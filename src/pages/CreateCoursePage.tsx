@@ -289,6 +289,64 @@ const CreateCoursePage = () => {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">What You'll Learn</h2>
+        <p className="text-xs text-muted-foreground">Add learning outcomes students will gain from this course.</p>
+        <div className="flex gap-2">
+          <input
+            value={learnInput}
+            onChange={(e) => setLearnInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLearn(); } }}
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="e.g. Core fundamentals and theory"
+          />
+          <button type="button" onClick={addLearn} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground flex items-center gap-1">
+            <Plus className="h-3 w-3" /> Add
+          </button>
+        </div>
+        {learnItems.length > 0 && (
+          <ul className="space-y-1.5">
+            {learnItems.map((item, i) => (
+              <li key={i} className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm text-foreground">
+                <span className="flex items-start gap-2"><span className="text-muted-foreground">—</span>{item}</span>
+                <button type="button" onClick={() => setLearnItems(learnItems.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Requirements</h2>
+        <p className="text-xs text-muted-foreground">Add prerequisites or things students should know before starting.</p>
+        <div className="flex gap-2">
+          <input
+            value={reqInput}
+            onChange={(e) => setReqInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addReq(); } }}
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="e.g. Basic algebra and calculus"
+          />
+          <button type="button" onClick={addReq} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground flex items-center gap-1">
+            <Plus className="h-3 w-3" /> Add
+          </button>
+        </div>
+        {reqItems.length > 0 && (
+          <ul className="space-y-1.5">
+            {reqItems.map((item, i) => (
+              <li key={i} className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm text-foreground">
+                <span className="flex items-start gap-2"><span className="text-muted-foreground">—</span>{item}</span>
+                <button type="button" onClick={() => setReqItems(reqItems.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Pricing</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
