@@ -102,6 +102,8 @@ const CreateCoursePage = () => {
         thumbnail_url: thumbnailUrl,
         is_published: publish,
         created_by: user.id,
+        what_youll_learn: learnItems,
+        requirements: reqItems,
       })
       .select("id, slug")
       .single();
