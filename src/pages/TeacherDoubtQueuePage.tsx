@@ -21,6 +21,7 @@ type Doubt = {
 const TeacherDoubtQueuePage = () => {
   const { user } = useAuth();
   const [doubts, setDoubts] = useState<Doubt[]>([]);
+  const [studentNames, setStudentNames] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<"all" | "pending" | "answered">("pending");
   const [selected, setSelected] = useState<Doubt | null>(null);
   const [answer, setAnswer] = useState("");
@@ -30,7 +31,20 @@ const TeacherDoubtQueuePage = () => {
   const load = async () => {
     setLoading(true);
     const { data } = await supabase.from("doubts").select("*").order("created_at", { ascending: false });
-    setDoubts((data ?? []) as Doubt[]);
+    const list = (data ?? []) as Doubt[];
+    setDoubts(list);
+    const ids = Array.from(new Set(list.map((d) => d.user_id)));
+    if (ids.length) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
+      const map: Record<string, string> = {};
+      (profiles ?? []).forEach((p: any) => {
+        map[p.user_id] = p.full_name || "Student";
+      });
+      setStudentNames(map);
+    }
     setLoading(false);
   };
 
