@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, LogOut, Flame, PlusCircle } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, LogOut, Flame, PlusCircle, BookMarked } from "lucide-react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }:
     { label: "My Courses", icon: BookOpen, path: "/teacher/courses" },
     { label: "Live Classes", icon: Video, path: "/teacher/live-classes" },
     { label: "Create Test", icon: ClipboardCheck, path: "/teacher/tests/create" },
+    { label: "Question Bank", icon: BookMarked, path: "/teacher/question-bank" },
     { label: "Doubt Queue", icon: MessageCircle, path: "/teacher/doubts", badge: pendingDoubts },
     { label: "My Students", icon: Users, path: "/teacher/students" },
     { label: "Analytics", icon: BarChart3, path: "/teacher/analytics" },

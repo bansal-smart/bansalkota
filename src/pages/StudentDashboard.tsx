@@ -243,7 +243,7 @@ const StudentDashboard = () => {
                 <span className={`font-bold ${t.pct < 65 ? 'text-destructive' : 'text-accent'}`}>{t.pct}%</span>
               </div>
             ))}
-            <Link to="/qbank" className="mt-2 block w-full rounded-pill bg-destructive py-2 text-center text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
+            <Link to="/my-tests" className="mt-2 block w-full rounded-pill bg-destructive py-2 text-center text-xs font-bold text-destructive-foreground hover:bg-destructive/90 transition-colors">
               Practice Now →
             </Link>
           </div>

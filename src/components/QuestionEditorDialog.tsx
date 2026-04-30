@@ -1,0 +1,150 @@
+import { useEffect, useState } from "react";
+import { Loader2, X } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import type { BankQuestion } from "@/hooks/useQuestionBank";
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+  initial?: BankQuestion | null;
+};
+
+const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology"];
+const DIFFICULTIES = ["easy", "medium", "hard"];
+
+const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
+  const { user } = useAuth();
+  const [subject, setSubject] = useState("Physics");
+  const [topic, setTopic] = useState("");
+  const [difficulty, setDifficulty] = useState("medium");
+  const [text, setText] = useState("");
+  const [options, setOptions] = useState(["", "", "", ""]);
+  const [correct, setCorrect] = useState(0);
+  const [explanation, setExplanation] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (initial) {
+      setSubject(initial.subject);
+      setTopic(initial.topic || "");
+      setDifficulty(initial.difficulty);
+      setText(initial.question_text);
+      setOptions(initial.options.map((o) => o.text).concat(["", "", "", ""]).slice(0, 4));
+      setCorrect(typeof initial.correct_answer === "number" ? initial.correct_answer : 0);
+      setExplanation(initial.explanation || "");
+    } else {
+      setSubject("Physics");
+      setTopic("");
+      setDifficulty("medium");
+      setText("");
+      setOptions(["", "", "", ""]);
+      setCorrect(0);
+      setExplanation("");
+    }
+  }, [initial, open]);
+
+  if (!open) return null;
+
+  const save = async () => {
+    if (!user) return toast.error("Sign in required");
+    if (!text.trim()) return toast.error("Question text required");
+    if (options.some((o) => !o.trim())) return toast.error("All 4 options required");
+
+    setSaving(true);
+    const payload = {
+      subject,
+      topic: topic.trim() || null,
+      difficulty,
+      question_text: text.trim(),
+      options: options.map((t, id) => ({ id, text: t })),
+      correct_answer: correct,
+      explanation: explanation.trim() || null,
+    };
+
+    let error;
+    if (initial) {
+      ({ error } = await supabase.from("question_bank").update(payload).eq("id", initial.id));
+    } else {
+      ({ error } = await supabase
+        .from("question_bank")
+        .insert({ ...payload, created_by: user.id }));
+    }
+
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(initial ? "Question updated" : "Question added");
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-xl">
+        <div className="sticky top-0 flex items-center justify-between border-b border-border bg-card px-5 py-3">
+          <h2 className="text-base font-bold text-foreground">{initial ? "Edit Question" : "New Question"}</h2>
+          <button onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-foreground">Subject</label>
+              <select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+                {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Topic</label>
+              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Kinematics" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Difficulty</label>
+              <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none capitalize">
+                {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-foreground">Question</label>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none" />
+          </div>
+
+          {options.map((opt, oi) => (
+            <div key={oi} className="flex items-center gap-2">
+              <input type="radio" checked={correct === oi} onChange={() => setCorrect(oi)} className="shrink-0" />
+              <span className="text-xs font-bold w-5">{String.fromCharCode(65 + oi)}.</span>
+              <input
+                value={opt}
+                onChange={(e) => {
+                  const next = [...options];
+                  next[oi] = e.target.value;
+                  setOptions(next);
+                }}
+                placeholder={`Option ${oi + 1}`}
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+              />
+            </div>
+          ))}
+
+          <div>
+            <label className="text-xs font-semibold text-foreground">Explanation (optional)</label>
+            <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none" />
+          </div>
+        </div>
+        <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-card px-5 py-3">
+          <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground">Cancel</button>
+          <button disabled={saving} onClick={save} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50 inline-flex items-center gap-2">
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />} Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QuestionEditorDialog;

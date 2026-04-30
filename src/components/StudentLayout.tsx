@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Search, LogOut, Flame, BookMarked, GraduationCap } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, Swords, BarChart3, Trophy, User, Settings, ShoppingBag, Search, LogOut, Flame, GraduationCap } from "lucide-react";
 import { memo, useCallback } from "react";
 import GoalSelector from "@/components/GoalSelector";
 import LiveBadge from "@/components/LiveBadge";
@@ -23,7 +23,6 @@ const navItems: StudentNavItem[] = [
   { label: "Browse Courses", icon: GraduationCap, path: "/courses" },
   { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
-  { label: "QBank", icon: BookMarked, path: "/qbank" },
   { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: 3 },
 ];
 
@@ -128,7 +127,7 @@ const StudentMobileNav = memo(() => {
   const items = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: BookOpen, label: "Learning", path: "/my-courses" },
-    { icon: BookMarked, label: "QBank", path: "/qbank" },
+    { icon: MessageCircle, label: "Doubts", path: "/doubts" },
     { icon: ClipboardCheck, label: "Tests", path: "/my-tests" },
     { icon: ShoppingBag, label: "Store", path: "/store" },
   ];
