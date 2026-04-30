@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useDoubts, type DoubtRow } from "@/hooks/useDoubts";
+import { FormattedAnswer } from "@/components/FormattedAnswer";
 
 const filterTabs = [
   { key: "all", label: "All" },
