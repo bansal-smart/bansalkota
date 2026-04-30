@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
+import { FormattedAnswer } from "@/components/FormattedAnswer";
 
 type Doubt = {
   id: string;
