@@ -186,6 +186,8 @@ const StudentLayout = () => {
   const { user, currentGoal, setCurrentGoal } = useAppStore();
   const { signOut } = useAuth();
   useNotifications();
+  const { doubts } = useDoubts("mine");
+  const pendingDoubtCount = doubts.filter((d) => d.status !== "answered").length;
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -207,6 +209,7 @@ const StudentLayout = () => {
         currentGoal={currentGoal}
         setCurrentGoal={setCurrentGoal}
         onLogout={handleLogout}
+        doubtCount={pendingDoubtCount}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
