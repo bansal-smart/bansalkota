@@ -8,6 +8,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useDoubts } from "@/hooks/useDoubts";
 import { toast } from "sonner";
 
 type StudentNavItem = {
