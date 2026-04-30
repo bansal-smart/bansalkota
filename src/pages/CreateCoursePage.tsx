@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, GripVertical, Trash2, Upload, Video, IndianRupee, Loader2 } from "lucide-react";
+import { Plus, GripVertical, Trash2, Upload, Video, IndianRupee, Loader2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
