@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Video, Plus, Calendar, Loader2, X, Trash2 } from "lucide-react";
+import { Video, Plus, Calendar, Loader2, X, Trash2, Play, Radio } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -195,7 +196,20 @@ const TeacherLiveClassesPage = () => {
                   </p>
                   {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  {c.status === "live" ? (
+                    <Link to={`/teacher/live-classes/${c.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-destructive px-3 py-1.5 text-xs font-bold text-destructive-foreground hover:opacity-90">
+                      <Radio className="h-3.5 w-3.5 animate-pulse" /> Resume
+                    </Link>
+                  ) : c.status !== "completed" ? (
+                    <Link to={`/teacher/live-classes/${c.id}`} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90">
+                      <Play className="h-3.5 w-3.5" /> Go Live
+                    </Link>
+                  ) : (
+                    <Link to={`/teacher/live-classes/${c.id}`} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted/50">
+                      Open
+                    </Link>
+                  )}
                   {c.status !== "completed" && (
                     <button onClick={() => markComplete(c.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground">
                       Mark complete
