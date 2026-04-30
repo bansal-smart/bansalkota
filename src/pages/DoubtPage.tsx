@@ -213,7 +213,21 @@ const DoubtCard = ({ doubt, expanded, onToggle }: { doubt: DoubtRow; expanded: b
 
       {expanded && (
         <div className="mt-3 space-y-3 pt-3 border-t border-border">
-          {doubt.image_url && <img src={doubt.image_url} alt="Doubt" className="rounded-lg max-h-48" />}
+          {doubt.image_url && (
+            <div className="relative inline-block">
+              <img src={doubt.image_url} alt="Doubt" className="rounded-lg max-h-48" />
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.from("doubts").update({ image_url: null }).eq("id", doubt.id);
+                }}
+                className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors shadow"
+                aria-label="Remove image"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           {doubt.ai_answer && (
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-2">
               <p className="text-[11px] font-bold text-primary uppercase flex items-center gap-1"><Brain className="h-3 w-3" /> AI answer</p>

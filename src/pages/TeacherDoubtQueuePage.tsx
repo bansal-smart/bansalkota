@@ -150,7 +150,21 @@ const TeacherDoubtQueuePage = () => {
                 <span className="text-[10px] text-muted-foreground capitalize ml-auto">{selected.status.replace("_", " ")}</span>
               </div>
               <p className="text-sm text-foreground whitespace-pre-line break-words">{selected.question_text}</p>
-              {selected.image_url && <img src={selected.image_url} alt="Doubt" className="rounded-lg max-h-64 object-contain" />}
+              {selected.image_url && (
+                <div className="relative inline-block">
+                  <img src={selected.image_url} alt="Doubt" className="rounded-lg max-h-64 object-contain" />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await supabase.from("doubts").update({ image_url: null }).eq("id", selected.id);
+                    }}
+                    className="absolute top-1 right-1 h-7 w-7 rounded-full bg-background/90 border border-border flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors shadow"
+                    aria-label="Remove image"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {selected.ai_answer && (
                 <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-2">
                   <p className="text-[10px] font-bold text-primary uppercase">AI suggested answer</p>
