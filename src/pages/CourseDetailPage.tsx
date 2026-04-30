@@ -153,22 +153,27 @@ const CourseDetailPage = () => {
         { value: `${Number(course.rating || 4.8).toFixed(1)}★`, label: "Rating" },
       ];
 
-  const whatYoullLearn = [
-    "Core fundamentals and theory",
-    "Problem-solving techniques",
-    "Formula derivations explained",
-    "JEE/NEET exam strategies",
-    "Previous year paper analysis",
-    "Topic-wise revision shortcuts",
-    "Conceptual clarity exercises",
-    "Formula cheats and quick notes",
-  ];
+  const courseAny = course as unknown as { what_youll_learn?: string[] | null; requirements?: string[] | null };
+  const whatYoullLearn = (courseAny.what_youll_learn && courseAny.what_youll_learn.length > 0)
+    ? courseAny.what_youll_learn
+    : [
+        "Core fundamentals and theory",
+        "Problem-solving techniques",
+        "Formula derivations explained",
+        "JEE/NEET exam strategies",
+        "Previous year paper analysis",
+        "Topic-wise revision shortcuts",
+        "Conceptual clarity exercises",
+        "Formula cheats and quick notes",
+      ];
 
-  const requirements = [
-    "Class 11/12 mathematics background",
-    "Basic algebra and calculus",
-    "Curiosity and dedication",
-  ];
+  const requirements = (courseAny.requirements && courseAny.requirements.length > 0)
+    ? courseAny.requirements
+    : [
+        "Class 11/12 mathematics background",
+        "Basic algebra and calculus",
+        "Curiosity and dedication",
+      ];
 
   const includes = [
     `${totalLessons || 32} video lectures`,
