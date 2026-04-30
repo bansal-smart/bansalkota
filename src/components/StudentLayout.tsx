@@ -48,6 +48,7 @@ type SidebarProps = {
   currentGoal: string;
   setCurrentGoal: (g: string) => void;
   onLogout: () => void;
+  doubtCount: number;
 };
 
 // Isolated, memoized sidebar — re-renders only when its props or pathname change.
