@@ -177,7 +177,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* Right Panel */}
-      <div className="hidden xl:block w-[280px] shrink-0 border-l border-border bg-card p-5 sticky top-[57px] h-[calc(100vh-57px)] overflow-y-auto">
+      <div className="hidden lg:block lg:w-[260px] xl:w-[280px] shrink-0 border-l border-border bg-card p-5 sticky top-[57px] h-[calc(100vh-57px)] overflow-y-auto">
         <h3 className="text-sm font-bold font-display text-foreground mb-4">My Performance</h3>
 
         {/* Rank Cards */}
