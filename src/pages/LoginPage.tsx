@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
+import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, Check, Sparkles, Globe, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -135,6 +135,9 @@ const LoginPage = () => {
       {/* Right Panel */}
       <div className="flex flex-1 items-center justify-center bg-card p-8">
         <div className="w-full max-w-sm animate-fade-in-up">
+          <Link to="/" className="inline-flex items-center gap-1.5 mb-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back to home
+          </Link>
           {/* Country Toggle */}
           <div className="flex items-center gap-2 mb-6 rounded-xl border border-border p-2">
             <Globe className="h-4 w-4 text-muted-foreground" />
