@@ -128,7 +128,7 @@ const AdminUsersPage = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["all", "student", "teacher", "staff", "admin"].map((f) => (
+          {["all", "student", "teacher", "mentor", "admin", "super_admin"].map((f) => (
             <button
               key={f}
               onClick={() => {
@@ -139,7 +139,7 @@ const AdminUsersPage = () => {
                 filter === f ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"
               }`}
             >
-              {f === "all" ? "All" : `${f}s`}
+              {f === "all" ? "All" : f === "super_admin" ? "Super Admins" : `${f}s`}
             </button>
           ))}
         </div>
