@@ -56,39 +56,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // multiple sign-in events fire in quick succession.
   const lastRoleUserId = useRef<string | null>(null);
 
-  const isStaff = role === "staff" || role === "admin";
+  const isSuperAdmin = role === "super_admin";
+  const isAdmin = role === "admin";
+  const isStaff = role === "admin" || role === "super_admin";
   const isTeacher = role === "teacher";
+  const isMentor = role === "mentor";
   const isStudent = role === "student";
 
   /**
    * Server-verified role check. Calls the `has_role` security-definer RPC for
-   * 'admin', 'staff', and 'teacher' so the answer comes from the database (not
-   * from a client-side query that could be tampered with). Defaults to
+   * each elevated role so the answer comes from the database. Defaults to
    * 'student' when none of the elevated roles match.
    */
   const resolveRoleFromServer = useCallback(async (userId: string): Promise<UserRole> => {
     try {
-      const [adminRes, staffRes, teacherRes] = await Promise.all([
+      const [superRes, adminRes, teacherRes, mentorRes] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
-        supabase.rpc("has_role", { _user_id: userId, _role: "staff" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "teacher" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "mentor" }),
       ]);
+      if (superRes.data) return "super_admin";
       if (adminRes.data) return "admin";
-      if (staffRes.data) return "staff";
       if (teacherRes.data) return "teacher";
+      if (mentorRes.data) return "mentor";
       return "student";
     } catch (err) {
       console.error("Failed to resolve role:", err);
-      // Fall back to direct table read (RLS still applies — users can only
-      // read their own roles), so we degrade safely instead of hard-failing.
       const { data } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
       const roles = (data ?? []).map((r) => r.role as UserRole);
+      if (roles.includes("super_admin")) return "super_admin";
       if (roles.includes("admin")) return "admin";
-      if (roles.includes("staff")) return "staff";
       if (roles.includes("teacher")) return "teacher";
+      if (roles.includes("mentor")) return "mentor";
       return "student";
     }
   }, []);
@@ -97,13 +100,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     async (userId: string): Promise<boolean> => {
       lastRoleUserId.current = userId;
       const resolved = await resolveRoleFromServer(userId);
-      // Guard against a race where another sign-in/out happened while we were awaiting
       if (lastRoleUserId.current !== userId) {
-        return resolved === "staff" || resolved === "admin";
+        return resolved === "admin" || resolved === "super_admin";
       }
       setRole(resolved);
       setRoleReady(true);
-      return resolved === "staff" || resolved === "admin";
+      return resolved === "admin" || resolved === "super_admin";
     },
     [resolveRoleFromServer],
   );
