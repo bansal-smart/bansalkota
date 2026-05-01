@@ -39,9 +39,10 @@ const exportCsv = (rows: AdminUserRow[]) => {
 
 const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
   student: "Can access their own dashboard, courses, tests, and progress only.",
-  teacher: "Can manage their own courses, live classes, and answer student doubts.",
-  staff: "Full access to the admin portal — manage users, content, payments, and notifications.",
-  admin: "Highest privilege — everything staff can do, plus role assignment and destructive actions.",
+  teacher: "Goes live on scheduled classes, uploads notes PDFs, and resolves doubts assigned to their courses.",
+  mentor: "Chats 1:1 and in groups with assigned students; views their performance read-only.",
+  admin: "Manages courses, live classes, mentors, students, and content moderation.",
+  super_admin: "Highest privilege — everything admin can do, plus revenue, refunds, platform settings and admin account creation.",
 };
 
 const AdminUsersPage = () => {
