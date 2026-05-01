@@ -62,9 +62,10 @@ const ProtectedRoute = ({ allow, loginPath = "/login", fallbackPath }: Props) =>
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
-  // Treat admin as staff — allowing 'staff' implicitly allows 'admin'.
-  const effectiveAllow = allow.includes("staff") && !allow.includes("admin")
-    ? [...allow, "admin" as UserRole]
+  // Allowing "admin" implicitly allows "super_admin" (super_admin is a strictly
+  // stronger admin), so admin-only routes don't lock out super-admins.
+  const effectiveAllow = allow.includes("admin") && !allow.includes("super_admin")
+    ? [...allow, "super_admin" as UserRole]
     : allow;
 
   if (!role || !effectiveAllow.includes(role)) {
