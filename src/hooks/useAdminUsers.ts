@@ -13,7 +13,7 @@ export type AdminUserRow = {
   is_suspended: boolean;
   created_at: string;
   email: string | null;
-  role: "student" | "teacher" | "staff" | "admin";
+  role: "student" | "teacher" | "mentor" | "admin" | "super_admin";
 };
 
 const PAGE_SIZE = 20;
