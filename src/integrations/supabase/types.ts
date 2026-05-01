@@ -135,6 +135,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          assigned_teacher_id: string | null
           badge: string | null
           created_at: string
           created_by: string | null
@@ -162,6 +163,7 @@ export type Database = {
           what_youll_learn: string[]
         }
         Insert: {
+          assigned_teacher_id?: string | null
           badge?: string | null
           created_at?: string
           created_by?: string | null
@@ -189,6 +191,7 @@ export type Database = {
           what_youll_learn?: string[]
         }
         Update: {
+          assigned_teacher_id?: string | null
           badge?: string | null
           created_at?: string
           created_by?: string | null
@@ -261,11 +264,14 @@ export type Database = {
       doubts: {
         Row: {
           ai_answer: string | null
+          ai_escalated: boolean
           assigned_teacher_id: string | null
           created_at: string
           id: string
           image_url: string | null
           question_text: string
+          resolution_type: string | null
+          routed_to: string
           status: string
           subject: string
           topic: string | null
@@ -274,11 +280,14 @@ export type Database = {
         }
         Insert: {
           ai_answer?: string | null
+          ai_escalated?: boolean
           assigned_teacher_id?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
           question_text: string
+          resolution_type?: string | null
+          routed_to?: string
           status?: string
           subject: string
           topic?: string | null
@@ -287,11 +296,14 @@ export type Database = {
         }
         Update: {
           ai_answer?: string | null
+          ai_escalated?: boolean
           assigned_teacher_id?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
           question_text?: string
+          resolution_type?: string | null
+          routed_to?: string
           status?: string
           subject?: string
           topic?: string | null
@@ -809,6 +821,7 @@ export type Database = {
           max_participants: number | null
           meeting_url: string | null
           recording_url: string | null
+          scheduled_by: string | null
           starts_at: string
           status: string
           subject: string
@@ -828,6 +841,7 @@ export type Database = {
           max_participants?: number | null
           meeting_url?: string | null
           recording_url?: string | null
+          scheduled_by?: string | null
           starts_at: string
           status?: string
           subject: string
@@ -847,6 +861,7 @@ export type Database = {
           max_participants?: number | null
           meeting_url?: string | null
           recording_url?: string | null
+          scheduled_by?: string | null
           starts_at?: string
           status?: string
           subject?: string
@@ -863,6 +878,130 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      mentor_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          student_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          student_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_groups: {
+        Row: {
+          created_at: string
+          id: string
+          mentor_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mentor_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mentor_messages: {
+        Row: {
+          content: string | null
+          conversation_type: string
+          created_at: string
+          group_id: string | null
+          id: string
+          image_url: string | null
+          is_deleted: boolean
+          recipient_id: string | null
+          sender_id: string
+        }
+        Insert: {
+          content?: string | null
+          conversation_type: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          recipient_id?: string | null
+          sender_id: string
+        }
+        Update: {
+          content?: string | null
+          conversation_type?: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          recipient_id?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_student_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          id: string
+          mentor_id: string
+          removed_at: string | null
+          student_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          id?: string
+          mentor_id: string
+          removed_at?: string | null
+          student_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          id?: string
+          mentor_id?: string
+          removed_at?: string | null
+          student_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -904,6 +1043,7 @@ export type Database = {
           class_level: string | null
           country: string | null
           created_at: string
+          doubt_preference: string
           full_name: string | null
           goal: string | null
           id: string
@@ -921,6 +1061,7 @@ export type Database = {
           class_level?: string | null
           country?: string | null
           created_at?: string
+          doubt_preference?: string
           full_name?: string | null
           goal?: string | null
           id?: string
@@ -938,6 +1079,7 @@ export type Database = {
           class_level?: string | null
           country?: string | null
           created_at?: string
+          doubt_preference?: string
           full_name?: string | null
           goal?: string | null
           id?: string
@@ -1367,6 +1509,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1388,7 +1531,7 @@ export type Database = {
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "staff" | "student" | "teacher"
+      app_role: "super_admin" | "admin" | "student" | "teacher" | "mentor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1516,7 +1659,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff", "student", "teacher"],
+      app_role: ["super_admin", "admin", "student", "teacher", "mentor"],
     },
   },
 } as const

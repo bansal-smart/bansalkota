@@ -8,10 +8,11 @@ const roleBadge = (role: string) => {
   const styles: Record<string, string> = {
     student: "bg-secondary/10 text-secondary",
     teacher: "bg-primary/10 text-primary",
-    staff: "bg-accent/20 text-accent",
-    admin: "bg-destructive/10 text-destructive",
+    mentor: "bg-secondary/15 text-secondary",
+    admin: "bg-accent/20 text-accent",
+    super_admin: "bg-destructive/10 text-destructive",
   };
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.student}`}>{role}</span>;
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.student}`}>{role.replace("_", " ")}</span>;
 };
 
 const planBadge = (plan: string) => {
@@ -38,9 +39,10 @@ const exportCsv = (rows: AdminUserRow[]) => {
 
 const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
   student: "Can access their own dashboard, courses, tests, and progress only.",
-  teacher: "Can manage their own courses, live classes, and answer student doubts.",
-  staff: "Full access to the admin portal — manage users, content, payments, and notifications.",
-  admin: "Highest privilege — everything staff can do, plus role assignment and destructive actions.",
+  teacher: "Goes live on scheduled classes, uploads notes PDFs, and resolves doubts assigned to their courses.",
+  mentor: "Chats 1:1 and in groups with assigned students; views their performance read-only.",
+  admin: "Manages courses, live classes, mentors, students, and content moderation.",
+  super_admin: "Highest privilege — everything admin can do, plus revenue, refunds, platform settings and admin account creation.",
 };
 
 const AdminUsersPage = () => {
@@ -126,7 +128,7 @@ const AdminUsersPage = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["all", "student", "teacher", "staff", "admin"].map((f) => (
+          {["all", "student", "teacher", "mentor", "admin", "super_admin"].map((f) => (
             <button
               key={f}
               onClick={() => {
@@ -137,7 +139,7 @@ const AdminUsersPage = () => {
                 filter === f ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"
               }`}
             >
-              {f === "all" ? "All" : `${f}s`}
+              {f === "all" ? "All" : f === "super_admin" ? "Super Admins" : `${f}s`}
             </button>
           ))}
         </div>
@@ -311,8 +313,9 @@ const AdminUsersPage = () => {
                 </p>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Change role to</p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {(["student", "teacher", "staff", "admin"] as const).map((r) => {
+                  {(["student", "teacher", "mentor", "admin", "super_admin"] as const).map((r) => {
                     const isCurrent = drawerUser.role === r;
+                    const label = r === "super_admin" ? "Super Admin" : r;
                     return (
                       <button
                         key={r}
@@ -324,7 +327,7 @@ const AdminUsersPage = () => {
                             : "border-border text-foreground hover:bg-muted/40"
                         }`}
                       >
-                        {isCurrent ? `${r} (current)` : r}
+                        {isCurrent ? `${label} (current)` : label}
                       </button>
                     );
                   })}
@@ -365,9 +368,9 @@ const AdminUsersPage = () => {
               <p className="font-semibold text-foreground capitalize mb-1">{pendingRole} access</p>
               {ROLE_DESCRIPTIONS[pendingRole]}
             </div>
-            {(pendingRole === "admin" || pendingRole === "staff") && drawerUser.role === "student" && (
+            {(pendingRole === "admin" || pendingRole === "super_admin") && drawerUser.role === "student" && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-[11px] text-destructive">
-                <strong>Heads up:</strong> Granting {pendingRole} access removes student-portal access for this user. They will be redirected to the admin dashboard on their next sign-in.
+                <strong>Heads up:</strong> Granting {pendingRole.replace("_", " ")} access removes student-portal access for this user. They will be redirected to the admin dashboard on their next sign-in.
               </div>
             )}
             <div className="flex justify-end gap-2">

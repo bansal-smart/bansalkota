@@ -13,7 +13,7 @@ export type AdminUserRow = {
   is_suspended: boolean;
   created_at: string;
   email: string | null;
-  role: "student" | "teacher" | "staff" | "admin";
+  role: "student" | "teacher" | "mentor" | "admin" | "super_admin";
 };
 
 const PAGE_SIZE = 20;
@@ -57,10 +57,10 @@ export const useAdminUsers = (filter: string, search: string, page: number) => {
 
     const roleByUser = new Map<string, AdminUserRow["role"]>();
     (roleRows ?? []).forEach((r) => {
-      // priority: admin > staff > teacher > student
-      const priority: Record<string, number> = { admin: 4, staff: 3, teacher: 2, student: 1 };
+      // priority: super_admin > admin > teacher > mentor > student
+      const priority: Record<string, number> = { super_admin: 5, admin: 4, teacher: 3, mentor: 2, student: 1 };
       const cur = roleByUser.get(r.user_id);
-      if (!cur || priority[r.role] > priority[cur]) roleByUser.set(r.user_id, r.role as AdminUserRow["role"]);
+      if (!cur || (priority[r.role] ?? 0) > (priority[cur] ?? 0)) roleByUser.set(r.user_id, r.role as AdminUserRow["role"]);
     });
 
     const merged: AdminUserRow[] = (profiles ?? []).map((p) => ({
