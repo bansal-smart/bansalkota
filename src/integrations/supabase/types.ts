@@ -1388,7 +1388,7 @@ export type Database = {
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin" | "staff" | "student" | "teacher"
+      app_role: "super_admin" | "admin" | "student" | "teacher" | "mentor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1516,7 +1516,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff", "student", "teacher"],
+      app_role: ["super_admin", "admin", "student", "teacher", "mentor"],
     },
   },
 } as const
