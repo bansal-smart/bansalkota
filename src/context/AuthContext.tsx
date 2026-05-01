@@ -3,15 +3,24 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 
-export type UserRole = "student" | "teacher" | "staff" | "admin";
+export type UserRole = "student" | "teacher" | "mentor" | "admin" | "super_admin";
 
 interface AuthContextValue {
   session: Session | null;
   user: User | null;
-  /** True if the user has the 'staff' or 'admin' role. */
+  /**
+   * True if the user can access the admin portal (admin OR super_admin).
+   * Kept for backwards compatibility with existing route guards.
+   */
   isStaff: boolean;
-  /** True if the user has the 'teacher' role (and is not staff/admin). */
+  /** True if the user has super_admin role (top tier — revenue, settings, refunds). */
+  isSuperAdmin: boolean;
+  /** True if the user is an admin (but not super_admin). */
+  isAdmin: boolean;
+  /** True if the user has the 'teacher' role. */
   isTeacher: boolean;
+  /** True if the user has the 'mentor' role. */
+  isMentor: boolean;
   /** True if the user has no elevated role (default student). */
   isStudent: boolean;
   /** The resolved primary role of the current user, or null when signed out. */
