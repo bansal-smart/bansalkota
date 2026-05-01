@@ -40,11 +40,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Ensure staff role
+    // Ensure admin role (formerly 'staff')
     const { error: roleErr } = await admin
       .from("user_roles")
       .upsert(
-        { user_id: user.id, role: "staff" },
+        { user_id: user.id, role: "admin" },
         { onConflict: "user_id,role" },
       );
     if (roleErr) throw roleErr;
