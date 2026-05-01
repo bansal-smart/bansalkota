@@ -27,7 +27,7 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
       .eq("user_id", user.id)
       .then(({ data }) => {
         const roles = (data ?? []).map((r) => r.role);
-        setIsStaff(roles.includes("staff") || roles.includes("admin"));
+        setIsStaff(roles.includes("admin") || roles.includes("super_admin"));
       });
   }, [user]);
 
