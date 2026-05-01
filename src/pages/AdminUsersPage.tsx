@@ -368,9 +368,9 @@ const AdminUsersPage = () => {
               <p className="font-semibold text-foreground capitalize mb-1">{pendingRole} access</p>
               {ROLE_DESCRIPTIONS[pendingRole]}
             </div>
-            {(pendingRole === "admin" || pendingRole === "staff") && drawerUser.role === "student" && (
+            {(pendingRole === "admin" || pendingRole === "super_admin") && drawerUser.role === "student" && (
               <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-[11px] text-destructive">
-                <strong>Heads up:</strong> Granting {pendingRole} access removes student-portal access for this user. They will be redirected to the admin dashboard on their next sign-in.
+                <strong>Heads up:</strong> Granting {pendingRole.replace("_", " ")} access removes student-portal access for this user. They will be redirected to the admin dashboard on their next sign-in.
               </div>
             )}
             <div className="flex justify-end gap-2">
