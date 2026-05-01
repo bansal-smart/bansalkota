@@ -313,8 +313,9 @@ const AdminUsersPage = () => {
                 </p>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Change role to</p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {(["student", "teacher", "staff", "admin"] as const).map((r) => {
+                  {(["student", "teacher", "mentor", "admin", "super_admin"] as const).map((r) => {
                     const isCurrent = drawerUser.role === r;
+                    const label = r === "super_admin" ? "Super Admin" : r;
                     return (
                       <button
                         key={r}
@@ -326,7 +327,7 @@ const AdminUsersPage = () => {
                             : "border-border text-foreground hover:bg-muted/40"
                         }`}
                       >
-                        {isCurrent ? `${r} (current)` : r}
+                        {isCurrent ? `${label} (current)` : label}
                       </button>
                     );
                   })}
