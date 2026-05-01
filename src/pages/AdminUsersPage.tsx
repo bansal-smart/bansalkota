@@ -8,10 +8,11 @@ const roleBadge = (role: string) => {
   const styles: Record<string, string> = {
     student: "bg-secondary/10 text-secondary",
     teacher: "bg-primary/10 text-primary",
-    staff: "bg-accent/20 text-accent",
-    admin: "bg-destructive/10 text-destructive",
+    mentor: "bg-secondary/15 text-secondary",
+    admin: "bg-accent/20 text-accent",
+    super_admin: "bg-destructive/10 text-destructive",
   };
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.student}`}>{role}</span>;
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.student}`}>{role.replace("_", " ")}</span>;
 };
 
 const planBadge = (plan: string) => {
