@@ -22,11 +22,13 @@ type Props = {
 
 const homeForRole = (role: UserRole | null): string => {
   switch (role) {
+    case "super_admin":
     case "admin":
-    case "staff":
       return "/admin/dashboard";
     case "teacher":
       return "/teacher/dashboard";
+    case "mentor":
+      return "/mentor/dashboard";
     case "student":
       return "/dashboard";
     default:
