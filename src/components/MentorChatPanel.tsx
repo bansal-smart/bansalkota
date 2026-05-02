@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { ImageIcon, Send, Users, MessageCircle, X, Check, CheckCheck } from "lucide-react";
-import { Conversation, useMentorMessages } from "@/hooks/useMentorChat";
+import { Paperclip, Send, Users, MessageCircle, X, Check, CheckCheck, FileText, Download } from "lucide-react";
+import { Conversation, useMentorMessages, MentorMessage, isImageMime, getChatFileUrl } from "@/hooks/useMentorChat";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -12,9 +12,104 @@ type Props = {
   onActivity?: () => void;
 };
 
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
 const formatTime = (iso: string) => {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
+const formatBytes = (bytes?: number | null) => {
+  if (!bytes && bytes !== 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+/** Renders a single attachment (image thumbnail or file card), refreshing signed URLs on demand. */
+const Attachment = ({ message, mine }: { message: MentorMessage; mine: boolean }) => {
+  const initialUrl = message.file_url || message.image_url;
+  const [url, setUrl] = useState<string | null>(initialUrl);
+  const mime = message.file_mime || (message.image_url ? "image/*" : null);
+  const isImage = isImageMime(mime) || (!!message.image_url && !message.file_mime);
+
+  // Refresh signed URL on mount if we have a path (signed URLs may expire).
+  useEffect(() => {
+    let cancelled = false;
+    if (message.file_path) {
+      getChatFileUrl(message.file_path).then((u) => {
+        if (!cancelled && u) setUrl(u);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [message.file_path]);
+
+  const handleOpen = async () => {
+    let target = url;
+    if (message.file_path) {
+      const fresh = await getChatFileUrl(message.file_path);
+      if (fresh) target = fresh;
+    }
+    if (target) window.open(target, "_blank", "noopener,noreferrer");
+  };
+
+  if (isImage) {
+    return (
+      <button type="button" onClick={handleOpen} className="block">
+        {url ? (
+          <img
+            src={url}
+            alt={message.file_name || "attachment"}
+            className="mb-1 max-h-64 cursor-zoom-in rounded-lg object-cover"
+            loading="lazy"
+            onError={async () => {
+              if (message.file_path) {
+                const fresh = await getChatFileUrl(message.file_path);
+                if (fresh) setUrl(fresh);
+              }
+            }}
+          />
+        ) : (
+          <div className="mb-1 flex h-32 w-48 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">
+            Loading image…
+          </div>
+        )}
+      </button>
+    );
+  }
+
+  // Non-image attachment: file card
+  return (
+    <button
+      type="button"
+      onClick={handleOpen}
+      className={`mb-1 flex w-full max-w-[260px] items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
+        mine
+          ? "border-primary-foreground/30 bg-primary-foreground/10 hover:bg-primary-foreground/15"
+          : "border-border bg-muted/40 hover:bg-muted/60"
+      }`}
+    >
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${
+          mine ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/15 text-primary"
+        }`}
+      >
+        <FileText className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-xs font-semibold ${mine ? "text-primary-foreground" : "text-foreground"}`}>
+          {message.file_name || "Attachment"}
+        </p>
+        <p className={`truncate text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+          {formatBytes(message.file_size_bytes)}
+          {mime ? ` · ${mime.split("/")[1]?.toUpperCase() || mime}` : ""}
+        </p>
+      </div>
+      <Download className={`h-4 w-4 shrink-0 ${mine ? "text-primary-foreground/80" : "text-muted-foreground"}`} />
+    </button>
+  );
 };
 
 const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Props) => {
@@ -22,12 +117,23 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
   const [active, setActive] = useState<Conversation | null>(null);
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const filePreview = file ? URL.createObjectURL(file) : null;
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { messages, loading: msgsLoading, sending, send, typingUsers, sendTyping } = useMentorMessages(
     active,
     onActivity,
   );
+
+  // Build/cleanup an object URL preview only for image attachments
+  useEffect(() => {
+    if (!file || !file.type.startsWith("image/")) {
+      setFilePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   // Keep active selection in sync with refreshed conversations (preserves unread updates)
   useEffect(() => {
@@ -45,7 +151,17 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, typingUsers.length]);
 
-  useEffect(() => () => { if (filePreview) URL.revokeObjectURL(filePreview); }, [filePreview]);
+  const handlePickFile = (f: File | null) => {
+    if (!f) {
+      setFile(null);
+      return;
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      toast.error("File too large. Maximum size is 20MB.");
+      return;
+    }
+    setFile(f);
+  };
 
   const handleSend = async () => {
     if (!text.trim() && !file) return;
@@ -133,6 +249,7 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
                 messages.map((m) => {
                   const mine = m.sender_id === user?.id;
                   const isDirect = m.conversation_type === "direct";
+                  const hasAttachment = !!(m.file_url || m.image_url || m.file_path);
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
@@ -140,11 +257,7 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
                           mine ? "bg-primary text-primary-foreground" : "bg-card text-foreground border border-border"
                         }`}
                       >
-                        {m.image_url ? (
-                          <a href={m.image_url} target="_blank" rel="noreferrer">
-                            <img src={m.image_url} alt="attachment" className="mb-1 max-h-64 rounded-lg object-cover" />
-                          </a>
-                        ) : null}
+                        {hasAttachment && <Attachment message={m} mine={mine} />}
                         {m.content ? <p className="whitespace-pre-wrap break-words">{m.content}</p> : null}
                         <div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                           <span>{formatTime(m.created_at)}</span>
@@ -176,22 +289,32 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
             </div>
 
             <div className="border-t border-border bg-card p-3">
-              {filePreview && (
-                <div className="mb-2 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-1 pr-2">
-                  <img src={filePreview} alt="preview" className="h-12 w-12 rounded object-cover" />
-                  <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-foreground">
+              {file && (
+                <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-lg border border-border bg-muted/40 p-1 pr-2">
+                  {filePreview ? (
+                    <img src={filePreview} alt="preview" className="h-12 w-12 rounded object-cover" />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded bg-primary/15 text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-foreground">{file.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatBytes(file.size)}</p>
+                  </div>
+                  <button onClick={() => setFile(null)} className="ml-2 text-muted-foreground hover:text-foreground" aria-label="Remove attachment">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               )}
               <div className="flex items-end gap-2">
-                <label className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground">
-                  <ImageIcon className="h-4 w-4" />
+                <label className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground" title="Attach image or document">
+                  <Paperclip className="h-4 w-4" />
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z"
                     className="hidden"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    onChange={(e) => handlePickFile(e.target.files?.[0] ?? null)}
                   />
                 </label>
                 <textarea
