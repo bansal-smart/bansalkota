@@ -57,6 +57,7 @@ import StaffDashboardPage from "./pages/StaffDashboardPage";
 import AdminEnquiriesPage from "./pages/AdminEnquiriesPage";
 import AdminCourseContentPage from "./pages/AdminCourseContentPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicLayout from "./components/PublicLayout";
