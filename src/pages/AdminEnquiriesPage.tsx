@@ -282,14 +282,24 @@ const AdminEnquiriesPage = () => {
                     placeholder="Add an internal note (saved on blur)"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={savingId === active.id}
-                  onClick={() => setActive(null)}
-                >
-                  Close
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    disabled={savingId === active.id}
+                    onClick={() => setActive(null)}
+                  >
+                    Close
+                  </Button>
+                  {isSuperAdmin && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteEnquiry(active.id, active.name)}
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
