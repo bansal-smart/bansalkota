@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, GripVertical, Trash2, Upload, Video, IndianRupee, Loader2, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -13,21 +13,29 @@ const slugify = (s: string) =>
     .replace(/^-|-$/g, "")
     .slice(0, 60);
 
-type DraftLecture = { title: string; durationMin: number };
-type DraftChapter = { title: string; lectures: DraftLecture[] };
+type DraftLecture = { id?: string; title: string; durationMin: number };
+type DraftChapter = { id?: string; title: string; lectures: DraftLecture[] };
 
 const CreateCoursePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { courseId } = useParams<{ courseId?: string }>();
+  const location = useLocation();
+  const isAdminContext = location.pathname.startsWith("/admin");
+  const isEditMode = Boolean(courseId);
+
   const [name, setName] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
   const [exam, setExam] = useState("JEE");
   const [subject, setSubject] = useState("Physics");
+  const [educatorName, setEducatorName] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [originalPrice, setOriginalPrice] = useState<number>(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
   const [chapters, setChapters] = useState<DraftChapter[]>([
     { title: "Chapter 1", lectures: [{ title: "Introduction", durationMin: 15 }] },
   ]);
@@ -35,6 +43,59 @@ const CreateCoursePage = () => {
   const [learnInput, setLearnInput] = useState("");
   const [reqItems, setReqItems] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
+
+  // Load existing course in edit mode
+  useEffect(() => {
+    if (!isEditMode || !courseId) return;
+    const load = async () => {
+      setLoading(true);
+      const { data: course, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("id", courseId)
+        .maybeSingle();
+      if (error || !course) {
+        toast.error("Course not found");
+        setLoading(false);
+        return;
+      }
+      setName(course.name ?? "");
+      setShortDesc("");
+      setDescription(course.description ?? "");
+      setExam(course.target_exam ?? "JEE");
+      setSubject(course.subject ?? "Physics");
+      setEducatorName(course.educator_name ?? "");
+      setPrice(Number(course.price ?? 0));
+      setOriginalPrice(Number(course.original_price ?? 0));
+      setExistingThumbnail(course.thumbnail_url ?? null);
+      setLearnItems((course.what_youll_learn ?? []) as string[]);
+      setReqItems((course.requirements ?? []) as string[]);
+
+      const { data: chs } = await supabase
+        .from("chapters")
+        .select("id, title, position")
+        .eq("course_id", courseId)
+        .order("position");
+      const chapterIds = (chs ?? []).map((c) => c.id);
+      const { data: lessons } = chapterIds.length
+        ? await supabase
+            .from("lessons")
+            .select("id, chapter_id, title, position, duration_seconds")
+            .in("chapter_id", chapterIds)
+            .order("position")
+        : { data: [] as { id: string; chapter_id: string; title: string; position: number; duration_seconds: number }[] };
+      const grouped: DraftChapter[] = (chs ?? []).map((c) => ({
+        id: c.id,
+        title: c.title,
+        lectures: (lessons ?? [])
+          .filter((l) => l.chapter_id === c.id)
+          .map((l) => ({ id: l.id, title: l.title, durationMin: Math.max(1, Math.round(l.duration_seconds / 60)) })),
+      }));
+      if (grouped.length) setChapters(grouped);
+      setLoading(false);
+    };
+    load();
+  }, [isEditMode, courseId]);
 
   const addLearn = () => {
     const v = learnInput.trim();
@@ -69,7 +130,7 @@ const CreateCoursePage = () => {
 
     setSubmitting(true);
 
-    let thumbnailUrl: string | null = null;
+    let thumbnailUrl: string | null = existingThumbnail;
     if (thumbnailFile) {
       const path = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
       const { error: upErr } = await supabase.storage.from("educator-uploads").upload(path, thumbnailFile);
@@ -81,48 +142,91 @@ const CreateCoursePage = () => {
       thumbnailUrl = supabase.storage.from("educator-uploads").getPublicUrl(path).data.publicUrl;
     }
 
-    const baseSlug = slugify(name) || `course-${Date.now()}`;
-    const slug = `${baseSlug}-${Date.now().toString(36)}`;
-
-    const educatorName =
+    const resolvedEducatorName =
+      educatorName.trim() ||
       ((user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "Educator").trim();
 
-    const { data: course, error: courseErr } = await supabase
-      .from("courses")
-      .insert({
-        name,
-        slug,
-        description: description || shortDesc,
-        subject,
-        target_exam: exam,
-        educator_name: educatorName,
-        price,
-        original_price: originalPrice || null,
-        discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
-        thumbnail_url: thumbnailUrl,
-        is_published: publish,
-        created_by: user.id,
-        what_youll_learn: learnItems,
-        requirements: reqItems,
-      })
-      .select("id, slug")
-      .single();
+    let workingCourseId = courseId;
 
-    if (courseErr || !course) {
-      console.error(courseErr);
-      toast.error(courseErr?.message ?? "Could not create course");
+    if (!isEditMode) {
+      const baseSlug = slugify(name) || `course-${Date.now()}`;
+      const slug = `${baseSlug}-${Date.now().toString(36)}`;
+
+      const { data: course, error: courseErr } = await supabase
+        .from("courses")
+        .insert({
+          name,
+          slug,
+          description: description || shortDesc,
+          subject,
+          target_exam: exam,
+          educator_name: resolvedEducatorName,
+          price,
+          original_price: originalPrice || null,
+          discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+          thumbnail_url: thumbnailUrl,
+          is_published: publish,
+          created_by: user.id,
+          what_youll_learn: learnItems,
+          requirements: reqItems,
+        })
+        .select("id, slug")
+        .single();
+
+      if (courseErr || !course) {
+        console.error(courseErr);
+        toast.error(courseErr?.message ?? "Could not create course");
+        setSubmitting(false);
+        return;
+      }
+      workingCourseId = course.id;
+    } else {
+      const { error: updErr } = await supabase
+        .from("courses")
+        .update({
+          name,
+          description: description || shortDesc,
+          subject,
+          target_exam: exam,
+          educator_name: resolvedEducatorName,
+          price,
+          original_price: originalPrice || null,
+          discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+          thumbnail_url: thumbnailUrl,
+          is_published: publish,
+          what_youll_learn: learnItems,
+          requirements: reqItems,
+        })
+        .eq("id", courseId!);
+      if (updErr) {
+        toast.error(updErr.message);
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    if (!workingCourseId) {
       setSubmitting(false);
       return;
     }
 
-    // Insert chapters + lessons
+    // For edit mode: replace chapters/lessons (simple strategy)
+    if (isEditMode) {
+      const { data: oldChs } = await supabase.from("chapters").select("id").eq("course_id", workingCourseId);
+      const oldIds = (oldChs ?? []).map((c) => c.id);
+      if (oldIds.length) {
+        await supabase.from("lessons").delete().in("chapter_id", oldIds);
+        await supabase.from("chapters").delete().in("id", oldIds);
+      }
+    }
+
     let totalSecs = 0;
     let totalLessons = 0;
     for (let ci = 0; ci < chapters.length; ci++) {
       const ch = chapters[ci];
       const { data: chapterRow, error: chapterErr } = await supabase
         .from("chapters")
-        .insert({ course_id: course.id, title: ch.title || `Chapter ${ci + 1}`, position: ci })
+        .insert({ course_id: workingCourseId, title: ch.title || `Chapter ${ci + 1}`, position: ci })
         .select("id")
         .single();
       if (chapterErr || !chapterRow) {
@@ -131,7 +235,7 @@ const CreateCoursePage = () => {
         return;
       }
       const lessonRows = ch.lectures.map((l, li) => ({
-        course_id: course.id,
+        course_id: workingCourseId!,
         chapter_id: chapterRow.id,
         slug: `${ci}-${li}-${slugify(l.title) || "lesson"}`,
         title: l.title || `Lesson ${li + 1}`,
@@ -152,16 +256,24 @@ const CreateCoursePage = () => {
     await supabase
       .from("courses")
       .update({ total_lessons: totalLessons, duration_hours: Math.max(1, Math.round(totalSecs / 3600)) })
-      .eq("id", course.id);
+      .eq("id", workingCourseId);
 
-    toast.success(publish ? "Course published!" : "Draft saved");
+    toast.success(isEditMode ? "Course updated" : publish ? "Course published!" : "Draft saved");
     setSubmitting(false);
-    navigate("/teacher/courses");
+    navigate(isAdminContext ? "/admin/courses" : "/teacher/courses");
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 pb-24 lg:pb-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-xl font-bold text-foreground">Create New Course</h1>
+      <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Basic Information</h2>
@@ -174,16 +286,18 @@ const CreateCoursePage = () => {
             placeholder="e.g. JEE Physics Booster 2027"
           />
         </div>
-        <div>
-          <label className="text-xs font-semibold text-foreground">Short Description</label>
-          <input
-            value={shortDesc}
-            onChange={(e) => setShortDesc(e.target.value)}
-            maxLength={150}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
-            placeholder="150 chars max"
-          />
-        </div>
+        {!isEditMode && (
+          <div>
+            <label className="text-xs font-semibold text-foreground">Short Description</label>
+            <input
+              value={shortDesc}
+              onChange={(e) => setShortDesc(e.target.value)}
+              maxLength={150}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+              placeholder="150 chars max"
+            />
+          </div>
+        )}
         <div>
           <label className="text-xs font-semibold text-foreground">Full Description</label>
           <textarea
@@ -214,15 +328,29 @@ const CreateCoursePage = () => {
             </select>
           </div>
         </div>
+        {isAdminContext && (
+          <div>
+            <label className="text-xs font-semibold text-foreground">Educator Name</label>
+            <input
+              value={educatorName}
+              onChange={(e) => setEducatorName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              placeholder="e.g. Vikram Thapar"
+            />
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Thumbnail</h2>
+        {existingThumbnail && !thumbnailFile && (
+          <img src={existingThumbnail} alt="Current thumbnail" className="h-32 w-auto rounded-lg border border-border object-cover" />
+        )}
         <label className="block">
           <input type="file" accept="image/*" className="hidden" onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)} />
           <div className="rounded-lg border-2 border-dashed border-border bg-background p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : "Click to upload thumbnail"}</p>
+            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : existingThumbnail ? "Click to replace thumbnail" : "Click to upload thumbnail"}</p>
           </div>
         </label>
       </div>
@@ -384,14 +512,14 @@ const CreateCoursePage = () => {
           onClick={() => submit(false)}
           className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-50"
         >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save Draft"}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save as Draft" : "Save Draft"}
         </button>
         <button
           disabled={submitting}
           onClick={() => submit(true)}
           className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
         >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Publish Course"}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save & Publish" : "Publish Course"}
         </button>
       </div>
     </div>
