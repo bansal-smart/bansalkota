@@ -2,7 +2,7 @@ import MentorChatPanel from "@/components/MentorChatPanel";
 import { useMentorConversations } from "@/hooks/useMentorChat";
 
 const MentorChatsPage = () => {
-  const { conversations, loading } = useMentorConversations();
+  const { conversations, loading, refresh } = useMentorConversations();
   return (
     <div className="p-4 lg:p-6">
       <div className="mb-4">
@@ -12,6 +12,7 @@ const MentorChatsPage = () => {
       <MentorChatPanel
         conversations={conversations}
         loading={loading}
+        onActivity={refresh}
         emptyHint="No students assigned yet. Once an admin assigns students to you, they'll show up here."
       />
     </div>
