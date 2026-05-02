@@ -57,6 +57,9 @@ const AdminPaymentsPage = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -71,34 +74,58 @@ const AdminPaymentsPage = () => {
     })();
   }, []);
 
+  // Date-range + search-aware base set (drives stats, chart, table)
+  const dateFiltered = useMemo(() => {
+    const fromTs = fromDate ? new Date(fromDate + "T00:00:00").getTime() : null;
+    const toTs = toDate ? new Date(toDate + "T23:59:59").getTime() : null;
+    const q = search.trim().toLowerCase();
+    return payments.filter((p) => {
+      const t = new Date(p.created_at).getTime();
+      if (fromTs !== null && t < fromTs) return false;
+      if (toTs !== null && t > toTs) return false;
+      if (q) {
+        const hay = `${p.id} ${p.external_id ?? ""} ${p.student_name ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [payments, fromDate, toDate, search]);
+
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const successful = payments.filter((p) => p.status === "success");
+    const successful = dateFiltered.filter((p) => p.status === "success");
     const totalRevenue = successful.reduce((acc, p) => acc + Number(p.amount), 0);
     const todayRevenue = successful
       .filter((p) => p.created_at.startsWith(today))
       .reduce((acc, p) => acc + Number(p.amount), 0);
-    const refunds = payments
+    const refunds = dateFiltered
       .filter((p) => p.status === "refunded")
       .reduce((acc, p) => acc + Number(p.amount), 0);
-    const pending = payments
+    const pending = dateFiltered
       .filter((p) => p.status === "pending")
       .reduce((acc, p) => acc + Number(p.amount), 0);
     return { totalRevenue, todayRevenue, refunds, pending };
-  }, [payments]);
+  }, [dateFiltered]);
 
   const monthly = useMemo(() => {
     const map = new Map<string, number>();
-    payments
+    dateFiltered
       .filter((p) => p.status === "success")
       .forEach((p) => {
         const m = format(new Date(p.created_at), "MMM yy");
         map.set(m, (map.get(m) ?? 0) + Number(p.amount));
       });
     return Array.from(map.entries()).map(([month, revenue]) => ({ month, revenue }));
-  }, [payments]);
+  }, [dateFiltered]);
 
-  const filtered = filter === "all" ? payments : payments.filter((t) => t.status === filter);
+  const filtered = filter === "all" ? dateFiltered : dateFiltered.filter((t) => t.status === filter);
+
+  const hasActiveFilters = fromDate || toDate || search;
+  const clearFilters = () => {
+    setFromDate("");
+    setToDate("");
+    setSearch("");
+  };
 
   const stats_cards = [
     { label: "Total Revenue", value: fmtCurrency(stats.totalRevenue, "INR"), icon: IndianRupee, color: "text-secondary" },
