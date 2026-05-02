@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2 } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -17,6 +18,7 @@ type AdminCourse = {
 
 const AdminCoursesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -57,9 +59,17 @@ const AdminCoursesPage = () => {
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {ConfirmDialog}
-      <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white">
-        <h1 className="text-2xl font-black font-display">Courses Management</h1>
-        <p className="text-white/90 text-sm mt-1">Review, approve, and manage all platform courses</p>
+      <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black font-display">Courses Management</h1>
+          <p className="text-white/90 text-sm mt-1">Review, approve, and manage all platform courses</p>
+        </div>
+        <Link
+          to="/admin/courses/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-white text-primary px-4 py-2 text-sm font-bold shadow-sm hover:bg-white/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> New Course
+        </Link>
       </div>
 
       <div className="relative">
@@ -78,7 +88,15 @@ const AdminCoursesPage = () => {
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">No courses found.</div>
+          <div className="p-10 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">No courses found.</p>
+            <Link
+              to="/admin/courses/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" /> Create your first course
+            </Link>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -110,9 +128,23 @@ const AdminCoursesPage = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors">
+                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </a>
+                        <button
+                          onClick={() => navigate(`/admin/courses/${c.id}/edit`)}
+                          className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
+                          title="Edit course"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/admin/course-content?courseId=${c.id}`)}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
+                          title="Manage content"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                        </button>
                         {!c.is_published ? (
                           <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
                             <Check className="h-3.5 w-3.5" />
