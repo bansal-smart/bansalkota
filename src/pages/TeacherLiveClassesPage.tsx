@@ -313,6 +313,7 @@ const TeacherLiveClassesPage = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };
