@@ -17,6 +17,7 @@ export interface AppNotification {
   link: string | null;
   read_at: string | null;
   created_at: string;
+  archived_at?: string | null;
 }
 
 interface AppState {
@@ -31,6 +32,7 @@ interface AppState {
   addNotification: (n: AppNotification) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
+  archiveNotification: (id: string) => void;
   setCountry: (country: 'india' | 'dubai') => void;
 }
 
@@ -60,6 +62,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     const now = new Date().toISOString();
     const next = get().notifications.map((n) => (n.read_at ? n : { ...n, read_at: now }));
     set({ notifications: next, unreadCount: 0 });
+  },
+  archiveNotification: (id) => {
+    const next = get().notifications.filter((n) => n.id !== id);
+    set({ notifications: next, unreadCount: next.filter((x) => !x.read_at).length });
   },
   setCountry: (country) => {
     localStorage.setItem('arke-country', country);

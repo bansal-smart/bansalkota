@@ -18,10 +18,11 @@ export const useNotifications = () => {
     (async () => {
       const { data, error } = await supabase
         .from("notifications")
-        .select("id, title, body, type, link, read_at, created_at")
+        .select("id, title, body, type, link, read_at, created_at, archived_at")
         .eq("user_id", user.id)
+        .is("archived_at", null)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(100);
       if (!active || error) return;
       setNotifications((data ?? []) as AppNotification[]);
     })();
@@ -67,4 +68,13 @@ export const markAllNotificationsRead = async (userId: string) => {
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", userId)
     .is("read_at", null);
+};
+
+export const archiveNotification = async (id: string) => {
+  const { archiveNotification } = useAppStore.getState();
+  archiveNotification(id);
+  await supabase
+    .from("notifications")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id);
 };
