@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search, Check, X, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type AdminCourse = {
   id: string;
@@ -15,6 +16,7 @@ type AdminCourse = {
 };
 
 const AdminCoursesPage = () => {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -34,6 +36,14 @@ const AdminCoursesPage = () => {
   }, []);
 
   const togglePublish = async (c: AdminCourse, publish: boolean) => {
+    if (!publish) {
+      const ok = await confirm({
+        title: `Unpublish "${c.name}"?`,
+        description: "Students will no longer see this course in the catalog or be able to enroll. Existing enrolled students keep their access. You can republish at any time.",
+        confirmLabel: "Unpublish course",
+      });
+      if (!ok) return;
+    }
     const { error } = await supabase.from("courses").update({ is_published: publish }).eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success(publish ? "Course approved & published" : "Course unpublished");
@@ -46,6 +56,7 @@ const AdminCoursesPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white">
         <h1 className="text-2xl font-black font-display">Courses Management</h1>
         <p className="text-white/90 text-sm mt-1">Review, approve, and manage all platform courses</p>
