@@ -45,6 +45,7 @@ import AdminMentorAssignmentsPage from "./pages/AdminMentorAssignmentsPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage";
+import CreateCoursePage from "./pages/CreateCoursePage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestsPage from "./pages/AdminTestsPage";
 import AdminModerationPage from "./pages/AdminModerationPage";
