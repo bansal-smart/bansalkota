@@ -15,6 +15,7 @@ import {
   Bell,
   Settings,
   ShieldCheck,
+  HeartHandshake,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback, useMemo } from "react";
@@ -27,6 +28,7 @@ type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
 const baseNav: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
   { label: "Users", icon: Users, path: "/admin/users" },
+  { label: "Mentor Assignments", icon: HeartHandshake, path: "/admin/mentor-assignments" },
   { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
   { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
