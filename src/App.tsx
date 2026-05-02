@@ -69,6 +69,9 @@ import TermsOfServicePage from "./pages/TermsOfServicePage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
 import MentorLayout from "./components/MentorLayout";
 import MentorDashboard from "./pages/MentorDashboard";
+import MentorChatsPage from "./pages/MentorChatsPage";
+import MentorStudentsPage from "./pages/MentorStudentsPage";
+import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
@@ -135,6 +138,7 @@ const App = () => (
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/mentor-chat" element={<StudentMentorChatPage />} />
               </Route>
             </Route>
 
@@ -163,6 +167,8 @@ const App = () => (
             <Route element={<ProtectedRoute allow={["mentor"]} />}>
               <Route element={<MentorLayout />}>
                 <Route path="/mentor/dashboard" element={<MentorDashboard />} />
+                <Route path="/mentor/students" element={<MentorStudentsPage />} />
+                <Route path="/mentor/chats" element={<MentorChatsPage />} />
               </Route>
             </Route>
 
