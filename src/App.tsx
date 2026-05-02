@@ -46,6 +46,7 @@ import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage";
 import CreateCoursePage from "./pages/CreateCoursePage";
+import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestsPage from "./pages/AdminTestsPage";
 import AdminModerationPage from "./pages/AdminModerationPage";
