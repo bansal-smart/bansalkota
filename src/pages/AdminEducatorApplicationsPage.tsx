@@ -225,8 +225,24 @@ const AdminEducatorApplicationsPage = () => {
     rejected: apps.filter((a) => a.status === "rejected").length,
   };
 
+  const deleteApp = async (a: Application) => {
+    const ok = await confirm({
+      title: `Delete application from ${a.candidate_name}?`,
+      description:
+        "This will permanently remove the application, uploaded resume metadata, and any decision history. This cannot be undone.",
+      confirmLabel: "Delete application",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("educator_applications").delete().eq("id", a.id);
+    if (error) return toast.error(error.message);
+    setApps((prev) => prev.filter((x) => x.id !== a.id));
+    if (selected?.id === a.id) setSelected(null);
+    toast.success("Application deleted");
+  };
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
