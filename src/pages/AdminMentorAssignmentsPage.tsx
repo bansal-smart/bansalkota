@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Search, UserMinus, UserPlus, Users } from "lucide-react";
+import { Loader2, Plus, Search, UserMinus, UserPlus, Users, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,8 +14,10 @@ const AdminMentorAssignmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMentor, setSelectedMentor] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [mentorSearch, setMentorSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
-  const [adding, setAdding] = useState<string | null>(null);
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
+  const [bulkAssigning, setBulkAssigning] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -77,25 +79,52 @@ const AdminMentorAssignmentsPage = () => {
     [students, assignedStudentIds, search],
   );
 
-  const handleAssign = async (studentId: string) => {
-    if (!selectedMentor) return;
-    setAdding(studentId);
+  const filteredMentors = useMemo(() => {
+    const q = mentorSearch.trim().toLowerCase();
+    if (!q) return mentors;
+    return mentors.filter((m) => (m.full_name ?? "").toLowerCase().includes(q));
+  }, [mentors, mentorSearch]);
+
+  const toggleBulk = (id: string) => {
+    setBulkSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (bulkSelected.size === availableStudents.length) {
+      setBulkSelected(new Set());
+    } else {
+      setBulkSelected(new Set(availableStudents.map((s) => s.user_id)));
+    }
+  };
+
+  const handleBulkAssign = async () => {
+    if (!selectedMentor || bulkSelected.size === 0) return;
+    setBulkAssigning(true);
     const { data: userRes } = await supabase.auth.getUser();
     const adminId = userRes.user?.id;
     if (!adminId) {
       toast.error("Not authenticated");
-      setAdding(null);
+      setBulkAssigning(false);
       return;
     }
-    const { error } = await supabase
-      .from("mentor_student_assignments")
-      .insert({ mentor_id: selectedMentor, student_id: studentId, assigned_by: adminId });
-    setAdding(null);
+    const rows = Array.from(bulkSelected).map((studentId) => ({
+      mentor_id: selectedMentor,
+      student_id: studentId,
+      assigned_by: adminId,
+    }));
+    const { error } = await supabase.from("mentor_student_assignments").insert(rows);
+    setBulkAssigning(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success("Student assigned");
+    toast.success(`Assigned ${rows.length} student${rows.length === 1 ? "" : "s"}`);
+    setBulkSelected(new Set());
     setShowAdd(false);
     load();
   };
@@ -130,7 +159,9 @@ const AdminMentorAssignmentsPage = () => {
             <p className="text-[10px] text-white/80">Active assignments</p>
           </div>
           <div className="rounded-xl bg-white/20 px-4 py-2 text-center">
-            <p className="text-lg font-bold">{students.length - assignments.length}</p>
+            <p className="text-lg font-bold">
+              {students.filter((s) => !assignments.some((a) => a.student_id === s.user_id)).length}
+            </p>
             <p className="text-[10px] text-white/80">Unassigned students</p>
           </div>
         </div>
@@ -150,30 +181,43 @@ const AdminMentorAssignmentsPage = () => {
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
           {/* Mentors list */}
           <aside className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="border-b border-border p-3">
+            <div className="border-b border-border p-3 space-y-2">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mentors</p>
+              <div className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5">
+                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  value={mentorSearch}
+                  onChange={(e) => setMentorSearch(e.target.value)}
+                  placeholder="Search mentors…"
+                  className="flex-1 bg-transparent text-xs outline-none"
+                />
+              </div>
             </div>
             <div className="max-h-[60vh] overflow-y-auto">
-              {mentors.map((m) => {
-                const active = m.user_id === selectedMentor;
-                return (
-                  <button
-                    key={m.user_id}
-                    onClick={() => setSelectedMentor(m.user_id)}
-                    className={`flex w-full items-center justify-between gap-2 border-b border-border/40 px-3 py-3 text-left transition-colors ${
-                      active ? "bg-secondary/15" : "hover:bg-muted/40"
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">{m.full_name || "Unnamed mentor"}</p>
-                      <p className="text-[10px] text-muted-foreground">{m.studentCount} students</p>
-                    </div>
-                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
-                      {m.studentCount}
-                    </span>
-                  </button>
-                );
-              })}
+              {filteredMentors.length === 0 ? (
+                <p className="p-4 text-center text-xs text-muted-foreground">No mentors match.</p>
+              ) : (
+                filteredMentors.map((m) => {
+                  const active = m.user_id === selectedMentor;
+                  return (
+                    <button
+                      key={m.user_id}
+                      onClick={() => setSelectedMentor(m.user_id)}
+                      className={`flex w-full items-center justify-between gap-2 border-b border-border/40 px-3 py-3 text-left transition-colors ${
+                        active ? "bg-secondary/15" : "hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{m.full_name || "Unnamed mentor"}</p>
+                        <p className="text-[10px] text-muted-foreground">{m.studentCount} students</p>
+                      </div>
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        {m.studentCount}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </aside>
 
@@ -185,10 +229,14 @@ const AdminMentorAssignmentsPage = () => {
                 <p className="text-xs text-muted-foreground">{mentorAssignments.length} assigned students</p>
               </div>
               <button
-                onClick={() => setShowAdd(true)}
+                onClick={() => {
+                  setBulkSelected(new Set());
+                  setSearch("");
+                  setShowAdd(true);
+                }}
                 className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
               >
-                <Plus className="h-3.5 w-3.5" /> Assign student
+                <Plus className="h-3.5 w-3.5" /> Assign students
               </button>
             </div>
             {mentorAssignments.length === 0 ? (
@@ -220,14 +268,14 @@ const AdminMentorAssignmentsPage = () => {
         </div>
       )}
 
-      {/* Add-student dialog */}
+      {/* Bulk add-students dialog */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4" onClick={() => setShowAdd(false)}>
           <div
             className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-sm font-bold text-foreground">Assign student to {selected?.full_name}</p>
+            <p className="text-sm font-bold text-foreground">Assign students to {selected?.full_name}</p>
             <div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input
@@ -238,33 +286,71 @@ const AdminMentorAssignmentsPage = () => {
                 className="flex-1 bg-transparent text-sm outline-none"
               />
             </div>
-            <div className="mt-3 max-h-[50vh] overflow-y-auto">
+
+            {availableStudents.length > 0 && (
+              <div className="mt-3 flex items-center justify-between">
+                <button
+                  onClick={toggleSelectAll}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                >
+                  {bulkSelected.size === availableStudents.length ? (
+                    <CheckSquare className="h-3.5 w-3.5" />
+                  ) : (
+                    <Square className="h-3.5 w-3.5" />
+                  )}
+                  {bulkSelected.size === availableStudents.length ? "Unselect all" : "Select all"}
+                </button>
+                <span className="text-[11px] text-muted-foreground">{bulkSelected.size} selected</span>
+              </div>
+            )}
+
+            <div className="mt-2 max-h-[45vh] overflow-y-auto">
               {availableStudents.length === 0 ? (
                 <p className="py-8 text-center text-xs text-muted-foreground">No matching students.</p>
               ) : (
                 <ul className="divide-y divide-border">
-                  {availableStudents.map((s) => (
-                    <li key={s.user_id} className="flex items-center justify-between gap-2 py-2">
-                      <p className="truncate text-sm text-foreground">{s.full_name || "Student"}</p>
-                      <button
-                        onClick={() => handleAssign(s.user_id)}
-                        disabled={adding === s.user_id}
-                        className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-60"
-                      >
-                        {adding === s.user_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserPlus className="h-3 w-3" />}
-                        Assign
-                      </button>
-                    </li>
-                  ))}
+                  {availableStudents.map((s) => {
+                    const checked = bulkSelected.has(s.user_id);
+                    return (
+                      <li key={s.user_id}>
+                        <button
+                          onClick={() => toggleBulk(s.user_id)}
+                          className="flex w-full items-center gap-2 py-2 text-left hover:bg-muted/40 px-1 rounded"
+                        >
+                          {checked ? (
+                            <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+                          ) : (
+                            <Square className="h-4 w-4 text-muted-foreground shrink-0" />
+                          )}
+                          <p className="truncate text-sm text-foreground flex-1">{s.full_name || "Student"}</p>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
-            <button
-              onClick={() => setShowAdd(false)}
-              className="mt-4 w-full rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-            >
-              Close
-            </button>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setShowAdd(false)}
+                className="flex-1 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkAssign}
+                disabled={bulkSelected.size === 0 || bulkAssigning}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+              >
+                {bulkAssigning ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <UserPlus className="h-3.5 w-3.5" />
+                )}
+                Assign {bulkSelected.size > 0 ? `(${bulkSelected.size})` : ""}
+              </button>
+            </div>
           </div>
         </div>
       )}
