@@ -128,9 +128,23 @@ const AdminCoursesPage = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors">
+                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </a>
+                        <button
+                          onClick={() => navigate(`/admin/courses/${c.id}/edit`)}
+                          className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
+                          title="Edit course"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => navigate(`/admin/course-content?courseId=${c.id}`)}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
+                          title="Manage content"
+                        >
+                          <BookOpen className="h-3.5 w-3.5" />
+                        </button>
                         {!c.is_published ? (
                           <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
                             <Check className="h-3.5 w-3.5" />
