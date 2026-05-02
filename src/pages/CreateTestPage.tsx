@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Loader2, GripVertical, BookMarked } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -66,6 +66,11 @@ const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boole
 const CreateTestPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { testId } = useParams<{ testId?: string }>();
+
+  const isAdminContext = location.pathname.startsWith("/admin");
+  const isEditMode = Boolean(testId);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -76,25 +81,64 @@ const CreateTestPage = () => {
   const [wrongMarks, setWrongMarks] = useState(-1);
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
   const [bankSheetOpen, setBankSheetOpen] = useState(false);
   const [courseId, setCourseId] = useState<string>("");
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // Load courses (admin sees all, teacher sees own)
   useEffect(() => {
     if (!user) return;
     let ignore = false;
     (async () => {
-      const { data } = await supabase
-        .from("courses")
-        .select("id,name")
-        .eq("created_by", user.id)
-        .order("created_at", { ascending: false });
+      const q = supabase.from("courses").select("id,name").order("created_at", { ascending: false });
+      const { data } = isAdminContext ? await q : await q.eq("created_by", user.id);
       if (!ignore) setMyCourses(data ?? []);
     })();
     return () => { ignore = true; };
-  }, [user]);
+  }, [user, isAdminContext]);
+
+  // Load existing test for edit mode
+  useEffect(() => {
+    if (!isEditMode || !testId) return;
+    let ignore = false;
+    (async () => {
+      const [{ data: test }, { data: tqs }] = await Promise.all([
+        supabase.from("tests").select("*").eq("id", testId).maybeSingle(),
+        supabase.from("test_questions").select("*").eq("test_id", testId).order("position"),
+      ]);
+      if (ignore) return;
+      if (!test) {
+        toast.error("Test not found");
+        navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
+        return;
+      }
+      setTitle(test.title ?? "");
+      setDescription(test.description ?? "");
+      setTestType(test.test_type ?? "mock");
+      setExamPattern(test.exam_pattern ?? "jee-main");
+      setDuration(test.duration_minutes ?? 180);
+      setCorrectMarks(Number(test.correct_marks ?? 4));
+      setWrongMarks(Number(test.wrong_marks ?? -1));
+      setCourseId(test.course_id ?? "");
+      setQuestions(
+        (tqs ?? []).map((q: any) => ({
+          source: "manual" as const,
+          subject: q.subject ?? "Physics",
+          topic: q.topic ?? "",
+          text: q.question_text ?? "",
+          options: Array.isArray(q.options)
+            ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
+            : ["", "", "", ""],
+          correct: typeof q.correct_answer === "number" ? q.correct_answer : 0,
+        })),
+      );
+      setLoading(false);
+    })();
+    return () => { ignore = true; };
+  }, [isEditMode, testId, isAdminContext, navigate]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
@@ -121,38 +165,52 @@ const CreateTestPage = () => {
     if (validQ.length === 0) return toast.error("Add at least one complete question");
 
     setSubmitting(true);
-    const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+
     const subjects = Array.from(new Set(validQ.map((q) => q.subject)));
 
-    const { data: test, error } = await supabase
-      .from("tests")
-      .insert({
-        title,
-        slug,
-        description,
-        test_type: testType,
-        exam_pattern: examPattern,
-        subjects,
-        duration_minutes: duration,
-        correct_marks: correctMarks,
-        wrong_marks: wrongMarks,
-        total_questions: validQ.length,
-        total_marks: validQ.length * correctMarks,
-        is_published: publish,
-        created_by: user.id,
-        course_id: courseId || null,
-      })
-      .select("id")
-      .single();
+    const basePayload = {
+      title,
+      description,
+      test_type: testType,
+      exam_pattern: examPattern,
+      subjects,
+      duration_minutes: duration,
+      correct_marks: correctMarks,
+      wrong_marks: wrongMarks,
+      total_questions: validQ.length,
+      total_marks: validQ.length * correctMarks,
+      is_published: publish,
+      course_id: courseId || null,
+    };
 
-    if (error || !test) {
-      toast.error(error?.message ?? "Could not create test");
-      setSubmitting(false);
-      return;
+    let savedTestId = testId;
+
+    if (isEditMode && testId) {
+      const { error } = await supabase.from("tests").update(basePayload).eq("id", testId);
+      if (error) {
+        toast.error(error.message);
+        setSubmitting(false);
+        return;
+      }
+      // Replace questions
+      await supabase.from("test_questions").delete().eq("test_id", testId);
+    } else {
+      const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+      const { data: test, error } = await supabase
+        .from("tests")
+        .insert({ ...basePayload, slug, created_by: user.id })
+        .select("id")
+        .single();
+      if (error || !test) {
+        toast.error(error?.message ?? "Could not create test");
+        setSubmitting(false);
+        return;
+      }
+      savedTestId = test.id;
     }
 
     const rows = validQ.map((q, i) => ({
-      test_id: test.id,
+      test_id: savedTestId,
       position: i,
       subject: q.subject,
       topic: q.topic || null,
@@ -163,17 +221,40 @@ const CreateTestPage = () => {
       marks_correct: correctMarks,
       marks_wrong: wrongMarks,
     }));
-    await supabase.from("test_questions").insert(rows);
+    const { error: qErr } = await supabase.from("test_questions").insert(rows);
+    if (qErr) {
+      toast.error(qErr.message);
+      setSubmitting(false);
+      return;
+    }
 
-    toast.success(publish ? "Test published" : "Draft saved");
+    toast.success(
+      isEditMode
+        ? publish
+          ? "Test updated and published"
+          : "Test saved as draft"
+        : publish
+          ? "Test published"
+          : "Draft saved",
+    );
     setSubmitting(false);
-    navigate("/teacher/dashboard");
+    navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const LeftPane = (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground">Create New Test</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">
+          {isEditMode ? "Edit Test" : "Create New Test"}
+        </h1>
         <p className="text-xs text-muted-foreground mt-1">Drag questions from the bank on the right, or add manual ones.</p>
       </div>
 
@@ -300,7 +381,7 @@ const CreateTestPage = () => {
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save Draft"}
         </button>
         <button disabled={submitting} onClick={() => submit(true)} className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50">
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Publish Test"}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save & Publish" : "Publish Test"}
         </button>
       </div>
     </div>

@@ -78,6 +78,18 @@ const emptyForm: FormState = {
   target_exam: "",
 };
 
+const buildJitsiUrl = (title: string) => {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "class";
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `https://meet.jit.si/arke-${slug}-${suffix}`;
+};
+
+const isAutoJitsi = (url: string) => url.startsWith("https://meet.jit.si/arke-");
+
 const toLocalInput = (iso: string) => {
   const d = new Date(iso);
   const tz = d.getTimezoneOffset() * 60000;
@@ -642,7 +654,17 @@ const AdminLiveClassesPage = () => {
                 <input
                   required
                   value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  onChange={(e) => {
+                    const newTitle = e.target.value;
+                    setForm((f) => {
+                      const shouldRegen = !f.meeting_url || isAutoJitsi(f.meeting_url);
+                      return {
+                        ...f,
+                        title: newTitle,
+                        meeting_url: shouldRegen && newTitle.trim() ? buildJitsiUrl(newTitle) : f.meeting_url,
+                      };
+                    });
+                  }}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                   placeholder="Thermodynamics Crash Class"
                 />

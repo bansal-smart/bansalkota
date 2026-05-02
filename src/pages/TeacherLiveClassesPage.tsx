@@ -70,8 +70,8 @@ const TeacherLiveClassesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const buildMeetingUrl = (courseName: string) => {
-    const slug = courseName
+  const buildMeetingUrl = (seed: string) => {
+    const slug = seed
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
@@ -80,15 +80,24 @@ const TeacherLiveClassesPage = () => {
     return `https://meet.jit.si/arke-${slug}-${suffix}`;
   };
 
+  const isAutoUrl = (url: string) => url.startsWith("https://meet.jit.si/arke-");
+
   const handleCourseChange = (id: string) => {
     setCourseId(id);
     const c = courses.find((x) => x.id === id);
     if (c?.subject) setSubject(c.subject);
     if (c) {
-      // Auto-fill meeting URL only if empty or previously auto-generated
-      if (!meetingUrl || meetingUrl.startsWith("https://meet.jit.si/arke-")) {
-        setMeetingUrl(buildMeetingUrl(c.name));
+      if (!meetingUrl || isAutoUrl(meetingUrl)) {
+        setMeetingUrl(buildMeetingUrl(title || c.name));
       }
+    }
+  };
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (!meetingUrl || isAutoUrl(meetingUrl)) {
+      const seed = value || courses.find((x) => x.id === courseId)?.name || "class";
+      if (value.trim()) setMeetingUrl(buildMeetingUrl(seed));
     }
   };
 
@@ -277,7 +286,7 @@ const TeacherLiveClassesPage = () => {
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground">Title</label>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
+              <input value={title} onChange={(e) => handleTitleChange(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
             </div>
             <div>
               <label className="text-xs font-semibold text-foreground">Subject</label>

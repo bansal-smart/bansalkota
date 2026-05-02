@@ -1678,6 +1678,10 @@ export type Database = {
         }
         Returns: number
       }
+      notify_admins: {
+        Args: { _body: string; _link: string; _title: string; _type: string }
+        Returns: undefined
+      }
       pick_teacher_for_doubt: { Args: never; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }

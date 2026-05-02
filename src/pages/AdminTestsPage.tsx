@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2 } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,9 +46,14 @@ const AdminTestsPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white">
-        <h1 className="text-2xl font-black font-display">Tests Management</h1>
-        <p className="text-white/90 text-sm mt-1">Review and approve test papers</p>
+      <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-black font-display">Tests Management</h1>
+          <p className="text-white/90 text-sm mt-1">Create, edit and publish test papers</p>
+        </div>
+        <Link to="/admin/tests/new" className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-primary hover:bg-white/90">
+          <Plus className="h-4 w-4" /> New test
+        </Link>
       </div>
 
       <div className="relative">
@@ -98,9 +104,12 @@ const AdminTestsPage = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <a href={`/tests/${t.id}/take`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors">
+                        <a href={`/tests/${t.id}/take`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </a>
+                        <Link to={`/admin/tests/${t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
                         {!t.is_published ? (
                           <button onClick={() => togglePublish(t, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10">
                             <Check className="h-3.5 w-3.5" />
