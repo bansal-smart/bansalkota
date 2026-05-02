@@ -192,6 +192,14 @@ const AdminCourseContentPage = () => {
   };
 
   const togglePublish = async (r: Resource) => {
+    if (r.is_published) {
+      const ok = await confirm({
+        title: `Unpublish "${r.title}"?`,
+        description: "Students will lose access to this resource until it's republished.",
+        confirmLabel: "Unpublish resource",
+      });
+      if (!ok) return;
+    }
     const { error } = await supabase
       .from("course_resources")
       .update({ is_published: !r.is_published })
