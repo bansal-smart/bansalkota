@@ -4,8 +4,8 @@ import { useAuth, type UserRole } from "@/context/AuthContext";
 
 type Props = {
   /**
-   * Roles that may access the wrapped routes. Use 'staff' to permit both staff
-   * and admin (admin is treated as a stronger staff).
+   * Roles that may access the wrapped routes. Listing 'admin' implicitly
+   * permits 'super_admin' too (super_admin is a strictly stronger admin).
    */
   allow: UserRole[];
   /**

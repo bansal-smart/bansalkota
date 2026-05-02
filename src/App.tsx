@@ -72,6 +72,8 @@ import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
+import MentorLayout from "./components/MentorLayout";
+import MentorDashboard from "./pages/MentorDashboard";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 
@@ -155,6 +157,13 @@ const App = () => (
                 <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
                 <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
                 <Route path="/teacher/courses/create" element={<CreateCoursePage />} />
+              </Route>
+            </Route>
+
+            {/* Mentor layout — mentors only */}
+            <Route element={<ProtectedRoute allow={["mentor"]} />}>
+              <Route element={<MentorLayout />}>
+                <Route path="/mentor/dashboard" element={<MentorDashboard />} />
               </Route>
             </Route>
 
