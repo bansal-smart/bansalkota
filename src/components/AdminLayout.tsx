@@ -1,27 +1,60 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Flame, CircleDot, Briefcase, Inbox, FileText, Flag } from "lucide-react";
+import {
+  LayoutDashboard,
+  Flame,
+  CircleDot,
+  Briefcase,
+  Inbox,
+  FileText,
+  Flag,
+  Users,
+  GraduationCap,
+  Video,
+  ClipboardCheck,
+  CreditCard,
+  Bell,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
-const navItems = [
+type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
+
+// Items every admin (and super-admin) sees.
+const baseNav: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
+  { label: "Users", icon: Users, path: "/admin/users" },
+  { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
+  { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
+  { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },
   { label: "Reports", icon: Flag, path: "/admin/reports" },
+  { label: "Notifications", icon: Bell, path: "/admin/notifications" },
+];
+
+// Items only super-admin sees: revenue, settings, moderation.
+const superAdminNav: NavItem[] = [
+  { label: "Payments & Revenue", icon: CreditCard, path: "/admin/payments" },
+  { label: "Moderation", icon: ShieldCheck, path: "/admin/moderation" },
+  { label: "Platform Settings", icon: Settings, path: "/admin/settings" },
 ];
 
 type SidebarProps = {
   email: string;
   initials: string;
+  isSuperAdmin: boolean;
   onLogout: () => void;
 };
 
-// Isolated, memoized sidebar — re-renders only when props or pathname change.
-const AdminSidebar = memo(({ email, initials, onLogout }: SidebarProps) => {
+const AdminSidebar = memo(({ email, initials, isSuperAdmin, onLogout }: SidebarProps) => {
   const { pathname } = useLocation();
+  const panelLabel = isSuperAdmin ? "Super Admin Panel" : "Admin Panel";
+  const roleLabel = isSuperAdmin ? "Super Admin" : "Admin";
 
   return (
     <aside
@@ -36,24 +69,52 @@ const AdminSidebar = memo(({ email, initials, onLogout }: SidebarProps) => {
           <span className="text-sm font-black font-display text-white">ARKE</span>
         </Link>
         <div className="mt-3 rounded-md bg-primary/20 px-2 py-1 text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Staff Panel</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+            {panelLabel}
+          </span>
         </div>
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map((item) => {
+        <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Main</p>
+        {baseNav.map((item) => {
           const active = pathname === item.path;
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"}`}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+              }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
               <span>{item.label}</span>
             </Link>
           );
         })}
+
+        {isSuperAdmin && (
+          <>
+            <p className="px-3 pt-4 pb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">
+              Super Admin
+            </p>
+            {superAdminNav.map((item) => {
+              const active = pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       <div className="border-t border-white/10 p-4">
@@ -62,8 +123,8 @@ const AdminSidebar = memo(({ email, initials, onLogout }: SidebarProps) => {
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">{email || "Staff"}</p>
-            <p className="text-[10px] text-white/50">Staff Member</p>
+            <p className="text-xs font-semibold text-white truncate">{email || roleLabel}</p>
+            <p className="text-[10px] text-white/50">{roleLabel}</p>
           </div>
         </div>
         <LogoutButton
@@ -76,32 +137,36 @@ const AdminSidebar = memo(({ email, initials, onLogout }: SidebarProps) => {
 });
 AdminSidebar.displayName = "AdminSidebar";
 
-const AdminHeader = memo(({ initials, onLogout }: { initials: string; onLogout: () => void }) => (
-  <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
-    <div className="flex items-center gap-3">
-      <h1 className="text-sm font-bold text-foreground">ARKE Staff Dashboard</h1>
-    </div>
-    <div className="flex items-center gap-3">
-      <div className="hidden sm:flex items-center gap-1.5 text-xs text-secondary">
-        <CircleDot className="h-3 w-3" />
-        <span className="font-medium">Connected</span>
+const AdminHeader = memo(
+  ({ initials, isSuperAdmin, onLogout }: { initials: string; isSuperAdmin: boolean; onLogout: () => void }) => (
+    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
+      <div className="flex items-center gap-3">
+        <h1 className="text-sm font-bold text-foreground">
+          ARKE {isSuperAdmin ? "Super Admin" : "Admin"} Dashboard
+        </h1>
       </div>
-      <LogoutButton
-        onConfirm={onLogout}
-        variant="compact"
-        className="lg:hidden flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
-      />
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-        {initials}
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-secondary">
+          <CircleDot className="h-3 w-3" />
+          <span className="font-medium">Connected</span>
+        </div>
+        <LogoutButton
+          onConfirm={onLogout}
+          variant="compact"
+          className="lg:hidden flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
+        />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          {initials}
+        </div>
       </div>
-    </div>
-  </header>
-));
+    </header>
+  ),
+);
 AdminHeader.displayName = "AdminHeader";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isSuperAdmin } = useAuth();
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -110,14 +175,14 @@ const AdminLayout = () => {
   }, [signOut, navigate]);
 
   const email = user?.email ?? "";
-  const initials = (email || "S").slice(0, 1).toUpperCase();
+  const initials = useMemo(() => (email || "A").slice(0, 1).toUpperCase(), [email]);
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AdminSidebar email={email} initials={initials} onLogout={handleLogout} />
+      <AdminSidebar email={email} initials={initials} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader initials={initials} onLogout={handleLogout} />
+        <AdminHeader initials={initials} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
         <main className="flex-1 overflow-y-auto">
           <Outlet />
