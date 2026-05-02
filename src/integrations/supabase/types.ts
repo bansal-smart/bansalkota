@@ -1195,6 +1195,84 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          external_id: string | null
+          gateway: string
+          id: string
+          metadata: Json | null
+          plan: string | null
+          refunded_at: string | null
+          status: string
+          student_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          external_id?: string | null
+          gateway?: string
+          id?: string
+          metadata?: Json | null
+          plan?: string | null
+          refunded_at?: string | null
+          status?: string
+          student_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          external_id?: string | null
+          gateway?: string
+          id?: string
+          metadata?: Json | null
+          plan?: string | null
+          refunded_at?: string | null
+          status?: string
+          student_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          admin_email_alerts: boolean
+          id: number
+          maintenance_mode: boolean
+          open_registrations: boolean
+          site_name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admin_email_alerts?: boolean
+          id?: number
+          maintenance_mode?: boolean
+          open_registrations?: boolean
+          site_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admin_email_alerts?: boolean
+          id?: number
+          maintenance_mode?: boolean
+          open_registrations?: boolean
+          site_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
