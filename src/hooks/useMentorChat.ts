@@ -13,6 +13,23 @@ export type MentorMessage = {
   is_deleted: boolean;
   created_at: string;
   read_at: string | null;
+  file_url: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  file_mime: string | null;
+  file_size_bytes: number | null;
+};
+
+export const CHAT_BUCKET = "mentor-chat-files";
+const SIGNED_URL_TTL = 60 * 60 * 24 * 7; // 7 days
+
+export const isImageMime = (mime?: string | null) => !!mime && mime.startsWith("image/");
+
+/** Refresh a signed URL for a private bucket object. */
+export const getChatFileUrl = async (path: string) => {
+  const { data, error } = await supabase.storage.from(CHAT_BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
+  if (error) return null;
+  return data?.signedUrl ?? null;
 };
 
 export type Conversation =
