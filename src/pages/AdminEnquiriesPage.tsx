@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Inbox, Search, Loader2, Clock, CheckCircle2, AlertCircle, Archive } from "lucide-react";
+import { Inbox, Search, Loader2, Clock, CheckCircle2, AlertCircle, Archive, Trash2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
