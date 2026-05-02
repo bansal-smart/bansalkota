@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Swords, BarChart3, Trophy, User, Settings, Search, Flame, GraduationCap } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Swords, BarChart3, Trophy, User, Settings, Search, Flame, GraduationCap, Users } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback } from "react";
 import GoalSelector from "@/components/GoalSelector";
@@ -26,6 +26,7 @@ const buildNavItems = (doubtCount: number): StudentNavItem[] => [
   { label: "Live Classes", icon: Video, path: "/my-live-classes", live: true },
   { label: "Tests", icon: ClipboardCheck, path: "/my-tests" },
   { label: "Doubts", icon: MessageCircle, path: "/doubts", badge: doubtCount || undefined },
+  { label: "Mentor Chat", icon: Users, path: "/mentor-chat" },
 ];
 
 const exploreItems: StudentNavItem[] = [
