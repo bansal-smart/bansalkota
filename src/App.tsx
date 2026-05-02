@@ -19,7 +19,7 @@ import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
-import TeacherQuestionBankPage from "./pages/TeacherQuestionBankPage";
+
 import CompetePage from "./pages/CompetePage";
 import DoubtPage from "./pages/DoubtPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
