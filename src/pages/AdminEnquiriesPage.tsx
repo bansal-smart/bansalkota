@@ -103,8 +103,23 @@ const AdminEnquiriesPage = () => {
     toast.success("Enquiry updated");
   };
 
+  const deleteEnquiry = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: `Delete enquiry from ${name}?`,
+      description: "This will permanently remove the enquiry and any internal notes. This cannot be undone.",
+      confirmLabel: "Delete enquiry",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("enquiries").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((prev) => prev.filter((r) => r.id !== id));
+    if (active?.id === id) setActive(null);
+    toast.success("Enquiry deleted");
+  };
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div>
         <h1 className="text-2xl font-black font-display text-foreground">Enquiry Management</h1>
         <p className="mt-1 text-sm text-muted-foreground">
