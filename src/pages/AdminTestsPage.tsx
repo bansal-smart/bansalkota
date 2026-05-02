@@ -19,6 +19,8 @@ type AdminTest = {
 };
 
 const AdminTestsPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [tests, setTests] = useState<AdminTest[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
