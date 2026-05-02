@@ -40,6 +40,7 @@ import TeacherLiveClassRoomPage from "./pages/TeacherLiveClassRoomPage";
 import TeacherSettingsPage from "./pages/TeacherSettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminMentorAssignmentsPage from "./pages/AdminMentorAssignmentsPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage";
@@ -190,6 +191,7 @@ const App = () => (
               <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/mentor-assignments" element={<AdminMentorAssignmentsPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               <Route path="/admin/tests" element={<AdminTestsPage />} />
