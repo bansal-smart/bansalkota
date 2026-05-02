@@ -196,6 +196,8 @@ const App = () => (
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/mentor-assignments" element={<AdminMentorAssignmentsPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
+              <Route path="/admin/courses/new" element={<CreateCoursePage />} />
+              <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               <Route path="/admin/tests" element={<AdminTestsPage />} />
               <Route path="/admin/payments" element={<AdminPaymentsPage />} />
