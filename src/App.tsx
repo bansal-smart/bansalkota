@@ -19,7 +19,7 @@ import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
-import TeacherQuestionBankPage from "./pages/TeacherQuestionBankPage";
+
 import CompetePage from "./pages/CompetePage";
 import DoubtPage from "./pages/DoubtPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -34,14 +34,9 @@ import EducatorsPage from "./pages/EducatorsPage";
 import SettingsPage from "./pages/SettingsPage";
 import StorePage from "./pages/StorePage";
 import TeacherDashboard from "./pages/TeacherDashboard";
-import CreateTestPage from "./pages/CreateTestPage";
 import TeacherDoubtQueuePage from "./pages/TeacherDoubtQueuePage";
-import CreateCoursePage from "./pages/CreateCoursePage";
-import TeacherCoursesPage from "./pages/TeacherCoursesPage";
 import TeacherLiveClassesPage from "./pages/TeacherLiveClassesPage";
 import TeacherLiveClassRoomPage from "./pages/TeacherLiveClassRoomPage";
-import TeacherStudentsPage from "./pages/TeacherStudentsPage";
-import TeacherAnalyticsPage from "./pages/TeacherAnalyticsPage";
 import TeacherSettingsPage from "./pages/TeacherSettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
@@ -143,20 +138,24 @@ const App = () => (
               </Route>
             </Route>
 
-            {/* Teacher layout — teachers only */}
+            {/* Teacher layout — teachers only. Per role restructure, teachers
+                only handle live classes and assigned doubts. Everything else
+                (courses, tests, students, analytics, question bank) lives in
+                the admin portal. */}
             <Route element={<ProtectedRoute allow={["teacher"]} />}>
               <Route element={<TeacherLayout />}>
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-                <Route path="/teacher/courses" element={<TeacherCoursesPage />} />
                 <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
                 <Route path="/teacher/live-classes/:id" element={<TeacherLiveClassRoomPage />} />
-                <Route path="/teacher/tests/create" element={<CreateTestPage />} />
-                <Route path="/teacher/question-bank" element={<TeacherQuestionBankPage />} />
                 <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
-                <Route path="/teacher/students" element={<TeacherStudentsPage />} />
-                <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
                 <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
-                <Route path="/teacher/courses/create" element={<CreateCoursePage />} />
+                {/* Legacy teacher URLs now redirect into the trimmed portal. */}
+                <Route path="/teacher/courses" element={<Navigate to="/teacher/dashboard" replace />} />
+                <Route path="/teacher/courses/create" element={<Navigate to="/teacher/dashboard" replace />} />
+                <Route path="/teacher/tests/create" element={<Navigate to="/teacher/dashboard" replace />} />
+                <Route path="/teacher/question-bank" element={<Navigate to="/teacher/dashboard" replace />} />
+                <Route path="/teacher/students" element={<Navigate to="/teacher/dashboard" replace />} />
+                <Route path="/teacher/analytics" element={<Navigate to="/teacher/dashboard" replace />} />
               </Route>
             </Route>
 
