@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type TeacherCourse = {
   id: string;
@@ -20,6 +21,7 @@ type TeacherCourse = {
 
 const TeacherCoursesPage = () => {
   const { user } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,6 +43,14 @@ const TeacherCoursesPage = () => {
   }, [user]);
 
   const togglePublish = async (c: TeacherCourse) => {
+    if (c.is_published) {
+      const ok = await confirm({
+        title: `Unpublish "${c.name}"?`,
+        description: "Students will no longer see this course in the catalog or be able to enroll. Existing enrolled students keep their access. You can republish at any time.",
+        confirmLabel: "Unpublish course",
+      });
+      if (!ok) return;
+    }
     const { error } = await supabase.from("courses").update({ is_published: !c.is_published }).eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success(c.is_published ? "Course unpublished" : "Course published");
@@ -51,6 +61,7 @@ const TeacherCoursesPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-black font-display">My Courses</h1>
