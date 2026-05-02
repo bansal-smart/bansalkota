@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type AdminLive = {
   id: string;
@@ -86,6 +87,7 @@ const toLocalInput = (iso: string) => {
 const PAGE_SIZE = 25;
 
 const AdminLiveClassesPage = () => {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [classes, setClasses] = useState<AdminLive[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -275,7 +277,12 @@ const AdminLiveClassesPage = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this scheduled class? This cannot be undone.")) return;
+    const ok = await confirm({
+      title: "Delete this scheduled class?",
+      description: "This will permanently remove the class. Students who registered will be notified. This action cannot be undone.",
+      confirmLabel: "Delete class",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("live_classes").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -383,7 +390,12 @@ const AdminLiveClassesPage = () => {
   };
 
   const deleteTemplate = async (id: string) => {
-    if (!confirm("Delete this template?")) return;
+    const ok = await confirm({
+      title: "Delete this template?",
+      description: "Future classes can no longer be created from this template.",
+      confirmLabel: "Delete template",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("live_class_templates").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -888,6 +900,7 @@ const AdminLiveClassesPage = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

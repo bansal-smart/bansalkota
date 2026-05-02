@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
 type Chapter = { id: string; title: string; position: number };
@@ -67,6 +68,7 @@ const formatSize = (b: number | null) => {
 
 const AdminCourseContentPage = () => {
   const { user } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -199,7 +201,12 @@ const AdminCourseContentPage = () => {
   };
 
   const deleteResource = async (r: Resource) => {
-    if (!confirm(`Delete "${r.title}"?`)) return;
+    const ok = await confirm({
+      title: `Delete "${r.title}"?`,
+      description: "This resource will be removed from the course and students will no longer be able to access it. This action cannot be undone.",
+      confirmLabel: "Delete resource",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("course_resources").delete().eq("id", r.id);
     if (error) { toast.error(error.message); return; }
     setResources((prev) => prev.filter((x) => x.id !== r.id));
@@ -210,6 +217,7 @@ const AdminCourseContentPage = () => {
   if (!selectedCourse) {
     return (
       <div className="p-4 lg:p-6 space-y-6">
+        {ConfirmDialog}
         <div>
           <h1 className="text-2xl font-black font-display text-foreground">Course Content</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -275,6 +283,7 @@ const AdminCourseContentPage = () => {
   // ------------- View: Selected course -------------
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="outline" size="sm" onClick={() => setSelectedCourse(null)}>

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type TeacherCourse = { id: string; name: string; subject: string };
 
@@ -25,6 +26,7 @@ type LiveClass = {
 
 const TeacherLiveClassesPage = () => {
   const { user } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [classes, setClasses] = useState<LiveClass[]>([]);
   const [courses, setCourses] = useState<TeacherCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,8 +134,18 @@ const TeacherLiveClassesPage = () => {
     load();
   };
 
-  const remove = async (id: string) => {
-    await supabase.from("live_classes").delete().eq("id", id);
+  const remove = async (id: string, title?: string) => {
+    const ok = await confirm({
+      title: title ? `Delete "${title}"?` : "Delete this live class?",
+      description: "The class will be permanently removed and registered students will lose access. This action cannot be undone.",
+      confirmLabel: "Delete class",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("live_classes").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Class removed");
     load();
   };
@@ -215,7 +227,7 @@ const TeacherLiveClassesPage = () => {
                       Mark complete
                     </button>
                   )}
-                  <button onClick={() => remove(c.id)} className="rounded-lg border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/5">
+                  <button onClick={() => remove(c.id, c.title)} className="rounded-lg border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/5">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -301,6 +313,7 @@ const TeacherLiveClassesPage = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };
