@@ -395,7 +395,7 @@ const AdminLiveClassesPage = () => {
 
   // ---- Virtualized row ----
   const ROW_HEIGHT = 110;
-  const ClassRow = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const ClassRow = ({ index, style }: RowComponentProps) => {
     const cls = pageRows[index];
     if (!cls) return null;
     return (

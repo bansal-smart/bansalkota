@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { List } from "react-window";
+import { List, type RowComponentProps } from "react-window";
 import {
   Loader2,
   Plus,
@@ -329,7 +329,7 @@ const AdminMentorAssignmentsPage = () => {
   const ASSIGNED_ROW = 60;
   const AVAILABLE_ROW = 40;
 
-  const MentorRow = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const MentorRow = ({ index, style }: RowComponentProps) => {
     const m = filteredMentors[index];
     if (!m) return null;
     const active = m.user_id === selectedMentor;
@@ -353,7 +353,7 @@ const AdminMentorAssignmentsPage = () => {
     );
   };
 
-  const AssignedRow = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const AssignedRow = ({ index, style }: RowComponentProps) => {
     const a = pagedAssignments[index];
     if (!a) return null;
     const stu = studentsById.get(a.student_id);
@@ -375,7 +375,7 @@ const AdminMentorAssignmentsPage = () => {
     );
   };
 
-  const AvailableRow = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const AvailableRow = ({ index, style }: RowComponentProps) => {
     const s = availableStudents[index];
     if (!s) return null;
     const checked = bulkSelected.has(s.user_id);
