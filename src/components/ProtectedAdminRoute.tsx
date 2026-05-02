@@ -32,7 +32,11 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
   if (!isStaff) {
     // Non-staff: bounce to their correct portal home.
     const home =
-      role === "teacher" ? "/teacher/dashboard" : "/dashboard";
+      role === "teacher"
+        ? "/teacher/dashboard"
+        : role === "mentor"
+          ? "/mentor/dashboard"
+          : "/dashboard";
     return <Navigate to={home} replace />;
   }
 
