@@ -10,6 +10,7 @@ import SignupPage from "./pages/SignupPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import ForceChangePasswordPage from "./pages/ForceChangePasswordPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
 import StudentLayout from "./components/StudentLayout";
 import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
@@ -94,6 +95,7 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
+            <Route path="/unsubscribe" element={<UnsubscribePage />} />
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
             <Route element={<ProtectedRoute allow={["student"]} />}>

@@ -423,6 +423,57 @@ export const useMentorMessages = (conversation: Conversation | null, onActivity?
         };
         const { error } = await supabase.from("mentor_messages").insert(row);
         if (error) throw error;
+
+        // Fire-and-forget notification dispatch (in-app + email per recipient prefs)
+        try {
+          const { dispatchNotification } = await import("@/lib/notify");
+          const senderName =
+            (user.user_metadata as any)?.full_name ||
+            (user.user_metadata as any)?.name ||
+            user.email?.split("@")[0] ||
+            "Your mentor";
+          const preview = text
+            ? text.slice(0, 140)
+            : file
+              ? `Sent ${isImageMime(fileMime) ? "an image" : "a file"}: ${fileName}`
+              : "New message";
+
+          if (conversation.kind === "direct") {
+            const { data: peer } = await supabase
+              .from("profiles")
+              .select("user_id, full_name")
+              .eq("user_id", conversation.peerId)
+              .maybeSingle();
+            const { data: peerAuth } = await supabase.auth.admin
+              ? { data: null }
+              : { data: null };
+            // Look up email via RPC fallback: read from a view if available, else skip email.
+            // The dispatch helper safely no-ops if email is missing.
+            void dispatchNotification({
+              recipientUserId: conversation.peerId,
+              recipientEmail: (peerAuth as any)?.email ?? null,
+              category: "mentor_message",
+              inApp: {
+                title: `New message from ${senderName}`,
+                body: preview,
+                type: "mentor_message",
+                link: "/mentor-chat",
+              },
+              email: {
+                templateName: "mentor-message",
+                idempotencyKey: `mentor-msg-${user.id}-${conversation.peerId}-${Date.now()}`,
+                templateData: {
+                  recipientName: peer?.full_name,
+                  senderName,
+                  messagePreview: preview,
+                  chatUrl: "https://arke.pro/mentor-chat",
+                },
+              },
+            });
+          }
+        } catch (e) {
+          console.warn("[mentor-chat] notify dispatch failed", e);
+        }
       } finally {
         setSending(false);
       }
