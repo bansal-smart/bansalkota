@@ -1,46 +1,124 @@
-import { IndianRupee, TrendingUp, ArrowDownLeft, Clock, Download } from "lucide-react";
+import { IndianRupee, TrendingUp, ArrowDownLeft, Clock, Download, Loader2, CreditCard } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const stats = [
-  { label: "Total Revenue", value: "₹48.2L", icon: IndianRupee, color: "text-secondary" },
-  { label: "Today", value: "₹1.2L", icon: TrendingUp, color: "text-primary" },
-  { label: "Refunds", value: "₹12K", icon: ArrowDownLeft, color: "text-destructive" },
-  { label: "Pending", value: "₹8K", icon: Clock, color: "text-accent" },
-];
-
-const monthlyRevenue = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"].map((m) => ({
-  month: m, revenue: Math.floor(Math.random() * 300000 + 300000),
-}));
-
-const transactions = [
-  { id: "TXN-001234", student: "Aditya Rajan", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-30", status: "success" },
-  { id: "TXN-001233", student: "Ishita Bansal", plan: "Elite Annual", amount: "₹7,999", currency: "INR", gateway: "Razorpay", date: "2026-03-30", status: "success" },
-  { id: "TXN-001232", student: "Divya Nair", plan: "Pro Monthly", amount: "AED 149", currency: "AED", gateway: "Stripe", date: "2026-03-29", status: "success" },
-  { id: "TXN-001231", student: "Harsh Agarwal", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-29", status: "failed" },
-  { id: "TXN-001230", student: "Karan Malhotra", plan: "Course Only", amount: "₹1,999", currency: "INR", gateway: "Razorpay", date: "2026-03-28", status: "refunded" },
-  { id: "TXN-001229", student: "Saurabh Pillai", plan: "Pro Monthly", amount: "₹999", currency: "INR", gateway: "Razorpay", date: "2026-03-28", status: "success" },
-];
-
-const statusBadge = (s: string) => {
-  const styles: Record<string, string> = { success: "bg-secondary/10 text-secondary", pending: "bg-accent/20 text-accent", failed: "bg-destructive/10 text-destructive", refunded: "bg-muted text-muted-foreground" };
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${styles[s]}`}>{s}</span>;
+type Payment = {
+  id: string;
+  user_id: string | null;
+  student_name: string | null;
+  plan: string | null;
+  amount: number;
+  currency: string;
+  gateway: string;
+  external_id: string | null;
+  status: string;
+  refunded_at: string | null;
+  created_at: string;
 };
 
-const subPlans = [
-  { plan: "Free", count: 8432, revenue: "₹0" },
-  { plan: "Pro", count: 3241, revenue: "₹32.4L" },
-  { plan: "Elite", count: 1174, revenue: "₹15.8L" },
-];
+const fmtCurrency = (amount: number, currency: string) => {
+  if (currency === "INR") return `₹${amount.toLocaleString("en-IN")}`;
+  if (currency === "AED") return `AED ${amount.toLocaleString()}`;
+  return `${currency} ${amount.toLocaleString()}`;
+};
+
+const statusBadge = (s: string) => {
+  const styles: Record<string, string> = {
+    success: "bg-secondary/10 text-secondary",
+    pending: "bg-accent/20 text-accent",
+    failed: "bg-destructive/10 text-destructive",
+    refunded: "bg-muted text-muted-foreground",
+  };
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${styles[s] ?? "bg-muted text-muted-foreground"}`}>{s}</span>;
+};
+
+const exportCsv = (rows: Payment[]) => {
+  const header = ["id", "external_id", "student", "plan", "amount", "currency", "gateway", "status", "date"];
+  const lines = [header.join(",")].concat(
+    rows.map((r) =>
+      [r.id, r.external_id ?? "", r.student_name ?? "", r.plan ?? "", r.amount, r.currency, r.gateway, r.status, r.created_at]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(","),
+    ),
+  );
+  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `payments-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const AdminPaymentsPage = () => {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  const filtered = filter === "all" ? transactions : transactions.filter(t => t.status === filter);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) toast.error(error.message);
+      setPayments((data as Payment[]) ?? []);
+      setLoading(false);
+    })();
+  }, []);
+
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const successful = payments.filter((p) => p.status === "success");
+    const totalRevenue = successful.reduce((acc, p) => acc + Number(p.amount), 0);
+    const todayRevenue = successful
+      .filter((p) => p.created_at.startsWith(today))
+      .reduce((acc, p) => acc + Number(p.amount), 0);
+    const refunds = payments
+      .filter((p) => p.status === "refunded")
+      .reduce((acc, p) => acc + Number(p.amount), 0);
+    const pending = payments
+      .filter((p) => p.status === "pending")
+      .reduce((acc, p) => acc + Number(p.amount), 0);
+    return { totalRevenue, todayRevenue, refunds, pending };
+  }, [payments]);
+
+  const monthly = useMemo(() => {
+    const map = new Map<string, number>();
+    payments
+      .filter((p) => p.status === "success")
+      .forEach((p) => {
+        const m = format(new Date(p.created_at), "MMM yy");
+        map.set(m, (map.get(m) ?? 0) + Number(p.amount));
+      });
+    return Array.from(map.entries()).map(([month, revenue]) => ({ month, revenue }));
+  }, [payments]);
+
+  const filtered = filter === "all" ? payments : payments.filter((t) => t.status === filter);
+
+  const stats_cards = [
+    { label: "Total Revenue", value: fmtCurrency(stats.totalRevenue, "INR"), icon: IndianRupee, color: "text-secondary" },
+    { label: "Today", value: fmtCurrency(stats.todayRevenue, "INR"), icon: TrendingUp, color: "text-primary" },
+    { label: "Refunds", value: fmtCurrency(stats.refunds, "INR"), icon: ArrowDownLeft, color: "text-destructive" },
+    { label: "Pending", value: fmtCurrency(stats.pending, "INR"), icon: Clock, color: "text-accent" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6 pb-24 lg:pb-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
-        {stats.map((s) => (
+        {stats_cards.map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4 hover-lift">
             <s.icon className={`h-5 w-5 ${s.color}`} />
             <p className="mt-2 text-2xl font-bold text-foreground">{s.value}</p>
@@ -51,58 +129,83 @@ const AdminPaymentsPage = () => {
 
       <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
         <h2 className="text-sm font-bold text-foreground mb-4">Monthly Revenue</h2>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={monthlyRevenue}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" />
-            <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(215,16%,47%)" />
-            <YAxis tick={{ fontSize: 10 }} stroke="hsl(215,16%,47%)" tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
-            <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Revenue']} />
-            <Bar dataKey="revenue" fill="hsl(24,95%,53%)" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {monthly.length === 0 ? (
+          <p className="py-8 text-center text-xs text-muted-foreground">
+            No revenue data yet — once payment gateways are connected, monthly trends will appear here.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={monthly}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,13%,91%)" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="hsl(215,16%,47%)" />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(215,16%,47%)" tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
+              <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, "Revenue"]} />
+              <Bar dataKey="revenue" fill="hsl(24,95%,53%)" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="text-sm font-bold text-foreground">Transactions</h2>
           <div className="flex gap-2">
-            {["all", "success", "failed", "refunded"].map((f) => (
-              <button key={f} onClick={() => setFilter(f)} className={`rounded-lg px-3 py-1.5 text-[10px] font-medium capitalize ${filter === f ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}>{f}</button>
+            {["all", "success", "failed", "refunded", "pending"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`rounded-lg px-3 py-1.5 text-[10px] font-medium capitalize ${filter === f ? "bg-primary text-primary-foreground" : "bg-background border border-border text-muted-foreground"}`}
+              >
+                {f}
+              </button>
             ))}
-            <button className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-[10px] font-medium text-muted-foreground"><Download className="h-3 w-3" /> CSV</button>
+            <button
+              onClick={() => exportCsv(filtered)}
+              disabled={filtered.length === 0}
+              className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-[10px] font-medium text-muted-foreground disabled:opacity-50"
+            >
+              <Download className="h-3 w-3" /> CSV
+            </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead><tr className="border-b border-border text-muted-foreground"><th className="text-left py-2 font-medium">ID</th><th className="text-left py-2 font-medium">Student</th><th className="text-left py-2 font-medium hidden sm:table-cell">Plan</th><th className="text-right py-2 font-medium">Amount</th><th className="text-left py-2 font-medium hidden md:table-cell">Gateway</th><th className="text-left py-2 font-medium hidden lg:table-cell">Date</th><th className="text-left py-2 font-medium">Status</th></tr></thead>
-            <tbody>
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-border last:border-0">
-                  <td className="py-2.5 font-mono text-muted-foreground">{t.id}</td>
-                  <td className="py-2.5 font-medium text-foreground">{t.student}</td>
-                  <td className="py-2.5 text-muted-foreground hidden sm:table-cell">{t.plan}</td>
-                  <td className="py-2.5 text-right font-medium text-foreground">{t.amount}</td>
-                  <td className="py-2.5 text-muted-foreground hidden md:table-cell">{t.gateway}</td>
-                  <td className="py-2.5 text-muted-foreground hidden lg:table-cell">{t.date}</td>
-                  <td className="py-2.5">{statusBadge(t.status)}</td>
+        {filtered.length === 0 ? (
+          <div className="py-12 text-center space-y-2">
+            <CreditCard className="mx-auto h-10 w-10 text-muted-foreground/40" />
+            <p className="text-sm font-semibold text-foreground">No transactions yet</p>
+            <p className="text-xs text-muted-foreground">
+              Once Razorpay (India) or Stripe (Dubai) payments are wired in, every successful, failed or refunded charge will land here.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground">
+                  <th className="text-left py-2 font-medium">ID</th>
+                  <th className="text-left py-2 font-medium">Student</th>
+                  <th className="text-left py-2 font-medium hidden sm:table-cell">Plan</th>
+                  <th className="text-right py-2 font-medium">Amount</th>
+                  <th className="text-left py-2 font-medium hidden md:table-cell">Gateway</th>
+                  <th className="text-left py-2 font-medium hidden lg:table-cell">Date</th>
+                  <th className="text-left py-2 font-medium">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
-        <h2 className="text-sm font-bold text-foreground mb-3">Subscription Overview</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {subPlans.map((p) => (
-            <div key={p.plan} className="rounded-lg border border-border p-3 text-center hover-lift">
-              <p className="text-lg font-bold text-foreground">{p.count.toLocaleString()}</p>
-              <p className="text-xs font-medium text-muted-foreground">{p.plan} users</p>
-              <p className="text-xs font-semibold text-secondary mt-1">{p.revenue}</p>
-            </div>
-          ))}
-        </div>
+              </thead>
+              <tbody>
+                {filtered.map((t) => (
+                  <tr key={t.id} className="border-b border-border last:border-0">
+                    <td className="py-2.5 font-mono text-muted-foreground">{t.external_id ?? t.id.slice(0, 8)}</td>
+                    <td className="py-2.5 font-medium text-foreground">{t.student_name ?? "—"}</td>
+                    <td className="py-2.5 text-muted-foreground hidden sm:table-cell">{t.plan ?? "—"}</td>
+                    <td className="py-2.5 text-right font-medium text-foreground">{fmtCurrency(Number(t.amount), t.currency)}</td>
+                    <td className="py-2.5 text-muted-foreground hidden md:table-cell capitalize">{t.gateway}</td>
+                    <td className="py-2.5 text-muted-foreground hidden lg:table-cell">{format(new Date(t.created_at), "dd MMM yy")}</td>
+                    <td className="py-2.5">{statusBadge(t.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

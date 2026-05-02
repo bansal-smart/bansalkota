@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye, Download, Clock, KeyRound, Copy, RefreshCw, Send } from "lucide-react";
+import { Briefcase, Check, X, Mail, Phone, Calendar as CalIcon, GraduationCap, Building2, FileText, Video, ExternalLink, Loader2, Eye, Download, Clock, KeyRound, Copy, RefreshCw, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,6 +66,8 @@ const escapeCsv = (val: unknown) => {
 };
 
 const AdminEducatorApplicationsPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -221,8 +225,24 @@ const AdminEducatorApplicationsPage = () => {
     rejected: apps.filter((a) => a.status === "rejected").length,
   };
 
+  const deleteApp = async (a: Application) => {
+    const ok = await confirm({
+      title: `Delete application from ${a.candidate_name}?`,
+      description:
+        "This will permanently remove the application, uploaded resume metadata, and any decision history. This cannot be undone.",
+      confirmLabel: "Delete application",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("educator_applications").delete().eq("id", a.id);
+    if (error) return toast.error(error.message);
+    setApps((prev) => prev.filter((x) => x.id !== a.id));
+    if (selected?.id === a.id) setSelected(null);
+    toast.success("Application deleted");
+  };
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -368,6 +388,11 @@ const AdminEducatorApplicationsPage = () => {
                         <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span></SelectItem>
                       </SelectContent>
                     </Select>
+                    {isSuperAdmin && (
+                      <Button size="sm" variant="destructive" onClick={() => deleteApp(a)} title="Delete (super admin)">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

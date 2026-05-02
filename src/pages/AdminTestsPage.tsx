@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type AdminTest = {
   id: string;
@@ -17,6 +19,8 @@ type AdminTest = {
 };
 
 const AdminTestsPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [tests, setTests] = useState<AdminTest[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -42,10 +46,25 @@ const AdminTestsPage = () => {
     load();
   };
 
+  const deleteTest = async (t: AdminTest) => {
+    const ok = await confirm({
+      title: `Delete "${t.title}" permanently?`,
+      description:
+        "This will permanently remove the test and all its questions and student attempts. This cannot be undone.",
+      confirmLabel: "Delete test",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("tests").delete().eq("id", t.id);
+    if (error) return toast.error(error.message);
+    toast.success("Test deleted");
+    load();
+  };
+
   const filtered = tests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black font-display">Tests Management</h1>
@@ -117,6 +136,15 @@ const AdminTestsPage = () => {
                         ) : (
                           <button onClick={() => togglePublish(t, false)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10">
                             <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {isSuperAdmin && (
+                          <button
+                            onClick={() => deleteTest(t)}
+                            className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
+                            title="Delete test (super admin)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>

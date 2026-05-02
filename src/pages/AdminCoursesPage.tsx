@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { useAuth } from "@/context/AuthContext";
 
 type AdminCourse = {
   id: string;
@@ -18,6 +19,7 @@ type AdminCourse = {
 
 const AdminCoursesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
+  const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +51,20 @@ const AdminCoursesPage = () => {
     const { error } = await supabase.from("courses").update({ is_published: publish }).eq("id", c.id);
     if (error) return toast.error(error.message);
     toast.success(publish ? "Course approved & published" : "Course unpublished");
+    load();
+  };
+
+  const deleteCourse = async (c: AdminCourse) => {
+    const ok = await confirm({
+      title: `Delete "${c.name}" permanently?`,
+      description:
+        "This will permanently remove the course, its chapters, lessons and resources. Existing enrollments may also be affected. This cannot be undone.",
+      confirmLabel: "Delete course",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("courses").delete().eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success("Course deleted");
     load();
   };
 
@@ -152,6 +168,15 @@ const AdminCoursesPage = () => {
                         ) : (
                           <button onClick={() => togglePublish(c, false)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors" title="Unpublish">
                             <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {isSuperAdmin && (
+                          <button
+                            onClick={() => deleteCourse(c)}
+                            className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Delete course (super admin)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
                       </div>

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Inbox, Search, Loader2, Clock, CheckCircle2, AlertCircle, Archive } from "lucide-react";
+import { Inbox, Search, Loader2, Clock, CheckCircle2, AlertCircle, Archive, Trash2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,8 @@ const sourceLabel: Record<string, string> = {
 };
 
 const AdminEnquiriesPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [rows, setRows] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -99,8 +103,23 @@ const AdminEnquiriesPage = () => {
     toast.success("Enquiry updated");
   };
 
+  const deleteEnquiry = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: `Delete enquiry from ${name}?`,
+      description: "This will permanently remove the enquiry and any internal notes. This cannot be undone.",
+      confirmLabel: "Delete enquiry",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("enquiries").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setRows((prev) => prev.filter((r) => r.id !== id));
+    if (active?.id === id) setActive(null);
+    toast.success("Enquiry deleted");
+  };
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div>
         <h1 className="text-2xl font-black font-display text-foreground">Enquiry Management</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -263,14 +282,24 @@ const AdminEnquiriesPage = () => {
                     placeholder="Add an internal note (saved on blur)"
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={savingId === active.id}
-                  onClick={() => setActive(null)}
-                >
-                  Close
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    disabled={savingId === active.id}
+                    onClick={() => setActive(null)}
+                  >
+                    Close
+                  </Button>
+                  {isSuperAdmin && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteEnquiry(active.id, active.name)}
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
