@@ -88,7 +88,15 @@ const AdminCoursesPage = () => {
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">No courses found.</div>
+          <div className="p-10 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">No courses found.</p>
+            <Link
+              to="/admin/courses/new"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" /> Create your first course
+            </Link>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
