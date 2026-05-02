@@ -19,6 +19,7 @@ type AdminCourse = {
 
 const AdminCoursesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
+  const { isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
