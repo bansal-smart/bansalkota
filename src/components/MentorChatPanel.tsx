@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ImageIcon, Send, Users, MessageCircle, X } from "lucide-react";
+import { ImageIcon, Send, Users, MessageCircle, X, Check, CheckCheck } from "lucide-react";
 import { Conversation, useMentorMessages } from "@/hooks/useMentorChat";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ type Props = {
   conversations: Conversation[];
   loading?: boolean;
   emptyHint?: string;
+  onActivity?: () => void;
 };
 
 const formatTime = (iso: string) => {
@@ -16,22 +17,33 @@ const formatTime = (iso: string) => {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
-const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
+const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Props) => {
   const { user } = useAuth();
   const [active, setActive] = useState<Conversation | null>(null);
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const filePreview = file ? URL.createObjectURL(file) : null;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { messages, loading: msgsLoading, sending, send } = useMentorMessages(active);
+  const { messages, loading: msgsLoading, sending, send, typingUsers, sendTyping } = useMentorMessages(
+    active,
+    onActivity,
+  );
 
+  // Keep active selection in sync with refreshed conversations (preserves unread updates)
   useEffect(() => {
-    if (!active && conversations[0]) setActive(conversations[0]);
+    if (!active && conversations[0]) {
+      setActive(conversations[0]);
+      return;
+    }
+    if (active) {
+      const fresh = conversations.find((c) => c.id === active.id);
+      if (fresh && fresh !== active) setActive(fresh);
+    }
   }, [conversations, active]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, typingUsers.length]);
 
   useEffect(() => () => { if (filePreview) URL.revokeObjectURL(filePreview); }, [filePreview]);
 
@@ -45,6 +57,13 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
       toast.error(e?.message ?? "Failed to send message");
     }
   };
+
+  const typingLabel = (() => {
+    if (typingUsers.length === 0) return null;
+    if (typingUsers.length === 1) return `${typingUsers[0].name} is typing…`;
+    if (typingUsers.length === 2) return `${typingUsers[0].name} and ${typingUsers[1].name} are typing…`;
+    return `${typingUsers.length} people are typing…`;
+  })();
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-0 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-[280px_1fr]">
@@ -62,6 +81,7 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
             conversations.map((c) => {
               const isActive = active?.id === c.id;
               const Icon = c.kind === "group" ? Users : MessageCircle;
+              const unread = c.unread ?? 0;
               return (
                 <button
                   key={c.id}
@@ -74,9 +94,16 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">{c.title}</p>
+                    <p className={`truncate text-sm ${unread > 0 && !isActive ? "font-bold text-foreground" : "font-semibold text-foreground"}`}>
+                      {c.title}
+                    </p>
                     <p className="truncate text-[11px] text-muted-foreground">{c.subtitle}</p>
                   </div>
+                  {unread > 0 && !isActive && (
+                    <span className="ml-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
                 </button>
               );
             })
@@ -91,7 +118,9 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">{active.title}</p>
-                <p className="text-[11px] text-muted-foreground">{active.subtitle}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {typingLabel ?? active.subtitle}
+                </p>
               </div>
             </div>
 
@@ -103,6 +132,7 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
               ) : (
                 messages.map((m) => {
                   const mine = m.sender_id === user?.id;
+                  const isDirect = m.conversation_type === "direct";
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
@@ -116,13 +146,32 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
                           </a>
                         ) : null}
                         {m.content ? <p className="whitespace-pre-wrap break-words">{m.content}</p> : null}
-                        <p className={`mt-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          {formatTime(m.created_at)}
-                        </p>
+                        <div className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                          <span>{formatTime(m.created_at)}</span>
+                          {mine && isDirect && (
+                            m.read_at ? (
+                              <CheckCheck className="h-3 w-3" aria-label="Seen" />
+                            ) : (
+                              <Check className="h-3 w-3" aria-label="Sent" />
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
                 })
+              )}
+
+              {typingLabel && (
+                <div className="flex justify-start">
+                  <div className="rounded-2xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground shadow-sm">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -148,7 +197,10 @@ const MentorChatPanel = ({ conversations, loading, emptyHint }: Props) => {
                 <textarea
                   rows={1}
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    setText(e.target.value);
+                    if (e.target.value.trim()) sendTyping();
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
