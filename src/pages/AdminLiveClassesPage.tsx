@@ -291,12 +291,10 @@ const AdminLiveClassesPage = () => {
       setCancelReason("");
       return;
     }
-    const update: Record<string, unknown> = { status };
-    if (cls.status === "cancelled" && status !== "cancelled") {
-      update.cancellation_reason = null;
-      update.cancelled_at = null;
-      update.cancelled_by = null;
-    }
+    const update =
+      cls.status === "cancelled" && status !== "cancelled"
+        ? { status, cancellation_reason: null, cancelled_at: null, cancelled_by: null }
+        : { status };
     const { error } = await supabase.from("live_classes").update(update).eq("id", cls.id);
     if (error) {
       toast.error(error.message);
