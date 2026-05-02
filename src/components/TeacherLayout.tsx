@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Users, BarChart3, Settings, Bell, Search, Flame, PlusCircle, BookMarked } from "lucide-react";
+import { Home, Video, MessageCircle, Settings, Bell, Search, Flame } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
@@ -17,15 +17,12 @@ const getInitials = (name: string) => {
 
 const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }: { pendingDoubts: number; displayName: string; initials: string; onLogout: () => void }) => {
   const location = useLocation();
+  // Teacher portal is intentionally minimal: live classes + doubts only.
+  // Course/test/student/analytics management is owned by the admin portal.
   const navItems: NavItem[] = [
     { label: "Dashboard", icon: Home, path: "/teacher/dashboard" },
-    { label: "My Courses", icon: BookOpen, path: "/teacher/courses" },
     { label: "Live Classes", icon: Video, path: "/teacher/live-classes" },
-    { label: "Create Test", icon: ClipboardCheck, path: "/teacher/tests/create" },
-    { label: "Question Bank", icon: BookMarked, path: "/teacher/question-bank" },
     { label: "Doubt Queue", icon: MessageCircle, path: "/teacher/doubts", badge: pendingDoubts },
-    { label: "My Students", icon: Users, path: "/teacher/students" },
-    { label: "Analytics", icon: BarChart3, path: "/teacher/analytics" },
     { label: "Settings", icon: Settings, path: "/teacher/settings" },
   ];
 
@@ -137,13 +134,10 @@ const TeacherLayout = () => {
             </div>
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" placeholder="Search courses, students..." className="w-64 rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+              <input type="text" placeholder="Search doubts, classes..." className="w-64 rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link to="/teacher/courses/create" className="hidden sm:flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
-              <PlusCircle className="h-3.5 w-3.5" /> Create Course
-            </Link>
             <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-background transition-colors">
               <Bell className="h-5 w-5" />
               {pendingDoubts > 0 && (
