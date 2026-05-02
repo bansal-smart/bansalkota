@@ -66,6 +66,8 @@ const escapeCsv = (val: unknown) => {
 };
 
 const AdminEducatorApplicationsPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
