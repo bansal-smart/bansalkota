@@ -908,6 +908,30 @@ export type Database = {
           },
         ]
       }
+      mentor_group_reads: {
+        Row: {
+          group_id: string
+          id: string
+          last_read_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          last_read_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          last_read_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       mentor_groups: {
         Row: {
           created_at: string
@@ -941,6 +965,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_deleted: boolean
+          read_at: string | null
           recipient_id: string | null
           sender_id: string
         }
@@ -952,6 +977,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_deleted?: boolean
+          read_at?: string | null
           recipient_id?: string | null
           sender_id: string
         }
@@ -963,6 +989,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_deleted?: boolean
+          read_at?: string | null
           recipient_id?: string | null
           sender_id?: string
         }
