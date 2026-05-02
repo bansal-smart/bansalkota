@@ -388,6 +388,11 @@ const AdminEducatorApplicationsPage = () => {
                         <SelectItem value="rejected"><span className="flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span></SelectItem>
                       </SelectContent>
                     </Select>
+                    {isSuperAdmin && (
+                      <Button size="sm" variant="destructive" onClick={() => deleteApp(a)} title="Delete (super admin)">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
