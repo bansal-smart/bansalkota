@@ -40,6 +40,8 @@ const sourceLabel: Record<string, string> = {
 };
 
 const AdminEnquiriesPage = () => {
+  const { isSuperAdmin } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [rows, setRows] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
