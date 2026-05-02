@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type Profile = { user_id: string; full_name: string | null; email?: string | null };
 type Mentor = Profile & { studentCount: number };
@@ -34,6 +35,7 @@ type CsvRow = {
 const PAGE_SIZE = 25;
 
 const AdminMentorAssignmentsPage = () => {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [students, setStudents] = useState<Profile[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -177,7 +179,13 @@ const AdminMentorAssignmentsPage = () => {
     load();
   };
 
-  const handleRemove = async (assignmentId: string) => {
+  const handleRemove = async (assignmentId: string, studentName?: string) => {
+    const ok = await confirm({
+      title: studentName ? `Remove ${studentName} from this mentor?` : "Remove this student from the mentor?",
+      description: "The student will no longer have this mentor assigned. You can reassign them later. Past chat history is preserved.",
+      confirmLabel: "Remove student",
+    });
+    if (!ok) return;
     const { error } = await supabase
       .from("mentor_student_assignments")
       .update({ removed_at: new Date().toISOString() })
@@ -366,7 +374,7 @@ const AdminMentorAssignmentsPage = () => {
           </p>
         </div>
         <button
-          onClick={() => handleRemove(a.id)}
+          onClick={() => handleRemove(a.id, stu?.full_name || undefined)}
           className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
         >
           <UserMinus className="h-3.5 w-3.5" /> Remove
@@ -717,6 +725,7 @@ const AdminMentorAssignmentsPage = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };
