@@ -144,6 +144,49 @@ const AdminPaymentsPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6 pb-24 lg:pb-6">
+      <div className="rounded-xl border border-border bg-card p-4 animate-fade-in-up">
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by transaction ID, student or external ID…"
+              className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="flex gap-2 items-end">
+            <div className="flex flex-col">
+              <label className="text-[10px] font-medium text-muted-foreground mb-1">From</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-[10px] font-medium text-muted-foreground mb-1">To</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" /> Clear
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
         {stats_cards.map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4 hover-lift">
