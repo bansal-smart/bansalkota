@@ -54,6 +54,20 @@ const AdminCoursesPage = () => {
     load();
   };
 
+  const deleteCourse = async (c: AdminCourse) => {
+    const ok = await confirm({
+      title: `Delete "${c.name}" permanently?`,
+      description:
+        "This will permanently remove the course, its chapters, lessons and resources. Existing enrollments may also be affected. This cannot be undone.",
+      confirmLabel: "Delete course",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("courses").delete().eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success("Course deleted");
+    load();
+  };
+
   const filtered = courses.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
   );
