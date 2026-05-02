@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2 } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/ConfirmDialog";
