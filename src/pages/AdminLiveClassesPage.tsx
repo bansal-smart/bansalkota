@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { List } from "react-window";
+import { List, type RowComponentProps } from "react-window";
 import {
   Video,
   Calendar,
