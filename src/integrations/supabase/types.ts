@@ -961,6 +961,11 @@ export type Database = {
           content: string | null
           conversation_type: string
           created_at: string
+          file_mime: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size_bytes: number | null
+          file_url: string | null
           group_id: string | null
           id: string
           image_url: string | null
@@ -973,6 +978,11 @@ export type Database = {
           content?: string | null
           conversation_type: string
           created_at?: string
+          file_mime?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
           group_id?: string | null
           id?: string
           image_url?: string | null
@@ -985,6 +995,11 @@ export type Database = {
           content?: string | null
           conversation_type?: string
           created_at?: string
+          file_mime?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
           group_id?: string | null
           id?: string
           image_url?: string | null
