@@ -1108,6 +1108,57 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_doubt_answered: boolean
+          email_live_class_reminder: boolean
+          email_mentor_message: boolean
+          email_payment_receipt: boolean
+          email_system: boolean
+          id: string
+          inapp_doubt_answered: boolean
+          inapp_live_class_reminder: boolean
+          inapp_mentor_message: boolean
+          inapp_payment_receipt: boolean
+          inapp_system: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_doubt_answered?: boolean
+          email_live_class_reminder?: boolean
+          email_mentor_message?: boolean
+          email_payment_receipt?: boolean
+          email_system?: boolean
+          id?: string
+          inapp_doubt_answered?: boolean
+          inapp_live_class_reminder?: boolean
+          inapp_mentor_message?: boolean
+          inapp_payment_receipt?: boolean
+          inapp_system?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_doubt_answered?: boolean
+          email_live_class_reminder?: boolean
+          email_mentor_message?: boolean
+          email_payment_receipt?: boolean
+          email_system?: boolean
+          id?: string
+          inapp_doubt_answered?: boolean
+          inapp_live_class_reminder?: boolean
+          inapp_mentor_message?: boolean
+          inapp_payment_receipt?: boolean
+          inapp_system?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1634,6 +1685,19 @@ export type Database = {
         }[]
       }
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
+      upcoming_live_class_reminders: {
+        Args: { _lookahead_minutes?: number }
+        Returns: {
+          class_id: string
+          class_title: string
+          educator_name: string
+          starts_at: string
+          subject: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "student" | "teacher" | "mentor"
