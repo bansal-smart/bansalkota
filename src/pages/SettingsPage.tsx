@@ -1,9 +1,8 @@
-import { Settings, Bell, Moon, Globe, Lock, Trash2 } from "lucide-react";
+import { Settings, Moon, Globe, Lock, Trash2 } from "lucide-react";
 import { useState } from "react";
+import NotificationPreferences from "@/components/NotificationPreferences";
 
 const SettingsPage = () => {
-  const [notifications, setNotifications] = useState(true);
-  const [emailNotif, setEmailNotif] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("en");
 
@@ -24,19 +23,7 @@ const SettingsPage = () => {
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><Bell className="h-4 w-4 text-primary" /> Notifications</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-foreground">Push Notifications</p><p className="text-xs text-muted-foreground">Receive class reminders & test alerts</p></div>
-              <Toggle on={notifications} toggle={() => setNotifications(!notifications)} />
-            </div>
-            <div className="flex items-center justify-between">
-              <div><p className="text-sm text-foreground">Email Notifications</p><p className="text-xs text-muted-foreground">Weekly progress reports via email</p></div>
-              <Toggle on={emailNotif} toggle={() => setEmailNotif(!emailNotif)} />
-            </div>
-          </div>
-        </div>
+        <NotificationPreferences />
 
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><Moon className="h-4 w-4 text-primary" /> Appearance</h3>
