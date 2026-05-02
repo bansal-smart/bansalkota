@@ -3,6 +3,8 @@ import { X, PartyPopper, AlertCircle, Info, Loader2, Check } from "lucide-react"
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { dispatchEmailOnly } from "@/lib/notify";
+import { useAppStore } from "@/store/useAppStore";
 
 interface EnrollmentModalProps {
   open: boolean;
@@ -57,6 +59,27 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
       type: "course",
       link: `/my-courses`,
     });
+    // Send payment-receipt email (respects user preferences). Demo amount = course price.
+    if (user.email) {
+      const country = useAppStore.getState().country;
+      const currency = country === "dubai" ? "AED" : "INR";
+      const amount = country === "dubai" ? Math.round(coursePrice / 22) : coursePrice;
+      void dispatchEmailOnly({
+        recipientUserId: user.id,
+        recipientEmail: user.email,
+        category: "payment_receipt",
+        templateName: "payment-receipt",
+        idempotencyKey: `enroll-${user.id}-${courseId}`,
+        templateData: {
+          name: user.user_metadata?.full_name || "Learner",
+          courseName,
+          amount,
+          currency,
+          orderId: `DEMO-${courseId.slice(0, 8)}`,
+          paidAt: new Date().toISOString(),
+        },
+      });
+    }
     setSubmitting(false);
     setStep("success");
   };
