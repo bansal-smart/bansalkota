@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import { FormattedAnswer } from "@/components/FormattedAnswer";
+import { dispatchEmailOnly } from "@/lib/notify";
 
 type Doubt = {
   id: string;
@@ -77,6 +78,23 @@ const TeacherDoubtQueuePage = () => {
       return;
     }
     toast.success("Answer sent");
+    // Fire-and-forget transactional email to student (in-app notification is created by DB trigger).
+    (async () => {
+      try {
+        const studentName = studentNames[selected.user_id] || "Student";
+        await supabase.functions.invoke("send-doubt-answered-email", {
+          body: {
+            studentUserId: selected.user_id,
+            studentName,
+            subject: selected.subject,
+            doubtId: selected.id,
+            answerPreview: answer.trim().slice(0, 280),
+          },
+        });
+      } catch (err) {
+        console.warn("doubt-answered email dispatch failed", err);
+      }
+    })();
     setAnswer("");
     setSubmitting(false);
     load();
