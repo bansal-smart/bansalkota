@@ -5,6 +5,7 @@ import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 const SUBJECTS = ["All", "Physics", "Chemistry", "Mathematics", "Biology"];
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
@@ -82,12 +83,18 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [search, setSearch] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<BankQuestion | null>(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const filters = useMemo(() => ({ subject, difficulty, search }), [subject, difficulty, search]);
   const { questions, loading, reload } = useQuestionBank(filters);
 
   const handleDelete = async (q: BankQuestion) => {
-    if (!confirm("Delete this question?")) return;
+    const ok = await confirm({
+      title: "Delete this question?",
+      description: "It will be removed from the question bank. Tests already using it will keep their copy, but it can't be added to new tests.",
+      confirmLabel: "Delete question",
+    });
+    if (!ok) return;
     const { error } = await supabase.from("question_bank").delete().eq("id", q.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
@@ -147,6 +154,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
       </div>
 
       <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
+      {ConfirmDialog}
     </div>
   );
 };
