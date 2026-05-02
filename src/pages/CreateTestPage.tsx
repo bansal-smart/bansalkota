@@ -168,7 +168,7 @@ const CreateTestPage = () => {
 
     const subjects = Array.from(new Set(validQ.map((q) => q.subject)));
 
-    const payload: Record<string, unknown> = {
+    const basePayload = {
       title,
       description,
       test_type: testType,
@@ -186,7 +186,7 @@ const CreateTestPage = () => {
     let savedTestId = testId;
 
     if (isEditMode && testId) {
-      const { error } = await supabase.from("tests").update(payload).eq("id", testId);
+      const { error } = await supabase.from("tests").update(basePayload).eq("id", testId);
       if (error) {
         toast.error(error.message);
         setSubmitting(false);
@@ -198,7 +198,7 @@ const CreateTestPage = () => {
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
       const { data: test, error } = await supabase
         .from("tests")
-        .insert({ ...payload, slug, created_by: user.id })
+        .insert({ ...basePayload, slug, created_by: user.id })
         .select("id")
         .single();
       if (error || !test) {
