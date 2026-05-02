@@ -78,13 +78,10 @@ const TeacherDoubtQueuePage = () => {
       return;
     }
     toast.success("Answer sent");
-    // Fire-and-forget transactional email to student (in-app notification already created by DB trigger).
+    // Fire-and-forget transactional email to student (in-app notification is created by DB trigger).
     (async () => {
       try {
-        const { data: au } = await supabase.rpc("upcoming_live_class_reminders" as never, { _lookahead_minutes: 0 } as never).then(() => ({ data: null })).catch(() => ({ data: null }));
-        // Lookup student email via auth.users is not allowed from client; rely on profiles + edge function fallback.
         const studentName = studentNames[selected.user_id] || "Student";
-        // Edge function reads recipient email when we pass user_id-derived email; here we pass via templateData and let function resolve via service role.
         await supabase.functions.invoke("send-doubt-answered-email", {
           body: {
             studentUserId: selected.user_id,
@@ -94,7 +91,6 @@ const TeacherDoubtQueuePage = () => {
             answerPreview: answer.trim().slice(0, 280),
           },
         });
-        void au;
       } catch (err) {
         console.warn("doubt-answered email dispatch failed", err);
       }
