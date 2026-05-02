@@ -57,6 +57,7 @@ import StaffDashboardPage from "./pages/StaffDashboardPage";
 import AdminEnquiriesPage from "./pages/AdminEnquiriesPage";
 import AdminCourseContentPage from "./pages/AdminCourseContentPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
+import AdminProfilePage from "./pages/AdminProfilePage";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicLayout from "./components/PublicLayout";
@@ -207,6 +208,7 @@ const App = () => (
               <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
               <Route path="/admin/moderation" element={<AdminModerationPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
+              <Route path="/admin/profile" element={<AdminProfilePage />} />
               <Route path="/admin/overview" element={<AdminDashboard />} />
             </Route>
 

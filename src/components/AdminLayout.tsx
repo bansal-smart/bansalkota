@@ -18,6 +18,7 @@ import {
   HeartHandshake,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
+import NotificationBell from "@/components/NotificationBell";
 import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -152,14 +153,19 @@ const AdminHeader = memo(
           <CircleDot className="h-3 w-3" />
           <span className="font-medium">Connected</span>
         </div>
+        <NotificationBell />
         <LogoutButton
           onConfirm={onLogout}
           variant="compact"
           className="lg:hidden flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
         />
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+        <Link
+          to="/admin/profile"
+          aria-label="My profile"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+        >
           {initials}
-        </div>
+        </Link>
       </div>
     </header>
   ),
