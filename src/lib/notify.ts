@@ -41,6 +41,37 @@ const fetchPrefs = async (userId: string) => {
   return data;
 };
 
+export const dispatchEmailOnly = async (params: {
+  recipientUserId: string;
+  recipientEmail: string;
+  category: NotificationCategory;
+  templateName: string;
+  idempotencyKey: string;
+  templateData?: Record<string, unknown>;
+}) => {
+  const fields = PREF_FIELDS[params.category];
+  let prefs: Record<string, boolean> | null = null;
+  try {
+    prefs = (await fetchPrefs(params.recipientUserId)) as any;
+  } catch {
+    /* ignore */
+  }
+  const wantsEmail = prefs ? !!prefs[fields.email] : true;
+  if (!wantsEmail) return;
+  try {
+    await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: params.templateName,
+        recipientEmail: params.recipientEmail,
+        idempotencyKey: params.idempotencyKey,
+        templateData: params.templateData,
+      },
+    });
+  } catch (err) {
+    console.warn("[notify] email-only send failed", err);
+  }
+};
+
 export const dispatchNotification = async (input: DispatchInput) => {
   const fields = PREF_FIELDS[input.category];
   let prefs: Record<string, boolean> | null = null;
