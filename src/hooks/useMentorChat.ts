@@ -385,18 +385,28 @@ export const useMentorMessages = (conversation: Conversation | null, onActivity?
       if (!text && !file) return;
       setSending(true);
       try {
+        let filePath: string | null = null;
+        let fileUrl: string | null = null;
         let imageUrl: string | null = null;
+        let fileName: string | null = null;
+        let fileMime: string | null = null;
+        let fileSize: number | null = null;
+
         if (file) {
-          const ext = file.name.split(".").pop() || "jpg";
+          const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+          const ext = safeName.includes(".") ? safeName.split(".").pop() : "bin";
           const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
           const { error: upErr } = await supabase.storage
-            .from("mentor-chat-images")
-            .upload(path, file, { contentType: file.type, upsert: false });
+            .from(CHAT_BUCKET)
+            .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
           if (upErr) throw upErr;
-          const { data: signed } = await supabase.storage
-            .from("mentor-chat-images")
-            .createSignedUrl(path, 60 * 60 * 24 * 365);
-          imageUrl = signed?.signedUrl ?? null;
+          const signed = await getChatFileUrl(path);
+          filePath = path;
+          fileUrl = signed;
+          fileName = file.name;
+          fileMime = file.type || "application/octet-stream";
+          fileSize = file.size;
+          if (isImageMime(fileMime)) imageUrl = signed; // back-compat
         }
         const row = {
           conversation_type: conversation.kind,
@@ -405,6 +415,11 @@ export const useMentorMessages = (conversation: Conversation | null, onActivity?
           recipient_id: conversation.kind === "direct" ? conversation.peerId : null,
           content: text || null,
           image_url: imageUrl,
+          file_url: fileUrl,
+          file_path: filePath,
+          file_name: fileName,
+          file_mime: fileMime,
+          file_size_bytes: fileSize,
         };
         const { error } = await supabase.from("mentor_messages").insert(row);
         if (error) throw error;
