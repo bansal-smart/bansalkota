@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 type Props = {
   reportedName: string;
-  reportedRole: "teacher" | "mentor" | "staff" | "other";
+  reportedRole: "teacher" | "mentor" | "admin" | "other";
   reportedUserId?: string | null;
   trigger?: React.ReactNode;
 };
