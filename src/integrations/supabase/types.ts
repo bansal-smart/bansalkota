@@ -808,8 +808,65 @@ export type Database = {
           },
         ]
       }
+      live_class_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          duration_minutes: number
+          educator_avatar: string | null
+          educator_name: string | null
+          id: string
+          max_participants: number | null
+          meeting_url: string | null
+          name: string
+          subject: string
+          target_exam: string | null
+          teacher_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          duration_minutes?: number
+          educator_avatar?: string | null
+          educator_name?: string | null
+          id?: string
+          max_participants?: number | null
+          meeting_url?: string | null
+          name: string
+          subject: string
+          target_exam?: string | null
+          teacher_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          duration_minutes?: number
+          educator_avatar?: string | null
+          educator_name?: string | null
+          id?: string
+          max_participants?: number | null
+          meeting_url?: string | null
+          name?: string
+          subject?: string
+          target_exam?: string | null
+          teacher_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       live_classes: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           course_id: string | null
           created_at: string
           created_by: string | null
@@ -830,6 +887,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           course_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -850,6 +910,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           course_id?: string | null
           created_at?: string
           created_by?: string | null
