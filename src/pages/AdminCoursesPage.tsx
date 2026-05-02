@@ -170,6 +170,15 @@ const AdminCoursesPage = () => {
                             <X className="h-3.5 w-3.5" />
                           </button>
                         )}
+                        {isSuperAdmin && (
+                          <button
+                            onClick={() => deleteCourse(c)}
+                            className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Delete course (super admin)"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
