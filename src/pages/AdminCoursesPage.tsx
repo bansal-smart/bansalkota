@@ -18,6 +18,7 @@ type AdminCourse = {
 
 const AdminCoursesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
