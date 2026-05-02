@@ -46,10 +46,25 @@ const AdminTestsPage = () => {
     load();
   };
 
+  const deleteTest = async (t: AdminTest) => {
+    const ok = await confirm({
+      title: `Delete "${t.title}" permanently?`,
+      description:
+        "This will permanently remove the test and all its questions and student attempts. This cannot be undone.",
+      confirmLabel: "Delete test",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("tests").delete().eq("id", t.id);
+    if (error) return toast.error(error.message);
+    toast.success("Test deleted");
+    load();
+  };
+
   const filtered = tests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
+      {ConfirmDialog}
       <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black font-display">Tests Management</h1>
