@@ -219,14 +219,17 @@ const LecturePlayerPage = () => {
       });
       ytPlayerRef.current = player;
 
+      let autoCompleted = progressMap[lessonSnapshot.slug]?.is_completed ?? false;
       ytPollRef.current = window.setInterval(() => {
         const p = ytPlayerRef.current;
         if (!p || typeof p.getCurrentTime !== "function") return;
         const cur = p.getCurrentTime() ?? 0;
         const dur = p.getDuration?.() ?? 0;
-        if (cur > 0) saveProgress(cur, false, lessonSnapshot);
-        if (dur && cur / dur >= COMPLETION_THRESHOLD) {
+        if (cur > 0 && !autoCompleted) saveProgress(cur, false, lessonSnapshot);
+        if (!autoCompleted && dur && cur / dur >= COMPLETION_THRESHOLD) {
+          autoCompleted = true;
           saveProgress(cur, true, lessonSnapshot);
+          toast.success("Lesson completed!");
         }
       }, 5000);
     });
