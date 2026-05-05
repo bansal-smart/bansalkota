@@ -290,34 +290,36 @@ const LecturePlayerPage = () => {
 
       <div className="flex flex-1 flex-col lg:flex-row">
         <div className="flex-1 flex flex-col">
-          <div className="relative aspect-video bg-black">
-            {activeLesson.video_url ? (
-              isYouTube ? (
-                <div key={activeLesson.id} className="absolute inset-0">
-                  <div ref={ytContainerRef} className="h-full w-full" />
-                </div>
+          <div className="w-full bg-black flex justify-center">
+            <div className="relative aspect-video w-full max-w-[min(100%,calc((100vh-180px)*16/9))] bg-black">
+              {activeLesson.video_url ? (
+                isYouTube ? (
+                  <div key={activeLesson.id} className="absolute inset-0">
+                    <div ref={ytContainerRef} className="h-full w-full" />
+                  </div>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    key={activeLesson.id}
+                    src={activeLesson.video_url}
+                    controls
+                    onPlay={() => setPlaying(true)}
+                    onPause={() => setPlaying(false)}
+                    onTimeUpdate={onTimeUpdate}
+                    onLoadedMetadata={() => {
+                      const v = videoRef.current;
+                      const saved = progressMap[activeLesson.slug]?.watched_seconds;
+                      if (v && saved && saved < (activeLesson.duration_seconds || 0) - 10) {
+                        v.currentTime = saved;
+                      }
+                    }}
+                    className="absolute inset-0 h-full w-full"
+                  />
+                )
               ) : (
-                <video
-                  ref={videoRef}
-                  key={activeLesson.id}
-                  src={activeLesson.video_url}
-                  controls
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  onTimeUpdate={onTimeUpdate}
-                  onLoadedMetadata={() => {
-                    const v = videoRef.current;
-                    const saved = progressMap[activeLesson.slug]?.watched_seconds;
-                    if (v && saved && saved < (activeLesson.duration_seconds || 0) - 10) {
-                      v.currentTime = saved;
-                    }
-                  }}
-                  className="absolute inset-0 h-full w-full"
-                />
-              )
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">No video uploaded for this lesson</div>
-            )}
+                <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">No video uploaded for this lesson</div>
+              )}
+            </div>
           </div>
 
           <div className="p-4 space-y-3">
