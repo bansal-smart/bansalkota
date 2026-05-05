@@ -775,6 +775,107 @@ const AdminCourseContentPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Chapter Dialog */}
+      <Dialog open={chapterDialogOpen} onOpenChange={setChapterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add chapter</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label htmlFor="ch-title">Chapter title</Label>
+            <Input
+              id="ch-title"
+              value={chapterTitle}
+              onChange={(e) => setChapterTitle(e.target.value)}
+              placeholder="e.g. Kinematics"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChapterDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveChapter} disabled={savingChapter}>
+              {savingChapter ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
+              Add chapter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add / Edit Lecture Dialog */}
+      <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingLessonId ? "Edit lecture" : "Add lecture"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="lec-title">Lecture title</Label>
+              <Input
+                id="lec-title"
+                value={lectureForm.title}
+                onChange={(e) => setLectureForm({ ...lectureForm, title: e.target.value })}
+                placeholder="e.g. Newton's Laws of Motion"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lec-yt">YouTube link</Label>
+              <Input
+                id="lec-yt"
+                value={lectureForm.youtubeUrl}
+                onChange={(e) => setLectureForm({ ...lectureForm, youtubeUrl: e.target.value })}
+                placeholder="https://youtu.be/... or https://youtube.com/watch?v=..."
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Upload the recording to YouTube as <strong>Unlisted</strong> so it plays inside our platform without being publicly listed. (Private videos can't be embedded.)
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="lec-dur">Duration (minutes)</Label>
+                <Input
+                  id="lec-dur"
+                  type="number"
+                  min={1}
+                  value={lectureForm.durationMin}
+                  onChange={(e) => setLectureForm({ ...lectureForm, durationMin: Number(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label>Chapter</Label>
+                <Select
+                  value={lectureForm.chapter_id}
+                  onValueChange={(v) => setLectureForm({ ...lectureForm, chapter_id: v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Choose chapter" /></SelectTrigger>
+                  <SelectContent>
+                    {chapters.map((ch) => (
+                      <SelectItem key={ch.id} value={ch.id}>{ch.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">Free preview</p>
+                <p className="text-xs text-muted-foreground">Anyone can watch without enrolling</p>
+              </div>
+              <Switch
+                checked={lectureForm.is_free_preview}
+                onCheckedChange={(v) => setLectureForm({ ...lectureForm, is_free_preview: v })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLectureDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveLecture} disabled={savingLecture}>
+              {savingLecture ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {editingLessonId ? "Save changes" : "Add lecture"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };
