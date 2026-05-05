@@ -30,6 +30,7 @@ type AdminLive = {
   description: string | null;
   target_exam: string | null;
   created_by: string | null;
+  course_id?: string | null;
   cancellation_reason?: string | null;
 };
 
