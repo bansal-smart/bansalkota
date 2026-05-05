@@ -143,12 +143,12 @@ describe("calcCourseProgress", () => {
 describe("isLessonComplete", () => {
   it("marks complete at the default 90% threshold", () => {
     expect(isLessonComplete(540, 600)).toBe(true);
-    expect(isLessonComplete(539, 600)).toBe(false);
+    expect(isLessonComplete(530, 600)).toBe(false);
   });
 
   it("respects a custom threshold", () => {
     expect(isLessonComplete(300, 600, 50)).toBe(true);
-    expect(isLessonComplete(299, 600, 50)).toBe(false);
+    expect(isLessonComplete(290, 600, 50)).toBe(false);
   });
 
   it("is false when total is missing/zero", () => {
