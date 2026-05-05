@@ -34,6 +34,7 @@ type AdminLive = {
 };
 
 type Teacher = { user_id: string; full_name: string | null };
+type Course = { id: string; name: string };
 
 type Template = {
   id: string;
