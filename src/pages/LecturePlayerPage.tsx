@@ -121,50 +121,58 @@ const LecturePlayerPage = () => {
       .then(({ data }) => setNotes(data?.content ?? ""));
   }, [user, activeLesson]);
 
-  const saveProgress = async (currentSec: number, completed = false, lessonOverride?: typeof activeLesson) => {
-    const lesson = lessonOverride ?? activeLesson;
-    if (!user || !lesson || !course) return;
-    const total = lesson.duration_seconds || 1;
-    await supabase.from("lesson_progress").upsert(
-      {
-        user_id: user.id,
-        course_id: course.id,
-        lesson_slug: lesson.slug,
-        lesson_title: lesson.title,
-        watched_seconds: Math.floor(currentSec),
-        total_seconds: total,
-        is_completed: completed,
-        last_watched_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,lesson_slug,course_id" } as never,
-    );
-
-    const nextMap = { ...progressMap, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
-    setProgressMap(nextMap);
-
-    const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
-    const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
-    await supabase
-      .from("enrollments")
-      .update({
-        progress_percent: percent,
-        completed_lessons: completedCount,
-        last_lesson_title: lesson.title,
-        last_accessed_at: new Date().toISOString(),
-      })
-      .eq("id", enrolledId!);
-
-    if (completed) {
-      await supabase.from("study_sessions").upsert(
+  const saveProgress = useCallback(
+    async (currentSec: number, completed: boolean, lessonOverride?: typeof activeLesson) => {
+      const lesson = lessonOverride ?? activeLesson;
+      if (!user || !lesson || !course) return;
+      const total = lesson.duration_seconds || 1;
+      await supabase.from("lesson_progress").upsert(
         {
           user_id: user.id,
-          session_date: new Date().toISOString().slice(0, 10),
-          minutes_studied: Math.round(total / 60),
+          course_id: course.id,
+          lesson_slug: lesson.slug,
+          lesson_title: lesson.title,
+          watched_seconds: Math.floor(currentSec),
+          total_seconds: total,
+          is_completed: completed,
+          last_watched_at: new Date().toISOString(),
         },
-        { onConflict: "user_id,session_date" } as never,
+        { onConflict: "user_id,lesson_slug,course_id" } as never,
       );
-    }
-  };
+
+      let completedCount = 0;
+      setProgressMap((prev) => {
+        const nextMap = { ...prev, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
+        completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
+        return nextMap;
+      });
+
+      const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
+      if (enrolledId) {
+        await supabase
+          .from("enrollments")
+          .update({
+            progress_percent: percent,
+            completed_lessons: completedCount,
+            last_lesson_title: lesson.title,
+            last_accessed_at: new Date().toISOString(),
+          })
+          .eq("id", enrolledId);
+      }
+
+      if (completed) {
+        await supabase.from("study_sessions").upsert(
+          {
+            user_id: user.id,
+            session_date: new Date().toISOString().slice(0, 10),
+            minutes_studied: Math.round(total / 60),
+          },
+          { onConflict: "user_id,session_date" } as never,
+        );
+      }
+    },
+    [activeLesson, user, course, enrolledId, flatLessons.length],
+  );
 
   const toggleComplete = async () => {
     if (!activeLesson) return;
@@ -176,17 +184,64 @@ const LecturePlayerPage = () => {
 
   const onTimeUpdate = () => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || !activeLesson) return;
     const now = Date.now();
     if (now - lastSavedRef.current > 5000) {
       lastSavedRef.current = now;
       saveProgress(v.currentTime, false);
     }
-    if (v.duration && v.currentTime / v.duration >= 0.9 && !progressMap[activeLesson!.slug]?.is_completed) {
+    if (v.duration && v.currentTime / v.duration >= COMPLETION_THRESHOLD && !progressMap[activeLesson.slug]?.is_completed) {
       saveProgress(v.currentTime, true);
       toast.success("Lesson completed!");
     }
   };
+
+  // YouTube IFrame API integration for auto-completion tracking
+  const youtubeId = activeLesson?.video_url ? extractYouTubeId(activeLesson.video_url) : null;
+  useEffect(() => {
+    if (!youtubeId || !accessChecked || !activeLesson) return;
+    let cancelled = false;
+    const lessonSnapshot = activeLesson;
+
+    loadYouTubeApi().then(() => {
+      if (cancelled || !ytContainerRef.current) return;
+      const w = window as any;
+      const player = new w.YT.Player(ytContainerRef.current, {
+        videoId: youtubeId,
+        playerVars: { rel: 0, modestbranding: 1, origin: window.location.origin },
+        events: {
+          onStateChange: (e: any) => {
+            setPlaying(e.data === w.YT.PlayerState.PLAYING);
+            if (e.data === w.YT.PlayerState.ENDED) {
+              const dur = player?.getDuration?.() ?? lessonSnapshot.duration_seconds;
+              saveProgress(dur, true, lessonSnapshot);
+            }
+          },
+        },
+      });
+      ytPlayerRef.current = player;
+
+      ytPollRef.current = window.setInterval(() => {
+        const p = ytPlayerRef.current;
+        if (!p || typeof p.getCurrentTime !== "function") return;
+        const cur = p.getCurrentTime() ?? 0;
+        const dur = p.getDuration?.() ?? 0;
+        if (cur > 0) saveProgress(cur, false, lessonSnapshot);
+        if (dur && cur / dur >= COMPLETION_THRESHOLD) {
+          saveProgress(cur, true, lessonSnapshot);
+        }
+      }, 5000);
+    });
+
+    return () => {
+      cancelled = true;
+      if (ytPollRef.current) window.clearInterval(ytPollRef.current);
+      ytPollRef.current = null;
+      try { ytPlayerRef.current?.destroy?.(); } catch { /* noop */ }
+      ytPlayerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeId, accessChecked, activeLesson?.id]);
 
   const saveNotes = async () => {
     if (!user || !activeLesson) return;
