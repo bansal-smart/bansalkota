@@ -32,6 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { CourseReviews } from "@/components/CourseReviews";
 
 type EnrollmentInfo = {
   id: string;
