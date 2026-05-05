@@ -292,6 +292,11 @@ const AdminCourseContentPage = () => {
 
     setSavingLecture(true);
     if (editingLessonId) {
+      const currentLesson = lessons.find((lesson) => lesson.id === editingLessonId);
+      const movedToNewChapter = currentLesson?.chapter_id !== lectureForm.chapter_id;
+      const nextPosition = movedToNewChapter
+        ? Math.max(-1, ...lessons.filter((lesson) => lesson.chapter_id === lectureForm.chapter_id).map((lesson) => lesson.position)) + 1
+        : currentLesson?.position ?? 0;
       const { error } = await supabase
         .from("lessons")
         .update({
@@ -299,6 +304,7 @@ const AdminCourseContentPage = () => {
           video_url: videoUrl,
           duration_seconds: durationSecs,
           chapter_id: lectureForm.chapter_id,
+          position: nextPosition,
           is_free_preview: lectureForm.is_free_preview,
         })
         .eq("id", editingLessonId);
@@ -306,7 +312,7 @@ const AdminCourseContentPage = () => {
       if (error) { toast.error(error.message); return; }
       toast.success("Lecture updated");
     } else {
-      const positionInChapter = lessons.filter((l) => l.chapter_id === lectureForm.chapter_id).length;
+      const positionInChapter = Math.max(-1, ...lessons.filter((l) => l.chapter_id === lectureForm.chapter_id).map((l) => l.position)) + 1;
       const slug = `${slugify(title) || "lesson"}-${Date.now().toString(36)}`;
       const { error } = await supabase.from("lessons").insert({
         course_id: selectedCourse.id,
