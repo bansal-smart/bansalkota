@@ -126,7 +126,7 @@ const CreateCoursePage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Please sign in");
     if (!name.trim()) return toast.error("Course title is required");
-    if (chapters.length === 0) return toast.error("Add at least one chapter");
+    if (isEditMode && chapters.length === 0) return toast.error("Add at least one chapter");
 
     setSubmitting(true);
 
@@ -210,7 +210,8 @@ const CreateCoursePage = () => {
       return;
     }
 
-    // For edit mode: replace chapters/lessons (simple strategy)
+    // Curriculum (chapters + lessons) is only managed during edit; on create,
+    // admins build the curriculum afterwards from the Course Content page.
     if (isEditMode) {
       const { data: oldChs } = await supabase.from("chapters").select("id").eq("course_id", workingCourseId);
       const oldIds = (oldChs ?? []).map((c) => c.id);
@@ -218,45 +219,45 @@ const CreateCoursePage = () => {
         await supabase.from("lessons").delete().in("chapter_id", oldIds);
         await supabase.from("chapters").delete().in("id", oldIds);
       }
-    }
 
-    let totalSecs = 0;
-    let totalLessons = 0;
-    for (let ci = 0; ci < chapters.length; ci++) {
-      const ch = chapters[ci];
-      const { data: chapterRow, error: chapterErr } = await supabase
-        .from("chapters")
-        .insert({ course_id: workingCourseId, title: ch.title || `Chapter ${ci + 1}`, position: ci })
-        .select("id")
-        .single();
-      if (chapterErr || !chapterRow) {
-        toast.error("Failed creating chapter");
-        setSubmitting(false);
-        return;
+      let totalSecs = 0;
+      let totalLessons = 0;
+      for (let ci = 0; ci < chapters.length; ci++) {
+        const ch = chapters[ci];
+        const { data: chapterRow, error: chapterErr } = await supabase
+          .from("chapters")
+          .insert({ course_id: workingCourseId, title: ch.title || `Chapter ${ci + 1}`, position: ci })
+          .select("id")
+          .single();
+        if (chapterErr || !chapterRow) {
+          toast.error("Failed creating chapter");
+          setSubmitting(false);
+          return;
+        }
+        const lessonRows = ch.lectures.map((l, li) => ({
+          course_id: workingCourseId!,
+          chapter_id: chapterRow.id,
+          slug: `${ci}-${li}-${slugify(l.title) || "lesson"}`,
+          title: l.title || `Lesson ${li + 1}`,
+          position: li,
+          duration_seconds: Math.max(60, l.durationMin * 60),
+          is_free_preview: ci === 0 && li === 0,
+          type: "video",
+        }));
+        lessonRows.forEach((l) => {
+          totalSecs += l.duration_seconds;
+          totalLessons += 1;
+        });
+        if (lessonRows.length) {
+          await supabase.from("lessons").insert(lessonRows);
+        }
       }
-      const lessonRows = ch.lectures.map((l, li) => ({
-        course_id: workingCourseId!,
-        chapter_id: chapterRow.id,
-        slug: `${ci}-${li}-${slugify(l.title) || "lesson"}`,
-        title: l.title || `Lesson ${li + 1}`,
-        position: li,
-        duration_seconds: Math.max(60, l.durationMin * 60),
-        is_free_preview: ci === 0 && li === 0,
-        type: "video",
-      }));
-      lessonRows.forEach((l) => {
-        totalSecs += l.duration_seconds;
-        totalLessons += 1;
-      });
-      if (lessonRows.length) {
-        await supabase.from("lessons").insert(lessonRows);
-      }
-    }
 
-    await supabase
-      .from("courses")
-      .update({ total_lessons: totalLessons, duration_hours: Math.max(1, Math.round(totalSecs / 3600)) })
-      .eq("id", workingCourseId);
+      await supabase
+        .from("courses")
+        .update({ total_lessons: totalLessons, duration_hours: Math.max(1, Math.round(totalSecs / 3600)) })
+        .eq("id", workingCourseId);
+    }
 
     toast.success(isEditMode ? "Course updated" : publish ? "Course published!" : "Draft saved");
     setSubmitting(false);
@@ -355,6 +356,7 @@ const CreateCoursePage = () => {
         </label>
       </div>
 
+      {isEditMode && (
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-foreground">Curriculum</h2>
@@ -362,6 +364,7 @@ const CreateCoursePage = () => {
             <Plus className="h-3 w-3" /> Add Chapter
           </button>
         </div>
+
         <div className="space-y-3">
           {chapters.map((ch, ci) => (
             <div key={ci} className="rounded-lg border border-border p-3">
@@ -415,6 +418,8 @@ const CreateCoursePage = () => {
           ))}
         </div>
       </div>
+      )}
+
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">What You'll Learn</h2>

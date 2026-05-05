@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
-  FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X
+  FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X,
+  Plus, Video, Youtube, Pencil, FolderPlus
+
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +35,38 @@ type Resource = {
   position: number;
   created_at: string;
 };
+type Lesson = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  slug: string;
+  title: string;
+  position: number;
+  duration_seconds: number;
+  video_url: string | null;
+  is_free_preview: boolean;
+  type: string;
+};
+
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+
+const extractYouTubeId = (url: string): string | null => {
+  const u = url.trim();
+  // youtu.be/<id>
+  let m = u.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/watch?v=<id>
+  m = u.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/embed/<id> or /shorts/<id> or /live/<id>
+  m = u.match(/youtube\.com\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // bare id
+  if (/^[A-Za-z0-9_-]{11}$/.test(u)) return u;
+  return null;
+};
+
 
 const RESOURCE_TYPES = [
   { value: "pdf", label: "PDF" },
@@ -90,6 +124,22 @@ const AdminCourseContentPage = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [chapterDialogOpen, setChapterDialogOpen] = useState(false);
+  const [chapterTitle, setChapterTitle] = useState("");
+  const [savingChapter, setSavingChapter] = useState(false);
+
+  const [lectureDialogOpen, setLectureDialogOpen] = useState(false);
+  const [lectureForm, setLectureForm] = useState({
+    title: "",
+    youtubeUrl: "",
+    durationMin: 10,
+    chapter_id: "",
+    is_free_preview: false,
+  });
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [savingLecture, setSavingLecture] = useState(false);
+
   // Load courses
   useEffect(() => {
     (async () => {
@@ -103,22 +153,152 @@ const AdminCourseContentPage = () => {
     })();
   }, []);
 
-  // Load chapters + resources when a course is selected
+  // Load chapters + lessons + resources when a course is selected
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
-    const [{ data: ch }, { data: rs }] = await Promise.all([
+    const [{ data: ch }, { data: ls }, { data: rs }] = await Promise.all([
       supabase.from("chapters").select("id,title,position").eq("course_id", courseId).order("position"),
+      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
     ]);
     setChapters((ch as Chapter[]) ?? []);
+    setLessons((ls as Lesson[]) ?? []);
     setResources((rs as Resource[]) ?? []);
     setResLoading(false);
   };
 
   useEffect(() => {
     if (selectedCourse) loadCourseDetail(selectedCourse.id);
-    else { setChapters([]); setResources([]); setChapterFilter("all"); }
+    else { setChapters([]); setLessons([]); setResources([]); setChapterFilter("all"); }
   }, [selectedCourse]);
+
+  const openAddLecture = (chapterId: string) => {
+    setEditingLessonId(null);
+    setLectureForm({ title: "", youtubeUrl: "", durationMin: 10, chapter_id: chapterId, is_free_preview: false });
+    setLectureDialogOpen(true);
+  };
+
+  const openEditLecture = (lesson: Lesson) => {
+    setEditingLessonId(lesson.id);
+    setLectureForm({
+      title: lesson.title,
+      youtubeUrl: lesson.video_url ?? "",
+      durationMin: Math.max(1, Math.round((lesson.duration_seconds || 0) / 60)),
+      chapter_id: lesson.chapter_id,
+      is_free_preview: lesson.is_free_preview,
+    });
+    setLectureDialogOpen(true);
+  };
+
+  const saveChapter = async () => {
+    if (!selectedCourse) return;
+    const title = chapterTitle.trim();
+    if (!title) { toast.error("Chapter title is required"); return; }
+    setSavingChapter(true);
+    const nextPos = chapters.length;
+    const { error } = await supabase.from("chapters").insert({
+      course_id: selectedCourse.id, title, position: nextPos,
+    });
+    setSavingChapter(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Chapter added");
+    setChapterDialogOpen(false);
+    setChapterTitle("");
+    loadCourseDetail(selectedCourse.id);
+  };
+
+  const saveLecture = async () => {
+    if (!selectedCourse) return;
+    const title = lectureForm.title.trim();
+    if (!title) { toast.error("Lecture title is required"); return; }
+    if (!lectureForm.chapter_id) { toast.error("Pick a chapter"); return; }
+    const ytId = extractYouTubeId(lectureForm.youtubeUrl);
+    if (!ytId) { toast.error("Enter a valid YouTube link"); return; }
+    const videoUrl = `https://www.youtube.com/embed/${ytId}`;
+    const durationSecs = Math.max(60, Math.round((lectureForm.durationMin || 10) * 60));
+
+    setSavingLecture(true);
+    if (editingLessonId) {
+      const { error } = await supabase
+        .from("lessons")
+        .update({
+          title,
+          video_url: videoUrl,
+          duration_seconds: durationSecs,
+          chapter_id: lectureForm.chapter_id,
+          is_free_preview: lectureForm.is_free_preview,
+        })
+        .eq("id", editingLessonId);
+      setSavingLecture(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Lecture updated");
+    } else {
+      const positionInChapter = lessons.filter((l) => l.chapter_id === lectureForm.chapter_id).length;
+      const slug = `${slugify(title) || "lesson"}-${Date.now().toString(36)}`;
+      const { error } = await supabase.from("lessons").insert({
+        course_id: selectedCourse.id,
+        chapter_id: lectureForm.chapter_id,
+        title,
+        slug,
+        position: positionInChapter,
+        duration_seconds: durationSecs,
+        video_url: videoUrl,
+        is_free_preview: lectureForm.is_free_preview,
+        type: "video",
+      });
+      setSavingLecture(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Lecture added");
+    }
+
+    // Recompute course totals
+    const { data: allLessons } = await supabase
+      .from("lessons")
+      .select("duration_seconds")
+      .eq("course_id", selectedCourse.id);
+    const totalSecs = (allLessons ?? []).reduce((s, l) => s + (l.duration_seconds || 0), 0);
+    await supabase
+      .from("courses")
+      .update({
+        total_lessons: (allLessons ?? []).length,
+        duration_hours: Math.max(1, Math.round(totalSecs / 3600)),
+      })
+      .eq("id", selectedCourse.id);
+
+    setLectureDialogOpen(false);
+    loadCourseDetail(selectedCourse.id);
+  };
+
+  const deleteLesson = async (lesson: Lesson) => {
+    const ok = await confirm({
+      title: `Delete "${lesson.title}"?`,
+      description: "Students will lose access to this lecture. This cannot be undone.",
+      confirmLabel: "Delete lecture",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("lessons").delete().eq("id", lesson.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Lecture deleted");
+    if (selectedCourse) loadCourseDetail(selectedCourse.id);
+  };
+
+  const deleteChapter = async (ch: Chapter) => {
+    const lessonsInChapter = lessons.filter((l) => l.chapter_id === ch.id).length;
+    const ok = await confirm({
+      title: `Delete chapter "${ch.title}"?`,
+      description: lessonsInChapter > 0
+        ? `This chapter has ${lessonsInChapter} lecture(s) which will also be removed.`
+        : "This chapter will be removed.",
+      confirmLabel: "Delete chapter",
+    });
+    if (!ok) return;
+    await supabase.from("lessons").delete().eq("chapter_id", ch.id);
+    const { error } = await supabase.from("chapters").delete().eq("id", ch.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Chapter deleted");
+    if (selectedCourse) loadCourseDetail(selectedCourse.id);
+  };
+
 
   const filteredCourses = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -309,6 +489,119 @@ const AdminCourseContentPage = () => {
         </Button>
       </div>
 
+      {/* Curriculum */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-base font-bold text-foreground">
+              Curriculum <span className="text-muted-foreground font-normal">({lessons.length} lectures · {chapters.length} chapters)</span>
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Add lectures via YouTube link. Use <strong>Unlisted</strong> videos so they're not publicly listed but still play here.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setChapterTitle(""); setChapterDialogOpen(true); }}>
+              <FolderPlus className="h-4 w-4" /> Add chapter
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (chapters.length === 0) { toast.error("Add a chapter first"); return; }
+                openAddLecture(chapters[0].id);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Add lectures
+            </Button>
+          </div>
+        </div>
+
+        {chapters.length === 0 ? (
+          <div className="p-12 text-center">
+            <Video className="mx-auto h-10 w-10 text-muted-foreground/40" />
+            <p className="mt-3 font-semibold text-foreground">No chapters yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Add a chapter, then start adding lectures.</p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {chapters.map((ch) => {
+              const chLessons = lessons
+                .filter((l) => l.chapter_id === ch.id)
+                .sort((a, b) => a.position - b.position);
+              return (
+                <li key={ch.id} className="p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate">{ch.title}</p>
+                      <p className="text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="sm" variant="outline" onClick={() => openAddLecture(ch.id)}>
+                        <Plus className="h-3.5 w-3.5" /> Add lecture
+                      </Button>
+                      <button
+                        onClick={() => deleteChapter(ch)}
+                        className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete chapter"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {chLessons.length > 0 && (
+                    <ul className="mt-3 ml-2 space-y-1.5 border-l border-border pl-4">
+                      {chLessons.map((lec) => (
+                        <li key={lec.id} className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
+                          <Youtube className="h-4 w-4 text-destructive shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
+                              {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
+                              {lec.video_url ? ` · ${lec.video_url}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {lec.video_url && (
+                              <a
+                                href={lec.video_url.replace("/embed/", "/watch?v=")}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                title="Open on YouTube"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => openEditLecture(lec)}
+                              className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteLesson(lec)}
+                              className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       <div className="rounded-xl border border-border bg-card">
         <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between">
           <h2 className="text-base font-bold text-foreground">
@@ -482,6 +775,107 @@ const AdminCourseContentPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add Chapter Dialog */}
+      <Dialog open={chapterDialogOpen} onOpenChange={setChapterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add chapter</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label htmlFor="ch-title">Chapter title</Label>
+            <Input
+              id="ch-title"
+              value={chapterTitle}
+              onChange={(e) => setChapterTitle(e.target.value)}
+              placeholder="e.g. Kinematics"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChapterDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveChapter} disabled={savingChapter}>
+              {savingChapter ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
+              Add chapter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add / Edit Lecture Dialog */}
+      <Dialog open={lectureDialogOpen} onOpenChange={setLectureDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingLessonId ? "Edit lecture" : "Add lecture"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="lec-title">Lecture title</Label>
+              <Input
+                id="lec-title"
+                value={lectureForm.title}
+                onChange={(e) => setLectureForm({ ...lectureForm, title: e.target.value })}
+                placeholder="e.g. Newton's Laws of Motion"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lec-yt">YouTube link</Label>
+              <Input
+                id="lec-yt"
+                value={lectureForm.youtubeUrl}
+                onChange={(e) => setLectureForm({ ...lectureForm, youtubeUrl: e.target.value })}
+                placeholder="https://youtu.be/... or https://youtube.com/watch?v=..."
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Upload the recording to YouTube as <strong>Unlisted</strong> so it plays inside our platform without being publicly listed. (Private videos can't be embedded.)
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="lec-dur">Duration (minutes)</Label>
+                <Input
+                  id="lec-dur"
+                  type="number"
+                  min={1}
+                  value={lectureForm.durationMin}
+                  onChange={(e) => setLectureForm({ ...lectureForm, durationMin: Number(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label>Chapter</Label>
+                <Select
+                  value={lectureForm.chapter_id}
+                  onValueChange={(v) => setLectureForm({ ...lectureForm, chapter_id: v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Choose chapter" /></SelectTrigger>
+                  <SelectContent>
+                    {chapters.map((ch) => (
+                      <SelectItem key={ch.id} value={ch.id}>{ch.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">Free preview</p>
+                <p className="text-xs text-muted-foreground">Anyone can watch without enrolling</p>
+              </div>
+              <Switch
+                checked={lectureForm.is_free_preview}
+                onCheckedChange={(v) => setLectureForm({ ...lectureForm, is_free_preview: v })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLectureDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveLecture} disabled={savingLecture}>
+              {savingLecture ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {editingLessonId ? "Save changes" : "Add lecture"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };

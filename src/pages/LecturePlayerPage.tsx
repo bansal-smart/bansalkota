@@ -185,23 +185,38 @@ const LecturePlayerPage = () => {
         <div className="flex-1 flex flex-col">
           <div className="relative aspect-video bg-black">
             {activeLesson.video_url ? (
-              <video
-                ref={videoRef}
-                key={activeLesson.id}
-                src={activeLesson.video_url}
-                controls
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onTimeUpdate={onTimeUpdate}
-                onLoadedMetadata={() => {
-                  const v = videoRef.current;
-                  const saved = progressMap[activeLesson.slug]?.watched_seconds;
-                  if (v && saved && saved < (activeLesson.duration_seconds || 0) - 10) {
-                    v.currentTime = saved;
+              /youtube\.com|youtu\.be/.test(activeLesson.video_url) ? (
+                <iframe
+                  key={activeLesson.id}
+                  src={
+                    activeLesson.video_url.includes("/embed/")
+                      ? `${activeLesson.video_url}?rel=0&modestbranding=1`
+                      : activeLesson.video_url
                   }
-                }}
-                className="absolute inset-0 h-full w-full"
-              />
+                  title={activeLesson.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 h-full w-full border-0"
+                />
+              ) : (
+                <video
+                  ref={videoRef}
+                  key={activeLesson.id}
+                  src={activeLesson.video_url}
+                  controls
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onTimeUpdate={onTimeUpdate}
+                  onLoadedMetadata={() => {
+                    const v = videoRef.current;
+                    const saved = progressMap[activeLesson.slug]?.watched_seconds;
+                    if (v && saved && saved < (activeLesson.duration_seconds || 0) - 10) {
+                      v.currentTime = saved;
+                    }
+                  }}
+                  className="absolute inset-0 h-full w-full"
+                />
+              )
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-white/40 text-sm">No video uploaded for this lesson</div>
             )}
