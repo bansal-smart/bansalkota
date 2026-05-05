@@ -135,7 +135,7 @@ export const useDashboardData = (): DashboardData => {
         course_id: l.course_id,
         lesson_title: l.lesson_title,
         lesson_slug: l.lesson_slug,
-        progress_pct: l.total_seconds > 0 ? Math.round((l.watched_seconds / l.total_seconds) * 100) : 0,
+        progress_pct: l.total_seconds > 0 ? Math.min(100, Math.round((l.watched_seconds / l.total_seconds) * 100)) : 0,
         course_name: coursesMap[l.course_id]?.name,
         educator_name: coursesMap[l.course_id]?.educator_name,
         subject: coursesMap[l.course_id]?.subject,
