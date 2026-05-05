@@ -757,6 +757,22 @@ const AdminLiveClassesPage = () => {
               </div>
 
               <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Course (optional)</label>
+                <select
+                  value={form.courseId}
+                  onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                >
+                  <option value="">No course — standalone class</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Description</label>
                 <textarea
                   rows={3}
