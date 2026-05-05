@@ -132,15 +132,16 @@ const AdminLiveClassesPage = () => {
 
   const load = async () => {
     setLoading(true);
-    const [classesRes, rolesRes, templatesRes] = await Promise.all([
+    const [classesRes, rolesRes, templatesRes, coursesRes] = await Promise.all([
       supabase
         .from("live_classes")
         .select(
-          "id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, target_exam, created_by, cancellation_reason",
+          "id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, target_exam, created_by, course_id, cancellation_reason",
         )
         .order("starts_at", { ascending: false }),
       supabase.from("user_roles").select("user_id").eq("role", "teacher"),
       supabase.from("live_class_templates").select("*").order("created_at", { ascending: false }),
+      supabase.from("courses").select("id, name").order("name"),
     ]);
     const teacherIds = (rolesRes.data ?? []).map((r) => r.user_id);
     const { data: profiles } = teacherIds.length
@@ -154,6 +155,7 @@ const AdminLiveClassesPage = () => {
       ),
     );
     setTemplates((templatesRes.data ?? []) as Template[]);
+    setCourses((coursesRes.data ?? []) as Course[]);
     setLoading(false);
   };
 
