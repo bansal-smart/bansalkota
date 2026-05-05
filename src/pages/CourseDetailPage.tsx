@@ -364,6 +364,8 @@ const CourseDetailPage = () => {
                   ))}
                 </div>
               </div>
+
+              <CourseReviews courseId={course.id} enrolled={enrolled} />
             </div>
           )}
 
