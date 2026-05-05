@@ -356,9 +356,9 @@ const CreateCoursePage = () => {
         </label>
       </div>
 
+      {isEditMode && (
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-foreground">Curriculum</h2>
+
           <button onClick={addChapter} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
             <Plus className="h-3 w-3" /> Add Chapter
           </button>
