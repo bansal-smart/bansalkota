@@ -61,6 +61,7 @@ type FormState = {
   title: string;
   subject: string;
   teacherId: string;
+  courseId: string;
   starts_at: string;
   duration_minutes: number;
   meeting_url: string;
@@ -72,6 +73,7 @@ const emptyForm: FormState = {
   title: "",
   subject: "",
   teacherId: "",
+  courseId: "",
   starts_at: "",
   duration_minutes: 60,
   meeting_url: "",
