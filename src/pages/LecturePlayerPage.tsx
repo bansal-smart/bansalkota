@@ -6,6 +6,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCourseDetail } from "@/hooks/useCourseDetail";
 
+const extractYouTubeId = (url: string): string | null => {
+  const value = url.trim();
+  let match = value.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (match) return match[1];
+  match = value.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (match) return match[1];
+  match = value.match(/youtube\.com\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/);
+  if (match) return match[1];
+  return /^[A-Za-z0-9_-]{11}$/.test(value) ? value : null;
+};
+
+const getYouTubeEmbedSrc = (url: string) => {
+  const videoId = extractYouTubeId(url);
+  return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : null;
+};
+
 const LecturePlayerPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -166,6 +182,7 @@ const LecturePlayerPage = () => {
   }
 
   const completedCount = Object.values(progressMap).filter((p) => p.is_completed).length;
+  const youtubeEmbedSrc = activeLesson.video_url ? getYouTubeEmbedSrc(activeLesson.video_url) : null;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(222, 47%, 8%)" }}>
@@ -185,16 +202,12 @@ const LecturePlayerPage = () => {
         <div className="flex-1 flex flex-col">
           <div className="relative aspect-video bg-black">
             {activeLesson.video_url ? (
-              /youtube\.com|youtu\.be/.test(activeLesson.video_url) ? (
+              youtubeEmbedSrc ? (
                 <iframe
                   key={activeLesson.id}
-                  src={
-                    activeLesson.video_url.includes("/embed/")
-                      ? `${activeLesson.video_url}?rel=0&modestbranding=1`
-                      : activeLesson.video_url
-                  }
+                  src={youtubeEmbedSrc}
                   title={activeLesson.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   className="absolute inset-0 h-full w-full border-0"
                 />

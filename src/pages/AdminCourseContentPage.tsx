@@ -1,10 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { format } from "date-fns";
 import {
   FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X,
-  Plus, Video, Youtube, Pencil, FolderPlus
+  Plus, Video, Youtube, Pencil, FolderPlus, GripVertical, CheckCircle2, AlertCircle
 
 } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -14,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -65,6 +75,64 @@ const extractYouTubeId = (url: string): string | null => {
   // bare id
   if (/^[A-Za-z0-9_-]{11}$/.test(u)) return u;
   return null;
+};
+
+const getYouTubeEmbedUrl = (videoId: string) => `https://www.youtube.com/embed/${videoId}`;
+const getYouTubePreviewUrl = (videoId: string) => `${getYouTubeEmbedUrl(videoId)}?rel=0&modestbranding=1`;
+
+const chapterDragId = (id: string) => `chapter:${id}`;
+const lessonDragId = (id: string) => `lesson:${id}`;
+const parseDragId = (id: string) => {
+  const [type, itemId] = id.split(":");
+  return { type, itemId };
+};
+
+const SortableChapter = ({ chapter, children }: { chapter: Chapter; children: ReactNode }) => {
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: chapterDragId(chapter.id),
+  });
+  const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <li ref={setNodeRef} style={style} className={`p-4 ${isDragging ? "opacity-60" : ""}`}>
+      <div className="flex items-start gap-3">
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          className="mt-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-grab active:cursor-grabbing"
+          title="Drag to reorder chapter"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    </li>
+  );
+};
+
+const SortableLecture = ({ lesson, children }: { lesson: Lesson; children: ReactNode }) => {
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: lessonDragId(lesson.id),
+  });
+  const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <li ref={setNodeRef} style={style} className={`flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2 ${isDragging ? "opacity-60" : ""}`}>
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-grab active:cursor-grabbing"
+        title="Drag to reorder lecture"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      {children}
+    </li>
+  );
 };
 
 
@@ -139,6 +207,11 @@ const AdminCourseContentPage = () => {
   });
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [savingLecture, setSavingLecture] = useState(false);
+  const [reordering, setReordering] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const lectureVideoId = useMemo(() => extractYouTubeId(lectureForm.youtubeUrl), [lectureForm.youtubeUrl]);
+  const hasTypedYouTubeUrl = lectureForm.youtubeUrl.trim().length > 0;
 
   // Load courses
   useEffect(() => {
@@ -214,11 +287,16 @@ const AdminCourseContentPage = () => {
     if (!lectureForm.chapter_id) { toast.error("Pick a chapter"); return; }
     const ytId = extractYouTubeId(lectureForm.youtubeUrl);
     if (!ytId) { toast.error("Enter a valid YouTube link"); return; }
-    const videoUrl = `https://www.youtube.com/embed/${ytId}`;
+    const videoUrl = getYouTubeEmbedUrl(ytId);
     const durationSecs = Math.max(60, Math.round((lectureForm.durationMin || 10) * 60));
 
     setSavingLecture(true);
     if (editingLessonId) {
+      const currentLesson = lessons.find((lesson) => lesson.id === editingLessonId);
+      const movedToNewChapter = currentLesson?.chapter_id !== lectureForm.chapter_id;
+      const nextPosition = movedToNewChapter
+        ? Math.max(-1, ...lessons.filter((lesson) => lesson.chapter_id === lectureForm.chapter_id).map((lesson) => lesson.position)) + 1
+        : currentLesson?.position ?? 0;
       const { error } = await supabase
         .from("lessons")
         .update({
@@ -226,6 +304,7 @@ const AdminCourseContentPage = () => {
           video_url: videoUrl,
           duration_seconds: durationSecs,
           chapter_id: lectureForm.chapter_id,
+          position: nextPosition,
           is_free_preview: lectureForm.is_free_preview,
         })
         .eq("id", editingLessonId);
@@ -233,7 +312,7 @@ const AdminCourseContentPage = () => {
       if (error) { toast.error(error.message); return; }
       toast.success("Lecture updated");
     } else {
-      const positionInChapter = lessons.filter((l) => l.chapter_id === lectureForm.chapter_id).length;
+      const positionInChapter = Math.max(-1, ...lessons.filter((l) => l.chapter_id === lectureForm.chapter_id).map((l) => l.position)) + 1;
       const slug = `${slugify(title) || "lesson"}-${Date.now().toString(36)}`;
       const { error } = await supabase.from("lessons").insert({
         course_id: selectedCourse.id,
@@ -267,6 +346,76 @@ const AdminCourseContentPage = () => {
 
     setLectureDialogOpen(false);
     loadCourseDetail(selectedCourse.id);
+  };
+
+  const persistChapterOrder = async (orderedChapters: Chapter[]) => {
+    const updates = orderedChapters.map((ch, index) =>
+      supabase.from("chapters").update({ position: index }).eq("id", ch.id),
+    );
+    const results = await Promise.all(updates);
+    return results.find((r) => r.error)?.error ?? null;
+  };
+
+  const persistLessonOrder = async (orderedLessons: Lesson[], chapterId: string) => {
+    const updates = orderedLessons.map((lesson, index) =>
+      supabase.from("lessons").update({ chapter_id: chapterId, position: index }).eq("id", lesson.id),
+    );
+    const results = await Promise.all(updates);
+    return results.find((r) => r.error)?.error ?? null;
+  };
+
+  const handleCurriculumDragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!selectedCourse || !over || active.id === over.id) return;
+    const activeMeta = parseDragId(String(active.id));
+    const overMeta = parseDragId(String(over.id));
+    if (activeMeta.type !== overMeta.type) return;
+
+    if (activeMeta.type === "chapter") {
+      const oldIndex = chapters.findIndex((ch) => ch.id === activeMeta.itemId);
+      const newIndex = chapters.findIndex((ch) => ch.id === overMeta.itemId);
+      if (oldIndex < 0 || newIndex < 0) return;
+      const previous = chapters;
+      const next = arrayMove(chapters, oldIndex, newIndex).map((ch, index) => ({ ...ch, position: index }));
+      setChapters(next);
+      setReordering(true);
+      const error = await persistChapterOrder(next);
+      setReordering(false);
+      if (error) {
+        setChapters(previous);
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Chapter order updated");
+      return;
+    }
+
+    if (activeMeta.type === "lesson") {
+      const activeLesson = lessons.find((lesson) => lesson.id === activeMeta.itemId);
+      const overLesson = lessons.find((lesson) => lesson.id === overMeta.itemId);
+      if (!activeLesson || !overLesson || activeLesson.chapter_id !== overLesson.chapter_id) return;
+
+      const chapterLessons = lessons
+        .filter((lesson) => lesson.chapter_id === activeLesson.chapter_id)
+        .sort((a, b) => a.position - b.position);
+      const oldIndex = chapterLessons.findIndex((lesson) => lesson.id === activeLesson.id);
+      const newIndex = chapterLessons.findIndex((lesson) => lesson.id === overLesson.id);
+      if (oldIndex < 0 || newIndex < 0) return;
+
+      const previous = lessons;
+      const nextChapterLessons = arrayMove(chapterLessons, oldIndex, newIndex).map((lesson, index) => ({ ...lesson, position: index }));
+      setLessons((current) =>
+        current.map((lesson) => nextChapterLessons.find((updated) => updated.id === lesson.id) ?? lesson),
+      );
+      setReordering(true);
+      const error = await persistLessonOrder(nextChapterLessons, activeLesson.chapter_id);
+      setReordering(false);
+      if (error) {
+        setLessons(previous);
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Lecture order updated");
+    }
   };
 
   const deleteLesson = async (lesson: Lesson) => {
@@ -523,82 +672,89 @@ const AdminCourseContentPage = () => {
             <p className="mt-1 text-sm text-muted-foreground">Add a chapter, then start adding lectures.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {chapters.map((ch) => {
-              const chLessons = lessons
-                .filter((l) => l.chapter_id === ch.id)
-                .sort((a, b) => a.position - b.position);
-              return (
-                <li key={ch.id} className="p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-bold text-foreground truncate">{ch.title}</p>
-                      <p className="text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button size="sm" variant="outline" onClick={() => openAddLecture(ch.id)}>
-                        <Plus className="h-3.5 w-3.5" /> Add lecture
-                      </Button>
-                      <button
-                        onClick={() => deleteChapter(ch)}
-                        className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
-                        title="Delete chapter"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCurriculumDragEnd}>
+            <SortableContext items={chapters.map((ch) => chapterDragId(ch.id))} strategy={verticalListSortingStrategy}>
+              <ul className="divide-y divide-border">
+                {chapters.map((ch) => {
+                  const chLessons = lessons
+                    .filter((l) => l.chapter_id === ch.id)
+                    .sort((a, b) => a.position - b.position);
+                  return (
+                    <SortableChapter key={ch.id} chapter={ch}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-foreground truncate">{ch.title}</p>
+                          <p className="text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {reordering && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                          <Button size="sm" variant="outline" onClick={() => openAddLecture(ch.id)}>
+                            <Plus className="h-3.5 w-3.5" /> Add lecture
+                          </Button>
+                          <button
+                            onClick={() => deleteChapter(ch)}
+                            className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Delete chapter"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
 
-                  {chLessons.length > 0 && (
-                    <ul className="mt-3 ml-2 space-y-1.5 border-l border-border pl-4">
-                      {chLessons.map((lec) => (
-                        <li key={lec.id} className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
-                          <Youtube className="h-4 w-4 text-destructive shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
-                              {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
-                            </div>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
-                              {lec.video_url ? ` · ${lec.video_url}` : ""}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {lec.video_url && (
-                              <a
-                                href={lec.video_url.replace("/embed/", "/watch?v=")}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
-                                title="Open on YouTube"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </a>
-                            )}
-                            <button
-                              onClick={() => openEditLecture(lec)}
-                              className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => deleteLesson(lec)}
-                              className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                      {chLessons.length > 0 && (
+                        <SortableContext items={chLessons.map((lec) => lessonDragId(lec.id))} strategy={verticalListSortingStrategy}>
+                          <ul className="mt-3 ml-2 space-y-1.5 border-l border-border pl-4">
+                            {chLessons.map((lec) => (
+                              <SortableLecture key={lec.id} lesson={lec}>
+                                <Youtube className="h-4 w-4 text-destructive shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
+                                    {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
+                                    {lec.video_url ? ` · ${lec.video_url}` : ""}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {lec.video_url && (
+                                    <a
+                                      href={lec.video_url.replace("/embed/", "/watch?v=")}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                      title="Open on YouTube"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </a>
+                                  )}
+                                  <button
+                                    onClick={() => openEditLecture(lec)}
+                                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                    title="Edit"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteLesson(lec)}
+                                    className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </SortableLecture>
+                            ))}
+                          </ul>
+                        </SortableContext>
+                      )}
+                    </SortableChapter>
+                  );
+                })}
+              </ul>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
@@ -806,6 +962,9 @@ const AdminCourseContentPage = () => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingLessonId ? "Edit lecture" : "Add lecture"}</DialogTitle>
+            <DialogDescription>
+              Paste a YouTube URL, verify the extracted video ID, then save the lecture.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -828,7 +987,28 @@ const AdminCourseContentPage = () => {
               <p className="mt-1 text-xs text-muted-foreground">
                 Upload the recording to YouTube as <strong>Unlisted</strong> so it plays inside our platform without being publicly listed. (Private videos can't be embedded.)
               </p>
+              {hasTypedYouTubeUrl && (
+                <div className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${lectureVideoId ? "border-secondary/30 bg-secondary/10 text-secondary-dark" : "border-destructive/30 bg-destructive/10 text-destructive"}`}>
+                  {lectureVideoId ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+                  <span className="min-w-0 truncate">
+                    {lectureVideoId ? `Video ID detected: ${lectureVideoId}` : "This doesn't look like a valid YouTube URL or video ID."}
+                  </span>
+                </div>
+              )}
             </div>
+            {lectureVideoId && (
+              <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                <div className="aspect-video bg-muted">
+                  <iframe
+                    src={getYouTubePreviewUrl(lectureVideoId)}
+                    title="Lecture preview"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="h-full w-full border-0"
+                  />
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="lec-dur">Duration (minutes)</Label>
@@ -868,7 +1048,7 @@ const AdminCourseContentPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLectureDialogOpen(false)}>Cancel</Button>
-            <Button onClick={saveLecture} disabled={savingLecture}>
+            <Button onClick={saveLecture} disabled={savingLecture || !lectureVideoId}>
               {savingLecture ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               {editingLessonId ? "Save changes" : "Add lecture"}
             </Button>
