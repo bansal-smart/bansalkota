@@ -207,6 +207,11 @@ const AdminCourseContentPage = () => {
   });
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [savingLecture, setSavingLecture] = useState(false);
+  const [reordering, setReordering] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const lectureVideoId = useMemo(() => extractYouTubeId(lectureForm.youtubeUrl), [lectureForm.youtubeUrl]);
+  const hasTypedYouTubeUrl = lectureForm.youtubeUrl.trim().length > 0;
 
   // Load courses
   useEffect(() => {
@@ -282,7 +287,7 @@ const AdminCourseContentPage = () => {
     if (!lectureForm.chapter_id) { toast.error("Pick a chapter"); return; }
     const ytId = extractYouTubeId(lectureForm.youtubeUrl);
     if (!ytId) { toast.error("Enter a valid YouTube link"); return; }
-    const videoUrl = `https://www.youtube.com/embed/${ytId}`;
+    const videoUrl = getYouTubeEmbedUrl(ytId);
     const durationSecs = Math.max(60, Math.round((lectureForm.durationMin || 10) * 60));
 
     setSavingLecture(true);
@@ -335,6 +340,76 @@ const AdminCourseContentPage = () => {
 
     setLectureDialogOpen(false);
     loadCourseDetail(selectedCourse.id);
+  };
+
+  const persistChapterOrder = async (orderedChapters: Chapter[]) => {
+    const updates = orderedChapters.map((ch, index) =>
+      supabase.from("chapters").update({ position: index }).eq("id", ch.id),
+    );
+    const results = await Promise.all(updates);
+    return results.find((r) => r.error)?.error ?? null;
+  };
+
+  const persistLessonOrder = async (orderedLessons: Lesson[], chapterId: string) => {
+    const updates = orderedLessons.map((lesson, index) =>
+      supabase.from("lessons").update({ chapter_id: chapterId, position: index }).eq("id", lesson.id),
+    );
+    const results = await Promise.all(updates);
+    return results.find((r) => r.error)?.error ?? null;
+  };
+
+  const handleCurriculumDragEnd = async ({ active, over }: DragEndEvent) => {
+    if (!selectedCourse || !over || active.id === over.id) return;
+    const activeMeta = parseDragId(String(active.id));
+    const overMeta = parseDragId(String(over.id));
+    if (activeMeta.type !== overMeta.type) return;
+
+    if (activeMeta.type === "chapter") {
+      const oldIndex = chapters.findIndex((ch) => ch.id === activeMeta.itemId);
+      const newIndex = chapters.findIndex((ch) => ch.id === overMeta.itemId);
+      if (oldIndex < 0 || newIndex < 0) return;
+      const previous = chapters;
+      const next = arrayMove(chapters, oldIndex, newIndex).map((ch, index) => ({ ...ch, position: index }));
+      setChapters(next);
+      setReordering(true);
+      const error = await persistChapterOrder(next);
+      setReordering(false);
+      if (error) {
+        setChapters(previous);
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Chapter order updated");
+      return;
+    }
+
+    if (activeMeta.type === "lesson") {
+      const activeLesson = lessons.find((lesson) => lesson.id === activeMeta.itemId);
+      const overLesson = lessons.find((lesson) => lesson.id === overMeta.itemId);
+      if (!activeLesson || !overLesson || activeLesson.chapter_id !== overLesson.chapter_id) return;
+
+      const chapterLessons = lessons
+        .filter((lesson) => lesson.chapter_id === activeLesson.chapter_id)
+        .sort((a, b) => a.position - b.position);
+      const oldIndex = chapterLessons.findIndex((lesson) => lesson.id === activeLesson.id);
+      const newIndex = chapterLessons.findIndex((lesson) => lesson.id === overLesson.id);
+      if (oldIndex < 0 || newIndex < 0) return;
+
+      const previous = lessons;
+      const nextChapterLessons = arrayMove(chapterLessons, oldIndex, newIndex).map((lesson, index) => ({ ...lesson, position: index }));
+      setLessons((current) =>
+        current.map((lesson) => nextChapterLessons.find((updated) => updated.id === lesson.id) ?? lesson),
+      );
+      setReordering(true);
+      const error = await persistLessonOrder(nextChapterLessons, activeLesson.chapter_id);
+      setReordering(false);
+      if (error) {
+        setLessons(previous);
+        toast.error(error.message);
+        return;
+      }
+      toast.success("Lecture order updated");
+    }
   };
 
   const deleteLesson = async (lesson: Lesson) => {
