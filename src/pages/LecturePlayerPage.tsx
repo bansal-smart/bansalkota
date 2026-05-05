@@ -271,7 +271,7 @@ const LecturePlayerPage = () => {
   }
 
   const completedCount = Object.values(progressMap).filter((p) => p.is_completed).length;
-  const youtubeEmbedSrc = activeLesson.video_url ? getYouTubeEmbedSrc(activeLesson.video_url) : null;
+  const isYouTube = !!youtubeId;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(222, 47%, 8%)" }}>
@@ -291,15 +291,10 @@ const LecturePlayerPage = () => {
         <div className="flex-1 flex flex-col">
           <div className="relative aspect-video bg-black">
             {activeLesson.video_url ? (
-              youtubeEmbedSrc ? (
-                <iframe
-                  key={activeLesson.id}
-                  src={youtubeEmbedSrc}
-                  title={activeLesson.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  className="absolute inset-0 h-full w-full border-0"
-                />
+              isYouTube ? (
+                <div key={activeLesson.id} className="absolute inset-0">
+                  <div ref={ytContainerRef} className="h-full w-full" />
+                </div>
               ) : (
                 <video
                   ref={videoRef}
