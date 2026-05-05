@@ -124,7 +124,7 @@ const StudentMobileNav = memo(() => {
   const items = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: BookOpen, label: "Learning", path: "/my-courses" },
-    { icon: GraduationCap, label: "Browse", path: "/explore-courses" },
+    { icon: Video, label: "Live", path: "/my-live-classes" },
     { icon: MessageCircle, label: "Doubts", path: "/doubts" },
     { icon: ClipboardCheck, label: "Tests", path: "/my-tests" },
   ];
