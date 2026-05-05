@@ -166,7 +166,7 @@ const LecturePlayerPage = () => {
         );
       }
     },
-    [activeLesson, user, course, enrolledId, flatLessons.length],
+    [activeLesson, user, course, enrolledId, flatLessons.length, progressMap],
   );
 
   const toggleComplete = async () => {
