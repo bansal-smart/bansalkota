@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
-  FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X
+  FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X,
+  Plus, Video, Youtube, Pencil, FolderPlus
+
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
