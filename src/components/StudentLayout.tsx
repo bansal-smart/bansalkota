@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Swords, BarChart3, Trophy, User, Settings, Search, Flame, GraduationCap, Users } from "lucide-react";
+import { Home, BookOpen, Video, ClipboardCheck, MessageCircle, Swords, BarChart3, Trophy, User, Settings, Search, Flame, Users } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback } from "react";
 import GoalSelector from "@/components/GoalSelector";
