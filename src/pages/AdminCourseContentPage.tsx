@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -956,6 +956,9 @@ const AdminCourseContentPage = () => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingLessonId ? "Edit lecture" : "Add lecture"}</DialogTitle>
+            <DialogDescription>
+              Paste a YouTube URL, verify the extracted video ID, then save the lecture.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -978,7 +981,28 @@ const AdminCourseContentPage = () => {
               <p className="mt-1 text-xs text-muted-foreground">
                 Upload the recording to YouTube as <strong>Unlisted</strong> so it plays inside our platform without being publicly listed. (Private videos can't be embedded.)
               </p>
+              {hasTypedYouTubeUrl && (
+                <div className={`mt-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${lectureVideoId ? "border-secondary/30 bg-secondary/10 text-secondary-dark" : "border-destructive/30 bg-destructive/10 text-destructive"}`}>
+                  {lectureVideoId ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
+                  <span className="min-w-0 truncate">
+                    {lectureVideoId ? `Video ID detected: ${lectureVideoId}` : "This doesn't look like a valid YouTube URL or video ID."}
+                  </span>
+                </div>
+              )}
             </div>
+            {lectureVideoId && (
+              <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                <div className="aspect-video bg-muted">
+                  <iframe
+                    src={getYouTubePreviewUrl(lectureVideoId)}
+                    title="Lecture preview"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="h-full w-full border-0"
+                  />
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="lec-dur">Duration (minutes)</Label>
@@ -1018,7 +1042,7 @@ const AdminCourseContentPage = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLectureDialogOpen(false)}>Cancel</Button>
-            <Button onClick={saveLecture} disabled={savingLecture}>
+            <Button onClick={saveLecture} disabled={savingLecture || !lectureVideoId}>
               {savingLecture ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               {editingLessonId ? "Save changes" : "Add lecture"}
             </Button>
