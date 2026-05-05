@@ -489,6 +489,119 @@ const AdminCourseContentPage = () => {
         </Button>
       </div>
 
+      {/* Curriculum */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-base font-bold text-foreground">
+              Curriculum <span className="text-muted-foreground font-normal">({lessons.length} lectures · {chapters.length} chapters)</span>
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Add lectures via YouTube link. Use <strong>Unlisted</strong> videos so they're not publicly listed but still play here.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setChapterTitle(""); setChapterDialogOpen(true); }}>
+              <FolderPlus className="h-4 w-4" /> Add chapter
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (chapters.length === 0) { toast.error("Add a chapter first"); return; }
+                openAddLecture(chapters[0].id);
+              }}
+            >
+              <Plus className="h-4 w-4" /> Add lectures
+            </Button>
+          </div>
+        </div>
+
+        {chapters.length === 0 ? (
+          <div className="p-12 text-center">
+            <Video className="mx-auto h-10 w-10 text-muted-foreground/40" />
+            <p className="mt-3 font-semibold text-foreground">No chapters yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Add a chapter, then start adding lectures.</p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {chapters.map((ch) => {
+              const chLessons = lessons
+                .filter((l) => l.chapter_id === ch.id)
+                .sort((a, b) => a.position - b.position);
+              return (
+                <li key={ch.id} className="p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate">{ch.title}</p>
+                      <p className="text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="sm" variant="outline" onClick={() => openAddLecture(ch.id)}>
+                        <Plus className="h-3.5 w-3.5" /> Add lecture
+                      </Button>
+                      <button
+                        onClick={() => deleteChapter(ch)}
+                        className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete chapter"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {chLessons.length > 0 && (
+                    <ul className="mt-3 ml-2 space-y-1.5 border-l border-border pl-4">
+                      {chLessons.map((lec) => (
+                        <li key={lec.id} className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2">
+                          <Youtube className="h-4 w-4 text-destructive shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
+                              {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
+                              {lec.video_url ? ` · ${lec.video_url}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {lec.video_url && (
+                              <a
+                                href={lec.video_url.replace("/embed/", "/watch?v=")}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                title="Open on YouTube"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => openEditLecture(lec)}
+                              className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteLesson(lec)}
+                              className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       <div className="rounded-xl border border-border bg-card">
         <div className="flex flex-col gap-3 border-b border-border p-4 md:flex-row md:items-center md:justify-between">
           <h2 className="text-base font-bold text-foreground">
