@@ -213,6 +213,7 @@ const AdminLiveClassesPage = () => {
       title: cls.title,
       subject: cls.subject,
       teacherId: cls.created_by ?? "",
+      courseId: cls.course_id ?? "",
       starts_at: toLocalInput(cls.starts_at),
       duration_minutes: duration,
       meeting_url: cls.meeting_url ?? "",
