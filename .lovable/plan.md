@@ -1,118 +1,46 @@
-## Goals
+## Goal
 
-1. Student sidebar "Doubts" badge must reflect real-time count of pending doubts (no manual refresh).
-2. Each doubt should belong to one teacher only — other teachers must not see it.
+Stop forcing admins to define the curriculum at course creation time. Instead, let admins build the curriculum (chapters + lectures) inside the existing **Course Content** page (`/admin/course-content`) by adding lectures via private YouTube links that play inline on our platform.
 
----
+## Changes
 
-## Problem analysis
+### 1. Remove curriculum from course creation — `src/pages/CreateCoursePage.tsx`
 
-**Dynamic count**
-- `useDoubts("mine")` already subscribes to realtime and reloads. The badge derives from `doubts.filter(d => d.status !== "answered").length`.
-- The likely reason the count doesn't update live: the `doubts` table is in the realtime publication, but `REPLICA IDENTITY` is not set to `FULL`, so UPDATE payloads don't carry enough data and changes for the user's row may not be delivered consistently. Also the answer flow updates `status` via a trigger on `doubt_answers` — both are listened to, but without `REPLICA IDENTITY FULL` on `doubts`, UPDATE events can be silently dropped from RLS-filtered streams.
-- Fix: set `REPLICA IDENTITY FULL` on `doubts` and `doubt_answers`, and re-add to publication. Also tighten the badge to refetch on focus as a safety net.
+- In **create mode** (`!isEditMode`):
+  - Remove the entire "Curriculum" card (chapters + lectures UI).
+  - Drop the "Add at least one chapter" validation guard.
+  - Skip the chapter/lesson insert loop and the totals update on create.
+  - New courses are saved with no chapters/lessons — admin builds them later from Course Content.
+- In **edit mode**: keep the existing curriculum editor as-is so legacy courses remain editable.
+- Remove now-unused imports/helpers if they become dead in create mode (keep them; edit mode still uses them).
 
-**Doubt isolation per teacher**
-- Current RLS lets ANY teacher/staff/admin SELECT all doubts.
-- Schema already has `doubts.assigned_teacher_id` (unused).
-- Fix: assign each new doubt to one teacher at creation time (round-robin / first available) and restrict teacher SELECT/UPDATE to only doubts where `assigned_teacher_id = auth.uid()`. Staff/admin keep full access.
+### 2. Add curriculum management to Course Content — `src/pages/AdminCourseContentPage.tsx`
 
----
+Within the **selected course** view (after picking a course), add a new **Curriculum** section above the existing Resources section.
 
-## Plan
+- **Layout**: list of chapters; each chapter shows its lectures (title, duration, YouTube preview link) with edit/delete; an "Add lecture" button per chapter and an "Add chapter" button at the top of the section.
+- **Add Chapter dialog**: title input → inserts into `chapters` with next `position`.
+- **Add Lecture dialog** (the requested "Add lectures" button), fields:
+  - Lecture title (required)
+  - YouTube URL (required) — accept full URL or short `youtu.be/...`; parse out the 11-char video ID; reject invalid input
+  - Duration in minutes (optional, default 10)
+  - Chapter selector (defaults to the chapter the button was clicked from)
+  - "Free preview" toggle
+  - On save: insert into `lessons` with `type='video'`, `video_url = https://www.youtube.com/embed/{id}` (canonical embed form for private/unlisted-friendly playback), `duration_seconds = minutes*60`, auto-generated unique `slug`, next `position` within that chapter.
+- **Edit / delete**: inline edit of title/duration; delete with `useConfirm` confirmation.
+- **Data loading**: extend `loadCourseDetail` to also fetch `lessons` for the course so chapters render with their lessons.
 
-### 1. Database migration
+### 3. Player compatibility — `src/pages/LecturePlayerPage.tsx` (verify only, edit if needed)
 
-```sql
--- Realtime reliability for doubts
-ALTER TABLE public.doubts REPLICA IDENTITY FULL;
-ALTER TABLE public.doubt_answers REPLICA IDENTITY FULL;
+Confirm the existing lecture player renders YouTube `embed` URLs via `<iframe>`. If it currently expects an MP4 `<video>`, add a branch: when `video_url` includes `youtube.com/embed/` or `youtu.be`, render a YouTube iframe (with `?rel=0&modestbranding=1`). This ensures private-listed YouTube lectures play inside our platform rather than redirecting to YouTube.
 
--- Helper: pick a teacher (least-loaded, fallback random)
-CREATE OR REPLACE FUNCTION public.pick_teacher_for_doubt()
-RETURNS uuid
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT ur.user_id
-  FROM public.user_roles ur
-  LEFT JOIN public.doubts d
-    ON d.assigned_teacher_id = ur.user_id AND d.status <> 'answered'
-  WHERE ur.role = 'teacher'
-  GROUP BY ur.user_id
-  ORDER BY COUNT(d.id) ASC, random()
-  LIMIT 1;
-$$;
+## Notes for the user
 
--- Auto-assign on insert
-CREATE OR REPLACE FUNCTION public.assign_doubt_to_teacher()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF NEW.assigned_teacher_id IS NULL THEN
-    NEW.assigned_teacher_id := public.pick_teacher_for_doubt();
-  END IF;
-  RETURN NEW;
-END $$;
-
-CREATE TRIGGER doubts_assign_teacher
-BEFORE INSERT ON public.doubts
-FOR EACH ROW EXECUTE FUNCTION public.assign_doubt_to_teacher();
-
--- Backfill existing unassigned doubts
-UPDATE public.doubts SET assigned_teacher_id = public.pick_teacher_for_doubt()
-WHERE assigned_teacher_id IS NULL;
-
--- Replace teacher SELECT/UPDATE policies
-DROP POLICY "Teachers and staff view all doubts" ON public.doubts;
-DROP POLICY "Teachers and staff update doubts" ON public.doubts;
-
-CREATE POLICY "Assigned teacher views own doubts" ON public.doubts
-FOR SELECT TO authenticated
-USING (
-  (has_role(auth.uid(),'teacher') AND assigned_teacher_id = auth.uid())
-  OR has_role(auth.uid(),'staff') OR has_role(auth.uid(),'admin')
-);
-
-CREATE POLICY "Assigned teacher updates own doubts" ON public.doubts
-FOR UPDATE TO authenticated
-USING (
-  (has_role(auth.uid(),'teacher') AND assigned_teacher_id = auth.uid())
-  OR has_role(auth.uid(),'staff') OR has_role(auth.uid(),'admin')
-)
-WITH CHECK (
-  (has_role(auth.uid(),'teacher') AND assigned_teacher_id = auth.uid())
-  OR has_role(auth.uid(),'staff') OR has_role(auth.uid(),'admin')
-);
-
--- doubt_answers: teachers can answer only assigned doubts
-DROP POLICY "Teachers staff and AI insert answers" ON public.doubt_answers;
-CREATE POLICY "Teachers answer only assigned doubts" ON public.doubt_answers
-FOR INSERT TO authenticated
-WITH CHECK (
-  responder_id = auth.uid() AND (
-    has_role(auth.uid(),'staff') OR has_role(auth.uid(),'admin')
-    OR (has_role(auth.uid(),'teacher') AND EXISTS (
-      SELECT 1 FROM public.doubts d
-      WHERE d.id = doubt_id AND d.assigned_teacher_id = auth.uid()
-    ))
-  )
-);
-```
-
-### 2. `src/hooks/useDoubts.ts`
-- Keep current realtime subscription (it's correctly built).
-- Add a `visibilitychange` / `focus` reload as a safety net so the badge syncs when the tab regains focus.
-
-### 3. `src/pages/TeacherDoubtQueuePage.tsx`
-- No code change needed — RLS now filters automatically. Each teacher will see only their assigned doubts.
-
----
+- "Private" YouTube videos cannot be embedded by third parties — only **Unlisted** videos can. Recommend uploading recordings as **Unlisted** on YouTube so the link is not publicly listed but the embed still works on our platform. The UI copy in the Add Lecture dialog will mention this.
+- No database schema changes are needed — existing `chapters` and `lessons` tables already support this (`lessons.video_url`, `type`, `duration_seconds`, etc.).
 
 ## Files touched
 
-- `supabase/migrations/<new>.sql` — schema + policy changes
-- `src/hooks/useDoubts.ts` — focus-based safety refetch
-
-## Out of scope
-
-- Manual reassignment UI for staff (can add later).
-- Load-balancing strategy beyond least-pending-count.
+- `src/pages/CreateCoursePage.tsx` — strip curriculum from create flow
+- `src/pages/AdminCourseContentPage.tsx` — add Curriculum section + chapter/lecture dialogs
+- `src/pages/LecturePlayerPage.tsx` — ensure YouTube embed playback (only if not already supported)
