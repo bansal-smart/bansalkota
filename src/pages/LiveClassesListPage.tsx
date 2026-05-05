@@ -106,24 +106,6 @@ const LiveClassesListPage = () => {
         )}
       </section>
 
-      {past.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-foreground mb-3">Past recordings</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {past.map((c) => (
-              <Link key={c.id} to={`/live-classes/${c.id}`} className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 hover-lift">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${subjectColors[c.subject] ?? "from-primary to-accent"} text-white shrink-0`}>
-                  <Play className="h-4 w-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xs font-bold text-foreground line-clamp-2">{c.title}</h3>
-                  <p className="text-[10px] text-muted-foreground">{c.educator_name}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 };
