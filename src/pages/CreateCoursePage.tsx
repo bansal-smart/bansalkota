@@ -416,6 +416,8 @@ const CreateCoursePage = () => {
           ))}
         </div>
       </div>
+      )}
+
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">What You'll Learn</h2>
