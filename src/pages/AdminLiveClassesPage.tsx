@@ -30,10 +30,12 @@ type AdminLive = {
   description: string | null;
   target_exam: string | null;
   created_by: string | null;
+  course_id?: string | null;
   cancellation_reason?: string | null;
 };
 
 type Teacher = { user_id: string; full_name: string | null };
+type Course = { id: string; name: string };
 
 type Template = {
   id: string;
@@ -60,6 +62,7 @@ type FormState = {
   title: string;
   subject: string;
   teacherId: string;
+  courseId: string;
   starts_at: string;
   duration_minutes: number;
   meeting_url: string;
@@ -71,6 +74,7 @@ const emptyForm: FormState = {
   title: "",
   subject: "",
   teacherId: "",
+  courseId: "",
   starts_at: "",
   duration_minutes: 60,
   meeting_url: "",
@@ -103,6 +107,7 @@ const AdminLiveClassesPage = () => {
   const [classes, setClasses] = useState<AdminLive[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -127,15 +132,16 @@ const AdminLiveClassesPage = () => {
 
   const load = async () => {
     setLoading(true);
-    const [classesRes, rolesRes, templatesRes] = await Promise.all([
+    const [classesRes, rolesRes, templatesRes, coursesRes] = await Promise.all([
       supabase
         .from("live_classes")
         .select(
-          "id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, target_exam, created_by, cancellation_reason",
+          "id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, target_exam, created_by, course_id, cancellation_reason",
         )
         .order("starts_at", { ascending: false }),
       supabase.from("user_roles").select("user_id").eq("role", "teacher"),
       supabase.from("live_class_templates").select("*").order("created_at", { ascending: false }),
+      supabase.from("courses").select("id, name").order("name"),
     ]);
     const teacherIds = (rolesRes.data ?? []).map((r) => r.user_id);
     const { data: profiles } = teacherIds.length
@@ -149,6 +155,7 @@ const AdminLiveClassesPage = () => {
       ),
     );
     setTemplates((templatesRes.data ?? []) as Template[]);
+    setCourses((coursesRes.data ?? []) as Course[]);
     setLoading(false);
   };
 
@@ -206,6 +213,7 @@ const AdminLiveClassesPage = () => {
       title: cls.title,
       subject: cls.subject,
       teacherId: cls.created_by ?? "",
+      courseId: cls.course_id ?? "",
       starts_at: toLocalInput(cls.starts_at),
       duration_minutes: duration,
       meeting_url: cls.meeting_url ?? "",
@@ -225,6 +233,7 @@ const AdminLiveClassesPage = () => {
       title: cls.title,
       subject: cls.subject,
       teacherId: cls.created_by ?? "",
+      courseId: cls.course_id ?? "",
       starts_at: "",
       duration_minutes: duration,
       meeting_url: cls.meeting_url ?? "",
@@ -265,6 +274,7 @@ const AdminLiveClassesPage = () => {
         meeting_url: form.meeting_url || null,
         description: form.description || null,
         created_by: form.teacherId,
+        course_id: form.courseId || null,
         scheduled_by: adminId,
       };
 
@@ -391,6 +401,7 @@ const AdminLiveClassesPage = () => {
       title: t.title,
       subject: t.subject,
       teacherId: t.teacher_id ?? "",
+      courseId: "",
       starts_at: "",
       duration_minutes: t.duration_minutes,
       meeting_url: t.meeting_url ?? "",
@@ -743,6 +754,22 @@ const AdminLiveClassesPage = () => {
                     placeholder="https://…"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Course (optional)</label>
+                <select
+                  value={form.courseId}
+                  onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                >
+                  <option value="">No course — standalone class</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
