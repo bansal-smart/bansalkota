@@ -20,8 +20,6 @@ const extractYouTubeId = (url: string): string | null => {
   return /^[A-Za-z0-9_-]{11}$/.test(value) ? value : null;
 };
 
-const getYouTubeEmbedSrc = (videoId: string) =>
-  `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
 
 // Lazy-load the YouTube IFrame API
 let ytApiPromise: Promise<void> | null = null;
