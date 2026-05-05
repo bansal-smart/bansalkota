@@ -106,6 +106,7 @@ const AdminLiveClassesPage = () => {
   const [classes, setClasses] = useState<AdminLive[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
