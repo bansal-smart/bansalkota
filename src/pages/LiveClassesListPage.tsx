@@ -55,10 +55,6 @@ const LiveClassesListPage = () => {
             <p className="text-lg font-bold">{upcoming.length}</p>
             <p className="text-[10px] text-white/80">Upcoming</p>
           </div>
-          <div className="rounded-xl bg-white/20 px-4 py-2 text-center">
-            <p className="text-lg font-bold">{past.length}</p>
-            <p className="text-[10px] text-white/80">Recordings</p>
-          </div>
         </div>
       </div>
 
