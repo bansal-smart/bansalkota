@@ -274,6 +274,7 @@ const AdminLiveClassesPage = () => {
         meeting_url: form.meeting_url || null,
         description: form.description || null,
         created_by: form.teacherId,
+        course_id: form.courseId || null,
         scheduled_by: adminId,
       };
 
