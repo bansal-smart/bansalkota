@@ -99,6 +99,7 @@ const MyCoursesPage = () => {
   }
 
   const continueLearning = enrollments.filter((e) => e.progress_percent < 100).slice(0, 3);
+  const allEnrolled = enrollments;
   const inProgress = enrollments.filter((e) => e.progress_percent > 0 && e.progress_percent < 100);
   const completed = enrollments.filter((e) => e.progress_percent >= 100);
   const avgProgress = Math.round(enrollments.reduce((s, e) => s + e.progress_percent, 0) / Math.max(enrollments.length, 1));
