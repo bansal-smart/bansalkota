@@ -245,9 +245,22 @@ const LecturePlayerPage = () => {
           </div>
 
           <div className="p-4 space-y-3">
-            <div>
-              <h2 className="text-base font-bold text-white">{activeLesson.title}</h2>
-              <p className="text-xs text-white/50">{Math.round(activeLesson.duration_seconds / 60)} min</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-white">{activeLesson.title}</h2>
+                <p className="text-xs text-white/50">{Math.round(activeLesson.duration_seconds / 60)} min</p>
+              </div>
+              <button
+                onClick={toggleComplete}
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  progressMap[activeLesson.slug]?.is_completed
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {progressMap[activeLesson.slug]?.is_completed ? "Completed" : "Mark as complete"}
+              </button>
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold text-white/80">Notes</p>
