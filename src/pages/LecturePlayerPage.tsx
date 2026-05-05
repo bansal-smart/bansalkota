@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Play, Pause, Loader2, Lock, CheckCircle2, ChevronDown } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCourseDetail } from "@/hooks/useCourseDetail";
+
+// Auto-complete a lesson once the learner has watched this fraction of it.
+const COMPLETION_THRESHOLD = 0.9;
 
 const extractYouTubeId = (url: string): string | null => {
   const value = url.trim();
@@ -17,9 +20,28 @@ const extractYouTubeId = (url: string): string | null => {
   return /^[A-Za-z0-9_-]{11}$/.test(value) ? value : null;
 };
 
-const getYouTubeEmbedSrc = (url: string) => {
-  const videoId = extractYouTubeId(url);
-  return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : null;
+const getYouTubeEmbedSrc = (videoId: string) =>
+  `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+
+// Lazy-load the YouTube IFrame API
+let ytApiPromise: Promise<void> | null = null;
+const loadYouTubeApi = () => {
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise<void>((resolve) => {
+    const w = window as any;
+    if (w.YT && w.YT.Player) return resolve();
+    const prev = w.onYouTubeIframeAPIReady;
+    w.onYouTubeIframeAPIReady = () => {
+      if (typeof prev === "function") prev();
+      resolve();
+    };
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
+  });
+  return ytApiPromise;
 };
 
 const LecturePlayerPage = () => {
