@@ -138,12 +138,9 @@ const LecturePlayerPage = () => {
         { onConflict: "user_id,lesson_slug,course_id" } as never,
       );
 
-      let completedCount = 0;
-      setProgressMap((prev) => {
-        const nextMap = { ...prev, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
-        completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
-        return nextMap;
-      });
+      const nextMap = { ...progressMap, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
+      setProgressMap(nextMap);
+      const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
 
       const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
       if (enrolledId) {
