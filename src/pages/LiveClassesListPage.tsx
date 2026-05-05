@@ -24,9 +24,11 @@ const formatDate = (iso: string) => {
 const LiveClassesListPage = () => {
   const { classes: liveAndUpcoming, loading } = useLiveClasses("all");
 
+  const now = new Date();
   const live = liveAndUpcoming.filter((c) => c.status === "live");
-  const upcoming = liveAndUpcoming.filter((c) => c.status === "scheduled" && new Date(c.starts_at) >= new Date());
-  const past = liveAndUpcoming.filter((c) => c.status === "completed" || (c.recording_url && new Date(c.starts_at) < new Date()));
+  const upcoming = liveAndUpcoming.filter(
+    (c) => c.status === "scheduled" && new Date(c.starts_at) >= now,
+  );
 
   if (loading) {
     return (
