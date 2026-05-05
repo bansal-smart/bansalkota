@@ -117,20 +117,19 @@ const LecturePlayerPage = () => {
     const nextMap = { ...progressMap, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
     setProgressMap(nextMap);
 
-    {
-      const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
-      const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
-      await supabase
-        .from("enrollments")
-        .update({
-          progress_percent: percent,
-          completed_lessons: completedCount,
-          last_lesson_title: lesson.title,
-          last_accessed_at: new Date().toISOString(),
-        })
-        .eq("id", enrolledId!);
+    const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
+    const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
+    await supabase
+      .from("enrollments")
+      .update({
+        progress_percent: percent,
+        completed_lessons: completedCount,
+        last_lesson_title: lesson.title,
+        last_accessed_at: new Date().toISOString(),
+      })
+      .eq("id", enrolledId!);
 
-      // Log study session for streak / accuracy aggregates
+    if (completed) {
       await supabase.from("study_sessions").upsert(
         {
           user_id: user.id,
@@ -140,6 +139,14 @@ const LecturePlayerPage = () => {
         { onConflict: "user_id,session_date" } as never,
       );
     }
+  };
+
+  const toggleComplete = async () => {
+    if (!activeLesson) return;
+    const isDone = progressMap[activeLesson.slug]?.is_completed;
+    const watched = progressMap[activeLesson.slug]?.watched_seconds ?? (isDone ? 0 : activeLesson.duration_seconds);
+    await saveProgress(watched, !isDone);
+    toast.success(!isDone ? "Marked as complete" : "Marked as incomplete");
   };
 
   const onTimeUpdate = () => {
