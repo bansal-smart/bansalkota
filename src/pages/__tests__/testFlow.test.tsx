@@ -17,9 +17,10 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 }));
 
+const stableUser = { id: "user-1" };
 vi.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
-    user: { id: "user-1" },
+    user: stableUser,
     loading: false,
   }),
 }));
