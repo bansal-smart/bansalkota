@@ -24,9 +24,11 @@ const formatDate = (iso: string) => {
 const LiveClassesListPage = () => {
   const { classes: liveAndUpcoming, loading } = useLiveClasses("all");
 
+  const now = new Date();
   const live = liveAndUpcoming.filter((c) => c.status === "live");
-  const upcoming = liveAndUpcoming.filter((c) => c.status === "scheduled" && new Date(c.starts_at) >= new Date());
-  const past = liveAndUpcoming.filter((c) => c.status === "completed" || (c.recording_url && new Date(c.starts_at) < new Date()));
+  const upcoming = liveAndUpcoming.filter(
+    (c) => c.status === "scheduled" && new Date(c.starts_at) >= now,
+  );
 
   if (loading) {
     return (
@@ -52,10 +54,6 @@ const LiveClassesListPage = () => {
           <div className="rounded-xl bg-white/20 px-4 py-2 text-center">
             <p className="text-lg font-bold">{upcoming.length}</p>
             <p className="text-[10px] text-white/80">Upcoming</p>
-          </div>
-          <div className="rounded-xl bg-white/20 px-4 py-2 text-center">
-            <p className="text-lg font-bold">{past.length}</p>
-            <p className="text-[10px] text-white/80">Recordings</p>
           </div>
         </div>
       </div>
@@ -108,24 +106,6 @@ const LiveClassesListPage = () => {
         )}
       </section>
 
-      {past.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-foreground mb-3">Past recordings</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {past.map((c) => (
-              <Link key={c.id} to={`/live-classes/${c.id}`} className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 hover-lift">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${subjectColors[c.subject] ?? "from-primary to-accent"} text-white shrink-0`}>
-                  <Play className="h-4 w-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xs font-bold text-foreground line-clamp-2">{c.title}</h3>
-                  <p className="text-[10px] text-muted-foreground">{c.educator_name}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 };
