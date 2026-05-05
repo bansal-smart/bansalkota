@@ -96,15 +96,16 @@ const LecturePlayerPage = () => {
       .then(({ data }) => setNotes(data?.content ?? ""));
   }, [user, activeLesson]);
 
-  const saveProgress = async (currentSec: number, completed = false) => {
-    if (!user || !activeLesson || !course) return;
-    const total = activeLesson.duration_seconds || 1;
+  const saveProgress = async (currentSec: number, completed = false, lessonOverride?: typeof activeLesson) => {
+    const lesson = lessonOverride ?? activeLesson;
+    if (!user || !lesson || !course) return;
+    const total = lesson.duration_seconds || 1;
     await supabase.from("lesson_progress").upsert(
       {
         user_id: user.id,
         course_id: course.id,
-        lesson_slug: activeLesson.slug,
-        lesson_title: activeLesson.title,
+        lesson_slug: lesson.slug,
+        lesson_title: lesson.title,
         watched_seconds: Math.floor(currentSec),
         total_seconds: total,
         is_completed: completed,
@@ -113,22 +114,22 @@ const LecturePlayerPage = () => {
       { onConflict: "user_id,lesson_slug,course_id" } as never,
     );
 
-    setProgressMap((m) => ({ ...m, [activeLesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } }));
+    const nextMap = { ...progressMap, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
+    setProgressMap(nextMap);
+
+    const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
+    const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
+    await supabase
+      .from("enrollments")
+      .update({
+        progress_percent: percent,
+        completed_lessons: completedCount,
+        last_lesson_title: lesson.title,
+        last_accessed_at: new Date().toISOString(),
+      })
+      .eq("id", enrolledId!);
 
     if (completed) {
-      const completedCount = Object.values({ ...progressMap, [activeLesson.slug]: { watched_seconds: total, is_completed: true } }).filter((p) => p.is_completed).length;
-      const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
-      await supabase
-        .from("enrollments")
-        .update({
-          progress_percent: percent,
-          completed_lessons: completedCount,
-          last_lesson_title: activeLesson.title,
-          last_accessed_at: new Date().toISOString(),
-        })
-        .eq("id", enrolledId!);
-
-      // Log study session for streak / accuracy aggregates
       await supabase.from("study_sessions").upsert(
         {
           user_id: user.id,
@@ -138,6 +139,14 @@ const LecturePlayerPage = () => {
         { onConflict: "user_id,session_date" } as never,
       );
     }
+  };
+
+  const toggleComplete = async () => {
+    if (!activeLesson) return;
+    const isDone = progressMap[activeLesson.slug]?.is_completed;
+    const watched = progressMap[activeLesson.slug]?.watched_seconds ?? (isDone ? 0 : activeLesson.duration_seconds);
+    await saveProgress(watched, !isDone);
+    toast.success(!isDone ? "Marked as complete" : "Marked as incomplete");
   };
 
   const onTimeUpdate = () => {
@@ -236,9 +245,22 @@ const LecturePlayerPage = () => {
           </div>
 
           <div className="p-4 space-y-3">
-            <div>
-              <h2 className="text-base font-bold text-white">{activeLesson.title}</h2>
-              <p className="text-xs text-white/50">{Math.round(activeLesson.duration_seconds / 60)} min</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-base font-bold text-white">{activeLesson.title}</h2>
+                <p className="text-xs text-white/50">{Math.round(activeLesson.duration_seconds / 60)} min</p>
+              </div>
+              <button
+                onClick={toggleComplete}
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  progressMap[activeLesson.slug]?.is_completed
+                    ? "bg-secondary text-secondary-foreground"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {progressMap[activeLesson.slug]?.is_completed ? "Completed" : "Mark as complete"}
+              </button>
             </div>
             <div className="space-y-2">
               <p className="text-xs font-semibold text-white/80">Notes</p>
