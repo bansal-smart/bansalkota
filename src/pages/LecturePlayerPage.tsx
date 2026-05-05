@@ -60,6 +60,9 @@ const LecturePlayerPage = () => {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastSavedRef = useRef<number>(0);
+  const ytContainerRef = useRef<HTMLDivElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const ytPollRef = useRef<number | null>(null);
 
   const flatLessons = useMemo(() => chapters.flatMap((c) => c.lessons), [chapters]);
   const activeLesson = flatLessons.find((l) => l.id === activeLessonId) ?? flatLessons[0];
