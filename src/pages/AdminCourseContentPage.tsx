@@ -124,6 +124,22 @@ const AdminCourseContentPage = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [chapterDialogOpen, setChapterDialogOpen] = useState(false);
+  const [chapterTitle, setChapterTitle] = useState("");
+  const [savingChapter, setSavingChapter] = useState(false);
+
+  const [lectureDialogOpen, setLectureDialogOpen] = useState(false);
+  const [lectureForm, setLectureForm] = useState({
+    title: "",
+    youtubeUrl: "",
+    durationMin: 10,
+    chapter_id: "",
+    is_free_preview: false,
+  });
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [savingLecture, setSavingLecture] = useState(false);
+
   // Load courses
   useEffect(() => {
     (async () => {
@@ -137,22 +153,152 @@ const AdminCourseContentPage = () => {
     })();
   }, []);
 
-  // Load chapters + resources when a course is selected
+  // Load chapters + lessons + resources when a course is selected
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
-    const [{ data: ch }, { data: rs }] = await Promise.all([
+    const [{ data: ch }, { data: ls }, { data: rs }] = await Promise.all([
       supabase.from("chapters").select("id,title,position").eq("course_id", courseId).order("position"),
+      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
     ]);
     setChapters((ch as Chapter[]) ?? []);
+    setLessons((ls as Lesson[]) ?? []);
     setResources((rs as Resource[]) ?? []);
     setResLoading(false);
   };
 
   useEffect(() => {
     if (selectedCourse) loadCourseDetail(selectedCourse.id);
-    else { setChapters([]); setResources([]); setChapterFilter("all"); }
+    else { setChapters([]); setLessons([]); setResources([]); setChapterFilter("all"); }
   }, [selectedCourse]);
+
+  const openAddLecture = (chapterId: string) => {
+    setEditingLessonId(null);
+    setLectureForm({ title: "", youtubeUrl: "", durationMin: 10, chapter_id: chapterId, is_free_preview: false });
+    setLectureDialogOpen(true);
+  };
+
+  const openEditLecture = (lesson: Lesson) => {
+    setEditingLessonId(lesson.id);
+    setLectureForm({
+      title: lesson.title,
+      youtubeUrl: lesson.video_url ?? "",
+      durationMin: Math.max(1, Math.round((lesson.duration_seconds || 0) / 60)),
+      chapter_id: lesson.chapter_id,
+      is_free_preview: lesson.is_free_preview,
+    });
+    setLectureDialogOpen(true);
+  };
+
+  const saveChapter = async () => {
+    if (!selectedCourse) return;
+    const title = chapterTitle.trim();
+    if (!title) { toast.error("Chapter title is required"); return; }
+    setSavingChapter(true);
+    const nextPos = chapters.length;
+    const { error } = await supabase.from("chapters").insert({
+      course_id: selectedCourse.id, title, position: nextPos,
+    });
+    setSavingChapter(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Chapter added");
+    setChapterDialogOpen(false);
+    setChapterTitle("");
+    loadCourseDetail(selectedCourse.id);
+  };
+
+  const saveLecture = async () => {
+    if (!selectedCourse) return;
+    const title = lectureForm.title.trim();
+    if (!title) { toast.error("Lecture title is required"); return; }
+    if (!lectureForm.chapter_id) { toast.error("Pick a chapter"); return; }
+    const ytId = extractYouTubeId(lectureForm.youtubeUrl);
+    if (!ytId) { toast.error("Enter a valid YouTube link"); return; }
+    const videoUrl = `https://www.youtube.com/embed/${ytId}`;
+    const durationSecs = Math.max(60, Math.round((lectureForm.durationMin || 10) * 60));
+
+    setSavingLecture(true);
+    if (editingLessonId) {
+      const { error } = await supabase
+        .from("lessons")
+        .update({
+          title,
+          video_url: videoUrl,
+          duration_seconds: durationSecs,
+          chapter_id: lectureForm.chapter_id,
+          is_free_preview: lectureForm.is_free_preview,
+        })
+        .eq("id", editingLessonId);
+      setSavingLecture(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Lecture updated");
+    } else {
+      const positionInChapter = lessons.filter((l) => l.chapter_id === lectureForm.chapter_id).length;
+      const slug = `${slugify(title) || "lesson"}-${Date.now().toString(36)}`;
+      const { error } = await supabase.from("lessons").insert({
+        course_id: selectedCourse.id,
+        chapter_id: lectureForm.chapter_id,
+        title,
+        slug,
+        position: positionInChapter,
+        duration_seconds: durationSecs,
+        video_url: videoUrl,
+        is_free_preview: lectureForm.is_free_preview,
+        type: "video",
+      });
+      setSavingLecture(false);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Lecture added");
+    }
+
+    // Recompute course totals
+    const { data: allLessons } = await supabase
+      .from("lessons")
+      .select("duration_seconds")
+      .eq("course_id", selectedCourse.id);
+    const totalSecs = (allLessons ?? []).reduce((s, l) => s + (l.duration_seconds || 0), 0);
+    await supabase
+      .from("courses")
+      .update({
+        total_lessons: (allLessons ?? []).length,
+        duration_hours: Math.max(1, Math.round(totalSecs / 3600)),
+      })
+      .eq("id", selectedCourse.id);
+
+    setLectureDialogOpen(false);
+    loadCourseDetail(selectedCourse.id);
+  };
+
+  const deleteLesson = async (lesson: Lesson) => {
+    const ok = await confirm({
+      title: `Delete "${lesson.title}"?`,
+      description: "Students will lose access to this lecture. This cannot be undone.",
+      confirmLabel: "Delete lecture",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("lessons").delete().eq("id", lesson.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Lecture deleted");
+    if (selectedCourse) loadCourseDetail(selectedCourse.id);
+  };
+
+  const deleteChapter = async (ch: Chapter) => {
+    const lessonsInChapter = lessons.filter((l) => l.chapter_id === ch.id).length;
+    const ok = await confirm({
+      title: `Delete chapter "${ch.title}"?`,
+      description: lessonsInChapter > 0
+        ? `This chapter has ${lessonsInChapter} lecture(s) which will also be removed.`
+        : "This chapter will be removed.",
+      confirmLabel: "Delete chapter",
+    });
+    if (!ok) return;
+    await supabase.from("lessons").delete().eq("chapter_id", ch.id);
+    const { error } = await supabase.from("chapters").delete().eq("id", ch.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Chapter deleted");
+    if (selectedCourse) loadCourseDetail(selectedCourse.id);
+  };
+
 
   const filteredCourses = useMemo(() => {
     const q = search.trim().toLowerCase();
