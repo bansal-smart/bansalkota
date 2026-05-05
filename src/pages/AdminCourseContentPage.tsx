@@ -35,6 +35,38 @@ type Resource = {
   position: number;
   created_at: string;
 };
+type Lesson = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  slug: string;
+  title: string;
+  position: number;
+  duration_seconds: number;
+  video_url: string | null;
+  is_free_preview: boolean;
+  type: string;
+};
+
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+
+const extractYouTubeId = (url: string): string | null => {
+  const u = url.trim();
+  // youtu.be/<id>
+  let m = u.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/watch?v=<id>
+  m = u.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/embed/<id> or /shorts/<id> or /live/<id>
+  m = u.match(/youtube\.com\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // bare id
+  if (/^[A-Za-z0-9_-]{11}$/.test(u)) return u;
+  return null;
+};
+
 
 const RESOURCE_TYPES = [
   { value: "pdf", label: "PDF" },
