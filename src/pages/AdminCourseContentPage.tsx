@@ -1,10 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { format } from "date-fns";
 import {
   FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X,
-  Plus, Video, Youtube, Pencil, FolderPlus
+  Plus, Video, Youtube, Pencil, FolderPlus, GripVertical, CheckCircle2, AlertCircle
 
 } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -65,6 +75,64 @@ const extractYouTubeId = (url: string): string | null => {
   // bare id
   if (/^[A-Za-z0-9_-]{11}$/.test(u)) return u;
   return null;
+};
+
+const getYouTubeEmbedUrl = (videoId: string) => `https://www.youtube.com/embed/${videoId}`;
+const getYouTubePreviewUrl = (videoId: string) => `${getYouTubeEmbedUrl(videoId)}?rel=0&modestbranding=1`;
+
+const chapterDragId = (id: string) => `chapter:${id}`;
+const lessonDragId = (id: string) => `lesson:${id}`;
+const parseDragId = (id: string) => {
+  const [type, itemId] = id.split(":");
+  return { type, itemId };
+};
+
+const SortableChapter = ({ chapter, children }: { chapter: Chapter; children: ReactNode }) => {
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: chapterDragId(chapter.id),
+  });
+  const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <li ref={setNodeRef} style={style} className={`p-4 ${isDragging ? "opacity-60" : ""}`}>
+      <div className="flex items-start gap-3">
+        <button
+          ref={setActivatorNodeRef}
+          type="button"
+          className="mt-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-grab active:cursor-grabbing"
+          title="Drag to reorder chapter"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    </li>
+  );
+};
+
+const SortableLecture = ({ lesson, children }: { lesson: Lesson; children: ReactNode }) => {
+  const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: lessonDragId(lesson.id),
+  });
+  const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <li ref={setNodeRef} style={style} className={`flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2 ${isDragging ? "opacity-60" : ""}`}>
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-grab active:cursor-grabbing"
+        title="Drag to reorder lecture"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      {children}
+    </li>
+  );
 };
 
 
