@@ -122,36 +122,34 @@ const MyCoursesPage = () => {
         {recent && recent.progress_percent < 100 && (
           <Link
             to={`/courses/${recent.course.slug}/learn`}
-            className="group relative block overflow-hidden rounded-2xl border border-border bg-card hover-lift animate-fade-in-up"
+            className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-card hover-lift animate-fade-in-up sm:max-w-sm lg:max-w-[33%]"
           >
-            <div className={`relative flex h-44 items-center justify-center bg-gradient-to-br ${subjectGradient[recent.course.subject] ?? "from-primary to-accent"} lg:h-52`}>
-              {(() => { const I = subjectIcon[recent.course.subject] ?? BookOpen; return <I className="h-20 w-20 text-white/30" />; })()}
+            <div className={`relative flex h-40 items-center justify-center bg-gradient-to-br ${subjectGradient[recent.course.subject] ?? "from-primary to-accent"}`}>
+              {(() => { const I = subjectIcon[recent.course.subject] ?? BookOpen; return <I className="h-16 w-16 text-white/30" />; })()}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+              <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
                 <Zap className="h-3 w-3" /> Resume
               </span>
-              <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+              <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
                 <div className="min-w-0 text-white">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">{recent.course.subject}</p>
-                  <h2 className="truncate font-display text-xl font-black lg:text-2xl">{recent.course.name}</h2>
+                  <h2 className="truncate font-display text-base font-black">{recent.course.name}</h2>
                   {recent.last_lesson_title && (
-                    <p className="mt-1 truncate text-xs text-white/80">Up next: {recent.last_lesson_title}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-white/80">Up next: {recent.last_lesson_title}</p>
                   )}
                 </div>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-xl transition-transform group-hover:scale-110">
-                  <Play className="h-5 w-5 fill-current" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-xl transition-transform group-hover:scale-110">
+                  <Play className="h-4 w-4 fill-current" />
                 </div>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-4 px-4 py-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-primary">{recent.progress_percent}% complete</span>
-                  <span className="text-muted-foreground">{recent.completed_lessons}/{recent.course.total_lessons} lessons</span>
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${recent.progress_percent}%` }} />
-                </div>
+            <div className="px-3 py-2.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-bold text-primary">{recent.progress_percent}% complete</span>
+                <span className="text-muted-foreground">{recent.completed_lessons}/{recent.course.total_lessons} lessons</span>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${recent.progress_percent}%` }} />
               </div>
             </div>
           </Link>
