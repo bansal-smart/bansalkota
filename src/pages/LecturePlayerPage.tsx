@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Play, Pause, Loader2, Lock, CheckCircle2, ChevronDown } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCourseDetail } from "@/hooks/useCourseDetail";
+
+// Auto-complete a lesson once the learner has watched this fraction of it.
+const COMPLETION_THRESHOLD = 0.9;
 
 const extractYouTubeId = (url: string): string | null => {
   const value = url.trim();
@@ -17,9 +20,26 @@ const extractYouTubeId = (url: string): string | null => {
   return /^[A-Za-z0-9_-]{11}$/.test(value) ? value : null;
 };
 
-const getYouTubeEmbedSrc = (url: string) => {
-  const videoId = extractYouTubeId(url);
-  return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : null;
+
+// Lazy-load the YouTube IFrame API
+let ytApiPromise: Promise<void> | null = null;
+const loadYouTubeApi = () => {
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise<void>((resolve) => {
+    const w = window as any;
+    if (w.YT && w.YT.Player) return resolve();
+    const prev = w.onYouTubeIframeAPIReady;
+    w.onYouTubeIframeAPIReady = () => {
+      if (typeof prev === "function") prev();
+      resolve();
+    };
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
+  });
+  return ytApiPromise;
 };
 
 const LecturePlayerPage = () => {
@@ -38,6 +58,9 @@ const LecturePlayerPage = () => {
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastSavedRef = useRef<number>(0);
+  const ytContainerRef = useRef<HTMLDivElement | null>(null);
+  const ytPlayerRef = useRef<any>(null);
+  const ytPollRef = useRef<number | null>(null);
 
   const flatLessons = useMemo(() => chapters.flatMap((c) => c.lessons), [chapters]);
   const activeLesson = flatLessons.find((l) => l.id === activeLessonId) ?? flatLessons[0];
@@ -96,50 +119,58 @@ const LecturePlayerPage = () => {
       .then(({ data }) => setNotes(data?.content ?? ""));
   }, [user, activeLesson]);
 
-  const saveProgress = async (currentSec: number, completed = false, lessonOverride?: typeof activeLesson) => {
-    const lesson = lessonOverride ?? activeLesson;
-    if (!user || !lesson || !course) return;
-    const total = lesson.duration_seconds || 1;
-    await supabase.from("lesson_progress").upsert(
-      {
-        user_id: user.id,
-        course_id: course.id,
-        lesson_slug: lesson.slug,
-        lesson_title: lesson.title,
-        watched_seconds: Math.floor(currentSec),
-        total_seconds: total,
-        is_completed: completed,
-        last_watched_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,lesson_slug,course_id" } as never,
-    );
-
-    const nextMap = { ...progressMap, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
-    setProgressMap(nextMap);
-
-    const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
-    const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
-    await supabase
-      .from("enrollments")
-      .update({
-        progress_percent: percent,
-        completed_lessons: completedCount,
-        last_lesson_title: lesson.title,
-        last_accessed_at: new Date().toISOString(),
-      })
-      .eq("id", enrolledId!);
-
-    if (completed) {
-      await supabase.from("study_sessions").upsert(
+  const saveProgress = useCallback(
+    async (currentSec: number, completed: boolean, lessonOverride?: typeof activeLesson) => {
+      const lesson = lessonOverride ?? activeLesson;
+      if (!user || !lesson || !course) return;
+      const total = lesson.duration_seconds || 1;
+      await supabase.from("lesson_progress").upsert(
         {
           user_id: user.id,
-          session_date: new Date().toISOString().slice(0, 10),
-          minutes_studied: Math.round(total / 60),
+          course_id: course.id,
+          lesson_slug: lesson.slug,
+          lesson_title: lesson.title,
+          watched_seconds: Math.floor(currentSec),
+          total_seconds: total,
+          is_completed: completed,
+          last_watched_at: new Date().toISOString(),
         },
-        { onConflict: "user_id,session_date" } as never,
+        { onConflict: "user_id,lesson_slug,course_id" } as never,
       );
-    }
-  };
+
+      let completedCount = 0;
+      setProgressMap((prev) => {
+        const nextMap = { ...prev, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
+        completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
+        return nextMap;
+      });
+
+      const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
+      if (enrolledId) {
+        await supabase
+          .from("enrollments")
+          .update({
+            progress_percent: percent,
+            completed_lessons: completedCount,
+            last_lesson_title: lesson.title,
+            last_accessed_at: new Date().toISOString(),
+          })
+          .eq("id", enrolledId);
+      }
+
+      if (completed) {
+        await supabase.from("study_sessions").upsert(
+          {
+            user_id: user.id,
+            session_date: new Date().toISOString().slice(0, 10),
+            minutes_studied: Math.round(total / 60),
+          },
+          { onConflict: "user_id,session_date" } as never,
+        );
+      }
+    },
+    [activeLesson, user, course, enrolledId, flatLessons.length],
+  );
 
   const toggleComplete = async () => {
     if (!activeLesson) return;
@@ -151,17 +182,67 @@ const LecturePlayerPage = () => {
 
   const onTimeUpdate = () => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || !activeLesson) return;
     const now = Date.now();
     if (now - lastSavedRef.current > 5000) {
       lastSavedRef.current = now;
       saveProgress(v.currentTime, false);
     }
-    if (v.duration && v.currentTime / v.duration >= 0.9 && !progressMap[activeLesson!.slug]?.is_completed) {
+    if (v.duration && v.currentTime / v.duration >= COMPLETION_THRESHOLD && !progressMap[activeLesson.slug]?.is_completed) {
       saveProgress(v.currentTime, true);
       toast.success("Lesson completed!");
     }
   };
+
+  // YouTube IFrame API integration for auto-completion tracking
+  const youtubeId = activeLesson?.video_url ? extractYouTubeId(activeLesson.video_url) : null;
+  useEffect(() => {
+    if (!youtubeId || !accessChecked || !activeLesson) return;
+    let cancelled = false;
+    const lessonSnapshot = activeLesson;
+
+    loadYouTubeApi().then(() => {
+      if (cancelled || !ytContainerRef.current) return;
+      const w = window as any;
+      const player = new w.YT.Player(ytContainerRef.current, {
+        videoId: youtubeId,
+        playerVars: { rel: 0, modestbranding: 1, origin: window.location.origin },
+        events: {
+          onStateChange: (e: any) => {
+            setPlaying(e.data === w.YT.PlayerState.PLAYING);
+            if (e.data === w.YT.PlayerState.ENDED) {
+              const dur = player?.getDuration?.() ?? lessonSnapshot.duration_seconds;
+              saveProgress(dur, true, lessonSnapshot);
+            }
+          },
+        },
+      });
+      ytPlayerRef.current = player;
+
+      let autoCompleted = progressMap[lessonSnapshot.slug]?.is_completed ?? false;
+      ytPollRef.current = window.setInterval(() => {
+        const p = ytPlayerRef.current;
+        if (!p || typeof p.getCurrentTime !== "function") return;
+        const cur = p.getCurrentTime() ?? 0;
+        const dur = p.getDuration?.() ?? 0;
+        if (cur > 0 && !autoCompleted) saveProgress(cur, false, lessonSnapshot);
+        if (!autoCompleted && dur && cur / dur >= COMPLETION_THRESHOLD) {
+          autoCompleted = true;
+          saveProgress(cur, true, lessonSnapshot);
+          toast.success("Lesson completed!");
+        }
+      }, 5000);
+    });
+
+    return () => {
+      cancelled = true;
+      if (ytPollRef.current) window.clearInterval(ytPollRef.current);
+      ytPollRef.current = null;
+      try { ytPlayerRef.current?.destroy?.(); } catch { /* noop */ }
+      ytPlayerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [youtubeId, accessChecked, activeLesson?.id]);
 
   const saveNotes = async () => {
     if (!user || !activeLesson) return;
@@ -191,7 +272,7 @@ const LecturePlayerPage = () => {
   }
 
   const completedCount = Object.values(progressMap).filter((p) => p.is_completed).length;
-  const youtubeEmbedSrc = activeLesson.video_url ? getYouTubeEmbedSrc(activeLesson.video_url) : null;
+  const isYouTube = !!youtubeId;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(222, 47%, 8%)" }}>
@@ -211,15 +292,10 @@ const LecturePlayerPage = () => {
         <div className="flex-1 flex flex-col">
           <div className="relative aspect-video bg-black">
             {activeLesson.video_url ? (
-              youtubeEmbedSrc ? (
-                <iframe
-                  key={activeLesson.id}
-                  src={youtubeEmbedSrc}
-                  title={activeLesson.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  className="absolute inset-0 h-full w-full border-0"
-                />
+              isYouTube ? (
+                <div key={activeLesson.id} className="absolute inset-0">
+                  <div ref={ytContainerRef} className="h-full w-full" />
+                </div>
               ) : (
                 <video
                   ref={videoRef}
