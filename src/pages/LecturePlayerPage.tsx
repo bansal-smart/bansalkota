@@ -96,15 +96,16 @@ const LecturePlayerPage = () => {
       .then(({ data }) => setNotes(data?.content ?? ""));
   }, [user, activeLesson]);
 
-  const saveProgress = async (currentSec: number, completed = false) => {
-    if (!user || !activeLesson || !course) return;
-    const total = activeLesson.duration_seconds || 1;
+  const saveProgress = async (currentSec: number, completed = false, lessonOverride?: typeof activeLesson) => {
+    const lesson = lessonOverride ?? activeLesson;
+    if (!user || !lesson || !course) return;
+    const total = lesson.duration_seconds || 1;
     await supabase.from("lesson_progress").upsert(
       {
         user_id: user.id,
         course_id: course.id,
-        lesson_slug: activeLesson.slug,
-        lesson_title: activeLesson.title,
+        lesson_slug: lesson.slug,
+        lesson_title: lesson.title,
         watched_seconds: Math.floor(currentSec),
         total_seconds: total,
         is_completed: completed,
@@ -113,17 +114,18 @@ const LecturePlayerPage = () => {
       { onConflict: "user_id,lesson_slug,course_id" } as never,
     );
 
-    setProgressMap((m) => ({ ...m, [activeLesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } }));
+    const nextMap = { ...progressMap, [lesson.slug]: { watched_seconds: Math.floor(currentSec), is_completed: completed } };
+    setProgressMap(nextMap);
 
-    if (completed) {
-      const completedCount = Object.values({ ...progressMap, [activeLesson.slug]: { watched_seconds: total, is_completed: true } }).filter((p) => p.is_completed).length;
+    {
+      const completedCount = Object.values(nextMap).filter((p) => p.is_completed).length;
       const percent = Math.round((completedCount / Math.max(flatLessons.length, 1)) * 100);
       await supabase
         .from("enrollments")
         .update({
           progress_percent: percent,
           completed_lessons: completedCount,
-          last_lesson_title: activeLesson.title,
+          last_lesson_title: lesson.title,
           last_accessed_at: new Date().toISOString(),
         })
         .eq("id", enrolledId!);
