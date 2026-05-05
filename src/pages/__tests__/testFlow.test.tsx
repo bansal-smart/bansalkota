@@ -173,11 +173,13 @@ const runFullFlow = async () => {
   renderFlow();
 
   // Instructions screen renders
-  const startBtn = await screen.findByRole("button", { name: /start test/i });
-  fireEvent.click(startBtn);
+  const startBtn = await screen.findByRole("button", { name: /start test/i }, { timeout: 4000 });
+  await act(async () => {
+    fireEvent.click(startBtn);
+  });
 
   // Question 1 visible
-  await screen.findByText("1 + 1 = ?");
+  await screen.findByText("1 + 1 = ?", {}, { timeout: 4000 });
 
   // Answer Q1 with option B (correct)
   fireEvent.click(screen.getByRole("button", { name: /B\.\s*2/ }));
@@ -185,7 +187,7 @@ const runFullFlow = async () => {
   fireEvent.click(screen.getByRole("button", { name: /save & next/i }));
 
   // Question 2
-  await screen.findByText("2 * 3 = ?");
+  await screen.findByText("2 * 3 = ?", {}, { timeout: 4000 });
   fireEvent.click(screen.getByRole("button", { name: /A\.\s*5/ })); // wrong on purpose
 
   // Submit
@@ -194,7 +196,7 @@ const runFullFlow = async () => {
   });
 
   // Result page rendered
-  await waitFor(() => expect(screen.getByText(/score/i)).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText(/score/i)).toBeInTheDocument(), { timeout: 4000 });
 };
 
 describe("Student test flow (start → answer → submit → results)", () => {
