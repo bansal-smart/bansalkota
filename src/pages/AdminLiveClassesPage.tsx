@@ -400,6 +400,7 @@ const AdminLiveClassesPage = () => {
       title: t.title,
       subject: t.subject,
       teacherId: t.teacher_id ?? "",
+      courseId: "",
       starts_at: "",
       duration_minutes: t.duration_minutes,
       meeting_url: t.meeting_url ?? "",
