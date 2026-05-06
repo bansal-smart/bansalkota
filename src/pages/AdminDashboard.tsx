@@ -23,72 +23,73 @@ const PLAN_STYLE: Record<string, string> = {
   Free: "bg-muted text-muted-foreground",
 };
 
+const fetchDashboard = async () => {
+  const todayStart = startOfDay(new Date()).toISOString();
+  const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+
+  const [
+    profilesRes, coursesRes, enrollmentsRes, liveRes, attemptsRes, eduRes, enqRes, repRes,
+  ] = await Promise.all([
+    supabase.from("profiles")
+      .select("user_id, full_name, plan, created_at, country")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase.from("courses")
+      .select("id, name, educator_name, total_enrolled, rating, price")
+      .eq("is_published", true),
+    supabase.from("enrollments")
+      .select("id, course_id, created_at")
+      .gte("created_at", thirtyDaysAgo),
+    supabase.from("live_classes")
+      .select("id, title, educator_name, status, starts_at")
+      .in("status", ["live", "scheduled"])
+      .order("starts_at", { ascending: true })
+      .limit(10),
+    supabase.from("test_attempts")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", todayStart),
+    supabase.from("educator_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase.from("enquiries")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "new"),
+    supabase.from("reports")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+  ]);
+
+  return {
+    profiles: (profilesRes.data ?? []) as ProfileRow[],
+    courses: (coursesRes.data ?? []) as CourseRow[],
+    enrollments: (enrollmentsRes.data ?? []) as EnrollmentRow[],
+    liveClasses: (liveRes.data ?? []) as LiveClassRow[],
+    testAttemptsToday: attemptsRes.count ?? 0,
+    pending: {
+      educators: eduRes.count ?? 0,
+      enquiries: enqRes.count ?? 0,
+      reports: repRes.count ?? 0,
+    },
+  };
+};
+
 const AdminDashboard = () => {
-  const [loading, setLoading] = useState(true);
-  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
-  const [courses, setCourses] = useState<CourseRow[]>([]);
-  const [enrollments, setEnrollments] = useState<EnrollmentRow[]>([]);
-  const [liveClasses, setLiveClasses] = useState<LiveClassRow[]>([]);
-  const [testAttemptsToday, setTestAttemptsToday] = useState(0);
-  const [pending, setPending] = useState({ educators: 0, enquiries: 0, reports: 0 });
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-dashboard"],
+    queryFn: fetchDashboard,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
-  useEffect(() => {
-    (async () => {
-      const todayStart = startOfDay(new Date()).toISOString();
-      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-
-      const [
-        profilesRes,
-        coursesRes,
-        enrollmentsRes,
-        liveRes,
-        attemptsRes,
-        eduRes,
-        enqRes,
-        repRes,
-      ] = await Promise.all([
-        supabase.from("profiles")
-          .select("user_id, full_name, plan, created_at, country")
-          .order("created_at", { ascending: false })
-          .limit(200),
-        supabase.from("courses")
-          .select("id, name, educator_name, total_enrolled, rating, price")
-          .eq("is_published", true),
-        supabase.from("enrollments")
-          .select("id, course_id, created_at")
-          .gte("created_at", thirtyDaysAgo),
-        supabase.from("live_classes")
-          .select("id, title, educator_name, status, starts_at")
-          .in("status", ["live", "scheduled"])
-          .order("starts_at", { ascending: true })
-          .limit(10),
-        supabase.from("test_attempts")
-          .select("id", { count: "exact", head: true })
-          .gte("created_at", todayStart),
-        supabase.from("educator_applications")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "pending"),
-        supabase.from("enquiries")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "new"),
-        supabase.from("reports")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "pending"),
-      ]);
-
-      setProfiles((profilesRes.data ?? []) as ProfileRow[]);
-      setCourses((coursesRes.data ?? []) as CourseRow[]);
-      setEnrollments((enrollmentsRes.data ?? []) as EnrollmentRow[]);
-      setLiveClasses((liveRes.data ?? []) as LiveClassRow[]);
-      setTestAttemptsToday(attemptsRes.count ?? 0);
-      setPending({
-        educators: eduRes.count ?? 0,
-        enquiries: enqRes.count ?? 0,
-        reports: repRes.count ?? 0,
-      });
-      setLoading(false);
-    })();
-  }, []);
+  const profiles = data?.profiles ?? [];
+  const courses = data?.courses ?? [];
+  const enrollments = data?.enrollments ?? [];
+  const liveClasses = data?.liveClasses ?? [];
+  const testAttemptsToday = data?.testAttemptsToday ?? 0;
+  const pending = data?.pending ?? { educators: 0, enquiries: 0, reports: 0 };
+  const loading = isLoading;
 
   // Derived stats
   const newUsersToday = useMemo(() => {
