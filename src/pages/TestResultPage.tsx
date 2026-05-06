@@ -11,10 +11,15 @@ import {
   MinusCircle,
   Clock,
   Award,
+  ChevronRight,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
+
+const slugifySubject = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
+
 
 type SubjectStat = { total: number; correct: number; attempted: number; score: number };
 
