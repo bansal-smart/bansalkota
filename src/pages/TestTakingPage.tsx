@@ -87,7 +87,7 @@ const TestTakingPage = () => {
 
       setLoading(false);
     })();
-  }, [id, user, authLoading, navigate]);
+  }, [slug, user, authLoading, navigate]);
 
   // Timer
   useEffect(() => {
