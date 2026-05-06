@@ -214,7 +214,7 @@ const TestTakingPage = () => {
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
 
-    navigate(`/tests/result/${attemptId}`);
+    navigate(`/tests/${slug}/result/${attemptId}`);
   };
 
   const counts = useMemo(() => {
