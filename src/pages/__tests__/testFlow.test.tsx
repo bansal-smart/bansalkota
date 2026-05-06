@@ -162,8 +162,8 @@ const renderFlow = () =>
   render(
     <MemoryRouter initialEntries={[`/tests/${scenario.testId}/take`]}>
       <Routes>
-        <Route path="/tests/:id/take" element={<TestTakingPage />} />
-        <Route path="/tests/:id/result" element={<TestResultPage />} />
+        <Route path="/tests/:slug/take" element={<TestTakingPage />} />
+        <Route path="/tests/result/:attemptId" element={<TestResultPage />} />
         <Route path="/my-tests" element={<div>My Tests Page</div>} />
         <Route path="/login" element={<div>Login Page</div>} />
       </Routes>
