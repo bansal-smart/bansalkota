@@ -35,6 +35,7 @@ const baseNav: NavItem[] = [
   { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
   { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
+  { label: "Question Bank", icon: Library, path: "/admin/question-bank" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },
