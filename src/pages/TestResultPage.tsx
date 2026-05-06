@@ -247,7 +247,15 @@ const StatTile = ({
 const CircularProgress = ({ value, size = 64, stroke = 6 }: { value: number; size?: number; stroke?: number }) => {
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
+  const target = Math.min(100, Math.max(0, value));
+  const [animated, setAnimated] = useState(0);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setAnimated(target), 50);
+    return () => window.clearTimeout(t);
+  }, [target]);
+
+  const offset = circumference - (animated / 100) * circumference;
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
@@ -260,11 +268,12 @@ const CircularProgress = ({ value, size = 64, stroke = 6 }: { value: number; siz
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className="fill-none stroke-primary transition-all"
+          style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1)" }}
+          className="fill-none stroke-primary"
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-foreground">
-        {value}%
+        {Math.round(animated)}%
       </div>
     </div>
   );
