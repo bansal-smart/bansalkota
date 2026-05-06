@@ -18,6 +18,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import TestListPage from "./pages/TestListPage";
 import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
+import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
 
