@@ -153,12 +153,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkRole]);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
+      const newUserId = newSession?.user?.id ?? null;
+
+      // Ignore token refreshes / tab-focus re-emits for the same user — they
+      // would otherwise reset roleReady and trigger a full-screen loader,
+      // which looks like a "reload" when switching browser tabs.
+      if (event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") return;
+      if (newUserId && newUserId === lastRoleUserId.current) return;
+
       if (newSession?.user) {
-        // Reset roleReady so consumers know the next role check is in flight.
         setRoleReady(false);
-        // Defer the async work so we don't block the auth listener callback.
         setTimeout(() => {
           checkRole(newSession.user.id);
           loadProfile(newSession.user);
@@ -166,7 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         lastRoleUserId.current = null;
         setRole(null);
-        setRoleReady(true); // No user = role question is "resolved"
+        setRoleReady(true);
         setStoreUser(null);
       }
     });
