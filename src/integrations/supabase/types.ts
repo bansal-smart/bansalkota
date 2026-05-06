@@ -1785,6 +1785,14 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
+      is_member_of_group: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_mentor_of_group: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
