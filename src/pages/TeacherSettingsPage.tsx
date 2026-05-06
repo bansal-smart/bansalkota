@@ -1,5 +1,5 @@
-import { Settings, User, Wallet, Bell, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Settings, User, Wallet, Bell, Shield, Camera, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -13,12 +13,17 @@ import {
 } from "@/components/ui/dialog";
 
 const TeacherSettingsPage = () => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [profileLoading, setProfileLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [classNotif, setClassNotif] = useState(true);
   const [doubtNotif, setDoubtNotif] = useState(true);
@@ -46,11 +51,14 @@ const TeacherSettingsPage = () => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone")
+        .select("full_name, phone, city, country, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
       setName(data?.full_name || "");
       setPhone(data?.phone || "");
+      setCity(data?.city || "");
+      setCountry(data?.country || "");
+      setAvatarUrl(data?.avatar_url || "");
       setProfileLoading(false);
     })();
   }, [user]);
@@ -60,14 +68,43 @@ const TeacherSettingsPage = () => {
     setSavingProfile(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: name, phone })
+      .update({ full_name: name, phone, city, country })
       .eq("user_id", user.id);
     setSavingProfile(false);
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Profile updated" });
+      await refreshProfile();
     }
+  };
+
+  const handleAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Image too large", description: "Max 2MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (upErr) {
+      setUploading(false);
+      toast({ title: "Upload failed", description: upErr.message, variant: "destructive" });
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
+    setUploading(false);
+    if (dbErr) {
+      toast({ title: "Could not save photo", description: dbErr.message, variant: "destructive" });
+      return;
+    }
+    setAvatarUrl(publicUrl);
+    toast({ title: "Photo updated" });
+    await refreshProfile();
   };
 
   const persistNotif = (next: { classNotif: boolean; doubtNotif: boolean }) => {
@@ -137,7 +174,33 @@ const TeacherSettingsPage = () => {
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
             <User className="h-4 w-4 text-primary" /> Profile
           </h3>
-          <div className="space-y-3">
+
+          <div className="flex items-center gap-4 mb-5">
+            <div className="relative">
+              <div className="h-20 w-20 rounded-full bg-primary-light ring-2 ring-border overflow-hidden flex items-center justify-center text-xl font-black text-primary">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+                ) : (
+                  (name || "T").split(" ").map((n) => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()
+                )}
+              </div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md disabled:opacity-60"
+              >
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">{name || "Educator"}</p>
+              <p className="text-xs text-muted-foreground">{email}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">JPG/PNG, up to 2MB</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Full Name</label>
               <input
@@ -154,7 +217,6 @@ const TeacherSettingsPage = () => {
                 disabled
                 className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground outline-none cursor-not-allowed"
               />
-              <p className="mt-1 text-[10px] text-muted-foreground">Email is tied to your account and can't be changed here.</p>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Phone</label>
@@ -166,14 +228,33 @@ const TeacherSettingsPage = () => {
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
               />
             </div>
-            <button
-              onClick={saveProfile}
-              disabled={savingProfile || profileLoading}
-              className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
-            >
-              {savingProfile ? "Saving..." : "Save Changes"}
-            </button>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">City</label>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={profileLoading}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Country</label>
+              <input
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                disabled={profileLoading}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
           </div>
+
+          <button
+            onClick={saveProfile}
+            disabled={savingProfile || profileLoading}
+            className="mt-4 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+          >
+            {savingProfile ? "Saving..." : "Save Changes"}
+          </button>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
