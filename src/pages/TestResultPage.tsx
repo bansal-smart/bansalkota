@@ -31,7 +31,7 @@ type Attempt = {
 };
 
 const TestResultPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { attemptId: id } = useParams<{ attemptId: string }>();
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
