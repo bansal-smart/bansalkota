@@ -3,6 +3,9 @@ project_id = "zmkgboiqubtowmionplq"
 [functions.seed-staff-user]
 verify_jwt = false
 
+[functions.seed-mentor-demo]
+verify_jwt = false
+
 [functions.seed-super-admin]
 verify_jwt = false
 
