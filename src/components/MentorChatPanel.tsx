@@ -136,14 +136,15 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
   }, [file]);
 
   // Keep active selection in sync with refreshed conversations (preserves unread updates)
+  // Only swap when the id actually changes — otherwise we'd thrash the messages effect
+  // every time the parent refreshes, causing a re-fetch loop.
   useEffect(() => {
     if (!active && conversations[0]) {
       setActive(conversations[0]);
       return;
     }
-    if (active) {
-      const fresh = conversations.find((c) => c.id === active.id);
-      if (fresh && fresh !== active) setActive(fresh);
+    if (active && !conversations.some((c) => c.id === active.id) && conversations[0]) {
+      setActive(conversations[0]);
     }
   }, [conversations, active]);
 
