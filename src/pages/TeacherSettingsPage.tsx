@@ -51,11 +51,14 @@ const TeacherSettingsPage = () => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone")
+        .select("full_name, phone, city, country, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
       setName(data?.full_name || "");
       setPhone(data?.phone || "");
+      setCity(data?.city || "");
+      setCountry(data?.country || "");
+      setAvatarUrl(data?.avatar_url || "");
       setProfileLoading(false);
     })();
   }, [user]);
@@ -65,14 +68,43 @@ const TeacherSettingsPage = () => {
     setSavingProfile(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: name, phone })
+      .update({ full_name: name, phone, city, country })
       .eq("user_id", user.id);
     setSavingProfile(false);
     if (error) {
       toast({ title: "Failed to save", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Profile updated" });
+      await refreshProfile();
     }
+  };
+
+  const handleAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Image too large", description: "Max 2MB", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (upErr) {
+      setUploading(false);
+      toast({ title: "Upload failed", description: upErr.message, variant: "destructive" });
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", user.id);
+    setUploading(false);
+    if (dbErr) {
+      toast({ title: "Could not save photo", description: dbErr.message, variant: "destructive" });
+      return;
+    }
+    setAvatarUrl(publicUrl);
+    toast({ title: "Photo updated" });
+    await refreshProfile();
   };
 
   const persistNotif = (next: { classNotif: boolean; doubtNotif: boolean }) => {
