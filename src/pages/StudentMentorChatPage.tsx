@@ -4,8 +4,8 @@ import { useStudentMentorConversations } from "@/hooks/useMentorChat";
 const StudentMentorChatPage = () => {
   const { conversations, loading, refresh } = useStudentMentorConversations();
   return (
-    <div className="p-4 lg:p-6">
-      <div className="mb-4">
+    <div className="flex h-[calc(100vh-4rem)] flex-col p-4 lg:p-6">
+      <div className="mb-4 shrink-0">
         <h1 className="font-display text-2xl font-black text-foreground">Mentor Chat</h1>
         <p className="text-sm text-muted-foreground">
           Talk to your assigned mentor and your mentor group.
