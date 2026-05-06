@@ -36,10 +36,11 @@ type Attempt = {
 };
 
 const TestResultPage = () => {
-  const { attemptId: id } = useParams<{ attemptId: string }>();
+  const { attemptId: id, slug } = useParams<{ attemptId: string; slug: string }>();
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
+
 
   useEffect(() => {
     if (!id) return;
