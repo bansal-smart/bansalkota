@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Sigma, FlaskConical, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
+import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
   open: boolean;
