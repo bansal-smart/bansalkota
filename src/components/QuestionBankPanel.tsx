@@ -3,6 +3,7 @@ import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked } from "lucide-re
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
+import MathRenderer from "./MathRenderer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -46,7 +47,9 @@ const QuestionCard = ({ q, draggable, onEdit, onDelete, compact }: CardProps) =>
             {q.topic && <span className="text-[10px] font-medium text-muted-foreground">{q.topic}</span>}
             <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
           </div>
-          <p className={`text-foreground ${compact ? "text-xs line-clamp-2" : "text-sm line-clamp-3"}`}>{q.question_text}</p>
+          <div className={`text-foreground ${compact ? "text-xs line-clamp-2" : "text-sm line-clamp-3"}`}>
+            <MathRenderer content={q.question_text} />
+          </div>
         </div>
         {(onEdit || onDelete) && (
           <div className="flex flex-col gap-1 shrink-0">

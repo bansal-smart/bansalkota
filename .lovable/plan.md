@@ -1,46 +1,64 @@
-## Goal
+# Question Bank Admin Page + Math/Chemistry Equation Rendering
 
-Stop forcing admins to define the curriculum at course creation time. Instead, let admins build the curriculum (chapters + lectures) inside the existing **Course Content** page (`/admin/course-content`) by adding lectures via private YouTube links that play inline on our platform.
+## Problem
 
-## Changes
+There is no admin tab to add/edit/delete questions in `question_bank`. Today, questions can only be picked from the bank inside test creation but never authored standalone. We also need LaTeX/chemistry equation support both in the editor (write) and the student/test UI (render).
 
-### 1. Remove curriculum from course creation — `src/pages/CreateCoursePage.tsx`
+## Scope
 
-- In **create mode** (`!isEditMode`):
-  - Remove the entire "Curriculum" card (chapters + lectures UI).
-  - Drop the "Add at least one chapter" validation guard.
-  - Skip the chapter/lesson insert loop and the totals update on create.
-  - New courses are saved with no chapters/lessons — admin builds them later from Course Content.
-- In **edit mode**: keep the existing curriculum editor as-is so legacy courses remain editable.
-- Remove now-unused imports/helpers if they become dead in create mode (keep them; edit mode still uses them).
+### 1. New admin page: `AdminQuestionBankPage`
 
-### 2. Add curriculum management to Course Content — `src/pages/AdminCourseContentPage.tsx`
+- Route: `/admin/question-bank` (added to `App.tsx` under the admin protected routes).
+- Nav entry in `src/components/AdminLayout.tsx` (icon: `Library` or `BookOpen`) placed under "Tests".
+- Uses existing `useQuestionBank` hook for listing, with filters (subject, difficulty, search) + pagination.
+- Table columns: Subject, Topic, Difficulty, Question (rendered with math), Created at, Actions (Edit / Delete).
+- Toolbar: "Add Question" button → opens an upgraded `QuestionEditorDialog`.
+- Delete uses `ConfirmDialog`.
 
-Within the **selected course** view (after picking a course), add a new **Curriculum** section above the existing Resources section.
+### 2. Equation rendering library
 
-- **Layout**: list of chapters; each chapter shows its lectures (title, duration, YouTube preview link) with edit/delete; an "Add lecture" button per chapter and an "Add chapter" button at the top of the section.
-- **Add Chapter dialog**: title input → inserts into `chapters` with next `position`.
-- **Add Lecture dialog** (the requested "Add lectures" button), fields:
-  - Lecture title (required)
-  - YouTube URL (required) — accept full URL or short `youtu.be/...`; parse out the 11-char video ID; reject invalid input
-  - Duration in minutes (optional, default 10)
-  - Chapter selector (defaults to the chapter the button was clicked from)
-  - "Free preview" toggle
-  - On save: insert into `lessons` with `type='video'`, `video_url = https://www.youtube.com/embed/{id}` (canonical embed form for private/unlisted-friendly playback), `duration_seconds = minutes*60`, auto-generated unique `slug`, next `position` within that chapter.
-- **Edit / delete**: inline edit of title/duration; delete with `useConfirm` confirmation.
-- **Data loading**: extend `loadCourseDetail` to also fetch `lessons` for the course so chapters render with their lessons.
+Install: `react-katex`, `katex`, `react-markdown`, `remark-math`, `rehype-katex`, `mathlive`.
 
-### 3. Player compatibility — `src/pages/LecturePlayerPage.tsx` (verify only, edit if needed)
+- Import `katex/dist/katex.min.css` once in `src/main.tsx`.
+- Create reusable `src/components/MathRenderer.tsx`:
+  - Wraps `ReactMarkdown` with `remarkMath` + `rehypeKatex`.
+  - Accepts `content: string` and renders inline `$...$` and block `$$...$$` math, plus markdown.
+  - Adds a small post-process for chemistry: convert `\ce{...}` to KaTeX-compatible via the `mhchem` KaTeX extension (`import "katex/contrib/mhchem"`).
+- Create `src/components/MathField.tsx`:
+  - Wraps the MathLive `<math-field>` web component as a controlled React input.
+  - Emits LaTeX string via `onChange`.
+  - Includes a small toolbar hint and "Insert chemistry (\ce{})" helper button.
 
-Confirm the existing lecture player renders YouTube `embed` URLs via `<iframe>`. If it currently expects an MP4 `<video>`, add a branch: when `video_url` includes `youtube.com/embed/` or `youtu.be`, render a YouTube iframe (with `?rel=0&modestbranding=1`). This ensures private-listed YouTube lectures play inside our platform rather than redirecting to YouTube.
+### 3. Upgrade `QuestionEditorDialog`
 
-## Notes for the user
+- Replace plain `<textarea>` for question text and the 4 option inputs with a hybrid input: a `MathField` (visual equation editor) plus a plain text fallback toggle (so admins can paste raw markdown/LaTeX too).
+- Add a live "Preview" pane using `MathRenderer` showing the question + options + explanation as students will see them.
+- Persist as plain LaTeX/markdown string in `question_bank.question_text`, `options[].text`, and `explanation` (no schema change — already `text`/`jsonb`).
 
-- "Private" YouTube videos cannot be embedded by third parties — only **Unlisted** videos can. Recommend uploading recordings as **Unlisted** on YouTube so the link is not publicly listed but the embed still works on our platform. The UI copy in the Add Lecture dialog will mention this.
-- No database schema changes are needed — existing `chapters` and `lessons` tables already support this (`lessons.video_url`, `type`, `duration_seconds`, etc.).
+### 4. Student-side rendering
 
-## Files touched
+Swap plain text rendering for `MathRenderer` in:
 
-- `src/pages/CreateCoursePage.tsx` — strip curriculum from create flow
-- `src/pages/AdminCourseContentPage.tsx` — add Curriculum section + chapter/lecture dialogs
-- `src/pages/LecturePlayerPage.tsx` — ensure YouTube embed playback (only if not already supported)
+- `src/pages/TestTakingPage.tsx` — question text, options, (if shown) explanation.
+- `src/pages/TestSubjectBreakdownPage.tsx` — question text, user/correct option labels, explanation.
+- `src/components/QuestionBankPanel.tsx` — preview cards.
+- `src/pages/CreateTestPage.tsx` — question text preview in the draft list.
+
+No changes to AI doubt solver or other pages in this pass.
+
+## Out of scope
+
+- No DB schema migration (existing columns already store text).
+- No bulk import/CSV.
+- No image upload changes (existing `question_image_url` stays as is).
+
+## Technical notes
+
+- KaTeX `mhchem` extension supports `\ce{H2SO4 + NaOH -> Na2SO4 + H2O}`.
+- MathLive ships as a custom element; declare it in a `.d.ts` (`src/mathlive.d.ts`) so TS accepts `<math-field>` JSX.
+- `MathRenderer` should sanitize: pass `skipHtml` to `ReactMarkdown` to avoid raw HTML injection from admin input.
+
+## Files
+
+- New: `src/pages/AdminQuestionBankPage.tsx`, `src/components/MathRenderer.tsx`, `src/components/MathField.tsx`, `src/mathlive.d.ts`.
+- Edit: `src/App.tsx`, `src/components/AdminLayout.tsx`, `src/components/QuestionEditorDialog.tsx`, `src/components/QuestionBankPanel.tsx`, `src/pages/CreateTestPage.tsx`, `src/pages/TestTakingPage.tsx`, `src/pages/TestSubjectBreakdownPage.tsx`, `src/main.tsx`, `package.json`.

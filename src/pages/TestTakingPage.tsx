@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import MathRenderer from "@/components/MathRenderer";
 
 type TestQuestion = {
   id: string;
@@ -321,7 +322,7 @@ const TestTakingPage = () => {
               {q.topic && <span>· {q.topic}</span>}
               <span className="ml-auto">+{q.marks_correct} / {q.marks_wrong}</span>
             </div>
-            <p className="text-sm text-foreground leading-relaxed">{q.question_text}</p>
+            <div className="text-sm text-foreground leading-relaxed"><MathRenderer content={q.question_text} /></div>
             {q.question_image_url && <img src={q.question_image_url} alt="" className="rounded-lg max-h-64" />}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {q.options.map((opt) => {
@@ -335,7 +336,7 @@ const TestTakingPage = () => {
                     }`}
                   >
                     <span className="font-bold mr-2">{String.fromCharCode(65 + opt.id)}.</span>
-                    {opt.text}
+                    <MathRenderer content={opt.text} inline />
                   </button>
                 );
               })}

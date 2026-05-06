@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Sigma, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
+import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
   open: boolean;
@@ -109,31 +110,55 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
             </div>
           </div>
 
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground flex items-center gap-3 flex-wrap">
+            <span className="font-semibold text-foreground">Equation tips:</span>
+            <span className="inline-flex items-center gap-1"><Sigma className="h-3 w-3" /> Inline math: <code className="px-1 bg-background rounded">$x^2$</code></span>
+            <span className="inline-flex items-center gap-1"><Sigma className="h-3 w-3" /> Block: <code className="px-1 bg-background rounded">$$\frac{`{a}{b}`}$$</code></span>
+            <span className="inline-flex items-center gap-1"><FlaskConical className="h-3 w-3" /> Chemistry: <code className="px-1 bg-background rounded">$\ce{`{H2SO4}`}$</code></span>
+          </div>
+
           <div>
             <label className="text-xs font-semibold text-foreground">Question</label>
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none" />
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Solve $x^2 + 5x + 6 = 0$" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none font-mono" />
+            {text && (
+              <div className="mt-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                <MathRenderer content={text} />
+              </div>
+            )}
           </div>
 
           {options.map((opt, oi) => (
-            <div key={oi} className="flex items-center gap-2">
-              <input type="radio" checked={correct === oi} onChange={() => setCorrect(oi)} className="shrink-0" />
-              <span className="text-xs font-bold w-5">{String.fromCharCode(65 + oi)}.</span>
-              <input
-                value={opt}
-                onChange={(e) => {
-                  const next = [...options];
-                  next[oi] = e.target.value;
-                  setOptions(next);
-                }}
-                placeholder={`Option ${oi + 1}`}
-                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
-              />
+            <div key={oi} className="flex items-start gap-2">
+              <input type="radio" checked={correct === oi} onChange={() => setCorrect(oi)} className="shrink-0 mt-3" />
+              <span className="text-xs font-bold w-5 mt-3">{String.fromCharCode(65 + oi)}.</span>
+              <div className="flex-1 space-y-1">
+                <input
+                  value={opt}
+                  onChange={(e) => {
+                    const next = [...options];
+                    next[oi] = e.target.value;
+                    setOptions(next);
+                  }}
+                  placeholder={`Option ${oi + 1} (LaTeX allowed: $x=2$)`}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none font-mono"
+                />
+                {opt && (
+                  <div className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
+                    <MathRenderer content={opt} inline />
+                  </div>
+                )}
+              </div>
             </div>
           ))}
 
           <div>
             <label className="text-xs font-semibold text-foreground">Explanation (optional)</label>
-            <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none" />
+            <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none font-mono" />
+            {explanation && (
+              <div className="mt-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+                <MathRenderer content={explanation} />
+              </div>
+            )}
           </div>
         </div>
         <div className="sticky bottom-0 flex justify-end gap-2 border-t border-border bg-card px-5 py-3">

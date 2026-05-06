@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
+import MathRenderer from "@/components/MathRenderer";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -125,9 +126,10 @@ const TestSubjectBreakdownPage = () => {
           return (
             <div key={q.id} className="rounded-2xl border border-border bg-card p-4 animate-fade-in">
               <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-semibold text-foreground">
-                  Q{idx + 1}. {q.question_text}
-                </p>
+                <div className="text-sm font-semibold text-foreground flex-1">
+                  <span className="mr-1">Q{idx + 1}.</span>
+                  <MathRenderer content={q.question_text} inline />
+                </div>
                 {isUnattempted ? (
                   <MinusCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
                 ) : isCorrect ? (
@@ -152,7 +154,7 @@ const TestSubjectBreakdownPage = () => {
                       }`}
                     >
                       <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
-                      {opt.text}
+                      <MathRenderer content={opt.text} inline />
                     </div>
                   );
                 })}
@@ -160,7 +162,7 @@ const TestSubjectBreakdownPage = () => {
               {q.explanation && (
                 <div className="mt-3 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                   <span className="font-bold text-foreground">Explanation: </span>
-                  {q.explanation}
+                  <MathRenderer content={q.explanation} inline />
                 </div>
               )}
             </div>
