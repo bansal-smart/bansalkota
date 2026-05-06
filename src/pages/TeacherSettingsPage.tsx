@@ -1,5 +1,5 @@
-import { Settings, User, Wallet, Bell, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Settings, User, Wallet, Bell, Shield, Camera, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -13,12 +13,17 @@ import {
 } from "@/components/ui/dialog";
 
 const TeacherSettingsPage = () => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [profileLoading, setProfileLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [classNotif, setClassNotif] = useState(true);
   const [doubtNotif, setDoubtNotif] = useState(true);
