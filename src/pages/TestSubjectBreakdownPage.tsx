@@ -126,9 +126,10 @@ const TestSubjectBreakdownPage = () => {
           return (
             <div key={q.id} className="rounded-2xl border border-border bg-card p-4 animate-fade-in">
               <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-semibold text-foreground">
-                  Q{idx + 1}. {q.question_text}
-                </p>
+                <div className="text-sm font-semibold text-foreground flex-1">
+                  <span className="mr-1">Q{idx + 1}.</span>
+                  <MathRenderer content={q.question_text} inline />
+                </div>
                 {isUnattempted ? (
                   <MinusCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
                 ) : isCorrect ? (
