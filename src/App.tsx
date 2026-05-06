@@ -135,6 +135,7 @@ const App = () => (
                 <Route path="/dashboard" element={<StudentDashboard />} />
                 <Route path="/my-tests" element={<TestListPage />} />
                 <Route path="/tests/:slug/result/:attemptId" element={<TestResultPage />} />
+                <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
                 <Route path="/my-live-classes" element={<LiveClassesListPage />} />
                 <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
                 
