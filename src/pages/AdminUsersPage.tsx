@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Search, UserPlus, Download, X, ChevronLeft, ChevronRight, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { List, type RowComponentProps } from "react-window";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminUsers, type AdminUserRow } from "@/hooks/useAdminUsers";
 
