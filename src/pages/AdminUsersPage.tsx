@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Search, UserPlus, Download, X, ChevronLeft, ChevronRight, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { List, type RowComponentProps } from "react-window";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminUsers, type AdminUserRow } from "@/hooks/useAdminUsers";
 
@@ -43,6 +44,126 @@ const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
   mentor: "Chats 1:1 and in groups with assigned students; views their performance read-only.",
   admin: "Manages courses, live classes, mentors, students, and content moderation.",
   super_admin: "Highest privilege — everything admin can do, plus revenue, refunds, platform settings and admin account creation.",
+};
+
+type UserRowProps = {
+  rows: AdminUserRow[];
+  selected: string[];
+  setSelected: (s: string[]) => void;
+  onRowClick: (u: AdminUserRow) => void;
+};
+
+const UserListRow = ({
+  index,
+  style,
+  rows,
+  selected,
+  setSelected,
+  onRowClick,
+}: RowComponentProps<UserRowProps>) => {
+  const u = rows[index];
+  if (!u) return null;
+  const isChecked = selected.includes(u.user_id);
+  return (
+    <div
+      style={style}
+      onClick={() => onRowClick(u)}
+      className="flex items-center border-b border-border hover:bg-background/50 cursor-pointer text-xs"
+    >
+      <div className="p-3 w-10 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          className="rounded"
+          checked={isChecked}
+          onChange={(e) =>
+            setSelected(e.target.checked ? [...selected, u.user_id] : selected.filter((id) => id !== u.user_id))
+          }
+        />
+      </div>
+      <div className="p-3 flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0 overflow-hidden">
+            {u.avatar_url ? (
+              <img src={u.avatar_url} alt="" loading="lazy" className="h-full w-full object-cover" />
+            ) : (
+              (u.full_name ?? "U").split(" ").map((n) => n[0]).join("").slice(0, 2)
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-foreground truncate">{u.full_name || "Unnamed user"}</p>
+            {u.is_suspended && <span className="text-[9px] font-bold text-destructive uppercase">Suspended</span>}
+          </div>
+        </div>
+      </div>
+      <div className="p-3 w-32 hidden sm:block text-muted-foreground truncate">{u.phone || "—"}</div>
+      <div className="p-3 w-28">{roleBadge(u.role)}</div>
+      <div className="p-3 w-20 hidden md:block">{planBadge(u.plan)}</div>
+      <div className="p-3 w-28 hidden lg:block text-muted-foreground truncate">{u.country || "—"}</div>
+      <div className="p-3 w-24 hidden lg:block text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</div>
+      <div className="p-3 w-12 text-muted-foreground">
+        {u.is_suspended ? <ShieldOff className="h-4 w-4 text-destructive" /> : <ShieldCheck className="h-4 w-4 text-secondary" />}
+      </div>
+    </div>
+  );
+};
+
+const UsersVirtualTable = ({
+  rows,
+  loading,
+  selected,
+  setSelected,
+  allSelected,
+  onRowClick,
+}: {
+  rows: AdminUserRow[];
+  loading: boolean;
+  selected: string[];
+  setSelected: (s: string[]) => void;
+  allSelected: boolean;
+  onRowClick: (u: AdminUserRow) => void;
+}) => {
+  const rowProps = useMemo(
+    () => ({ rows, selected, setSelected, onRowClick }),
+    [rows, selected, setSelected, onRowClick],
+  );
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in-up">
+      <div className="flex items-center border-b border-border bg-background text-xs font-medium text-muted-foreground">
+        <div className="p-3 w-10 shrink-0">
+          <input
+            type="checkbox"
+            className="rounded"
+            checked={allSelected}
+            onChange={(e) => setSelected(e.target.checked ? rows.map((u) => u.user_id) : [])}
+          />
+        </div>
+        <div className="p-3 flex-1">Name</div>
+        <div className="p-3 w-32 hidden sm:block">Phone</div>
+        <div className="p-3 w-28">Role</div>
+        <div className="p-3 w-20 hidden md:block">Plan</div>
+        <div className="p-3 w-28 hidden lg:block">Country</div>
+        <div className="p-3 w-24 hidden lg:block">Joined</div>
+        <div className="p-3 w-12"></div>
+      </div>
+      {loading ? (
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="p-10 text-center text-sm text-muted-foreground">No users match your filters.</div>
+      ) : (
+        <List
+          rowCount={rows.length}
+          rowHeight={56}
+          rowComponent={UserListRow}
+          rowProps={rowProps}
+          style={{ height: Math.min(rows.length * 56 + 4, 600) }}
+          overscanCount={6}
+        />
+      )}
+    </div>
+  );
 };
 
 const AdminUsersPage = () => {
@@ -163,78 +284,14 @@ const AdminUsersPage = () => {
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-card overflow-x-auto animate-fade-in-up">
-        {loading ? (
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          </div>
-        ) : rows.length === 0 ? (
-          <div className="p-10 text-center text-sm text-muted-foreground">No users match your filters.</div>
-        ) : (
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-b border-border bg-background">
-                <th className="p-3">
-                  <input
-                    type="checkbox"
-                    className="rounded"
-                    onChange={(e) => setSelected(e.target.checked ? rows.map((u) => u.user_id) : [])}
-                    checked={allSelected}
-                  />
-                </th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
-                <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Phone</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
-                <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Plan</th>
-                <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Country</th>
-                <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Joined</th>
-                <th className="p-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((u) => (
-                <tr key={u.user_id} className="border-b border-border last:border-0 hover:bg-background/50 cursor-pointer" onClick={() => setDrawerUser(u)}>
-                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      className="rounded"
-                      checked={selected.includes(u.user_id)}
-                      onChange={(e) => setSelected(e.target.checked ? [...selected, u.user_id] : selected.filter((id) => id !== u.user_id))}
-                    />
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0 overflow-hidden">
-                        {u.avatar_url ? (
-                          <img src={u.avatar_url} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          (u.full_name ?? "U")
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-foreground truncate">{u.full_name || "Unnamed user"}</p>
-                        {u.is_suspended && <span className="text-[9px] font-bold text-destructive uppercase">Suspended</span>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3 text-muted-foreground hidden sm:table-cell">{u.phone || "—"}</td>
-                  <td className="p-3">{roleBadge(u.role)}</td>
-                  <td className="p-3 hidden md:table-cell">{planBadge(u.plan)}</td>
-                  <td className="p-3 text-muted-foreground hidden lg:table-cell">{u.country || "—"}</td>
-                  <td className="p-3 text-muted-foreground hidden lg:table-cell">{new Date(u.created_at).toLocaleDateString()}</td>
-                  <td className="p-3 text-muted-foreground">
-                    {u.is_suspended ? <ShieldOff className="h-4 w-4 text-destructive" /> : <ShieldCheck className="h-4 w-4 text-secondary" />}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <UsersVirtualTable
+        rows={rows}
+        loading={loading}
+        selected={selected}
+        setSelected={setSelected}
+        allSelected={allSelected}
+        onRowClick={setDrawerUser}
+      />
 
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
