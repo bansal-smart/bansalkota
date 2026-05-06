@@ -21,6 +21,7 @@ import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
 import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 
 type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
@@ -122,8 +123,8 @@ const AdminSidebar = memo(({ email, initials, isSuperAdmin, onLogout }: SidebarP
 
       <div className="border-t border-white/10 p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {initials}
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground overflow-hidden">
+            {avatarUrl ? <img src={avatarUrl} alt={initials} className="h-full w-full object-cover" /> : initials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate">{email || roleLabel}</p>
@@ -162,9 +163,9 @@ const AdminHeader = memo(
         <Link
           to="/admin/profile"
           aria-label="My profile"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity overflow-hidden"
         >
-          {initials}
+          {avatarUrl ? <img src={avatarUrl} alt={initials} className="h-full w-full object-cover" /> : initials}
         </Link>
       </div>
     </header>
