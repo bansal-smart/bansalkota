@@ -159,26 +159,21 @@ const TestResultPage = () => {
 
         {/* Subject breakdown */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-3 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
+          <h2 className="mb-4 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
           {Object.keys(subjects).length === 0 ? (
             <p className="text-xs text-muted-foreground">No subject data available.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {Object.entries(subjects).map(([subj, stat]) => {
                 const acc = calcPercent(stat.correct, stat.attempted || stat.total);
                 return (
-                  <div key={subj} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-semibold text-foreground">{subj}</span>
-                      <span className="text-muted-foreground">
-                        {stat.correct}/{stat.total} correct · {Number(stat.score).toFixed(1)} marks
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${acc}%` }}
-                      />
+                  <div key={subj} className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3">
+                    <CircularProgress value={acc} />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-foreground">{subj}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {stat.correct}/{stat.total} · {Number(stat.score).toFixed(1)}m
+                      </p>
                     </div>
                   </div>
                 );
@@ -231,6 +226,32 @@ const StatTile = ({
       </div>
       <p className="font-display text-xl font-black text-foreground">{value}</p>
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+    </div>
+  );
+};
+
+const CircularProgress = ({ value, size = 64, stroke = 6 }: { value: number; size?: number; stroke?: number }) => {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={stroke} className="fill-none stroke-muted" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="fill-none stroke-primary transition-all"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-foreground">
+        {value}%
+      </div>
     </div>
   );
 };
