@@ -65,20 +65,43 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
       explanation: explanation.trim() || null,
     };
 
-    let error;
-    if (initial) {
-      ({ error } = await supabase.from("question_bank").update(payload).eq("id", initial.id));
-    } else {
-      ({ error } = await supabase
-        .from("question_bank")
-        .insert({ ...payload, created_by: user.id }));
-    }
+    const runSave = async () => {
+      if (initial) {
+        return supabase.from("question_bank").update(payload).eq("id", initial.id);
+      }
+      return supabase.from("question_bank").insert({ ...payload, created_by: user.id });
+    };
 
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(initial ? "Question updated" : "Question added");
-    onSaved();
-    onClose();
+    try {
+      // Ensure auth token is fresh — stale tokens can cause "Failed to fetch" on refresh.
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        await supabase.auth.refreshSession();
+      }
+
+      let res = await runSave();
+      // Retry once on transient network errors.
+      if (res.error && /failed to fetch|network/i.test(res.error.message)) {
+        await new Promise((r) => setTimeout(r, 600));
+        res = await runSave();
+      }
+      if (res.error) {
+        toast.error(res.error.message);
+        return;
+      }
+      toast.success(initial ? "Question updated" : "Question added");
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      const msg = e?.message || "Save failed";
+      if (/failed to fetch/i.test(msg)) {
+        toast.error("Network error — check your connection or disable ad/script blockers, then try again.");
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
