@@ -162,7 +162,7 @@ const TestSubjectBreakdownPage = () => {
               {q.explanation && (
                 <div className="mt-3 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                   <span className="font-bold text-foreground">Explanation: </span>
-                  {q.explanation}
+                  <MathRenderer content={q.explanation} inline />
                 </div>
               )}
             </div>
