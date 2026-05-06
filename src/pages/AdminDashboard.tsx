@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Users, IndianRupee, BookOpen, Target, ArrowRight, Loader2, Inbox, Briefcase, Flag,
 } from "lucide-react";
