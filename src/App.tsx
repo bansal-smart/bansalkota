@@ -75,6 +75,7 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 import MentorLayout from "./components/MentorLayout";
 import MentorDashboard from "./pages/MentorDashboard";
 import MentorChatsPage from "./pages/MentorChatsPage";
+import MentorPerformancePage from "./pages/MentorPerformancePage";
 import MentorStudentsPage from "./pages/MentorStudentsPage";
 import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
@@ -175,6 +176,7 @@ const App = () => (
                 <Route path="/mentor/dashboard" element={<MentorDashboard />} />
                 <Route path="/mentor/students" element={<MentorStudentsPage />} />
                 <Route path="/mentor/chats" element={<MentorChatsPage />} />
+                <Route path="/mentor/performance" element={<MentorPerformancePage />} />
               </Route>
             </Route>
 
