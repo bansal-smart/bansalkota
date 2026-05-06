@@ -174,7 +174,33 @@ const TeacherSettingsPage = () => {
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4">
             <User className="h-4 w-4 text-primary" /> Profile
           </h3>
-          <div className="space-y-3">
+
+          <div className="flex items-center gap-4 mb-5">
+            <div className="relative">
+              <div className="h-20 w-20 rounded-full bg-primary-light ring-2 ring-border overflow-hidden flex items-center justify-center text-xl font-black text-primary">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+                ) : (
+                  (name || "T").split(" ").map((n) => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()
+                )}
+              </div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md disabled:opacity-60"
+              >
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">{name || "Educator"}</p>
+              <p className="text-xs text-muted-foreground">{email}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">JPG/PNG, up to 2MB</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-xs font-medium text-muted-foreground">Full Name</label>
               <input
@@ -191,7 +217,6 @@ const TeacherSettingsPage = () => {
                 disabled
                 className="mt-1 w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-muted-foreground outline-none cursor-not-allowed"
               />
-              <p className="mt-1 text-[10px] text-muted-foreground">Email is tied to your account and can't be changed here.</p>
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">Phone</label>
@@ -203,14 +228,33 @@ const TeacherSettingsPage = () => {
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
               />
             </div>
-            <button
-              onClick={saveProfile}
-              disabled={savingProfile || profileLoading}
-              className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
-            >
-              {savingProfile ? "Saving..." : "Save Changes"}
-            </button>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">City</label>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={profileLoading}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Country</label>
+              <input
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                disabled={profileLoading}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-60"
+              />
+            </div>
           </div>
+
+          <button
+            onClick={saveProfile}
+            disabled={savingProfile || profileLoading}
+            className="mt-4 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60"
+          >
+            {savingProfile ? "Saving..." : "Save Changes"}
+          </button>
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
