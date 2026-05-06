@@ -38,13 +38,30 @@ interface AppState {
 
 const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('arke-country') : null) as 'india' | 'dubai' | null;
 
+const USER_CACHE_KEY = 'arke-user-cache';
+const loadCachedUser = (): AppUser | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as AppUser) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const useAppStore = create<AppState>((set, get) => ({
-  user: null,
+  user: loadCachedUser(),
   currentGoal: 'IIT JEE',
   notifications: [],
   unreadCount: 0,
   country: savedCountry || 'india',
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    if (typeof window !== 'undefined') {
+      if (user) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+      else localStorage.removeItem(USER_CACHE_KEY);
+    }
+    set({ user });
+  },
   setCurrentGoal: (currentGoal) => set({ currentGoal }),
   setNotifications: (notifications) =>
     set({ notifications, unreadCount: notifications.filter((n) => !n.read_at).length }),
