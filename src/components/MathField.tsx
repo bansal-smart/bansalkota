@@ -30,9 +30,10 @@ const MathField = ({ value, onChange, placeholder, className }: Props) => {
     return () => el.removeEventListener("input", handler);
   }, [onChange]);
 
+  const Tag = "math-field" as any;
   return (
-    <math-field
-      ref={ref as any}
+    <Tag
+      ref={ref}
       placeholder={placeholder}
       class={cn(
         "block w-full min-h-[44px] rounded-lg border border-border bg-card px-3 py-2 text-sm",
