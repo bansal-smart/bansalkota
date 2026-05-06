@@ -21,7 +21,7 @@ type TestQuestion = {
 type QStatus = "not-visited" | "answered" | "not-answered" | "marked" | "answered-marked";
 
 const TestTakingPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
@@ -43,7 +43,7 @@ const TestTakingPage = () => {
 
   // Load test + existing in-progress attempt
   useEffect(() => {
-    if (authLoading || !id) return;
+    if (authLoading || !slug) return;
     if (!user) {
       navigate("/login");
       return;
@@ -53,7 +53,7 @@ const TestTakingPage = () => {
       const { data: t } = await supabase
         .from("tests")
         .select("id, title, duration_minutes, total_questions")
-        .eq("id", id)
+        .eq("slug", slug)
         .maybeSingle();
       if (!t) {
         toast.error("Test not found");
