@@ -159,26 +159,21 @@ const TestResultPage = () => {
 
         {/* Subject breakdown */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-3 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
+          <h2 className="mb-4 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
           {Object.keys(subjects).length === 0 ? (
             <p className="text-xs text-muted-foreground">No subject data available.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {Object.entries(subjects).map(([subj, stat]) => {
                 const acc = calcPercent(stat.correct, stat.attempted || stat.total);
                 return (
-                  <div key={subj} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-semibold text-foreground">{subj}</span>
-                      <span className="text-muted-foreground">
-                        {stat.correct}/{stat.total} correct · {Number(stat.score).toFixed(1)} marks
-                      </span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${acc}%` }}
-                      />
+                  <div key={subj} className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3">
+                    <CircularProgress value={acc} />
+                    <div className="text-center">
+                      <p className="text-xs font-bold text-foreground">{subj}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {stat.correct}/{stat.total} · {Number(stat.score).toFixed(1)}m
+                      </p>
                     </div>
                   </div>
                 );
