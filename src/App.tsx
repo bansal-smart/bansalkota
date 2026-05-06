@@ -176,6 +176,7 @@ const App = () => (
                 <Route path="/mentor/dashboard" element={<MentorDashboard />} />
                 <Route path="/mentor/students" element={<MentorStudentsPage />} />
                 <Route path="/mentor/chats" element={<MentorChatsPage />} />
+                <Route path="/mentor/performance" element={<MentorPerformancePage />} />
               </Route>
             </Route>
 
