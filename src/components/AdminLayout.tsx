@@ -16,6 +16,7 @@ import {
   Settings,
   ShieldCheck,
   HeartHandshake,
+  Library,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
