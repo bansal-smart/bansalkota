@@ -182,7 +182,7 @@ const MentorChatPanel = ({ conversations, loading, emptyHint, onActivity }: Prop
   })();
 
   return (
-    <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-0 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-[280px_1fr]">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-[280px_1fr]">
       {/* Conversation list */}
       <aside className="flex flex-col border-r border-border bg-muted/20">
         <div className="border-b border-border p-3">
