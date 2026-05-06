@@ -154,7 +154,7 @@ const TestSubjectBreakdownPage = () => {
                       }`}
                     >
                       <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
-                      {opt.text}
+                      <MathRenderer content={opt.text} inline />
                     </div>
                   );
                 })}
