@@ -75,6 +75,7 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 import MentorLayout from "./components/MentorLayout";
 import MentorDashboard from "./pages/MentorDashboard";
 import MentorChatsPage from "./pages/MentorChatsPage";
+import MentorPerformancePage from "./pages/MentorPerformancePage";
 import MentorStudentsPage from "./pages/MentorStudentsPage";
 import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
