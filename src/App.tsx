@@ -104,7 +104,7 @@ const App = () => (
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
             <Route element={<ProtectedRoute allow={["student"]} />}>
-              <Route path="/tests/:id/take" element={<TestTakingPage />} />
+              <Route path="/tests/:slug/take" element={<TestTakingPage />} />
               <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
             </Route>
 
