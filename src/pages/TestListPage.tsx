@@ -87,7 +87,7 @@ const TestListPage = () => {
               return (
                 <Link
                   key={t.id}
-                  to={`/tests/${t.id}/take`}
+                  to={`/tests/${t.slug}/take`}
                   className="block rounded-2xl border border-border bg-card p-4 hover-lift hover:border-primary/30"
                 >
                   <div className="flex items-start gap-3">
