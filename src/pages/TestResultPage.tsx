@@ -1,31 +1,59 @@
 import { useEffect, useState } from "react";
-import { Trophy, Target, TrendingUp, RotateCcw, Home, Loader2 } from "lucide-react";
+import {
+  Trophy,
+  Target,
+  TrendingUp,
+  RotateCcw,
+  Home,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  MinusCircle,
+  Clock,
+  Award,
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { calcPercent } from "@/lib/progress";
 
 type SubjectStat = { total: number; correct: number; attempted: number; score: number };
+
+type Attempt = {
+  id: string;
+  test_name: string;
+  score: number | null;
+  total_questions: number | null;
+  correct_answers: number | null;
+  percentile: number | null;
+  time_spent_seconds: number | null;
+  test_id: string | null;
+  answers: Record<string, { selected: number | null }> | null;
+};
 
 const TestResultPage = () => {
   const { id } = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
-  const [attempt, setAttempt] = useState<{ id: string; test_name: string; score: number; total_questions: number; correct_answers: number; percentile: number | null; time_spent_seconds: number; test_id: string | null } | null>(null);
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
 
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("test_attempts")
-        .select("id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers")
+        .select(
+          "id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers",
+        )
         .eq("id", id)
         .maybeSingle();
+      if (cancelled) return;
       if (!data) {
         setLoading(false);
         return;
       }
-      setAttempt(data);
+      setAttempt(data as Attempt);
 
-      // Build subject breakdown from questions + answers
       if (data.test_id) {
         const { data: qs } = await supabase
           .from("test_questions")
@@ -37,10 +65,10 @@ const TestResultPage = () => {
           const subj = q.subject ?? "General";
           if (!breakdown[subj]) breakdown[subj] = { total: 0, correct: 0, attempted: 0, score: 0 };
           breakdown[subj].total += 1;
-          const userSel = ans[q.id]?.selected;
-          if (userSel != null) {
+          const sel = ans[q.id]?.selected;
+          if (sel != null) {
             breakdown[subj].attempted += 1;
-            if (q.correct_answer === userSel) {
+            if (q.correct_answer === sel) {
               breakdown[subj].correct += 1;
               breakdown[subj].score += Number(q.marks_correct ?? 4);
             } else {
@@ -48,10 +76,13 @@ const TestResultPage = () => {
             }
           }
         });
-        setSubjects(breakdown);
+        if (!cancelled) setSubjects(breakdown);
       }
       setLoading(false);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (loading) {
@@ -65,42 +96,76 @@ const TestResultPage = () => {
     return <div className="p-10 text-center text-sm text-muted-foreground">Result not found.</div>;
   }
 
-  const accuracy = attempt.total_questions > 0 ? Math.round((attempt.correct_answers / attempt.total_questions) * 100) : 0;
-  const minutes = Math.floor(attempt.time_spent_seconds / 60);
+  const total = Number(attempt.total_questions ?? 0);
+  const correct = Number(attempt.correct_answers ?? 0);
+  const score = Number(attempt.score ?? 0);
+  const answersMap = (attempt.answers ?? {}) as Record<string, { selected: number | null }>;
+  const attempted = Object.values(answersMap).filter((a) => a?.selected != null).length;
+  const wrong = Math.max(0, attempted - correct);
+  const unattempted = Math.max(0, total - attempted);
+  const accuracy = calcPercent(correct, attempted || total);
+  const percentile = attempt.percentile != null ? Number(attempt.percentile) : null;
+  const seconds = Number(attempt.time_spent_seconds ?? 0);
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+
+  const performanceLabel =
+    accuracy >= 80 ? "Excellent" : accuracy >= 60 ? "Good" : accuracy >= 40 ? "Keep going" : "Needs work";
 
   return (
     <div className="pb-20 lg:pb-0">
-      <div className="bg-gradient-to-br from-primary to-primary-dark grid-texture p-6 text-center">
-        <h1 className="text-2xl font-black font-display text-white mb-4">{attempt.test_name}</h1>
-        <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
-          <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-            <Trophy className="h-5 w-5 text-white mx-auto mb-1" />
-            <p className="text-xl font-black text-white">{Number(attempt.score).toFixed(1)}</p>
-            <p className="text-[10px] text-white/80">Score</p>
+      {/* Hero */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 px-6 py-8 text-center">
+        <div className="absolute inset-0 opacity-10 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:24px_24px]" />
+        <div className="relative">
+          <div className="mx-auto mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur">
+            <Award className="h-3.5 w-3.5" /> {performanceLabel}
           </div>
-          <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-            <Target className="h-5 w-5 text-white mx-auto mb-1" />
-            <p className="text-xl font-black text-white">{accuracy}%</p>
-            <p className="text-[10px] text-white/80">Accuracy</p>
+          <h1 className="font-display text-2xl font-black text-white">{attempt.test_name}</h1>
+          <p className="mt-1 text-xs text-white/80">Test submitted successfully</p>
+
+          <div className="mx-auto mt-5 grid max-w-md grid-cols-3 gap-3">
+            <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
+              <Trophy className="mx-auto mb-1 h-5 w-5 text-white" />
+              <p className="text-xl font-black text-white">{score.toFixed(1)}</p>
+              <p className="text-[10px] text-white/80">Score</p>
+            </div>
+            <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
+              <Target className="mx-auto mb-1 h-5 w-5 text-white" />
+              <p className="text-xl font-black text-white">{accuracy}%</p>
+              <p className="text-[10px] text-white/80">Accuracy</p>
+            </div>
+            <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
+              <TrendingUp className="mx-auto mb-1 h-5 w-5 text-white" />
+              <p className="text-xl font-black text-white">{percentile != null ? `${percentile}%` : "—"}</p>
+              <p className="text-[10px] text-white/80">Percentile</p>
+            </div>
           </div>
-          <div className="rounded-xl bg-white/15 backdrop-blur p-3">
-            <TrendingUp className="h-5 w-5 text-white mx-auto mb-1" />
-            <p className="text-xl font-black text-white">{attempt.percentile != null ? `${attempt.percentile}%` : "—"}</p>
-            <p className="text-[10px] text-white/80">Percentile</p>
-          </div>
+
+          <p className="mt-3 inline-flex items-center gap-1 text-xs text-white/80">
+            <Clock className="h-3 w-3" /> Completed in {minutes}m {secs}s
+          </p>
         </div>
-        <p className="text-xs text-white/70 mt-3">Completed in {minutes} min</p>
       </div>
 
-      <div className="p-4 lg:p-6 space-y-5">
+      <div className="space-y-5 p-4 lg:p-6">
+        {/* Question stats */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatTile icon={CheckCircle2} label="Correct" value={correct} tone="success" />
+          <StatTile icon={XCircle} label="Wrong" value={wrong} tone="danger" />
+          <StatTile icon={MinusCircle} label="Unattempted" value={unattempted} tone="muted" />
+          <StatTile icon={Target} label="Total" value={total} tone="primary" />
+        </div>
+
+        {/* Subject breakdown */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="text-sm font-bold text-foreground mb-3">Subject-wise Breakdown</h2>
+          <h2 className="mb-3 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
           {Object.keys(subjects).length === 0 ? (
             <p className="text-xs text-muted-foreground">No subject data available.</p>
           ) : (
             <div className="space-y-3">
               {Object.entries(subjects).map(([subj, stat]) => {
-                const acc = stat.attempted > 0 ? Math.round((stat.correct / stat.attempted) * 100) : 0;
+                const acc = calcPercent(stat.correct, stat.attempted || stat.total);
                 return (
                   <div key={subj} className="space-y-1">
                     <div className="flex justify-between text-xs">
@@ -110,7 +175,10 @@ const TestResultPage = () => {
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-muted">
-                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${acc}%` }} />
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${acc}%` }}
+                      />
                     </div>
                   </div>
                 );
@@ -119,15 +187,50 @@ const TestResultPage = () => {
           )}
         </div>
 
-        <div className="flex gap-3">
-          <Link to="/my-tests" className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground text-center inline-flex items-center justify-center gap-1">
+        {/* Actions */}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            to="/my-tests"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50"
+          >
             <RotateCcw className="h-3.5 w-3.5" /> Back to Tests
           </Link>
-          <Link to="/dashboard" className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground text-center inline-flex items-center justify-center gap-1">
-            <Home className="h-3.5 w-3.5" /> Dashboard
+          <Link
+            to="/dashboard"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+          >
+            <Home className="h-3.5 w-3.5" /> Go to Dashboard
           </Link>
         </div>
       </div>
+    </div>
+  );
+};
+
+const StatTile = ({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: "success" | "danger" | "muted" | "primary";
+}) => {
+  const tones: Record<string, string> = {
+    success: "bg-secondary/10 text-secondary",
+    danger: "bg-destructive/10 text-destructive",
+    muted: "bg-muted text-muted-foreground",
+    primary: "bg-primary/10 text-primary",
+  };
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 text-center">
+      <div className={`mx-auto mb-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full ${tones[tone]}`}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <p className="font-display text-xl font-black text-foreground">{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
   );
 };
