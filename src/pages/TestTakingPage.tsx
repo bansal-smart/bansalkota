@@ -323,7 +323,7 @@ const TestTakingPage = () => {
             </div>
             <p className="text-sm text-foreground leading-relaxed">{q.question_text}</p>
             {q.question_image_url && <img src={q.question_image_url} alt="" className="rounded-lg max-h-64" />}
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {q.options.map((opt) => {
                 const selected = answers[q.id]?.selected === opt.id;
                 return (
