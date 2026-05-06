@@ -172,16 +172,24 @@ const TestResultPage = () => {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {Object.entries(subjects).map(([subj, stat]) => {
                 const acc = calcPercent(stat.correct, stat.attempted || stat.total);
+                const subjSlug = slugifySubject(subj);
                 return (
-                  <div key={subj} className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3">
+                  <Link
+                    key={subj}
+                    to={`/tests/${slug}/result/${id}/subject/${subjSlug}`}
+                    className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                  >
                     <CircularProgress value={acc} />
                     <div className="text-center">
-                      <p className="text-xs font-bold text-foreground">{subj}</p>
+                      <p className="flex items-center justify-center gap-0.5 text-xs font-bold text-foreground group-hover:text-primary">
+                        {subj}
+                        <ChevronRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </p>
                       <p className="text-[10px] text-muted-foreground">
                         {stat.correct}/{stat.total} · {Number(stat.score).toFixed(1)}m
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
