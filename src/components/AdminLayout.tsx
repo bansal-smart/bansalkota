@@ -21,6 +21,7 @@ import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
 import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 
 type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
@@ -50,11 +51,12 @@ const superAdminNav: NavItem[] = [
 type SidebarProps = {
   email: string;
   initials: string;
+  avatarUrl?: string;
   isSuperAdmin: boolean;
   onLogout: () => void;
 };
 
-const AdminSidebar = memo(({ email, initials, isSuperAdmin, onLogout }: SidebarProps) => {
+const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout }: SidebarProps) => {
   const { pathname } = useLocation();
   const panelLabel = isSuperAdmin ? "Super Admin Panel" : "Admin Panel";
   const roleLabel = isSuperAdmin ? "Super Admin" : "Admin";
@@ -122,8 +124,8 @@ const AdminSidebar = memo(({ email, initials, isSuperAdmin, onLogout }: SidebarP
 
       <div className="border-t border-white/10 p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {initials}
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground overflow-hidden">
+            {avatarUrl ? <img src={avatarUrl} alt={initials} className="h-full w-full object-cover" /> : initials}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate">{email || roleLabel}</p>
@@ -141,7 +143,7 @@ const AdminSidebar = memo(({ email, initials, isSuperAdmin, onLogout }: SidebarP
 AdminSidebar.displayName = "AdminSidebar";
 
 const AdminHeader = memo(
-  ({ initials, isSuperAdmin, onLogout }: { initials: string; isSuperAdmin: boolean; onLogout: () => void }) => (
+  ({ initials, avatarUrl, isSuperAdmin, onLogout }: { initials: string; avatarUrl?: string; isSuperAdmin: boolean; onLogout: () => void }) => (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
       <div className="flex items-center gap-3">
         <h1 className="text-sm font-bold text-foreground">
@@ -162,9 +164,9 @@ const AdminHeader = memo(
         <Link
           to="/admin/profile"
           aria-label="My profile"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity overflow-hidden"
         >
-          {initials}
+          {avatarUrl ? <img src={avatarUrl} alt={initials} className="h-full w-full object-cover" /> : initials}
         </Link>
       </div>
     </header>
@@ -184,13 +186,15 @@ const AdminLayout = () => {
 
   const email = user?.email ?? "";
   const initials = useMemo(() => (email || "A").slice(0, 1).toUpperCase(), [email]);
+  const storeUser = useAppStore((s) => s.user);
+  const avatarUrl = storeUser?.avatar_url;
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AdminSidebar email={email} initials={initials} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
+      <AdminSidebar email={email} initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader initials={initials} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
+        <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
         <main className="flex-1 overflow-y-auto">
           <Outlet />

@@ -23,7 +23,13 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-const MentorSidebar = memo(({ displayName, initials, onLogout }: { displayName: string; initials: string; onLogout: () => void }) => {
+const Avatar = ({ url, initials, className }: { url?: string; initials: string; className: string }) => (
+  <div className={`overflow-hidden ${className}`}>
+    {url ? <img src={url} alt={initials} className="h-full w-full object-cover" /> : <span>{initials}</span>}
+  </div>
+);
+
+const MentorSidebar = memo(({ displayName, initials, avatarUrl, onLogout }: { displayName: string; initials: string; avatarUrl?: string; onLogout: () => void }) => {
   const { pathname } = useLocation();
   return (
     <aside className="hidden lg:flex w-[220px] flex-col border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">
@@ -60,7 +66,7 @@ const MentorSidebar = memo(({ displayName, initials, onLogout }: { displayName: 
 
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-secondary">{initials}</div>
+          <Avatar url={avatarUrl} initials={initials} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-secondary" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
             <p className="text-[10px] text-muted-foreground">Mentor</p>
@@ -92,7 +98,7 @@ const MentorLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <MentorSidebar displayName={displayName} initials={initials} onLogout={handleLogout} />
+      <MentorSidebar displayName={displayName} initials={initials} avatarUrl={storeUser?.avatar_url} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
@@ -112,9 +118,7 @@ const MentorLayout = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-secondary" title={displayName}>
-              {initials}
-            </div>
+            <Avatar url={storeUser?.avatar_url} initials={initials} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary/20 text-xs font-bold text-secondary" />
           </div>
         </header>
 
