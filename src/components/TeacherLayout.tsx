@@ -15,7 +15,13 @@ const getInitials = (name: string) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }: { pendingDoubts: number; displayName: string; initials: string; onLogout: () => void }) => {
+const Avatar = ({ url, initials, className }: { url?: string; initials: string; className: string }) => (
+  <div className={`overflow-hidden ${className}`}>
+    {url ? <img src={url} alt={initials} className="h-full w-full object-cover" /> : <span>{initials}</span>}
+  </div>
+);
+
+const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, avatarUrl, onLogout }: { pendingDoubts: number; displayName: string; initials: string; avatarUrl?: string; onLogout: () => void }) => {
   const location = useLocation();
   // Teacher portal is intentionally minimal: live classes + doubts only.
   // Course/test/student/analytics management is owned by the admin portal.
@@ -64,7 +70,7 @@ const TeacherSidebar = memo(({ pendingDoubts, displayName, initials, onLogout }:
 
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary">{initials}</div>
+          <Avatar url={avatarUrl} initials={initials} className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
             <p className="text-[10px] text-muted-foreground">Educator</p>
@@ -122,7 +128,7 @@ const TeacherLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <TeacherSidebar pendingDoubts={pendingDoubts} displayName={displayName} initials={initials} onLogout={handleLogout} />
+      <TeacherSidebar pendingDoubts={pendingDoubts} displayName={displayName} initials={initials} avatarUrl={storeUser?.avatar_url} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
@@ -144,7 +150,7 @@ const TeacherLayout = () => {
                 <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">{pendingDoubts}</span>
               )}
             </button>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary" title={displayName}>{initials}</div>
+            <Avatar url={storeUser?.avatar_url} initials={initials} className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-light text-xs font-bold text-primary" />
           </div>
         </header>
 
