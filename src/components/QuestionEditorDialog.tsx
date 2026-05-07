@@ -132,9 +132,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
 
     const runSave = async () => {
       if (initial) {
-        return supabase.from("question_bank").update(payload).eq("id", initial.id);
+        return supabase.from("question_bank").update(payload as any).eq("id", initial.id);
       }
-      return supabase.from("question_bank").insert({ ...payload, created_by: user.id });
+      return supabase.from("question_bank").insert({ ...(payload as any), created_by: user.id });
     };
 
     try {
