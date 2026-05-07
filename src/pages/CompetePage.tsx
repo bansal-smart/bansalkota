@@ -212,6 +212,7 @@ const CompetePage = () => {
         {phase === "result" && match && (
           <CompeteResult match={match} questions={questions} answers={answers} onPlayAgain={handlePlayAgain} onLobby={handlePlayAgain} />
         )}
+        </div>
       </div>
     </div>
   );
