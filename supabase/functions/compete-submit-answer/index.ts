@@ -141,7 +141,10 @@ Deno.serve(async (req) => {
           player2_rating_after: p2After,
         }).eq("id", matchId);
       } else {
-        await sb.from("compete_matches").update({ current_question_index: next }).eq("id", matchId);
+        await sb.from("compete_matches").update({
+          current_question_index: next,
+          current_question_started_at: new Date().toISOString(),
+        }).eq("id", matchId);
       }
     }
 
