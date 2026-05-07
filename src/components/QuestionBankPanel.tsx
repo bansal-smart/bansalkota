@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
+import BulkQuestionUploadDialog from "./BulkQuestionUploadDialog";
 import MathRenderer from "./MathRenderer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
