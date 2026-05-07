@@ -49,6 +49,266 @@ export type Database = {
           },
         ]
       }
+      compete_match_answers: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean
+          match_id: string
+          points: number
+          question_id: string
+          question_index: number
+          selected_index: number | null
+          time_taken_ms: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          match_id: string
+          points?: number
+          question_id: string
+          question_index: number
+          selected_index?: number | null
+          time_taken_ms?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          match_id?: string
+          points?: number
+          question_id?: string
+          question_index?: number
+          selected_index?: number | null
+          time_taken_ms?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compete_match_answers_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "compete_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compete_matches: {
+        Row: {
+          created_at: string
+          current_question_index: number
+          finished_at: string | null
+          id: string
+          is_bot: boolean
+          is_private: boolean
+          player1_avatar: string | null
+          player1_id: string
+          player1_name: string | null
+          player1_rating_after: number | null
+          player1_rating_before: number | null
+          player1_score: number
+          player2_avatar: string | null
+          player2_id: string | null
+          player2_name: string | null
+          player2_rating_after: number | null
+          player2_rating_before: number | null
+          player2_score: number
+          question_ids: string[]
+          room_code: string | null
+          started_at: string | null
+          status: string
+          subject: string
+          topic: string
+          total_questions: number
+          updated_at: string
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_question_index?: number
+          finished_at?: string | null
+          id?: string
+          is_bot?: boolean
+          is_private?: boolean
+          player1_avatar?: string | null
+          player1_id: string
+          player1_name?: string | null
+          player1_rating_after?: number | null
+          player1_rating_before?: number | null
+          player1_score?: number
+          player2_avatar?: string | null
+          player2_id?: string | null
+          player2_name?: string | null
+          player2_rating_after?: number | null
+          player2_rating_before?: number | null
+          player2_score?: number
+          question_ids?: string[]
+          room_code?: string | null
+          started_at?: string | null
+          status?: string
+          subject: string
+          topic: string
+          total_questions?: number
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_question_index?: number
+          finished_at?: string | null
+          id?: string
+          is_bot?: boolean
+          is_private?: boolean
+          player1_avatar?: string | null
+          player1_id?: string
+          player1_name?: string | null
+          player1_rating_after?: number | null
+          player1_rating_before?: number | null
+          player1_score?: number
+          player2_avatar?: string | null
+          player2_id?: string | null
+          player2_name?: string | null
+          player2_rating_after?: number | null
+          player2_rating_before?: number | null
+          player2_score?: number
+          question_ids?: string[]
+          room_code?: string | null
+          started_at?: string | null
+          status?: string
+          subject?: string
+          topic?: string
+          total_questions?: number
+          updated_at?: string
+          winner_id?: string | null
+        }
+        Relationships: []
+      }
+      compete_questions: {
+        Row: {
+          correct_index: number
+          created_at: string
+          created_by: string | null
+          difficulty: string
+          explanation: string | null
+          id: string
+          is_active: boolean
+          options: Json
+          question_text: string
+          subject: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          correct_index: number
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          options: Json
+          question_text: string
+          subject: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          correct_index?: number
+          created_at?: string
+          created_by?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          is_active?: boolean
+          options?: Json
+          question_text?: string
+          subject?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      compete_queue: {
+        Row: {
+          class_level: string | null
+          created_at: string
+          id: string
+          match_id: string | null
+          rating: number
+          status: string
+          subject: string
+          target_exam: string
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          class_level?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          rating?: number
+          status?: string
+          subject: string
+          target_exam?: string
+          topic: string
+          user_id: string
+        }
+        Update: {
+          class_level?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string | null
+          rating?: number
+          status?: string
+          subject?: string
+          target_exam?: string
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compete_ratings: {
+        Row: {
+          best_streak: number
+          current_streak: number
+          draws: number
+          id: string
+          losses: number
+          rating: number
+          target_exam: string
+          updated_at: string
+          user_id: string
+          wins: number
+        }
+        Insert: {
+          best_streak?: number
+          current_streak?: number
+          draws?: number
+          id?: string
+          losses?: number
+          rating?: number
+          target_exam?: string
+          updated_at?: string
+          user_id: string
+          wins?: number
+        }
+        Update: {
+          best_streak?: number
+          current_streak?: number
+          draws?: number
+          id?: string
+          losses?: number
+          rating?: number
+          target_exam?: string
+          updated_at?: string
+          user_id?: string
+          wins?: number
+        }
+        Relationships: []
+      }
       course_pdfs: {
         Row: {
           course_id: string
