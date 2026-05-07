@@ -38,6 +38,7 @@ const baseNav: NavItem[] = [
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
   { label: "Question Bank", icon: Library, path: "/admin/question-bank" },
   { label: "Compete Questions", icon: Swords, path: "/admin/compete-questions" },
+  { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },

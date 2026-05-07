@@ -4,6 +4,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useExams } from "@/hooks/useExams";
 
 const slugify = (s: string) =>
   s
@@ -17,6 +18,7 @@ type DraftLecture = { id?: string; title: string; durationMin: number };
 type DraftChapter = { id?: string; title: string; lectures: DraftLecture[] };
 
 const CreateCoursePage = () => {
+  const { examNames } = useExams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId?: string }>();
@@ -313,10 +315,7 @@ const CreateCoursePage = () => {
           <div>
             <label className="text-xs font-semibold text-foreground">Exam</label>
             <select value={exam} onChange={(e) => setExam(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-              <option>JEE</option>
-              <option>NEET</option>
-              <option>Class 11</option>
-              <option>Class 12</option>
+              {examNames.map((x) => <option key={x}>{x}</option>)}
             </select>
           </div>
           <div>
