@@ -309,36 +309,95 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     setProgress({ done: 0, total: parsed.length });
     const BATCH = 50;
     let inserted = 0;
+    let updated = 0;
+    let skipped = 0;
     const insErrors: RowError[] = [];
+
+    // Build lookup of existing duplicates by (subject + normalized question_text) for skip/upsert modes.
+    // Match key uses subject + normalized question_text.
+    const existing = new Map<string, string>(); // key -> existing id
+    if (duplicateMode !== "insert") {
+      const subjects = Array.from(new Set(parsed.map((p) => p.subject)));
+      const { data: existingRows, error: fetchErr } = await supabase
+        .from("question_bank")
+        .select("id, subject, question_text")
+        .in("subject", subjects);
+      if (fetchErr) {
+        toast.error(`Couldn't check duplicates: ${fetchErr.message}`);
+        setStep("preview");
+        return;
+      }
+      for (const r of existingRows ?? []) {
+        existing.set(`${r.subject}::${normalizeText(r.question_text)}`, r.id);
+      }
+    }
 
     for (let i = 0; i < parsed.length; i += BATCH) {
       const chunk = parsed.slice(i, i + BATCH);
-      const { error } = await supabase.from("question_bank").insert(chunk as any);
-      if (error) {
-        // Mark this batch as failed; we don't know which row exactly without per-row insert
-        for (let j = 0; j < chunk.length; j++) {
-          insErrors.push({
-            row: i + j + 2,
-            message: `Insert failed: ${error.message}`,
-            raw: [],
-          });
+
+      // Partition chunk by duplicate status
+      const toInsert: ParsedQuestion[] = [];
+      const toUpdate: { id: string; row: ParsedQuestion; index: number }[] = [];
+
+      chunk.forEach((row, idx) => {
+        const key = `${row.subject}::${normalizeText(row.question_text)}`;
+        const existingId = existing.get(key);
+        if (!existingId || duplicateMode === "insert") {
+          toInsert.push(row);
+        } else if (duplicateMode === "skip") {
+          skipped += 1;
+        } else if (duplicateMode === "upsert") {
+          toUpdate.push({ id: existingId, row, index: idx });
         }
-      } else {
-        inserted += chunk.length;
+      });
+
+      if (toInsert.length) {
+        const { data: insertedRows, error } = await supabase
+          .from("question_bank")
+          .insert(toInsert as any)
+          .select("id, subject, question_text");
+        if (error) {
+          for (let j = 0; j < toInsert.length; j++) {
+            insErrors.push({ row: i + j + 2, message: `Insert failed: ${error.message}`, raw: [] });
+          }
+        } else {
+          inserted += toInsert.length;
+          // Track newly-inserted rows so subsequent chunks treat them as duplicates
+          for (const r of insertedRows ?? []) {
+            existing.set(`${r.subject}::${normalizeText(r.question_text)}`, r.id);
+          }
+        }
       }
+
+      for (const u of toUpdate) {
+        const { error } = await supabase
+          .from("question_bank")
+          .update(u.row as any)
+          .eq("id", u.id);
+        if (error) {
+          insErrors.push({ row: i + u.index + 2, message: `Update failed: ${error.message}`, raw: [] });
+        } else {
+          updated += 1;
+        }
+      }
+
       setProgress({ done: Math.min(i + chunk.length, parsed.length), total: parsed.length });
-      // Yield to UI
       await new Promise((r) => setTimeout(r, 0));
     }
 
     setInsertedCount(inserted);
+    setUpdatedCount(updated);
+    setSkippedCount(skipped);
     setInsertErrors(insErrors);
     setStep("done");
-    if (inserted > 0) {
-      toast.success(`Imported ${inserted} question${inserted === 1 ? "" : "s"}`);
+    const totalChanged = inserted + updated;
+    if (totalChanged > 0) {
+      toast.success(`Imported ${inserted} new${updated ? `, updated ${updated}` : ""}${skipped ? `, skipped ${skipped}` : ""}`);
       onUploaded();
+    } else if (skipped > 0) {
+      toast.info(`All ${skipped} rows already existed — none imported`);
     }
-    if (insErrors.length) toast.warning(`${insErrors.length} row${insErrors.length === 1 ? "" : "s"} failed to insert`);
+    if (insErrors.length) toast.warning(`${insErrors.length} row${insErrors.length === 1 ? "" : "s"} failed`);
   };
 
   const renderCorrect = (q: ParsedQuestion) => {
