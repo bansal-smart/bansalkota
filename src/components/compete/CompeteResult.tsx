@@ -3,6 +3,7 @@ import { Crown, RotateCw, Home, TrendingUp, TrendingDown, Check, X, Share2, Down
 import { CompeteMatch, CompeteQuestion, CompeteAnswer } from "@/hooks/useCompeteMatch";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
   match: CompeteMatch;
