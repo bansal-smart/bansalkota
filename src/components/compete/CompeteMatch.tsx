@@ -24,20 +24,23 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
   const [selected, setSelected] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_MS);
-  const startedAtRef = useRef<number>(Date.now());
   const submittedRef = useRef<Set<number>>(new Set());
 
-  // Reset timer when question advances
+  // Anchor question start time to server's current_question_started_at so
+  // refreshes/reconnects resume with the correct remaining time.
+  const startedAt = match.current_question_started_at
+    ? new Date(match.current_question_started_at).getTime()
+    : Date.now();
+
+  // Reset selection when question advances
   useEffect(() => {
     setSelected(null);
-    setTimeLeft(QUESTION_TIME_MS);
-    startedAtRef.current = Date.now();
   }, [qIndex]);
 
-  // Tick
+  // Tick timer based on server start
   useEffect(() => {
     const id = setInterval(() => {
-      const elapsed = Date.now() - startedAtRef.current;
+      const elapsed = Date.now() - startedAt;
       const left = Math.max(0, QUESTION_TIME_MS - elapsed);
       setTimeLeft(left);
       if (left <= 0 && !submittedRef.current.has(qIndex)) {
@@ -46,10 +49,14 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
     }, 250);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qIndex]);
+  }, [qIndex, startedAt]);
 
   const myAnswered = answers.some((a) => a.user_id === myId && a.question_index === qIndex);
   const oppAnswered = answers.some((a) => a.user_id !== myId && a.question_index === qIndex);
+  // After reload, mark submitted so we don't re-submit on timeout
+  useEffect(() => {
+    if (myAnswered) submittedRef.current.add(qIndex);
+  }, [myAnswered, qIndex]);
 
   const myScore = isP1 ? match.player1_score : match.player2_score;
   const oppScore = isP1 ? match.player2_score : match.player1_score;
@@ -61,7 +68,7 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
     submittedRef.current.add(qIndex);
     setSubmitting(true);
     setSelected(idx);
-    const elapsed = Math.min(QUESTION_TIME_MS, Date.now() - startedAtRef.current);
+    const elapsed = Math.min(QUESTION_TIME_MS, Date.now() - startedAt);
     try {
       const { error } = await supabase.functions.invoke("compete-submit-answer", {
         body: { match_id: match.id, question_index: qIndex, selected_index: idx, time_taken_ms: elapsed },

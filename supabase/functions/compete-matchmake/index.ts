@@ -39,6 +39,8 @@ Deno.serve(async (req) => {
         status: "active",
         is_bot: true,
         started_at: new Date().toISOString(),
+        countdown_until: new Date(Date.now() + 5000).toISOString(),
+        current_question_started_at: new Date(Date.now() + 5000).toISOString(),
       }).select("*").single();
       return jsonResponse({ status: "matched", match_id: match!.id, is_bot: true });
     }
@@ -107,6 +109,8 @@ Deno.serve(async (req) => {
           total_questions: questionIds.length,
           status: "active",
           started_at: new Date().toISOString(),
+          countdown_until: new Date(Date.now() + 5000).toISOString(),
+          current_question_started_at: new Date(Date.now() + 5000).toISOString(),
         }).select("*").single();
         // Notify opponent via their queue row
         await sb.from("compete_queue").update({ match_id: match!.id }).eq("user_id", opponent.user_id);

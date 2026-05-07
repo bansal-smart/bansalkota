@@ -25,6 +25,8 @@ Deno.serve(async (req) => {
       player2_rating_before: rating.rating,
       status: "active",
       started_at: new Date().toISOString(),
+      countdown_until: new Date(Date.now() + 5000).toISOString(),
+      current_question_started_at: new Date(Date.now() + 5000).toISOString(),
     }).eq("id", match.id).eq("status", "pending").select("*").single();
     if (error) return jsonResponse({ error: error.message }, 400);
 

@@ -27,6 +27,8 @@ export type CompeteMatch = {
   winner_id: string | null;
   started_at: string | null;
   finished_at: string | null;
+  countdown_until: string | null;
+  current_question_started_at: string | null;
 };
 
 export type CompeteQuestion = {
