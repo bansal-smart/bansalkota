@@ -179,9 +179,14 @@ const AdminCompeteQuestionsPage = () => {
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2"><Swords className="h-5 w-5 text-primary" /> Compete Questions</h1>
           <p className="text-sm text-muted-foreground">{filtered.length} of {list.length} questions {selected.size > 0 && `· ${selected.size} selected`}</p>
         </div>
-        <button onClick={() => setEditing({ ...empty })} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
-          <Plus className="h-4 w-4" /> New Question
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setBulkOpen(true)} className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-bold text-foreground hover:bg-muted inline-flex items-center gap-1">
+            <Upload className="h-4 w-4" /> Bulk upload
+          </button>
+          <button onClick={() => setEditing({ ...empty })} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
+            <Plus className="h-4 w-4" /> New Question
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
