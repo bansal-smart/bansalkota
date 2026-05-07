@@ -1,64 +1,96 @@
-# Question Bank Admin Page + Math/Chemistry Equation Rendering
+# Compete Feature — 1v1 Quiz Battles
 
-## Problem
+Replace the static `CompetePage.tsx` mock with a real, end-to-end multiplayer quiz battle for students.
 
-There is no admin tab to add/edit/delete questions in `question_bank`. Today, questions can only be picked from the bank inside test creation but never authored standalone. We also need LaTeX/chemistry equation support both in the editor (write) and the student/test UI (render).
+## Match concept
+- **1v1**, 10 questions, 30 seconds per question
+- Score = correct answers + speed bonus (faster correct = more points)
+- Winner gets +ELO, loser loses ELO; both see a result screen with rank delta
 
-## Scope
+## Matching criteria (all four combined)
+1. **Same target exam** — JEE / NEET / etc. (from `profiles.target_exam`)
+2. **Same class level** — 11 / 12 / Dropper (from `profiles.class_level`)
+3. **Subject + topic** — player picks before queueing (e.g., Physics → Kinematics)
+4. **Similar ELO rating** — start at 1000, expand search window every 5s (±50 → ±100 → ±200 → bot fallback at 25s)
 
-### 1. New admin page: `AdminQuestionBankPage`
+## Two entry modes
+- **Quick Match** — auto-pair via queue
+- **Private Room** — host creates, gets a 6-char code, friend joins by code (skips ELO/exam checks)
 
-- Route: `/admin/question-bank` (added to `App.tsx` under the admin protected routes).
-- Nav entry in `src/components/AdminLayout.tsx` (icon: `Library` or `BookOpen`) placed under "Tests".
-- Uses existing `useQuestionBank` hook for listing, with filters (subject, difficulty, search) + pagination.
-- Table columns: Subject, Topic, Difficulty, Question (rendered with math), Created at, Actions (Edit / Delete).
-- Toolbar: "Add Question" button → opens an upgraded `QuestionEditorDialog`.
-- Delete uses `ConfirmDialog`.
+---
 
-### 2. Equation rendering library
+## Database (new tables)
 
-Install: `react-katex`, `katex`, `react-markdown`, `remark-math`, `rehype-katex`, `mathlive`.
+**`compete_questions`** — separate curated pool
+- subject, topic, difficulty, question_text, options (jsonb), correct_index, explanation
+- Admin-managed; readable by all authenticated students
 
-- Import `katex/dist/katex.min.css` once in `src/main.tsx`.
-- Create reusable `src/components/MathRenderer.tsx`:
-  - Wraps `ReactMarkdown` with `remarkMath` + `rehypeKatex`.
-  - Accepts `content: string` and renders inline `$...$` and block `$$...$$` math, plus markdown.
-  - Adds a small post-process for chemistry: convert `\ce{...}` to KaTeX-compatible via the `mhchem` KaTeX extension (`import "katex/contrib/mhchem"`).
-- Create `src/components/MathField.tsx`:
-  - Wraps the MathLive `<math-field>` web component as a controlled React input.
-  - Emits LaTeX string via `onChange`.
-  - Includes a small toolbar hint and "Insert chemistry (\ce{})" helper button.
+**`compete_ratings`** — per student per exam
+- user_id, target_exam, rating (default 1000), wins, losses, draws, current_streak, best_streak
 
-### 3. Upgrade `QuestionEditorDialog`
+**`compete_queue`** — active matchmaking entries
+- user_id, target_exam, class_level, subject, topic, rating, room_code (nullable), status (`waiting` / `matched`), created_at
+- Cleaned up on match or timeout
 
-- Replace plain `<textarea>` for question text and the 4 option inputs with a hybrid input: a `MathField` (visual equation editor) plus a plain text fallback toggle (so admins can paste raw markdown/LaTeX too).
-- Add a live "Preview" pane using `MathRenderer` showing the question + options + explanation as students will see them.
-- Persist as plain LaTeX/markdown string in `question_bank.question_text`, `options[].text`, and `explanation` (no schema change — already `text`/`jsonb`).
+**`compete_matches`** — match lifecycle
+- id, player1_id, player2_id, subject, topic, status (`pending` / `active` / `finished`), question_ids (uuid[]), current_question_index, started_at, finished_at, winner_id, room_code
 
-### 4. Student-side rendering
+**`compete_match_answers`** — per-question answers
+- match_id, user_id, question_index, selected_index, is_correct, time_taken_ms, points
 
-Swap plain text rendering for `MathRenderer` in:
+RLS: players can only read/write their own match rows; questions readable to authenticated; ratings readable to all (for leaderboards), writable only via edge function.
 
-- `src/pages/TestTakingPage.tsx` — question text, options, (if shown) explanation.
-- `src/pages/TestSubjectBreakdownPage.tsx` — question text, user/correct option labels, explanation.
-- `src/components/QuestionBankPanel.tsx` — preview cards.
-- `src/pages/CreateTestPage.tsx` — question text preview in the draft list.
+## Edge functions
+- **`compete-matchmake`** — called on "Find Opponent". Inserts into queue, looks for compatible waiting opponent, atomically pairs them, creates a `compete_matches` row, picks 10 questions filtered by subject/topic/difficulty, returns `match_id`. Bot fallback after 25s.
+- **`compete-create-room`** — generates 6-char code, inserts a `pending` match, waits for join.
+- **`compete-join-room`** — validates code, attaches player2, picks questions, sets `active`.
+- **`compete-submit-answer`** — validates timing, scores answer, writes to `compete_match_answers`, advances question if both players answered, finalizes match + updates ELO when complete.
 
-No changes to AI doubt solver or other pages in this pass.
+ELO: standard formula, K=32. Expected = 1/(1+10^((opp-me)/400)). New = old + K*(actual-expected).
 
-## Out of scope
+## Frontend (`src/pages/CompetePage.tsx` rewrite + new components)
 
-- No DB schema migration (existing columns already store text).
-- No bulk import/CSV.
-- No image upload changes (existing `question_image_url` stays as is).
+States/screens:
+1. **Lobby** — shows current rating, W/L, streak, "Quick Match" + "Create Room" + "Join Room" buttons, subject/topic picker
+2. **Searching** — animated, shows expanding rating window, cancel button, "vs Bot in 25s" countdown
+3. **Match Found** — both avatars, names, ratings, 3-2-1 countdown
+4. **Playing** — question + 4 options, 30s timer ring, live opponent score, your score, question N/10
+5. **Result** — winner crown, final scores, ELO delta, question-by-question recap, "Play Again" / "Back to Lobby"
 
-## Technical notes
+Realtime via Supabase Realtime subscription on `compete_matches` (current_question_index, status) and `compete_match_answers` (opponent's progress).
 
-- KaTeX `mhchem` extension supports `\ce{H2SO4 + NaOH -> Na2SO4 + H2O}`.
-- MathLive ships as a custom element; declare it in a `.d.ts` (`src/mathlive.d.ts`) so TS accepts `<math-field>` JSX.
-- `MathRenderer` should sanitize: pass `skipHtml` to `ReactMarkdown` to avoid raw HTML injection from admin input.
+New components:
+- `src/components/compete/CompeteLobby.tsx`
+- `src/components/compete/CompeteSearching.tsx`
+- `src/components/compete/CompeteMatch.tsx` (the playing screen)
+- `src/components/compete/CompeteResult.tsx`
+- `src/hooks/useCompeteMatch.ts` — subscribes, submits answers
+- `src/hooks/useCompeteRating.ts` — fetches/cache user rating
 
-## Files
+## Admin
+Add `AdminCompeteQuestionsPage.tsx` (reusing the existing `QuestionEditorDialog` pattern from question_bank) so admins can seed `compete_questions`. Linked from admin sidebar.
 
-- New: `src/pages/AdminQuestionBankPage.tsx`, `src/components/MathRenderer.tsx`, `src/components/MathField.tsx`, `src/mathlive.d.ts`.
-- Edit: `src/App.tsx`, `src/components/AdminLayout.tsx`, `src/components/QuestionEditorDialog.tsx`, `src/components/QuestionBankPanel.tsx`, `src/pages/CreateTestPage.tsx`, `src/pages/TestTakingPage.tsx`, `src/pages/TestSubjectBreakdownPage.tsx`, `src/main.tsx`, `package.json`.
+## Seeding
+Migration includes ~40 sample compete_questions across Physics/Chem/Math/Biology to make the feature usable immediately.
+
+---
+
+## Files to create
+- `supabase/functions/compete-matchmake/index.ts`
+- `supabase/functions/compete-create-room/index.ts`
+- `supabase/functions/compete-join-room/index.ts`
+- `supabase/functions/compete-submit-answer/index.ts`
+- `src/components/compete/{CompeteLobby,CompeteSearching,CompeteMatch,CompeteResult}.tsx`
+- `src/hooks/{useCompeteMatch,useCompeteRating}.ts`
+- `src/pages/AdminCompeteQuestionsPage.tsx`
+
+## Files to edit
+- `src/pages/CompetePage.tsx` — full rewrite to wire up the four states
+- `src/App.tsx` — add admin compete questions route
+- `src/components/AdminLayout.tsx` — add nav link
+
+## Out of scope (can add later)
+- Tournaments / brackets
+- Multiplayer >2 players
+- Spectator mode
+- Voice/text chat during match
