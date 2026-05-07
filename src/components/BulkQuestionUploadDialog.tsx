@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
+export type BulkUploadMode = "question_bank" | "compete";
+
 type Props = {
   open: boolean;
   onClose: () => void;
   onUploaded: () => void;
+  mode?: BulkUploadMode;
 };
 
-const TEMPLATE_HEADERS = [
+const QB_HEADERS = [
   "subject",
   "topic",
   "difficulty",
@@ -24,6 +27,21 @@ const TEMPLATE_HEADERS = [
   "marks_correct",
   "marks_wrong",
   "tags",
+];
+
+const COMPETE_HEADERS = [
+  "subject",
+  "topic",
+  "difficulty",
+  "target_exam",
+  "class_level",
+  "question_text",
+  "option_a",
+  "option_b",
+  "option_c",
+  "option_d",
+  "correct_answer",
+  "explanation",
 ];
 
 const SAMPLE_ROWS: string[][] = [
