@@ -525,39 +525,123 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
                 </div>
               )}
 
-              {parsed.length > 0 && (
-                <div className="rounded-xl border border-border overflow-hidden">
-                  <div className="px-3 py-2 bg-muted/40 text-xs font-semibold text-foreground border-b border-border">
-                    Preview ({parsed.length} valid rows — showing first 50)
-                  </div>
-                  <div className="overflow-x-auto max-h-[40vh]">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/20 text-[11px] uppercase tracking-wider text-muted-foreground">
-                        <tr>
-                          <th className="px-2 py-2 text-left">#</th>
-                          <th className="px-2 py-2 text-left">Subject</th>
-                          <th className="px-2 py-2 text-left">Topic</th>
-                          <th className="px-2 py-2 text-left">Diff.</th>
-                          <th className="px-2 py-2 text-left">Question</th>
-                          <th className="px-2 py-2 text-left">Options</th>
-                          <th className="px-2 py-2 text-left">Correct</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {parsed.slice(0, 50).map((q, i) => (
-                          <tr key={i} className="border-t border-border align-top">
-                            <td className="px-2 py-2 text-muted-foreground">{i + 1}</td>
-                            <td className="px-2 py-2 font-semibold">{q.subject}</td>
-                            <td className="px-2 py-2 text-muted-foreground">{q.topic ?? "—"}</td>
-                            <td className="px-2 py-2 capitalize">{q.difficulty}</td>
-                            <td className="px-2 py-2 max-w-[260px] truncate" title={q.question_text}>{q.question_text}</td>
-                            <td className="px-2 py-2 text-muted-foreground">{q.options.length}</td>
-                            <td className="px-2 py-2 font-semibold text-emerald-700">{renderCorrect(q)}</td>
+              {parsed.length > 0 && (() => {
+                const filtered = previewSearch.trim()
+                  ? parsed
+                      .map((q, idx) => ({ q, idx }))
+                      .filter(({ q }) => {
+                        const s = previewSearch.toLowerCase();
+                        return (
+                          q.question_text.toLowerCase().includes(s) ||
+                          q.subject.toLowerCase().includes(s) ||
+                          (q.topic ?? "").toLowerCase().includes(s) ||
+                          q.difficulty.toLowerCase().includes(s)
+                        );
+                      })
+                  : parsed.map((q, idx) => ({ q, idx }));
+                const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+                const page = Math.min(previewPage, totalPages);
+                const start = (page - 1) * PAGE_SIZE;
+                const pageRows = filtered.slice(start, start + PAGE_SIZE);
+                return (
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/40 border-b border-border">
+                      <span className="text-xs font-semibold text-foreground">
+                        Preview · {filtered.length} of {parsed.length} valid rows
+                      </span>
+                      <div className="flex-1" />
+                      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                        <input
+                          value={previewSearch}
+                          onChange={(e) => { setPreviewSearch(e.target.value); setPreviewPage(1); }}
+                          placeholder="Search rows…"
+                          className="bg-transparent text-xs outline-none w-44"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto max-h-[40vh]">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/20 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
+                          <tr>
+                            <th className="px-2 py-2 text-left">CSV row</th>
+                            <th className="px-2 py-2 text-left">Subject</th>
+                            <th className="px-2 py-2 text-left">Topic</th>
+                            <th className="px-2 py-2 text-left">Diff.</th>
+                            <th className="px-2 py-2 text-left">Question</th>
+                            <th className="px-2 py-2 text-left">Options</th>
+                            <th className="px-2 py-2 text-left">Correct</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {pageRows.length === 0 ? (
+                            <tr><td colSpan={7} className="px-2 py-6 text-center text-muted-foreground">No rows match your search.</td></tr>
+                          ) : pageRows.map(({ q, idx }) => (
+                            <tr key={idx} className="border-t border-border align-top">
+                              <td className="px-2 py-2 text-muted-foreground">{idx + 2}</td>
+                              <td className="px-2 py-2 font-semibold">{q.subject}</td>
+                              <td className="px-2 py-2 text-muted-foreground">{q.topic ?? "—"}</td>
+                              <td className="px-2 py-2 capitalize">{q.difficulty}</td>
+                              <td className="px-2 py-2 max-w-[260px] truncate" title={q.question_text}>{q.question_text}</td>
+                              <td className="px-2 py-2 text-muted-foreground">{q.options.length}</td>
+                              <td className="px-2 py-2 font-semibold text-emerald-700">{renderCorrect(q)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30 border-t border-border text-xs">
+                      <span className="text-muted-foreground">Page {page} of {totalPages}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setPreviewPage(Math.max(1, page - 1))}
+                          disabled={page <= 1}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 font-semibold text-foreground hover:bg-muted disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                        </button>
+                        <button
+                          onClick={() => setPreviewPage(Math.min(totalPages, page + 1))}
+                          disabled={page >= totalPages}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 font-semibold text-foreground hover:bg-muted disabled:opacity-40"
+                        >
+                          Next <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                );
+              })()}
+
+              {/* Duplicate handling */}
+              <div className="rounded-xl border border-border bg-muted/20 p-3">
+                <div className="text-xs font-semibold text-foreground mb-2">If a question already exists in the bank…</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {([
+                    { id: "insert", label: "Insert anyway", desc: "Create new rows even if duplicates exist." },
+                    { id: "skip", label: "Skip duplicates", desc: "Only insert questions that don't already exist." },
+                    { id: "upsert", label: "Update existing", desc: "Overwrite the existing question with CSV data." },
+                  ] as const).map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`cursor-pointer rounded-lg border p-2.5 transition-all ${duplicateMode === opt.id ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/40"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="dup-mode"
+                        className="sr-only"
+                        checked={duplicateMode === opt.id}
+                        onChange={() => setDuplicateMode(opt.id)}
+                      />
+                      <div className="text-xs font-bold text-foreground">{opt.label}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{opt.desc}</div>
+                    </label>
+                  ))}
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-2">
+                  Duplicates are detected by matching <strong>subject</strong> + <strong>question text</strong> (case &amp; whitespace-insensitive).
+                </div>
+              </div>
                 </div>
               )}
             </>
