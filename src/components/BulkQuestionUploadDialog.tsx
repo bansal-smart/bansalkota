@@ -348,6 +348,28 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
     }
   };
 
+  const toCompetePayload = (row: ParsedQuestion) => {
+    const correctIdx = Array.isArray(row.correct_answer) ? row.correct_answer[0] : row.correct_answer;
+    return {
+      subject: row.subject,
+      topic: row.topic ?? "",
+      difficulty: row.difficulty,
+      target_exam: row.target_exam ?? null,
+      class_level: row.class_level ?? null,
+      question_text: row.question_text,
+      options: row.options.map((o) => o.text),
+      correct_index: correctIdx - 1,
+      explanation: row.explanation,
+      is_active: true,
+      created_by: row.created_by,
+    };
+  };
+
+  const toQbPayload = (row: ParsedQuestion) => row;
+
+  const buildPayload = (row: ParsedQuestion) =>
+    mode === "compete" ? toCompetePayload(row) : toQbPayload(row);
+
   const handleConfirmImport = async () => {
     if (!parsed.length) return;
     setStep("importing");
@@ -358,13 +380,11 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
     let skipped = 0;
     const insErrors: RowError[] = [];
 
-    // Build lookup of existing duplicates by (subject + normalized question_text) for skip/upsert modes.
-    // Match key uses subject + normalized question_text.
-    const existing = new Map<string, string>(); // key -> existing id
+    const existing = new Map<string, string>();
     if (duplicateMode !== "insert") {
       const subjects = Array.from(new Set(parsed.map((p) => p.subject)));
-      const { data: existingRows, error: fetchErr } = await supabase
-        .from("question_bank")
+      const { data: existingRows, error: fetchErr } = await (supabase as any)
+        .from(tableName)
         .select("id, subject, question_text")
         .in("subject", subjects);
       if (fetchErr) {
@@ -380,7 +400,6 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
     for (let i = 0; i < parsed.length; i += BATCH) {
       const chunk = parsed.slice(i, i + BATCH);
 
-      // Partition chunk by duplicate status
       const toInsert: ParsedQuestion[] = [];
       const toUpdate: { id: string; row: ParsedQuestion; index: number }[] = [];
 
@@ -397,9 +416,10 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
       });
 
       if (toInsert.length) {
-        const { data: insertedRows, error } = await supabase
-          .from("question_bank")
-          .insert(toInsert as any)
+        const payloads = toInsert.map(buildPayload);
+        const { data: insertedRows, error } = await (supabase as any)
+          .from(tableName)
+          .insert(payloads as any)
           .select("id, subject, question_text");
         if (error) {
           for (let j = 0; j < toInsert.length; j++) {
@@ -407,7 +427,6 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
           }
         } else {
           inserted += toInsert.length;
-          // Track newly-inserted rows so subsequent chunks treat them as duplicates
           for (const r of insertedRows ?? []) {
             existing.set(`${r.subject}::${normalizeText(r.question_text)}`, r.id);
           }
@@ -415,9 +434,9 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
       }
 
       for (const u of toUpdate) {
-        const { error } = await supabase
-          .from("question_bank")
-          .update(u.row as any)
+        const { error } = await (supabase as any)
+          .from(tableName)
+          .update(buildPayload(u.row) as any)
           .eq("id", u.id);
         if (error) {
           insErrors.push({ row: i + u.index + 2, message: `Update failed: ${error.message}`, raw: [] });
