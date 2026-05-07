@@ -164,6 +164,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
       </div>
 
       <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
+      <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} />
       {ConfirmDialog}
     </div>
   );
