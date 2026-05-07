@@ -65,6 +65,7 @@ const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boole
 };
 
 const CreateTestPage = () => {
+  const { exams: examList } = useExams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -272,9 +273,14 @@ const CreateTestPage = () => {
             <option value="practice">Practice</option>
           </select>
           <select value={examPattern} onChange={(e) => setExamPattern(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-            <option value="jee-main">JEE Main</option>
-            <option value="jee-advanced">JEE Advanced</option>
-            <option value="neet">NEET</option>
+            {examList.length === 0 && <>
+              <option value="jee-main">JEE Main</option>
+              <option value="jee-advanced">JEE Advanced</option>
+              <option value="neet">NEET</option>
+            </>}
+            {examList.map((x) => (
+              <option key={x.id} value={x.code || x.name.toLowerCase().replace(/\s+/g, "-")}>{x.name}</option>
+            ))}
             <option value="custom">Custom</option>
           </select>
         </div>
