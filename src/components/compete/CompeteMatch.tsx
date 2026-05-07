@@ -136,8 +136,8 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
                   : "border-white/10 bg-white/5 text-white hover:border-white/30 hover:bg-white/10"
               } ${locked ? "cursor-not-allowed" : "cursor-pointer"}`}
             >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-black mr-2">{String.fromCharCode(65 + i)}</span>
-              {opt}
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-black mr-2 align-middle">{String.fromCharCode(65 + i)}</span>
+              <span className="inline [&_p]:inline [&_p]:m-0"><MathRenderer inline content={opt} /></span>
             </button>
           );
         })}
