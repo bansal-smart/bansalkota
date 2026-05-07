@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
+import { useExams } from "@/hooks/useExams";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
