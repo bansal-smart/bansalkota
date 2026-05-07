@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit3, Loader2, Swords, Search, CheckSquare, Square, Filter, EyeOff, Eye, X } from "lucide-react";
+import { Plus, Trash2, Edit3, Loader2, Swords, Search, CheckSquare, Square, Filter, EyeOff, Eye, X, Upload } from "lucide-react";
+import BulkQuestionUploadDialog from "@/components/BulkQuestionUploadDialog";
+import MathRenderer from "@/components/MathRenderer";
 
 type Q = {
   id: string;
