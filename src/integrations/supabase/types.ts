@@ -98,8 +98,10 @@ export type Database = {
       }
       compete_matches: {
         Row: {
+          countdown_until: string | null
           created_at: string
           current_question_index: number
+          current_question_started_at: string | null
           finished_at: string | null
           id: string
           is_bot: boolean
@@ -127,8 +129,10 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          countdown_until?: string | null
           created_at?: string
           current_question_index?: number
+          current_question_started_at?: string | null
           finished_at?: string | null
           id?: string
           is_bot?: boolean
@@ -156,8 +160,10 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          countdown_until?: string | null
           created_at?: string
           current_question_index?: number
+          current_question_started_at?: string | null
           finished_at?: string | null
           id?: string
           is_bot?: boolean
