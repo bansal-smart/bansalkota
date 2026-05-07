@@ -53,6 +53,10 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
 
   const myAnswered = answers.some((a) => a.user_id === myId && a.question_index === qIndex);
   const oppAnswered = answers.some((a) => a.user_id !== myId && a.question_index === qIndex);
+  // After reload, mark submitted so we don't re-submit on timeout
+  useEffect(() => {
+    if (myAnswered) submittedRef.current.add(qIndex);
+  }, [myAnswered, qIndex]);
 
   const myScore = isP1 ? match.player1_score : match.player2_score;
   const oppScore = isP1 ? match.player2_score : match.player1_score;
