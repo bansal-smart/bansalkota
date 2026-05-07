@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { CompeteMatch, CompeteQuestion, CompeteAnswer } from "@/hooks/useCompeteMatch";
 import { toast } from "sonner";
+import MathRenderer from "@/components/MathRenderer";
 
 const QUESTION_TIME_MS = 30_000;
 
