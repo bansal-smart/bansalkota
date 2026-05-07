@@ -87,6 +87,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [search, setSearch] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<BankQuestion | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
   const filters = useMemo(() => ({ subject, difficulty, search }), [subject, difficulty, search]);
