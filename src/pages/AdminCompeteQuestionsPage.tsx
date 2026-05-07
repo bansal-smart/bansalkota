@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Edit3, Loader2, Swords, Search, CheckSquare, Square, Filter, EyeOff, Eye, X, Upload } from "lucide-react";
 import BulkQuestionUploadDialog from "@/components/BulkQuestionUploadDialog";
 import MathRenderer from "@/components/MathRenderer";
+import { useExams } from "@/hooks/useExams";
 
 type Q = {
   id: string;
@@ -21,7 +22,7 @@ type Q = {
 
 const SUBJECTS = ["Physics", "Chemistry", "Math", "Biology"];
 const DIFFICULTIES = ["easy", "medium", "hard"];
-const EXAMS = ["JEE Main", "JEE Advanced", "NEET", "Boards", "general"];
+// EXAMS now sourced from useExams() (DB-managed). Fallback handled by the hook.
 const CLASS_LEVELS = ["9", "10", "11", "12", "Dropper"];
 
 const empty: Omit<Q, "id"> = {
@@ -38,6 +39,7 @@ const empty: Omit<Q, "id"> = {
 };
 
 const AdminCompeteQuestionsPage = () => {
+  const { examNames: EXAMS } = useExams();
   const [list, setList] = useState<Q[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<(Omit<Q, "id"> & { id?: string }) | null>(null);
