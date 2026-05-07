@@ -90,20 +90,45 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
   if (!open) return null;
 
   const save = async () => {
+    // Hard guard against duplicate submissions (double-click, Enter spam).
+    if (inFlight.current || saving) return;
     if (!user) return toast.error("Sign in required");
-    if (!text.trim()) return toast.error("Question text required");
-    if (options.some((o) => !o.trim())) return toast.error("All 4 options required");
 
-    setSaving(true);
-    const payload = {
+    // Sanitize all string inputs first.
+    const cleanText = sanitize(text).trim();
+    const cleanTopic = sanitize(topic).trim();
+    const cleanExplanation = sanitize(explanation).trim();
+    const cleanOptions = options.map((o) => sanitize(o).trim());
+
+    // LaTeX delimiter / brace validation across every authored field.
+    for (const [label, value] of [
+      ["Question", cleanText],
+      ["Explanation", cleanExplanation],
+      ...cleanOptions.map((o, i) => [`Option ${String.fromCharCode(65 + i)}`, o] as const),
+    ] as const) {
+      if (!value) continue;
+      const err = validateLatex(value);
+      if (err) return toast.error(`${label}: ${err}`);
+    }
+
+    const candidate = {
       subject,
-      topic: topic.trim() || null,
+      topic: cleanTopic || null,
       difficulty,
-      question_text: text.trim(),
-      options: options.map((t, id) => ({ id, text: t })),
+      question_text: cleanText,
+      options: cleanOptions.map((t, id) => ({ id, text: t })),
       correct_answer: correct,
-      explanation: explanation.trim() || null,
+      explanation: cleanExplanation || null,
     };
+
+    const parsed = schema.safeParse(candidate);
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0]?.message || "Invalid input");
+    }
+    const payload = parsed.data;
+
+    inFlight.current = true;
+    setSaving(true);
 
     const runSave = async () => {
       if (initial) {
@@ -113,14 +138,12 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
     };
 
     try {
-      // Ensure auth token is fresh — stale tokens can cause "Failed to fetch" on refresh.
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
         await supabase.auth.refreshSession();
       }
 
       let res = await runSave();
-      // Retry once on transient network errors.
       if (res.error && /failed to fetch|network/i.test(res.error.message)) {
         await new Promise((r) => setTimeout(r, 600));
         res = await runSave();
@@ -140,6 +163,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
         toast.error(msg);
       }
     } finally {
+      inFlight.current = false;
       setSaving(false);
     }
   };
