@@ -43,6 +43,7 @@ const AdminCompeteQuestionsPage = () => {
   const [editing, setEditing] = useState<(Omit<Q, "id"> & { id?: string }) | null>(null);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
