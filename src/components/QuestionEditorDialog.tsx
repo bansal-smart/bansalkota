@@ -40,6 +40,9 @@ const schema = z.object({
   correct_answer: z.number().int().min(0).max(3),
   explanation: z.string().max(MAX_EXPLANATION).nullable(),
 });
+
+// Re-add MathRenderer import below (kept separate for diff clarity).
+import MathRenderer from "@/components/MathRenderer";
 import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
