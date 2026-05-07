@@ -63,6 +63,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
   const [correct, setCorrect] = useState(0);
   const [explanation, setExplanation] = useState("");
   const [saving, setSaving] = useState(false);
+  // Ref-based lock so rapid double-clicks within the same tick are blocked
+  // before React state has a chance to flush.
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (initial) {
