@@ -163,22 +163,31 @@ type ParsedQuestion = {
   tags: string[];
   is_public: boolean;
   created_by: string | null;
+  target_exam?: string | null;
+  class_level?: string | null;
 };
 
 type RowError = { row: number; message: string; raw: string[] };
 
-const VALID_SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology"];
+const VALID_SUBJECTS_QB = ["Physics", "Chemistry", "Mathematics", "Biology"];
+const VALID_SUBJECTS_COMPETE = ["Physics", "Chemistry", "Math", "Mathematics", "Biology"];
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
-const parseRow = (headers: string[], row: string[], userId: string | null): ParsedQuestion => {
+const parseRow = (
+  headers: string[],
+  row: string[],
+  userId: string | null,
+  mode: BulkUploadMode,
+): ParsedQuestion => {
   const get = (k: string) => {
     const idx = headers.indexOf(k);
     return idx >= 0 ? (row[idx] ?? "").trim() : "";
   };
 
+  const validSubjects = mode === "compete" ? VALID_SUBJECTS_COMPETE : VALID_SUBJECTS_QB;
   const subject = get("subject");
-  if (!VALID_SUBJECTS.includes(subject)) {
-    throw new Error(`Invalid subject "${subject}" (allowed: ${VALID_SUBJECTS.join(", ")})`);
+  if (!validSubjects.includes(subject)) {
+    throw new Error(`Invalid subject "${subject}" (allowed: ${validSubjects.join(", ")})`);
   }
 
   const difficulty = (get("difficulty") || "medium").toLowerCase();
@@ -202,6 +211,9 @@ const parseRow = (headers: string[], row: string[], userId: string | null): Pars
   for (const c of correctIdxs) {
     if (c < 1 || c > options.length) throw new Error(`correct_answer ${c} out of range (1-${options.length})`);
   }
+  if (mode === "compete" && correctIdxs.length > 1) {
+    throw new Error("Compete questions support only a single correct_answer");
+  }
   const correct_answer: number | number[] = correctIdxs.length === 1 ? correctIdxs[0] : correctIdxs;
 
   const marksC = parseFloat(get("marks_correct"));
@@ -222,6 +234,8 @@ const parseRow = (headers: string[], row: string[], userId: string | null): Pars
     tags,
     is_public: true,
     created_by: userId,
+    target_exam: get("target_exam") || null,
+    class_level: get("class_level") || null,
   };
 };
 
