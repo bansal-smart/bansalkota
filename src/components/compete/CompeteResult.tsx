@@ -3,6 +3,7 @@ import { Crown, RotateCw, Home, TrendingUp, TrendingDown, Check, X, Share2, Down
 import { CompeteMatch, CompeteQuestion, CompeteAnswer } from "@/hooks/useCompeteMatch";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
   match: CompeteMatch;
@@ -175,7 +176,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
                     <Badge ok={opp?.is_correct} label={opp ? `Opp ${(opp.time_taken_ms/1000).toFixed(1)}s` : "—"} />
                   </div>
                 </div>
-                <p className="text-sm text-white whitespace-pre-wrap mb-2">{q.question_text}</p>
+                <div className="text-sm text-white mb-2 [&_p]:m-0"><MathRenderer content={q.question_text} /></div>
                 <div className="grid gap-1.5">
                   {q.options.map((opt, oi) => {
                     const isCorrect = oi === q.correct_index;
@@ -192,9 +193,9 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
                               : "bg-white/5 border border-white/10 text-white/80"
                         }`}
                       >
-                        <span>
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[10px] font-black mr-2">{String.fromCharCode(65 + oi)}</span>
-                          {opt}
+                        <span className="flex-1 min-w-0">
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[10px] font-black mr-2 align-middle">{String.fromCharCode(65 + oi)}</span>
+                          <span className="inline [&_p]:inline [&_p]:m-0"><MathRenderer inline content={opt} /></span>
                         </span>
                         <span className="flex items-center gap-1.5 text-[10px] font-bold">
                           {youPicked && <span className="px-1.5 py-0.5 rounded bg-white/15">YOU</span>}
@@ -206,7 +207,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
                   })}
                 </div>
                 {q.explanation && (
-                  <p className="text-[11px] text-white/60 mt-2 italic">💡 {q.explanation}</p>
+                  <div className="text-[11px] text-white/60 mt-2 italic [&_p]:m-0">💡 <span className="inline [&_p]:inline"><MathRenderer inline content={q.explanation} /></span></div>
                 )}
               </div>
             );

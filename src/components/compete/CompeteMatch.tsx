@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { CompeteMatch, CompeteQuestion, CompeteAnswer } from "@/hooks/useCompeteMatch";
 import { toast } from "sonner";
+import MathRenderer from "@/components/MathRenderer";
 
 const QUESTION_TIME_MS = 30_000;
 
@@ -116,7 +117,7 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
 
       {/* Question */}
       <div className="max-w-xl mx-auto rounded-2xl bg-white/5 border border-white/10 p-5">
-        <p className="text-base font-bold text-white leading-relaxed whitespace-pre-wrap">{question.question_text}</p>
+        <div className="text-base font-bold text-white leading-relaxed [&_p]:m-0"><MathRenderer content={question.question_text} /></div>
       </div>
 
       {/* Options */}
@@ -135,8 +136,8 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
                   : "border-white/10 bg-white/5 text-white hover:border-white/30 hover:bg-white/10"
               } ${locked ? "cursor-not-allowed" : "cursor-pointer"}`}
             >
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-black mr-2">{String.fromCharCode(65 + i)}</span>
-              {opt}
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-xs font-black mr-2 align-middle">{String.fromCharCode(65 + i)}</span>
+              <span className="inline [&_p]:inline [&_p]:m-0"><MathRenderer inline content={opt} /></span>
             </button>
           );
         })}

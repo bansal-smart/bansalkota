@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit3, Loader2, Swords, Search, CheckSquare, Square, Filter, EyeOff, Eye, X } from "lucide-react";
+import { Plus, Trash2, Edit3, Loader2, Swords, Search, CheckSquare, Square, Filter, EyeOff, Eye, X, Upload } from "lucide-react";
+import BulkQuestionUploadDialog from "@/components/BulkQuestionUploadDialog";
+import MathRenderer from "@/components/MathRenderer";
 
 type Q = {
   id: string;
@@ -41,6 +43,7 @@ const AdminCompeteQuestionsPage = () => {
   const [editing, setEditing] = useState<(Omit<Q, "id"> & { id?: string }) | null>(null);
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -176,9 +179,14 @@ const AdminCompeteQuestionsPage = () => {
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2"><Swords className="h-5 w-5 text-primary" /> Compete Questions</h1>
           <p className="text-sm text-muted-foreground">{filtered.length} of {list.length} questions {selected.size > 0 && `· ${selected.size} selected`}</p>
         </div>
-        <button onClick={() => setEditing({ ...empty })} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
-          <Plus className="h-4 w-4" /> New Question
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setBulkOpen(true)} className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-bold text-foreground hover:bg-muted inline-flex items-center gap-1">
+            <Upload className="h-4 w-4" /> Bulk upload
+          </button>
+          <button onClick={() => setEditing({ ...empty })} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
+            <Plus className="h-4 w-4" /> New Question
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -252,7 +260,7 @@ const AdminCompeteQuestionsPage = () => {
                   <td className="px-3 py-2 capitalize">{q.difficulty}</td>
                   <td className="px-3 py-2 text-muted-foreground">{q.target_exam || "—"}</td>
                   <td className="px-3 py-2 text-muted-foreground">{q.class_level || "—"}</td>
-                  <td className="px-3 py-2 max-w-md truncate">{q.question_text}</td>
+                  <td className="px-3 py-2 max-w-md truncate"><MathRenderer inline content={q.question_text} /></td>
                   <td className="px-3 py-2">{q.is_active ? <span className="text-secondary font-bold">Yes</span> : <span className="text-muted-foreground">No</span>}</td>
                   <td className="px-3 py-2 text-right">
                     <button onClick={() => setEditing({ ...q })} className="p-1 hover:bg-muted rounded"><Edit3 className="h-4 w-4" /></button>
@@ -326,6 +334,13 @@ const AdminCompeteQuestionsPage = () => {
           </div>
         </div>
       )}
+
+      <BulkQuestionUploadDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onUploaded={load}
+        mode="compete"
+      />
 
       <style>{`.input { width: 100%; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; } .input:focus { border-color: hsl(var(--primary)); }`}</style>
     </div>

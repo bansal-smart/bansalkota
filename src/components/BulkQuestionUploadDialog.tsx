@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
+export type BulkUploadMode = "question_bank" | "compete";
+
 type Props = {
   open: boolean;
   onClose: () => void;
   onUploaded: () => void;
+  mode?: BulkUploadMode;
 };
 
-const TEMPLATE_HEADERS = [
+const QB_HEADERS = [
   "subject",
   "topic",
   "difficulty",
@@ -26,51 +29,69 @@ const TEMPLATE_HEADERS = [
   "tags",
 ];
 
-const SAMPLE_ROWS: string[][] = [
+const COMPETE_HEADERS = [
+  "subject",
+  "topic",
+  "difficulty",
+  "target_exam",
+  "class_level",
+  "question_text",
+  "option_a",
+  "option_b",
+  "option_c",
+  "option_d",
+  "correct_answer",
+  "explanation",
+];
+
+const QB_SAMPLE_ROWS: string[][] = [
   [
-    "Physics",
-    "Kinematics",
-    "easy",
+    "Physics", "Kinematics", "easy",
     "What is the SI unit of acceleration?",
-    "m/s",
-    "m/s^2",
-    "m^2/s",
-    "kg.m/s",
+    "m/s", "m/s^2", "m^2/s", "kg.m/s",
     "2",
     "Acceleration = change in velocity per unit time, so units are m/s².",
-    "4",
-    "-1",
-    "units;basics",
+    "4", "-1", "units;basics",
   ],
   [
-    "Mathematics",
-    "Algebra",
-    "medium",
+    "Mathematics", "Algebra", "medium",
     "Solve for x: $2x + 6 = 14$",
-    "2",
-    "4",
-    "6",
-    "8",
+    "2", "4", "6", "8",
     "2",
     "2x = 8 so x = 4.",
-    "4",
-    "-1",
-    "linear-equations",
+    "4", "-1", "linear-equations",
   ],
   [
-    "Chemistry",
-    "Periodic Table",
-    "hard",
+    "Chemistry", "Periodic Table", "hard",
     "Which of the following are noble gases? (Select all that apply)",
-    "Helium",
-    "Nitrogen",
-    "Argon",
-    "Oxygen",
+    "Helium", "Nitrogen", "Argon", "Oxygen",
     "1,3",
     "Helium and Argon belong to group 18 (noble gases).",
-    "4",
-    "-1",
-    "noble-gases;multi-select",
+    "4", "-1", "noble-gases;multi-select",
+  ],
+];
+
+const COMPETE_SAMPLE_ROWS: string[][] = [
+  [
+    "Physics", "Kinematics", "easy", "JEE Main", "11",
+    "What is the SI unit of acceleration?",
+    "m/s", "m/s^2", "m^2/s", "kg.m/s",
+    "2",
+    "Acceleration = change in velocity per unit time, so units are m/s².",
+  ],
+  [
+    "Math", "Algebra", "medium", "JEE Main", "11",
+    "Solve for x: $2x + 6 = 14$",
+    "2", "4", "6", "8",
+    "2",
+    "Subtracting 6 then dividing by 2 gives x = 4.",
+  ],
+  [
+    "Chemistry", "Thermodynamics", "hard", "NEET", "12",
+    "For an ideal gas at constant T, $\\Delta U$ equals?",
+    "0", "nRT", "nC_vT", "PV",
+    "1",
+    "Internal energy of an ideal gas depends only on T; isothermal => ΔU = 0.",
   ],
 ];
 
@@ -82,8 +103,15 @@ const csvEscape = (v: string | number | null | undefined) => {
   return s;
 };
 
-const buildTemplate = () => {
-  const rows = [TEMPLATE_HEADERS, ...SAMPLE_ROWS];
+const getHeadersFor = (mode: BulkUploadMode) =>
+  mode === "compete" ? COMPETE_HEADERS : QB_HEADERS;
+
+const getSamplesFor = (mode: BulkUploadMode) =>
+  mode === "compete" ? COMPETE_SAMPLE_ROWS : QB_SAMPLE_ROWS;
+
+const buildTemplate = (mode: BulkUploadMode) => {
+  const headers = getHeadersFor(mode);
+  const rows = [headers, ...getSamplesFor(mode)];
   return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
 };
 
@@ -135,22 +163,31 @@ type ParsedQuestion = {
   tags: string[];
   is_public: boolean;
   created_by: string | null;
+  target_exam?: string | null;
+  class_level?: string | null;
 };
 
 type RowError = { row: number; message: string; raw: string[] };
 
-const VALID_SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology"];
+const VALID_SUBJECTS_QB = ["Physics", "Chemistry", "Mathematics", "Biology"];
+const VALID_SUBJECTS_COMPETE = ["Physics", "Chemistry", "Math", "Mathematics", "Biology"];
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
-const parseRow = (headers: string[], row: string[], userId: string | null): ParsedQuestion => {
+const parseRow = (
+  headers: string[],
+  row: string[],
+  userId: string | null,
+  mode: BulkUploadMode,
+): ParsedQuestion => {
   const get = (k: string) => {
     const idx = headers.indexOf(k);
     return idx >= 0 ? (row[idx] ?? "").trim() : "";
   };
 
+  const validSubjects = mode === "compete" ? VALID_SUBJECTS_COMPETE : VALID_SUBJECTS_QB;
   const subject = get("subject");
-  if (!VALID_SUBJECTS.includes(subject)) {
-    throw new Error(`Invalid subject "${subject}" (allowed: ${VALID_SUBJECTS.join(", ")})`);
+  if (!validSubjects.includes(subject)) {
+    throw new Error(`Invalid subject "${subject}" (allowed: ${validSubjects.join(", ")})`);
   }
 
   const difficulty = (get("difficulty") || "medium").toLowerCase();
@@ -174,6 +211,9 @@ const parseRow = (headers: string[], row: string[], userId: string | null): Pars
   for (const c of correctIdxs) {
     if (c < 1 || c > options.length) throw new Error(`correct_answer ${c} out of range (1-${options.length})`);
   }
+  if (mode === "compete" && correctIdxs.length > 1) {
+    throw new Error("Compete questions support only a single correct_answer");
+  }
   const correct_answer: number | number[] = correctIdxs.length === 1 ? correctIdxs[0] : correctIdxs;
 
   const marksC = parseFloat(get("marks_correct"));
@@ -194,6 +234,8 @@ const parseRow = (headers: string[], row: string[], userId: string | null): Pars
     tags,
     is_public: true,
     created_by: userId,
+    target_exam: get("target_exam") || null,
+    class_level: get("class_level") || null,
   };
 };
 
@@ -203,7 +245,7 @@ const PAGE_SIZE = 25;
 
 const normalizeText = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
-const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
+const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_bank" }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
@@ -219,6 +261,9 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("insert");
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewPage, setPreviewPage] = useState(1);
+
+  const tableName = mode === "compete" ? "compete_questions" : "question_bank";
+  const headersForMode = getHeadersFor(mode);
 
   if (!open) return null;
 
@@ -244,14 +289,15 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   };
 
   const handleDownloadTemplate = () => {
-    downloadCSV("question-bank-template.csv", buildTemplate());
+    const filename = mode === "compete" ? "compete-questions-template.csv" : "question-bank-template.csv";
+    downloadCSV(filename, buildTemplate(mode));
   };
 
   const handleDownloadErrors = (rows: RowError[]) => {
-    const headers = ["row_number", "error_message", ...TEMPLATE_HEADERS];
+    const headers = ["row_number", "error_message", ...headersForMode];
     const lines = [headers.map(csvEscape).join(",")];
     for (const e of rows) {
-      const cells = [String(e.row), e.message, ...TEMPLATE_HEADERS.map((_, i) => e.raw[i] ?? "")];
+      const cells = [String(e.row), e.message, ...headersForMode.map((_, i) => e.raw[i] ?? "")];
       lines.push(cells.map(csvEscape).join(","));
     }
     downloadCSV("import-errors.csv", lines.join("\n"));
@@ -276,10 +322,9 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
         return;
       }
 
-      // Reorder raw row to TEMPLATE_HEADERS order for nice error CSV
       const headerIndex = (h: string) => headers.indexOf(h);
       const reorderRaw = (r: string[]) =>
-        TEMPLATE_HEADERS.map((h) => {
+        headersForMode.map((h) => {
           const idx = headerIndex(h);
           return idx >= 0 ? (r[idx] ?? "") : "";
         });
@@ -288,7 +333,7 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
       const bad: RowError[] = [];
       for (let i = 1; i < rows.length; i++) {
         try {
-          ok.push(parseRow(headers, rows[i], user?.id ?? null));
+          ok.push(parseRow(headers, rows[i], user?.id ?? null, mode));
         } catch (e: any) {
           bad.push({ row: i + 1, message: e.message, raw: reorderRaw(rows[i]) });
         }
@@ -303,6 +348,28 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     }
   };
 
+  const toCompetePayload = (row: ParsedQuestion) => {
+    const correctIdx = Array.isArray(row.correct_answer) ? row.correct_answer[0] : row.correct_answer;
+    return {
+      subject: row.subject,
+      topic: row.topic ?? "",
+      difficulty: row.difficulty,
+      target_exam: row.target_exam ?? null,
+      class_level: row.class_level ?? null,
+      question_text: row.question_text,
+      options: row.options.map((o) => o.text),
+      correct_index: correctIdx - 1,
+      explanation: row.explanation,
+      is_active: true,
+      created_by: row.created_by,
+    };
+  };
+
+  const toQbPayload = (row: ParsedQuestion) => row;
+
+  const buildPayload = (row: ParsedQuestion) =>
+    mode === "compete" ? toCompetePayload(row) : toQbPayload(row);
+
   const handleConfirmImport = async () => {
     if (!parsed.length) return;
     setStep("importing");
@@ -313,13 +380,11 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     let skipped = 0;
     const insErrors: RowError[] = [];
 
-    // Build lookup of existing duplicates by (subject + normalized question_text) for skip/upsert modes.
-    // Match key uses subject + normalized question_text.
-    const existing = new Map<string, string>(); // key -> existing id
+    const existing = new Map<string, string>();
     if (duplicateMode !== "insert") {
       const subjects = Array.from(new Set(parsed.map((p) => p.subject)));
-      const { data: existingRows, error: fetchErr } = await supabase
-        .from("question_bank")
+      const { data: existingRows, error: fetchErr } = await (supabase as any)
+        .from(tableName)
         .select("id, subject, question_text")
         .in("subject", subjects);
       if (fetchErr) {
@@ -335,7 +400,6 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     for (let i = 0; i < parsed.length; i += BATCH) {
       const chunk = parsed.slice(i, i + BATCH);
 
-      // Partition chunk by duplicate status
       const toInsert: ParsedQuestion[] = [];
       const toUpdate: { id: string; row: ParsedQuestion; index: number }[] = [];
 
@@ -352,9 +416,10 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
       });
 
       if (toInsert.length) {
-        const { data: insertedRows, error } = await supabase
-          .from("question_bank")
-          .insert(toInsert as any)
+        const payloads = toInsert.map(buildPayload);
+        const { data: insertedRows, error } = await (supabase as any)
+          .from(tableName)
+          .insert(payloads as any)
           .select("id, subject, question_text");
         if (error) {
           for (let j = 0; j < toInsert.length; j++) {
@@ -362,7 +427,6 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
           }
         } else {
           inserted += toInsert.length;
-          // Track newly-inserted rows so subsequent chunks treat them as duplicates
           for (const r of insertedRows ?? []) {
             existing.set(`${r.subject}::${normalizeText(r.question_text)}`, r.id);
           }
@@ -370,9 +434,9 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
       }
 
       for (const u of toUpdate) {
-        const { error } = await supabase
-          .from("question_bank")
-          .update(u.row as any)
+        const { error } = await (supabase as any)
+          .from(tableName)
+          .update(buildPayload(u.row) as any)
           .eq("id", u.id);
         if (error) {
           insErrors.push({ row: i + u.index + 2, message: `Update failed: ${error.message}`, raw: [] });
