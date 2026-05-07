@@ -260,7 +260,7 @@ const AdminCompeteQuestionsPage = () => {
                   <td className="px-3 py-2 capitalize">{q.difficulty}</td>
                   <td className="px-3 py-2 text-muted-foreground">{q.target_exam || "—"}</td>
                   <td className="px-3 py-2 text-muted-foreground">{q.class_level || "—"}</td>
-                  <td className="px-3 py-2 max-w-md truncate">{q.question_text}</td>
+                  <td className="px-3 py-2 max-w-md truncate"><MathRenderer inline content={q.question_text} /></td>
                   <td className="px-3 py-2">{q.is_active ? <span className="text-secondary font-bold">Yes</span> : <span className="text-muted-foreground">No</span>}</td>
                   <td className="px-3 py-2 text-right">
                     <button onClick={() => setEditing({ ...q })} className="p-1 hover:bg-muted rounded"><Edit3 className="h-4 w-4" /></button>
