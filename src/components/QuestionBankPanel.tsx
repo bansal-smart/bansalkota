@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
+import BulkQuestionUploadDialog from "./BulkQuestionUploadDialog";
 import MathRenderer from "./MathRenderer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -86,6 +87,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [search, setSearch] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<BankQuestion | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
   const filters = useMemo(() => ({ subject, difficulty, search }), [subject, difficulty, search]);
@@ -112,9 +114,14 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           <BookMarked className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold text-foreground flex-1">Question Bank</h3>
           {manage && (
-            <button onClick={() => { setEditing(null); setEditorOpen(true); }} className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground">
-              <Plus className="h-3 w-3" /> New
-            </button>
+            <>
+              <button onClick={() => setBulkOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+                <Upload className="h-3 w-3" /> Bulk upload
+              </button>
+              <button onClick={() => { setEditing(null); setEditorOpen(true); }} className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground">
+                <Plus className="h-3 w-3" /> New
+              </button>
+            </>
           )}
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5">
@@ -157,6 +164,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
       </div>
 
       <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
+      <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} />
       {ConfirmDialog}
     </div>
   );
