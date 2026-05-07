@@ -1,9 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, X, Sigma, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
+
+// Limits keep payload small and prevent broken markdown from blowing up KaTeX.
+const MAX_TEXT = 4000;
+const MAX_OPTION = 1000;
+const MAX_TOPIC = 120;
+const MAX_EXPLANATION = 4000;
+
+/** Strip control characters (except \n, \t) that can corrupt JSON payloads. */
+const sanitize = (s: string) =>
+  s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").normalize("NFC");
+
+/** Lightweight LaTeX sanity check — balanced $ and {} so the request body is well-formed. */
+const validateLatex = (s: string): string | null => {
+  // Count unescaped $ — must be even (pairs of $...$ or $$...$$).
+  const dollars = (s.match(/(?<!\\)\$/g) || []).length;
+  if (dollars % 2 !== 0) return "Unbalanced '$' delimiters in LaTeX";
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "\\") { i++; continue; }
+    if (s[i] === "{") depth++;
+    else if (s[i] === "}") { depth--; if (depth < 0) return "Unbalanced '{}' braces in LaTeX"; }
+  }
+  if (depth !== 0) return "Unbalanced '{}' braces in LaTeX";
+  return null;
+};
+
+const schema = z.object({
+  subject: z.string().min(1).max(50),
+  topic: z.string().max(MAX_TOPIC).nullable(),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  question_text: z.string().trim().min(1, "Question text required").max(MAX_TEXT),
+  options: z.array(z.object({ id: z.number(), text: z.string().trim().min(1).max(MAX_OPTION) })).length(4),
+  correct_answer: z.number().int().min(0).max(3),
+  explanation: z.string().max(MAX_EXPLANATION).nullable(),
+});
+
 import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
@@ -26,6 +63,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
   const [correct, setCorrect] = useState(0);
   const [explanation, setExplanation] = useState("");
   const [saving, setSaving] = useState(false);
+  // Ref-based lock so rapid double-clicks within the same tick are blocked
+  // before React state has a chance to flush.
+  const inFlight = useRef(false);
 
   useEffect(() => {
     if (initial) {
@@ -50,37 +90,60 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
   if (!open) return null;
 
   const save = async () => {
+    // Hard guard against duplicate submissions (double-click, Enter spam).
+    if (inFlight.current || saving) return;
     if (!user) return toast.error("Sign in required");
-    if (!text.trim()) return toast.error("Question text required");
-    if (options.some((o) => !o.trim())) return toast.error("All 4 options required");
 
-    setSaving(true);
-    const payload = {
+    // Sanitize all string inputs first.
+    const cleanText = sanitize(text).trim();
+    const cleanTopic = sanitize(topic).trim();
+    const cleanExplanation = sanitize(explanation).trim();
+    const cleanOptions = options.map((o) => sanitize(o).trim());
+
+    // LaTeX delimiter / brace validation across every authored field.
+    for (const [label, value] of [
+      ["Question", cleanText],
+      ["Explanation", cleanExplanation],
+      ...cleanOptions.map((o, i) => [`Option ${String.fromCharCode(65 + i)}`, o] as const),
+    ] as const) {
+      if (!value) continue;
+      const err = validateLatex(value);
+      if (err) return toast.error(`${label}: ${err}`);
+    }
+
+    const candidate = {
       subject,
-      topic: topic.trim() || null,
+      topic: cleanTopic || null,
       difficulty,
-      question_text: text.trim(),
-      options: options.map((t, id) => ({ id, text: t })),
+      question_text: cleanText,
+      options: cleanOptions.map((t, id) => ({ id, text: t })),
       correct_answer: correct,
-      explanation: explanation.trim() || null,
+      explanation: cleanExplanation || null,
     };
+
+    const parsed = schema.safeParse(candidate);
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0]?.message || "Invalid input");
+    }
+    const payload = parsed.data;
+
+    inFlight.current = true;
+    setSaving(true);
 
     const runSave = async () => {
       if (initial) {
-        return supabase.from("question_bank").update(payload).eq("id", initial.id);
+        return supabase.from("question_bank").update(payload as any).eq("id", initial.id);
       }
-      return supabase.from("question_bank").insert({ ...payload, created_by: user.id });
+      return supabase.from("question_bank").insert({ ...(payload as any), created_by: user.id });
     };
 
     try {
-      // Ensure auth token is fresh — stale tokens can cause "Failed to fetch" on refresh.
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) {
         await supabase.auth.refreshSession();
       }
 
       let res = await runSave();
-      // Retry once on transient network errors.
       if (res.error && /failed to fetch|network/i.test(res.error.message)) {
         await new Promise((r) => setTimeout(r, 600));
         res = await runSave();
@@ -100,6 +163,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
         toast.error(msg);
       }
     } finally {
+      inFlight.current = false;
       setSaving(false);
     }
   };
