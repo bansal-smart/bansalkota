@@ -4,6 +4,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useExams } from "@/hooks/useExams";
 
 const slugify = (s: string) =>
   s
