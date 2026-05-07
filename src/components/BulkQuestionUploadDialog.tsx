@@ -245,7 +245,7 @@ const PAGE_SIZE = 25;
 
 const normalizeText = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
-const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
+const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_bank" }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
@@ -261,6 +261,9 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("insert");
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewPage, setPreviewPage] = useState(1);
+
+  const tableName = mode === "compete" ? "compete_questions" : "question_bank";
+  const headersForMode = getHeadersFor(mode);
 
   if (!open) return null;
 
@@ -286,14 +289,15 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   };
 
   const handleDownloadTemplate = () => {
-    downloadCSV("question-bank-template.csv", buildTemplate());
+    const filename = mode === "compete" ? "compete-questions-template.csv" : "question-bank-template.csv";
+    downloadCSV(filename, buildTemplate(mode));
   };
 
   const handleDownloadErrors = (rows: RowError[]) => {
-    const headers = ["row_number", "error_message", ...TEMPLATE_HEADERS];
+    const headers = ["row_number", "error_message", ...headersForMode];
     const lines = [headers.map(csvEscape).join(",")];
     for (const e of rows) {
-      const cells = [String(e.row), e.message, ...TEMPLATE_HEADERS.map((_, i) => e.raw[i] ?? "")];
+      const cells = [String(e.row), e.message, ...headersForMode.map((_, i) => e.raw[i] ?? "")];
       lines.push(cells.map(csvEscape).join(","));
     }
     downloadCSV("import-errors.csv", lines.join("\n"));
@@ -318,10 +322,9 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
         return;
       }
 
-      // Reorder raw row to TEMPLATE_HEADERS order for nice error CSV
       const headerIndex = (h: string) => headers.indexOf(h);
       const reorderRaw = (r: string[]) =>
-        TEMPLATE_HEADERS.map((h) => {
+        headersForMode.map((h) => {
           const idx = headerIndex(h);
           return idx >= 0 ? (r[idx] ?? "") : "";
         });
@@ -330,7 +333,7 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
       const bad: RowError[] = [];
       for (let i = 1; i < rows.length; i++) {
         try {
-          ok.push(parseRow(headers, rows[i], user?.id ?? null));
+          ok.push(parseRow(headers, rows[i], user?.id ?? null, mode));
         } catch (e: any) {
           bad.push({ row: i + 1, message: e.message, raw: reorderRaw(rows[i]) });
         }
