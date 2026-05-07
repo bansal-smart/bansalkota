@@ -198,6 +198,10 @@ const parseRow = (headers: string[], row: string[], userId: string | null): Pars
 };
 
 type Step = "upload" | "preview" | "importing" | "done";
+type DuplicateMode = "insert" | "skip" | "upsert";
+const PAGE_SIZE = 25;
+
+const normalizeText = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
 const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   const { user } = useAuth();
@@ -209,7 +213,12 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   const [fileName, setFileName] = useState<string>("");
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [insertedCount, setInsertedCount] = useState(0);
+  const [updatedCount, setUpdatedCount] = useState(0);
+  const [skippedCount, setSkippedCount] = useState(0);
   const [insertErrors, setInsertErrors] = useState<RowError[]>([]);
+  const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("insert");
+  const [previewSearch, setPreviewSearch] = useState("");
+  const [previewPage, setPreviewPage] = useState(1);
 
   if (!open) return null;
 
