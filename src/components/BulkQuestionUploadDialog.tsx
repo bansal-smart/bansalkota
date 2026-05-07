@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, Download, X, FileText, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Check } from "lucide-react";
+import { Upload, Download, X, FileText, CheckCircle2, AlertCircle, Loader2, ArrowLeft, Check, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -198,6 +198,10 @@ const parseRow = (headers: string[], row: string[], userId: string | null): Pars
 };
 
 type Step = "upload" | "preview" | "importing" | "done";
+type DuplicateMode = "insert" | "skip" | "upsert";
+const PAGE_SIZE = 25;
+
+const normalizeText = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
 const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   const { user } = useAuth();
@@ -209,7 +213,12 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
   const [fileName, setFileName] = useState<string>("");
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [insertedCount, setInsertedCount] = useState(0);
+  const [updatedCount, setUpdatedCount] = useState(0);
+  const [skippedCount, setSkippedCount] = useState(0);
   const [insertErrors, setInsertErrors] = useState<RowError[]>([]);
+  const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("insert");
+  const [previewSearch, setPreviewSearch] = useState("");
+  const [previewPage, setPreviewPage] = useState(1);
 
   if (!open) return null;
 
@@ -220,7 +229,11 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     setFileName("");
     setProgress({ done: 0, total: 0 });
     setInsertedCount(0);
+    setUpdatedCount(0);
+    setSkippedCount(0);
     setInsertErrors([]);
+    setPreviewSearch("");
+    setPreviewPage(1);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -296,36 +309,95 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     setProgress({ done: 0, total: parsed.length });
     const BATCH = 50;
     let inserted = 0;
+    let updated = 0;
+    let skipped = 0;
     const insErrors: RowError[] = [];
+
+    // Build lookup of existing duplicates by (subject + normalized question_text) for skip/upsert modes.
+    // Match key uses subject + normalized question_text.
+    const existing = new Map<string, string>(); // key -> existing id
+    if (duplicateMode !== "insert") {
+      const subjects = Array.from(new Set(parsed.map((p) => p.subject)));
+      const { data: existingRows, error: fetchErr } = await supabase
+        .from("question_bank")
+        .select("id, subject, question_text")
+        .in("subject", subjects);
+      if (fetchErr) {
+        toast.error(`Couldn't check duplicates: ${fetchErr.message}`);
+        setStep("preview");
+        return;
+      }
+      for (const r of existingRows ?? []) {
+        existing.set(`${r.subject}::${normalizeText(r.question_text)}`, r.id);
+      }
+    }
 
     for (let i = 0; i < parsed.length; i += BATCH) {
       const chunk = parsed.slice(i, i + BATCH);
-      const { error } = await supabase.from("question_bank").insert(chunk as any);
-      if (error) {
-        // Mark this batch as failed; we don't know which row exactly without per-row insert
-        for (let j = 0; j < chunk.length; j++) {
-          insErrors.push({
-            row: i + j + 2,
-            message: `Insert failed: ${error.message}`,
-            raw: [],
-          });
+
+      // Partition chunk by duplicate status
+      const toInsert: ParsedQuestion[] = [];
+      const toUpdate: { id: string; row: ParsedQuestion; index: number }[] = [];
+
+      chunk.forEach((row, idx) => {
+        const key = `${row.subject}::${normalizeText(row.question_text)}`;
+        const existingId = existing.get(key);
+        if (!existingId || duplicateMode === "insert") {
+          toInsert.push(row);
+        } else if (duplicateMode === "skip") {
+          skipped += 1;
+        } else if (duplicateMode === "upsert") {
+          toUpdate.push({ id: existingId, row, index: idx });
         }
-      } else {
-        inserted += chunk.length;
+      });
+
+      if (toInsert.length) {
+        const { data: insertedRows, error } = await supabase
+          .from("question_bank")
+          .insert(toInsert as any)
+          .select("id, subject, question_text");
+        if (error) {
+          for (let j = 0; j < toInsert.length; j++) {
+            insErrors.push({ row: i + j + 2, message: `Insert failed: ${error.message}`, raw: [] });
+          }
+        } else {
+          inserted += toInsert.length;
+          // Track newly-inserted rows so subsequent chunks treat them as duplicates
+          for (const r of insertedRows ?? []) {
+            existing.set(`${r.subject}::${normalizeText(r.question_text)}`, r.id);
+          }
+        }
       }
+
+      for (const u of toUpdate) {
+        const { error } = await supabase
+          .from("question_bank")
+          .update(u.row as any)
+          .eq("id", u.id);
+        if (error) {
+          insErrors.push({ row: i + u.index + 2, message: `Update failed: ${error.message}`, raw: [] });
+        } else {
+          updated += 1;
+        }
+      }
+
       setProgress({ done: Math.min(i + chunk.length, parsed.length), total: parsed.length });
-      // Yield to UI
       await new Promise((r) => setTimeout(r, 0));
     }
 
     setInsertedCount(inserted);
+    setUpdatedCount(updated);
+    setSkippedCount(skipped);
     setInsertErrors(insErrors);
     setStep("done");
-    if (inserted > 0) {
-      toast.success(`Imported ${inserted} question${inserted === 1 ? "" : "s"}`);
+    const totalChanged = inserted + updated;
+    if (totalChanged > 0) {
+      toast.success(`Imported ${inserted} new${updated ? `, updated ${updated}` : ""}${skipped ? `, skipped ${skipped}` : ""}`);
       onUploaded();
+    } else if (skipped > 0) {
+      toast.info(`All ${skipped} rows already existed — none imported`);
     }
-    if (insErrors.length) toast.warning(`${insErrors.length} row${insErrors.length === 1 ? "" : "s"} failed to insert`);
+    if (insErrors.length) toast.warning(`${insErrors.length} row${insErrors.length === 1 ? "" : "s"} failed`);
   };
 
   const renderCorrect = (q: ParsedQuestion) => {
@@ -453,41 +525,123 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
                 </div>
               )}
 
-              {parsed.length > 0 && (
-                <div className="rounded-xl border border-border overflow-hidden">
-                  <div className="px-3 py-2 bg-muted/40 text-xs font-semibold text-foreground border-b border-border">
-                    Preview ({parsed.length} valid rows — showing first 50)
-                  </div>
-                  <div className="overflow-x-auto max-h-[40vh]">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/20 text-[11px] uppercase tracking-wider text-muted-foreground">
-                        <tr>
-                          <th className="px-2 py-2 text-left">#</th>
-                          <th className="px-2 py-2 text-left">Subject</th>
-                          <th className="px-2 py-2 text-left">Topic</th>
-                          <th className="px-2 py-2 text-left">Diff.</th>
-                          <th className="px-2 py-2 text-left">Question</th>
-                          <th className="px-2 py-2 text-left">Options</th>
-                          <th className="px-2 py-2 text-left">Correct</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {parsed.slice(0, 50).map((q, i) => (
-                          <tr key={i} className="border-t border-border align-top">
-                            <td className="px-2 py-2 text-muted-foreground">{i + 1}</td>
-                            <td className="px-2 py-2 font-semibold">{q.subject}</td>
-                            <td className="px-2 py-2 text-muted-foreground">{q.topic ?? "—"}</td>
-                            <td className="px-2 py-2 capitalize">{q.difficulty}</td>
-                            <td className="px-2 py-2 max-w-[260px] truncate" title={q.question_text}>{q.question_text}</td>
-                            <td className="px-2 py-2 text-muted-foreground">{q.options.length}</td>
-                            <td className="px-2 py-2 font-semibold text-emerald-700">{renderCorrect(q)}</td>
+              {parsed.length > 0 && (() => {
+                const filtered = previewSearch.trim()
+                  ? parsed
+                      .map((q, idx) => ({ q, idx }))
+                      .filter(({ q }) => {
+                        const s = previewSearch.toLowerCase();
+                        return (
+                          q.question_text.toLowerCase().includes(s) ||
+                          q.subject.toLowerCase().includes(s) ||
+                          (q.topic ?? "").toLowerCase().includes(s) ||
+                          q.difficulty.toLowerCase().includes(s)
+                        );
+                      })
+                  : parsed.map((q, idx) => ({ q, idx }));
+                const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+                const page = Math.min(previewPage, totalPages);
+                const start = (page - 1) * PAGE_SIZE;
+                const pageRows = filtered.slice(start, start + PAGE_SIZE);
+                return (
+                  <div className="rounded-xl border border-border overflow-hidden">
+                    <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/40 border-b border-border">
+                      <span className="text-xs font-semibold text-foreground">
+                        Preview · {filtered.length} of {parsed.length} valid rows
+                      </span>
+                      <div className="flex-1" />
+                      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1">
+                        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                        <input
+                          value={previewSearch}
+                          onChange={(e) => { setPreviewSearch(e.target.value); setPreviewPage(1); }}
+                          placeholder="Search rows…"
+                          className="bg-transparent text-xs outline-none w-44"
+                        />
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto max-h-[40vh]">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/20 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
+                          <tr>
+                            <th className="px-2 py-2 text-left">CSV row</th>
+                            <th className="px-2 py-2 text-left">Subject</th>
+                            <th className="px-2 py-2 text-left">Topic</th>
+                            <th className="px-2 py-2 text-left">Diff.</th>
+                            <th className="px-2 py-2 text-left">Question</th>
+                            <th className="px-2 py-2 text-left">Options</th>
+                            <th className="px-2 py-2 text-left">Correct</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {pageRows.length === 0 ? (
+                            <tr><td colSpan={7} className="px-2 py-6 text-center text-muted-foreground">No rows match your search.</td></tr>
+                          ) : pageRows.map(({ q, idx }) => (
+                            <tr key={idx} className="border-t border-border align-top">
+                              <td className="px-2 py-2 text-muted-foreground">{idx + 2}</td>
+                              <td className="px-2 py-2 font-semibold">{q.subject}</td>
+                              <td className="px-2 py-2 text-muted-foreground">{q.topic ?? "—"}</td>
+                              <td className="px-2 py-2 capitalize">{q.difficulty}</td>
+                              <td className="px-2 py-2 max-w-[260px] truncate" title={q.question_text}>{q.question_text}</td>
+                              <td className="px-2 py-2 text-muted-foreground">{q.options.length}</td>
+                              <td className="px-2 py-2 font-semibold text-emerald-700">{renderCorrect(q)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30 border-t border-border text-xs">
+                      <span className="text-muted-foreground">Page {page} of {totalPages}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setPreviewPage(Math.max(1, page - 1))}
+                          disabled={page <= 1}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 font-semibold text-foreground hover:bg-muted disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                        </button>
+                        <button
+                          onClick={() => setPreviewPage(Math.min(totalPages, page + 1))}
+                          disabled={page >= totalPages}
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 font-semibold text-foreground hover:bg-muted disabled:opacity-40"
+                        >
+                          Next <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                );
+              })()}
+
+              {/* Duplicate handling */}
+              <div className="rounded-xl border border-border bg-muted/20 p-3">
+                <div className="text-xs font-semibold text-foreground mb-2">If a question already exists in the bank…</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {([
+                    { id: "insert", label: "Insert anyway", desc: "Create new rows even if duplicates exist." },
+                    { id: "skip", label: "Skip duplicates", desc: "Only insert questions that don't already exist." },
+                    { id: "upsert", label: "Update existing", desc: "Overwrite the existing question with CSV data." },
+                  ] as const).map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`cursor-pointer rounded-lg border p-2.5 transition-all ${duplicateMode === opt.id ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/40"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="dup-mode"
+                        className="sr-only"
+                        checked={duplicateMode === opt.id}
+                        onChange={() => setDuplicateMode(opt.id)}
+                      />
+                      <div className="text-xs font-bold text-foreground">{opt.label}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">{opt.desc}</div>
+                    </label>
+                  ))}
                 </div>
-              )}
+                <div className="text-[11px] text-muted-foreground mt-2">
+                  Duplicates are detected by matching <strong>subject</strong> + <strong>question text</strong> (case &amp; whitespace-insensitive).
+                </div>
+              </div>
             </>
           )}
 
@@ -511,10 +665,17 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
 
           {step === "done" && (
             <div className="space-y-3">
-              {insertedCount > 0 && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Successfully imported {insertedCount} question{insertedCount === 1 ? "" : "s"}.
+              {(insertedCount > 0 || updatedCount > 0 || skippedCount > 0) && (
+                <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Import complete</div>
+                    <div>
+                      Inserted {insertedCount}
+                      {updatedCount > 0 && ` · Updated ${updatedCount}`}
+                      {skippedCount > 0 && ` · Skipped ${skippedCount} duplicate${skippedCount === 1 ? "" : "s"}`}
+                    </div>
+                  </div>
                 </div>
               )}
               {(errors.length > 0 || insertErrors.length > 0) && (
