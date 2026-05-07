@@ -665,10 +665,17 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
 
           {step === "done" && (
             <div className="space-y-3">
-              {insertedCount > 0 && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Successfully imported {insertedCount} question{insertedCount === 1 ? "" : "s"}.
+              {(insertedCount > 0 || updatedCount > 0 || skippedCount > 0) && (
+                <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">Import complete</div>
+                    <div>
+                      Inserted {insertedCount}
+                      {updatedCount > 0 && ` · Updated ${updatedCount}`}
+                      {skippedCount > 0 && ` · Skipped ${skippedCount} duplicate${skippedCount === 1 ? "" : "s"}`}
+                    </div>
+                  </div>
                 </div>
               )}
               {(errors.length > 0 || insertErrors.length > 0) && (
