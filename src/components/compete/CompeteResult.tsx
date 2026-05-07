@@ -193,9 +193,9 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
                               : "bg-white/5 border border-white/10 text-white/80"
                         }`}
                       >
-                        <span>
-                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[10px] font-black mr-2">{String.fromCharCode(65 + oi)}</span>
-                          {opt}
+                        <span className="flex-1 min-w-0">
+                          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/15 text-[10px] font-black mr-2 align-middle">{String.fromCharCode(65 + oi)}</span>
+                          <span className="inline [&_p]:inline [&_p]:m-0"><MathRenderer inline content={opt} /></span>
                         </span>
                         <span className="flex items-center gap-1.5 text-[10px] font-bold">
                           {youPicked && <span className="px-1.5 py-0.5 rounded bg-white/15">YOU</span>}
