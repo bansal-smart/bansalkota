@@ -180,8 +180,9 @@ const CompetePage = () => {
   };
 
   return (
-    <div className="pb-20 lg:pb-0 min-h-[calc(100vh-57px)]" style={{ background: "hsl(var(--navy))" }}>
-      <div className="grid-texture p-4 lg:p-6">
+    <div className="pb-20 lg:pb-0 min-h-[calc(100vh-57px)] grid-texture" style={{ background: "hsl(var(--navy))" }}>
+      <div className="p-4 lg:p-6 min-h-[calc(100vh-57px)] flex items-start lg:items-center justify-center">
+        <div className="w-full max-w-2xl">
         {phase === "lobby" && (
           <CompeteLobby
             rating={rating}
