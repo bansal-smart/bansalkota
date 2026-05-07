@@ -51,6 +51,7 @@ import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestsPage from "./pages/AdminTestsPage";
 import AdminQuestionBankPage from "./pages/AdminQuestionBankPage";
+import AdminCompeteQuestionsPage from "./pages/AdminCompeteQuestionsPage";
 import AdminModerationPage from "./pages/AdminModerationPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage";
@@ -222,6 +223,7 @@ const App = () => (
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:testId/edit" element={<CreateTestPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
+              <Route path="/admin/compete-questions" element={<AdminCompeteQuestionsPage />} />
               <Route path="/admin/payments" element={<AdminPaymentsPage />} />
               <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
               <Route path="/admin/moderation" element={<AdminModerationPage />} />

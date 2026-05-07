@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   HeartHandshake,
   Library,
+  Swords,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -36,6 +37,7 @@ const baseNav: NavItem[] = [
   { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
   { label: "Question Bank", icon: Library, path: "/admin/question-bank" },
+  { label: "Compete Questions", icon: Swords, path: "/admin/compete-questions" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },
