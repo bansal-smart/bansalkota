@@ -116,7 +116,7 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
 
       {/* Question */}
       <div className="max-w-xl mx-auto rounded-2xl bg-white/5 border border-white/10 p-5">
-        <p className="text-base font-bold text-white leading-relaxed whitespace-pre-wrap">{question.question_text}</p>
+        <div className="text-base font-bold text-white leading-relaxed [&_p]:m-0"><MathRenderer content={question.question_text} /></div>
       </div>
 
       {/* Options */}
