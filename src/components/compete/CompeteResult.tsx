@@ -207,7 +207,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
                   })}
                 </div>
                 {q.explanation && (
-                  <p className="text-[11px] text-white/60 mt-2 italic">💡 {q.explanation}</p>
+                  <div className="text-[11px] text-white/60 mt-2 italic [&_p]:m-0">💡 <span className="inline [&_p]:inline"><MathRenderer inline content={q.explanation} /></span></div>
                 )}
               </div>
             );
