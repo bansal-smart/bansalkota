@@ -335,6 +335,13 @@ const AdminCompeteQuestionsPage = () => {
         </div>
       )}
 
+      <BulkQuestionUploadDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onUploaded={load}
+        mode="compete"
+      />
+
       <style>{`.input { width: 100%; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; } .input:focus { border-color: hsl(var(--primary)); }`}</style>
     </div>
   );
