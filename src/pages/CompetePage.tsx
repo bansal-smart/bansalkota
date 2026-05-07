@@ -3,13 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import CompeteLobby from "@/components/compete/CompeteLobby";
 import CompeteSearching from "@/components/compete/CompeteSearching";
+import CompeteCountdown from "@/components/compete/CompeteCountdown";
 import CompeteMatchView from "@/components/compete/CompeteMatch";
 import CompeteResult from "@/components/compete/CompeteResult";
 import { useCompeteRating } from "@/hooks/useCompeteRating";
 import { useCompeteMatch } from "@/hooks/useCompeteMatch";
 import { useAuth } from "@/context/AuthContext";
 
-type Phase = "lobby" | "searching" | "match" | "result";
+type Phase = "lobby" | "searching" | "countdown" | "match" | "result";
+const STORAGE_KEY = "compete:active_match_id";
 
 const CompetePage = () => {
   const { user } = useAuth();
@@ -25,17 +27,55 @@ const CompetePage = () => {
 
   const { match, questions, answers } = useCompeteMatch(matchId);
 
-  // Auto-advance phase based on match status
+  // Resume: on mount, look for stored match id and check if it's still active
+  useEffect(() => {
+    if (!user) return;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return;
+    (async () => {
+      const { data } = await supabase
+        .from("compete_matches")
+        .select("id,status,player1_id,player2_id")
+        .eq("id", stored)
+        .maybeSingle();
+      if (!data) { localStorage.removeItem(STORAGE_KEY); return; }
+      if (data.player1_id !== user.id && data.player2_id !== user.id) { localStorage.removeItem(STORAGE_KEY); return; }
+      if (data.status === "active" || data.status === "pending") {
+        setMatchId(stored);
+        toast.info("Resumed your match");
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    })();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist active match id
+  useEffect(() => {
+    if (matchId && (phase === "countdown" || phase === "match")) {
+      localStorage.setItem(STORAGE_KEY, matchId);
+    } else if (phase === "lobby" || phase === "result") {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [matchId, phase]);
+
+  // Auto-advance phase based on match status + countdown
   useEffect(() => {
     if (!match) return;
-    if (match.status === "active" && phase !== "match") setPhase("match");
+    const countdownActive = match.countdown_until && new Date(match.countdown_until).getTime() > Date.now();
+    if (match.status === "active" && countdownActive) {
+      if (phase !== "countdown") setPhase("countdown");
+      const ms = new Date(match.countdown_until!).getTime() - Date.now();
+      const t = window.setTimeout(() => setPhase("match"), ms + 50);
+      return () => window.clearTimeout(t);
+    }
+    if (match.status === "active" && !countdownActive && phase !== "match") setPhase("match");
     if (match.status === "finished" && phase !== "result") {
       setPhase("result");
       refresh();
     }
-  }, [match?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (match.status === "pending" && phase === "lobby") setPhase("searching");
+  }, [match?.status, match?.countdown_until]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll matchmaking
   const startPolling = () => {
     stopPolling();
     pollTimer.current = window.setInterval(async () => {
@@ -53,7 +93,6 @@ const CompetePage = () => {
   };
   useEffect(() => () => stopPolling(), []);
 
-  // Realtime: when private room gets a player2, status flips active
   useEffect(() => {
     if (!matchId || !roomCode) return;
     if (match?.status === "active") setRoomCode(null);
@@ -69,7 +108,7 @@ const CompetePage = () => {
       if (error) throw error;
       if (data.status === "matched") {
         setMatchId(data.match_id);
-        setPhase("searching"); // will flip to match via match.status
+        setPhase("searching");
       } else {
         setPhase("searching");
         startPolling();
@@ -102,7 +141,6 @@ const CompetePage = () => {
       });
       if (error) throw error;
       setMatchId(data.match_id);
-      setPhase("match");
     } catch (e: any) {
       toast.error(e?.message || "Failed to join room");
     } finally { setBusy(false); }
@@ -116,7 +154,6 @@ const CompetePage = () => {
       });
       if (error) throw error;
       setMatchId(data.match_id);
-      setPhase("match");
     } catch (e: any) {
       toast.error(e?.message || "Failed to start bot match");
     } finally { setBusy(false); }
@@ -165,11 +202,14 @@ const CompetePage = () => {
             onBotFallback={handleBotFallback}
           />
         )}
+        {phase === "countdown" && match && (
+          <CompeteCountdown match={match} />
+        )}
         {phase === "match" && match && (
           <CompeteMatchView match={match} questions={questions} answers={answers} />
         )}
         {phase === "result" && match && (
-          <CompeteResult match={match} onPlayAgain={handlePlayAgain} onLobby={handlePlayAgain} />
+          <CompeteResult match={match} questions={questions} answers={answers} onPlayAgain={handlePlayAgain} onLobby={handlePlayAgain} />
         )}
       </div>
     </div>
