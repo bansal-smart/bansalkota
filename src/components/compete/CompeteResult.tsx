@@ -176,7 +176,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
                     <Badge ok={opp?.is_correct} label={opp ? `Opp ${(opp.time_taken_ms/1000).toFixed(1)}s` : "—"} />
                   </div>
                 </div>
-                <p className="text-sm text-white whitespace-pre-wrap mb-2">{q.question_text}</p>
+                <div className="text-sm text-white mb-2 [&_p]:m-0"><MathRenderer content={q.question_text} /></div>
                 <div className="grid gap-1.5">
                   {q.options.map((opt, oi) => {
                     const isCorrect = oi === q.correct_index;
