@@ -642,8 +642,6 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
                   Duplicates are detected by matching <strong>subject</strong> + <strong>question text</strong> (case &amp; whitespace-insensitive).
                 </div>
               </div>
-                </div>
-              )}
             </>
           )}
 
