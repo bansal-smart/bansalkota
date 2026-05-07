@@ -229,7 +229,11 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded }: Props) => {
     setFileName("");
     setProgress({ done: 0, total: 0 });
     setInsertedCount(0);
+    setUpdatedCount(0);
+    setSkippedCount(0);
     setInsertErrors([]);
+    setPreviewSearch("");
+    setPreviewPage(1);
     if (fileRef.current) fileRef.current.value = "";
   };
 
