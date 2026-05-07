@@ -1,9 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, X, Sigma, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
+
+// Limits keep payload small and prevent broken markdown from blowing up KaTeX.
+const MAX_TEXT = 4000;
+const MAX_OPTION = 1000;
+const MAX_TOPIC = 120;
+const MAX_EXPLANATION = 4000;
+
+/** Strip control characters (except \n, \t) that can corrupt JSON payloads. */
+const sanitize = (s: string) =>
+  s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").normalize("NFC");
+
+/** Lightweight LaTeX sanity check — balanced $ and {} so the request body is well-formed. */
+const validateLatex = (s: string): string | null => {
+  // Count unescaped $ — must be even (pairs of $...$ or $$...$$).
+  const dollars = (s.match(/(?<!\\)\$/g) || []).length;
+  if (dollars % 2 !== 0) return "Unbalanced '$' delimiters in LaTeX";
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "\\") { i++; continue; }
+    if (s[i] === "{") depth++;
+    else if (s[i] === "}") { depth--; if (depth < 0) return "Unbalanced '{}' braces in LaTeX"; }
+  }
+  if (depth !== 0) return "Unbalanced '{}' braces in LaTeX";
+  return null;
+};
+
+const schema = z.object({
+  subject: z.string().min(1).max(50),
+  topic: z.string().max(MAX_TOPIC).nullable(),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  question_text: z.string().trim().min(1, "Question text required").max(MAX_TEXT),
+  options: z.array(z.object({ id: z.number(), text: z.string().trim().min(1).max(MAX_OPTION) })).length(4),
+  correct_answer: z.number().int().min(0).max(3),
+  explanation: z.string().max(MAX_EXPLANATION).nullable(),
+});
 import MathRenderer from "@/components/MathRenderer";
 
 type Props = {
