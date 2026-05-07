@@ -44,51 +44,54 @@ const COMPETE_HEADERS = [
   "explanation",
 ];
 
-const SAMPLE_ROWS: string[][] = [
+const QB_SAMPLE_ROWS: string[][] = [
   [
-    "Physics",
-    "Kinematics",
-    "easy",
+    "Physics", "Kinematics", "easy",
     "What is the SI unit of acceleration?",
-    "m/s",
-    "m/s^2",
-    "m^2/s",
-    "kg.m/s",
+    "m/s", "m/s^2", "m^2/s", "kg.m/s",
     "2",
     "Acceleration = change in velocity per unit time, so units are m/s².",
-    "4",
-    "-1",
-    "units;basics",
+    "4", "-1", "units;basics",
   ],
   [
-    "Mathematics",
-    "Algebra",
-    "medium",
+    "Mathematics", "Algebra", "medium",
     "Solve for x: $2x + 6 = 14$",
-    "2",
-    "4",
-    "6",
-    "8",
+    "2", "4", "6", "8",
     "2",
     "2x = 8 so x = 4.",
-    "4",
-    "-1",
-    "linear-equations",
+    "4", "-1", "linear-equations",
   ],
   [
-    "Chemistry",
-    "Periodic Table",
-    "hard",
+    "Chemistry", "Periodic Table", "hard",
     "Which of the following are noble gases? (Select all that apply)",
-    "Helium",
-    "Nitrogen",
-    "Argon",
-    "Oxygen",
+    "Helium", "Nitrogen", "Argon", "Oxygen",
     "1,3",
     "Helium and Argon belong to group 18 (noble gases).",
-    "4",
-    "-1",
-    "noble-gases;multi-select",
+    "4", "-1", "noble-gases;multi-select",
+  ],
+];
+
+const COMPETE_SAMPLE_ROWS: string[][] = [
+  [
+    "Physics", "Kinematics", "easy", "JEE Main", "11",
+    "What is the SI unit of acceleration?",
+    "m/s", "m/s^2", "m^2/s", "kg.m/s",
+    "2",
+    "Acceleration = change in velocity per unit time, so units are m/s².",
+  ],
+  [
+    "Math", "Algebra", "medium", "JEE Main", "11",
+    "Solve for x: $2x + 6 = 14$",
+    "2", "4", "6", "8",
+    "2",
+    "Subtracting 6 then dividing by 2 gives x = 4.",
+  ],
+  [
+    "Chemistry", "Thermodynamics", "hard", "NEET", "12",
+    "For an ideal gas at constant T, $\\Delta U$ equals?",
+    "0", "nRT", "nC_vT", "PV",
+    "1",
+    "Internal energy of an ideal gas depends only on T; isothermal => ΔU = 0.",
   ],
 ];
 
@@ -100,8 +103,15 @@ const csvEscape = (v: string | number | null | undefined) => {
   return s;
 };
 
-const buildTemplate = () => {
-  const rows = [TEMPLATE_HEADERS, ...SAMPLE_ROWS];
+const getHeadersFor = (mode: BulkUploadMode) =>
+  mode === "compete" ? COMPETE_HEADERS : QB_HEADERS;
+
+const getSamplesFor = (mode: BulkUploadMode) =>
+  mode === "compete" ? COMPETE_SAMPLE_ROWS : QB_SAMPLE_ROWS;
+
+const buildTemplate = (mode: BulkUploadMode) => {
+  const headers = getHeadersFor(mode);
+  const rows = [headers, ...getSamplesFor(mode)];
   return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
 };
 
