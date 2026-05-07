@@ -194,6 +194,7 @@ export type Database = {
       }
       compete_questions: {
         Row: {
+          class_level: string | null
           correct_index: number
           created_at: string
           created_by: string | null
@@ -204,10 +205,12 @@ export type Database = {
           options: Json
           question_text: string
           subject: string
+          target_exam: string | null
           topic: string
           updated_at: string
         }
         Insert: {
+          class_level?: string | null
           correct_index: number
           created_at?: string
           created_by?: string | null
@@ -218,10 +221,12 @@ export type Database = {
           options: Json
           question_text: string
           subject: string
+          target_exam?: string | null
           topic: string
           updated_at?: string
         }
         Update: {
+          class_level?: string | null
           correct_index?: number
           created_at?: string
           created_by?: string | null
@@ -232,6 +237,7 @@ export type Database = {
           options?: Json
           question_text?: string
           subject?: string
+          target_exam?: string | null
           topic?: string
           updated_at?: string
         }
