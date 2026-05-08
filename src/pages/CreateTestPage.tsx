@@ -261,146 +261,240 @@ const CreateTestPage = () => {
     );
   }
 
+  const inputCls =
+    "w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
+  const labelCls = "block text-xs font-semibold text-foreground mb-1.5";
+
   const LeftPane = (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-xl md:text-2xl font-bold text-foreground">
-          {isEditMode ? "Edit Test" : "Create New Test"}
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">Drag questions from the bank on the right, or add manual ones.</p>
+    <div className="space-y-6">
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+            {isEditMode ? "Edit Test" : "Create New Test"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Drag questions from the bank on the right, or add manual ones.
+          </p>
+        </div>
       </div>
 
-      {/* Basic setup */}
-      <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Basic Setup</h2>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Test title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description (optional)" rows={2} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <select value={testType} onChange={(e) => setTestType(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-            <option value="mock">Mock Test</option>
-            <option value="chapter">Chapter Test</option>
-            <option value="pyq">Previous Year</option>
-            <option value="practice">Practice</option>
-          </select>
-          <select value={examPattern} onChange={(e) => setExamPattern(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-            {examList.length === 0 && <>
-              <option value="jee-main">JEE Main</option>
-              <option value="jee-advanced">JEE Advanced</option>
-              <option value="neet">NEET</option>
-            </>}
-            {examList.map((x) => (
-              <option key={x.id} value={x.code || x.name.toLowerCase().replace(/\s+/g, "-")}>{x.name}</option>
-            ))}
-            <option value="custom">Custom</option>
-          </select>
-        </div>
+      {/* Test Details card */}
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
+        <h2 className="text-lg font-bold text-foreground">Test Details</h2>
+
         <div>
-          <label className="text-xs font-semibold text-foreground">Associate with Course (optional)</label>
-          <select
-            value={courseId}
-            onChange={(e) => setCourseId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
-          >
+          <label className={labelCls}>Test Name</label>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Class 11 Maths Practice — Trigonometry"
+            className={inputCls}
+          />
+        </div>
+
+        <div>
+          <label className={labelCls}>Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short description (optional)"
+            rows={3}
+            className={`${inputCls} resize-none`}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}>Test Type</label>
+            <select value={testType} onChange={(e) => setTestType(e.target.value)} className={inputCls}>
+              <option value="mock">Mock Test</option>
+              <option value="chapter">Chapter Test</option>
+              <option value="pyq">Previous Year</option>
+              <option value="practice">Practice</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Exam Pattern</label>
+            <select value={examPattern} onChange={(e) => setExamPattern(e.target.value)} className={inputCls}>
+              {examList.length === 0 && (
+                <>
+                  <option value="jee-main">JEE Main</option>
+                  <option value="jee-advanced">JEE Advanced</option>
+                  <option value="neet">NEET</option>
+                </>
+              )}
+              {examList.map((x) => (
+                <option key={x.id} value={x.code || x.name.toLowerCase().replace(/\s+/g, "-")}>
+                  {x.name}
+                </option>
+              ))}
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>Associate with Course</label>
+          <select value={courseId} onChange={(e) => setCourseId(e.target.value)} className={inputCls}>
             <option value="">Standalone test (not linked to any course)</option>
             {myCourses.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
-          <p className="mt-1 text-[11px] text-muted-foreground">Linked tests will appear inside the selected course for enrolled students.</p>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Linked tests will appear inside the selected course for enrolled students.
+          </p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-foreground">Duration (min)</label>
-            <input type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value) || 0)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground">Correct marks</label>
-            <input type="number" value={correctMarks} onChange={(e) => setCorrectMarks(Number(e.target.value) || 0)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground">Wrong marks</label>
-            <input type="number" value={wrongMarks} onChange={(e) => setWrongMarks(Number(e.target.value) || 0)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
-          </div>
-        </div>
-      </div>
 
-      {/* Questions */}
-      <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-3">
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className={labelCls}>Duration (min)</label>
+            <input
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(Number(e.target.value) || 0)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Correct marks</label>
+            <input
+              type="number"
+              value={correctMarks}
+              onChange={(e) => setCorrectMarks(Number(e.target.value) || 0)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Wrong marks</label>
+            <input
+              type="number"
+              value={wrongMarks}
+              onChange={(e) => setWrongMarks(Number(e.target.value) || 0)}
+              className={inputCls}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Selected Questions */}
+      <section className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <h2 className="text-sm font-bold text-foreground">Test Questions ({questions.length})</h2>
+          <h2 className="text-lg font-bold text-foreground">
+            Selected Questions <span className="text-muted-foreground font-semibold">({questions.length})</span>
+          </h2>
           <div className="flex items-center gap-2">
             <Sheet open={bankSheetOpen} onOpenChange={setBankSheetOpen}>
               <SheetTrigger asChild>
-                <button className="lg:hidden inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground">
-                  <BookMarked className="h-3 w-3" /> Open Bank
+                <button className="lg:hidden inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">
+                  <BookMarked className="h-3.5 w-3.5" /> Open Bank
                 </button>
               </SheetTrigger>
               <SheetContent side="right" className="p-0 w-full sm:max-w-md">
-                <div className="h-full"><QuestionBankPanel draggable compact /></div>
+                <div className="h-full">
+                  <QuestionBankPanel draggable compact />
+                </div>
               </SheetContent>
             </Sheet>
             <button
               onClick={() => setQuestions([...questions, blankQuestion()])}
-              className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
             >
-              <Plus className="h-3 w-3" /> Add Manual
+              <Plus className="h-3.5 w-3.5" /> Add Manual
             </button>
           </div>
         </div>
 
         <DropZone empty={questions.length === 0}>
           {questions.map((q, i) => (
-            <div key={i} className="rounded-lg border border-border p-3 space-y-2 bg-background">
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm hover:border-primary/40 transition-colors"
+            >
               <div className="flex items-center gap-2 flex-wrap">
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs font-bold text-muted-foreground">Q{i + 1}</span>
+                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-foreground">
+                  Q{i + 1}
+                </span>
                 {q.source === "bank" && (
-                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">From Bank</span>
+                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                    From Bank
+                  </span>
                 )}
-                <select value={q.subject} onChange={(e) => updateQ(i, { subject: e.target.value })} className="rounded-lg border border-border bg-card px-2 py-1 text-xs outline-none">
+                <select
+                  value={q.subject}
+                  onChange={(e) => updateQ(i, { subject: e.target.value })}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
+                >
                   <option>Physics</option>
                   <option>Chemistry</option>
                   <option>Mathematics</option>
                   <option>Biology</option>
                 </select>
-                <input value={q.topic} onChange={(e) => updateQ(i, { topic: e.target.value })} placeholder="Topic" className="flex-1 min-w-[120px] rounded-lg border border-border bg-card px-2 py-1 text-xs outline-none" />
-                <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer shrink-0" onClick={() => setQuestions(questions.filter((_, j) => j !== i))} />
+                <input
+                  value={q.topic}
+                  onChange={(e) => updateQ(i, { topic: e.target.value })}
+                  placeholder="Topic"
+                  className="flex-1 min-w-[120px] rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
+                  className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  aria-label="Remove question"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-              <textarea value={q.text} onChange={(e) => updateQ(i, { text: e.target.value })} placeholder="Question text..." rows={2} className="w-full rounded-lg border border-border bg-card px-2 py-1 text-xs outline-none resize-none" />
-              {q.options.map((opt, oi) => (
-                <div key={oi} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={q.correct === oi}
-                    onChange={() => updateQ(i, { correct: oi })}
-                    className="shrink-0"
-                  />
-                  <span className="text-xs font-bold w-4">{String.fromCharCode(65 + oi)}.</span>
-                  <input
-                    value={opt}
-                    onChange={(e) => {
-                      const next = [...q.options];
-                      next[oi] = e.target.value;
-                      updateQ(i, { options: next });
-                    }}
-                    placeholder={`Option ${oi + 1}`}
-                    className="flex-1 rounded-lg border border-border bg-card px-2 py-1 text-xs outline-none"
-                  />
-                </div>
-              ))}
+              <textarea
+                value={q.text}
+                onChange={(e) => updateQ(i, { text: e.target.value })}
+                placeholder="Question text..."
+                rows={2}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
+              />
+              <div className="space-y-1.5">
+                {q.options.map((opt, oi) => {
+                  const isCorrect = q.correct === oi;
+                  return (
+                    <label
+                      key={oi}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
+                        isCorrect
+                          ? "border-secondary bg-secondary/10"
+                          : "border-border bg-background hover:border-primary/40"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        checked={isCorrect}
+                        onChange={() => updateQ(i, { correct: oi })}
+                        className="shrink-0 accent-secondary"
+                      />
+                      <span className="text-xs font-bold w-5 text-foreground">
+                        {String.fromCharCode(65 + oi)}.
+                      </span>
+                      <input
+                        value={opt}
+                        onChange={(e) => {
+                          const next = [...q.options];
+                          next[oi] = e.target.value;
+                          updateQ(i, { options: next });
+                        }}
+                        placeholder={`Option ${oi + 1}`}
+                        className="flex-1 bg-transparent text-sm outline-none"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </DropZone>
-      </div>
-
-      <div className="flex gap-3">
-        <button disabled={submitting} onClick={() => submit(false)} className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-50">
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save Draft"}
-        </button>
-        <button disabled={submitting} onClick={() => submit(true)} className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50">
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save & Publish" : "Publish Test"}
-        </button>
-      </div>
+      </section>
     </div>
   );
 
@@ -408,7 +502,7 @@ const CreateTestPage = () => {
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex">
         {/* Left pane (form) */}
-        <div className="flex-1 lg:w-1/2 lg:flex-none px-4 md:px-6 xl:px-8 py-4">
+        <div className="flex-1 lg:w-1/2 lg:flex-none px-4 md:px-8 py-6 pb-28">
           <div className="max-w-3xl mx-auto">{LeftPane}</div>
         </div>
 
@@ -416,6 +510,34 @@ const CreateTestPage = () => {
         <aside className="hidden lg:flex lg:w-1/2 border-l border-border bg-muted/30 flex-col sticky top-[57px] self-start h-[calc(100vh-57px)]">
           <QuestionBankPanel draggable compact />
         </aside>
+      </div>
+
+      {/* Sticky action bar */}
+      <div className="sticky bottom-0 left-0 right-0 z-20 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="lg:w-1/2 px-4 md:px-8 py-3">
+          <div className="max-w-3xl mx-auto flex gap-3">
+            <button
+              disabled={submitting}
+              onClick={() => submit(false)}
+              className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Save Draft"}
+            </button>
+            <button
+              disabled={submitting}
+              onClick={() => submit(true)}
+              className="flex-1 rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-secondary-foreground hover:opacity-90 disabled:opacity-50"
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+              ) : isEditMode ? (
+                "Save & Publish"
+              ) : (
+                "Publish Test"
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </DndContext>
   );
