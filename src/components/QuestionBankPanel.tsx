@@ -78,10 +78,12 @@ type Props = {
   manage?: boolean;
   /** When true, compact card layout for narrow side panels. */
   compact?: boolean;
+  /** When true, render the questions as a table instead of cards. */
+  tableView?: boolean;
   className?: string;
 };
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, className = "" }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "" }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [search, setSearch] = useState("");
@@ -147,18 +149,64 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
         ) : (
           <>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{questions.length} questions{draggable ? " · drag to add" : ""}</p>
-            <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
-              {questions.map((q) => (
-                <QuestionCard
-                  key={q.id}
-                  q={q}
-                  draggable={draggable}
-                  compact={compact}
-                  onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
-                  onDelete={manage ? handleDelete : undefined}
-                />
-              ))}
-            </div>
+            {tableView ? (
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold">Question</th>
+                      <th className="px-3 py-2 text-left font-semibold w-32">Subject</th>
+                      <th className="px-3 py-2 text-left font-semibold w-40">Topic</th>
+                      <th className="px-3 py-2 text-left font-semibold w-28">Difficulty</th>
+                      {manage && <th className="px-3 py-2 text-right font-semibold w-28">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {questions.map((q) => (
+                      <tr key={q.id} className="border-t border-border hover:bg-muted/30 transition-colors align-top">
+                        <td className="px-3 py-2 max-w-xl">
+                          <div className="text-foreground line-clamp-2">
+                            <MathRenderer content={q.question_text} />
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-bold text-primary">{q.subject}</span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">{q.topic || "—"}</td>
+                        <td className="px-3 py-2">
+                          <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
+                        </td>
+                        {manage && (
+                          <td className="px-3 py-2">
+                            <div className="flex items-center justify-end gap-1">
+                              <button onClick={() => { setEditing(q); setEditorOpen(true); }} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => handleDelete(q)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
+                {questions.map((q) => (
+                  <QuestionCard
+                    key={q.id}
+                    q={q}
+                    draggable={draggable}
+                    compact={compact}
+                    onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
+                    onDelete={manage ? handleDelete : undefined}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
