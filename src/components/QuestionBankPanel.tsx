@@ -78,10 +78,12 @@ type Props = {
   manage?: boolean;
   /** When true, compact card layout for narrow side panels. */
   compact?: boolean;
+  /** When true, render the questions as a table instead of cards. */
+  tableView?: boolean;
   className?: string;
 };
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, className = "" }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "" }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [search, setSearch] = useState("");
