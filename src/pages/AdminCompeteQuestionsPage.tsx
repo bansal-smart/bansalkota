@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit3, Loader2, Swords, Search, CheckSquare, Square, Filter, EyeOff, Eye, X, Upload } from "lucide-react";
 import BulkQuestionUploadDialog from "@/components/BulkQuestionUploadDialog";
 import MathRenderer from "@/components/MathRenderer";
 import { useExams } from "@/hooks/useExams";
+import TablePagination from "@/components/TablePagination";
 
 type Q = {
   id: string;
@@ -38,6 +39,8 @@ const empty: Omit<Q, "id"> = {
   is_active: true,
 };
 
+const PAGE_SIZE = 20;
+
 const AdminCompeteQuestionsPage = () => {
   const { examNames: EXAMS } = useExams();
   const [list, setList] = useState<Q[]>([]);
@@ -49,50 +52,72 @@ const AdminCompeteQuestionsPage = () => {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [fSubject, setFSubject] = useState<string>("");
   const [fDifficulty, setFDifficulty] = useState<string>("");
   const [fExam, setFExam] = useState<string>("");
   const [fClass, setFClass] = useState<string>("");
   const [fActive, setFActive] = useState<string>("");
 
-  const load = async () => {
+  // Server-side pagination
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, fSubject, fDifficulty, fExam, fClass, fActive]);
+
+  const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    let q = supabase
       .from("compete_questions")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1000);
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
+
+    if (fSubject) q = q.eq("subject", fSubject);
+    if (fDifficulty) q = q.eq("difficulty", fDifficulty);
+    if (fExam) q = q.eq("target_exam", fExam);
+    if (fClass) q = q.eq("class_level", fClass);
+    if (fActive === "active") q = q.eq("is_active", true);
+    if (fActive === "inactive") q = q.eq("is_active", false);
+    if (debouncedSearch) {
+      const escaped = debouncedSearch.replace(/[%,()]/g, " ");
+      q = q.or(`question_text.ilike.%${escaped}%,topic.ilike.%${escaped}%`);
+    }
+
+    const from = (page - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, count, error } = await q.range(from, to);
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
     setList((data ?? []) as unknown as Q[]);
+    setTotal(count ?? 0);
     setLoading(false);
     setSelected(new Set());
-  };
-  useEffect(() => { load(); }, []);
+  }, [page, debouncedSearch, fSubject, fDifficulty, fExam, fClass, fActive]);
 
-  const filtered = useMemo(() => {
-    return list.filter((q) => {
-      if (fSubject && q.subject !== fSubject) return false;
-      if (fDifficulty && q.difficulty !== fDifficulty) return false;
-      if (fExam && (q.target_exam || "") !== fExam) return false;
-      if (fClass && (q.class_level || "") !== fClass) return false;
-      if (fActive === "active" && !q.is_active) return false;
-      if (fActive === "inactive" && q.is_active) return false;
-      if (search) {
-        const s = search.toLowerCase();
-        if (!q.question_text.toLowerCase().includes(s) && !q.topic.toLowerCase().includes(s)) return false;
-      }
-      return true;
-    });
-  }, [list, fSubject, fDifficulty, fExam, fClass, fActive, search]);
+  useEffect(() => { load(); }, [load]);
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every((q) => selected.has(q.id));
+  const allFilteredSelected = list.length > 0 && list.every((q) => selected.has(q.id));
   const toggleAll = () => {
     if (allFilteredSelected) {
       const next = new Set(selected);
-      filtered.forEach((q) => next.delete(q.id));
+      list.forEach((q) => next.delete(q.id));
       setSelected(next);
     } else {
       const next = new Set(selected);
-      filtered.forEach((q) => next.add(q.id));
+      list.forEach((q) => next.add(q.id));
       setSelected(next);
     }
   };
@@ -179,7 +204,7 @@ const AdminCompeteQuestionsPage = () => {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2"><Swords className="h-5 w-5 text-primary" /> Compete Questions</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} of {list.length} questions {selected.size > 0 && `· ${selected.size} selected`}</p>
+          <p className="text-sm text-muted-foreground">{total} questions {selected.size > 0 && `· ${selected.size} selected`}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setBulkOpen(true)} className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-bold text-foreground hover:bg-muted inline-flex items-center gap-1">
@@ -250,7 +275,7 @@ const AdminCompeteQuestionsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((q) => (
+              {list.map((q) => (
                 <tr key={q.id} className={`border-t border-border ${selected.has(q.id) ? "bg-primary/5" : ""}`}>
                   <td className="px-3 py-2">
                     <button onClick={() => toggleOne(q.id)} className="text-muted-foreground hover:text-foreground">
@@ -270,11 +295,18 @@ const AdminCompeteQuestionsPage = () => {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {list.length === 0 && (
                 <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">{anyFilter ? "No matches for current filters" : "No questions yet"}</td></tr>
               )}
             </tbody>
           </table>
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

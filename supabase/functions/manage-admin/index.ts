@@ -61,18 +61,20 @@ Deno.serve(async (req) => {
             .in("user_id", ids)
         : { data: [] as any[] };
       const { data: usersList } = await admin.auth.admin.listUsers({ perPage: 1000 });
-      const emailById = new Map<string, string>();
-      (usersList?.users ?? []).forEach((u) => u.email && emailById.set(u.id, u.email));
+      const userById = new Map<string, any>();
+      (usersList?.users ?? []).forEach((u) => userById.set(u.id, u));
       const rows = ids.map((id) => {
         const p = (profiles ?? []).find((x: any) => x.user_id === id);
+        const u = userById.get(id);
+        const meta = (u?.user_metadata ?? {}) as Record<string, any>;
         return {
           user_id: id,
-          email: emailById.get(id) ?? null,
-          full_name: p?.full_name ?? null,
-          phone: p?.phone ?? null,
-          avatar_url: p?.avatar_url ?? null,
+          email: u?.email ?? null,
+          full_name: p?.full_name || meta.full_name || meta.name || null,
+          phone: p?.phone || meta.phone || null,
+          avatar_url: p?.avatar_url || meta.avatar_url || null,
           is_suspended: p?.is_suspended ?? false,
-          created_at: p?.created_at ?? null,
+          created_at: p?.created_at ?? u?.created_at ?? null,
           role: roleByUser.get(id) ?? "admin",
         };
       });
@@ -147,6 +149,12 @@ Deno.serve(async (req) => {
           .from("profiles")
           .upsert(profileUpdate, { onConflict: "user_id" });
         if (pErr) throw pErr;
+        // Mirror to auth user_metadata for redundancy
+        const { data: existing } = await admin.auth.admin.getUserById(user_id);
+        const meta = { ...(existing?.user?.user_metadata ?? {}) };
+        if (full_name !== undefined) meta.full_name = full_name;
+        if (phone !== undefined) meta.phone = phone;
+        await admin.auth.admin.updateUserById(user_id, { user_metadata: meta });
       }
       return json(200, { success: true });
     }
