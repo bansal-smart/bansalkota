@@ -195,17 +195,17 @@ const CreateTestPage = () => {
       course_id: courseId || null,
     };
 
-    let savedTestId = testId;
+    let savedTestId: string | null = resolvedTestId;
 
-    if (isEditMode && testId) {
-      const { error } = await supabase.from("tests").update(basePayload).eq("id", testId);
+    if (isEditMode && resolvedTestId) {
+      const { error } = await supabase.from("tests").update(basePayload).eq("id", resolvedTestId);
       if (error) {
         toast.error(error.message);
         setSubmitting(false);
         return;
       }
       // Replace questions
-      await supabase.from("test_questions").delete().eq("test_id", testId);
+      await supabase.from("test_questions").delete().eq("test_id", resolvedTestId);
     } else {
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
       const { data: test, error } = await supabase
