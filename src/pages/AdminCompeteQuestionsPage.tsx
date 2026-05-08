@@ -275,7 +275,7 @@ const AdminCompeteQuestionsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((q) => (
+              {list.map((q) => (
                 <tr key={q.id} className={`border-t border-border ${selected.has(q.id) ? "bg-primary/5" : ""}`}>
                   <td className="px-3 py-2">
                     <button onClick={() => toggleOne(q.id)} className="text-muted-foreground hover:text-foreground">
@@ -295,11 +295,18 @@ const AdminCompeteQuestionsPage = () => {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {list.length === 0 && (
                 <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">{anyFilter ? "No matches for current filters" : "No questions yet"}</td></tr>
               )}
             </tbody>
           </table>
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
       )}
 
