@@ -139,11 +139,14 @@ Deno.serve(async (req) => {
           app_metadata: { must_change_password: true },
         });
       }
-      const profileUpdate: Record<string, unknown> = {};
+      const profileUpdate: Record<string, unknown> = { user_id };
       if (full_name !== undefined) profileUpdate.full_name = full_name;
       if (phone !== undefined) profileUpdate.phone = phone;
-      if (Object.keys(profileUpdate).length) {
-        await admin.from("profiles").update(profileUpdate).eq("user_id", user_id);
+      if (Object.keys(profileUpdate).length > 1) {
+        const { error: pErr } = await admin
+          .from("profiles")
+          .upsert(profileUpdate, { onConflict: "user_id" });
+        if (pErr) throw pErr;
       }
       return json(200, { success: true });
     }
