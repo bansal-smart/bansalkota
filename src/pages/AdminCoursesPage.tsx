@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type AdminCourse = {
   id: string;
@@ -71,6 +73,7 @@ const AdminCoursesPage = () => {
   const filtered = courses.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
   );
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -127,7 +130,7 @@ const AdminCoursesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => (
+                {paged.map((c) => (
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
@@ -185,6 +188,7 @@ const AdminCoursesPage = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
           </div>
         )}
       </div>
