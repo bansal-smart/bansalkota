@@ -53,6 +53,7 @@ import AdminTestsPage from "./pages/AdminTestsPage";
 import AdminQuestionBankPage from "./pages/AdminQuestionBankPage";
 import AdminCompeteQuestionsPage from "./pages/AdminCompeteQuestionsPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
+import AdminAdminsPage from "./pages/AdminAdminsPage";
 import AdminModerationPage from "./pages/AdminModerationPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage";
@@ -230,6 +231,7 @@ const App = () => (
               <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
               <Route path="/admin/moderation" element={<AdminModerationPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
+              <Route path="/admin/admins" element={<AdminAdminsPage />} />
               <Route path="/admin/profile" element={<AdminProfilePage />} />
               <Route path="/admin/overview" element={<AdminDashboard />} />
             </Route>
