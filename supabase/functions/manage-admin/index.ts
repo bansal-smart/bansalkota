@@ -149,6 +149,12 @@ Deno.serve(async (req) => {
           .from("profiles")
           .upsert(profileUpdate, { onConflict: "user_id" });
         if (pErr) throw pErr;
+        // Mirror to auth user_metadata for redundancy
+        const { data: existing } = await admin.auth.admin.getUserById(user_id);
+        const meta = { ...(existing?.user?.user_metadata ?? {}) };
+        if (full_name !== undefined) meta.full_name = full_name;
+        if (phone !== undefined) meta.phone = phone;
+        await admin.auth.admin.updateUserById(user_id, { user_metadata: meta });
       }
       return json(200, { success: true });
     }
