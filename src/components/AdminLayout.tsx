@@ -69,7 +69,7 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
 
   return (
     <aside
-      className="hidden lg:flex w-[240px] flex-col sticky top-0 h-screen overflow-y-auto"
+      className="hidden lg:flex w-[240px] flex-col sticky top-0 h-screen overflow-y-auto scrollbar-hide"
       style={{ backgroundColor: "hsl(222, 47%, 11%)" }}
     >
       <div className="p-4">
@@ -202,7 +202,7 @@ const AdminLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
           <Outlet />
         </main>
       </div>

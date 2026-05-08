@@ -160,3 +160,12 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Hide scrollbar utility (used in admin panel) */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
