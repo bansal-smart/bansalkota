@@ -204,7 +204,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const handleBulkEditSave = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    const patch: Record<string, string> = {};
+    const patch: { subject?: string; topic?: string; difficulty?: string } = {};
     if (bulkSubject) patch.subject = bulkSubject;
     if (bulkTopic.trim()) patch.topic = bulkTopic.trim();
     if (bulkDifficulty) patch.difficulty = bulkDifficulty.toLowerCase();
