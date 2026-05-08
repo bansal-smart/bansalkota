@@ -225,7 +225,7 @@ const App = () => (
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               <Route path="/admin/tests" element={<AdminTestsPage />} />
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
-              <Route path="/admin/tests/:testId/edit" element={<CreateTestPage />} />
+              <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
               <Route path="/admin/compete-questions" element={<AdminCompeteQuestionsPage />} />
               <Route path="/admin/exams" element={<AdminExamsPage />} />

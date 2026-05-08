@@ -129,7 +129,7 @@ const AdminTestsPage = () => {
                         <a href={`/tests/${t.slug}/take`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </a>
-                        <Link to={`/admin/tests/${t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
+                        <Link to={`/admin/tests/${t.slug}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
                         {!t.is_published ? (
