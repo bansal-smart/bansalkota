@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { Target, Trophy, ClipboardCheck, BookOpen } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Target, Trophy, ClipboardCheck, BookOpen, Inbox, LineChart as LineChartIcon, BarChart3, Filter } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import Spinner from "@/components/Spinner";
+import { useExams } from "@/hooks/useExams";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Attempt = {
   id: string;
@@ -20,38 +22,100 @@ type Attempt = {
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
+const RANGE_OPTIONS = [
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+  { value: "all", label: "All time" },
+];
+
+const EmptyState = ({ icon: Icon, title, hint }: { icon: any; title: string; hint?: string }) => (
+  <div className="flex flex-col items-center justify-center py-10 text-center">
+    <div className="rounded-full bg-muted p-3 mb-3">
+      <Icon className="h-5 w-5 text-muted-foreground" />
+    </div>
+    <p className="text-sm font-semibold text-foreground">{title}</p>
+    {hint && <p className="text-xs text-muted-foreground mt-1 max-w-xs">{hint}</p>}
+  </div>
+);
+
 const AnalyticsPage = () => {
   const { user } = useAuth();
+  const { examNames } = useExams();
   const [loading, setLoading] = useState(true);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [activeSubject, setActiveSubject] = useState<string>("Overall");
+  const [examFilter, setExamFilter] = useState<string>("all");
+  const [rangeFilter, setRangeFilter] = useState<string>("30");
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("test_attempts")
+      .select("id, test_id, test_name, subject, score, total_questions, correct_answers, percentile, attempted_at, tests(exam_pattern, subjects)")
+      .eq("user_id", user.id)
+      .in("status", ["submitted", "auto_submitted"])
+      .order("attempted_at", { ascending: false });
+    setAttempts((data ?? []) as any);
+    setLoading(false);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from("test_attempts")
-        .select("id, test_id, test_name, subject, score, total_questions, correct_answers, percentile, attempted_at, tests(exam_pattern, subjects)")
-        .eq("user_id", user.id)
-        .in("status", ["submitted", "auto_submitted"])
-        .order("attempted_at", { ascending: false });
-      setAttempts((data ?? []) as any);
-      setLoading(false);
-    })();
-  }, [user?.id]);
+    setLoading(true);
+    load();
+  }, [user?.id, load]);
+
+  // Realtime: refresh on any change to this user's test_attempts
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`analytics-attempts-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "test_attempts", filter: `user_id=eq.${user.id}` },
+        () => { load(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id, load]);
 
   const subjectOf = (a: Attempt) => a.subject || a.tests?.subjects?.[0] || "General";
+  const examOf = (a: Attempt) => a.tests?.exam_pattern || null;
+
+  // Apply exam + range filters first
+  const scoped = useMemo(() => {
+    const since = rangeFilter === "all" ? 0 : Date.now() - Number(rangeFilter) * 24 * 60 * 60 * 1000;
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "-");
+    return attempts.filter(a => {
+      if (since && new Date(a.attempted_at).getTime() < since) return false;
+      if (examFilter !== "all") {
+        const ep = examOf(a);
+        if (!ep) return false;
+        if (norm(ep) !== norm(examFilter) && !norm(ep).includes(norm(examFilter)) && !norm(examFilter).includes(norm(ep))) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [attempts, examFilter, rangeFilter]);
 
   const subjects = useMemo(() => {
     const set = new Set<string>();
-    attempts.forEach(a => set.add(subjectOf(a)));
+    scoped.forEach(a => set.add(subjectOf(a)));
     return ["Overall", ...Array.from(set)];
-  }, [attempts]);
+  }, [scoped]);
+
+  // Reset subject if it no longer exists
+  useEffect(() => {
+    if (activeSubject !== "Overall" && !subjects.includes(activeSubject)) {
+      setActiveSubject("Overall");
+    }
+  }, [subjects, activeSubject]);
 
   const filtered = useMemo(
-    () => activeSubject === "Overall" ? attempts : attempts.filter(a => subjectOf(a) === activeSubject),
-    [attempts, activeSubject],
+    () => activeSubject === "Overall" ? scoped : scoped.filter(a => subjectOf(a) === activeSubject),
+    [scoped, activeSubject],
   );
 
   const stats = useMemo(() => {
@@ -73,9 +137,7 @@ const AnalyticsPage = () => {
   }, [filtered]);
 
   const scoreTrend = useMemo(() => {
-    const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
     return [...filtered]
-      .filter(a => new Date(a.attempted_at).getTime() >= since)
       .sort((a, b) => +new Date(a.attempted_at) - +new Date(b.attempted_at))
       .map(a => ({ date: fmtDate(a.attempted_at), score: Number(a.score) || 0 }));
   }, [filtered]);
@@ -96,9 +158,8 @@ const AnalyticsPage = () => {
     }));
   }, [filtered]);
 
-  if (loading) {
-    return <div className="flex items-center justify-center py-20"><Spinner /></div>;
-  }
+  const rangeLabel = RANGE_OPTIONS.find(r => r.value === rangeFilter)?.label.toLowerCase() ?? "selected range";
+  const filterHint = `Try a different exam or date range${activeSubject !== "Overall" ? ` or switch from “${activeSubject}”` : ""}.`;
 
   return (
     <div className="pb-20 lg:pb-0">
@@ -107,14 +168,18 @@ const AnalyticsPage = () => {
         <h1 className="text-lg font-black font-display mb-4 text-white">My Performance Analytics</h1>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { icon: ClipboardCheck, value: String(stats.total), label: "Total Tests" },
-            { icon: Target, value: `${stats.accuracy}%`, label: "Avg Accuracy" },
-            { icon: Trophy, value: stats.bestPercentile, label: "Best Percentile" },
-            { icon: BookOpen, value: stats.bestScore, label: "Best Score" },
+            { icon: ClipboardCheck, value: loading ? "—" : String(stats.total), label: "Total Tests" },
+            { icon: Target, value: loading ? "—" : `${stats.accuracy}%`, label: "Avg Accuracy" },
+            { icon: Trophy, value: loading ? "—" : stats.bestPercentile, label: "Best Percentile" },
+            { icon: BookOpen, value: loading ? "—" : stats.bestScore, label: "Best Score" },
           ].map(kpi => (
             <div key={kpi.label} className="rounded-xl bg-white/95 p-3 shadow-sm">
               <kpi.icon className="h-4 w-4 text-primary mb-1" />
-              <p className="text-xl font-black font-display text-navy">{kpi.value}</p>
+              {loading ? (
+                <Skeleton className="h-6 w-12 my-1 bg-muted" />
+              ) : (
+                <p className="text-xl font-black font-display text-navy">{kpi.value}</p>
+              )}
               <p className="text-[10px] text-muted-foreground font-medium">{kpi.label}</p>
             </div>
           ))}
@@ -122,11 +187,41 @@ const AnalyticsPage = () => {
       </div>
 
       <div className="p-4 lg:p-6 space-y-5">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Filter className="h-3.5 w-3.5" /> Filters
+          </div>
+          <Select value={examFilter} onValueChange={setExamFilter}>
+            <SelectTrigger className="h-9 w-auto min-w-[140px] text-xs">
+              <SelectValue placeholder="Exam" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All exams</SelectItem>
+              {examNames.map(name => (
+                <SelectItem key={name} value={name}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={rangeFilter} onValueChange={setRangeFilter}>
+            <SelectTrigger className="h-9 w-auto min-w-[140px] text-xs">
+              <SelectValue placeholder="Range" />
+            </SelectTrigger>
+            <SelectContent>
+              {RANGE_OPTIONS.map(o => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Score Trend */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold font-display text-foreground mb-4">Score Trend — Last 30 Days</h3>
-          {scoreTrend.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">No tests in the last 30 days.</p>
+          <h3 className="text-sm font-bold font-display text-foreground mb-4">Score Trend — {RANGE_OPTIONS.find(r => r.value === rangeFilter)?.label}</h3>
+          {loading ? (
+            <Skeleton className="h-[220px] w-full" />
+          ) : scoreTrend.length === 0 ? (
+            <EmptyState icon={LineChartIcon} title="No scores to chart" hint={`No attempts in the ${rangeLabel}. ${filterHint}`} />
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={scoreTrend}>
@@ -147,25 +242,29 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Subject Tabs */}
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
-          {subjects.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveSubject(tab)}
-              className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                tab === activeSubject ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/50 border border-border"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        {!loading && subjects.length > 1 && (
+          <div className="flex gap-1 overflow-x-auto no-scrollbar">
+            {subjects.map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveSubject(tab)}
+                className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  tab === activeSubject ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/50 border border-border"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Chapter / Subject-wise */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <h3 className="text-sm font-bold font-display text-foreground mb-4">Chapterwise Accuracy</h3>
-          {chapterwise.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-8 text-center">No data yet.</p>
+          {loading ? (
+            <Skeleton className="h-[180px] w-full" />
+          ) : chapterwise.length === 0 ? (
+            <EmptyState icon={BarChart3} title="Nothing to break down yet" hint={`No subject data for the current filters. ${filterHint}`} />
           ) : (
             <ResponsiveContainer width="100%" height={Math.max(180, chapterwise.length * 40)}>
               <BarChart data={chapterwise} layout="vertical" margin={{ left: 12, right: 12 }}>
@@ -181,12 +280,19 @@ const AnalyticsPage = () => {
 
         {/* Test History */}
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          <div className="p-5 pb-3">
+          <div className="p-5 pb-3 flex items-center justify-between">
             <h3 className="text-sm font-bold font-display text-foreground">Test History</h3>
+            {!loading && <span className="text-[10px] text-muted-foreground font-medium">{filtered.length} attempt{filtered.length === 1 ? "" : "s"}</span>}
           </div>
           <div className="overflow-x-auto">
-            {filtered.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-8 text-center px-5">No attempts yet.</p>
+            {loading ? (
+              <div className="p-5 space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="px-5">
+                <EmptyState icon={Inbox} title="No attempts to show" hint={filterHint} />
+              </div>
             ) : (
               <table className="w-full text-xs">
                 <thead>
