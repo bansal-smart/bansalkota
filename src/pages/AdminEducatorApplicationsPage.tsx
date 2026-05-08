@@ -310,7 +310,7 @@ const AdminEducatorApplicationsPage = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((a) => {
+          {paged.map((a) => {
             const status = statusVariants[a.status] ?? statusVariants.pending;
             return (
               <div key={a.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
