@@ -17,7 +17,7 @@ const AdminQuestionBankPage = () => {
       </div>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden h-[calc(100vh-180px)]">
-        <QuestionBankPanel manage />
+        <QuestionBankPanel manage tableView />
       </div>
     </div>
   );
