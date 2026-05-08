@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type AdminTest = {
   id: string;
@@ -61,6 +63,7 @@ const AdminTestsPage = () => {
   };
 
   const filtered = tests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()));
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -106,7 +109,7 @@ const AdminTestsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => (
+                {paged.map((t) => (
                   <tr key={t.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{t.title}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs capitalize">{t.test_type} · {t.exam_pattern}</td>
@@ -153,6 +156,7 @@ const AdminTestsPage = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
           </div>
         )}
       </div>
