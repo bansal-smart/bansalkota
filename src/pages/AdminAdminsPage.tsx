@@ -158,49 +158,69 @@ const AdminAdminsPage = () => {
         onSaved={() => { setEditing(null); load(); }}
       />
 
-      <ConfirmDialog
-        open={!!confirmBlock}
-        onOpenChange={(o) => !o && setConfirmBlock(null)}
-        title={confirmBlock?.is_suspended ? "Unblock admin?" : "Block admin?"}
-        description={confirmBlock?.is_suspended
-          ? `Restore access for ${confirmBlock?.full_name || confirmBlock?.email}.`
-          : `Revoke access for ${confirmBlock?.full_name || confirmBlock?.email}. They will be signed out immediately.`}
-        confirmLabel={confirmBlock?.is_suspended ? "Unblock" : "Block"}
-        onConfirm={async () => {
-          if (!confirmBlock) return;
-          try {
-            await callFn("set_suspended", {
-              user_id: confirmBlock.user_id,
-              is_suspended: !confirmBlock.is_suspended,
-            });
-            toast.success(confirmBlock.is_suspended ? "Admin unblocked" : "Admin blocked");
-            setConfirmBlock(null);
-            load();
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Failed");
-          }
-        }}
-      />
+      <AlertDialog open={!!confirmBlock} onOpenChange={(o) => !o && setConfirmBlock(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmBlock?.is_suspended ? "Unblock admin?" : "Block admin?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmBlock?.is_suspended
+                ? `Restore access for ${confirmBlock?.full_name || confirmBlock?.email}.`
+                : `Revoke access for ${confirmBlock?.full_name || confirmBlock?.email}. They will be signed out immediately.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!confirmBlock) return;
+                try {
+                  await callFn("set_suspended", {
+                    user_id: confirmBlock.user_id,
+                    is_suspended: !confirmBlock.is_suspended,
+                  });
+                  toast.success(confirmBlock.is_suspended ? "Admin unblocked" : "Admin blocked");
+                  setConfirmBlock(null);
+                  load();
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Failed");
+                }
+              }}
+            >
+              {confirmBlock?.is_suspended ? "Unblock" : "Block"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <ConfirmDialog
-        open={!!confirmDelete}
-        onOpenChange={(o) => !o && setConfirmDelete(null)}
-        title="Delete admin?"
-        description={`Permanently delete ${confirmDelete?.full_name || confirmDelete?.email}. This cannot be undone.`}
-        confirmLabel="Delete"
-        destructive
-        onConfirm={async () => {
-          if (!confirmDelete) return;
-          try {
-            await callFn("delete", { user_id: confirmDelete.user_id });
-            toast.success("Admin deleted");
-            setConfirmDelete(null);
-            load();
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Failed");
-          }
-        }}
-      />
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete admin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Permanently delete {confirmDelete?.full_name || confirmDelete?.email}. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!confirmDelete) return;
+                try {
+                  await callFn("delete", { user_id: confirmDelete.user_id });
+                  toast.success("Admin deleted");
+                  setConfirmDelete(null);
+                  load();
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Failed");
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
