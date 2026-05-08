@@ -403,6 +403,11 @@ const AdminEducatorApplicationsPage = () => {
           })}
         </div>
       )}
+      {!loading && filtered.length > 0 && (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+        </div>
+      )}
 
       {/* Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
