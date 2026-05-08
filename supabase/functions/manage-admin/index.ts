@@ -61,18 +61,20 @@ Deno.serve(async (req) => {
             .in("user_id", ids)
         : { data: [] as any[] };
       const { data: usersList } = await admin.auth.admin.listUsers({ perPage: 1000 });
-      const emailById = new Map<string, string>();
-      (usersList?.users ?? []).forEach((u) => u.email && emailById.set(u.id, u.email));
+      const userById = new Map<string, any>();
+      (usersList?.users ?? []).forEach((u) => userById.set(u.id, u));
       const rows = ids.map((id) => {
         const p = (profiles ?? []).find((x: any) => x.user_id === id);
+        const u = userById.get(id);
+        const meta = (u?.user_metadata ?? {}) as Record<string, any>;
         return {
           user_id: id,
-          email: emailById.get(id) ?? null,
-          full_name: p?.full_name ?? null,
-          phone: p?.phone ?? null,
-          avatar_url: p?.avatar_url ?? null,
+          email: u?.email ?? null,
+          full_name: p?.full_name || meta.full_name || meta.name || null,
+          phone: p?.phone || meta.phone || null,
+          avatar_url: p?.avatar_url || meta.avatar_url || null,
           is_suspended: p?.is_suspended ?? false,
-          created_at: p?.created_at ?? null,
+          created_at: p?.created_at ?? u?.created_at ?? null,
           role: roleByUser.get(id) ?? "admin",
         };
       });
