@@ -196,9 +196,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
-    // Resolve the role synchronously here so callers can rely on isStaff being
-    // correct as soon as signIn() resolves.
     if (data.user) {
+      // Block suspended accounts at sign-in time.
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("is_suspended")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+      if (prof?.is_suspended) {
+        await supabase.auth.signOut();
+        return { error: "Your account has been blocked. Please contact a super admin." };
+      }
       await checkRole(data.user.id);
     }
     return { error: null };
