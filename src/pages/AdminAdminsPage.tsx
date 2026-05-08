@@ -62,6 +62,15 @@ const AdminAdminsPage = () => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-mgmt-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
