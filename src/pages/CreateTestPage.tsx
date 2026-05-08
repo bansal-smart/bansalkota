@@ -69,10 +69,12 @@ const CreateTestPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { testId } = useParams<{ testId?: string }>();
+  const params = useParams<{ testId?: string; slug?: string }>();
+  const slugParam = params.slug;
+  const testIdParam = params.testId;
 
   const isAdminContext = location.pathname.startsWith("/admin");
-  const isEditMode = Boolean(testId);
+  const isEditMode = Boolean(slugParam || testIdParam);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -87,6 +89,7 @@ const CreateTestPage = () => {
   const [bankSheetOpen, setBankSheetOpen] = useState(false);
   const [courseId, setCourseId] = useState<string>("");
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
+  const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -102,21 +105,28 @@ const CreateTestPage = () => {
     return () => { ignore = true; };
   }, [user, isAdminContext]);
 
-  // Load existing test for edit mode
+  // Load existing test for edit mode (by slug or id)
   useEffect(() => {
-    if (!isEditMode || !testId) return;
+    if (!isEditMode) return;
     let ignore = false;
     (async () => {
-      const [{ data: test }, { data: tqs }] = await Promise.all([
-        supabase.from("tests").select("*").eq("id", testId).maybeSingle(),
-        supabase.from("test_questions").select("*").eq("test_id", testId).order("position"),
-      ]);
+      const baseQ = supabase.from("tests").select("*");
+      const { data: test } = slugParam
+        ? await baseQ.eq("slug", slugParam).maybeSingle()
+        : await baseQ.eq("id", testIdParam!).maybeSingle();
       if (ignore) return;
       if (!test) {
         toast.error("Test not found");
         navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
         return;
       }
+      const { data: tqs } = await supabase
+        .from("test_questions")
+        .select("*")
+        .eq("test_id", test.id)
+        .order("position");
+      if (ignore) return;
+      setResolvedTestId(test.id);
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
       setTestType(test.test_type ?? "mock");
@@ -140,7 +150,7 @@ const CreateTestPage = () => {
       setLoading(false);
     })();
     return () => { ignore = true; };
-  }, [isEditMode, testId, isAdminContext, navigate]);
+  }, [isEditMode, slugParam, testIdParam, isAdminContext, navigate]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
