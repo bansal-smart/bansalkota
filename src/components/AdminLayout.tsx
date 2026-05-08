@@ -202,7 +202,7 @@ const AdminLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
           <Outlet />
         </main>
       </div>
