@@ -28,6 +28,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
 type Chapter = { id: string; title: string; position: number };
@@ -458,6 +460,7 @@ const AdminCourseContentPage = () => {
       c.educator_name.toLowerCase().includes(q)
     );
   }, [courses, search]);
+  const { paged: pagedCourses, page: coursePage, setPage: setCoursePage, totalPages: courseTotalPages, total: courseTotal, pageSize: coursePageSize } = usePagination(filteredCourses, 15);
 
   const visibleResources = useMemo(() => {
     if (chapterFilter === "all") return resources;
@@ -585,8 +588,9 @@ const AdminCourseContentPage = () => {
               <p className="mt-3 font-semibold text-foreground">No courses found</p>
             </div>
           ) : (
+            <>
             <ul className="divide-y divide-border">
-              {filteredCourses.map((c) => (
+              {pagedCourses.map((c) => (
                 <li
                   key={c.id}
                   className="flex cursor-pointer items-center gap-4 p-4 hover:bg-muted/40 transition-colors"
@@ -611,6 +615,8 @@ const AdminCourseContentPage = () => {
                 </li>
               ))}
             </ul>
+            <TablePagination page={coursePage} totalPages={courseTotalPages} total={courseTotal} pageSize={coursePageSize} onPageChange={setCoursePage} />
+            </>
           )}
         </div>
       </div>
