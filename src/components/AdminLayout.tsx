@@ -69,7 +69,7 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
 
   return (
     <aside
-      className="hidden lg:flex w-[240px] flex-col sticky top-0 h-screen overflow-y-auto"
+      className="hidden lg:flex w-[240px] flex-col sticky top-0 h-screen overflow-y-auto scrollbar-hide"
       style={{ backgroundColor: "hsl(222, 47%, 11%)" }}
     >
       <div className="p-4">
