@@ -53,6 +53,7 @@ import AdminTestsPage from "./pages/AdminTestsPage";
 import AdminQuestionBankPage from "./pages/AdminQuestionBankPage";
 import AdminCompeteQuestionsPage from "./pages/AdminCompeteQuestionsPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
+import AdminAdminsPage from "./pages/AdminAdminsPage";
 import AdminModerationPage from "./pages/AdminModerationPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage";
