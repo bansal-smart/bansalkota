@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Report = {
   id: string;
@@ -83,6 +85,7 @@ const AdminReportsPage = () => {
       );
     });
   }, [rows, search, statusFilter, categoryFilter]);
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
   const stats = useMemo(() => ({
     total: rows.length,
@@ -181,7 +184,7 @@ const AdminReportsPage = () => {
           </div>
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.map((r) => (
+            {paged.map((r) => (
               <li
                 key={r.id}
                 className="flex cursor-pointer items-start gap-4 p-4 hover:bg-muted/40 transition-colors"
@@ -210,6 +213,7 @@ const AdminReportsPage = () => {
             ))}
           </ul>
         )}
+        <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
       </div>
 
       <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
