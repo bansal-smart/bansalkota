@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Application = {
   id: string;
@@ -216,6 +218,7 @@ const AdminEducatorApplicationsPage = () => {
     }
     return true;
   });
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
 
   const counts = {
     all: apps.length,
@@ -307,7 +310,7 @@ const AdminEducatorApplicationsPage = () => {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((a) => {
+          {paged.map((a) => {
             const status = statusVariants[a.status] ?? statusVariants.pending;
             return (
               <div key={a.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
@@ -398,6 +401,11 @@ const AdminEducatorApplicationsPage = () => {
               </div>
             );
           })}
+        </div>
+      )}
+      {!loading && filtered.length > 0 && (
+        <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
         </div>
       )}
 

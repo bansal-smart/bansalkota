@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { GraduationCap, Plus, Edit3, Trash2, Loader2, Eye, EyeOff, X } from "lucide-react";
 import { useExams, type Exam } from "@/hooks/useExams";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type EditDraft = Partial<Exam> & { name: string };
 
@@ -18,6 +20,7 @@ const AdminExamsPage = () => {
   const { exams, loading, reload } = useExams({ includeInactive: true });
   const [editing, setEditing] = useState<EditDraft | null>(null);
   const [saving, setSaving] = useState(false);
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(exams, 15);
 
   const save = async () => {
     if (!editing) return;
@@ -88,7 +91,7 @@ const AdminExamsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {exams.map((e) => (
+              {paged.map((e) => (
                 <tr key={e.id} className="border-t border-border">
                   <td className="px-3 py-2 text-muted-foreground">{e.sort_order}</td>
                   <td className="px-3 py-2 font-bold text-foreground">{e.name}</td>
@@ -113,6 +116,7 @@ const AdminExamsPage = () => {
               )}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
         </div>
       )}
 

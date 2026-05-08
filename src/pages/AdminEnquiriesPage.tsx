@@ -11,6 +11,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Enquiry = {
   id: string;
@@ -79,6 +81,7 @@ const AdminEnquiriesPage = () => {
       );
     });
   }, [rows, search, statusFilter, sourceFilter]);
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
   const stats = useMemo(() => {
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -188,7 +191,7 @@ const AdminEnquiriesPage = () => {
           </div>
         ) : (
           <ul className="divide-y divide-border">
-            {filtered.map((r) => (
+            {paged.map((r) => (
               <li
                 key={r.id}
                 className="flex cursor-pointer items-center gap-4 p-4 hover:bg-muted/40 transition-colors"
@@ -215,6 +218,7 @@ const AdminEnquiriesPage = () => {
             ))}
           </ul>
         )}
+        <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
       </div>
 
       <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
