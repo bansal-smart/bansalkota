@@ -204,7 +204,7 @@ const AdminCompeteQuestionsPage = () => {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2"><Swords className="h-5 w-5 text-primary" /> Compete Questions</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} of {list.length} questions {selected.size > 0 && `· ${selected.size} selected`}</p>
+          <p className="text-sm text-muted-foreground">{total} questions {selected.size > 0 && `· ${selected.size} selected`}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setBulkOpen(true)} className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-bold text-foreground hover:bg-muted inline-flex items-center gap-1">
