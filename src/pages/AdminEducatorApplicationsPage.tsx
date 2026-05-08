@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Application = {
   id: string;
@@ -216,6 +218,7 @@ const AdminEducatorApplicationsPage = () => {
     }
     return true;
   });
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
 
   const counts = {
     all: apps.length,
