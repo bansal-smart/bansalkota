@@ -1,4 +1,4 @@
-import { admin, corsHeaders, getOrCreateRating, getProfileMini, getUser, jsonResponse, pickQuestionIds } from "../_shared/compete.ts";
+import { admin, corsHeaders, getOrCreateRating, getProfileMini, getUser, jsonResponse, pickQuestionIds, randomBotName } from "../_shared/compete.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
