@@ -100,9 +100,7 @@ Deno.serve(async (req) => {
         const { data: finalMatch } = await sb.from("compete_matches").select("*").eq("id", matchId).single();
         const p1 = Number(finalMatch!.player1_score);
         const p2 = Number(finalMatch!.player2_score);
-        // For bot matches, player2_id is null — use the bot sentinel id so a bot win isn't mistaken for a draw.
-        const p2WinnerId = finalMatch!.player2_id ?? "00000000-0000-0000-0000-000000000000";
-        const winnerId = p1 === p2 ? null : (p1 > p2 ? finalMatch!.player1_id : p2WinnerId);
+        const winnerId = determineWinner(p1, p2, finalMatch!.player1_id, finalMatch!.player2_id);
 
         let p1After = finalMatch!.player1_rating_before;
         let p2After = finalMatch!.player2_rating_before;
