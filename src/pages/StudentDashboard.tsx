@@ -147,33 +147,6 @@ const StudentDashboard = () => {
           )}
         </div>
 
-        {/* Educators */}
-        <div className="mb-6 animate-fade-in-up">
-          <SectionHeader title="Your Educators" viewAllLink="/educators" />
-          {data.educators.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card py-8 text-center">
-              <Users className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-              <p className="text-xs text-muted-foreground">Follow educators to see them here — <Link to="/educators" className="text-primary font-bold">browse</Link></p>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-3">
-              {data.educators.slice(0, 3).map((edu) => (
-                <div key={edu.name} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover-lift">
-                  <div className="h-20 bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
-                    <Users className="h-8 w-8 text-white/80" />
-                  </div>
-                  <div className="p-4 text-center">
-                    <p className="text-sm font-bold font-display text-foreground inline-flex items-center gap-1">
-                      {edu.name} <BadgeCheck className="h-4 w-4 text-primary" />
-                    </p>
-                    <p className="text-xs text-muted-foreground">{edu.subject || "Educator"}</p>
-                    <Link to="/educators" className="mt-3 inline-block w-full rounded-lg border border-primary px-4 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">View</Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Right Panel */}
