@@ -1,96 +1,50 @@
-# Compete Feature — 1v1 Quiz Battles
+# Phased Implementation Plan (Payments Skipped)
 
-Replace the static `CompetePage.tsx` mock with a real, end-to-end multiplayer quiz battle for students.
-
-## Match concept
-- **1v1**, 10 questions, 30 seconds per question
-- Score = correct answers + speed bonus (faster correct = more points)
-- Winner gets +ELO, loser loses ELO; both see a result screen with rank delta
-
-## Matching criteria (all four combined)
-1. **Same target exam** — JEE / NEET / etc. (from `profiles.target_exam`)
-2. **Same class level** — 11 / 12 / Dropper (from `profiles.class_level`)
-3. **Subject + topic** — player picks before queueing (e.g., Physics → Kinematics)
-4. **Similar ELO rating** — start at 1000, expand search window every 5s (±50 → ±100 → ±200 → bot fallback at 25s)
-
-## Two entry modes
-- **Quick Match** — auto-pair via queue
-- **Private Room** — host creates, gets a 6-char code, friend joins by code (skips ELO/exam checks)
+Each phase is independently shippable. Phases 1–2 require no migrations.
 
 ---
 
-## Database (new tables)
+## Phase 1 — Quick wins (no DB changes) ✅ IN PROGRESS
 
-**`compete_questions`** — separate curated pool
-- subject, topic, difficulty, question_text, options (jsonb), correct_index, explanation
-- Admin-managed; readable by all authenticated students
+1. **Time-aware greeting** on Student Dashboard (Good morning/afternoon/evening).
+2. **"Talk to Counsellor"** CTA → links to `/contact`.
+3. **Centralise SUBJECTS** in `src/lib/constants.ts`; replace 6 duplicated lists.
+4. **CoursesPage filters** — use `useExams()` for goal filters instead of hardcoded list.
+5. **EducatorsPage** — fetch real teachers from `profiles` + `user_roles` (role=`teacher`); fallback to curated list only if empty.
+6. **StorePage** — replace static 6-course array with `useCourses()` (link to `/courses/:slug`).
 
-**`compete_ratings`** — per student per exam
-- user_id, target_exam, rating (default 1000), wins, losses, draws, current_streak, best_streak
+## Phase 2 — Mentor portal real KPIs (no DB changes)
 
-**`compete_queue`** — active matchmaking entries
-- user_id, target_exam, class_level, subject, topic, rating, room_code (nullable), status (`waiting` / `matched`), created_at
-- Cleaned up on match or timeout
+7. MentorDashboard tiles fed by real data: assigned students, unread chat count, avg progress, open doubts from assigned students.
+8. Add small "students at risk" list (low progress / no activity 7d).
 
-**`compete_matches`** — match lifecycle
-- id, player1_id, player2_id, subject, topic, status (`pending` / `active` / `finished`), question_ids (uuid[]), current_question_index, started_at, finished_at, winner_id, room_code
+## Phase 3 — Doubt status visible to student (small migration)
 
-**`compete_match_answers`** — per-question answers
-- match_id, user_id, question_index, selected_index, is_correct, time_taken_ms, points
+9. Surface educator-routed doubt timeline on `/doubts`: show "Awaiting educator", "Assigned to <name>", "Answered".
+10. Make `DoubtCard` show responder role + name when educator answers.
 
-RLS: players can only read/write their own match rows; questions readable to authenticated; ratings readable to all (for leaderboards), writable only via edge function.
+## Phase 4 — Admin: invite + audit trail
 
-## Edge functions
-- **`compete-matchmake`** — called on "Find Opponent". Inserts into queue, looks for compatible waiting opponent, atomically pairs them, creates a `compete_matches` row, picks 10 questions filtered by subject/topic/difficulty, returns `match_id`. Bot fallback after 25s.
-- **`compete-create-room`** — generates 6-char code, inserts a `pending` match, waits for join.
-- **`compete-join-room`** — validates code, attaches player2, picks questions, sets `active`.
-- **`compete-submit-answer`** — validates timing, scores answer, writes to `compete_match_answers`, advances question if both players answered, finalizes match + updates ELO when complete.
+11. Admin **invite flow**: edge function + dialog to email a magic-link signup with role pre-assigned.
+12. **Admin Reports**: notify reporter on status change (already covered by trigger — verify + add UI badge), add `report_audit` rows when status changes.
+13. **Bulk announcement** delivery: wire admin composer to `notifications` table fan-out via RPC/edge.
 
-ELO: standard formula, K=32. Expected = 1/(1+10^((opp-me)/400)). New = old + K*(actual-expected).
+## Phase 5 — Force-change-password admin trigger
 
-## Frontend (`src/pages/CompetePage.tsx` rewrite + new components)
+14. Admin Users page action: "Require password reset" → sets `must_change_password=true` on profile; `ForceChangePasswordPage` already enforces.
 
-States/screens:
-1. **Lobby** — shows current rating, W/L, streak, "Quick Match" + "Create Room" + "Join Room" buttons, subject/topic picker
-2. **Searching** — animated, shows expanding rating window, cancel button, "vs Bot in 25s" countdown
-3. **Match Found** — both avatars, names, ratings, 3-2-1 countdown
-4. **Playing** — question + 4 options, 30s timer ring, live opponent score, your score, question N/10
-5. **Result** — winner crown, final scores, ELO delta, question-by-question recap, "Play Again" / "Back to Lobby"
+## Phase 6 — Site content / marketing CMS
 
-Realtime via Supabase Realtime subscription on `compete_matches` (current_question_index, status) and `compete_match_answers` (opponent's progress).
+15. Create `site_content` table (`key`, `payload jsonb`, `updated_by`, RLS: anyone read, admin write).
+16. Migrate FAQs (Landing, Pricing), AboutPage stats, Tests/LiveClasses landing copy, Mentorship steps, Admissions tiers, Career openings, Association partners.
+17. Admin "Site Content" page to edit JSON blocks.
 
-New components:
-- `src/components/compete/CompeteLobby.tsx`
-- `src/components/compete/CompeteSearching.tsx`
-- `src/components/compete/CompeteMatch.tsx` (the playing screen)
-- `src/components/compete/CompeteResult.tsx`
-- `src/hooks/useCompeteMatch.ts` — subscribes, submits answers
-- `src/hooks/useCompeteRating.ts` — fetches/cache user rating
+## Phase 7 — Marketing page polish
 
-## Admin
-Add `AdminCompeteQuestionsPage.tsx` (reusing the existing `QuestionEditorDialog` pattern from question_bank) so admins can seed `compete_questions`. Linked from admin sidebar.
-
-## Seeding
-Migration includes ~40 sample compete_questions across Physics/Chem/Math/Biology to make the feature usable immediately.
+18. Replace remaining curated arrays (highlights, builders) with `site_content` once table is in.
 
 ---
 
-## Files to create
-- `supabase/functions/compete-matchmake/index.ts`
-- `supabase/functions/compete-create-room/index.ts`
-- `supabase/functions/compete-join-room/index.ts`
-- `supabase/functions/compete-submit-answer/index.ts`
-- `src/components/compete/{CompeteLobby,CompeteSearching,CompeteMatch,CompeteResult}.tsx`
-- `src/hooks/{useCompeteMatch,useCompeteRating}.ts`
-- `src/pages/AdminCompeteQuestionsPage.tsx`
+## Skipped (payment-dependent)
 
-## Files to edit
-- `src/pages/CompetePage.tsx` — full rewrite to wire up the four states
-- `src/App.tsx` — add admin compete questions route
-- `src/components/AdminLayout.tsx` — add nav link
-
-## Out of scope (can add later)
-- Tournaments / brackets
-- Multiplayer >2 players
-- Spectator mode
-- Voice/text chat during match
+- StorePage checkout, CourseDetail enrol payment, PricingPage subscriptions, ProfilePage subscription panel, AdminPaymentsPage gateway integration, Plan entitlement gating.
