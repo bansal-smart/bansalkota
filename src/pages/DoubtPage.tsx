@@ -37,6 +37,7 @@ const DoubtPage = () => {
   const [subject, setSubject] = useState("Physics");
   const [question, setQuestion] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [answerMode, setAnswerMode] = useState<"ai" | "educator">("ai");
 
   const { doubts, loading } = useDoubts("mine");
 
