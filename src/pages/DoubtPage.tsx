@@ -274,7 +274,13 @@ const DoubtCard = ({ doubt, expanded, onToggle }: { doubt: DoubtRow; expanded: b
           )}
           {doubt.ai_answer && (
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-2">
-              <p className="text-[11px] font-bold text-primary uppercase flex items-center gap-1"><Brain className="h-3 w-3" /> AI answer</p>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-[11px] font-bold text-primary uppercase flex items-center gap-1"><Brain className="h-3 w-3" /> AI answer</p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  AI generated answer might be incorrect
+                </span>
+              </div>
               <FormattedAnswer content={doubt.ai_answer} tone="primary" className="text-xs" />
             </div>
           )}
