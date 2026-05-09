@@ -26,10 +26,19 @@ const quickActions = [
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
 
+const greetingFor = (d: Date) => {
+  const h = d.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Good night";
+};
+
 const StudentDashboard = () => {
   const { user } = useAppStore();
   const firstName = user?.full_name?.split(" ")[0] || "Student";
   const data = useDashboardData();
+  const greeting = greetingFor(new Date());
 
   return (
     <div className="flex gap-0 pb-20 lg:pb-0">
@@ -38,13 +47,13 @@ const StudentDashboard = () => {
         {/* Greeting */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 animate-fade-in-up">
           <div>
-            <h1 className="text-xl font-black font-display text-foreground lg:text-2xl">Good morning, {firstName}</h1>
+            <h1 className="text-xl font-black font-display text-foreground lg:text-2xl">{greeting}, {firstName}</h1>
             <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
           </div>
           <div className="flex gap-2">
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">
+            <Link to="/contact" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">
               <PhoneCall className="h-3.5 w-3.5" /> Talk to Counsellor
-            </button>
+            </Link>
             <Link to="/courses" className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Enroll in Course</Link>
           </div>
         </div>
