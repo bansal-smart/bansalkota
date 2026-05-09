@@ -1,7 +1,7 @@
 import { Trophy, Flame, Star, Swords } from "lucide-react";
 import { CompeteRating } from "@/hooks/useCompeteRating";
 
-const SUBJECTS = ["Physics", "Chemistry", "Math", "Biology"];
+import { SUBJECTS_COMPETE as SUBJECTS } from "@/lib/constants";
 const TOPICS: Record<string, string[]> = {
   Physics: ["Any", "Kinematics", "Laws of Motion"],
   Chemistry: ["Any", "Atomic Structure", "Periodic Table", "Mole Concept"],

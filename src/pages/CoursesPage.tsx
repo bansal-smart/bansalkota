@@ -2,15 +2,16 @@ import { useState } from "react";
 import { Star, Users, Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
+import { useExams } from "@/hooks/useExams";
 import { useAppStore } from "@/store/useAppStore";
 import EnrollmentModal from "@/components/EnrollmentModal";
+import { SUBJECTS_WITH_ALL } from "@/lib/constants";
 import coursePhysics from "@/assets/course-physics.png";
 import courseChemistry from "@/assets/course-chemistry.png";
 import courseMaths from "@/assets/course-maths.png";
 import courseBiology from "@/assets/course-biology.png";
 
-const goalFilters = ["All", "JEE", "NEET", "Class 11", "Class 12"];
-const subjectFilters = ["All", "Physics", "Chemistry", "Maths", "Biology"];
+const subjectFilters: string[] = [...SUBJECTS_WITH_ALL];
 
 const courseImages: Record<string, string> = {
   Physics: coursePhysics,
@@ -26,6 +27,8 @@ const highlights = [
 ];
 
 const CoursesPage = () => {
+  const { examNames } = useExams();
+  const goalFilters = ["All", ...examNames];
   const [activeGoal, setActiveGoal] = useState(0);
   const [activeSubject, setActiveSubject] = useState(0);
   const [enrollFor, setEnrollFor] = useState<CourseRow | null>(null);

@@ -21,7 +21,8 @@ type Q = {
   is_active: boolean;
 };
 
-const SUBJECTS = ["Physics", "Chemistry", "Math", "Biology"];
+import { SUBJECTS_COMPETE } from "@/lib/constants";
+const SUBJECTS: string[] = [...SUBJECTS_COMPETE];
 const DIFFICULTIES = ["easy", "medium", "hard"];
 // EXAMS now sourced from useExams() (DB-managed). Fallback handled by the hook.
 const CLASS_LEVELS = ["9", "10", "11", "12", "Dropper"];

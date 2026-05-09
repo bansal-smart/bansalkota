@@ -14,16 +14,20 @@ import {
   Briefcase,
   Heart,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { useEducators } from "@/hooks/useEducators";
 
-const educators = [
-  { id: 1, name: "Vikram Thapar", subject: "Physics", rating: 4.9, students: 12400, classes: 340, photo: "VT", color: "from-blue-500 to-blue-600", exp: "12 yrs", speciality: "IIT JEE Advanced" },
-  { id: 2, name: "Priya Mehta", subject: "Chemistry", rating: 4.8, students: 9800, classes: 290, photo: "PM", color: "from-green-500 to-green-600", exp: "10 yrs", speciality: "Organic Chemistry" },
-  { id: 3, name: "Ananya Iyer", subject: "Mathematics", rating: 4.9, students: 11200, classes: 310, photo: "AI", color: "from-purple-500 to-purple-600", exp: "15 yrs", speciality: "Calculus & Algebra" },
-  { id: 4, name: "Karan Deshmukh", subject: "Biology", rating: 4.7, students: 8500, classes: 250, photo: "KD", color: "from-pink-500 to-pink-600", exp: "8 yrs", speciality: "NEET Biology" },
-  { id: 5, name: "Sneha Kulkarni", subject: "Physics", rating: 4.8, students: 7600, classes: 180, photo: "SK", color: "from-cyan-500 to-cyan-600", exp: "9 yrs", speciality: "Electromagnetism" },
-  { id: 6, name: "Rohan Gupta", subject: "Mathematics", rating: 4.6, students: 6400, classes: 210, photo: "RG", color: "from-amber-500 to-amber-600", exp: "7 yrs", speciality: "Coordinate Geometry" },
+const initialsOf = (name: string) =>
+  name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("") || "?";
+
+// Curated fallback educators shown only when no real teacher accounts exist yet.
+const fallbackEducators = [
+  { id: "f1", name: "Vikram Thapar", subject: "Physics", rating: 4.9, students: 12400, classes: 340, exp: "12 yrs", speciality: "IIT JEE Advanced" },
+  { id: "f2", name: "Ananya Iyer", subject: "Mathematics", rating: 4.9, students: 11200, classes: 310, exp: "15 yrs", speciality: "Calculus & Algebra" },
+  { id: "f3", name: "Siddharth Nair", subject: "Chemistry", rating: 4.8, students: 9800, classes: 290, exp: "10 yrs", speciality: "Organic Chemistry" },
+  { id: "f4", name: "Kavitha Menon", subject: "Biology", rating: 4.7, students: 8500, classes: 250, exp: "8 yrs", speciality: "NEET Biology" },
 ];
 
 const stats = [
@@ -69,7 +73,25 @@ const highlights = [
 const EducatorsPage = () => {
   const { user } = useAppStore();
   const [search, setSearch] = useState("");
-  const filtered = educators.filter(
+  const { educators: dbEducators, loading } = useEducators();
+
+  // Use real educators when available, otherwise show curated fallback so the
+  // marketing page never appears empty before any teachers are onboarded.
+  const list = dbEducators.length > 0
+    ? dbEducators.map((e) => ({
+        id: e.user_id,
+        name: e.full_name,
+        subject: e.subject || "Faculty",
+        rating: 4.8,
+        students: 0,
+        classes: 0,
+        exp: "—",
+        speciality: e.city || "Educator",
+        avatar_url: e.avatar_url,
+      }))
+    : fallbackEducators.map((f) => ({ ...f, avatar_url: null as string | null }));
+
+  const filtered = list.filter(
     (e) =>
       e.name.toLowerCase().includes(search.toLowerCase()) ||
       e.subject.toLowerCase().includes(search.toLowerCase()),
@@ -158,12 +180,21 @@ const EducatorsPage = () => {
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
-            {filtered.map((edu) => (
+            {loading && (
+              <div className="col-span-full flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            )}
+            {!loading && filtered.map((edu) => (
               <div key={edu.id} className="rounded-xl border border-border bg-background p-5 hover-lift">
                 <div className="mb-4 flex items-center gap-3">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${edu.color} text-lg font-bold text-white`}>
-                    {edu.photo}
-                  </div>
+                  {edu.avatar_url ? (
+                    <img src={edu.avatar_url} alt={edu.name} className="h-14 w-14 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-lg font-bold text-white">
+                      {initialsOf(edu.name)}
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-sm font-bold text-foreground">{edu.name}</h3>
                     <p className="text-xs text-muted-foreground">{edu.subject} · {edu.exp}</p>
@@ -194,7 +225,7 @@ const EducatorsPage = () => {
                 </div>
               </div>
             ))}
-            {filtered.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <p className="col-span-full py-12 text-center text-sm text-muted-foreground">
                 No educators match your search.
               </p>

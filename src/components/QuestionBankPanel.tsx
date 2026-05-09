@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
-const SUBJECTS = ["All", "Physics", "Chemistry", "Mathematics", "Biology"];
+import { SUBJECTS_WITH_ALL as SUBJECTS } from "@/lib/constants";
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
 const PAGE_SIZE = 25;
 
