@@ -169,7 +169,9 @@ type ParsedQuestion = {
 
 type RowError = { row: number; message: string; raw: string[] };
 
-import { SUBJECTS as VALID_SUBJECTS_QB, SUBJECTS_VALID_ANY as VALID_SUBJECTS_COMPETE } from "@/lib/constants";
+import { SUBJECTS, SUBJECTS_VALID_ANY } from "@/lib/constants";
+const VALID_SUBJECTS_QB: string[] = [...SUBJECTS];
+const VALID_SUBJECTS_COMPETE: string[] = [...SUBJECTS_VALID_ANY];
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 const parseRow = (
