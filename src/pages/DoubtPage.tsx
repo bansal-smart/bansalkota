@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Brain, Clock, Loader2, X, Sparkles, MessageCircle, ChevronDown } from "lucide-react";
+import { Plus, Brain, Clock, Loader2, X, Sparkles, MessageCircle, ChevronDown, AlertTriangle, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -37,6 +37,7 @@ const DoubtPage = () => {
   const [subject, setSubject] = useState("Physics");
   const [question, setQuestion] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [answerMode, setAnswerMode] = useState<"ai" | "educator">("ai");
 
   const { doubts, loading } = useDoubts("mine");
 
@@ -70,6 +71,12 @@ const DoubtPage = () => {
     setQuestion("");
     setImageFile(null);
     setSubmitting(false);
+
+    if (answerMode === "educator") {
+      toast.success("Doubt sent to an educator — you'll be notified when they respond.");
+      return;
+    }
+
     toast.success("Doubt submitted — generating AI answer...");
 
     // Fire AI solver
@@ -162,13 +169,50 @@ const DoubtPage = () => {
               <label className="text-xs font-semibold text-foreground">Attach image (optional)</label>
               <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} className="mt-1 w-full text-xs" />
             </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Who should answer?</label>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAnswerMode("ai")}
+                  className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
+                    answerMode === "ai" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" /> AI
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">Instant answer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAnswerMode("educator")}
+                  className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
+                    answerMode === "educator" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <GraduationCap className="h-3.5 w-3.5 text-secondary" /> Educator
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">Best for complex doubts</span>
+                </button>
+              </div>
+              {answerMode === "ai" ? (
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-3 w-3" />
+                  AI generated answer might be incorrect — for complex doubts, ask a teacher.
+                </div>
+              ) : (
+                <p className="mt-2 text-[10px] text-muted-foreground">An educator will respond. This may take some time.</p>
+              )}
+            </div>
             <button
               disabled={submitting}
               onClick={submitDoubt}
               className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              {submitting ? "Submitting..." : "Submit & get AI answer"}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : answerMode === "ai" ? <Sparkles className="h-4 w-4" /> : <GraduationCap className="h-4 w-4" />}
+              {submitting ? "Submitting..." : answerMode === "ai" ? "Submit & get AI answer" : "Send to educator"}
             </button>
           </div>
         </div>
@@ -230,7 +274,13 @@ const DoubtCard = ({ doubt, expanded, onToggle }: { doubt: DoubtRow; expanded: b
           )}
           {doubt.ai_answer && (
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-2">
-              <p className="text-[11px] font-bold text-primary uppercase flex items-center gap-1"><Brain className="h-3 w-3" /> AI answer</p>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-[11px] font-bold text-primary uppercase flex items-center gap-1"><Brain className="h-3 w-3" /> AI answer</p>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  AI generated answer might be incorrect
+                </span>
+              </div>
               <FormattedAnswer content={doubt.ai_answer} tone="primary" className="text-xs" />
             </div>
           )}
