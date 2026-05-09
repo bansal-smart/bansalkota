@@ -34,7 +34,7 @@ const MentorSidebar = memo(({ displayName, initials, avatarUrl, onLogout }: { di
   return (
     <aside className="hidden lg:flex w-[220px] flex-col border-r border-border bg-card sticky top-0 h-screen overflow-y-auto">
       <div className="p-4">
-        <Link to="/mentor/dashboard" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-4 w-4 text-primary-foreground" />
           </div>

@@ -74,7 +74,7 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
       style={{ backgroundColor: "hsl(222, 47%, 11%)" }}
     >
       <div className="p-4">
-        <Link to="/admin/dashboard" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-4 w-4 text-primary-foreground" />
           </div>
