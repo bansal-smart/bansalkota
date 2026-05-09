@@ -50,7 +50,7 @@ type Props = {
   initial?: BankQuestion | null;
 };
 
-const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology"];
+import { SUBJECTS } from "@/lib/constants";
 const DIFFICULTIES = ["easy", "medium", "hard"];
 
 const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {

@@ -169,8 +169,7 @@ type ParsedQuestion = {
 
 type RowError = { row: number; message: string; raw: string[] };
 
-const VALID_SUBJECTS_QB = ["Physics", "Chemistry", "Mathematics", "Biology"];
-const VALID_SUBJECTS_COMPETE = ["Physics", "Chemistry", "Math", "Mathematics", "Biology"];
+import { SUBJECTS as VALID_SUBJECTS_QB, SUBJECTS_VALID_ANY as VALID_SUBJECTS_COMPETE } from "@/lib/constants";
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 const parseRow = (
