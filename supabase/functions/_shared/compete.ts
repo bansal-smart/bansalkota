@@ -96,3 +96,40 @@ export async function getProfileMini(sb: ReturnType<typeof admin>, userId: strin
   const { data } = await sb.from("profiles").select("full_name, avatar_url, target_exam, class_level").eq("user_id", userId).maybeSingle();
   return data ?? { full_name: "Player", avatar_url: null, target_exam: "general", class_level: null };
 }
+
+// Sentinel UUID used to represent the bot opponent (player2_id is null on bot matches).
+export const BOT_SENTINEL_ID = "00000000-0000-0000-0000-000000000000";
+
+// Determine the winner of a finished match. Returns null on a draw.
+// For bot matches (player2_id is null), a bot win returns BOT_SENTINEL_ID instead of null
+// so the UI can distinguish a bot victory from a true draw.
+export function determineWinner(
+  p1Score: number,
+  p2Score: number,
+  p1Id: string,
+  p2Id: string | null,
+): string | null {
+  if (p1Score === p2Score) return null;
+  if (p1Score > p2Score) return p1Id;
+  return p2Id ?? BOT_SENTINEL_ID;
+}
+
+// Machinery-themed random bot opponent names. Picked fresh per match.
+const BOT_NAME_PREFIXES = [
+  "Turbo", "Hydro", "Nano", "Cyber", "Quantum", "Volt", "Servo", "Atomic",
+  "Plasma", "Magnet", "Piston", "Gear", "Rotor", "Forge", "Diesel", "Neon",
+  "Crank", "Flux", "Helix", "Kinetic", "Lithium", "Mecha", "Photon", "Sonic",
+];
+const BOT_NAME_SUFFIXES = [
+  "Engine", "Drive", "Core", "Wrench", "Bolt", "Cog", "Forge", "Press",
+  "Anvil", "Reactor", "Coil", "Turbine", "Piston", "Sprocket", "Hammer",
+  "Lathe", "Drill", "Boiler", "Compressor", "Motor",
+];
+
+export function randomBotName(): string {
+  const p = BOT_NAME_PREFIXES[Math.floor(Math.random() * BOT_NAME_PREFIXES.length)];
+  const s = BOT_NAME_SUFFIXES[Math.floor(Math.random() * BOT_NAME_SUFFIXES.length)];
+  const n = Math.floor(Math.random() * 90) + 10; // 10-99
+  return `${p}${s}-${n}`;
+}
+

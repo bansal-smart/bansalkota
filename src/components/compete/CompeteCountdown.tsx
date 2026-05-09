@@ -10,7 +10,7 @@ const CompeteCountdown = ({ match }: Props) => {
   const isP1 = user?.id === match.player1_id;
   const myName = isP1 ? match.player1_name : match.player2_name;
   const oppName = isP1
-    ? (match.player2_name || (match.is_bot ? "Practice Bot" : "Opponent"))
+    ? (match.player2_name || (match.is_bot ? "Bot" : "Opponent"))
     : match.player1_name;
   const target = match.countdown_until ? new Date(match.countdown_until).getTime() : Date.now();
   const [left, setLeft] = useState(() => Math.max(0, Math.ceil((target - Date.now()) / 1000)));

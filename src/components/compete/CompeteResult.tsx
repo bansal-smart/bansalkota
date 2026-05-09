@@ -24,7 +24,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
   const myAfter = isP1 ? match.player1_rating_after : match.player2_rating_after;
   const myName = isP1 ? match.player1_name : match.player2_name;
   const oppName = isP1
-    ? (match.player2_name || (match.is_bot ? "Practice Bot" : "Opponent"))
+    ? (match.player2_name || (match.is_bot ? "Bot" : "Opponent"))
     : match.player1_name;
 
   const won = match.winner_id && match.winner_id === user?.id;

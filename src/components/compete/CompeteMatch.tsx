@@ -62,7 +62,7 @@ const CompeteMatchView = ({ match, questions, answers }: Props) => {
   const myScore = isP1 ? match.player1_score : match.player2_score;
   const oppScore = isP1 ? match.player2_score : match.player1_score;
   const myName = isP1 ? match.player1_name : match.player2_name;
-  const oppName = isP1 ? (match.player2_name || (match.is_bot ? "Practice Bot" : "Opponent")) : match.player1_name;
+  const oppName = isP1 ? (match.player2_name || (match.is_bot ? "Bot" : "Opponent")) : match.player1_name;
 
   const submitAnswer = async (idx: number | null) => {
     if (submittedRef.current.has(qIndex) || submitting) return;

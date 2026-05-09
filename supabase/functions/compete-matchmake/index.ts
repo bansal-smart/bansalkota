@@ -1,4 +1,4 @@
-import { admin, corsHeaders, getOrCreateRating, getProfileMini, getUser, jsonResponse, pickQuestionIds } from "../_shared/compete.ts";
+import { admin, corsHeaders, getOrCreateRating, getProfileMini, getUser, jsonResponse, pickQuestionIds, randomBotName } from "../_shared/compete.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
         player2_id: null,
         player1_name: profile.full_name,
         player1_avatar: profile.avatar_url,
-        player2_name: "Practice Bot",
+        player2_name: randomBotName(),
         player1_rating_before: rating.rating,
         player2_rating_before: 1000,
         subject, topic,
