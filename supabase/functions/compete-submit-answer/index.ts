@@ -1,4 +1,4 @@
-import { admin, corsHeaders, eloDelta, getUser, jsonResponse } from "../_shared/compete.ts";
+import { admin, corsHeaders, determineWinner, eloDelta, getUser, jsonResponse } from "../_shared/compete.ts";
 
 const QUESTION_TIME_MS = 30_000;
 
