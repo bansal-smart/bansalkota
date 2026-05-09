@@ -71,6 +71,12 @@ const DoubtPage = () => {
     setQuestion("");
     setImageFile(null);
     setSubmitting(false);
+
+    if (answerMode === "educator") {
+      toast.success("Doubt sent to an educator — you'll be notified when they respond.");
+      return;
+    }
+
     toast.success("Doubt submitted — generating AI answer...");
 
     // Fire AI solver
