@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Flame, Target, ClipboardCheck, Trophy, Loader2 } from "lucide-react";
+import { Camera, Flame, Target, ClipboardCheck, Trophy, Loader2, School } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
