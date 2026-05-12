@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { School, Plus, Edit3, Trash2, Loader2, X, Upload, Users, ChevronRight, Copy } from "lucide-react";
+import { School, Plus, Edit3, Trash2, Loader2, X, Upload, Users, ChevronRight, Copy, Download, FileText } from "lucide-react";
 
 type SchoolRow = {
   id: string;
@@ -37,8 +37,34 @@ const AdminSchoolsPage = () => {
   const [students, setStudents] = useState<Array<{ user_id: string; full_name: string | null; class_level: string | null; target_exam: string | null }>>([]);
   const [csvOpen, setCsvOpen] = useState(false);
   const [csvText, setCsvText] = useState("");
+  const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState<ResultRow[] | null>(null);
+
+  const CSV_TEMPLATE = "full_name,email,phone,class_level,target_exam,city\nAarav Sharma,aarav@example.com,9999999999,12,JEE Main,Delhi\nIsha Verma,isha@example.com,9888888888,11,NEET,Mumbai\n";
+
+  const downloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "school-students-template.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFile = async (file: File | null) => {
+    if (!file) return;
+    if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") {
+      return toast.error("Please select a .csv file");
+    }
+    if (file.size > 5 * 1024 * 1024) return toast.error("File too large (max 5MB)");
+    const text = await file.text();
+    setCsvText(text);
+    setCsvFileName(file.name);
+  };
 
   const reload = async () => {
     setLoading(true);
@@ -248,31 +274,71 @@ const AdminSchoolsPage = () => {
 
       {/* School detail drawer */}
       {selected && (
-        <div className="fixed inset-0 z-40 bg-black/50 flex justify-end" onClick={() => { setSelected(null); setResults(null); setCsvOpen(false); setCsvText(""); }}>
+        <div className="fixed inset-0 z-40 bg-black/50 flex justify-end" onClick={() => { setSelected(null); setResults(null); setCsvOpen(false); setCsvText(""); setCsvFileName(null); }}>
           <div className="bg-card w-full max-w-2xl h-full overflow-y-auto p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">{selected.name}</h2>
                 <p className="text-xs text-muted-foreground">{selected.city || "—"} · {selected.board || "—"}</p>
               </div>
-              <button onClick={() => { setSelected(null); setResults(null); setCsvOpen(false); }} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+              <button onClick={() => { setSelected(null); setResults(null); setCsvOpen(false); setCsvText(""); setCsvFileName(null); }} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button onClick={() => setCsvOpen((v) => !v)} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground inline-flex items-center gap-1">
                 <Upload className="h-4 w-4" /> Bulk upload students
+              </button>
+              <button onClick={downloadTemplate} className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold inline-flex items-center gap-1 hover:bg-muted">
+                <Download className="h-4 w-4" /> Download CSV template
               </button>
               <span className="text-sm text-muted-foreground">{students.length} student{students.length === 1 ? "" : "s"} associated</span>
             </div>
 
             {csvOpen && (
-              <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/30">
-                <p className="text-xs text-muted-foreground">
-                  Paste CSV with header row. Columns: <code>full_name, email, phone, class_level, target_exam, city</code>. Email is required.
-                </p>
-                <textarea rows={8} value={csvText} onChange={(e) => setCsvText(e.target.value)}
-                  placeholder={"full_name,email,phone,class_level,target_exam,city\nAarav Sharma,aarav@example.com,9999999999,12,JEE Main,Delhi"}
-                  className="sch-input font-mono text-xs" />
+              <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <p className="text-xs text-muted-foreground flex-1 min-w-[200px]">
+                    Upload a <code>.csv</code> file with header row. Columns: <code>full_name, email, phone, class_level, target_exam, city</code>. Email is required. Need a starting point? Download the template above.
+                  </p>
+                </div>
+
+                <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-background hover:bg-muted/50 cursor-pointer py-6 px-4 transition-colors">
+                  <Upload className="h-6 w-6 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {csvFileName ? "Replace file" : "Click to choose CSV file"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">.csv up to 5MB</span>
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+
+                {csvFileName && (
+                  <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-xs">
+                    <span className="inline-flex items-center gap-2 truncate">
+                      <FileText className="h-4 w-4 text-primary shrink-0" />
+                      <span className="truncate font-semibold">{csvFileName}</span>
+                    </span>
+                    <button
+                      onClick={() => { setCsvText(""); setCsvFileName(null); setResults(null); }}
+                      className="p-1 hover:bg-muted rounded text-muted-foreground"
+                      title="Remove file"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {csvText && (
+                  <details className="rounded-md border border-border bg-background">
+                    <summary className="px-3 py-2 text-xs font-semibold cursor-pointer">Preview parsed CSV</summary>
+                    <pre className="px-3 pb-3 text-[10px] font-mono overflow-x-auto max-h-40 text-muted-foreground">{csvText.slice(0, 2000)}{csvText.length > 2000 ? "\n…" : ""}</pre>
+                  </details>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{parsedRows.length} valid row{parsedRows.length === 1 ? "" : "s"} parsed</span>
                   <button onClick={upload} disabled={uploading || !parsedRows.length}
