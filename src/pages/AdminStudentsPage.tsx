@@ -92,10 +92,10 @@ const AdminStudentsPage = () => {
         setRows([]); setTotal(0); setLoading(false); return;
       }
 
-      let query = supabase
+      let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at",
+          "user_id, full_name, phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, school_id",
           { count: "exact" },
         )
         .in("user_id", studentIds)
@@ -105,6 +105,8 @@ const AdminStudentsPage = () => {
         const s = search.trim();
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%`);
       }
+      if (schoolFilter === "none") query = query.is("school_id", null);
+      else if (schoolFilter) query = query.eq("school_id", schoolFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -112,6 +114,8 @@ const AdminStudentsPage = () => {
       if (error) throw error;
 
       const baseRows = (data ?? []) as StudentRow[];
+      const schoolMap = new Map(schools.map((s) => [s.id, s.name]));
+      baseRows.forEach((r) => { r.school_name = r.school_id ? schoolMap.get(r.school_id) ?? null : null; });
 
       // Fetch emails via edge function for visible rows
       let emails: Record<string, string | null> = {};
