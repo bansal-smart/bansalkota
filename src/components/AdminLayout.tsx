@@ -18,6 +18,7 @@ import {
   HeartHandshake,
   Library,
   Swords,
+  School,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
