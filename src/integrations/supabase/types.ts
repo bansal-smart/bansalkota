@@ -1288,6 +1288,127 @@ export type Database = {
           },
         ]
       }
+      mentor_announcement_rsvps: {
+        Row: {
+          announcement_id: string
+          created_at: string
+          id: string
+          responded_at: string | null
+          response: string
+          student_id: string
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          response?: string
+          student_id: string
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          response?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_announcement_rsvps_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_announcements: {
+        Row: {
+          agenda: string | null
+          created_at: string
+          duration_minutes: number
+          id: string
+          meeting_at: string
+          meeting_url: string | null
+          mentor_id: string
+          parent_template_id: string | null
+          recurrence: string
+          recurrence_active: boolean
+          recurrence_interval_days: number | null
+          reminder_sent_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          meeting_at: string
+          meeting_url?: string | null
+          mentor_id: string
+          parent_template_id?: string | null
+          recurrence?: string
+          recurrence_active?: boolean
+          recurrence_interval_days?: number | null
+          reminder_sent_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          meeting_at?: string
+          meeting_url?: string | null
+          mentor_id?: string
+          parent_template_id?: string | null
+          recurrence?: string
+          recurrence_active?: boolean
+          recurrence_interval_days?: number | null
+          reminder_sent_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_announcements_parent_template_id_fkey"
+            columns: ["parent_template_id"]
+            isOneToOne: false
+            referencedRelation: "mentor_announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mentor_backup_pool: {
+        Row: {
+          added_by: string
+          backup_mentor_id: string
+          created_at: string
+          id: string
+          primary_mentor_id: string
+        }
+        Insert: {
+          added_by: string
+          backup_mentor_id: string
+          created_at?: string
+          id?: string
+          primary_mentor_id: string
+        }
+        Update: {
+          added_by?: string
+          backup_mentor_id?: string
+          created_at?: string
+          id?: string
+          primary_mentor_id?: string
+        }
+        Relationships: []
+      }
       mentor_group_members: {
         Row: {
           group_id: string
@@ -1362,6 +1483,42 @@ export type Database = {
           mentor_id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      mentor_handovers: {
+        Row: {
+          backup_mentor_id: string
+          created_at: string
+          created_by: string
+          ended_early_at: string | null
+          ends_at: string
+          id: string
+          primary_mentor_id: string
+          reason: string | null
+          started_at: string
+        }
+        Insert: {
+          backup_mentor_id: string
+          created_at?: string
+          created_by: string
+          ended_early_at?: string | null
+          ends_at: string
+          id?: string
+          primary_mentor_id: string
+          reason?: string | null
+          started_at?: string
+        }
+        Update: {
+          backup_mentor_id?: string
+          created_at?: string
+          created_by?: string
+          ended_early_at?: string | null
+          ends_at?: string
+          id?: string
+          primary_mentor_id?: string
+          reason?: string | null
+          started_at?: string
         }
         Relationships: []
       }
@@ -2090,6 +2247,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_active_backup_for_mentor: {
+        Args: { _backup: string; _primary: string }
+        Returns: boolean
+      }
+      is_active_backup_for_student: {
+        Args: { _mentor: string; _student: string }
         Returns: boolean
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
