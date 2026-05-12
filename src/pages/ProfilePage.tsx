@@ -42,7 +42,7 @@ const ProfilePage = () => {
         supabase.from("test_attempts").select("percentile").eq("user_id", authUser.id).order("attempted_at", { ascending: false }).limit(5),
       ]);
       if (!active) return;
-      const p = profileRes.data;
+      const p = profileRes.data as any;
       if (p) {
         setForm({
           full_name: p.full_name || "",
@@ -53,6 +53,10 @@ const ProfilePage = () => {
           goal: p.goal || "",
           avatar_url: p.avatar_url || "",
         });
+        if (p.school_id) {
+          const { data: sch } = await (supabase as any).from("schools").select("name").eq("id", p.school_id).maybeSingle();
+          if (active) setSchoolName(sch?.name ?? null);
+        }
       }
       const sessions = sessionsRes.data ?? [];
       const att = sessions.reduce((s, r) => s + (r.questions_attempted ?? 0), 0);
