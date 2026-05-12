@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trophy, Crown, Inbox, Filter } from "lucide-react";
+import { Trophy, Crown, Inbox, Filter, School as SchoolIcon, Globe2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,7 @@ type Row = Rating & {
   accuracy: number;
   initials: string;
   isYou: boolean;
+  schoolId: string | null;
 };
 
 const RANGE_OPTIONS = [
@@ -50,9 +51,13 @@ const LeaderboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
+  const [schoolMap, setSchoolMap] = useState<Record<string, string | null>>({});
+  const [mySchoolId, setMySchoolId] = useState<string | null>(null);
+  const [mySchoolName, setMySchoolName] = useState<string | null>(null);
   const [exams, setExams] = useState<string[]>([]);
   const [examFilter, setExamFilter] = useState<string>("all");
   const [rangeFilter, setRangeFilter] = useState<string>("all");
+  const [scopeFilter, setScopeFilter] = useState<"global" | "school">("global");
 
   const load = useCallback(async () => {
     const { data: r } = await supabase
@@ -64,7 +69,6 @@ const LeaderboardPage = () => {
     setRatings(list);
     setExams(Array.from(new Set(list.map(x => x.target_exam).filter(Boolean))));
 
-    // Pull names from compete_matches (stored snapshots)
     const ids = Array.from(new Set(list.map(x => x.user_id)));
     if (ids.length) {
       const { data: m } = await supabase
@@ -78,10 +82,34 @@ const LeaderboardPage = () => {
         if (row.player1_id && row.player1_name && !map[row.player1_id]) map[row.player1_id] = row.player1_name;
         if (row.player2_id && row.player2_name && !map[row.player2_id]) map[row.player2_id] = row.player2_name;
       });
-      // Own name from profile
+
+      // Fetch school_id + full_name for all ranked users
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, school_id")
+        .in("user_id", ids);
+      const sMap: Record<string, string | null> = {};
+      (profs ?? []).forEach((p: any) => {
+        sMap[p.user_id] = p.school_id ?? null;
+        if (p.full_name && !map[p.user_id]) map[p.user_id] = p.full_name;
+      });
+      setSchoolMap(sMap);
+
       if (user) {
-        const { data: p } = await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("full_name, school_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
         if (p?.full_name) map[user.id] = p.full_name;
+        const sid = (p as any)?.school_id ?? null;
+        setMySchoolId(sid);
+        if (sid) {
+          const { data: s } = await supabase.from("schools").select("name").eq("id", sid).maybeSingle();
+          setMySchoolName((s as any)?.name ?? null);
+        } else {
+          setMySchoolName(null);
+        }
       }
       setNameMap(map);
     }
@@ -93,7 +121,6 @@ const LeaderboardPage = () => {
     load();
   }, [load]);
 
-  // Realtime
   useEffect(() => {
     const ch = supabase
       .channel("leaderboard-ratings")
@@ -102,12 +129,21 @@ const LeaderboardPage = () => {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
+  // Auto-revert if scope=school but user has no school
+  useEffect(() => {
+    if (scopeFilter === "school" && !mySchoolId && !loading) setScopeFilter("global");
+  }, [scopeFilter, mySchoolId, loading]);
+
   const rows: Row[] = useMemo(() => {
     const since = rangeFilter === "all" ? 0 : Date.now() - Number(rangeFilter) * 24 * 60 * 60 * 1000;
     return ratings
       .filter(r => {
         if (examFilter !== "all" && r.target_exam !== examFilter) return false;
         if (since && new Date(r.updated_at).getTime() < since) return false;
+        if (scopeFilter === "school") {
+          if (!mySchoolId) return false;
+          if (schoolMap[r.user_id] !== mySchoolId) return false;
+        }
         return true;
       })
       .sort((a, b) => b.rating - a.rating)
@@ -122,9 +158,10 @@ const LeaderboardPage = () => {
           accuracy: matches ? Math.round((r.wins / matches) * 100) : 0,
           initials: initialsOf(name),
           isYou: !!user && r.user_id === user.id,
+          schoolId: schoolMap[r.user_id] ?? null,
         };
       });
-  }, [ratings, examFilter, rangeFilter, nameMap, user?.id]);
+  }, [ratings, examFilter, rangeFilter, nameMap, user?.id, scopeFilter, mySchoolId, schoolMap]);
 
   const topThree = rows.slice(0, 3);
   const rest = rows.slice(3, 50);
@@ -140,7 +177,11 @@ const LeaderboardPage = () => {
         <h1 className="text-lg font-black font-display text-white flex items-center gap-2">
           <Trophy className="h-5 w-5 text-accent" /> Leaderboard
         </h1>
-        <p className="text-[11px] text-white/70 mt-1">Live rankings from Compete matches</p>
+        <p className="text-[11px] text-white/70 mt-1">
+          {scopeFilter === "school" && mySchoolName
+            ? `Ranking within ${mySchoolName}`
+            : "Live rankings from Compete matches"}
+        </p>
       </div>
 
       <div className="p-4 lg:p-6 space-y-5">
@@ -149,6 +190,22 @@ const LeaderboardPage = () => {
           <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
             <Filter className="h-3.5 w-3.5" /> Filters
           </div>
+          <Select value={scopeFilter} onValueChange={(v) => setScopeFilter(v as "global" | "school")}>
+            <SelectTrigger className="h-9 w-auto min-w-[160px] text-xs">
+              <SelectValue placeholder="Scope" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="global">
+                <span className="flex items-center gap-2"><Globe2 className="h-3.5 w-3.5" /> Global</span>
+              </SelectItem>
+              <SelectItem value="school" disabled={!mySchoolId}>
+                <span className="flex items-center gap-2">
+                  <SchoolIcon className="h-3.5 w-3.5" />
+                  {mySchoolId ? `My School${mySchoolName ? ` (${mySchoolName})` : ""}` : "My School (not linked)"}
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={examFilter} onValueChange={setExamFilter}>
             <SelectTrigger className="h-9 w-auto min-w-[140px] text-xs">
               <SelectValue placeholder="Exam" />
@@ -177,7 +234,12 @@ const LeaderboardPage = () => {
           <Skeleton className="h-44 w-full" />
         ) : topThree.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card">
-            <EmptyState title="No rankings yet" hint="Play Compete matches to appear on the leaderboard." />
+            <EmptyState
+              title={scopeFilter === "school" ? "No school rankings yet" : "No rankings yet"}
+              hint={scopeFilter === "school"
+                ? "Once classmates from your school play Compete, they'll show up here."
+                : "Play Compete matches to appear on the leaderboard."}
+            />
           </div>
         ) : (
           <div className="flex items-end justify-center gap-4 py-6 animate-fade-in-up">
@@ -243,7 +305,10 @@ const LeaderboardPage = () => {
 
         {yourRow && (
           <div className="sticky bottom-20 lg:bottom-4 bg-gradient-to-r from-primary to-accent rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
-            <span className="text-xs font-bold text-primary-foreground">Your Position</span>
+            <span className="text-xs font-bold text-primary-foreground flex items-center gap-1.5">
+              {scopeFilter === "school" ? <SchoolIcon className="h-3.5 w-3.5" /> : <Globe2 className="h-3.5 w-3.5" />}
+              Your Position {scopeFilter === "school" ? "(School)" : "(Global)"}
+            </span>
             <span className="text-sm font-black font-display text-primary-foreground">#{yourRow.rank} · {yourRow.rating}</span>
           </div>
         )}
