@@ -140,7 +140,13 @@ const AdminSchoolsPage = () => {
   };
 
   const remove = async (s: SchoolRow) => {
-    if (!confirm(`Delete "${s.name}"? Students will keep their accounts but be unlinked.`)) return;
+    const ok = await confirm({
+      title: `Delete "${s.name}"?`,
+      description: "Students will keep their accounts but will be unlinked from this school. This action cannot be undone.",
+      confirmLabel: "Delete school",
+      variant: "destructive",
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from("schools").delete().eq("id", s.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
