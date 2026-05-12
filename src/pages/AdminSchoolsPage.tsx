@@ -24,6 +24,21 @@ const empty: Draft = { name: "", board: "CBSE", is_active: true };
 
 const BOARDS = ["CBSE", "ICSE", "IB", "CBSE-i", "State Board", "Other"];
 
+const generateSchoolCode = (name: string): string => {
+  const cleaned = (name || "").toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").trim();
+  if (!cleaned) return "";
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  let prefix = "";
+  if (words.length >= 2) {
+    prefix = words.slice(0, 4).map((w) => w[0]).join("");
+  } else {
+    prefix = words[0].slice(0, 4);
+  }
+  prefix = prefix.slice(0, 5).padEnd(3, "X");
+  const suffix = Math.floor(1000 + Math.random() * 9000).toString();
+  return `${prefix}-${suffix}`;
+};
+
 type CsvRow = { full_name?: string; email?: string; phone?: string; class_level?: string; target_exam?: string; city?: string };
 type ResultRow = { email: string | null; status: string; error?: string; temp_password?: string | null };
 
@@ -102,7 +117,7 @@ const AdminSchoolsPage = () => {
     setSaving(true);
     const payload: any = {
       name: editing.name.trim(),
-      code: editing.code?.trim() || null,
+      code: editing.code?.trim() || (editing.id ? null : generateSchoolCode(editing.name)),
       city: editing.city?.trim() || null,
       country: editing.country?.trim() || null,
       board: editing.board || null,
@@ -236,9 +251,37 @@ const AdminSchoolsPage = () => {
               <h2 className="text-lg font-bold">{editing.id ? "Edit School" : "New School"}</h2>
               <button onClick={() => setEditing(null)} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
-            <Field label="Name *"><Input v={editing.name} on={(v) => setEditing({ ...editing, name: v })} /></Field>
+            <Field label="Name *">
+              <Input
+                v={editing.name}
+                on={(v) => {
+                  const next: Draft = { ...editing, name: v };
+                  if (!editing.id && !editing.code?.trim()) {
+                    next.code = generateSchoolCode(v);
+                  }
+                  setEditing(next);
+                }}
+              />
+            </Field>
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Code"><Input v={editing.code ?? ""} on={(v) => setEditing({ ...editing, code: v })} /></Field>
+              <Field label="Code (auto-generated)">
+                <div className="flex items-center gap-1">
+                  <input
+                    value={editing.code ?? ""}
+                    readOnly
+                    className="sch-input flex-1 bg-muted/40 font-mono text-xs"
+                    placeholder="Auto from name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...editing, code: generateSchoolCode(editing.name || "SCH") })}
+                    title="Regenerate code"
+                    className="rounded-md border border-border bg-background px-2 py-2 text-xs font-semibold hover:bg-muted"
+                  >
+                    ↻
+                  </button>
+                </div>
+              </Field>
               <Field label="Board">
                 <select value={editing.board ?? ""} onChange={(e) => setEditing({ ...editing, board: e.target.value })} className="sch-input">
                   <option value="">—</option>
