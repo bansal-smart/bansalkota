@@ -353,6 +353,7 @@ const AdminStudentsPage = () => {
                     <td className="p-3 hidden sm:table-cell text-muted-foreground">{u.phone || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
+                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.school_name || "—"}</td>
                     <td className="p-3">
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">{u.plan}</span>
                     </td>
