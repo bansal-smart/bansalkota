@@ -24,6 +24,21 @@ const empty: Draft = { name: "", board: "CBSE", is_active: true };
 
 const BOARDS = ["CBSE", "ICSE", "IB", "CBSE-i", "State Board", "Other"];
 
+const generateSchoolCode = (name: string): string => {
+  const cleaned = (name || "").toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").trim();
+  if (!cleaned) return "";
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  let prefix = "";
+  if (words.length >= 2) {
+    prefix = words.slice(0, 4).map((w) => w[0]).join("");
+  } else {
+    prefix = words[0].slice(0, 4);
+  }
+  prefix = prefix.slice(0, 5).padEnd(3, "X");
+  const suffix = Math.floor(1000 + Math.random() * 9000).toString();
+  return `${prefix}-${suffix}`;
+};
+
 type CsvRow = { full_name?: string; email?: string; phone?: string; class_level?: string; target_exam?: string; city?: string };
 type ResultRow = { email: string | null; status: string; error?: string; temp_password?: string | null };
 
