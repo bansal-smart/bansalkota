@@ -68,6 +68,15 @@ const AdminStudentsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<StudentRow | null>(null);
+  const [schools, setSchools] = useState<SchoolLite[]>([]);
+  const [schoolFilter, setSchoolFilter] = useState<string>(""); // "", "none", or school id
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).from("schools").select("id, name").order("name");
+      setSchools((data as SchoolLite[]) ?? []);
+    })();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
