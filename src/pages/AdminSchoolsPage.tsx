@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { School, Plus, Edit3, Trash2, Loader2, X, Upload, Users, ChevronRight, Copy, Download, FileText } from "lucide-react";
