@@ -246,14 +246,25 @@ const AdminStudentsPage = () => {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          placeholder="Search by name, phone, city, or target exam..."
-          className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
-        />
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            placeholder="Search by name, phone, city, or target exam..."
+            className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <select
+          value={schoolFilter}
+          onChange={(e) => { setSchoolFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="">All schools</option>
+          <option value="none">Not associated</option>
+          {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
       </div>
 
       {selected.length > 0 && (
