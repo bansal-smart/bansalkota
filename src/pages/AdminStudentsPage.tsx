@@ -312,13 +312,13 @@ const AdminStudentsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-10 text-center">
+                  <td colSpan={10} className="p-10 text-center">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-10 text-center text-muted-foreground">No students found.</td>
+                  <td colSpan={10} className="p-10 text-center text-muted-foreground">No students found.</td>
                 </tr>
               ) : (
                 rows.map((u) => (
