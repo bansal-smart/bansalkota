@@ -37,8 +37,34 @@ const AdminSchoolsPage = () => {
   const [students, setStudents] = useState<Array<{ user_id: string; full_name: string | null; class_level: string | null; target_exam: string | null }>>([]);
   const [csvOpen, setCsvOpen] = useState(false);
   const [csvText, setCsvText] = useState("");
+  const [csvFileName, setCsvFileName] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState<ResultRow[] | null>(null);
+
+  const CSV_TEMPLATE = "full_name,email,phone,class_level,target_exam,city\nAarav Sharma,aarav@example.com,9999999999,12,JEE Main,Delhi\nIsha Verma,isha@example.com,9888888888,11,NEET,Mumbai\n";
+
+  const downloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "school-students-template.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFile = async (file: File | null) => {
+    if (!file) return;
+    if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") {
+      return toast.error("Please select a .csv file");
+    }
+    if (file.size > 5 * 1024 * 1024) return toast.error("File too large (max 5MB)");
+    const text = await file.text();
+    setCsvText(text);
+    setCsvFileName(file.name);
+  };
 
   const reload = async () => {
     setLoading(true);
