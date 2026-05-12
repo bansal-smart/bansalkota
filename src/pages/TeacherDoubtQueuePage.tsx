@@ -28,6 +28,35 @@ const TeacherDoubtQueuePage = () => {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+
+  const generateDraft = async () => {
+    if (!selected) return;
+    setDrafting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("teacher-ai-draft", {
+        body: {
+          subject: selected.subject,
+          topic: selected.topic,
+          question: selected.question_text,
+          imageUrl: selected.image_url,
+        },
+      });
+      if (error) throw error;
+      const draft = (data as { draft?: string } | null)?.draft?.trim();
+      if (!draft) {
+        toast.error("AI returned an empty draft");
+        return;
+      }
+      setAnswer((prev) => (prev.trim() ? `${prev}\n\n${draft}` : draft));
+      toast.success("Draft generated. Review and edit before sending.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to generate draft";
+      toast.error(msg);
+    } finally {
+      setDrafting(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
