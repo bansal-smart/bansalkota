@@ -132,7 +132,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [search, page, schoolFilter, schools]);
 
   useEffect(() => {
     load();
