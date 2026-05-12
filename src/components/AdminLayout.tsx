@@ -34,6 +34,7 @@ const baseNav: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
   { label: "Users", icon: Users, path: "/admin/users" },
   { label: "Students", icon: GraduationCap, path: "/admin/students" },
+  { label: "Schools", icon: School, path: "/admin/schools" },
   { label: "Mentor Assignments", icon: HeartHandshake, path: "/admin/mentor-assignments" },
   { label: "Mentor Handovers", icon: HeartHandshake, path: "/admin/mentor-handovers" },
   { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
