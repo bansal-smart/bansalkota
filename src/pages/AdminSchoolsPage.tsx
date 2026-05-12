@@ -44,6 +44,7 @@ type CsvRow = { full_name?: string; email?: string; phone?: string; class_level?
 type ResultRow = { email: string | null; status: string; error?: string; temp_password?: string | null };
 
 const AdminSchoolsPage = () => {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [schools, setSchools] = useState<SchoolRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Draft | null>(null);
