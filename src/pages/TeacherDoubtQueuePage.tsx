@@ -244,12 +244,27 @@ const TeacherDoubtQueuePage = () => {
               )}
             </div>
             <div className="p-4 md:p-5 space-y-3 flex-1">
-              <p className="text-xs font-semibold text-foreground">Your answer (markdown supported)</p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-foreground">Your answer (markdown supported)</p>
+                <button
+                  type="button"
+                  onClick={generateDraft}
+                  disabled={drafting}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-[11px] font-bold text-primary hover:bg-primary/10 disabled:opacity-50"
+                >
+                  {drafting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  {answer.trim() ? "Regenerate AI draft" : "Generate AI draft"}
+                </button>
+              </div>
+              <div className="inline-flex items-start gap-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 px-2.5 py-1.5 text-[10px] text-amber-700 dark:text-amber-400">
+                <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>AI drafts may be incorrect. Review and edit before sending — the student receives this as your answer.</span>
+              </div>
               <textarea
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
-                rows={6}
-                placeholder="Type your detailed answer... You can use **bold**, lists, and steps."
+                rows={8}
+                placeholder="Type your detailed answer, or click 'Generate AI draft' to start from an AI suggestion based on the question and image."
                 className="w-full rounded-lg border border-border bg-background p-3 text-sm outline-none resize-y focus:border-primary"
               />
               <button
