@@ -251,9 +251,37 @@ const AdminSchoolsPage = () => {
               <h2 className="text-lg font-bold">{editing.id ? "Edit School" : "New School"}</h2>
               <button onClick={() => setEditing(null)} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
-            <Field label="Name *"><Input v={editing.name} on={(v) => setEditing({ ...editing, name: v })} /></Field>
+            <Field label="Name *">
+              <Input
+                v={editing.name}
+                on={(v) => {
+                  const next: Draft = { ...editing, name: v };
+                  if (!editing.id && !editing.code?.trim()) {
+                    next.code = generateSchoolCode(v);
+                  }
+                  setEditing(next);
+                }}
+              />
+            </Field>
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Code"><Input v={editing.code ?? ""} on={(v) => setEditing({ ...editing, code: v })} /></Field>
+              <Field label="Code (auto-generated)">
+                <div className="flex items-center gap-1">
+                  <input
+                    value={editing.code ?? ""}
+                    readOnly
+                    className="sch-input flex-1 bg-muted/40 font-mono text-xs"
+                    placeholder="Auto from name"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...editing, code: generateSchoolCode(editing.name || "SCH") })}
+                    title="Regenerate code"
+                    className="rounded-md border border-border bg-background px-2 py-2 text-xs font-semibold hover:bg-muted"
+                  >
+                    ↻
+                  </button>
+                </div>
+              </Field>
               <Field label="Board">
                 <select value={editing.board ?? ""} onChange={(e) => setEditing({ ...editing, board: e.target.value })} className="sch-input">
                   <option value="">—</option>
