@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, MessageCircle, Users, BarChart3, Settings, Flame, Search } from "lucide-react";
+import { Home, MessageCircle, Users, BarChart3, Settings, Flame, Search, Megaphone } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +11,7 @@ type NavItem = { label: string; icon: typeof Home; path: string };
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: Home, path: "/mentor/dashboard" },
   { label: "My Students", icon: Users, path: "/mentor/students" },
+  { label: "Announcements", icon: Megaphone, path: "/mentor/announcements" },
   { label: "Chats", icon: MessageCircle, path: "/mentor/chats" },
   { label: "Performance", icon: BarChart3, path: "/mentor/performance" },
   { label: "Settings", icon: Settings, path: "/mentor/settings" },
