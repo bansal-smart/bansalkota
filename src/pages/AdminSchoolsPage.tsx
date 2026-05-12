@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { School, Plus, Edit3, Trash2, Loader2, X, Upload, Users, ChevronRight, Copy, Download, FileText } from "lucide-react";
@@ -43,6 +44,7 @@ type CsvRow = { full_name?: string; email?: string; phone?: string; class_level?
 type ResultRow = { email: string | null; status: string; error?: string; temp_password?: string | null };
 
 const AdminSchoolsPage = () => {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [schools, setSchools] = useState<SchoolRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Draft | null>(null);
@@ -138,7 +140,13 @@ const AdminSchoolsPage = () => {
   };
 
   const remove = async (s: SchoolRow) => {
-    if (!confirm(`Delete "${s.name}"? Students will keep their accounts but be unlinked.`)) return;
+    const ok = await confirm({
+      title: `Delete "${s.name}"?`,
+      description: "Students will keep their accounts but will be unlinked from this school. This action cannot be undone.",
+      confirmLabel: "Delete school",
+      variant: "destructive",
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from("schools").delete().eq("id", s.id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
@@ -438,6 +446,7 @@ const AdminSchoolsPage = () => {
       )}
 
       <style>{`.sch-input { width: 100%; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none; } .sch-input:focus { border-color: hsl(var(--primary)); }`}</style>
+      {ConfirmDialog}
     </div>
   );
 };
