@@ -26,6 +26,7 @@ const ProfilePage = () => {
     avatar_url: "",
   });
   const [stats, setStats] = useState({ streak: 0, tests: 0, accuracy: 0, percentile: 0 });
+  const [schoolName, setSchoolName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
