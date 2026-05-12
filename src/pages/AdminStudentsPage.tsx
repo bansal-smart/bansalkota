@@ -19,7 +19,11 @@ type StudentRow = {
   doubt_preference: string;
   created_at: string;
   email?: string | null;
+  school_id?: string | null;
+  school_name?: string | null;
 };
+
+type SchoolLite = { id: string; name: string };
 
 const PAGE_SIZE = 25;
 
