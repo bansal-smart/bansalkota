@@ -173,11 +173,11 @@ const LeaderboardPage = () => {
 
   return (
     <div className="pb-20 lg:pb-0">
-      <div className="bg-gradient-to-br from-[hsl(var(--navy))] to-[hsl(var(--navy2))] grid-texture px-4 pt-4 pb-5">
+      <div className="bg-gradient-to-br from-navy to-navy-light grid-texture px-4 pt-4 pb-5 rounded-b-2xl">
         <h1 className="text-lg font-black font-display text-white flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-accent" /> Leaderboard
+          <Trophy className="h-5 w-5 text-primary" /> Leaderboard
         </h1>
-        <p className="text-[11px] text-white/70 mt-1">
+        <p className="text-[11px] text-white/80 mt-1">
           {scopeFilter === "school" && mySchoolName
             ? `Ranking within ${mySchoolName}`
             : "Live rankings from Compete matches"}
