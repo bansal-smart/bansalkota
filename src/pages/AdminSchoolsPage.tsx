@@ -117,7 +117,7 @@ const AdminSchoolsPage = () => {
     setSaving(true);
     const payload: any = {
       name: editing.name.trim(),
-      code: editing.code?.trim() || null,
+      code: editing.code?.trim() || (editing.id ? null : generateSchoolCode(editing.name)),
       city: editing.city?.trim() || null,
       country: editing.country?.trim() || null,
       board: editing.board || null,
