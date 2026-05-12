@@ -86,6 +86,7 @@ import MentorSettingsPage from "./pages/MentorSettingsPage";
 import MentorStudentsPage from "./pages/MentorStudentsPage";
 import MentorAnnouncementsPage from "./pages/MentorAnnouncementsPage";
 import AdminMentorHandoversPage from "./pages/AdminMentorHandoversPage";
+import AdminSchoolsPage from "./pages/AdminSchoolsPage";
 import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
