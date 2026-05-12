@@ -86,6 +86,7 @@ import MentorSettingsPage from "./pages/MentorSettingsPage";
 import MentorStudentsPage from "./pages/MentorStudentsPage";
 import MentorAnnouncementsPage from "./pages/MentorAnnouncementsPage";
 import AdminMentorHandoversPage from "./pages/AdminMentorHandoversPage";
+import AdminSchoolsPage from "./pages/AdminSchoolsPage";
 import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
@@ -221,6 +222,7 @@ const App = () => (
               <Route path="/admin/reports" element={<AdminReportsPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/students" element={<AdminStudentsPage />} />
+              <Route path="/admin/schools" element={<AdminSchoolsPage />} />
               <Route path="/admin/mentor-assignments" element={<AdminMentorAssignmentsPage />} />
               <Route path="/admin/mentor-handovers" element={<AdminMentorHandoversPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />

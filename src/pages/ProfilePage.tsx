@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Flame, Target, ClipboardCheck, Trophy, Loader2 } from "lucide-react";
+import { Camera, Flame, Target, ClipboardCheck, Trophy, Loader2, School } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
@@ -26,6 +26,7 @@ const ProfilePage = () => {
     avatar_url: "",
   });
   const [stats, setStats] = useState({ streak: 0, tests: 0, accuracy: 0, percentile: 0 });
+  const [schoolName, setSchoolName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -41,7 +42,7 @@ const ProfilePage = () => {
         supabase.from("test_attempts").select("percentile").eq("user_id", authUser.id).order("attempted_at", { ascending: false }).limit(5),
       ]);
       if (!active) return;
-      const p = profileRes.data;
+      const p = profileRes.data as any;
       if (p) {
         setForm({
           full_name: p.full_name || "",
@@ -52,6 +53,10 @@ const ProfilePage = () => {
           goal: p.goal || "",
           avatar_url: p.avatar_url || "",
         });
+        if (p.school_id) {
+          const { data: sch } = await (supabase as any).from("schools").select("name").eq("id", p.school_id).maybeSingle();
+          if (active) setSchoolName(sch?.name ?? null);
+        }
       }
       const sessions = sessionsRes.data ?? [];
       const att = sessions.reduce((s, r) => s + (r.questions_attempted ?? 0), 0);
@@ -160,6 +165,7 @@ const ProfilePage = () => {
           <div className="flex items-center justify-center gap-2 mt-2">
             {form.target_exam && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">{form.target_exam}</span>}
             {form.goal && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">{form.goal}</span>}
+            {schoolName && <span className="inline-flex items-center gap-1 rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white"><School className="h-3 w-3" />{schoolName}</span>}
           </div>
           <p className="text-xs text-white/90 mt-2 font-medium">{[form.city, form.country].filter(Boolean).join(", ") || user?.email}</p>
         </div>

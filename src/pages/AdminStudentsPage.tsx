@@ -19,7 +19,11 @@ type StudentRow = {
   doubt_preference: string;
   created_at: string;
   email?: string | null;
+  school_id?: string | null;
+  school_name?: string | null;
 };
+
+type SchoolLite = { id: string; name: string };
 
 const PAGE_SIZE = 25;
 
@@ -64,6 +68,15 @@ const AdminStudentsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<StudentRow | null>(null);
+  const [schools, setSchools] = useState<SchoolLite[]>([]);
+  const [schoolFilter, setSchoolFilter] = useState<string>(""); // "", "none", or school id
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any).from("schools").select("id, name").order("name");
+      setSchools((data as SchoolLite[]) ?? []);
+    })();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,10 +92,10 @@ const AdminStudentsPage = () => {
         setRows([]); setTotal(0); setLoading(false); return;
       }
 
-      let query = supabase
+      let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at",
+          "user_id, full_name, phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, school_id",
           { count: "exact" },
         )
         .in("user_id", studentIds)
@@ -92,6 +105,8 @@ const AdminStudentsPage = () => {
         const s = search.trim();
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%`);
       }
+      if (schoolFilter === "none") query = query.is("school_id", null);
+      else if (schoolFilter) query = query.eq("school_id", schoolFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -99,6 +114,8 @@ const AdminStudentsPage = () => {
       if (error) throw error;
 
       const baseRows = (data ?? []) as StudentRow[];
+      const schoolMap = new Map(schools.map((s) => [s.id, s.name]));
+      baseRows.forEach((r) => { r.school_name = r.school_id ? schoolMap.get(r.school_id) ?? null : null; });
 
       // Fetch emails via edge function for visible rows
       let emails: Record<string, string | null> = {};
@@ -115,7 +132,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [search, page, schoolFilter, schools]);
 
   useEffect(() => {
     load();
@@ -229,14 +246,25 @@ const AdminStudentsPage = () => {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-          placeholder="Search by name, phone, city, or target exam..."
-          className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
-        />
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+            placeholder="Search by name, phone, city, or target exam..."
+            className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <select
+          value={schoolFilter}
+          onChange={(e) => { setSchoolFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="">All schools</option>
+          <option value="none">Not associated</option>
+          {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
       </div>
 
       {selected.length > 0 && (
@@ -275,6 +303,7 @@ const AdminStudentsPage = () => {
                 <th className="p-3 text-left font-medium hidden sm:table-cell">Phone</th>
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Target Exam</th>
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Class</th>
+                <th className="p-3 text-left font-medium hidden lg:table-cell">School</th>
                 <th className="p-3 text-left font-medium">Plan</th>
                 <th className="p-3 text-left font-medium hidden xl:table-cell">Joined</th>
                 <th className="p-3 text-left font-medium">Status</th>
@@ -283,13 +312,13 @@ const AdminStudentsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-10 text-center">
+                  <td colSpan={10} className="p-10 text-center">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-10 text-center text-muted-foreground">No students found.</td>
+                  <td colSpan={10} className="p-10 text-center text-muted-foreground">No students found.</td>
                 </tr>
               ) : (
                 rows.map((u) => (
@@ -324,6 +353,7 @@ const AdminStudentsPage = () => {
                     <td className="p-3 hidden sm:table-cell text-muted-foreground">{u.phone || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
+                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.school_name || "—"}</td>
                     <td className="p-3">
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">{u.plan}</span>
                     </td>

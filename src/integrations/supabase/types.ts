@@ -1787,10 +1787,12 @@ export type Database = {
           full_name: string | null
           goal: string | null
           id: string
+          is_associated_to_school: boolean
           is_suspended: boolean
           onboarding_completed: boolean
           phone: string | null
           plan: string
+          school_id: string | null
           target_exam: string | null
           updated_at: string
           user_id: string
@@ -1805,10 +1807,12 @@ export type Database = {
           full_name?: string | null
           goal?: string | null
           id?: string
+          is_associated_to_school?: boolean
           is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
+          school_id?: string | null
           target_exam?: string | null
           updated_at?: string
           user_id: string
@@ -1823,15 +1827,25 @@ export type Database = {
           full_name?: string | null
           goal?: string | null
           id?: string
+          is_associated_to_school?: boolean
           is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
+          school_id?: string | null
           target_exam?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       question_bank: {
         Row: {
@@ -1937,6 +1951,57 @@ export type Database = {
           resolution_notes?: string | null
           status?: string
           subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      schools: {
+        Row: {
+          address: string | null
+          board: string | null
+          city: string | null
+          code: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          board?: string | null
+          city?: string | null
+          code?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          board?: string | null
+          city?: string | null
+          code?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
           updated_at?: string
         }
         Relationships: []
