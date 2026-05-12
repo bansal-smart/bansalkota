@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
-import { Users, MessageCircle, BarChart3, Sparkles, TrendingUp, Loader2 } from "lucide-react";
+import { Users, MessageCircle, BarChart3, Sparkles, TrendingUp, Loader2, CalendarPlus, Megaphone } from "lucide-react";
+import { useMentorAnnouncements } from "@/hooks/useMentorAnnouncements";
+import MentorAnnouncementDialog from "@/components/MentorAnnouncementDialog";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +19,11 @@ const MentorDashboard = () => {
   const { user } = useAuth();
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [annDialogOpen, setAnnDialogOpen] = useState(false);
+  const { items: announcements, rsvps, refresh: refreshAnnouncements } = useMentorAnnouncements(user?.id);
+  const upcomingMeeting = announcements
+    .filter((a) => a.status !== "cancelled" && new Date(a.meeting_at).getTime() > Date.now())
+    .sort((a, b) => +new Date(a.meeting_at) - +new Date(b.meeting_at))[0];
 
   useEffect(() => {
     if (!user) return;
@@ -169,12 +177,57 @@ const MentorDashboard = () => {
         ))}
       </div>
 
+      <section className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/15 text-secondary">
+              <Megaphone className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-display text-lg font-bold text-foreground">Mentor meeting</h2>
+              {upcomingMeeting ? (
+                <>
+                  <p className="text-sm text-foreground/80">
+                    Next: <span className="font-semibold">{upcomingMeeting.title}</span> ·{" "}
+                    {new Date(upcomingMeeting.meeting_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {(rsvps[upcomingMeeting.id]?.attending ?? 0)} attending ·{" "}
+                    {(rsvps[upcomingMeeting.id]?.declined ?? 0)} declined ·{" "}
+                    {(rsvps[upcomingMeeting.id]?.no_response ?? 0)} pending
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No meetings scheduled. Announce one to keep mentees in the loop.</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Link to="/mentor/announcements">
+              <Button variant="outline" size="sm">View all</Button>
+            </Link>
+            <Button size="sm" onClick={() => setAnnDialogOpen(true)}>
+              <CalendarPlus className="h-4 w-4 mr-2" /> Announce meeting
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {!loading && kpis?.studentCount === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center">
           <p className="text-sm text-muted-foreground">
             You don't have any assigned students yet. An admin will assign mentees to your group soon.
           </p>
         </div>
+      )}
+
+      {user && (
+        <MentorAnnouncementDialog
+          open={annDialogOpen}
+          onOpenChange={setAnnDialogOpen}
+          mentorId={user.id}
+          onSaved={refreshAnnouncements}
+        />
       )}
     </div>
   );

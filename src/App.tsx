@@ -84,6 +84,8 @@ import MentorChatsPage from "./pages/MentorChatsPage";
 import MentorPerformancePage from "./pages/MentorPerformancePage";
 import MentorSettingsPage from "./pages/MentorSettingsPage";
 import MentorStudentsPage from "./pages/MentorStudentsPage";
+import MentorAnnouncementsPage from "./pages/MentorAnnouncementsPage";
+import AdminMentorHandoversPage from "./pages/AdminMentorHandoversPage";
 import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
@@ -193,6 +195,7 @@ const App = () => (
               <Route element={<MentorLayout />}>
                 <Route path="/mentor/dashboard" element={<MentorDashboard />} />
                 <Route path="/mentor/students" element={<MentorStudentsPage />} />
+                <Route path="/mentor/announcements" element={<MentorAnnouncementsPage />} />
                 <Route path="/mentor/chats" element={<MentorChatsPage />} />
                 <Route path="/mentor/performance" element={<MentorPerformancePage />} />
                 <Route path="/mentor/settings" element={<MentorSettingsPage />} />
@@ -219,6 +222,7 @@ const App = () => (
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/students" element={<AdminStudentsPage />} />
               <Route path="/admin/mentor-assignments" element={<AdminMentorAssignmentsPage />} />
+              <Route path="/admin/mentor-handovers" element={<AdminMentorHandoversPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
               <Route path="/admin/courses/new" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />

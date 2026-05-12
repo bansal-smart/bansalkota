@@ -4,6 +4,7 @@ import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
 import GoalSetupCard from "@/components/GoalSetupCard";
 import OnboardingTracker from "@/components/OnboardingTracker";
+import StudentMentorMeetingCard from "@/components/StudentMentorMeetingCard";
 import { useAppStore } from "@/store/useAppStore";
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -60,6 +61,7 @@ const StudentDashboard = () => {
 
         <OnboardingTracker />
         <GoalSetupCard />
+        <StudentMentorMeetingCard />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 stagger-children">
