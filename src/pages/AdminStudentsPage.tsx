@@ -303,6 +303,7 @@ const AdminStudentsPage = () => {
                 <th className="p-3 text-left font-medium hidden sm:table-cell">Phone</th>
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Target Exam</th>
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Class</th>
+                <th className="p-3 text-left font-medium hidden lg:table-cell">School</th>
                 <th className="p-3 text-left font-medium">Plan</th>
                 <th className="p-3 text-left font-medium hidden xl:table-cell">Joined</th>
                 <th className="p-3 text-left font-medium">Status</th>
