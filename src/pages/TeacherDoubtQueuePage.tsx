@@ -33,26 +33,70 @@ const TeacherDoubtQueuePage = () => {
   const generateDraft = async () => {
     if (!selected) return;
     setDrafting(true);
+    const doubt = selected;
     try {
-      const { data, error } = await supabase.functions.invoke("teacher-ai-draft", {
-        body: {
-          subject: selected.subject,
-          topic: selected.topic,
-          question: selected.question_text,
-          imageUrl: selected.image_url,
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const resp = await fetch(
+        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/teacher-ai-draft`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token ?? ""}`,
+          },
+          body: JSON.stringify({
+            subject: doubt.subject,
+            topic: doubt.topic,
+            question: doubt.question_text,
+            imageUrl: doubt.image_url,
+          }),
         },
-      });
-      if (error) throw error;
-      const draft = (data as { draft?: string } | null)?.draft?.trim();
+      );
+
+      const payload = await resp.json().catch(() => ({} as { draft?: string; error?: string }));
+
+      if (!resp.ok) {
+        const retry = { label: "Retry", onClick: () => generateDraft() };
+        if (resp.status === 429) {
+          toast.error("AI is busy right now", {
+            description: "Too many requests in a short time. Please wait a moment and try again.",
+            action: retry,
+          });
+        } else if (resp.status === 402) {
+          toast.error("AI credits exhausted", {
+            description: "The AI quota has been used up. Please contact your admin to top up credits.",
+          });
+        } else if (resp.status === 401) {
+          toast.error("Session expired", {
+            description: "Please sign in again to use the AI draft feature.",
+          });
+        } else if (resp.status >= 500) {
+          toast.error("AI service unavailable", {
+            description: payload.error || "Something went wrong on our side. Try again shortly.",
+            action: retry,
+          });
+        } else {
+          toast.error(payload.error || "Could not generate draft", { action: retry });
+        }
+        return;
+      }
+
+      const draft = payload.draft?.trim();
       if (!draft) {
-        toast.error("AI returned an empty draft");
+        toast.error("AI returned an empty draft", {
+          description: "Try rephrasing the question or regenerating.",
+          action: { label: "Retry", onClick: () => generateDraft() },
+        });
         return;
       }
       setAnswer((prev) => (prev.trim() ? `${prev}\n\n${draft}` : draft));
       toast.success("Draft generated. Review and edit before sending.");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to generate draft";
-      toast.error(msg);
+      toast.error("Network error", {
+        description: err instanceof Error ? err.message : "Could not reach the AI service.",
+        action: { label: "Retry", onClick: () => generateDraft() },
+      });
     } finally {
       setDrafting(false);
     }
