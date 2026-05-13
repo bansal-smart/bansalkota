@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Users, Loader2, ExternalLink, Play, Square, Video } from "lucide-react";
+import { ArrowLeft, Send, Users, Loader2, Play, Square, Video } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
+import arkeLogo from "@/assets/arke-logo.jpeg";
 
 type ClassRow = {
   id: string;
+  slug: string;
   title: string;
   subject: string;
   educator_name: string;
