@@ -79,7 +79,7 @@ const UnsubscribePage = () => {
               Unsubscribe from emails
             </h1>
             <p className="mt-2 text-center text-sm text-muted-foreground">
-              You&apos;ll stop receiving non-essential emails from Arambh. You&apos;ll still get critical
+              You&apos;ll stop receiving non-essential emails from Arke Scholars. You&apos;ll still get critical
               account messages like password resets.
             </p>
             <button
@@ -111,7 +111,7 @@ const UnsubscribePage = () => {
               onClick={() => navigate("/")}
               className="mt-6 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
-              Back to Arambh
+              Back to Arke Scholars
             </button>
           </Centered>
         )}
@@ -126,7 +126,7 @@ const UnsubscribePage = () => {
               onClick={() => navigate("/")}
               className="mt-6 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
             >
-              Back to Arambh
+              Back to Arke Scholars
             </button>
           </Centered>
         )}
@@ -141,7 +141,7 @@ const UnsubscribePage = () => {
               onClick={() => navigate("/")}
               className="mt-6 w-full rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background"
             >
-              Back to Arambh
+              Back to Arke Scholars
             </button>
           </Centered>
         )}
