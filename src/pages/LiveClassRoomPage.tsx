@@ -115,10 +115,10 @@ const LiveClassRoomPage = () => {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!user || !id || !text.trim()) return;
+    if (!user || !cls || !text.trim()) return;
     const display = storeUser?.full_name || user.email?.split("@")[0] || "Student";
     const { error } = await supabase.from("live_class_messages").insert({
-      class_id: id,
+      class_id: cls.id,
       user_id: user.id,
       display_name: display,
       is_teacher: false,
