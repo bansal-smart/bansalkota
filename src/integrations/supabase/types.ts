@@ -1249,7 +1249,7 @@ export type Database = {
           meeting_url?: string | null
           recording_url?: string | null
           scheduled_by?: string | null
-          slug: string
+          slug?: string
           starts_at: string
           status?: string
           subject: string
