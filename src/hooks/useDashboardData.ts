@@ -20,6 +20,7 @@ export interface DashboardData {
   }>;
   todaySchedule: Array<{
     id: string;
+    slug: string;
     title: string;
     subject: string;
     educator_name: string;
@@ -88,7 +89,7 @@ export const useDashboardData = (): DashboardData => {
           .limit(2),
         supabase
           .from("live_classes")
-          .select("id, title, subject, educator_name, starts_at, status, meeting_url")
+          .select("id, slug, title, subject, educator_name, starts_at, status, meeting_url")
           .gte("starts_at", todayISO.toISOString())
           .lt("starts_at", tomorrowISO.toISOString())
           .order("starts_at", { ascending: true }),

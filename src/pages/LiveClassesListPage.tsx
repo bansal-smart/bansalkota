@@ -63,7 +63,7 @@ const LiveClassesListPage = () => {
           <h2 className="text-sm font-bold text-foreground mb-3">Live now</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {live.map((c) => (
-              <Link key={c.id} to={`/live-classes/${c.id}`} className="rounded-2xl border border-border bg-card overflow-hidden hover-lift">
+              <Link key={c.id} to={`/live-classes/${c.slug}`} className="rounded-2xl border border-border bg-card overflow-hidden hover-lift">
                 <div className={`h-28 bg-gradient-to-br ${subjectColors[c.subject] ?? "from-primary to-accent"} relative flex items-center justify-center`}>
                   <Video className="h-12 w-12 text-white/40" />
                   <div className="absolute top-3 left-3"><LiveBadge /></div>
@@ -89,7 +89,7 @@ const LiveClassesListPage = () => {
         ) : (
           <div className="space-y-3">
             {upcoming.map((c) => (
-              <Link key={c.id} to={`/live-classes/${c.id}`} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover-lift">
+              <Link key={c.id} to={`/live-classes/${c.slug}`} className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 hover-lift">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${subjectColors[c.subject] ?? "from-primary to-accent"} text-white shrink-0`}>
                   <Video className="h-5 w-5" />
                 </div>
