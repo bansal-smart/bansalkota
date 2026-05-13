@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Send, Users, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Send, Users, Loader2 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -141,8 +141,8 @@ const LiveClassRoomPage = () => {
   const videoSrc = cls.recording_url || cls.meeting_url;
 
   return (
-    <div className="pb-20 lg:pb-0">
-      <div className="bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))] px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
+      <div className="shrink-0 bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))] px-4 py-3 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3 min-w-0">
           <Link to="/my-live-classes" className="text-white">
             <ArrowLeft className="h-5 w-5" />
@@ -160,41 +160,29 @@ const LiveClassRoomPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row">
-        <div className="flex-1">
-          <div className="relative aspect-video bg-[#0a0a0a] flex items-center justify-center">
-            {videoSrc ? (
-              <iframe
-                src={videoSrc}
-                title={cls.title}
-                allow="camera; microphone; fullscreen; display-capture"
-                className="absolute inset-0 h-full w-full"
-              />
-            ) : (
-              <div className="text-center text-white/60">
-                <p className="text-sm">No meeting link available yet.</p>
-                <p className="text-xs mt-1">Check back when the class goes live.</p>
-              </div>
-            )}
-          </div>
-          {videoSrc && (
-            <a
-              href={videoSrc}
-              target="_blank"
-              rel="noreferrer"
-              className="m-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/30"
-            >
-              <ExternalLink className="h-3 w-3" /> Open meeting in new tab
-            </a>
+      <div className="flex flex-1 min-h-0 flex-col md:flex-row">
+        <div className="flex-1 min-h-0 bg-[#0a0a0a] flex items-center justify-center">
+          {videoSrc ? (
+            <iframe
+              src={videoSrc}
+              title={cls.title}
+              allow="camera; microphone; fullscreen; display-capture"
+              className="h-full w-full border-0"
+            />
+          ) : (
+            <div className="text-center text-white/60 p-6">
+              <p className="text-sm">No meeting link available yet.</p>
+              <p className="text-xs mt-1">Check back when the class goes live.</p>
+            </div>
           )}
         </div>
 
-        <aside className="md:w-[300px] lg:w-[340px] border-t md:border-t-0 md:border-l border-border bg-card flex flex-col h-[60vh] md:h-auto">
-          <div className="px-4 py-3 border-b border-border">
+        <aside className="flex flex-col min-h-0 h-[45vh] md:h-auto md:w-[300px] lg:w-[340px] border-t md:border-t-0 md:border-l border-border bg-card">
+          <div className="shrink-0 px-4 py-3 border-b border-border">
             <p className="text-sm font-bold text-foreground">Live chat</p>
             <p className="text-[10px] text-muted-foreground">{messages.length} messages</p>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
             {messages.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">No messages yet — say hello!</p>
             ) : (
@@ -220,7 +208,7 @@ const LiveClassRoomPage = () => {
               e.preventDefault();
               sendMessage();
             }}
-            className="p-3 border-t border-border flex gap-2"
+            className="shrink-0 p-3 border-t border-border flex gap-2 bg-card"
           >
             <input
               value={text}
