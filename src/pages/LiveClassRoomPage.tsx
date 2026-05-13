@@ -192,14 +192,21 @@ const LiveClassRoomPage = () => {
       </div>
 
       <div className="flex flex-1 min-h-0 flex-col md:flex-row">
-        <div className="flex-1 min-h-0 bg-[#0a0a0a] flex items-center justify-center">
+        <div className="relative flex-1 min-h-0 bg-[#0a0a0a] flex items-center justify-center">
           {videoSrc ? (
-            <iframe
-              src={videoSrc}
-              title={cls.title}
-              allow="camera; microphone; fullscreen; display-capture"
-              className="h-full w-full border-0"
-            />
+            <>
+              <iframe
+                src={videoSrc}
+                title={cls.title}
+                allow="camera; microphone; fullscreen; display-capture"
+                className="h-full w-full border-0"
+              />
+              {/* Arke logo cover over Jitsi watermark (top-left of iframe) */}
+              <div className="pointer-events-none absolute top-2 left-2 md:top-3 md:left-3 z-10 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-1 backdrop-blur-sm">
+                <img src={arkeLogo} alt="Arke Scholars" className="h-5 md:h-6 w-auto rounded" />
+                <span className="text-[10px] md:text-xs font-bold text-white tracking-wide">Arke Scholars</span>
+              </div>
+            </>
           ) : (
             <div className="text-center text-white/60 p-6">
               <p className="text-sm">No meeting link available yet.</p>
