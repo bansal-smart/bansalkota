@@ -1,62 +1,58 @@
-## Student Report — Monthly PDF (Admin)
+## 1. Slugified live-class URLs
 
-Add a new admin section that lets the admin pick any student + any month, preview key academic statistics, and download a branded PDF report intended for parents.
+**Schema change** (migration):
+- Add `slug TEXT UNIQUE` column to `public.live_classes`.
+- Backfill existing rows: `slug = slugify(title) || '-' || substr(id::text, 1, 6)` to guarantee uniqueness.
+- Add a trigger `BEFORE INSERT/UPDATE OF title` that auto-generates the slug from `title` if `slug` is null or `title` changed, again suffixing with the first 6 chars of the row id to avoid collisions.
+- Make `slug NOT NULL` after backfill.
 
-### Navigation
-- Add a new sidebar item **"Student Report"** in `src/components/AdminLayout.tsx` (icon: `FileBarChart` from lucide-react), route `/admin/student-reports`.
-- Register the route in `src/App.tsx` under the existing admin protected routes, rendering a new page `AdminStudentReportsPage`.
+**Routing** (`src/App.tsx`):
+- `/live-classes/:id` → `/live-classes/:slug`
+- `/teacher/live-classes/:id` → `/teacher/live-classes/:slug`
 
-### Page layout (`src/pages/AdminStudentReportsPage.tsx`)
-Two sections, matching the user's "Both" preference:
+**Pages updated to lookup by slug**:
+- `src/pages/LiveClassRoomPage.tsx` — read `slug` param, query `live_classes.select(*).eq('slug', slug)`. All downstream queries (messages, attendance, realtime channel) keep using the resolved `cls.id`.
+- `src/pages/TeacherLiveClassRoomPage.tsx` — same treatment.
 
-1. **Quick generator (top card)**
-   - Student search/select combobox (search profiles by name/email, students only).
-   - Month picker (shadcn calendar in single-month mode, default = last completed month).
-   - "Preview" button → loads stats into the on-page preview below.
-   - "Download PDF" button → generates and downloads the PDF.
+**Link generators updated to use slug**:
+- `src/pages/StudentDashboard.tsx`, `src/pages/LiveClassesListPage.tsx` → `/live-classes/${cls.slug}`
+- `src/pages/TeacherLiveClassesPage.tsx` → `/teacher/live-classes/${cls.slug}`
+- `src/hooks/useLiveClasses.ts` row type gains `slug: string`.
 
-2. **Students table (below)**
-   - List of students with name, target exam, class level, mentor.
-   - Shared month selector at the top of the table.
-   - Per-row "Download report" button (uses the selected month).
-   - Pagination + simple search (reuse existing pagination/search patterns from `AdminStudentsPage`).
+**Backwards compat**: keep nothing — old `/live-classes/:uuid` links will 404 to the existing NotFound. (If you'd rather keep them working, say so and I'll add a fallback that detects a UUID and redirects to the slug.)
 
-### Report contents (single page where possible, else 2)
-Branded header (Arke logo, orange/navy theme, parent-friendly tone), then:
+## 2. Arke logo overlay on the Jitsi iframe
 
-1. **Student summary** — name, class, target exam, mentor name, report period.
-2. **Test performance** — tests attempted in month, average score %, average accuracy, best percentile, subject-wise mini bar chart, plus a small line chart of score trend across the month.
-3. **Attendance** — live classes registered vs attended in the month + a single donut/percent.
-4. **Course progress** — list of enrolled courses with progress bars (current % overall, with delta this month if available).
-5. **Engagement** — doubts asked, doubts answered, study streak (days active in month), best streak.
-6. **Parent note footer** — short auto-generated plain-English summary (e.g. "Aarav attended 8 of 10 live classes and improved physics accuracy by 12%.") and the Arke contact line.
+The Jitsi watermark lives inside a cross-origin iframe and can't be removed from outside it. The hash-config flags I added before (`SHOW_JITSI_WATERMARK=false`, etc.) are honored by self-hosted Jitsi but ignored by `meet.jit.si`, which is why you still see it. Solution: **cover it** with the Arke logo positioned absolutely over the iframe's top-left corner.
 
-Only these stats are included; nothing else, per "keep only the important statistics".
+In `src/pages/LiveClassRoomPage.tsx` and `src/pages/TeacherLiveClassRoomPage.tsx`:
+- Wrap the iframe in a `relative` container.
+- Add an absolutely-positioned `<img src={arkeLogo} />` at top-left (approx `top-3 left-3`, height ~36px on desktop, ~24px on mobile, `pointer-events-none` so it doesn't block clicks, with a subtle dark backdrop pill so it reads on the Jitsi prejoin black background).
+- Use the existing `src/assets/arke-logo.jpeg` import.
 
-### Data sources (already in DB)
-- `profiles` + `user_roles` (filter `role = 'student'`).
-- `test_attempts` (status in submitted/auto_submitted, `submitted_at` in month) joined to `tests` for subject info, plus `subjects` jsonb the report function already returns.
-- `live_class_attendance` joined to `live_classes` with `starts_at` in month.
-- `enrollments` + `courses` for course progress.
-- `doubts` for asked/resolved counts.
-- `study_sessions` for active days / streak in month.
+This visually replaces the Jitsi mark with Arke's logo without breaking the iframe.
 
-### PDF generation (client-side, downloadable)
-- Use `jspdf` + `jspdf-autotable` for the document, and `chart.js` (already implied via shadcn/recharts is also fine) to render charts to canvas, then embed as images via `pdf.addImage`.
-  - Preferred concrete stack: render the charts off-screen with **Recharts** (already in the project) inside a hidden container, snapshot with **html2canvas**, and embed in jsPDF. This avoids adding heavy new chart libs.
-- New dependencies: `jspdf`, `jspdf-autotable`, `html2canvas`.
-- Filename: `Arke_Report_<StudentName>_<YYYY-MM>.pdf`, triggered via `pdf.save(...)` so it downloads immediately.
-- Logo embedded from `/public` (existing Arke logo asset) as base64.
+## 3. Replace "Arambh" / "aarambh" with "Arke Scholars"
 
-### Hook for stats
-Create `src/hooks/useStudentMonthlyReport.ts` that takes `{ studentId, month }` and returns the aggregated stats object the report renderer consumes. All queries scoped server-side by month range; existing admin RLS already allows reads on the relevant tables.
+Found references:
+- `supabase/functions/send-transactional-email/index.ts` — `SITE_NAME = "arambhapp"` → `"Arke Scholars"`. Redeploy `send-transactional-email`.
+- `supabase/functions/_shared/transactional-email-templates/_styles.ts` — `SITE_NAME = 'Arambh'` → `'Arke Scholars'`; update the comment too. This is the value rendered inside every transactional email body (welcome, payment receipt, doubt-answered, live-class reminder, mentor-message), so it covers the email confirmation/welcome message you mentioned.
+- `src/pages/UnsubscribePage.tsx` — three "Back to Arambh" labels and one "from Arambh" sentence → "Arke Scholars".
+- Redeploy all transactional email functions so the new SITE_NAME ships: `send-transactional-email`, plus the shared templates take effect via redeploy of `send-transactional-email` (templates are bundled into that function).
 
-### Acceptance
-- New "Student Report" item visible in the admin sidebar.
-- Admin can search a student, pick any month, and click Download → branded multi-section PDF with charts downloads.
-- Table view also offers per-row downloads using the shared month selector.
-- No backend schema changes required.
+Auth confirmation emails: the Supabase auth-email-hook isn't scaffolded in this project, so confirmation emails currently use Supabase's default templates. The "From" name shown in inboxes for auth emails is set by the email-domain sender configuration. After the SITE_NAME swap above, all custom transactional emails (welcome, receipts, etc.) will say "Arke Scholars". If the auth confirmation email itself still shows "Arambh" in subject/from after this change, it's coming from the email-domain sender name configured in Cloud → Emails — tell me and I'll guide you to update that field (it's not editable from code).
 
-### Out of scope
-- Emailing the report to parents (download only for now).
-- Mentor feedback section, comparative class rankings, custom date ranges.
+## Files touched
+
+- New migration adding `slug` to `live_classes` + trigger + backfill
+- `src/App.tsx`
+- `src/pages/LiveClassRoomPage.tsx`
+- `src/pages/TeacherLiveClassRoomPage.tsx`
+- `src/pages/StudentDashboard.tsx`
+- `src/pages/LiveClassesListPage.tsx`
+- `src/pages/TeacherLiveClassesPage.tsx`
+- `src/hooks/useLiveClasses.ts`
+- `src/pages/UnsubscribePage.tsx`
+- `supabase/functions/send-transactional-email/index.ts`
+- `supabase/functions/_shared/transactional-email-templates/_styles.ts`
+- Redeploy `send-transactional-email`
