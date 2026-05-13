@@ -138,7 +138,26 @@ const LiveClassRoomPage = () => {
   }
 
   const isLive = cls.status === "live";
-  const videoSrc = cls.recording_url || cls.meeting_url;
+  const rawSrc = cls.recording_url || cls.meeting_url;
+  const videoSrc = rawSrc
+    ? (() => {
+        // For Jitsi meetings, hide the Jitsi watermark/logo via interface config hash params.
+        const isJitsi = /jit\.si|jitsi/i.test(rawSrc);
+        if (!isJitsi) return rawSrc;
+        const flags = [
+          "config.disableDeepLinking=true",
+          "interfaceConfig.SHOW_JITSI_WATERMARK=false",
+          "interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false",
+          "interfaceConfig.SHOW_BRAND_WATERMARK=false",
+          "interfaceConfig.SHOW_POWERED_BY=false",
+          "interfaceConfig.HIDE_DEEP_LINKING_LOGO=true",
+          "interfaceConfig.DEFAULT_LOGO_URL=",
+          "interfaceConfig.DEFAULT_WELCOME_PAGE_LOGO_URL=",
+        ].join("&");
+        const sep = rawSrc.includes("#") ? "&" : "#";
+        return `${rawSrc}${sep}${flags}`;
+      })()
+    : null;
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden">
