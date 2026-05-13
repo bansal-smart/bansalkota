@@ -280,16 +280,6 @@ const TeacherLiveClassRoomPage = () => {
           </div>
 
           <div className="p-4 lg:p-6 space-y-4">
-            {videoSrc && (
-              <a
-                href={videoSrc}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/30"
-              >
-                <ExternalLink className="h-3 w-3" /> Open meeting in new tab
-              </a>
-            )}
 
             <div className="rounded-2xl border border-border bg-card p-4">
               <p className="text-sm font-bold text-foreground mb-2">Class details</p>
