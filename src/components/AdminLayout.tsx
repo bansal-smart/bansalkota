@@ -48,6 +48,7 @@ const baseNav: NavItem[] = [
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },
   { label: "Reports", icon: Flag, path: "/admin/reports" },
+  { label: "Student Report", icon: FileBarChart, path: "/admin/student-reports" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },
 ];
 
