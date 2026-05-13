@@ -6,9 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
+import arkeLogo from "@/assets/arke-logo.jpeg";
 
 type ClassRow = {
   id: string;
+  slug: string;
   title: string;
   subject: string;
   educator_name: string;
@@ -28,7 +30,7 @@ type Message = {
 };
 
 const LiveClassRoomPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const storeUser = useAppStore((s) => s.user);
   const [cls, setCls] = useState<ClassRow | null>(null);
@@ -39,10 +41,16 @@ const LiveClassRoomPage = () => {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
     (async () => {
-      const { data } = await supabase.from("live_classes").select("*").eq("id", id).maybeSingle();
-      setCls(data as ClassRow | null);
+      const { data } = await supabase.from("live_classes").select("*").eq("slug", slug).maybeSingle();
+      const row = data as ClassRow | null;
+      setCls(row);
+      if (!row) {
+        setLoading(false);
+        return;
+      }
+      const id = row.id;
 
       const { data: msgs } = await supabase
         .from("live_class_messages")
@@ -71,42 +79,46 @@ const LiveClassRoomPage = () => {
       setParticipants(count ?? 0);
 
       setLoading(false);
+
+      const channel = supabase
+        .channel(`class-${id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
+          (payload) => setMessages((prev) => [...prev, payload.new as Message]),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
+          async () => {
+            const { count } = await supabase
+              .from("live_class_attendance")
+              .select("*", { count: "exact", head: true })
+              .eq("class_id", id);
+            setParticipants(count ?? 0);
+          },
+        )
+        .subscribe();
+
+      // Cleanup stored on element ref to remove on unmount
+      (window as any).__liveClassChannel = channel;
     })();
 
-    const channel = supabase
-      .channel(`class-${id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as Message]),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
-        async () => {
-          const { count } = await supabase
-            .from("live_class_attendance")
-            .select("*", { count: "exact", head: true })
-            .eq("class_id", id);
-          setParticipants(count ?? 0);
-        },
-      )
-      .subscribe();
-
     return () => {
-      supabase.removeChannel(channel);
+      const ch = (window as any).__liveClassChannel;
+      if (ch) supabase.removeChannel(ch);
     };
-  }, [id, user]);
+  }, [slug, user]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!user || !id || !text.trim()) return;
+    if (!user || !cls || !text.trim()) return;
     const display = storeUser?.full_name || user.email?.split("@")[0] || "Student";
     const { error } = await supabase.from("live_class_messages").insert({
-      class_id: id,
+      class_id: cls.id,
       user_id: user.id,
       display_name: display,
       is_teacher: false,
@@ -180,14 +192,21 @@ const LiveClassRoomPage = () => {
       </div>
 
       <div className="flex flex-1 min-h-0 flex-col md:flex-row">
-        <div className="flex-1 min-h-0 bg-[#0a0a0a] flex items-center justify-center">
+        <div className="relative flex-1 min-h-0 bg-[#0a0a0a] flex items-center justify-center">
           {videoSrc ? (
-            <iframe
-              src={videoSrc}
-              title={cls.title}
-              allow="camera; microphone; fullscreen; display-capture"
-              className="h-full w-full border-0"
-            />
+            <>
+              <iframe
+                src={videoSrc}
+                title={cls.title}
+                allow="camera; microphone; fullscreen; display-capture"
+                className="h-full w-full border-0"
+              />
+              {/* Arke logo cover over Jitsi watermark (top-left of iframe) */}
+              <div className="pointer-events-none absolute top-2 left-2 md:top-3 md:left-3 z-10 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-1 backdrop-blur-sm">
+                <img src={arkeLogo} alt="Arke Scholars" className="h-5 md:h-6 w-auto rounded" />
+                <span className="text-[10px] md:text-xs font-bold text-white tracking-wide">Arke Scholars</span>
+              </div>
+            </>
           ) : (
             <div className="text-center text-white/60 p-6">
               <p className="text-sm">No meeting link available yet.</p>

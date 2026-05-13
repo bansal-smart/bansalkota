@@ -1225,6 +1225,7 @@ export type Database = {
           meeting_url: string | null
           recording_url: string | null
           scheduled_by: string | null
+          slug: string
           starts_at: string
           status: string
           subject: string
@@ -1248,6 +1249,7 @@ export type Database = {
           meeting_url?: string | null
           recording_url?: string | null
           scheduled_by?: string | null
+          slug?: string
           starts_at: string
           status?: string
           subject: string
@@ -1271,6 +1273,7 @@ export type Database = {
           meeting_url?: string | null
           recording_url?: string | null
           scheduled_by?: string | null
+          slug?: string
           starts_at?: string
           status?: string
           subject?: string
@@ -2353,6 +2356,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      slugify_text: { Args: { input: string }; Returns: string }
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
       upcoming_live_class_reminders: {
         Args: { _lookahead_minutes?: number }

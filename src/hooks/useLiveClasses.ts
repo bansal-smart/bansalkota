@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type LiveClassRow = {
   id: string;
+  slug: string;
   title: string;
   subject: string;
   educator_name: string;

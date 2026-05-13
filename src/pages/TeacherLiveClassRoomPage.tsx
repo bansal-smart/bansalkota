@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Users, Loader2, ExternalLink, Play, Square, Video } from "lucide-react";
+import { ArrowLeft, Send, Users, Loader2, Play, Square, Video } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
+import arkeLogo from "@/assets/arke-logo.jpeg";
 
 type ClassRow = {
   id: string;
+  slug: string;
   title: string;
   subject: string;
   educator_name: string;
@@ -38,7 +40,7 @@ type Attendee = {
 };
 
 const TeacherLiveClassRoomPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const storeUser = useAppStore((s) => s.user);
   const navigate = useNavigate();
@@ -59,29 +61,12 @@ const TeacherLiveClassRoomPage = () => {
 
   // Load class + chat + attendees, and subscribe to realtime
   useEffect(() => {
-    if (!id || !user) return;
+    if (!slug || !user) return;
     let cancelled = false;
-
-    const refreshAttendees = async () => {
-      const { data: rows } = await supabase
-        .from("live_class_attendance")
-        .select("user_id, status, joined_at")
-        .eq("class_id", id);
-      const ids = (rows ?? []).map((r) => r.user_id);
-      let names: Record<string, string> = {};
-      if (ids.length) {
-        const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", ids);
-        names = Object.fromEntries((profs ?? []).map((p) => [p.user_id, p.full_name || "Student"]));
-      }
-      if (!cancelled) {
-        setAttendees(
-          (rows ?? []).map((r) => ({ ...r, display_name: names[r.user_id] || "Student" })) as Attendee[],
-        );
-      }
-    };
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     (async () => {
-      const { data, error } = await supabase.from("live_classes").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("live_classes").select("*").eq("slug", slug).maybeSingle();
       if (error || !data) {
         toast.error("Class not found");
         navigate("/teacher/live-classes");
@@ -96,6 +81,25 @@ const TeacherLiveClassRoomPage = () => {
       if (cancelled) return;
       setCls(data as ClassRow);
       setRecordingUrl(data.recording_url ?? "");
+      const id = data.id;
+
+      const refreshAttendees = async () => {
+        const { data: rows } = await supabase
+          .from("live_class_attendance")
+          .select("user_id, status, joined_at")
+          .eq("class_id", id);
+        const ids = (rows ?? []).map((r) => r.user_id);
+        let names: Record<string, string> = {};
+        if (ids.length) {
+          const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", ids);
+          names = Object.fromEntries((profs ?? []).map((p) => [p.user_id, p.full_name || "Student"]));
+        }
+        if (!cancelled) {
+          setAttendees(
+            (rows ?? []).map((r) => ({ ...r, display_name: names[r.user_id] || "Student" })) as Attendee[],
+          );
+        }
+      };
 
       const { data: msgs } = await supabase
         .from("live_class_messages")
@@ -106,41 +110,41 @@ const TeacherLiveClassRoomPage = () => {
 
       await refreshAttendees();
       if (!cancelled) setLoading(false);
-    })();
 
-    const channel = supabase
-      .channel(`teacher-class-${id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as Message]),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
-        () => refreshAttendees(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "live_classes", filter: `id=eq.${id}` },
-        (payload) => setCls((prev) => (prev ? { ...prev, ...(payload.new as ClassRow) } : prev)),
-      )
-      .subscribe();
+      channel = supabase
+        .channel(`teacher-class-${id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
+          (payload) => setMessages((prev) => [...prev, payload.new as Message]),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
+          () => refreshAttendees(),
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "live_classes", filter: `id=eq.${id}` },
+          (payload) => setCls((prev) => (prev ? { ...prev, ...(payload.new as ClassRow) } : prev)),
+        )
+        .subscribe();
+    })();
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [id, user, navigate]);
+  }, [slug, user, navigate]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!user || !id || !text.trim()) return;
+    if (!user || !cls || !text.trim()) return;
     const { error } = await supabase.from("live_class_messages").insert({
-      class_id: id,
+      class_id: cls.id,
       user_id: user.id,
       display_name: teacherDisplay,
       is_teacher: true,
@@ -189,7 +193,23 @@ const TeacherLiveClassRoomPage = () => {
 
   const isLive = cls.status === "live";
   const isCompleted = cls.status === "completed";
-  const videoSrc = cls.meeting_url || cls.recording_url;
+  const rawSrc = cls.meeting_url || cls.recording_url;
+  const videoSrc = rawSrc
+    ? (() => {
+        const isJitsi = /jit\.si|jitsi/i.test(rawSrc);
+        if (!isJitsi) return rawSrc;
+        const flags = [
+          "config.disableDeepLinking=true",
+          "interfaceConfig.SHOW_JITSI_WATERMARK=false",
+          "interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false",
+          "interfaceConfig.SHOW_BRAND_WATERMARK=false",
+          "interfaceConfig.SHOW_POWERED_BY=false",
+          "interfaceConfig.HIDE_DEEP_LINKING_LOGO=true",
+        ].join("&");
+        const sep = rawSrc.includes("#") ? "&" : "#";
+        return `${rawSrc}${sep}${flags}`;
+      })()
+    : null;
 
   return (
     <div className="flex flex-col">
@@ -238,12 +258,18 @@ const TeacherLiveClassRoomPage = () => {
         <div className="flex-1 min-w-0">
           <div className="relative aspect-video bg-[hsl(var(--navy))] flex items-center justify-center">
             {videoSrc ? (
-              <iframe
-                src={videoSrc}
-                title={cls.title}
-                allow="camera; microphone; fullscreen; display-capture; autoplay"
-                className="absolute inset-0 h-full w-full"
-              />
+              <>
+                <iframe
+                  src={videoSrc}
+                  title={cls.title}
+                  allow="camera; microphone; fullscreen; display-capture; autoplay"
+                  className="absolute inset-0 h-full w-full"
+                />
+                <div className="pointer-events-none absolute top-2 left-2 md:top-3 md:left-3 z-10 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-1 backdrop-blur-sm">
+                  <img src={arkeLogo} alt="Arke Scholars" className="h-5 md:h-6 w-auto rounded" />
+                  <span className="text-[10px] md:text-xs font-bold text-white tracking-wide">Arke Scholars</span>
+                </div>
+              </>
             ) : (
               <div className="text-center text-primary-foreground/70 px-4">
                 <Video className="h-10 w-10 mx-auto mb-2 opacity-60" />
@@ -254,16 +280,6 @@ const TeacherLiveClassRoomPage = () => {
           </div>
 
           <div className="p-4 lg:p-6 space-y-4">
-            {videoSrc && (
-              <a
-                href={videoSrc}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/30"
-              >
-                <ExternalLink className="h-3 w-3" /> Open meeting in new tab
-              </a>
-            )}
 
             <div className="rounded-2xl border border-border bg-card p-4">
               <p className="text-sm font-bold text-foreground mb-2">Class details</p>

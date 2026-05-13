@@ -156,7 +156,7 @@ const App = () => (
                 <Route path="/tests/:slug/result/:attemptId" element={<TestResultPage />} />
                 <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
                 <Route path="/my-live-classes" element={<LiveClassesListPage />} />
-                <Route path="/live-classes/:id" element={<LiveClassRoomPage />} />
+                <Route path="/live-classes/:slug" element={<LiveClassRoomPage />} />
                 
                 <Route path="/compete" element={<CompetePage />} />
                 <Route path="/doubts" element={<DoubtPage />} />
@@ -179,7 +179,7 @@ const App = () => (
               <Route element={<TeacherLayout />}>
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
                 <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
-                <Route path="/teacher/live-classes/:id" element={<TeacherLiveClassRoomPage />} />
+                <Route path="/teacher/live-classes/:slug" element={<TeacherLiveClassRoomPage />} />
                 <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
                 <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
                 {/* Legacy teacher URLs now redirect into the trimmed portal. */}

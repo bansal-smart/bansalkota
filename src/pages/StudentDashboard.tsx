@@ -142,7 +142,7 @@ const StudentDashboard = () => {
                     </div>
                     <div className="shrink-0">
                       {isLive && (
-                        <Link to={`/live-classes/${cls.id}`} className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">Join Now</Link>
+                        <Link to={`/live-classes/${cls.slug}`} className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-bold text-secondary-foreground hover:bg-secondary-dark transition-colors">Join Now</Link>
                       )}
                       {!isLive && !isCompleted && (
                         <span className="text-xs font-medium text-muted-foreground">{cls.user_status === "registered" ? "Registered" : "Upcoming"}</span>

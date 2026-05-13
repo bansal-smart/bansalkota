@@ -12,6 +12,7 @@ type TeacherCourse = { id: string; name: string; subject: string };
 
 type LiveClass = {
   id: string;
+  slug: string;
   title: string;
   subject: string;
   educator_name: string;
@@ -47,7 +48,7 @@ const TeacherLiveClassesPage = () => {
     setLoading(true);
     const { data } = await supabase
       .from("live_classes")
-      .select("id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, course_id, courses(name)")
+      .select("id, slug, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, course_id, courses(name)")
       .eq("created_by", user.id)
       .order("starts_at", { ascending: false });
     setClasses((data ?? []) as unknown as LiveClass[]);
