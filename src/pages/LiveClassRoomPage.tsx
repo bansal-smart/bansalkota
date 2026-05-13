@@ -6,9 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
+import arkeLogo from "@/assets/arke-logo.jpeg";
 
 type ClassRow = {
   id: string;
+  slug: string;
   title: string;
   subject: string;
   educator_name: string;
@@ -28,7 +30,7 @@ type Message = {
 };
 
 const LiveClassRoomPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const storeUser = useAppStore((s) => s.user);
   const [cls, setCls] = useState<ClassRow | null>(null);
@@ -39,10 +41,16 @@ const LiveClassRoomPage = () => {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
     (async () => {
-      const { data } = await supabase.from("live_classes").select("*").eq("id", id).maybeSingle();
-      setCls(data as ClassRow | null);
+      const { data } = await supabase.from("live_classes").select("*").eq("slug", slug).maybeSingle();
+      const row = data as ClassRow | null;
+      setCls(row);
+      if (!row) {
+        setLoading(false);
+        return;
+      }
+      const id = row.id;
 
       const { data: msgs } = await supabase
         .from("live_class_messages")
@@ -71,32 +79,36 @@ const LiveClassRoomPage = () => {
       setParticipants(count ?? 0);
 
       setLoading(false);
+
+      const channel = supabase
+        .channel(`class-${id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
+          (payload) => setMessages((prev) => [...prev, payload.new as Message]),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
+          async () => {
+            const { count } = await supabase
+              .from("live_class_attendance")
+              .select("*", { count: "exact", head: true })
+              .eq("class_id", id);
+            setParticipants(count ?? 0);
+          },
+        )
+        .subscribe();
+
+      // Cleanup stored on element ref to remove on unmount
+      (window as any).__liveClassChannel = channel;
     })();
 
-    const channel = supabase
-      .channel(`class-${id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "live_class_messages", filter: `class_id=eq.${id}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as Message]),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "live_class_attendance", filter: `class_id=eq.${id}` },
-        async () => {
-          const { count } = await supabase
-            .from("live_class_attendance")
-            .select("*", { count: "exact", head: true })
-            .eq("class_id", id);
-          setParticipants(count ?? 0);
-        },
-      )
-      .subscribe();
-
     return () => {
-      supabase.removeChannel(channel);
+      const ch = (window as any).__liveClassChannel;
+      if (ch) supabase.removeChannel(ch);
     };
-  }, [id, user]);
+  }, [slug, user]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
