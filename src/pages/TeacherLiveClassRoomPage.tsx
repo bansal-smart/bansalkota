@@ -193,7 +193,23 @@ const TeacherLiveClassRoomPage = () => {
 
   const isLive = cls.status === "live";
   const isCompleted = cls.status === "completed";
-  const videoSrc = cls.meeting_url || cls.recording_url;
+  const rawSrc = cls.meeting_url || cls.recording_url;
+  const videoSrc = rawSrc
+    ? (() => {
+        const isJitsi = /jit\.si|jitsi/i.test(rawSrc);
+        if (!isJitsi) return rawSrc;
+        const flags = [
+          "config.disableDeepLinking=true",
+          "interfaceConfig.SHOW_JITSI_WATERMARK=false",
+          "interfaceConfig.SHOW_WATERMARK_FOR_GUESTS=false",
+          "interfaceConfig.SHOW_BRAND_WATERMARK=false",
+          "interfaceConfig.SHOW_POWERED_BY=false",
+          "interfaceConfig.HIDE_DEEP_LINKING_LOGO=true",
+        ].join("&");
+        const sep = rawSrc.includes("#") ? "&" : "#";
+        return `${rawSrc}${sep}${flags}`;
+      })()
+    : null;
 
   return (
     <div className="flex flex-col">
@@ -242,12 +258,18 @@ const TeacherLiveClassRoomPage = () => {
         <div className="flex-1 min-w-0">
           <div className="relative aspect-video bg-[hsl(var(--navy))] flex items-center justify-center">
             {videoSrc ? (
-              <iframe
-                src={videoSrc}
-                title={cls.title}
-                allow="camera; microphone; fullscreen; display-capture; autoplay"
-                className="absolute inset-0 h-full w-full"
-              />
+              <>
+                <iframe
+                  src={videoSrc}
+                  title={cls.title}
+                  allow="camera; microphone; fullscreen; display-capture; autoplay"
+                  className="absolute inset-0 h-full w-full"
+                />
+                <div className="pointer-events-none absolute top-2 left-2 md:top-3 md:left-3 z-10 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-1 backdrop-blur-sm">
+                  <img src={arkeLogo} alt="Arke Scholars" className="h-5 md:h-6 w-auto rounded" />
+                  <span className="text-[10px] md:text-xs font-bold text-white tracking-wide">Arke Scholars</span>
+                </div>
+              </>
             ) : (
               <div className="text-center text-primary-foreground/70 px-4">
                 <Video className="h-10 w-10 mx-auto mb-2 opacity-60" />
