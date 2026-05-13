@@ -43,6 +43,7 @@ import TeacherSettingsPage from "./pages/TeacherSettingsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminStudentsPage from "./pages/AdminStudentsPage";
+import AdminStudentReportsPage from "./pages/AdminStudentReportsPage";
 import AdminMentorAssignmentsPage from "./pages/AdminMentorAssignmentsPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
