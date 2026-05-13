@@ -21,8 +21,21 @@ const LoginPage = () => {
       (user?.app_metadata as Record<string, unknown> | undefined)?.must_change_password,
     );
     if (mustChange) {
-      navigate("/auth/change-password", { replace: true });
-      return;
+      // Stale-flag guard: if this user has already updated their password
+      // before (auth updated_at > created_at + 60s), the flag is stale.
+      // Skip the change-password screen entirely and clear the flag in the
+      // background so the dialog never flashes on subsequent logins.
+      const createdAt = user?.created_at ? new Date(user.created_at).getTime() : 0;
+      const updatedAt = user?.updated_at ? new Date(user.updated_at).getTime() : 0;
+      const alreadyChanged = createdAt && updatedAt && updatedAt - createdAt > 60_000;
+      if (!alreadyChanged) {
+        navigate("/auth/change-password", { replace: true });
+        return;
+      }
+      // Fire-and-forget cleanup; do not block navigation on it.
+      void supabase.functions.invoke("clear-password-flag").then(({ error }) => {
+        if (!error) void supabase.auth.refreshSession();
+      });
     }
     if (isStaff) {
       navigate("/admin/dashboard", { replace: true });
