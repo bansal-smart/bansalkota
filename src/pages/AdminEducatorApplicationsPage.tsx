@@ -131,47 +131,41 @@ const AdminEducatorApplicationsPage = () => {
     const { data, error } = await supabase.functions.invoke("provision-teacher", {
       body: { application_id: credApp.id, password: tempPassword },
     });
-    setProvisioning(false);
     if (error || (data as { error?: string })?.error) {
+      setProvisioning(false);
       const msg = (data as { error?: string })?.error || error?.message || "Could not generate credentials";
       toast.error(msg);
       return;
     }
-    toast.success("Teacher account ready. Share the credentials with the candidate.");
+
+    // Send credentials directly to the teacher's email
+    const { error: emailError } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "teacher-credentials",
+        recipientEmail: credApp.email,
+        idempotencyKey: `teacher-credentials-${credApp.id}-${Date.now()}`,
+        templateData: {
+          name: credApp.candidate_name,
+          email: credApp.email,
+          tempPassword,
+          loginUrl: `${window.location.origin}/login`,
+        },
+      },
+    });
+    setProvisioning(false);
+
+    if (emailError) {
+      toast.error("Account created, but email could not be sent", {
+        description: emailError.message,
+      });
+      return;
+    }
+
+    toast.success(`Credentials sent to ${credApp.email}`);
     setProvisioned(true);
     setApps((prev) =>
       prev.map((a) => (a.id === credApp.id ? { ...a, status: "credentials_sent" } : a)),
     );
-  };
-
-  const buildCredentialsText = () => {
-    if (!credApp) return "";
-    return `ARKE Teacher Login\n==================\n\nName: ${credApp.candidate_name}\nEmail: ${credApp.email}\nTemporary Password: ${tempPassword}\nLogin URL: ${window.location.origin}/login\n\nNote: You will be asked to set a new password on first login.\nGenerated: ${format(new Date(), "dd MMM yyyy, HH:mm")}\n`;
-  };
-
-  const copyCredentials = async () => {
-    if (!credApp) return;
-    try {
-      await navigator.clipboard.writeText(buildCredentialsText());
-      toast.success("Credentials copied to clipboard");
-    } catch {
-      toast.error("Could not copy. Please copy manually.");
-    }
-  };
-
-  const downloadCredentialsTxt = () => {
-    if (!credApp) return;
-    const blob = new Blob([buildCredentialsText()], { type: "text/plain;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    const safeName = credApp.candidate_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    link.download = `arke-teacher-credentials-${safeName}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("Credentials downloaded");
   };
 
   const exportCsv = () => {
