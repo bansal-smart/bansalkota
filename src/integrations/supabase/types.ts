@@ -1587,6 +1587,36 @@ export type Database = {
           },
         ]
       }
+      mentor_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          mentor_id: string
+          rating: number
+          review: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mentor_id: string
+          rating: number
+          review?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mentor_id?: string
+          rating?: number
+          review?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mentor_student_assignments: {
         Row: {
           assigned_at: string
