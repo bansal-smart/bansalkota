@@ -166,8 +166,12 @@ const AdminMentorAssignmentsPage = () => {
       mentor_id: selectedMentor,
       student_id: studentId,
       assigned_by: adminId,
+      assigned_at: new Date().toISOString(),
+      removed_at: null,
     }));
-    const { error } = await supabase.from("mentor_student_assignments").insert(rows);
+    const { error } = await supabase
+      .from("mentor_student_assignments")
+      .upsert(rows, { onConflict: "mentor_id,student_id" });
     setBulkAssigning(false);
     if (error) {
       toast.error(error.message);
@@ -310,8 +314,12 @@ const AdminMentorAssignmentsPage = () => {
       mentor_id: r.mentorId!,
       student_id: r.studentId!,
       assigned_by: adminId,
+      assigned_at: new Date().toISOString(),
+      removed_at: null,
     }));
-    const { error } = await supabase.from("mentor_student_assignments").insert(payload);
+    const { error } = await supabase
+      .from("mentor_student_assignments")
+      .upsert(payload, { onConflict: "mentor_id,student_id" });
     setImporting(false);
     if (error) {
       toast.error(error.message);
