@@ -35,7 +35,7 @@ const MentorReviewCard = () => {
         .select("mentor_id")
         .eq("student_id", user.id)
         .is("removed_at", null)
-        .order("created_at", { ascending: false })
+        .order("assigned_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (cancelled) return;
