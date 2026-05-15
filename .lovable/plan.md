@@ -1,58 +1,59 @@
-## 1. Slugified live-class URLs
+## Goal
 
-**Schema change** (migration):
-- Add `slug TEXT UNIQUE` column to `public.live_classes`.
-- Backfill existing rows: `slug = slugify(title) || '-' || substr(id::text, 1, 6)` to guarantee uniqueness.
-- Add a trigger `BEFORE INSERT/UPDATE OF title` that auto-generates the slug from `title` if `slug` is null or `title` changed, again suffixing with the first 6 chars of the row id to avoid collisions.
-- Make `slug NOT NULL` after backfill.
+Enable cross-role reporting (student↔mentor/teacher, mentor→student, teacher→student), surface a unified "Reports" tab in the admin sidebar visible to admin + super admin, and rename "Student Report" to "Student Analysis".
 
-**Routing** (`src/App.tsx`):
-- `/live-classes/:id` → `/live-classes/:slug`
-- `/teacher/live-classes/:id` → `/teacher/live-classes/:slug`
+## What already exists (reuse)
 
-**Pages updated to lookup by slug**:
-- `src/pages/LiveClassRoomPage.tsx` — read `slug` param, query `live_classes.select(*).eq('slug', slug)`. All downstream queries (messages, attendance, realtime channel) keep using the resolved `cls.id`.
-- `src/pages/TeacherLiveClassRoomPage.tsx` — same treatment.
+- `public.reports` table (reporter_id, reported_user_id, reported_role, category, subject, description, status, evidence_url, resolution_notes, …) with RLS: any authenticated user can insert their own report; admin/super_admin can view and update all.
+- `ReportDialog` component (`src/components/ReportDialog.tsx`) — already wired to insert into `reports` and trigger the existing `notify_report_created` trigger (notifies the reported user + all admins).
+- `AdminModerationPage` already lists every row in `reports` with severity, filter, and resolve/dismiss actions — but it's mounted only for super-admin under Moderation.
 
-**Link generators updated to use slug**:
-- `src/pages/StudentDashboard.tsx`, `src/pages/LiveClassesListPage.tsx` → `/live-classes/${cls.slug}`
-- `src/pages/TeacherLiveClassesPage.tsx` → `/teacher/live-classes/${cls.slug}`
-- `src/hooks/useLiveClasses.ts` row type gains `slug: string`.
+## Changes
 
-**Backwards compat**: keep nothing — old `/live-classes/:uuid` links will 404 to the existing NotFound. (If you'd rather keep them working, say so and I'll add a fallback that detects a UUID and redirects to the slug.)
+### 1. Database (one small migration)
 
-## 2. Arke logo overlay on the Jitsi iframe
+The current `reports_reported_role_check` constraint allows only `teacher | mentor | staff | other`. Drop it and re-add it to also allow `student` so mentors and teachers can report students.
 
-The Jitsi watermark lives inside a cross-origin iframe and can't be removed from outside it. The hash-config flags I added before (`SHOW_JITSI_WATERMARK=false`, etc.) are honored by self-hosted Jitsi but ignored by `meet.jit.si`, which is why you still see it. Solution: **cover it** with the Arke logo positioned absolutely over the iframe's top-left corner.
+### 2. Sidebar (`src/components/AdminLayout.tsx`)
 
-In `src/pages/LiveClassRoomPage.tsx` and `src/pages/TeacherLiveClassRoomPage.tsx`:
-- Wrap the iframe in a `relative` container.
-- Add an absolutely-positioned `<img src={arkeLogo} />` at top-left (approx `top-3 left-3`, height ~36px on desktop, ~24px on mobile, `pointer-events-none` so it doesn't block clicks, with a subtle dark backdrop pill so it reads on the Jitsi prejoin black background).
-- Use the existing `src/assets/arke-logo.jpeg` import.
+- Rename the existing item label `"Student Report"` → `"Student Analysis"` (path stays `/admin/student-reports`, icon stays `FileBarChart`).
+- Insert a new item **right below** it, visible to both admin and super-admin:
+  `{ label: "Reports", icon: Flag, path: "/admin/reports" }`.
 
-This visually replaces the Jitsi mark with Arke's logo without breaking the iframe.
+### 3. New admin page `src/pages/AdminReportsPage.tsx`
 
-## 3. Replace "Arambh" / "aarambh" with "Arke Scholars"
+A focused list of all submitted reports, accessible to admin + super-admin (route guarded by the existing `ProtectedAdminRoute`). Built by lifting the proven listing logic from `AdminModerationPage` and adding:
 
-Found references:
-- `supabase/functions/send-transactional-email/index.ts` — `SITE_NAME = "arambhapp"` → `"Arke Scholars"`. Redeploy `send-transactional-email`.
-- `supabase/functions/_shared/transactional-email-templates/_styles.ts` — `SITE_NAME = 'Arambh'` → `'Arke Scholars'`; update the comment too. This is the value rendered inside every transactional email body (welcome, payment receipt, doubt-answered, live-class reminder, mentor-message), so it covers the email confirmation/welcome message you mentioned.
-- `src/pages/UnsubscribePage.tsx` — three "Back to Arambh" labels and one "from Arambh" sentence → "Arke Scholars".
-- Redeploy all transactional email functions so the new SITE_NAME ships: `send-transactional-email`, plus the shared templates take effect via redeploy of `send-transactional-email` (templates are bundled into that function).
+- Filter chips: All / Student / Mentor / Teacher (filters by `reported_role`) and status filter (Pending / In progress / Resolved / Dismissed).
+- Each row shows: reporter name + role, reported name + role badge, category, subject, description, evidence link, time-ago, status pill, and Resolve / Dismiss actions.
+- Joins `profiles` for reporter and reported display names where available.
+- Realtime channel on the `reports` table so new reports appear without refresh (per the realtime guideline).
 
-Auth confirmation emails: the Supabase auth-email-hook isn't scaffolded in this project, so confirmation emails currently use Supabase's default templates. The "From" name shown in inboxes for auth emails is set by the email-domain sender configuration. After the SITE_NAME swap above, all custom transactional emails (welcome, receipts, etc.) will say "Arke Scholars". If the auth confirmation email itself still shows "Arambh" in subject/from after this change, it's coming from the email-domain sender name configured in Cloud → Emails — tell me and I'll guide you to update that field (it's not editable from code).
+The existing `AdminModerationPage` stays as-is for super-admin (content moderation focus); this new page is the cross-role reports inbox the user described.
+
+### 4. Wire `ReportDialog` into the right surfaces
+
+Reuse the existing component. Add a "Report" entry point in each of these places, prefilled with the right `reportedRole` and `reportedUserId`:
+
+- **Student → Mentor**: in `StudentMentorChatPage` header (next to the existing "Rate your mentor" button) and on the mentor card on the student dashboard.
+- **Student → Teacher**: on the teacher/educator info card shown on `LiveClassRoomPage` and on the doubt answer card in `DoubtPage` (when an answer is from a teacher).
+- **Mentor → Student**: in `MentorStudentsPage` row actions (per-student kebab/menu).
+- **Teacher → Student**: in `TeacherStudentsPage` row actions and from `TeacherDoubtQueuePage` for the student who asked the doubt.
+
+### 5. Routing (`src/App.tsx`)
+
+Add `<Route path="/admin/reports" element={<AdminReportsPage />} />` inside the existing `ProtectedAdminRoute` block. Lazy import next to the other admin pages.
+
+## Out of scope
+
+- No changes to the Moderation page or its super-admin gating.
+- No changes to the existing "Student Analysis" page beyond the sidebar label.
+- No changes to email/notification copy — the existing `notify_report_created` trigger already handles fan-out.
 
 ## Files touched
 
-- New migration adding `slug` to `live_classes` + trigger + backfill
-- `src/App.tsx`
-- `src/pages/LiveClassRoomPage.tsx`
-- `src/pages/TeacherLiveClassRoomPage.tsx`
-- `src/pages/StudentDashboard.tsx`
-- `src/pages/LiveClassesListPage.tsx`
-- `src/pages/TeacherLiveClassesPage.tsx`
-- `src/hooks/useLiveClasses.ts`
-- `src/pages/UnsubscribePage.tsx`
-- `supabase/functions/send-transactional-email/index.ts`
-- `supabase/functions/_shared/transactional-email-templates/_styles.ts`
-- Redeploy `send-transactional-email`
+- `supabase/migrations/<new>.sql` — relax `reports_reported_role_check` to include `student`.
+- `src/components/AdminLayout.tsx` — rename + new nav item.
+- `src/App.tsx` — new admin route.
+- `src/pages/AdminReportsPage.tsx` — new file.
+- `src/pages/StudentMentorChatPage.tsx`, `src/pages/StudentDashboard.tsx`, `src/pages/LiveClassRoomPage.tsx`, `src/pages/DoubtPage.tsx`, `src/pages/MentorStudentsPage.tsx`, `src/pages/TeacherStudentsPage.tsx`, `src/pages/TeacherDoubtQueuePage.tsx` — drop in `<ReportDialog ... />`.
