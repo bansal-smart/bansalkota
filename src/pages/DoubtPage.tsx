@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Plus, Brain, Clock, Loader2, X, Sparkles, MessageCircle, ChevronDown, AlertTriangle, GraduationCap } from "lucide-react";
+import { Plus, Brain, Clock, Loader2, X, Sparkles, MessageCircle, ChevronDown, AlertTriangle, GraduationCap, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useDoubts, type DoubtRow } from "@/hooks/useDoubts";
 import { FormattedAnswer } from "@/components/FormattedAnswer";
+import ReportDialog from "@/components/ReportDialog";
+import { Button } from "@/components/ui/button";
 
 const filterTabs = [
   { key: "all", label: "All" },
@@ -222,15 +224,25 @@ const DoubtPage = () => {
 };
 
 const DoubtCard = ({ doubt, expanded, onToggle }: { doubt: DoubtRow; expanded: boolean; onToggle: () => void }) => {
-  const [teacherAnswers, setTeacherAnswers] = useState<{ id: string; answer_text: string; responder_role: string; created_at: string }[]>([]);
+  const [teacherAnswers, setTeacherAnswers] = useState<{ id: string; answer_text: string; responder_role: string; responder_id: string; responder_name?: string; created_at: string }[]>([]);
 
   const loadAnswers = async () => {
     const { data } = await supabase
       .from("doubt_answers")
-      .select("id, answer_text, responder_role, created_at")
+      .select("id, answer_text, responder_role, responder_id, created_at")
       .eq("doubt_id", doubt.id)
       .order("created_at");
-    setTeacherAnswers(data ?? []);
+    const list = (data ?? []) as typeof teacherAnswers;
+    const ids = Array.from(new Set(list.map((a) => a.responder_id).filter(Boolean)));
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
+      const nameMap = new Map((profs ?? []).map((p: any) => [p.user_id, p.full_name]));
+      list.forEach((a) => { a.responder_name = nameMap.get(a.responder_id) || a.responder_role; });
+    }
+    setTeacherAnswers(list);
   };
 
   return (
@@ -286,7 +298,23 @@ const DoubtCard = ({ doubt, expanded, onToggle }: { doubt: DoubtRow; expanded: b
           )}
           {teacherAnswers.map((a) => (
             <div key={a.id} className="rounded-lg bg-secondary/5 border border-secondary/20 p-3 space-y-2">
-              <p className="text-[11px] font-bold text-secondary uppercase">{a.responder_role} answer</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-bold text-secondary uppercase">
+                  {a.responder_name || a.responder_role} · {a.responder_role}
+                </p>
+                {(a.responder_role === "teacher" || a.responder_role === "mentor") && a.responder_id && (
+                  <ReportDialog
+                    reportedName={a.responder_name || a.responder_role}
+                    reportedRole={a.responder_role as "teacher" | "mentor"}
+                    reportedUserId={a.responder_id}
+                    trigger={
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-destructive hover:text-destructive">
+                        <Flag className="h-3 w-3" /> Report
+                      </Button>
+                    }
+                  />
+                )}
+              </div>
               <FormattedAnswer content={a.answer_text} tone="secondary" className="text-xs" />
             </div>
           ))}
