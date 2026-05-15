@@ -14,6 +14,7 @@ import { template as doubtAnswered } from './doubt-answered.tsx'
 import { template as mentorMessage } from './mentor-message.tsx'
 import { template as liveClassReminder } from './live-class-reminder.tsx'
 import { template as paymentReceipt } from './payment-receipt.tsx'
+import { template as teacherCredentials } from './teacher-credentials.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   welcome,
@@ -21,4 +22,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'mentor-message': mentorMessage,
   'live-class-reminder': liveClassReminder,
   'payment-receipt': paymentReceipt,
+  'teacher-credentials': teacherCredentials,
 }
