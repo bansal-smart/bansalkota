@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Send, Loader2, MessageCircle, ChevronLeft, ChevronRight, X, Sparkles, Info } from "lucide-react";
+import { Send, Loader2, MessageCircle, ChevronLeft, ChevronRight, X, Sparkles, Info, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import { FormattedAnswer } from "@/components/FormattedAnswer";
 import { dispatchEmailOnly } from "@/lib/notify";
+import ReportDialog from "@/components/ReportDialog";
+import { Button } from "@/components/ui/button";
 
 type Doubt = {
   id: string;
@@ -259,10 +261,20 @@ const TeacherDoubtQueuePage = () => {
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-light text-[10px] font-bold text-primary">
                   {(studentNames[selected.user_id] || "S").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground">{studentNames[selected.user_id] || "Student"}</p>
                   <p className="text-[10px] text-muted-foreground">Asked {new Date(selected.created_at).toLocaleString()}</p>
                 </div>
+                <ReportDialog
+                  reportedName={studentNames[selected.user_id] || "Student"}
+                  reportedRole="student"
+                  reportedUserId={selected.user_id}
+                  trigger={
+                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                      <Flag className="h-3.5 w-3.5" /> Report student
+                    </Button>
+                  }
+                />
               </div>
               <p className="text-sm text-foreground whitespace-pre-line break-words">{selected.question_text}</p>
               {selected.image_url && (
