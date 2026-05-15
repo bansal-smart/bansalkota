@@ -1,9 +1,11 @@
-import { Search, Clock, Users } from "lucide-react";
+import { Search, Clock, Users, Flag } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTeacherStudents } from "@/hooks/useTeacherStudents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
+import ReportDialog from "@/components/ReportDialog";
+import { Button } from "@/components/ui/button";
 
 const formatRelative = (iso: string | null) => {
   if (!iso) return "—";
@@ -86,6 +88,7 @@ const TeacherStudentsPage = () => {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Avg Score</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Last Active</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -126,6 +129,18 @@ const TeacherStudentsPage = () => {
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-3 w-3" /> {formatRelative(s.lastActiveIso)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <ReportDialog
+                        reportedName={s.name}
+                        reportedRole="student"
+                        reportedUserId={s.user_id}
+                        trigger={
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                            <Flag className="h-3.5 w-3.5" />
+                          </Button>
+                        }
+                      />
                     </td>
                   </tr>
                 ))}

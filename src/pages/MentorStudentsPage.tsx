@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, Users, ShieldCheck } from "lucide-react";
+import { MessageCircle, Users, ShieldCheck, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import ReportDialog from "@/components/ReportDialog";
+import { Button } from "@/components/ui/button";
 
 type Student = {
   user_id: string;
@@ -164,13 +166,25 @@ const MentorStudentsPage = () => {
                     </span>
                   </div>
                 )}
-                <Link
-                  to="/mentor/chats"
-                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Message
-                </Link>
+                <div className="mt-3 flex gap-2">
+                  <Link
+                    to="/mentor/chats"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted/40"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Message
+                  </Link>
+                  <ReportDialog
+                    reportedName={s.full_name || "Student"}
+                    reportedRole="student"
+                    reportedUserId={s.user_id}
+                    trigger={
+                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                        <Flag className="h-3.5 w-3.5" />
+                      </Button>
+                    }
+                  />
+                </div>
               </div>
             );
           })}

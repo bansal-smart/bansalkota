@@ -47,8 +47,8 @@ const baseNav: NavItem[] = [
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },
+  { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
   { label: "Reports", icon: Flag, path: "/admin/reports" },
-  { label: "Student Report", icon: FileBarChart, path: "/admin/student-reports" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },
 ];
 
