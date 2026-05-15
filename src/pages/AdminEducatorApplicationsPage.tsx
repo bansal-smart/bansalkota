@@ -561,28 +561,23 @@ const AdminEducatorApplicationsPage = () => {
                 {provisioned && (
                   <div className="rounded-lg border border-secondary/40 bg-secondary/10 p-3 text-xs text-foreground">
                     <p className="font-semibold flex items-center gap-1.5">
-                      <Check className="h-3.5 w-3.5 text-secondary" /> Account ready
+                      <Check className="h-3.5 w-3.5 text-secondary" /> Credentials sent
                     </p>
                     <p className="mt-1 text-muted-foreground">
-                      Copy the credentials and share them with the candidate. They'll set a new password on first login.
+                      The temporary login has been emailed to{" "}
+                      <span className="font-medium text-foreground">{credApp.email}</span>. They&apos;ll set a new password on first login.
                     </p>
                   </div>
                 )}
               </div>
 
               <DialogFooter className="mt-4 gap-2 sm:gap-2 flex-wrap">
-                <Button variant="outline" onClick={copyCredentials}>
-                  <Copy className="h-4 w-4" /> Copy
-                </Button>
-                <Button variant="outline" onClick={downloadCredentialsTxt}>
-                  <Download className="h-4 w-4" /> Download .txt
-                </Button>
                 {!provisioned ? (
                   <Button onClick={provisionTeacher} disabled={provisioning || tempPassword.length < 8}>
                     {provisioning ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</>
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
                     ) : (
-                      <><Send className="h-4 w-4" /> Create Account</>
+                      <><Send className="h-4 w-4" /> Send to email</>
                     )}
                   </Button>
                 ) : (
