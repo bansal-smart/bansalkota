@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.send-live-class-reminders]
 verify_jwt = true
+
+[functions.migrate-helper]
+verify_jwt = false
