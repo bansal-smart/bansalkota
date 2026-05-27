@@ -18,6 +18,21 @@ import resultsBanner from "@/assets/bansal-results-banner.png";
 import legacyBanner from "@/assets/bansal-legacy-banner.png";
 import featureMentorship from "@/assets/feature-mentorship.png";
 import featureTrackProgress from "@/assets/feature-track-progress.png";
+import courseJeeMain from "@/assets/course-jee-main.jpg";
+import courseJeeAdvanced from "@/assets/course-jee-advanced.jpg";
+import courseNeetUg from "@/assets/course-neet-ug.jpg";
+import courseFoundation from "@/assets/course-foundation.jpg";
+import courseDropper from "@/assets/course-dropper.jpg";
+import courseCrash from "@/assets/course-crash.jpg";
+
+const featuredCourses = [
+  { img: courseJeeMain, title: "JEE Main Crash & Foundation", tag: "JEE", tone: "blue" as const, desc: "Concept clarity + speed practice for JEE Main aspirants." },
+  { img: courseJeeAdvanced, title: "JEE Advanced — Elite Batch", tag: "JEE Adv", tone: "orange" as const, desc: "IIT-focused mastery with master mentors and weekly tests." },
+  { img: courseNeetUg, title: "NEET UG — Medical Aspirants", tag: "NEET", tone: "blue" as const, desc: "Biology-led syllabus coverage with NCERT-deep practice." },
+  { img: courseFoundation, title: "Class 8–10 Foundation", tag: "Foundation", tone: "orange" as const, desc: "Build the strongest base for future JEE / NEET success." },
+  { img: courseDropper, title: "Dropper / Repeater Batch", tag: "Repeater", tone: "blue" as const, desc: "Structured one-year plan for serious second-attempt scholars." },
+  { img: courseCrash, title: "Express Crash Course", tag: "Crash", tone: "orange" as const, desc: "Rapid revision and full-syllabus tests before the big day." },
+];
 
 type ExamKey = "jee" | "neet" | "foundation";
 
