@@ -33,12 +33,21 @@ const ChapterQuizPage = () => {
     if (!quizId) return;
     (async () => {
       setLoading(true);
-      const [qRes, questRes] = await Promise.all([
+      const [qRes, questRes, ansRes] = await Promise.all([
         supabase.from("chapter_quizzes").select("id, title, description, chapter_id, course_id").eq("id", quizId).maybeSingle(),
-        supabase.from("chapter_quiz_questions").select("id, position, question, options, correct_index, explanation").eq("quiz_id", quizId).order("position"),
+        supabase.from("chapter_quiz_questions").select("id, position, question, options").eq("quiz_id", quizId).order("position"),
+        supabase.rpc("get_chapter_quiz_answers", { _quiz_id: quizId }),
       ]);
       setQuiz((qRes.data ?? null) as Quiz | null);
-      setQuestions(((questRes.data ?? []) as any[]).map((q) => ({ ...q, options: Array.isArray(q.options) ? q.options : [] })));
+      const ansMap = new Map<string, { correct_index: number; explanation: string | null }>(
+        ((ansRes.data ?? []) as any[]).map((a) => [a.id, { correct_index: a.correct_index, explanation: a.explanation }]),
+      );
+      setQuestions(((questRes.data ?? []) as any[]).map((q) => ({
+        ...q,
+        options: Array.isArray(q.options) ? q.options : [],
+        correct_index: ansMap.get(q.id)?.correct_index ?? -1,
+        explanation: ansMap.get(q.id)?.explanation ?? null,
+      })));
       setLoading(false);
     })();
   }, [quizId]);

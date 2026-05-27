@@ -67,12 +67,21 @@ export const useCompeteMatch = (matchId: string | null) => {
 
       if (m && loadedQuestionsFor.current !== matchId && (m as any).question_ids?.length) {
         loadedQuestionsFor.current = matchId;
-        const { data: qs } = await supabase
-          .from("compete_questions")
-          .select("id, question_text, options, correct_index, explanation")
-          .in("id", (m as any).question_ids);
-        // Re-order to match question_ids order
-        const byId = new Map((qs ?? []).map((q) => [q.id, q]));
+        const [qsRes, ansRes] = await Promise.all([
+          supabase
+            .from("compete_questions")
+            .select("id, question_text, options")
+            .in("id", (m as any).question_ids),
+          supabase.rpc("get_compete_question_answers", { _match_id: matchId }),
+        ]);
+        const ansMap = new Map<string, { correct_index: number; explanation: string | null }>(
+          ((ansRes.data ?? []) as any[]).map((a) => [a.id, { correct_index: a.correct_index, explanation: a.explanation }]),
+        );
+        const byId = new Map(((qsRes.data ?? []) as any[]).map((q) => [q.id, {
+          ...q,
+          correct_index: ansMap.get(q.id)?.correct_index ?? -1,
+          explanation: ansMap.get(q.id)?.explanation ?? null,
+        }]));
         const ordered = (m as any).question_ids.map((id: string) => byId.get(id)).filter(Boolean) as CompeteQuestion[];
         setQuestions(ordered);
       }
