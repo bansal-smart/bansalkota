@@ -27,6 +27,22 @@ const matchesType = (c: CourseRow, type: string) => {
   return haystack.includes(type.toLowerCase());
 };
 
+const detectMode = (c: CourseRow): "Online" | "Offline" | "Residential" => {
+  const h = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (h.includes("residential")) return "Residential";
+  if (h.includes("offline")) return "Offline";
+  return "Online";
+};
+
+const detectCategory = (c: CourseRow): "IIT-JEE" | "NEET" | "Pre Foundation" => {
+  const h = `${c.target_exam ?? ""} ${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (/neet/.test(h)) return "NEET";
+  if (/pre[- ]?foundation|foundation/.test(h)) return "Pre Foundation";
+  return "IIT-JEE";
+};
+
+const modeIcon = { Online: Video, Offline: MapPin, Residential: Home } as const;
+
 const courseImages: Record<string, string> = {
   Physics: coursePhysics,
   Chemistry: courseChemistry,
