@@ -1,64 +1,54 @@
-# Plan: Subject-first study flow, video player polish, real quizzes, richer dashboard
+## Plan
 
-## 1. Subject picker before topics (Course Study Material)
+### 1. Navigation: About dropdown (5 items)
+Update `src/components/PublicLayout.tsx` — replace the single "About" link with a dropdown menu (hover/click) using existing shadcn `NavigationMenu` or a lightweight custom dropdown matching current nav styling. Items:
+1. About Bansal Classes → `/about`
+2. About VK Bansal Sir → `/leadership/vk-bansal`
+3. About Sameer Bansal Sir → `/leadership/sameer-bansal`
+4. About Neelam Bansal Ma'am → `/leadership/neelam-bansal`
+5. About Mahima Bansal Ma'am → `/leadership/mahima-bansal`
 
-Currently `/my-courses/:slug` jumps straight into chapter accordions. Add a subject-selection step.
+Mobile menu: render the 5 items as an expandable section.
 
-- New state `selectedSubject` in `src/pages/CourseStudyMaterialPage.tsx`.
-- Derive subject list from the course's exam:
-  - JEE / JEE Main / JEE Advanced → Physics, Chemistry, Mathematics
-  - NEET → Physics, Chemistry, Biology
-  - Foundation / others → fall back to the course's own subject, or all four
-- Step 1 view: a grid of large subject cards (icon + name + chapter count + progress bar), using existing `SUBJECT_THEME` tokens (`subject-physics`, `subject-chemistry`, `subject-math`, `subject-bio`).
-- On click → set `selectedSubject`, render existing chapters UI filtered to that subject.
-- Chapters need a subject tag. Use `chapters.subject` column if present; otherwise derive from chapter title keywords (Physics/Chem/Math/Bio) as a fallback. Add a small migration to ensure `chapters.subject text` exists (nullable) so future authoring is clean.
-- Breadcrumb at top: `My Courses › <Course> › <Subject>` with a "Change subject" button.
-- Persist last picked subject in `localStorage` keyed by course slug so returning users land on the same subject.
+Individual leadership pages already exist at `/leadership/:slug` via `LeadershipDetailPage.tsx` for all 4 family members — no new pages needed. I'll verify the slugs render and polish any missing content (photo placeholder, tagline) for the 3 non-VK profiles to ensure they feel complete.
 
-## 2. Video player + page alignment (LecturePlayerPage)
+### 2. About Bansal Classes page redesign (`src/pages/AboutPage.tsx`)
+Completely rebuild the page with a premium, editorial feel:
 
-- Fix layout: 2-column grid on `lg` (player 2fr, sidebar 1fr), single column on mobile. Player wrapped in `aspect-video` with `rounded-2xl overflow-hidden bg-black` so YouTube iframe never overflows.
-- Sticky top bar with `ArrowLeft` "Back to Study Material" (already wired to `/my-courses/:slug`) + lesson title + chapter chip.
-- Below player: tabs for **Overview · Notes · Resources · Quiz** (Quiz tab links to the chapter's quiz from step 3).
-- Right sidebar: chapter playlist with current lesson highlighted, completion ticks, next-lesson CTA.
-- Use semantic tokens only (`bg-card`, `text-foreground`, `border-border`, `ring-ring`).
+- **Hero — "Our Guiding Light"**: Two-column layout. Left = large portrait of VK Bansal Sir (generated AI portrait, respectful illustrated style — saved to `src/assets/vk-bansal-portrait.jpg`) with a soft glow frame and "Forever Honored" badge. Right = headline "Bansal Classes — Born from a Father's Vision", subhead crediting VK Bansal Sir as founder, guiding light, and eternal inspiration, plus CTA "Read His Full Story" → `/leadership/vk-bansal`.
+- **Legacy strip**: Founded 1981 · 40+ years · 100+ centres · Daily live sessions (uses `bansalStats`).
+- **Our Story**: 3-paragraph narrative on Kota origins, JEE legacy, and modern transformation.
+- **Teaching Methodology**: 3-card grid from `teachingMethodology` (CLP / DLP / Online).
+- **Vision & Mission**: Two-column with icon bullet lists from `visionPoints` / `missionPoints`.
+- **Leadership at a glance**: 4-card row linking to each leader's detail page (uses `leadership` array).
+- **CTA band**: "Visit a Centre" + "Explore Courses".
 
-## 3. Quizzes after each chapter (seed + UI)
+All sections use existing Bansal design tokens (`bansal-blue`, `bansal-orange`, `bansal-blue-light`), `BansalCard`, `BansalButton`, Mulish/Plus Jakarta Sans fonts, and Lucide icons (no emojis).
 
-Backend (one migration):
-- Ensure `chapter_quizzes` and `chapter_quiz_questions` exist with `chapter_id`, `title`, `question`, `options jsonb`, `correct_index`, `explanation`, `position`. Use existing `test_attempts` pattern? Simpler: dedicated lightweight tables since these are auto-graded MCQs tied to a chapter.
-- Seed 5 MCQs per chapter for the sample course (`nucleus-jee-main-advanced`) covering Physics/Chem/Math.
-- RLS: enrolled students can read; admins can write. Grants for `authenticated` + `service_role`.
+### 3. Home page: Featured Courses section (`src/pages/LandingPage.tsx`)
+Add a new section "Featured Courses" placed above the existing CLP/DLP block:
 
-Frontend:
-- New route `/my-courses/:slug/chapters/:chapterId/quiz`.
-- `ChapterQuizPage.tsx`: one question at a time, progress bar, timer (optional), instant scoring on submit, "Review answers" screen with explanations.
-- Replace the existing "Quizzes" tab in Study Material so each chapter shows real quizzes with a Start button + last score badge.
-- Store attempt in a new `chapter_quiz_attempts` table (user_id, quiz_id, score, total, answers jsonb).
+- Section header with title + "View All" link → `/courses`.
+- Responsive grid (`md:grid-cols-2 lg:grid-cols-3`) of 6 featured course cards.
+- Each card: AI-generated thumbnail, course title, exam badge (JEE/NEET/Foundation), short tagline, "Explore" CTA linking to `/courses` (or course detail if a matching slug exists).
 
-## 4. Dashboard redesign with charts
+**AI-generated thumbnails** (saved to `src/assets/`, fast tier, 1024×768):
+1. `course-jee-main.jpg` — JEE Main: geometric math/physics motifs, blue gradient
+2. `course-jee-advanced.jpg` — JEE Advanced: premium dark-blue with formula glow
+3. `course-neet-ug.jpg` — NEET UG: DNA/molecule biology theme, teal/green
+4. `course-foundation.jpg` — Class 8-10 Foundation: friendly classroom illustration, warm orange
+5. `course-dropper.jpg` — Dropper Batch: focused student silhouette, deep navy + orange
+6. `course-crash.jpg` — Crash Course: clock + rocket motif, vibrant orange
 
-`src/pages/StudentDashboard.tsx` — keep the hero but add:
-- **Stats strip**: 4 KPI cards (Streak days, Hours this week, Tests taken, Avg score) with mini sparkline using `recharts` (already a likely dep — verify; if not, add).
-- **Weekly study chart**: bar chart of minutes/day for last 7 days (from `study_sessions`).
-- **Subject mastery radar**: radar chart across Physics/Chem/Math/Bio using avg quiz/test scores.
-- **Progress ring grid**: per enrolled course donut.
-- **Upcoming row**: next live class + next test cards with countdown chips.
-- **Leaderboard / percentile teaser**: small card linking to analytics.
-- Lottie-free, all chart colors from semantic tokens (`--primary`, `--subject-*`).
-- Mobile: stack into single column; keep 16px gutters.
+Each thumbnail rendered with `rounded-2xl`, `hover-lift`, gradient overlay for title legibility.
 
-## Files
+### Technical Details
+- **Dropdown component**: Use shadcn `NavigationMenu` (already in `src/components/ui/`) for desktop; reuse mobile sheet pattern already in `PublicLayout`.
+- **Image generation**: `imagegen--generate_image` with `model: "fast"` for all 7 images (6 course thumbs + 1 VK portrait — portrait uses `standard` for higher fidelity).
+- **No backend changes**, no schema changes, no new routes (leadership routes already exist).
+- **Files changed**: `PublicLayout.tsx`, `AboutPage.tsx`, `LandingPage.tsx`.
+- **Files created**: 7 image assets in `src/assets/`.
 
-- Edit: `src/pages/CourseStudyMaterialPage.tsx`, `src/pages/LecturePlayerPage.tsx`, `src/pages/StudentDashboard.tsx`, `src/App.tsx`
-- New: `src/components/study/SubjectPicker.tsx`, `src/pages/ChapterQuizPage.tsx`, `src/components/dashboard/{StatStrip,WeeklyStudyChart,SubjectRadar,CourseProgressGrid}.tsx`
-- Migration: chapter subject column (if missing) + `chapter_quizzes`, `chapter_quiz_questions`, `chapter_quiz_attempts` with GRANTs + RLS, and seed inserts for the sample course.
-
-## Out of scope
-
-No business-logic changes to enrollments, payments, or auth. Existing course/lesson data model untouched besides the optional `chapters.subject` column and the new quiz tables.
-
-## Confirm before I build
-
-1. OK to add the new quiz tables + seed 5 MCQs per chapter for the sample JEE course?
-2. For JEE courses, show all three subjects (Phy/Chem/Math) even if some chapters aren't tagged yet (untagged chapters appear under the course's primary subject)?
+### Out of scope
+- Editing the 4 leadership detail pages' copy (they already exist and are populated). I'll only verify they render; deeper rewrites can be a follow-up.
+- Course data model changes — featured courses are presentational cards on the landing page linking to existing `/courses` flow.
