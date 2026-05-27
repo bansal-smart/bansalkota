@@ -54,12 +54,23 @@ const TestSubjectBreakdownPage = () => {
       setTestName(att.test_name ?? "");
       setAnswers((att.answers ?? {}) as Record<string, { selected: number | null }>);
 
-      const { data: qs } = await supabase
-        .from("test_questions")
-        .select("id, subject, question_text, options, correct_answer, marks_correct, marks_wrong, explanation")
-        .eq("test_id", att.test_id);
+      const [qsRes, ansRes] = await Promise.all([
+        supabase
+          .from("test_questions")
+          .select("id, subject, question_text, options, marks_correct, marks_wrong")
+          .eq("test_id", att.test_id),
+        supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
+      ]);
       if (cancelled) return;
-      const filtered = (qs ?? []).filter((q) => slugifySubject(q.subject ?? "General") === subject);
+      const ansMap = new Map<string, { correct_answer: any; explanation: string | null }>(
+        ((ansRes.data ?? []) as any[]).map((a) => [a.id, { correct_answer: a.correct_answer, explanation: a.explanation }]),
+      );
+      const merged = ((qsRes.data ?? []) as any[]).map((q) => ({
+        ...q,
+        correct_answer: ansMap.get(q.id)?.correct_answer ?? null,
+        explanation: ansMap.get(q.id)?.explanation ?? null,
+      }));
+      const filtered = merged.filter((q) => slugifySubject(q.subject ?? "General") === subject);
       if (filtered.length > 0) setSubjectName(filtered[0].subject ?? "General");
       setQuestions(filtered as Question[]);
       setLoading(false);
