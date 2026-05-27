@@ -11,7 +11,7 @@ const GOALS = [
   { value: "Class 12", label: "Class 12", desc: "Boards & entrance prep" },
 ];
 
-const DISMISS_KEY = "arke:goal_card_dismissed_v1";
+const DISMISS_KEY = "bansal:goal_card_dismissed_v1";
 
 const GoalSetupCard = () => {
   const { user } = useAuth();
@@ -79,7 +79,7 @@ const GoalSetupCard = () => {
             <Target className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h3 className="font-display text-lg font-black text-foreground">Pick your goal to personalize Arke</h3>
+            <h3 className="font-display text-lg font-black text-foreground">Pick your goal to personalize Bansal Classes</h3>
             <p className="text-xs text-muted-foreground">We&apos;ll tailor courses, tests, and educators around it.</p>
           </div>
         </div>

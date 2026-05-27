@@ -246,7 +246,7 @@ const AdminEducatorApplicationsPage = () => {
           <h1 className="flex items-center gap-2 text-2xl font-black font-display text-foreground">
             <Briefcase className="h-6 w-6 text-primary" /> Educator Enquiries
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">All "Join as an Educator" enquiries submitted via the ARKE landing page.</p>
+          <p className="mt-1 text-sm text-muted-foreground">All "Join as an Educator" enquiries submitted via the Bansal Classes landing page.</p>
         </div>
       </div>
 

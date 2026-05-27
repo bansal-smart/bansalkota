@@ -211,7 +211,7 @@ const AdminUsersPage = () => {
 
   const sendBulkNotification = async () => {
     if (!bulkBody.trim()) return toast.error("Enter a message");
-    const inserts = selected.map((uid) => ({ user_id: uid, title: "Update from Arke", body: bulkBody, type: "system" as const }));
+    const inserts = selected.map((uid) => ({ user_id: uid, title: "Update from Bansal Classes", body: bulkBody, type: "system" as const }));
     const { error } = await supabase.from("notifications").insert(inserts);
     if (error) return toast.error(error.message);
     toast.success(`Sent to ${selected.length} user${selected.length === 1 ? "" : "s"}`);

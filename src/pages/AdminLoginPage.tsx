@@ -68,7 +68,7 @@ const AdminLoginPage = () => {
               <Lock className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-xl font-black font-display text-foreground">Staff Sign In</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Access the ARKE enquiries dashboard</p>
+            <p className="mt-1 text-sm text-muted-foreground">Access the Bansal Classes enquiries dashboard</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
@@ -80,7 +80,7 @@ const AdminLoginPage = () => {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@arke.in"
+                  placeholder="you@bansal.ac.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"

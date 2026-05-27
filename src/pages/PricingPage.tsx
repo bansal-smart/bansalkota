@@ -20,7 +20,7 @@ const PricingPage = () => {
   const plans = [
     {
       name: "Explorer",
-      tagline: "Get a feel for Arke",
+      tagline: "Get a feel for Bansal Classes",
       icon: Sparkles,
       monthly: 0,
       gradient: "from-muted to-muted",
@@ -298,7 +298,7 @@ const PricingPage = () => {
               Ready to start your prep journey?
             </h2>
             <p className="mt-3 text-primary-foreground/80">
-              Join thousands of students already learning on Arke. Start free — upgrade whenever you're ready.
+              Join thousands of students already learning on Bansal Classes. Start free — upgrade whenever you're ready.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link

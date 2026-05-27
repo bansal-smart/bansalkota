@@ -13,7 +13,7 @@ interface Step {
   done: boolean;
 }
 
-const DISMISS_KEY = "arke:onboarding_celebrated_v1";
+const DISMISS_KEY = "bansal:onboarding_celebrated_v1";
 
 const OnboardingTracker = () => {
   const { user } = useAuth();
@@ -96,7 +96,7 @@ const OnboardingTracker = () => {
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <h3 className="font-display text-base font-black text-foreground">
-            {allDone ? "🎉 You're all set up!" : "Get started with Arke"}
+            {allDone ? "🎉 You're all set up!" : "Get started with Bansal Classes"}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {allDone ? "You've completed onboarding." : `${completed} of ${steps.length} steps complete`}

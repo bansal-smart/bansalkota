@@ -57,7 +57,7 @@ const StaffDashboardPage = () => {
       <div>
         <h1 className="text-2xl font-black font-display text-foreground">Enquiries Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Overview of educator enquiries received via the ARKE landing page.
+          Overview of educator enquiries received via the Bansal Classes landing page.
         </p>
       </div>
 

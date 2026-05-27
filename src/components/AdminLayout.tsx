@@ -163,7 +163,7 @@ const AdminHeader = memo(
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
       <div className="flex items-center gap-3">
         <h1 className="text-sm font-bold text-foreground">
-          ARKE {isSuperAdmin ? "Super Admin" : "Admin"} Dashboard
+          Bansal Classes {isSuperAdmin ? "Super Admin" : "Admin"} Dashboard
         </h1>
       </div>
       <div className="flex items-center gap-3">

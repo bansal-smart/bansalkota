@@ -19,7 +19,7 @@ const partnerTypes = [
   {
     icon: Building2,
     title: "Schools & Coaching Centers",
-    description: "We partner with K-12 schools and coaching centers across India and Dubai to bring Arke programs to their students.",
+    description: "We partner with K-12 schools and coaching centers across India and Dubai to bring Bansal Classes programs to their students.",
   },
   {
     icon: Globe2,
@@ -50,7 +50,7 @@ const AssociationPage = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 mb-6">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Partner with Arke</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-primary">Partner with Bansal Classes</span>
           </div>
           <h1 className="font-display text-4xl md:text-6xl font-black text-foreground mb-4">
             Our <span className="gradient-text">Association</span>
@@ -118,7 +118,7 @@ const AssociationPage = () => {
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">Partner Benefits</span>
               </div>
               <h2 className="font-display text-3xl md:text-4xl font-black text-foreground mb-4">
-                What partners get with Arke
+                What partners get with Bansal Classes
               </h2>
               <p className="text-muted-foreground mb-6">
                 We bring infrastructure, mentors and a proven program — partners bring students and reach. Together, we unleash potential.
@@ -169,7 +169,7 @@ const AssociationPage = () => {
                 to="/about"
                 className="rounded-pill border border-primary-foreground/40 px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary-foreground/10 transition-colors"
               >
-                About Arke
+                About Bansal Classes
               </Link>
             </div>
           </div>

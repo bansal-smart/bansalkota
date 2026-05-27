@@ -53,10 +53,10 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
   const fastest = myAnswers.filter((a) => a.is_correct).reduce((min, a) => a.time_taken_ms < min ? a.time_taken_ms : min, Infinity);
 
   const handleShare = async () => {
-    const text = `🏆 I just ${won ? "won" : draw ? "drew" : "played"} a Compete match on Arke!\n${myName}: ${Math.round(myScore)} vs ${oppName}: ${Math.round(oppScore)}\nAccuracy ${accuracy}% · ${match.subject}`;
+    const text = `🏆 I just ${won ? "won" : draw ? "drew" : "played"} a Compete match on Bansal Classes!\n${myName}: ${Math.round(myScore)} vs ${oppName}: ${Math.round(oppScore)}\nAccuracy ${accuracy}% · ${match.subject}`;
     if ((navigator as any).share) {
       try {
-        await (navigator as any).share({ title: "Arke Compete", text });
+        await (navigator as any).share({ title: "Bansal Classes Compete", text });
         return;
       } catch { /* fallback below */ }
     }
@@ -78,7 +78,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
     </linearGradient>
   </defs>
   <rect width="800" height="450" fill="url(#bg)"/>
-  <text x="40" y="60" fill="#F97316" font-family="sans-serif" font-weight="900" font-size="20">ARKE · COMPETE</text>
+  <text x="40" y="60" fill="#F97316" font-family="sans-serif" font-weight="900" font-size="20">Bansal Classes · COMPETE</text>
   <text x="40" y="130" fill="${won ? "#10B981" : draw ? "#FFFFFF" : "#EF4444"}" font-family="sans-serif" font-weight="900" font-size="68">${title.toUpperCase()}</text>
   <text x="40" y="180" fill="#FFFFFF" font-family="sans-serif" font-size="20">${escapeXml(myName ?? "You")} vs ${escapeXml(oppName ?? "Opponent")}</text>
   <text x="40" y="280" fill="#F97316" font-family="sans-serif" font-weight="900" font-size="92">${Math.round(myScore)}</text>
