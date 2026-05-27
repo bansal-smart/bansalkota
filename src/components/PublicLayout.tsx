@@ -43,7 +43,7 @@ const PublicLayout = () => {
             <BansalLogo className="h-10 md:h-12 w-auto" />
           </Link>
 
-          <div className="hidden md:flex items-center gap-5 lg:gap-7">
+          <div className="hidden md:flex items-center gap-3 lg:gap-5">
             {navItems.map((item) => {
               const active = item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path);
               return (
