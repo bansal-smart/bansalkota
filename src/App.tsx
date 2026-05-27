@@ -102,6 +102,8 @@ import EStorePage from "./pages/EStorePage";
 import BookDetailPage from "./pages/BookDetailPage";
 import TestSeriesCatalogPage from "./pages/TestSeriesCatalogPage";
 import TestSeriesDetailPage from "./pages/TestSeriesDetailPage";
+import AdminBooksPage from "./pages/AdminBooksPage";
+import AdminTestSeriesPage from "./pages/AdminTestSeriesPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -265,6 +267,8 @@ const App = () => (
               <Route path="/admin/tests" element={<AdminTestsPage />} />
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+              <Route path="/admin/test-series" element={<AdminTestSeriesPage />} />
+              <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
               <Route path="/admin/compete-questions" element={<AdminCompeteQuestionsPage />} />
               <Route path="/admin/exams" element={<AdminExamsPage />} />
