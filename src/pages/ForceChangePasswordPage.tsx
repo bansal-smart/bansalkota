@@ -67,7 +67,7 @@ const ForceChangePasswordPage = () => {
       // Password was changed but flag wasn't cleared — still proceed but warn.
       toast.error("Password updated, but please refresh if prompted again.");
     } else {
-      toast.success("Password updated. Welcome to ARKE!");
+      toast.success("Password updated. Welcome to Bansal Classes!");
     }
     // Refresh session so the new app_metadata is picked up.
     await supabase.auth.refreshSession();
@@ -91,7 +91,7 @@ const ForceChangePasswordPage = () => {
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 mb-6 flex items-start gap-2">
           <ShieldCheck className="h-4 w-4 text-primary mt-0.5 shrink-0" />
           <p className="text-xs text-foreground">
-            For security, you must replace the temporary password shared by the ARKE team before continuing.
+            For security, you must replace the temporary password shared by the Bansal Classes team before continuing.
           </p>
         </div>
 

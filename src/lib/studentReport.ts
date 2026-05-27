@@ -211,7 +211,7 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
-  doc.text("Arke", margin, 32);
+  doc.text("Bansal Classes", margin, 32);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("Monthly Academic Report", margin, 50);
@@ -236,7 +236,7 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   ]
     .filter(Boolean)
     .join("   |   ");
-  doc.text(infoLine || "Arke student", margin + 14, y + 44);
+  doc.text(infoLine || "Bansal Classes student", margin + 14, y + 44);
   doc.setTextColor(...NAVY);
   doc.setFontSize(9);
   doc.text(`Report period: ${data.period}`, margin + 14, y + 60);
@@ -387,7 +387,7 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   doc.line(margin, pageH - 36, W - margin, pageH - 36);
   doc.setFontSize(9);
   doc.setTextColor(...MUTED);
-  doc.text("Arke • Personalised learning for every student", margin, pageH - 22);
+  doc.text("Bansal Classes • Personalised learning for every student", margin, pageH - 22);
   doc.text(
     `Generated ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`,
     W - margin,

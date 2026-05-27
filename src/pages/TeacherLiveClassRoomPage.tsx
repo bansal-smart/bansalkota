@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
-import arkeLogo from "@/assets/arke-logo.jpeg";
+import bansalLogo from "@/assets/bansal-logo.png";
 
 type ClassRow = {
   id: string;
@@ -266,8 +266,8 @@ const TeacherLiveClassRoomPage = () => {
                   className="absolute inset-0 h-full w-full"
                 />
                 <div className="pointer-events-none absolute top-2 left-2 md:top-3 md:left-3 z-10 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-1 backdrop-blur-sm">
-                  <img src={arkeLogo} alt="Arke Scholars" className="h-5 md:h-6 w-auto rounded" />
-                  <span className="text-[10px] md:text-xs font-bold text-white tracking-wide">Arke Scholars</span>
+                  <img src={bansalLogo} alt="Bansal Classes Scholars" className="h-5 md:h-6 w-auto rounded" />
+                  <span className="text-[10px] md:text-xs font-bold text-white tracking-wide">Bansal Classes Scholars</span>
                 </div>
               </>
             ) : (

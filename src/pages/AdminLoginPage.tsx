@@ -59,7 +59,7 @@ const AdminLoginPage = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-2xl font-black font-display text-white">ARKE</span>
+          <span className="text-2xl font-black font-display text-white">Bansal Classes</span>
         </Link>
 
         <div className="rounded-2xl border border-white/10 bg-card p-6 sm:p-8 shadow-2xl">
@@ -68,7 +68,7 @@ const AdminLoginPage = () => {
               <Lock className="h-5 w-5 text-primary" />
             </div>
             <h1 className="text-xl font-black font-display text-foreground">Staff Sign In</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Access the ARKE enquiries dashboard</p>
+            <p className="mt-1 text-sm text-muted-foreground">Access the Bansal Classes enquiries dashboard</p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-4">
@@ -80,7 +80,7 @@ const AdminLoginPage = () => {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@arke.in"
+                  placeholder="you@bansal.ac.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"

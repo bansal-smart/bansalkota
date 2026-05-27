@@ -15,7 +15,7 @@ import {
 const steps = [
   { icon: GraduationCap, title: "Choose Program", body: "Pick the course aligned with your target exam." },
   { icon: FileText, title: "Submit Application", body: "Fill the simple online form in under 5 minutes." },
-  { icon: ClipboardCheck, title: "Scholarship Test", body: "Attempt the Arke Scholarship Test (AST)." },
+  { icon: ClipboardCheck, title: "Scholarship Test", body: "Attempt the Bansal Classes Scholarship Test (AST)." },
   { icon: CheckCircle2, title: "Confirm Seat", body: "Pay the discounted fee and start learning." },
 ];
 
@@ -75,7 +75,7 @@ const AdmissionsPage = () => {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
             Find the right program and apply for merit-based scholarships up to 100%. A simple 4-step process to join
-            Arke.
+            Bansal Classes.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
@@ -127,7 +127,7 @@ const AdmissionsPage = () => {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-display text-3xl font-black text-foreground md:text-4xl">Scholarship tiers</h2>
             <p className="mt-3 text-base text-muted-foreground">
-              The Arke Scholarship Test (AST) unlocks up to 100% off course fees.
+              The Bansal Classes Scholarship Test (AST) unlocks up to 100% off course fees.
             </p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -195,7 +195,7 @@ const AdmissionsPage = () => {
             <Trophy className="mx-auto h-10 w-10" />
             <h2 className="mt-4 font-display text-3xl font-black md:text-4xl">Apply today, save up to 100%</h2>
             <p className="mx-auto mt-3 max-w-xl text-base text-primary-foreground/90">
-              Take the Arke Scholarship Test and join the next batch with the scholarship you deserve.
+              Take the Bansal Classes Scholarship Test and join the next batch with the scholarship you deserve.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link

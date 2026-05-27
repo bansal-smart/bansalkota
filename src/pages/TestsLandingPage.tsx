@@ -158,7 +158,7 @@ const TestsLandingPage = () => {
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
-            <h2 className="font-display text-3xl font-black text-foreground md:text-4xl">How a test works on Arke</h2>
+            <h2 className="font-display text-3xl font-black text-foreground md:text-4xl">How a test works on Bansal Classes</h2>
             <p className="mt-3 text-muted-foreground">From the first click to your detailed score report</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-4">
@@ -189,7 +189,7 @@ const TestsLandingPage = () => {
           <Sparkles className="mx-auto h-8 w-8 text-accent mb-4 animate-pulse" />
           <h2 className="font-display text-3xl font-black text-white md:text-5xl">Ready to test your prep?</h2>
           <p className="mt-4 text-lg text-white/90 max-w-lg mx-auto">
-            Join 50,000+ students already practising with Arke's smart test engine.
+            Join 50,000+ students already practising with Bansal Classes's smart test engine.
           </p>
           <Link
             to={user ? "/my-tests" : "/signup"}

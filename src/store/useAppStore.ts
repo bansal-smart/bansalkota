@@ -25,7 +25,6 @@ interface AppState {
   currentGoal: string;
   notifications: AppNotification[];
   unreadCount: number;
-  country: 'india' | 'dubai';
   setUser: (user: AppUser | null) => void;
   setCurrentGoal: (goal: string) => void;
   setNotifications: (n: AppNotification[]) => void;
@@ -33,12 +32,9 @@ interface AppState {
   markRead: (id: string) => void;
   markAllRead: () => void;
   archiveNotification: (id: string) => void;
-  setCountry: (country: 'india' | 'dubai') => void;
 }
 
-const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('arke-country') : null) as 'india' | 'dubai' | null;
-
-const USER_CACHE_KEY = 'arke-user-cache';
+const USER_CACHE_KEY = 'bansal-user-cache';
 const loadCachedUser = (): AppUser | null => {
   if (typeof window === 'undefined') return null;
   try {
@@ -54,7 +50,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentGoal: 'IIT JEE',
   notifications: [],
   unreadCount: 0,
-  country: savedCountry || 'india',
   setUser: (user) => {
     if (typeof window !== 'undefined') {
       if (user) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
@@ -83,9 +78,5 @@ export const useAppStore = create<AppState>((set, get) => ({
   archiveNotification: (id) => {
     const next = get().notifications.filter((n) => n.id !== id);
     set({ notifications: next, unreadCount: next.filter((x) => !x.read_at).length });
-  },
-  setCountry: (country) => {
-    localStorage.setItem('arke-country', country);
-    set({ country });
   },
 }));

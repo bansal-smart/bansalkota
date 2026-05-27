@@ -151,17 +151,15 @@ const AdminDashboard = () => {
   const upcoming = liveClasses.filter((c) => c.status === "scheduled").slice(0, 5);
 
   const regionData = useMemo(() => {
-    const counts: Record<string, number> = { India: 0, Dubai: 0, Other: 0 };
+    const counts: Record<string, number> = { India: 0, Other: 0 };
     profiles.forEach((p) => {
       const c = (p.country ?? "").toLowerCase();
-      if (c.includes("india") || c === "in") counts.India++;
-      else if (c.includes("dubai") || c.includes("uae") || c === "ae") counts.Dubai++;
+      if (c === "" || c.includes("india") || c === "in") counts.India++;
       else counts.Other++;
     });
     const total = Math.max(1, profiles.length);
     return [
       { name: "India", value: Math.round((counts.India / total) * 100), color: "hsl(24,95%,53%)" },
-      { name: "Dubai", value: Math.round((counts.Dubai / total) * 100), color: "hsl(160,93%,39%)" },
       { name: "Other", value: Math.round((counts.Other / total) * 100), color: "hsl(220,14%,90%)" },
     ];
   }, [profiles]);

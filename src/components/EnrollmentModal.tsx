@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { dispatchEmailOnly } from "@/lib/notify";
-import { useAppStore } from "@/store/useAppStore";
+
 
 interface EnrollmentModalProps {
   open: boolean;
@@ -61,9 +61,6 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
     });
     // Send payment-receipt email (respects user preferences). Demo amount = course price.
     if (user.email) {
-      const country = useAppStore.getState().country;
-      const currency = country === "dubai" ? "AED" : "INR";
-      const amount = country === "dubai" ? Math.round(coursePrice / 22) : coursePrice;
       void dispatchEmailOnly({
         recipientUserId: user.id,
         recipientEmail: user.email,
@@ -73,8 +70,8 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
         templateData: {
           name: user.user_metadata?.full_name || "Learner",
           courseName,
-          amount,
-          currency,
+          amount: coursePrice,
+          currency: "INR",
           orderId: `DEMO-${courseId.slice(0, 8)}`,
           paidAt: new Date().toISOString(),
         },
@@ -101,15 +98,15 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
               <h2 className="text-lg font-bold text-foreground">Payment integration is not yet implemented</h2>
               <p className="text-xs text-muted-foreground mt-2">
                 Enrollment for <span className="font-semibold text-foreground">{courseName}</span> ({`₹${coursePrice.toLocaleString()}`}) requires a
-                payment gateway. Razorpay (India) and Stripe (Dubai) will be wired in next.
+                payment gateway. Razorpay will be wired in next.
               </p>
             </div>
 
             <div className="rounded-lg bg-muted/40 p-3 text-left">
               <p className="text-[11px] font-bold text-foreground uppercase mb-1">Coming soon</p>
               <ul className="text-xs text-muted-foreground space-y-1">
-                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Razorpay UPI / Card / Netbanking (India)</li>
-                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Stripe Card payments (Dubai)</li>
+                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Razorpay UPI / Card / Netbanking</li>
+                <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Easy EMI options</li>
                 <li className="flex gap-2"><Check className="h-3 w-3 text-secondary mt-0.5 shrink-0" /> Auto-receipt emails + invoice download</li>
               </ul>
             </div>

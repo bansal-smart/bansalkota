@@ -59,7 +59,7 @@ const AuthCallbackPage = () => {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
             <Flame className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-display text-lg font-black text-foreground">ARKE</span>
+          <span className="font-display text-lg font-black text-foreground">Bansal Classes</span>
         </Link>
 
         <div className="mx-auto mt-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
