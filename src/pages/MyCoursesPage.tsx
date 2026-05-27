@@ -121,7 +121,7 @@ const MyCoursesPage = () => {
         {/* Resume hero */}
         {recent && recent.progress_percent < 100 && (
           <Link
-            to={`/courses/${recent.course.slug}/learn`}
+            to={`/my-courses/${recent.course.slug}`}
             className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-card hover-lift animate-fade-in-up sm:max-w-sm lg:max-w-[33%]"
           >
             <div className={`relative flex h-40 items-center justify-center bg-gradient-to-br ${subjectGradient[recent.course.subject] ?? "from-primary to-accent"}`}>
@@ -200,7 +200,7 @@ const MyCoursesPage = () => {
                 return (
                   <Link
                     key={e.id}
-                    to={`/courses/${e.course.slug}/learn`}
+                    to={`/my-courses/${e.course.slug}`}
                     className="group flex gap-3 overflow-hidden rounded-2xl border border-border bg-card p-3 hover-lift"
                   >
                     <div className={`relative flex h-20 w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient}`}>
@@ -250,7 +250,7 @@ const MyCoursesPage = () => {
                 return (
                   <Link
                     key={e.id}
-                    to={`/courses/${e.course.slug}/learn`}
+                    to={`/my-courses/${e.course.slug}`}
                     className="group overflow-hidden rounded-2xl border border-border bg-card hover-lift"
                   >
                     <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${gradient}`}>

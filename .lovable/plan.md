@@ -1,52 +1,84 @@
-# Redesign Course Detail Page
+## Goal
+Restructure the student portal around six things only — Home, My Course, My Live Class, My Live Test, My Progress, My Profile — gate it behind a one-time profile-completion popup, and swap the sidebar's flame mark for the real Bansal logo. Test engine itself stays exactly as-is.
 
-Restructure `src/pages/CourseDetailPage.tsx` to match the reference layout (Bansal "Bull's Eye" detail) while keeping our locked design tokens (orange primary, navy, Mulish/Plus Jakarta, rounded-2xl cards, Lucide icons).
+## 1. Branding
+- Replace the orange flame + "Bansal Classes" text in `StudentLayout` sidebar and mobile header with `<BansalLogo />` (uses `src/assets/bansal-logo.png`).
 
-## New page structure
+## 2. Profile completion popup (mandatory, one-time)
+- New DB columns on `profiles`: `father_name text`, `state text`.  
+  (Existing `class_level`, `target_exam`, `city`, `phone`, `full_name` reused. `onboarding_completed` already exists and is the gate flag.)
+- New component `ProfileCompletionDialog.tsx` shown by `StudentLayout` whenever the logged-in student's `profiles.onboarding_completed = false`. Cannot be dismissed (no close button, no overlay click).
+- Fields (all required except where noted):
+  - Full Name
+  - Email (read-only, from auth)
+  - Phone
+  - Father's Name
+  - Class (dropdown: 8, 9, 10, 11, 12, Dropper)
+  - Stream (dropdown: IIT-JEE, NEET, Pre Foundation)
+  - City
+  - State (dropdown of Indian states)
+- On submit: update profile, set `onboarding_completed = true`, refresh auth profile, close dialog.
+- Zod validation, trim + max-length per field.
 
-Two-column layout on desktop (`grid-cols-[1fr_360px]`), single-column stacked on mobile. Sticky right rail on `lg+`.
+## 3. Sidebar restructure
+Replace existing nav groups in `StudentLayout` with a single flat list:
 
-### Top bar (above title)
-- Mode badge (e.g. `Offline` with video icon) + Category chip (e.g. `Category: JEE`) — pill row, brand colors.
+```text
+Home          → /dashboard
+My Course     → /my-courses
+My Live Class → /my-live-classes
+My Live Test  → /my-tests
+My Progress   → /analytics
+My Profile    → /profile
+```
 
-### Left column
-1. **Title + intro paragraph** — large H1, muted intro copy.
-2. **Subjects Covered** — chip row (Physics, Chemistry, Maths) from `course.subject` (comma-split).
-3. **This Course Includes** — 2–4 mini cards (Education Level, Duration, Mode, Language) in a responsive grid.
-4. **Know Your Teachers** — horizontal card row with avatar / name / subject / years badge. Pulls from a new optional `teachers` field on the course (fallback to single `educator_name`).
-5. **Know More Details** — rich-text block rendering structured key/value rows (Course Name, Eligibility, Mode, Location, Target Exam, Admission Process, Fee Structure with installments) + "Why Choose…" bulleted list.
-6. **Class Commencement Dates** — styled responsive table (cards on mobile).
-7. **Scholarship sections** — two collapsible/expandable tables: Board performance, Olympiads.
-8. **What You'll Learn / Requirements / Reviews** — kept from existing page, moved below.
+Removed from sidebar AND mobile bottom nav: Doubts, Mentor Chat, Compete, Leaderboard, Settings, Goal Selector, search bar in header. Routes stay registered (other pages may still link to them) but are no longer surfaced.
 
-### Right column (sticky)
-1. **Course banner image card** — full thumbnail with rounded top, brand-colored frame.
-2. **Price block** — strike-through original price, current price, % OFF badge.
-3. **Payment Details mini-table** — Price, Coupon Discount, Total Payable.
-4. **Pay Now CTA** — full-width orange gradient button with amount.
-5. **View Coupon Code** link.
-6. **Trust strip** — payment provider icons (Lucide `CreditCard`, plus inline SVG for VISA/MC/UPI placeholders) + "Safe and secure payment" line.
-7. **Our Services card** — 3×3 icon grid (Study Material, Recorded Lectures, Test Series, Doubt Classes, T-Shirt, Umbrella, Bag) using Lucide icons.
+## 4. My Live Test (course-wise)
+- Rename label to "My Live Tests".
+- `MyTestsPage` (or its data hook) groups available tests by enrolled course. Layout: one collapsible card per enrolled course, listing its tests with the existing Start / Resume / View Result actions. Tests not tied to an enrolled course go under a "General Practice" group at the bottom.
+- Test-taking, timer, autosave, and results pages are untouched.
 
-### Removed / merged
-- Existing 5-tab nav (About / Lectures / Tests / PDFs / Time) is **removed** for non-enrolled users — replaced by the new sectioned long-form layout that matches the reference.
-- For **enrolled** users, a single "Continue Learning" panel appears at the top of the left column with progress + curriculum accordion (kept from current Lectures tab).
+## 5. Dashboard ("Home")
+Trim `StudentDashboard` to: greeting, quick-resume of last lesson, today's live classes, upcoming live tests grouped by course, and a "My Progress" summary card (streak, accuracy, percentile, tests done) that deep-links to `/analytics`. Remove: "Talk to Counsellor", goal-setup card, mentor meeting card, compete shortcuts, weak-areas destructive panel (kept only inside `/analytics`).
 
-## Data handling
+## 6. My Course
+`MyCoursesPage` becomes a directory: enrolled course cards → click into course → nested view:
 
-- All new sections read from `course` fields when present; otherwise show sensible defaults derived from existing values (`subject`, `educator_name`, `duration_hours`, `target_exam`, `price`, `original_price`).
-- Teachers, commencement dates, and scholarship tables fall back to a static demo dataset (Bansal-styled names: Vikram Thapar, Ananya Iyer, Siddharth Nair, Kavitha Menon per project memory) when course-specific data is absent. No DB schema changes.
+```text
+Course → Subject → Chapter → Topic → [PDFs · Video Lectures · Quizzes]
+```
 
-## Styling
+- Data comes from existing tables: `courses`, `chapters`, `lessons` (filtered by `type`: `video`, `quiz`, `pdf`), and `course_resources` (PDFs by `chapter_id`).
+- New page `CourseStudyMaterialPage.tsx` at `/courses/:slug/study` with three tabs per topic: PDF, Video, Quizzes. Video tab links into the existing `LecturePlayerPage`; Quiz tab links into the existing test engine.
 
-- Cards: `rounded-2xl border border-border bg-card`, soft shadows.
-- Section headers: small uppercase eyebrow + bold display heading.
-- Mode/category badges: orange + navy pill chips.
-- Tables: zebra rows, rounded outer border, horizontal scroll on mobile.
-- "Our Services" icons: square tiles `bg-primary/10`, Lucide icon centered, label below.
-- Fully responsive: right rail stacks under content on `<lg`, two-column comparisons collapse, tables become stacked cards on `sm`.
+## 7. My Profile (editable)
+- Strip the "Subscription" tab.
+- Add Father's Name + State fields to the existing edit form. Class and Stream become dropdowns matching the popup.
+- Avatar upload, email read-only — unchanged.
+- Remove any "purchases / orders / plan" UI from profile and from anywhere else under the student shell.
 
-## Files
+## 8. Database migration (single file)
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS father_name text,
+  ADD COLUMN IF NOT EXISTS state text;
+```
+No new tables, no RLS changes — existing profile policies cover the new columns.
 
-- `src/pages/CourseDetailPage.tsx` — main rewrite of JSX (logic, hooks, enrollment flow unchanged).
-- No new components, no DB migrations, no new dependencies.
+## Files touched
+- `supabase/migrations/<new>.sql` — add two columns
+- `src/components/StudentLayout.tsx` — logo, nav, mobile nav, header cleanup, mount popup
+- `src/components/ProfileCompletionDialog.tsx` — **new**
+- `src/pages/StudentDashboard.tsx` — slim down to Home content
+- `src/pages/MyCoursesPage.tsx` — course directory entry
+- `src/pages/CourseStudyMaterialPage.tsx` — **new** (subject → chapter → topic → PDF/Video/Quiz)
+- `src/pages/MyTestsPage` (or equivalent) — group by enrolled course, rename
+- `src/pages/ProfilePage.tsx` — add father_name + state, drop Subscription tab
+- `src/App.tsx` — register `/courses/:slug/study` route
+- `src/integrations/supabase/types.ts` — regenerated automatically after migration
+
+## Out of scope
+- Test engine internals (per request — stays identical).
+- Doubts / Mentor / Compete / Leaderboard pages themselves (routes remain, just unlinked from sidebar).
+- Admin-side course content authoring (uses existing admin pages).
