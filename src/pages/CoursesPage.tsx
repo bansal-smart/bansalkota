@@ -41,14 +41,15 @@ const highlights = [
 ];
 
 const CoursesPage = () => {
-  const { examNames } = useExams();
-  const goalFilters = ["All", ...examNames];
   const [activeGoal, setActiveGoal] = useState(0);
-  const [activeSubject, setActiveSubject] = useState(0);
+  const [activeType, setActiveType] = useState(0);
   const [enrollFor, setEnrollFor] = useState<CourseRow | null>(null);
   const { user } = useAppStore();
   const navigate = useNavigate();
-  const { courses, loading } = useCourses(goalFilters[activeGoal], subjectFilters[activeSubject]);
+  const { courses: allCourses, loading } = useCourses();
+  const courses = allCourses.filter(
+    (c) => matchesGoal(c, goalFilters[activeGoal]) && matchesType(c, courseTypeFilters[activeType])
+  );
 
   const handleEnroll = (c: CourseRow) => {
     if (!user) {
