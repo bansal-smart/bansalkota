@@ -23,6 +23,19 @@ const PublicLayout = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Utility bar */}
+      <div className="hidden md:block bg-bansal-blue text-white text-xs">
+        <div className="container mx-auto flex items-center justify-between px-4 py-1.5">
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3 text-bansal-orange" /> Admission: +91 9773343246 · +91 8003045222</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/centers" className="hover:text-bansal-orange">Find a Center</Link>
+            <Link to="/login" className="hover:text-bansal-orange font-semibold">Student Login</Link>
+          </div>
+        </div>
+      </div>
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur-md shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
