@@ -2,16 +2,30 @@ import { useState } from "react";
 import { Star, Users, Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
-import { useExams } from "@/hooks/useExams";
 import { useAppStore } from "@/store/useAppStore";
 import EnrollmentModal from "@/components/EnrollmentModal";
-import { SUBJECTS_WITH_ALL } from "@/lib/constants";
 import coursePhysics from "@/assets/course-physics.png";
 import courseChemistry from "@/assets/course-chemistry.png";
 import courseMaths from "@/assets/course-maths.png";
 import courseBiology from "@/assets/course-biology.png";
 
-const subjectFilters: string[] = [...SUBJECTS_WITH_ALL];
+const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
+const courseTypeFilters = ["All", "Online", "Offline", "Residential"] as const;
+
+const matchesGoal = (c: CourseRow, goal: string) => {
+  if (goal === "All") return true;
+  const haystack = `${c.target_exam ?? ""} ${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (goal === "IIT-JEE") return /\b(iit|jee)\b/.test(haystack);
+  if (goal === "NEET") return /\bneet\b/.test(haystack);
+  if (goal === "Pre Foundation") return /(pre[- ]?foundation|foundation)/.test(haystack);
+  return true;
+};
+
+const matchesType = (c: CourseRow, type: string) => {
+  if (type === "All") return true;
+  const haystack = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  return haystack.includes(type.toLowerCase());
+};
 
 const courseImages: Record<string, string> = {
   Physics: coursePhysics,
@@ -27,14 +41,15 @@ const highlights = [
 ];
 
 const CoursesPage = () => {
-  const { examNames } = useExams();
-  const goalFilters = ["All", ...examNames];
   const [activeGoal, setActiveGoal] = useState(0);
-  const [activeSubject, setActiveSubject] = useState(0);
+  const [activeType, setActiveType] = useState(0);
   const [enrollFor, setEnrollFor] = useState<CourseRow | null>(null);
   const { user } = useAppStore();
   const navigate = useNavigate();
-  const { courses, loading } = useCourses(goalFilters[activeGoal], subjectFilters[activeSubject]);
+  const { courses: allCourses, loading } = useCourses();
+  const courses = allCourses.filter(
+    (c) => matchesGoal(c, goalFilters[activeGoal]) && matchesType(c, courseTypeFilters[activeType])
+  );
 
   const handleEnroll = (c: CourseRow) => {
     if (!user) {
@@ -109,12 +124,12 @@ const CoursesPage = () => {
             ))}
           </div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {subjectFilters.map((s, i) => (
+            {courseTypeFilters.map((s, i) => (
               <button
                 key={s}
-                onClick={() => setActiveSubject(i)}
+                onClick={() => setActiveType(i)}
                 className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  i === activeSubject ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/50"
+                  i === activeType ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/50"
                 }`}
               >
                 {s}
