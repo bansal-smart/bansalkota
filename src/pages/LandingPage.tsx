@@ -100,22 +100,24 @@ const LandingPage = () => {
 
           <div className="relative animate-fade-in-up-delay-2 max-w-md mx-auto lg:max-w-none w-full">
             <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-2xl">
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden relative">
-                <img
-                  src={heroStudents}
-                  alt="Bansal Classes students celebrating in classroom"
-                  className="absolute inset-0 h-full w-full object-cover"
-                  width={1536}
-                  height={1024}
-                />
-                <div className="absolute inset-0 bg-gradient-to-tr from-bansal-blue/40 via-transparent to-transparent" />
-                <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between">
-                  <div>
-                    <p className="font-display text-base sm:text-lg md:text-xl font-bold drop-shadow">Bansal Campus</p>
-                    <p className="text-[10px] sm:text-xs text-white/90">Kota · India's Coaching Capital</p>
-                  </div>
-                  <span className="rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">Live</span>
+              <div className="relative h-[360px] sm:h-[440px] lg:h-[520px] rounded-2xl overflow-hidden bg-white">
+                <div className="flex flex-col animate-marquee-y">
+                  <img
+                    src={resultsBanner}
+                    alt="Bansal Classes — JEE Main Session-I Result 2026"
+                    className="w-full h-auto block"
+                    loading="eager"
+                  />
+                  <img
+                    src={resultsBanner}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-auto block"
+                  />
                 </div>
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent" />
+                <span className="absolute top-3 right-3 rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">Latest Results</span>
               </div>
             </div>
           </div>
