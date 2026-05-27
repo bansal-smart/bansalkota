@@ -92,6 +92,9 @@ import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
+import BoostPage from "./pages/BoostPage";
+import CentersPage from "./pages/CentersPage";
+import AchievementsPage from "./pages/AchievementsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
