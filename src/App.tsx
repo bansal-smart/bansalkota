@@ -116,8 +116,6 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/career" element={<CareerPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -134,9 +132,11 @@ const App = () => (
 
             {/* Public marketing pages (PublicLayout: own navbar + footer) */}
             <Route element={<PublicLayout />}>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
               <Route path="/tests" element={<TestsLandingPage />} />
+              <Route path="/test-series" element={<TestsLandingPage />} />
               <Route path="/live-classes" element={<LiveClassesLandingPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
@@ -144,6 +144,8 @@ const App = () => (
               <Route path="/admissions" element={<AdmissionsPage />} />
               <Route path="/association" element={<AssociationPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/career" element={<CareerPage />} />
+              <Route path="/careers" element={<Navigate to="/career" replace />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
@@ -151,11 +153,29 @@ const App = () => (
               <Route path="/centers" element={<CentersPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route
-                path="/careers"
+                path="/e-store"
                 element={
                   <BansalPlaceholderPage
-                    title="Careers at Bansal"
-                    description="Join the team behind India's most trusted JEE/NEET coaching. Openings will be listed here soon."
+                    title="E-Store"
+                    description="Bansal Classes books and printed study material — coming soon."
+                  />
+                }
+              />
+              <Route
+                path="/refund-policy"
+                element={
+                  <BansalPlaceholderPage
+                    title="Refund Policy"
+                    description="Our refund policy will be published here shortly. For any refund requests please contact admissions."
+                  />
+                }
+              />
+              <Route
+                path="/disclaimer"
+                element={
+                  <BansalPlaceholderPage
+                    title="Disclaimer"
+                    description="All content on this site is for informational purposes. Bansal Classes reserves the right to update materials and policies at any time."
                   />
                 }
               />
