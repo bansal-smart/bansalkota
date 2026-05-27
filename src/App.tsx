@@ -165,24 +165,8 @@ const App = () => (
                   />
                 }
               />
-              <Route
-                path="/refund-policy"
-                element={
-                  <BansalPlaceholderPage
-                    title="Refund Policy"
-                    description="Our refund policy will be published here shortly. For any refund requests please contact admissions."
-                  />
-                }
-              />
-              <Route
-                path="/disclaimer"
-                element={
-                  <BansalPlaceholderPage
-                    title="Disclaimer"
-                    description="All content on this site is for informational purposes. Bansal Classes reserves the right to update materials and policies at any time."
-                  />
-                }
-              />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route
                 path="/blog"
                 element={
