@@ -261,8 +261,8 @@ const LecturePlayerPage = () => {
     return (
       <div className="p-10 text-center">
         <h1 className="font-display text-xl font-black text-foreground">No content available</h1>
-        <Link to="/my-courses" className="mt-4 inline-block text-sm text-primary hover:underline">
-          Back to My Courses
+        <Link to={`/my-courses/${slug}`} className="mt-4 inline-block text-sm text-primary hover:underline">
+          Back to Study Material
         </Link>
       </div>
     );
