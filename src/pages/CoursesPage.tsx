@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Users, Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock } from "lucide-react";
+import { Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock, Video, MapPin, Home } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
 import { useAppStore } from "@/store/useAppStore";
@@ -26,6 +26,22 @@ const matchesType = (c: CourseRow, type: string) => {
   const haystack = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
   return haystack.includes(type.toLowerCase());
 };
+
+const detectMode = (c: CourseRow): "Online" | "Offline" | "Residential" => {
+  const h = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (h.includes("residential")) return "Residential";
+  if (h.includes("offline")) return "Offline";
+  return "Online";
+};
+
+const detectCategory = (c: CourseRow): "IIT-JEE" | "NEET" | "Pre Foundation" => {
+  const h = `${c.target_exam ?? ""} ${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (/neet/.test(h)) return "NEET";
+  if (/pre[- ]?foundation|foundation/.test(h)) return "Pre Foundation";
+  return "IIT-JEE";
+};
+
+const modeIcon = { Online: Video, Offline: MapPin, Residential: Home } as const;
 
 const courseImages: Record<string, string> = {
   Physics: coursePhysics,
@@ -178,19 +194,25 @@ const CoursesPage = () => {
                     </div>
                   </Link>
                   <div className="p-4 flex flex-col flex-1">
-                    <p className="text-[10px] font-bold text-primary uppercase">{c.subject}</p>
+                    {(() => {
+                      const mode = detectMode(c);
+                      const cat = detectCategory(c);
+                      const MIcon = modeIcon[mode];
+                      return (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                            <MIcon className="h-3 w-3" /> {mode}
+                          </span>
+                          <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
+                            {cat}
+                          </span>
+                        </div>
+                      );
+                    })()}
                     <Link to={`/courses/${c.slug}`} className="block">
-                      <p className="text-sm font-bold text-foreground mt-1 line-clamp-2 hover:text-primary transition-colors">{c.name}</p>
+                      <p className="text-sm font-bold text-foreground mt-2 line-clamp-2 hover:text-primary transition-colors">{c.name}</p>
                     </Link>
                     {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-0.5">
-                        <Star className="h-3 w-3 text-accent fill-accent" /> {Number(c.rating).toFixed(1)}
-                      </span>
-                      <span className="flex items-center gap-0.5">
-                        <Users className="h-3 w-3" /> {(c.total_enrolled ?? 0).toLocaleString()}
-                      </span>
-                    </div>
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                       {c.original_price && c.original_price > c.price && (
                         <span className="text-xs line-through text-muted-foreground">
