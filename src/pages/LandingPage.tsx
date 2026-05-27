@@ -14,6 +14,7 @@ import mentorTeaching from "@/assets/bansal-mentor-v2.jpg";
 import toppersImage from "@/assets/bansal-toppers-v2.jpg";
 import indiaMap from "@/assets/bansal-pan-india.png";
 import appMockup from "@/assets/bansal-app-v2.png";
+import resultsBanner from "@/assets/bansal-results-banner.png";
 
 type ExamKey = "jee" | "neet" | "foundation";
 
@@ -60,6 +61,18 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background">
+      {/* 0. RESULTS BANNER — horizontally scrollable on mobile */}
+      <section aria-label="JEE Main Session-I Result 2026" className="bg-white border-b border-bansal-gray-light">
+        <div className="overflow-x-auto scrollbar-thin">
+          <img
+            src={resultsBanner}
+            alt="Bansal Classes — JEE Main Session-I Result 2026. Admissions open for 2026-2027 (JEE | NEET | Pre-Foundation). Call 97733 43246 or 80030 45222."
+            className="block h-auto w-full min-w-[900px] md:min-w-0 object-contain"
+            loading="eager"
+          />
+        </div>
+      </section>
+
       {/* 1. HERO */}
       <section className="relative bg-bansal-blue text-white overflow-hidden">
         <div className="absolute inset-0 grid-texture opacity-60" />
