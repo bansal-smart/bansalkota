@@ -6,17 +6,24 @@ import {
   Users,
   Clock,
   ShieldCheck,
-  Heart,
   ChevronDown,
   Loader2,
   Lock,
   FileText,
   Video,
-  ClipboardCheck,
-  Timer,
-  AlertCircle,
-  Download,
   ArrowRight,
+  Tag,
+  GraduationCap,
+  MapPin,
+  Calendar,
+  BadgeCheck,
+  BookOpen,
+  ClipboardList,
+  HelpCircle,
+  Backpack,
+  Shirt,
+  Umbrella,
+  CreditCard,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,6 +49,46 @@ type EnrollmentInfo = {
   last_accessed_at: string | null;
 };
 
+// ----- Fallback data (Bansal-styled demo) -----
+const FALLBACK_TEACHERS = [
+  { name: "Vikram Thapar", subject: "Physical Chemistry", years: "15+ years" },
+  { name: "Ananya Iyer", subject: "Organic Chemistry", years: "12+ years" },
+  { name: "Siddharth Nair", subject: "Physics", years: "15+ years" },
+  { name: "Kavitha Menon", subject: "Mathematics", years: "17+ years" },
+];
+
+const FALLBACK_COMMENCEMENT = [
+  { stream: "JEE (Main + Advanced)", phase: "Phase I", medium: "English", target: "2028", eligibility: "Class 10th to 11th Moving", mode: "Direct/BOOST", date: "01/04/2026" },
+  { stream: "JEE (Main + Advanced)", phase: "Phase II", medium: "English", target: "2028", eligibility: "Class 10th to 11th Moving", mode: "Direct/BOOST", date: "27/05/2026" },
+];
+
+const BOARD_SCHOLARSHIPS = [
+  { range: "95% +", pct: "55%" },
+  { range: "90 to 95%", pct: "50%" },
+  { range: "80 to 89%", pct: "45%" },
+  { range: "75 to 79%", pct: "40%" },
+];
+
+const OLYMPIAD_SCHOLARSHIPS = [
+  { label: "Stage III Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "100%" },
+  { label: "Stage II Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "90%" },
+  { label: "Stage I Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "75%" },
+  { label: "Stage III Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)", pct: "100%" },
+  { label: "Stage II Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)", pct: "90%" },
+  { label: "Stage I Qualified (Int'l Sr. Olympiads – HBCSE / NSEs)", pct: "75%" },
+  { label: "Based on Pre-RMO", pct: "25%" },
+];
+
+const SERVICES = [
+  { icon: BookOpen, label: "Study Material" },
+  { icon: Video, label: "Recorded Lectures" },
+  { icon: ClipboardList, label: "Test Series" },
+  { icon: Shirt, label: "T-Shirt" },
+  { icon: Umbrella, label: "Umbrella" },
+  { icon: HelpCircle, label: "Doubt Classes" },
+  { icon: Backpack, label: "Bag" },
+];
+
 const formatBytes = (bytes: number | null) => {
   if (!bytes) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -49,13 +96,19 @@ const formatBytes = (bytes: number | null) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const formatRelative = (iso: string | null) => {
-  if (!iso) return "";
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-  return `${Math.floor(diff / 86400)} days ago`;
+const detectMode = (c: { name: string; description: string | null; badge: string | null }) => {
+  const h = `${c.name} ${c.description ?? ""} ${c.badge ?? ""}`.toLowerCase();
+  if (h.includes("residential")) return "Residential";
+  if (h.includes("offline")) return "Offline";
+  return "Online";
+};
+
+const detectCategory = (c: { target_exam: string | null; name: string; description: string | null }) => {
+  const h = `${c.target_exam ?? ""} ${c.name} ${c.description ?? ""}`.toLowerCase();
+  if (h.includes("neet")) return "NEET";
+  if (h.includes("foundation")) return "Pre Foundation";
+  if (h.includes("jee") || h.includes("iit")) return "IIT-JEE";
+  return c.target_exam || "JEE";
 };
 
 const CourseDetailPage = () => {
@@ -63,7 +116,6 @@ const CourseDetailPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { course, chapters, pdfs, loading } = useCourseDetail(slug);
-  const [activeTab, setActiveTab] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState(0);
   const [enrollment, setEnrollment] = useState<EnrollmentInfo | null>(null);
   const [enrollOpen, setEnrollOpen] = useState(false);
@@ -72,7 +124,6 @@ const CourseDetailPage = () => {
 
   const enrolled = !!enrollment;
 
-  // Load enrollment + lesson progress
   useEffect(() => {
     if (!user || !course) {
       setEnrollment(null);
@@ -103,14 +154,7 @@ const CourseDetailPage = () => {
   const flatLessons = useMemo(() => chapters.flatMap((c) => c.lessons), [chapters]);
   const totalLessons = flatLessons.length;
   const completedCount = flatLessons.filter((l) => completedSlugs.has(l.slug)).length;
-  const totalSeconds = flatLessons.reduce((s, l) => s + (l.duration_seconds || 0), 0);
-  const completedSeconds = flatLessons
-    .filter((l) => completedSlugs.has(l.slug))
-    .reduce((s, l) => s + (l.duration_seconds || 0), 0);
-  const totalMinutes = Math.round(totalSeconds / 60);
-  const totalHours = course?.duration_hours || Math.max(1, Math.floor(totalMinutes / 60));
-  const completedHours = (completedSeconds / 3600).toFixed(1);
-  const remainingHours = ((totalSeconds - completedSeconds) / 3600).toFixed(1);
+  const totalHours = course?.duration_hours || 120;
   const progressPercent = enrollment?.progress_percent ?? 0;
 
   if (loading) {
@@ -132,57 +176,34 @@ const CourseDetailPage = () => {
     );
   }
 
-  const initials = course.educator_name
-    ? course.educator_name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0]?.toUpperCase()).join("")
-    : "ED";
+  const mode = detectMode(course);
+  const category = detectCategory(course);
+  const subjects = course.subject
+    ? course.subject.split(/[,/]/).map((s) => s.trim()).filter(Boolean)
+    : ["Physics", "Chemistry", "Mathematics"];
 
-  const tabs = ["About", "Lectures", "Tests", "PDF Notes", "Time"];
-
-  const stats = enrolled
-    ? [
-        { value: String(totalLessons || 32), label: "Lectures" },
-        { value: "12", label: "Tests" },
-        { value: String(pdfs.length || 18), label: "PDFs" },
-        { value: `${totalHours}h`, label: "Total Time" },
-        { value: `${progressPercent}%`, label: "Progress" },
-      ]
-    : [
-        { value: String(totalLessons || 32), label: "Lectures" },
-        { value: "12", label: "Tests" },
-        { value: String(pdfs.length || 18), label: "PDFs" },
-        { value: `${totalHours}h`, label: "Total Time" },
-        { value: `${Number(course.rating || 4.8).toFixed(1)}★`, label: "Rating" },
-      ];
-
-  const courseAny = course as unknown as { what_youll_learn?: string[] | null; requirements?: string[] | null };
-  const whatYoullLearn = (courseAny.what_youll_learn && courseAny.what_youll_learn.length > 0)
-    ? courseAny.what_youll_learn
-    : [
-        "Core fundamentals and theory",
-        "Problem-solving techniques",
-        "Formula derivations explained",
-        "JEE/NEET exam strategies",
-        "Previous year paper analysis",
-        "Topic-wise revision shortcuts",
-        "Conceptual clarity exercises",
-        "Formula cheats and quick notes",
-      ];
-
-  const requirements = (courseAny.requirements && courseAny.requirements.length > 0)
-    ? courseAny.requirements
-    : [
-        "Class 11/12 mathematics background",
-        "Basic algebra and calculus",
-        "Curiosity and dedication",
-      ];
+  const educationLevel = course.target_exam?.toLowerCase().includes("foundation")
+    ? "Class 9th–10th"
+    : "Class 11th–12th";
 
   const includes = [
-    `${totalLessons || 32} video lectures`,
-    "12 practice tests",
-    `${pdfs.length || 18} PDF notes`,
-    "Lifetime access",
-    "Certificate of completion",
+    { icon: GraduationCap, label: "Education Level", value: educationLevel },
+    { icon: Clock, label: "Duration", value: `${totalHours >= 100 ? "Up to 12 Months" : `${totalHours} hrs`}` },
+    { icon: Video, label: "Mode", value: mode },
+    { icon: BookOpen, label: "Language", value: "English / Hindi" },
   ];
+
+  const courseAny = course as unknown as { what_youll_learn?: string[] | null; requirements?: string[] | null };
+  const whyChoose = (courseAny.what_youll_learn && courseAny.what_youll_learn.length > 0)
+    ? courseAny.what_youll_learn
+    : [
+        "India's most trusted IIT-JEE coaching institute",
+        "Highly experienced faculty with a proven success record",
+        "Intensive classroom teaching with concept-based learning",
+        "Regular doubt-solving sessions and mentorship support",
+        "Weekly tests with performance analysis and ranking",
+        "Proven study material and structured curriculum",
+      ];
 
   const handleEnrollClick = () => {
     if (!user) {
@@ -220,190 +241,272 @@ const CourseDetailPage = () => {
       ? Math.round(((Number(course.original_price) - Number(course.price)) / Number(course.original_price)) * 100)
       : course.discount_percent || 0;
 
+  const price = Number(course.price);
+  const firstInstallment = Math.round(price * 0.75);
+  const secondInstallment = price - firstInstallment;
+
   return (
     <div className="bg-background pb-16">
-      {/* Hero */}
-      <section className="border-b border-border bg-[hsl(var(--muted))]/30">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-xs text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-primary">Home</Link>
-            {" / "}
-            <Link to="/courses" className="hover:text-primary">Courses</Link>
-            {" / "}
-            <span className="text-foreground font-medium">{course.name}</span>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="w-full md:w-72 shrink-0">
-              <div className="aspect-video rounded-2xl border-2 border-dashed border-border bg-card flex items-center justify-center overflow-hidden">
-                {course.thumbnail_url ? (
-                  <img src={course.thumbnail_url} alt={course.name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-xs text-muted-foreground">course image</span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase mb-2">
-                {course.subject}
-                {course.target_exam ? ` · ${course.target_exam}` : ""}
-              </p>
-              <h1 className="font-display text-3xl md:text-4xl font-black text-foreground leading-tight">
-                {course.name}
-              </h1>
-              {course.description && (
-                <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{course.description}</p>
-              )}
-
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                  <strong className="text-foreground">{Number(course.rating || 4.8).toFixed(1)}</strong>
-                  <span>({(course.total_enrolled || 2100).toLocaleString()} reviews)</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5 text-primary" />
-                  {(course.total_enrolled || 12400).toLocaleString()} enrolled
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-primary" />
-                  {totalHours} hrs
-                </span>
-                {course.badge && (
-                  <span className="rounded-full border border-border bg-card px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-foreground">
-                    {course.badge}
-                  </span>
-                )}
-                {enrolled && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-secondary/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
-                    <CheckCircle2 className="h-3 w-3" /> Enrolled
-                  </span>
-                )}
-              </div>
-
-              <div className="mt-4 flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-[10px] font-black text-primary-foreground">
-                  {initials}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  By <span className="font-semibold text-foreground">{course.educator_name}</span>
-                  {" · "}
-                  <span>{course.subject} Department</span>
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Breadcrumb */}
+      <div className="border-b border-border bg-muted/30">
+        <div className="container mx-auto px-4 py-3 text-xs text-muted-foreground">
+          <Link to="/" className="hover:text-primary">Home</Link>
+          {" / "}
+          <Link to="/courses" className="hover:text-primary">Courses</Link>
+          {" / "}
+          <span className="text-foreground font-medium">{course.name}</span>
         </div>
-      </section>
+      </div>
 
-      {/* Body */}
-      <div className="container mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-        <div className="min-w-0">
-          <div className="flex gap-6 border-b border-border overflow-x-auto">
-            {tabs.map((tab, i) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(i)}
-                className={`pb-3 text-sm font-semibold whitespace-nowrap transition-colors ${
-                  i === activeTab
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+      <div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 lg:gap-8">
+        {/* LEFT COLUMN */}
+        <div className="min-w-0 space-y-8">
+          {/* Mode + Category chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[hsl(var(--navy))] px-3 py-1.5 text-xs font-bold text-white">
+              <Video className="h-3.5 w-3.5" /> {mode}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">
+              <Tag className="h-3.5 w-3.5" /> Category: {category}
+            </span>
+            {enrolled && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-secondary/15 px-3 py-1.5 text-xs font-bold text-secondary">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Enrolled
+              </span>
+            )}
           </div>
 
-          {/* About */}
-          {activeTab === 0 && (
-            <div className="mt-6 space-y-8">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {stats.map((s) => (
-                  <div key={s.label} className="rounded-2xl border border-border bg-card p-4 text-center">
-                    <p className="font-display text-2xl font-black text-foreground">{s.value}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{s.label}</p>
-                    {s.label === "Progress" && (
-                      <div className="h-1 rounded-full bg-muted mt-2 overflow-hidden">
-                        <div className="h-1 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-2">About this course</h3>
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-                  {course.description ||
-                    "Full course description text explaining the scope, depth, and approach of this course."}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-3">What you'll learn</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  {whatYoullLearn.map((item) => (
-                    <div key={item} className="flex items-start gap-2 text-sm text-foreground">
-                      <span className="text-muted-foreground mt-0.5">—</span>
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground mb-3">Requirements</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                  {requirements.map((item) => (
-                    <div key={item} className="flex items-start gap-2 text-sm text-foreground">
-                      <span className="text-muted-foreground mt-0.5">—</span>
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <CourseReviews courseId={course.id} enrolled={enrolled} />
+          {/* Title + intro */}
+          <div>
+            <h1 className="font-display text-3xl md:text-4xl font-black text-foreground leading-tight">
+              {course.name}
+            </h1>
+            {course.description && (
+              <p className="mt-3 text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl">
+                {course.description}
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                <strong className="text-foreground">{Number(course.rating || 4.8).toFixed(1)}</strong>
+                <span>({(course.total_enrolled || 2100).toLocaleString()} reviews)</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-primary" /> {(course.total_enrolled || 12400).toLocaleString()} enrolled
+              </span>
             </div>
+          </div>
+
+          {/* Subjects Covered */}
+          <section>
+            <h3 className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">Subjects Covered</h3>
+            <div className="flex flex-wrap gap-2">
+              {subjects.map((s) => (
+                <span key={s} className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground">
+                  {s}
+                </span>
+              ))}
+            </div>
+          </section>
+
+          {/* This Course Includes */}
+          <section>
+            <h3 className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">This Course Includes</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {includes.map((it) => (
+                <div key={it.label} className="rounded-2xl border border-border bg-card p-4">
+                  <it.icon className="h-5 w-5 text-primary mb-2" />
+                  <p className="text-[11px] text-muted-foreground">{it.label}</p>
+                  <p className="text-sm font-bold text-foreground mt-0.5">{it.value}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Enrolled progress (only if enrolled) */}
+          {enrolled && (
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <p className="text-sm font-bold text-foreground">Your progress</p>
+                  <p className="text-xs text-muted-foreground">{completedCount} of {totalLessons} lessons completed</p>
+                </div>
+                <button
+                  onClick={() => navigate(`/courses/${course.slug}/learn`)}
+                  className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors"
+                >
+                  Continue <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
+              </div>
+            </section>
           )}
 
-          {/* Lectures */}
-          {activeTab === 1 && (
-            <div className="mt-6 space-y-4">
-              {enrolled && (
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <div className="flex items-center justify-between mb-2 gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-foreground">Your progress</p>
-                      <p className="text-xs text-muted-foreground">
-                        {completedCount} of {totalLessons} lessons completed
-                      </p>
+          {/* Know Your Teachers */}
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h3 className="font-display text-lg font-black text-foreground mb-4">Know Your Teachers</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {FALLBACK_TEACHERS.map((t) => (
+                <div key={t.name} className="rounded-xl border border-border bg-background overflow-hidden">
+                  <div className="aspect-square bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center">
+                    <span className="font-display text-2xl font-black text-primary">
+                      {t.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                    </span>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-bold text-foreground truncate">{t.name}</p>
+                    <div className="flex items-center justify-between gap-1 mt-1">
+                      <p className="text-[11px] text-muted-foreground truncate">{t.subject}</p>
+                      <span className="text-[10px] font-bold rounded-full bg-primary/10 text-primary px-1.5 py-0.5 shrink-0">
+                        {t.years}
+                      </span>
                     </div>
-                    <button
-                      onClick={() => navigate(`/courses/${course.slug}/learn`)}
-                      className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0"
-                    >
-                      Continue Learning <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>{progressPercent}% complete</span>
-                    {enrollment?.last_lesson_title && (
-                      <span className="truncate ml-2">Last watched: {enrollment.last_lesson_title}</span>
-                    )}
                   </div>
                 </div>
-              )}
+              ))}
+            </div>
+          </section>
 
-              {chapters.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No lectures published yet.</p>
-              ) : (
-                chapters.map((ch, i) => (
+          {/* Know More Details */}
+          <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+            <h3 className="font-display text-lg font-black text-foreground">Know More Details</h3>
+            <div>
+              <p className="text-sm font-bold text-foreground">{course.name} — Bansal Classes Kota</p>
+              <p className="text-xs text-primary mt-1">{mode} Classroom Program · {category}</p>
+              <p className="text-xs text-foreground mt-1">
+                <span className="font-bold">Target:</span> {category} 2028 ·
+                <span className="font-bold"> Duration:</span> 1 Year ·
+                <span className="font-bold"> Commencement:</span> 01/04/2026
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <DetailRow label="Course Name" value={course.name} />
+              <DetailRow label="Eligibility" value="Class X Pass" />
+              <DetailRow label="Mode" value={`${mode} Classroom Coaching`} />
+              <DetailRow label="Location" value="Bansal Classes, Kota" icon={MapPin} />
+              <DetailRow label="Target Exam" value={`${category} — 2028`} />
+              <DetailRow label="Admission Process" value="Direct / BOOST" icon={BadgeCheck} />
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-foreground mb-1.5">Fee Structure:</p>
+              <p className="text-xs text-foreground">
+                Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString()}/-</span>{" "}
+                <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <p className="text-muted-foreground">1st Installment</p>
+                  <p className="font-bold text-foreground">₹{firstInstallment.toLocaleString()}/-</p>
+                </div>
+                <div className="rounded-xl bg-muted/40 p-3">
+                  <p className="text-muted-foreground">2nd Installment</p>
+                  <p className="font-bold text-foreground">₹{secondInstallment.toLocaleString()}/-</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-foreground mb-2">Why Choose this Batch at Bansal Classes?</p>
+              <ul className="space-y-1.5">
+                {whyChoose.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-secondary mt-0.5 shrink-0" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          {/* Commencement Dates */}
+          <section>
+            <h3 className="font-display text-xl font-black text-foreground mb-3 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" /> Class Commencement Dates
+            </h3>
+            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+              <table className="w-full text-xs min-w-[640px]">
+                <thead className="bg-muted/40">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-3 py-2.5 font-bold">Stream</th>
+                    <th className="px-3 py-2.5 font-bold">Phase</th>
+                    <th className="px-3 py-2.5 font-bold">Medium</th>
+                    <th className="px-3 py-2.5 font-bold">Target</th>
+                    <th className="px-3 py-2.5 font-bold">Eligibility</th>
+                    <th className="px-3 py-2.5 font-bold">Admission Mode</th>
+                    <th className="px-3 py-2.5 font-bold">Commencement</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {FALLBACK_COMMENCEMENT.map((r, i) => (
+                    <tr key={i} className="border-t border-border text-foreground">
+                      <td className="px-3 py-3">{r.stream}</td>
+                      <td className="px-3 py-3">{r.phase}</td>
+                      <td className="px-3 py-3">{r.medium}</td>
+                      <td className="px-3 py-3">{r.target}</td>
+                      <td className="px-3 py-3">{r.eligibility}</td>
+                      <td className="px-3 py-3">{r.mode}</td>
+                      <td className="px-3 py-3 font-bold text-primary">{r.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Scholarships */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-border bg-card overflow-hidden">
+              <div className="bg-primary/10 px-4 py-3">
+                <p className="font-display text-sm font-black text-foreground">Scholarship — Board Performance</p>
+                <p className="text-[11px] text-muted-foreground">For 10th Pass Students</p>
+              </div>
+              <table className="w-full text-xs">
+                <thead className="bg-muted/30">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-4 py-2 font-bold">Board %</th>
+                    <th className="px-4 py-2 font-bold text-right">Scholarship</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {BOARD_SCHOLARSHIPS.map((s) => (
+                    <tr key={s.range} className="border-t border-border text-foreground">
+                      <td className="px-4 py-2.5">{s.range}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-primary">{s.pct}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card overflow-hidden">
+              <div className="bg-primary/10 px-4 py-3">
+                <p className="font-display text-sm font-black text-foreground">Scholarship — Olympiads</p>
+                <p className="text-[11px] text-muted-foreground">For Class XI / XII admissions, Session 2025–26</p>
+              </div>
+              <table className="w-full text-xs">
+                <tbody>
+                  {OLYMPIAD_SCHOLARSHIPS.map((s) => (
+                    <tr key={s.label} className="border-t border-border text-foreground first:border-t-0">
+                      <td className="px-4 py-2.5 pr-2 leading-snug">{s.label}</td>
+                      <td className="px-4 py-2.5 text-right font-bold text-primary whitespace-nowrap">{s.pct}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Curriculum (if any) */}
+          {chapters.length > 0 && (
+            <section>
+              <h3 className="font-display text-xl font-black text-foreground mb-3">Curriculum</h3>
+              <div className="space-y-3">
+                {chapters.map((ch, i) => (
                   <div key={ch.id} className="rounded-2xl border border-border bg-card overflow-hidden">
                     <button
                       onClick={() => setExpandedChapter(expandedChapter === i ? -1 : i)}
@@ -441,230 +544,157 @@ const CourseDetailPage = () => {
                       </div>
                     )}
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            </section>
           )}
 
-          {/* Tests */}
-          {activeTab === 2 && (
-            <EmptyTab icon={ClipboardCheck} title="Practice Tests" description="Topic-wise and full-length mock tests will appear here once published." />
-          )}
-
-          {/* PDF Notes */}
-          {activeTab === 3 && (
-            <div className="mt-6">
-              {pdfs.length === 0 ? (
-                <EmptyTab icon={FileText} title="PDF Notes" description="Downloadable notes and formula sheets will appear here once your educator uploads them." />
-              ) : (
-                <div className="space-y-2">
-                  {pdfs.map((pdf) => {
-                    const canDownload = enrolled;
-                    return (
-                      <div
-                        key={pdf.id}
-                        className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4"
-                      >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                          <FileText className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-foreground truncate">{pdf.title}</p>
-                          <p className="text-[11px] text-muted-foreground">PDF{pdf.size_bytes ? ` · ${formatBytes(pdf.size_bytes)}` : ""}</p>
-                        </div>
-                        {canDownload ? (
-                          <a
-                            href={pdf.file_url}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0"
-                          >
-                            <Download className="h-3.5 w-3.5" /> Download
-                          </a>
-                        ) : (
-                          <span className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground shrink-0">
-                            <Lock className="h-3.5 w-3.5" /> Enroll to download
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Time */}
-          {activeTab === 4 && (
-            <div className="mt-6">
-              {enrolled ? (
-                <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
-                  <div>
-                    <h3 className="font-display text-lg font-black text-foreground">Time Tracker</h3>
-                    <p className="text-xs text-muted-foreground">Your progress through this course</p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <TimeStat label="Total" value={`${totalHours}h`} />
-                    <TimeStat label="Completed" value={`${completedHours}h`} accent="text-secondary" />
-                    <TimeStat label="Remaining" value={`${remainingHours}h`} />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="font-semibold text-foreground">{progressPercent}% complete</span>
-                      <span className="text-muted-foreground">{completedCount}/{totalLessons} lessons</span>
+          {/* PDFs */}
+          {pdfs.length > 0 && (
+            <section>
+              <h3 className="font-display text-xl font-black text-foreground mb-3">PDF Notes</h3>
+              <div className="space-y-2">
+                {pdfs.map((pdf) => (
+                  <div key={pdf.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                      <FileText className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-foreground truncate">{pdf.title}</p>
+                      <p className="text-[11px] text-muted-foreground">PDF{pdf.size_bytes ? ` · ${formatBytes(pdf.size_bytes)}` : ""}</p>
                     </div>
+                    {enrolled ? (
+                      <a href={pdf.file_url} download target="_blank" rel="noopener noreferrer"
+                        className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0">
+                        Download
+                      </a>
+                    ) : (
+                      <span className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground shrink-0">
+                        <Lock className="h-3.5 w-3.5" /> Enroll
+                      </span>
+                    )}
                   </div>
-
-                  {enrollment?.last_accessed_at && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Timer className="h-3.5 w-3.5" /> Last accessed {formatRelative(enrollment.last_accessed_at)}
-                    </p>
-                  )}
-
-                  <button
-                    onClick={() => navigate(`/courses/${course.slug}/learn`)}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:bg-primary-dark transition-colors"
-                  >
-                    Continue Learning <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <EmptyTab icon={Timer} title="Track your time" description="Enroll in this course to start tracking your study time and progress." />
-              )}
-            </div>
+                ))}
+              </div>
+            </section>
           )}
+
+          <CourseReviews courseId={course.id} enrolled={enrolled} />
         </div>
 
-        {/* Sticky purchase / progress card */}
-        <aside className="lg:sticky lg:top-24 self-start">
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <div className="aspect-video rounded-xl border-2 border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground overflow-hidden">
+        {/* RIGHT COLUMN */}
+        <aside className="lg:sticky lg:top-24 self-start space-y-4">
+          {/* Banner + payment card */}
+          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+            <div className="aspect-[4/3] bg-gradient-to-br from-[hsl(var(--navy))] to-[hsl(var(--navy2))] flex items-center justify-center overflow-hidden">
               {course.thumbnail_url ? (
-                <img src={course.thumbnail_url} alt="preview" className="h-full w-full object-cover" />
+                <img src={course.thumbnail_url} alt={course.name} className="h-full w-full object-cover" />
               ) : (
-                "course preview"
+                <div className="text-center text-white px-4">
+                  <p className="font-display text-3xl font-black text-primary">{category}</p>
+                  <p className="font-display text-xl font-black mt-1">{course.name}</p>
+                </div>
               )}
             </div>
 
-            {enrolled ? (
-              <>
-                <div className="flex items-center gap-2 rounded-xl bg-secondary/10 px-3 py-2 text-secondary">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="text-sm font-bold">You're enrolled</span>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-semibold text-foreground">{progressPercent}% complete</span>
-                    <span className="text-muted-foreground">{completedCount}/{totalLessons}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div className="h-2 bg-secondary transition-all" style={{ width: `${progressPercent}%` }} />
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => navigate(`/courses/${course.slug}/learn`)}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-foreground py-3 text-sm font-bold text-background hover:opacity-90 transition-opacity"
-                >
-                  Continue Learning <ArrowRight className="h-4 w-4" />
-                </button>
-
-                <button
-                  disabled
-                  className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground bg-muted/30 cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4" /> Enrolled
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-display text-3xl font-black text-foreground">
-                    ₹{Number(course.price).toLocaleString()}
+            <div className="p-5 space-y-4">
+              {/* Price */}
+              <div className="flex items-baseline gap-2 flex-wrap">
+                {course.original_price && course.original_price > course.price && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    ₹{Number(course.original_price).toLocaleString()}
                   </span>
-                  {course.original_price && course.original_price > course.price && (
-                    <span className="text-sm text-muted-foreground line-through">
-                      ₹{Number(course.original_price).toLocaleString()}
-                    </span>
-                  )}
-                  {discount > 0 && (
-                    <span className="ml-auto rounded-full bg-secondary/10 px-2 py-0.5 text-[11px] font-bold text-secondary">
-                      {discount}% OFF
-                    </span>
-                  )}
+                )}
+                <span className="font-display text-2xl font-black text-foreground">
+                  ₹{price.toLocaleString()}
+                </span>
+                {discount > 0 && (
+                  <span className="text-xs font-bold text-destructive">{discount}% Off</span>
+                )}
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <p className="text-sm font-bold text-foreground mb-3">Payment Details</p>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Price</span>
+                    <span className="text-foreground">₹{price.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Coupon Discount</span>
+                    <span className="text-foreground">- ₹0</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-2 mt-2">
+                    <span className="font-bold text-foreground">Total Payable</span>
+                    <span className="font-bold text-foreground">₹{price.toLocaleString()}.00</span>
+                  </div>
                 </div>
+              </div>
 
-                <p className="flex items-center gap-1.5 text-[11px] text-destructive">
-                  <AlertCircle className="h-3 w-3" /> 2 days left at this price
-                </p>
+              <button
+                onClick={handleEnrollClick}
+                className="w-full rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+              >
+                {enrolled ? `Continue Learning` : `Pay Now ₹${price.toLocaleString()}.00`}
+              </button>
 
-                <button
-                  onClick={handleEnrollClick}
-                  className="w-full rounded-xl bg-foreground py-3 text-sm font-bold text-background hover:opacity-90 transition-opacity"
-                >
-                  Enroll Now →
-                </button>
+              <button className="w-full text-center text-xs font-semibold text-primary hover:underline">
+                View Coupon Code &gt;
+              </button>
 
-                <button className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors flex items-center justify-center gap-2">
-                  <Heart className="h-4 w-4" /> Add to Wishlist
-                </button>
-              </>
-            )}
+              {/* Trust strip */}
+              <div className="flex items-center justify-center gap-2 pt-2">
+                {["VISA", "MC", "PayPal", "GPay", "UPI"].map((p) => (
+                  <span key={p} className="rounded-md border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground">
+                    {p}
+                  </span>
+                ))}
+              </div>
+              <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5" /> Safe and secure payment · 100% authentic
+              </p>
+            </div>
+          </div>
 
-            <div className="pt-3 border-t border-border space-y-2">
-              <p className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">This course includes</p>
-              {includes.map((item) => (
-                <div key={item} className="flex items-center gap-2 text-xs text-foreground">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-secondary" />
-                  {item}
+          {/* Our Services */}
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <p className="font-display text-sm font-black text-center text-foreground mb-4">Our Services</p>
+            <div className="grid grid-cols-3 gap-3">
+              {SERVICES.map((s) => (
+                <div key={s.label} className="flex flex-col items-center text-center gap-1.5">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <s.icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <p className="text-[10px] font-semibold text-foreground leading-tight">{s.label}</p>
                 </div>
               ))}
-            </div>
-
-            <div className="flex items-center gap-2 pt-2 text-[11px] text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              7-day money-back guarantee
             </div>
           </div>
         </aside>
       </div>
 
-      {/* Payment coming soon dialog */}
+      {/* Enroll dialog */}
       <Dialog open={enrollOpen} onOpenChange={(o) => !enrolling && setEnrollOpen(o)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display">Payments coming soon</DialogTitle>
+            <DialogTitle className="font-display">Confirm Enrollment</DialogTitle>
             <DialogDescription>
-              Online payment integration is not yet enabled. For now, you can confirm your enrollment in{" "}
-              <span className="font-semibold text-foreground">{course.name}</span> in demo mode and start
-              learning right away. Reach out to support for the actual payment flow.
+              Confirm your enrollment in{" "}
+              <span className="font-semibold text-foreground">{course.name}</span>. Online payments are coming soon —
+              for now you'll be enrolled in demo mode and can start learning immediately.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl bg-muted/40 p-3 text-xs text-foreground space-y-1">
-            <p>
-              <span className="text-muted-foreground">Email:</span>{" "}
-              <a className="text-primary font-semibold" href="mailto:support@arke.pro">support@arke.pro</a>
-            </p>
             <p><span className="text-muted-foreground">Course:</span> {course.name}</p>
-            <p><span className="text-muted-foreground">Price:</span> ₹{Number(course.price).toLocaleString()}</p>
+            <p><span className="text-muted-foreground">Price:</span> ₹{price.toLocaleString()}</p>
+            <p className="flex items-center gap-1.5"><CreditCard className="h-3 w-3 text-muted-foreground" /> Demo payment flow</p>
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" asChild disabled={enrolling}>
               <Link to="/contact">Contact Support</Link>
             </Button>
             <Button onClick={handleConfirmEnroll} disabled={enrolling}>
-              {enrolling ? (
-                <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Enrolling…</>
-              ) : (
-                <>Mark as Enrolled (Demo)</>
-              )}
+              {enrolling ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Enrolling…</>) : (<>Mark as Enrolled</>)}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -673,26 +703,12 @@ const CourseDetailPage = () => {
   );
 };
 
-const TimeStat = ({ label, value, accent }: { label: string; value: string; accent?: string }) => (
-  <div className="rounded-xl border border-border bg-background/50 p-3 text-center">
-    <p className={`font-display text-xl font-black ${accent ?? "text-foreground"}`}>{value}</p>
-    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{label}</p>
-  </div>
-);
-
-const EmptyTab = ({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: typeof Video;
-  title: string;
-  description: string;
-}) => (
-  <div className="mt-6 rounded-2xl border border-dashed border-border bg-card p-10 text-center">
-    <Icon className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
-    <h4 className="font-display text-base font-bold text-foreground">{title}</h4>
-    <p className="text-xs text-muted-foreground mt-1">{description}</p>
+const DetailRow = ({ label, value, icon: Icon }: { label: string; value: string; icon?: typeof Video }) => (
+  <div className="flex items-start gap-1.5">
+    {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />}
+    <p className="text-foreground">
+      <span className="font-bold">{label}:</span> <span className="text-muted-foreground">{value}</span>
+    </p>
   </div>
 );
 
