@@ -1928,6 +1928,7 @@ export type Database = {
           country: string | null
           created_at: string
           doubt_preference: string
+          father_name: string | null
           full_name: string | null
           goal: string | null
           id: string
@@ -1937,6 +1938,7 @@ export type Database = {
           phone: string | null
           plan: string
           school_id: string | null
+          state: string | null
           target_exam: string | null
           updated_at: string
           user_id: string
@@ -1948,6 +1950,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           doubt_preference?: string
+          father_name?: string | null
           full_name?: string | null
           goal?: string | null
           id?: string
@@ -1957,6 +1960,7 @@ export type Database = {
           phone?: string | null
           plan?: string
           school_id?: string | null
+          state?: string | null
           target_exam?: string | null
           updated_at?: string
           user_id: string
@@ -1968,6 +1972,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           doubt_preference?: string
+          father_name?: string | null
           full_name?: string | null
           goal?: string | null
           id?: string
@@ -1977,6 +1982,7 @@ export type Database = {
           phone?: string | null
           plan?: string
           school_id?: string | null
+          state?: string | null
           target_exam?: string | null
           updated_at?: string
           user_id?: string
