@@ -98,6 +98,12 @@ import AchievementsPage from "./pages/AchievementsPage";
 import LeadershipDetailPage from "./pages/LeadershipDetailPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
 import DisclaimerPage from "./pages/DisclaimerPage";
+import EStorePage from "./pages/EStorePage";
+import BookDetailPage from "./pages/BookDetailPage";
+import TestSeriesCatalogPage from "./pages/TestSeriesCatalogPage";
+import TestSeriesDetailPage from "./pages/TestSeriesDetailPage";
+import AdminBooksPage from "./pages/AdminBooksPage";
+import AdminTestSeriesPage from "./pages/AdminTestSeriesPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,7 +145,8 @@ const App = () => (
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/:slug" element={<CourseDetailPage />} />
               <Route path="/tests" element={<TestsLandingPage />} />
-              <Route path="/test-series" element={<TestsLandingPage />} />
+              <Route path="/test-series" element={<TestSeriesCatalogPage />} />
+              <Route path="/test-series/:slug" element={<TestSeriesDetailPage />} />
               <Route path="/live-classes" element={<LiveClassesLandingPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
@@ -156,15 +163,8 @@ const App = () => (
               <Route path="/boost" element={<BoostPage />} />
               <Route path="/centers" element={<CentersPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
-              <Route
-                path="/e-store"
-                element={
-                  <BansalPlaceholderPage
-                    title="E-Store"
-                    description="Bansal Classes books and printed study material — coming soon."
-                  />
-                }
-              />
+              <Route path="/e-store" element={<EStorePage />} />
+              <Route path="/e-store/:slug" element={<BookDetailPage />} />
               <Route path="/refund-policy" element={<RefundPolicyPage />} />
               <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route
@@ -267,6 +267,8 @@ const App = () => (
               <Route path="/admin/tests" element={<AdminTestsPage />} />
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+              <Route path="/admin/test-series" element={<AdminTestSeriesPage />} />
+              <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
               <Route path="/admin/compete-questions" element={<AdminCompeteQuestionsPage />} />
               <Route path="/admin/exams" element={<AdminExamsPage />} />
