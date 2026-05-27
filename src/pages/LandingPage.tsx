@@ -15,6 +15,7 @@ import toppersImage from "@/assets/bansal-toppers-v2.jpg";
 import indiaMap from "@/assets/bansal-pan-india.png";
 import appMockup from "@/assets/bansal-app-v2.png";
 import resultsBanner from "@/assets/bansal-results-banner.png";
+import legacyBanner from "@/assets/bansal-legacy-banner.png";
 
 type ExamKey = "jee" | "neet" | "foundation";
 
@@ -109,7 +110,19 @@ const LandingPage = () => {
                     loading="eager"
                   />
                   <img
+                    src={legacyBanner}
+                    alt="Bansal Classes — 45+ Years of Academic Excellence"
+                    className="w-full h-auto block"
+                    loading="eager"
+                  />
+                  <img
                     src={resultsBanner}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-auto block"
+                  />
+                  <img
+                    src={legacyBanner}
                     alt=""
                     aria-hidden="true"
                     className="w-full h-auto block"
