@@ -14,12 +14,24 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Mulish", "sans-serif"],
-        body: ["Plus Jakarta Sans", "sans-serif"],
+        display: ["Poppins", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        accent: ["Rajdhani", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
+        bansal: {
+          blue: "hsl(var(--bansal-blue))",
+          "blue-dark": "hsl(var(--bansal-blue-dark))",
+          "blue-light": "hsl(var(--bansal-blue-light))",
+          orange: "hsl(var(--bansal-orange))",
+          "orange-dark": "hsl(var(--bansal-orange-dark))",
+          "orange-light": "hsl(var(--bansal-orange-light))",
+          black: "hsl(var(--bansal-black))",
+          gray: "hsl(var(--bansal-gray))",
+          "gray-light": "hsl(var(--bansal-gray-light))",
+        },
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

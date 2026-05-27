@@ -29,3 +29,7 @@ verify_jwt = true
 
 [functions.migrate-helper]
 verify_jwt = false
+
+[functions.mobile-otp-mock]
+verify_jwt = false
+

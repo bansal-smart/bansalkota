@@ -1,59 +1,70 @@
-## Goal
 
-Enable cross-role reporting (student↔mentor/teacher, mentor→student, teacher→student), surface a unified "Reports" tab in the admin sidebar visible to admin + super admin, and rename "Student Report" to "Student Analysis".
+# Phase 1 — Bansal Classes Rebrand + Home + Mock OTP Auth
 
-## What already exists (reuse)
+Goal: convert the public face of the app to Bansal Classes Pvt Ltd, swap the email/password login for a mock Mobile+OTP flow, and hide non-Bansal pages from navigation. Backend logic (tests, lectures, dashboard, admin) is left intact and reskinned later in Phase 2.
 
-- `public.reports` table (reporter_id, reported_user_id, reported_role, category, subject, description, status, evidence_url, resolution_notes, …) with RLS: any authenticated user can insert their own report; admin/super_admin can view and update all.
-- `ReportDialog` component (`src/components/ReportDialog.tsx`) — already wired to insert into `reports` and trigger the existing `notify_report_created` trigger (notifies the reported user + all admins).
-- `AdminModerationPage` already lists every row in `reports` with severity, filter, and resolve/dismiss actions — but it's mounted only for super-admin under Moderation.
+## What changes
 
-## Changes
+### 1. Brand system (global)
+- Add Bansal palette as HSL CSS variables in `src/index.css`:
+  - `--bansal-blue 220 70% 33%` (#1A3D8F), `--bansal-orange 22 100% 50%` (#FF6A00), blue-dark, blue-light, orange-light, gray, gray-light, black, white.
+- Remap existing semantic tokens (`--primary`, `--accent`, `--background`, etc.) to Bansal values so already-themed components inherit the new brand without rewrites.
+- Add fonts to `index.html`: Poppins (700/800/600), Inter (400/500), Rajdhani (600).
+- Update `tailwind.config.ts` font families: `display: Poppins`, `body: Inter`, `accent: Rajdhani`. Add `bansal-*` colors as Tailwind tokens.
+- Update `src/styles/design-tokens.ts` with new palette (kept for legacy imports).
+- Replace project title + meta in `index.html` with Bansal copy. Copy `user-uploads://logo.png` to `src/assets/bansal-logo.png` and `public/favicon.png`; wire favicon.
 
-### 1. Database (one small migration)
+### 2. Shared brand components (new)
+Create under `src/components/bansal/`:
+- `BansalLogo.tsx` (variant: full | mono | white | mark)
+- `BansalButton.tsx` (variant: primary | cta | outline | secondary)
+- `BansalCard.tsx` (white card with blue left-border accent)
+- `BansalBadge.tsx`, `BansalStat.tsx`, `BansalSection.tsx`
 
-The current `reports_reported_role_check` constraint allows only `teacher | mentor | staff | other`. Drop it and re-add it to also allow `student` so mentors and teachers can report students.
+### 3. Public chrome (reskin in place)
+- Rewrite `src/components/PublicLayout.tsx`:
+  - Sticky white navbar with blue logo. Links: Home, About, Courses, BOOST, Centers, Blog, Careers. Outlined Login + orange "Enquire Now" CTA. Mobile hamburger → blue slide-in.
+  - Footer: blue background, 4 cols, real Bansal contact data (Bansal Tower, A-10 IPIA, Kota-324005; admission +91 9773343246 / 8003045222; HR +91 8375015384; BFTP +91 8003046222). Copyright "© 2025 Bansal Classes Private Limited."
+  - Remove region selector / Dubai content from header.
 
-### 2. Sidebar (`src/components/AdminLayout.tsx`)
+### 4. New Home page
+- Replace contents of `src/pages/LandingPage.tsx` with the Bansal home as specified:
+  1. Hero (navy bg + geometric pattern): "Ideal Guidance. Exceptional Results." (orange "Results."), subline, [Explore Courses] [Enquire Now], hero image placeholder.
+  2. Animated stat strip: Daily Live Sessions · 10M+ Resources · 24×7 Support · 100+ Centers.
+  3. "Why Bansal Classes" 2-col with orange highlights and [Read More].
+  4. Courses preview with JEE / NEET UG / Pre Foundation tabs and 3 cards each.
+  5. BOOST banner (navy) → "Register for ₹99" CTA linking out to https://www.bansal.ac.in/boost-registration.
+  6. CLP vs DLP cards.
+  7. Testimonials carousel.
+  8. Orange App CTA section ("Coming Soon on Play Store").
+- Add a stub `src/pages/AboutPage.tsx` rebrand pass (hero + leadership cards) so navbar links don't 404. Other listed pages (BOOST, Centers, Careers, Blog, Achievements, Contact) get small placeholder pages with brand chrome and a "Coming soon" notice — full builds happen in Phase 2.
 
-- Rename the existing item label `"Student Report"` → `"Student Analysis"` (path stays `/admin/student-reports`, icon stays `FileBarChart`).
-- Insert a new item **right below** it, visible to both admin and super-admin:
-  `{ label: "Reports", icon: Flag, path: "/admin/reports" }`.
+### 5. Mock Mobile + OTP login
+- Replace `src/pages/LoginPage.tsx` with a split-layout screen: left blue gradient with logo + tagline + VK Bansal quote; right form.
+- Two-step UI: enter +91 10-digit mobile → enter 6-digit OTP (60s resend timer).
+- Mock provider: any 6-digit OTP succeeds; create/reuse a Supabase user via email `mobile+91XXXXXXXXXX@bansal.local` with a deterministic password (handled in a new edge function `mobile-otp-mock` so the password never leaves the server). Returns a session the client signs in with.
+- New user → second screen asks for Name, then continues to dashboard.
+- Remove email/password form and Google login from this page. (Existing `/admin/login` keeps email+password — out of scope.)
+- Hide `SignupPage` from public navigation but keep the file (route can redirect to `/login`).
 
-### 3. New admin page `src/pages/AdminReportsPage.tsx`
+### 6. Navigation hide-list (keep code)
+- Remove from `PublicLayout` nav: region pages, mentorship marketing, store, admissions, association, educators, pricing — anything not in the Bansal page list.
+- Routes in `App.tsx` stay defined so deep links don't 404; only nav links and CTAs are pruned.
 
-A focused list of all submitted reports, accessible to admin + super-admin (route guarded by the existing `ProtectedAdminRoute`). Built by lifting the proven listing logic from `AdminModerationPage` and adding:
+### 7. Cleanup
+- Update `mem://index.md` Core: new brand (Bansal blue/orange, Poppins/Inter/Rajdhani), India-only, mock OTP for now. Remove Dubai/AED line.
 
-- Filter chips: All / Student / Mentor / Teacher (filters by `reported_role`) and status filter (Pending / In progress / Resolved / Dismissed).
-- Each row shows: reporter name + role, reported name + role badge, category, subject, description, evidence link, time-ago, status pill, and Resolve / Dismiss actions.
-- Joins `profiles` for reporter and reported display names where available.
-- Realtime channel on the `reports` table so new reports appear without refresh (per the realtime guideline).
+## Out of scope (Phase 2+)
+- Full BOOST page with eligibility + apply tabs.
+- Test engine UI reskin, video lectures UI reskin, student dashboard reskin.
+- Centers map, Careers + BFTP, Blog, Achievements, Contact form, WhatsApp/Call mobile bar.
+- Real SMS OTP (Twilio/MSG91), Razorpay BOOST payment.
+- Deleting unused pages/tables.
 
-The existing `AdminModerationPage` stays as-is for super-admin (content moderation focus); this new page is the cross-role reports inbox the user described.
+## Technical notes
+- All colors via HSL semantic tokens — no hex in components.
+- Mock OTP edge function `supabase/functions/mobile-otp-mock/index.ts` with `verify_jwt = false`; uses `SUPABASE_SERVICE_ROLE_KEY` to upsert the auth user. Returns `{ email, password }` so the client can `signInWithPassword`. Document clearly that this is dev-only.
+- No DB migrations needed in Phase 1 (mobile is stored in `profiles.phone` via existing `handle_new_user` trigger).
+- Keep `AuthContext`, `ProtectedRoute`, role checks untouched.
 
-### 4. Wire `ReportDialog` into the right surfaces
-
-Reuse the existing component. Add a "Report" entry point in each of these places, prefilled with the right `reportedRole` and `reportedUserId`:
-
-- **Student → Mentor**: in `StudentMentorChatPage` header (next to the existing "Rate your mentor" button) and on the mentor card on the student dashboard.
-- **Student → Teacher**: on the teacher/educator info card shown on `LiveClassRoomPage` and on the doubt answer card in `DoubtPage` (when an answer is from a teacher).
-- **Mentor → Student**: in `MentorStudentsPage` row actions (per-student kebab/menu).
-- **Teacher → Student**: in `TeacherStudentsPage` row actions and from `TeacherDoubtQueuePage` for the student who asked the doubt.
-
-### 5. Routing (`src/App.tsx`)
-
-Add `<Route path="/admin/reports" element={<AdminReportsPage />} />` inside the existing `ProtectedAdminRoute` block. Lazy import next to the other admin pages.
-
-## Out of scope
-
-- No changes to the Moderation page or its super-admin gating.
-- No changes to the existing "Student Analysis" page beyond the sidebar label.
-- No changes to email/notification copy — the existing `notify_report_created` trigger already handles fan-out.
-
-## Files touched
-
-- `supabase/migrations/<new>.sql` — relax `reports_reported_role_check` to include `student`.
-- `src/components/AdminLayout.tsx` — rename + new nav item.
-- `src/App.tsx` — new admin route.
-- `src/pages/AdminReportsPage.tsx` — new file.
-- `src/pages/StudentMentorChatPage.tsx`, `src/pages/StudentDashboard.tsx`, `src/pages/LiveClassRoomPage.tsx`, `src/pages/DoubtPage.tsx`, `src/pages/MentorStudentsPage.tsx`, `src/pages/TeacherStudentsPage.tsx`, `src/pages/TeacherDoubtQueuePage.tsx` — drop in `<ReportDialog ... />`.
+After approval I'll implement in this order: tokens & fonts → brand components → PublicLayout → LandingPage → LoginPage + edge function → placeholder pages → memory update.
