@@ -9,10 +9,11 @@ const navItems = [
   { label: "Home", path: "/" },
   { label: "About", path: "/about" },
   { label: "Courses", path: "/courses" },
-  { label: "BOOST", path: "/boost" },
+  { label: "Test Series", path: "/test-series" },
   { label: "Centers", path: "/centers" },
-  { label: "Blog", path: "/blog" },
-  { label: "Careers", path: "/career" },
+  { label: "BOOST", path: "/boost" },
+  { label: "Career", path: "/career" },
+  { label: "Contact", path: "/contact" },
 ];
 
 const PublicLayout = () => {
