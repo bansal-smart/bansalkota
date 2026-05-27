@@ -124,12 +124,12 @@ const CoursesPage = () => {
             ))}
           </div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
-            {subjectFilters.map((s, i) => (
+            {courseTypeFilters.map((s, i) => (
               <button
                 key={s}
-                onClick={() => setActiveSubject(i)}
+                onClick={() => setActiveType(i)}
                 className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  i === activeSubject ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/50"
+                  i === activeType ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted/50"
                 }`}
               >
                 {s}
