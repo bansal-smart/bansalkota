@@ -58,6 +58,32 @@ const PublicLayout = () => {
           <div className="hidden md:flex items-center gap-3 lg:gap-5">
             {navItems.map((item) => {
               const active = item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path);
+              if ("children" in item) {
+                return (
+                  <div key={item.path} className="relative group">
+                    <Link
+                      to={item.path}
+                      className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${active ? "text-bansal-blue" : "text-bansal-black hover:text-bansal-blue"}`}
+                    >
+                      {item.label}
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
+                    </Link>
+                    <div className="invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                      <div className="w-64 rounded-xl border border-border bg-white shadow-xl py-2">
+                        {item.children.map((c) => (
+                          <Link
+                            key={c.path}
+                            to={c.path}
+                            className="block px-4 py-2.5 text-sm font-medium text-bansal-black hover:bg-bansal-blue-light/40 hover:text-bansal-blue transition-colors"
+                          >
+                            {c.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <Link
                   key={item.path}
