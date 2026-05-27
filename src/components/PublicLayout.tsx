@@ -1,13 +1,25 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Phone, MapPin, Mail } from "lucide-react";
+import { Menu, X, Phone, MapPin, Mail, ChevronDown } from "lucide-react";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
 
-const navItems = [
+type NavItem =
+  | { label: string; path: string }
+  | { label: string; path: string; children: { label: string; path: string }[] };
+
+const aboutChildren = [
+  { label: "About Bansal Classes", path: "/about" },
+  { label: "About VK Bansal Sir", path: "/about/vk-bansal" },
+  { label: "About Sameer Bansal Sir", path: "/about/sameer-bansal" },
+  { label: "About Neelam Bansal Ma'am", path: "/about/neelam-bansal" },
+  { label: "About Mahima Bansal Ma'am", path: "/about/mahima-bansal" },
+];
+
+const navItems: NavItem[] = [
   { label: "Home", path: "/" },
-  { label: "About", path: "/about" },
+  { label: "About", path: "/about", children: aboutChildren },
   { label: "Courses", path: "/courses" },
   { label: "Test Series", path: "/test-series" },
   { label: "Centers", path: "/centers" },
@@ -46,6 +58,32 @@ const PublicLayout = () => {
           <div className="hidden md:flex items-center gap-3 lg:gap-5">
             {navItems.map((item) => {
               const active = item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path);
+              if ("children" in item) {
+                return (
+                  <div key={item.path} className="relative group">
+                    <Link
+                      to={item.path}
+                      className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${active ? "text-bansal-blue" : "text-bansal-black hover:text-bansal-blue"}`}
+                    >
+                      {item.label}
+                      <ChevronDown className="h-3.5 w-3.5 transition-transform group-hover:rotate-180" />
+                    </Link>
+                    <div className="invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                      <div className="w-64 rounded-xl border border-border bg-white shadow-xl py-2">
+                        {item.children.map((c) => (
+                          <Link
+                            key={c.path}
+                            to={c.path}
+                            className="block px-4 py-2.5 text-sm font-medium text-bansal-black hover:bg-bansal-blue-light/40 hover:text-bansal-blue transition-colors"
+                          >
+                            {c.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <Link
                   key={item.path}
@@ -98,14 +136,29 @@ const PublicLayout = () => {
             </div>
             <div className="flex flex-col gap-1">
               {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-3 text-base font-semibold text-white/90 hover:bg-white/10"
-                >
-                  {item.label}
-                </Link>
+                <div key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={() => setOpen(false)}
+                    className="block rounded-lg px-3 py-3 text-base font-semibold text-white/90 hover:bg-white/10"
+                  >
+                    {item.label}
+                  </Link>
+                  {"children" in item && (
+                    <div className="ml-3 pl-3 border-l border-white/15 flex flex-col">
+                      {item.children.map((c) => (
+                        <Link
+                          key={c.path}
+                          to={c.path}
+                          onClick={() => setOpen(false)}
+                          className="block rounded-md px-3 py-2 text-sm text-white/75 hover:text-bansal-orange hover:bg-white/5"
+                        >
+                          {c.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
             <div className="mt-6 flex flex-col gap-3">

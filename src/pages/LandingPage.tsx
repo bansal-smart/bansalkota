@@ -18,6 +18,21 @@ import resultsBanner from "@/assets/bansal-results-banner.png";
 import legacyBanner from "@/assets/bansal-legacy-banner.png";
 import featureMentorship from "@/assets/feature-mentorship.png";
 import featureTrackProgress from "@/assets/feature-track-progress.png";
+import courseJeeMain from "@/assets/course-jee-main.jpg";
+import courseJeeAdvanced from "@/assets/course-jee-advanced.jpg";
+import courseNeetUg from "@/assets/course-neet-ug.jpg";
+import courseFoundation from "@/assets/course-foundation.jpg";
+import courseDropper from "@/assets/course-dropper.jpg";
+import courseCrash from "@/assets/course-crash.jpg";
+
+const featuredCourses = [
+  { img: courseJeeMain, title: "JEE Main Crash & Foundation", tag: "JEE", tone: "blue" as const, desc: "Concept clarity + speed practice for JEE Main aspirants." },
+  { img: courseJeeAdvanced, title: "JEE Advanced — Elite Batch", tag: "JEE Adv", tone: "orange" as const, desc: "IIT-focused mastery with master mentors and weekly tests." },
+  { img: courseNeetUg, title: "NEET UG — Medical Aspirants", tag: "NEET", tone: "blue" as const, desc: "Biology-led syllabus coverage with NCERT-deep practice." },
+  { img: courseFoundation, title: "Class 8–10 Foundation", tag: "Foundation", tone: "orange" as const, desc: "Build the strongest base for future JEE / NEET success." },
+  { img: courseDropper, title: "Dropper / Repeater Batch", tag: "Repeater", tone: "blue" as const, desc: "Structured one-year plan for serious second-attempt scholars." },
+  { img: courseCrash, title: "Express Crash Course", tag: "Crash", tone: "orange" as const, desc: "Rapid revision and full-syllabus tests before the big day." },
+];
 
 type ExamKey = "jee" | "neet" | "foundation";
 
@@ -177,8 +192,66 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* 3b. FEATURED COURSES */}
+      <section className="py-12 md:py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
+            <div>
+              <BansalBadge tone="orange">Featured Courses</BansalBadge>
+              <h2 className="mt-3 font-display text-3xl md:text-4xl font-extrabold text-bansal-black">
+                Hand-Picked Programs for <span className="text-bansal-orange">Serious Scholars</span>
+              </h2>
+              <p className="mt-2 text-bansal-gray max-w-xl">
+                Our most popular batches — from foundation to advanced — designed by master mentors.
+              </p>
+            </div>
+            <Link
+              to="/courses"
+              className="inline-flex items-center gap-1 rounded-full bg-bansal-blue text-white px-5 py-2.5 text-sm font-semibold hover:bg-bansal-blue-dark transition-colors shadow-blue"
+            >
+              View All Courses <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 stagger-children">
+            {featuredCourses.map((c) => (
+              <Link
+                key={c.title}
+                to="/courses"
+                className="group block rounded-2xl overflow-hidden bg-white border border-border shadow-sm hover:shadow-xl hover-lift transition-all"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden bg-bansal-blue-dark">
+                  <img
+                    src={c.img}
+                    alt={c.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    width={1024}
+                    height={768}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                  <span className={`absolute top-3 left-3 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow ${c.tone === "orange" ? "bg-bansal-orange" : "bg-bansal-blue"}`}>
+                    {c.tag}
+                  </span>
+                  <h3 className="absolute bottom-3 left-4 right-4 font-display text-lg font-extrabold text-white drop-shadow-lg">
+                    {c.title}
+                  </h3>
+                </div>
+                <div className="p-5">
+                  <p className="text-sm text-bansal-gray">{c.desc}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue group-hover:text-bansal-orange transition-colors">
+                    Explore <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 4. WHY BANSAL */}
       <section className="py-12 md:py-20 bg-white">
+
         <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="relative order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
             <div className="aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl">
