@@ -9,11 +9,11 @@ import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import heroStudents from "@/assets/bansal-hero-students.jpg";
-import mentorTeaching from "@/assets/bansal-mentor-teaching.jpg";
-import toppersImage from "@/assets/bansal-toppers.jpg";
-import indiaMap from "@/assets/bansal-india-map.png";
-import appMockup from "@/assets/bansal-app-mockup.png";
+import heroStudents from "@/assets/bansal-hero-v2.jpg";
+import mentorTeaching from "@/assets/bansal-mentor-v2.jpg";
+import toppersImage from "@/assets/bansal-toppers-v2.jpg";
+import indiaMap from "@/assets/bansal-pan-india.png";
+import appMockup from "@/assets/bansal-app-v2.png";
 
 type ExamKey = "jee" | "neet" | "foundation";
 
@@ -66,12 +66,12 @@ const LandingPage = () => {
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bansal-orange/20 blur-3xl" />
         <div className="absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative container mx-auto px-4 py-16 md:py-24 grid lg:grid-cols-2 gap-10 items-center">
+        <div className="relative container mx-auto px-4 py-12 md:py-24 grid lg:grid-cols-2 gap-8 md:gap-10 items-center">
           <div className="animate-fade-in-up">
             <BansalBadge tone="orange">
               <Sparkles className="h-3 w-3 mr-1" /> Since 1984 · Kota, Rajasthan
             </BansalBadge>
-            <h1 className="mt-5 font-display text-4xl md:text-6xl font-extrabold leading-tight">
+            <h1 className="mt-5 font-display text-3xl sm:text-4xl md:text-6xl font-extrabold leading-tight">
               Ideal Guidance.{" "}
               <span className="text-bansal-orange">Exceptional Results.</span>
             </h1>
@@ -97,23 +97,23 @@ const LandingPage = () => {
             </div>
           </div>
 
-          <div className="relative animate-fade-in-up-delay-2">
+          <div className="relative animate-fade-in-up-delay-2 max-w-md mx-auto lg:max-w-none w-full">
             <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-2xl">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden relative">
                 <img
                   src={heroStudents}
                   alt="Bansal Classes students celebrating in classroom"
                   className="absolute inset-0 h-full w-full object-cover"
-                  width={1280}
-                  height={960}
+                  width={1536}
+                  height={1024}
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-bansal-blue/70 via-bansal-blue/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                <div className="absolute inset-0 bg-gradient-to-tr from-bansal-blue/40 via-transparent to-transparent" />
+                <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 flex items-end justify-between">
                   <div>
-                    <p className="font-display text-lg md:text-xl font-bold drop-shadow">Bansal Campus</p>
-                    <p className="text-xs text-white/85">Kota · India's Coaching Capital</p>
+                    <p className="font-display text-base sm:text-lg md:text-xl font-bold drop-shadow">Bansal Campus</p>
+                    <p className="text-[10px] sm:text-xs text-white/90">Kota · India's Coaching Capital</p>
                   </div>
-                  <span className="rounded-full bg-bansal-orange px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Live</span>
+                  <span className="rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide">Live</span>
                 </div>
               </div>
             </div>
@@ -132,7 +132,7 @@ const LandingPage = () => {
       </section>
 
       {/* 3. ACHIEVEMENTS ROW */}
-      <section className="py-16 bg-bansal-orange-light/40">
+      <section className="py-12 md:py-16 bg-bansal-orange-light/40">
         <div className="container mx-auto px-4">
           <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
             <div>
@@ -160,17 +160,17 @@ const LandingPage = () => {
       </section>
 
       {/* 4. WHY BANSAL */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="relative order-2 lg:order-1">
-            <div className="aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl">
+      <section className="py-12 md:py-20 bg-white">
+        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div className="relative order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
+            <div className="aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl">
               <img
                 src={mentorTeaching}
                 alt="Bansal Classes mentor teaching at whiteboard"
                 className="h-full w-full object-cover"
                 loading="lazy"
-                width={1024}
-                height={1024}
+                width={1280}
+                height={960}
               />
             </div>
             <div className="absolute -bottom-6 -right-6 bg-bansal-orange text-white rounded-2xl p-5 shadow-xl">
@@ -208,7 +208,7 @@ const LandingPage = () => {
       </section>
 
       {/* 5. COURSES */}
-      <section className="py-20 bg-bansal-blue-light/40">
+      <section className="py-12 md:py-20 bg-bansal-blue-light/40">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto">
             <BansalBadge tone="blue">Programs</BansalBadge>
@@ -238,7 +238,7 @@ const LandingPage = () => {
             ))}
           </div>
 
-          <div className="mt-10 grid md:grid-cols-3 gap-6 stagger-children">
+          <div className="mt-8 md:mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 stagger-children">
             {coursesByExam[exam].map((c) => (
               <BansalCard key={c.name}>
                 <div className="h-12 w-12 rounded-full bg-bansal-orange-light flex items-center justify-center mb-4">
@@ -259,7 +259,7 @@ const LandingPage = () => {
       </section>
 
       {/* 6. CLP vs DLP */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto">
             <BansalBadge tone="blue">Teaching Programs</BansalBadge>
@@ -335,7 +335,7 @@ const LandingPage = () => {
       </section>
 
       {/* 8. TOPPERS / TESTIMONIALS */}
-      <section className="py-20 bg-bansal-orange-light/30 relative overflow-hidden">
+      <section className="py-12 md:py-20 bg-bansal-orange-light/30 relative overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-8 items-center mb-12">
             <div className="lg:col-span-1">
@@ -382,8 +382,8 @@ const LandingPage = () => {
       </section>
 
       {/* 9. CENTERS TEASER */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+      <section className="py-12 md:py-20 bg-white">
+        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           <div>
             <BansalBadge tone="blue">Pan-India Presence</BansalBadge>
             <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
@@ -403,8 +403,8 @@ const LandingPage = () => {
               <BansalButton variant="primary">Find a Center <ArrowRight className="h-4 w-4" /></BansalButton>
             </Link>
           </div>
-          <div className="relative">
-            <div className="aspect-square rounded-3xl bg-gradient-to-br from-bansal-blue-light to-bansal-orange-light/40 p-8 flex items-center justify-center">
+          <div className="relative max-w-sm mx-auto lg:max-w-none w-full">
+            <div className="aspect-square rounded-3xl bg-gradient-to-br from-bansal-blue-light to-bansal-orange-light/40 p-6 sm:p-8 flex items-center justify-center">
               <img
                 src={indiaMap}
                 alt="Bansal Classes centers across India"
@@ -447,9 +447,9 @@ const LandingPage = () => {
             <img
               src={appMockup}
               alt="Bansal Classes mobile app preview"
-              className="h-80 md:h-96 w-auto object-contain drop-shadow-2xl"
+              className="h-64 sm:h-80 md:h-96 w-auto object-contain drop-shadow-2xl"
               loading="lazy"
-              width={800}
+              width={1024}
               height={1024}
             />
           </div>
