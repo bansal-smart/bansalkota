@@ -176,6 +176,13 @@ const CourseStudyMaterialPage = () => {
       setLessons((lessRes.data ?? []) as Lesson[]);
       setPdfs((pdfRes.data ?? []) as Pdf[]);
       setTests((testRes.data ?? []) as ChapterTest[]);
+      setChapterQuizzes((quizRes.data ?? []) as ChapterQuiz[]);
+      const attMap: Record<string, QuizAttempt> = {};
+      ((attRes.data ?? []) as QuizAttempt[]).forEach((a) => {
+        // keep the most recent (results are ordered desc, first wins)
+        if (!attMap[a.quiz_id]) attMap[a.quiz_id] = a;
+      });
+      setQuizAttempts(attMap);
       const progMap: Record<string, boolean> = {};
       ((progRes.data ?? []) as ProgressRow[]).forEach((p) => {
         progMap[p.lesson_slug] = p.is_completed;
