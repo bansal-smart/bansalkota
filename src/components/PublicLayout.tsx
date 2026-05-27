@@ -136,14 +136,29 @@ const PublicLayout = () => {
             </div>
             <div className="flex flex-col gap-1">
               {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-3 text-base font-semibold text-white/90 hover:bg-white/10"
-                >
-                  {item.label}
-                </Link>
+                <div key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={() => setOpen(false)}
+                    className="block rounded-lg px-3 py-3 text-base font-semibold text-white/90 hover:bg-white/10"
+                  >
+                    {item.label}
+                  </Link>
+                  {"children" in item && (
+                    <div className="ml-3 pl-3 border-l border-white/15 flex flex-col">
+                      {item.children.map((c) => (
+                        <Link
+                          key={c.path}
+                          to={c.path}
+                          onClick={() => setOpen(false)}
+                          className="block rounded-md px-3 py-2 text-sm text-white/75 hover:text-bansal-orange hover:bg-white/5"
+                        >
+                          {c.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
             <div className="mt-6 flex flex-col gap-3">
