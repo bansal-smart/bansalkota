@@ -1,84 +1,67 @@
-## Goal
-Restructure the student portal around six things only — Home, My Course, My Live Class, My Live Test, My Progress, My Profile — gate it behind a one-time profile-completion popup, and swap the sidebar's flame mark for the real Bansal logo. Test engine itself stays exactly as-is.
+# Study Material polish + Video back-nav fix
 
-## 1. Branding
-- Replace the orange flame + "Bansal Classes" text in `StudentLayout` sidebar and mobile header with `<BansalLogo />` (uses `src/assets/bansal-logo.png`).
+## 1. Back navigation from video → Study Material
 
-## 2. Profile completion popup (mandatory, one-time)
-- New DB columns on `profiles`: `father_name text`, `state text`.  
-  (Existing `class_level`, `target_exam`, `city`, `phone`, `full_name` reused. `onboarding_completed` already exists and is the gate flag.)
-- New component `ProfileCompletionDialog.tsx` shown by `StudentLayout` whenever the logged-in student's `profiles.onboarding_completed = false`. Cannot be dismissed (no close button, no overlay click).
-- Fields (all required except where noted):
-  - Full Name
-  - Email (read-only, from auth)
-  - Phone
-  - Father's Name
-  - Class (dropdown: 8, 9, 10, 11, 12, Dropper)
-  - Stream (dropdown: IIT-JEE, NEET, Pre Foundation)
-  - City
-  - State (dropdown of Indian states)
-- On submit: update profile, set `onboarding_completed = true`, refresh auth profile, close dialog.
-- Zod validation, trim + max-length per field.
+**Problem**: Opening a lesson goes to `/courses/:slug/learn?lesson=…`. The player's back link sends users to `/courses/:slug` (course detail / sales page) instead of `/my-courses/:slug` (study material).
 
-## 3. Sidebar restructure
-Replace existing nav groups in `StudentLayout` with a single flat list:
+**Fix in `src/pages/LecturePlayerPage.tsx`**:
+- Replace the two `navigate(\`/courses/${slug}\`)` fallbacks and the "Back to My Courses" link with `navigate(\`/my-courses/${slug}\`)`.
+- Add a visible top "Back to Study Material" button (ArrowLeft icon) that routes to `/my-courses/:slug`, preserving chapter scroll via `location.state` (pass `{ chapterId }` from the study page link, then on back navigate with that state so the chapter auto-expands).
 
-```text
-Home          → /dashboard
-My Course     → /my-courses
-My Live Class → /my-live-classes
-My Live Test  → /my-tests
-My Progress   → /analytics
-My Profile    → /profile
+**Fix in `src/pages/CourseStudyMaterialPage.tsx`**:
+- When rendering each lesson `<Link>`, pass `state={{ from: 'study', chapterId: ch.id }}` so the player knows where to return.
+
+## 2. Study Material page redesign (`CourseStudyMaterialPage.tsx`)
+
+Keep data model intact; only presentation changes.
+
+### Header
+- Replace plain gradient header with a layered hero: course title, instructor avatar + name, progress ring (overall completion %), and a compact stats row (Chapters · Videos · Quizzes · PDFs).
+- Breadcrumb: My Courses › {Course}.
+
+### Subject visual system
+Add a `SUBJECT_THEME` map keyed by subject name (Physics, Chemistry, Mathematics, Biology) with:
+- Lucide icon (Atom, FlaskConical, Sigma, Leaf)
+- HSL gradient token pair (use semantic tokens; add `--subject-physics`, `--subject-chemistry`, `--subject-math`, `--subject-bio` in `index.css` + tailwind config)
+- Soft background illustration (CSS pattern, no external assets)
+
+Render subjects as tabs/pills at the top; each shows its icon, name, and chapter count with the themed gradient.
+
+### Chapter list
+- Replace flat cards with an accordion grid (one column on mobile, two on `lg`).
+- Each chapter card: number badge, title, mini progress bar, counts (▶ videos · 📄 pdfs · ✓ quizzes) using Lucide icons only.
+- Expanded state shows three tabs inside the card: **Video Lectures · PDFs · Quizzes**.
+
+### Lesson rows
+- Uniform row height, left icon (PlayCircle / FileText / ClipboardCheck), title, duration / pages, right-side status chip (Not started / In progress / Completed) and a primary action button.
+- Hover: subtle lift, focus ring uses `--ring`.
+- Empty states per tab with a friendly illustration block.
+
+### Pagination
+- If a chapter has >6 items in a tab, paginate with shadcn `Pagination` component (6 per page). State kept per chapter+tab in a `Map`.
+
+### Student avatar / personalization strip
+- Above the chapter list, a slim "Continue where you left off" strip: student avatar (from profile), last-watched lesson thumbnail, resume button.
+
+### Alignment & spacing pass
+- Container `max-w-6xl mx-auto px-4 lg:px-6`, consistent `gap-6`, `py-8`.
+- All icons `h-4 w-4` inline / `h-5 w-5` in headers.
+- Cards use `rounded-2xl border bg-card shadow-sm`.
+
+## 3. Tokens
+Add to `src/index.css` (`:root` + `.dark`) and `tailwind.config.ts`:
 ```
-
-Removed from sidebar AND mobile bottom nav: Doubts, Mentor Chat, Compete, Leaderboard, Settings, Goal Selector, search bar in header. Routes stay registered (other pages may still link to them) but are no longer surfaced.
-
-## 4. My Live Test (course-wise)
-- Rename label to "My Live Tests".
-- `MyTestsPage` (or its data hook) groups available tests by enrolled course. Layout: one collapsible card per enrolled course, listing its tests with the existing Start / Resume / View Result actions. Tests not tied to an enrolled course go under a "General Practice" group at the bottom.
-- Test-taking, timer, autosave, and results pages are untouched.
-
-## 5. Dashboard ("Home")
-Trim `StudentDashboard` to: greeting, quick-resume of last lesson, today's live classes, upcoming live tests grouped by course, and a "My Progress" summary card (streak, accuracy, percentile, tests done) that deep-links to `/analytics`. Remove: "Talk to Counsellor", goal-setup card, mentor meeting card, compete shortcuts, weak-areas destructive panel (kept only inside `/analytics`).
-
-## 6. My Course
-`MyCoursesPage` becomes a directory: enrolled course cards → click into course → nested view:
-
-```text
-Course → Subject → Chapter → Topic → [PDFs · Video Lectures · Quizzes]
+--subject-physics, --subject-physics-foreground
+--subject-chemistry, --subject-chemistry-foreground
+--subject-math, --subject-math-foreground
+--subject-bio, --subject-bio-foreground
 ```
-
-- Data comes from existing tables: `courses`, `chapters`, `lessons` (filtered by `type`: `video`, `quiz`, `pdf`), and `course_resources` (PDFs by `chapter_id`).
-- New page `CourseStudyMaterialPage.tsx` at `/courses/:slug/study` with three tabs per topic: PDF, Video, Quizzes. Video tab links into the existing `LecturePlayerPage`; Quiz tab links into the existing test engine.
-
-## 7. My Profile (editable)
-- Strip the "Subscription" tab.
-- Add Father's Name + State fields to the existing edit form. Class and Stream become dropdowns matching the popup.
-- Avatar upload, email read-only — unchanged.
-- Remove any "purchases / orders / plan" UI from profile and from anywhere else under the student shell.
-
-## 8. Database migration (single file)
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS father_name text,
-  ADD COLUMN IF NOT EXISTS state text;
-```
-No new tables, no RLS changes — existing profile policies cover the new columns.
+All HSL. No raw hex in components.
 
 ## Files touched
-- `supabase/migrations/<new>.sql` — add two columns
-- `src/components/StudentLayout.tsx` — logo, nav, mobile nav, header cleanup, mount popup
-- `src/components/ProfileCompletionDialog.tsx` — **new**
-- `src/pages/StudentDashboard.tsx` — slim down to Home content
-- `src/pages/MyCoursesPage.tsx` — course directory entry
-- `src/pages/CourseStudyMaterialPage.tsx` — **new** (subject → chapter → topic → PDF/Video/Quiz)
-- `src/pages/MyTestsPage` (or equivalent) — group by enrolled course, rename
-- `src/pages/ProfilePage.tsx` — add father_name + state, drop Subscription tab
-- `src/App.tsx` — register `/courses/:slug/study` route
-- `src/integrations/supabase/types.ts` — regenerated automatically after migration
+- `src/pages/LecturePlayerPage.tsx` (back nav)
+- `src/pages/CourseStudyMaterialPage.tsx` (full UI rebuild, data fetch unchanged)
+- `src/index.css`, `tailwind.config.ts` (subject tokens)
+- New: `src/components/study/SubjectTabs.tsx`, `ChapterCard.tsx`, `LessonRow.tsx`, `ResumeStrip.tsx`
 
-## Out of scope
-- Test engine internals (per request — stays identical).
-- Doubts / Mentor / Compete / Leaderboard pages themselves (routes remain, just unlinked from sidebar).
-- Admin-side course content authoring (uses existing admin pages).
+No DB / business-logic changes.
