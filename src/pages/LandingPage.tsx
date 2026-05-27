@@ -61,20 +61,6 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background">
-      {/* 0. RESULTS BANNER */}
-      <section aria-label="JEE Main Session-I Result 2026" className="bg-white border-b border-bansal-gray-light">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="mx-auto w-full max-w-5xl overflow-x-auto rounded-xl shadow-sm">
-            <img
-              src={resultsBanner}
-              alt="Bansal Classes — JEE Main Session-I Result 2026. Admissions open 2026-2027 (JEE | NEET | Pre-Foundation)."
-              className="mx-auto block h-auto w-full max-h-[180px] sm:max-h-[240px] md:max-h-[320px] object-contain"
-              loading="eager"
-            />
-          </div>
-        </div>
-      </section>
-
       {/* 1. HERO */}
       <section className="relative bg-bansal-blue text-white overflow-hidden">
         <div className="absolute inset-0 grid-texture opacity-60" />
