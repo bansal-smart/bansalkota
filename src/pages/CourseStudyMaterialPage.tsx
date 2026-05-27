@@ -32,17 +32,37 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-type Course = { id: string; slug: string; name: string; subject: string };
-type Chapter = { id: string; title: string; position: number };
+type Course = { id: string; slug: string; name: string; subject: string; target_exam: string | null };
+type Chapter = { id: string; title: string; position: number; subject: string | null };
 type Lesson = { id: string; chapter_id: string; slug: string; title: string; type: string; duration_seconds: number };
 type Pdf = { id: string; chapter_id: string | null; title: string; file_url: string };
 type ChapterTest = { id: string; slug: string; title: string; chapter_id?: string | null };
+type ChapterQuiz = { id: string; chapter_id: string; title: string; description: string | null; position: number };
+type QuizAttempt = { quiz_id: string; score: number; total: number };
 type ProgressRow = { lesson_slug: string; is_completed: boolean };
 type Enrollment = { last_lesson_title: string | null; progress_percent: number | null };
 type Profile = { full_name: string | null; avatar_url: string | null };
 
 type Tab = "videos" | "pdfs" | "quizzes";
 const PAGE_SIZE = 6;
+
+const subjectsForExam = (exam: string | null | undefined, fallback: string): string[] => {
+  const e = (exam ?? "").toLowerCase();
+  if (e.includes("neet")) return ["Physics", "Chemistry", "Biology"];
+  if (e.includes("jee")) return ["Physics", "Chemistry", "Mathematics"];
+  if (e.includes("foundation")) return ["Physics", "Chemistry", "Mathematics", "Biology"];
+  return [fallback || "General"];
+};
+
+const chapterSubjectFor = (chapter: Chapter): string | null => {
+  if (chapter.subject) return chapter.subject;
+  const t = chapter.title.toLowerCase();
+  if (/(physics|kinematic|motion|force|energy|wave|optic|electric|magnet|thermo)/i.test(t)) return "Physics";
+  if (/(chem|atom|periodic|bond|reaction|organic|acid|base|mole|hydrocarb)/i.test(t)) return "Chemistry";
+  if (/(math|algebra|calculus|trig|geometry|integ|differ|matrix|probability|vector)/i.test(t)) return "Mathematics";
+  if (/(bio|cell|plant|animal|human|gene|ecology|organism)/i.test(t)) return "Biology";
+  return null;
+};
 
 const SUBJECT_THEME: Record<
   string,
