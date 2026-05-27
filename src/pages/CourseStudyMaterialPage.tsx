@@ -123,8 +123,8 @@ const CourseStudyMaterialPage = () => {
       if (saved) setSelectedSubject(saved);
 
 
-      const [chRes, lessRes, pdfRes, testRes, progRes, enrRes, profRes] = await Promise.all([
-        supabase.from("chapters").select("id, title, position").eq("course_id", c.id).order("position"),
+      const [chRes, lessRes, pdfRes, testRes, quizRes, progRes, enrRes, profRes, attRes] = await Promise.all([
+        supabase.from("chapters").select("id, title, position, subject").eq("course_id", c.id).order("position"),
         supabase
           .from("lessons")
           .select("id, chapter_id, slug, title, type, duration_seconds")
@@ -138,6 +138,12 @@ const CourseStudyMaterialPage = () => {
           .eq("is_published", true)
           .order("position"),
         supabase.from("tests").select("id, slug, title, course_id").eq("course_id", c.id).eq("is_published", true),
+        supabase
+          .from("chapter_quizzes")
+          .select("id, chapter_id, title, description, position")
+          .eq("course_id", c.id)
+          .eq("is_published", true)
+          .order("position"),
         user
           ? supabase
               .from("lesson_progress")
@@ -157,6 +163,13 @@ const CourseStudyMaterialPage = () => {
         user
           ? supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).maybeSingle()
           : Promise.resolve({ data: null }),
+        user
+          ? supabase
+              .from("chapter_quiz_attempts")
+              .select("quiz_id, score, total")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+          : Promise.resolve({ data: [] as QuizAttempt[] }),
       ]);
       if (!active) return;
       setChapters((chRes.data ?? []) as Chapter[]);
