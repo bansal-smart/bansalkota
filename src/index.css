@@ -154,3 +154,11 @@
   box-shadow: 0 2px 12px rgba(26,61,143,0.08);
   border-left: 4px solid hsl(var(--bansal-blue));
 }
+
+/* Vertical marquee scroll for hero banner */
+@keyframes marquee-y {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+.animate-marquee-y { animation: marquee-y 25s linear infinite; }
+.animate-marquee-y:hover { animation-play-state: paused; }
