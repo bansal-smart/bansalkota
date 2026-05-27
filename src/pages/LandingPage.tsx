@@ -101,35 +101,35 @@ const LandingPage = () => {
 
           <div className="relative animate-fade-in-up-delay-2 max-w-md mx-auto lg:max-w-none w-full">
             <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-2xl">
-              <div className="relative h-[360px] sm:h-[440px] lg:h-[520px] rounded-2xl overflow-hidden bg-white">
-                <div className="flex flex-col animate-marquee-y">
+              <div className="relative h-auto rounded-2xl overflow-hidden bg-white">
+                <div className="flex flex-row animate-marquee-x w-max">
                   <img
                     src={resultsBanner}
                     alt="Bansal Classes — JEE Main Session-I Result 2026"
-                    className="w-full h-auto block"
+                    className="h-[260px] sm:h-[320px] lg:h-[380px] w-auto block flex-shrink-0"
                     loading="eager"
                   />
                   <img
                     src={legacyBanner}
                     alt="Bansal Classes — 45+ Years of Academic Excellence"
-                    className="w-full h-auto block"
+                    className="h-[260px] sm:h-[320px] lg:h-[380px] w-auto block flex-shrink-0"
                     loading="eager"
                   />
                   <img
                     src={resultsBanner}
                     alt=""
                     aria-hidden="true"
-                    className="w-full h-auto block"
+                    className="h-[260px] sm:h-[320px] lg:h-[380px] w-auto block flex-shrink-0"
                   />
                   <img
                     src={legacyBanner}
                     alt=""
                     aria-hidden="true"
-                    className="w-full h-auto block"
+                    className="h-[260px] sm:h-[320px] lg:h-[380px] w-auto block flex-shrink-0"
                   />
                 </div>
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent" />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />
                 <span className="absolute top-3 right-3 rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">Latest Results</span>
               </div>
             </div>
