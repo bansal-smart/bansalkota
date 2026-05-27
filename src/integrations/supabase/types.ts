@@ -2637,6 +2637,37 @@ export type Database = {
         Args: { _email: string; _phone: string }
         Returns: boolean
       }
+      get_chapter_quiz_answers: {
+        Args: { _quiz_id: string }
+        Returns: {
+          correct_index: number
+          explanation: string
+          id: string
+        }[]
+      }
+      get_compete_question_answers: {
+        Args: { _match_id: string }
+        Returns: {
+          correct_index: number
+          explanation: string
+          id: string
+        }[]
+      }
+      get_live_class_join_url: {
+        Args: { _class_id: string }
+        Returns: {
+          meeting_url: string
+          recording_url: string
+        }[]
+      }
+      get_test_question_answers: {
+        Args: { _test_id: string }
+        Returns: {
+          correct_answer: Json
+          explanation: string
+          id: string
+        }[]
+      }
       get_user_streak: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
