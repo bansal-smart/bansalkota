@@ -16,6 +16,8 @@ import indiaMap from "@/assets/bansal-pan-india.png";
 import appMockup from "@/assets/bansal-app-v2.png";
 import resultsBanner from "@/assets/bansal-results-banner.png";
 import legacyBanner from "@/assets/bansal-legacy-banner.png";
+import featureMentorship from "@/assets/feature-mentorship.png";
+import featureTrackProgress from "@/assets/feature-track-progress.png";
 
 type ExamKey = "jee" | "neet" | "foundation";
 
@@ -319,6 +321,38 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* 6b. Feature Showcase */}
+      <section className="py-12 md:py-20 bg-bansal-blue-light/30">
+        <div className="container mx-auto px-4 space-y-10">
+          <div className="text-center max-w-2xl mx-auto">
+            <BansalBadge tone="orange">Why Bansal</BansalBadge>
+            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black">
+              Built for Every Learner's Journey
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link to="/mentorship" className="block rounded-3xl overflow-hidden shadow-lg hover-lift bg-white">
+              <img
+                src={featureMentorship}
+                alt="Personal Mentorship — One-to-one attention, stronger concepts, better results"
+                className="w-full h-auto object-cover"
+                loading="lazy"
+              />
+            </Link>
+            <Link to="/dashboard" className="block rounded-3xl overflow-hidden shadow-lg hover-lift bg-white">
+              <img
+                src={featureTrackProgress}
+                alt="Track Progress. Improve Faster — Real-time academic insights"
+                className="w-full h-auto object-cover"
+                loading="lazy"
+              />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+
 
       {/* 7. BOOST */}
       <section className="py-16 bg-bansal-blue text-white relative overflow-hidden">
