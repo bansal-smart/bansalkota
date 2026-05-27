@@ -1,10 +1,7 @@
-import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, PhoneCall, FlaskConical, Compass, BadgeCheck, BookOpen, Bot, BarChart3, Video, Calendar, Users } from "lucide-react";
+import { Zap, Target, ClipboardCheck, Trophy, AlertTriangle, FlaskConical, Compass, BookOpen, Bot, BarChart3, Video, Calendar } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import SectionHeader from "@/components/SectionHeader";
 import LiveBadge from "@/components/LiveBadge";
-import GoalSetupCard from "@/components/GoalSetupCard";
-import OnboardingTracker from "@/components/OnboardingTracker";
-import StudentMentorMeetingCard from "@/components/StudentMentorMeetingCard";
 
 import { useAppStore } from "@/store/useAppStore";
 import { Link } from "react-router-dom";
@@ -19,10 +16,10 @@ const subjectIcons: Record<string, React.ElementType> = {
 };
 
 const quickActions = [
-  { icon: Video, label: "Attend Class", desc: "Join live session", link: "/my-live-classes", gradient: "from-primary to-primary-dark" },
-  { icon: ClipboardCheck, label: "Take Test", desc: "Start a mock test", link: "/my-tests", gradient: "from-secondary to-secondary-dark" },
-  { icon: Bot, label: "Ask Doubt", desc: "AI doubt solver", link: "/doubts", gradient: "from-accent to-primary" },
-  { icon: BarChart3, label: "Analytics", desc: "View progress", link: "/analytics", gradient: "from-primary-dark to-accent" },
+  { icon: BookOpen, label: "My Course", desc: "Study material", link: "/my-courses", gradient: "from-primary to-primary-dark" },
+  { icon: Video, label: "Live Class", desc: "Join sessions", link: "/my-live-classes", gradient: "from-secondary to-secondary-dark" },
+  { icon: ClipboardCheck, label: "Live Test", desc: "Take a test", link: "/my-tests", gradient: "from-accent to-primary" },
+  { icon: BarChart3, label: "My Progress", desc: "View analytics", link: "/analytics", gradient: "from-primary-dark to-accent" },
 ];
 
 const formatTime = (iso: string) =>
@@ -53,16 +50,10 @@ const StudentDashboard = () => {
             <p className="text-sm text-muted-foreground">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
           </div>
           <div className="flex gap-2">
-            <Link to="/contact" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors">
-              <PhoneCall className="h-3.5 w-3.5" /> Talk to Counsellor
-            </Link>
-            <Link to="/courses" className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Enroll in Course</Link>
+            <Link to="/courses" className="rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity">Browse Courses</Link>
           </div>
         </div>
 
-        <OnboardingTracker />
-        <GoalSetupCard />
-        <StudentMentorMeetingCard />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 stagger-children">
