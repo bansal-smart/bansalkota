@@ -155,10 +155,10 @@
   border-left: 4px solid hsl(var(--bansal-blue));
 }
 
-/* Vertical marquee scroll for hero banner */
-@keyframes marquee-y {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
+/* Horizontal marquee scroll for hero banner */
+@keyframes marquee-x {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
-.animate-marquee-y { animation: marquee-y 25s linear infinite; }
-.animate-marquee-y:hover { animation-play-state: paused; }
+.animate-marquee-x { animation: marquee-x 30s linear infinite; }
+.animate-marquee-x:hover { animation-play-state: paused; }
