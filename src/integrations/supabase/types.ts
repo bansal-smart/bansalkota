@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      books: {
+        Row: {
+          author: string | null
+          class_level: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discount_percent: number | null
+          id: string
+          is_published: boolean
+          original_price: number | null
+          price: number
+          slug: string
+          stock: number
+          subject: string | null
+          tags: string[] | null
+          target_exam: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          class_level?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          id?: string
+          is_published?: boolean
+          original_price?: number | null
+          price?: number
+          slug: string
+          stock?: number
+          subject?: string | null
+          tags?: string[] | null
+          target_exam?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          class_level?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          id?: string
+          is_published?: boolean
+          original_price?: number | null
+          price?: number
+          slug?: string
+          stock?: number
+          subject?: string | null
+          tags?: string[] | null
+          target_exam?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           course_id: string
@@ -1731,6 +1794,54 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          item_id: string
+          item_title: string
+          item_type: string
+          metadata: Json | null
+          payment_provider: string | null
+          payment_reference: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          item_id: string
+          item_title: string
+          item_type: string
+          metadata?: Json | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          item_id?: string
+          item_title?: string
+          item_type?: string
+          metadata?: Json | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -2220,6 +2331,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      test_series: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          discount_percent: number | null
+          duration_months: number | null
+          features: string[] | null
+          id: string
+          is_featured: boolean
+          is_published: boolean
+          original_price: number | null
+          price: number
+          slug: string
+          subject: string | null
+          target_exam: string | null
+          thumbnail_url: string | null
+          title: string
+          total_tests: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          duration_months?: number | null
+          features?: string[] | null
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          original_price?: number | null
+          price?: number
+          slug: string
+          subject?: string | null
+          target_exam?: string | null
+          thumbnail_url?: string | null
+          title: string
+          total_tests?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          discount_percent?: number | null
+          duration_months?: number | null
+          features?: string[] | null
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          original_price?: number | null
+          price?: number
+          slug?: string
+          subject?: string | null
+          target_exam?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          total_tests?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       tests: {
         Row: {
