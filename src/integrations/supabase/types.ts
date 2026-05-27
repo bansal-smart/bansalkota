@@ -77,12 +77,128 @@ export type Database = {
         }
         Relationships: []
       }
+      chapter_quiz_attempts: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          quiz_id: string
+          score: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          quiz_id: string
+          score?: number
+          total?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          quiz_id?: string
+          score?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "chapter_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chapter_quiz_questions: {
+        Row: {
+          correct_index: number
+          created_at: string
+          explanation: string | null
+          id: string
+          options: Json
+          position: number
+          question: string
+          quiz_id: string
+        }
+        Insert: {
+          correct_index: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options: Json
+          position?: number
+          question: string
+          quiz_id: string
+        }
+        Update: {
+          correct_index?: number
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          options?: Json
+          position?: number
+          question?: string
+          quiz_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "chapter_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chapter_quizzes: {
+        Row: {
+          chapter_id: string
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean
+          position: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          chapter_id: string
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          position?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          chapter_id?: string
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chapters: {
         Row: {
           course_id: string
           created_at: string
           id: string
           position: number
+          subject: string | null
           title: string
           updated_at: string
         }
@@ -91,6 +207,7 @@ export type Database = {
           created_at?: string
           id?: string
           position?: number
+          subject?: string | null
           title: string
           updated_at?: string
         }
@@ -99,6 +216,7 @@ export type Database = {
           created_at?: string
           id?: string
           position?: number
+          subject?: string | null
           title?: string
           updated_at?: string
         }
