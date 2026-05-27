@@ -29,6 +29,7 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import CoursesPage from "./pages/CoursesPage";
 import MyCoursesPage from "./pages/MyCoursesPage";
 import CourseStudyMaterialPage from "./pages/CourseStudyMaterialPage";
+import ChapterQuizPage from "./pages/ChapterQuizPage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import LecturePlayerPage from "./pages/LecturePlayerPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -200,6 +201,7 @@ const App = () => (
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/my-courses" element={<MyCoursesPage />} />
                 <Route path="/my-courses/:slug" element={<CourseStudyMaterialPage />} />
+                <Route path="/my-courses/:slug/chapters/:chapterId/quiz/:quizId" element={<ChapterQuizPage />} />
                 <Route path="/explore-courses" element={<StorePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />

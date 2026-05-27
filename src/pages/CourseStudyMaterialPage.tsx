@@ -32,17 +32,37 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-type Course = { id: string; slug: string; name: string; subject: string };
-type Chapter = { id: string; title: string; position: number };
+type Course = { id: string; slug: string; name: string; subject: string; target_exam: string | null };
+type Chapter = { id: string; title: string; position: number; subject: string | null };
 type Lesson = { id: string; chapter_id: string; slug: string; title: string; type: string; duration_seconds: number };
 type Pdf = { id: string; chapter_id: string | null; title: string; file_url: string };
 type ChapterTest = { id: string; slug: string; title: string; chapter_id?: string | null };
+type ChapterQuiz = { id: string; chapter_id: string; title: string; description: string | null; position: number };
+type QuizAttempt = { quiz_id: string; score: number; total: number };
 type ProgressRow = { lesson_slug: string; is_completed: boolean };
 type Enrollment = { last_lesson_title: string | null; progress_percent: number | null };
 type Profile = { full_name: string | null; avatar_url: string | null };
 
 type Tab = "videos" | "pdfs" | "quizzes";
 const PAGE_SIZE = 6;
+
+const subjectsForExam = (exam: string | null | undefined, fallback: string): string[] => {
+  const e = (exam ?? "").toLowerCase();
+  if (e.includes("neet")) return ["Physics", "Chemistry", "Biology"];
+  if (e.includes("jee")) return ["Physics", "Chemistry", "Mathematics"];
+  if (e.includes("foundation")) return ["Physics", "Chemistry", "Mathematics", "Biology"];
+  return [fallback || "General"];
+};
+
+const chapterSubjectFor = (chapter: Chapter): string | null => {
+  if (chapter.subject) return chapter.subject;
+  const t = chapter.title.toLowerCase();
+  if (/(physics|kinematic|motion|force|energy|wave|optic|electric|magnet|thermo)/i.test(t)) return "Physics";
+  if (/(chem|atom|periodic|bond|reaction|organic|acid|base|mole|hydrocarb)/i.test(t)) return "Chemistry";
+  if (/(math|algebra|calculus|trig|geometry|integ|differ|matrix|probability|vector)/i.test(t)) return "Mathematics";
+  if (/(bio|cell|plant|animal|human|gene|ecology|organism)/i.test(t)) return "Biology";
+  return null;
+};
 
 const SUBJECT_THEME: Record<
   string,
@@ -78,6 +98,10 @@ const CourseStudyMaterialPage = () => {
   const [chapterTab, setChapterTab] = useState<Record<string, Tab>>({});
   const [chapterPage, setChapterPage] = useState<Record<string, number>>({});
 
+  const [chapterQuizzes, setChapterQuizzes] = useState<ChapterQuiz[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<Record<string, QuizAttempt>>({});
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+
   useEffect(() => {
     if (!slug) return;
     let active = true;
@@ -85,7 +109,7 @@ const CourseStudyMaterialPage = () => {
       setLoading(true);
       const { data: c } = await supabase
         .from("courses")
-        .select("id, slug, name, subject")
+        .select("id, slug, name, subject, target_exam")
         .eq("slug", slug)
         .maybeSingle();
       if (!active || !c) {
@@ -94,8 +118,13 @@ const CourseStudyMaterialPage = () => {
       }
       setCourse(c as Course);
 
-      const [chRes, lessRes, pdfRes, testRes, progRes, enrRes, profRes] = await Promise.all([
-        supabase.from("chapters").select("id, title, position").eq("course_id", c.id).order("position"),
+      // restore last picked subject
+      const saved = typeof window !== "undefined" ? localStorage.getItem(`study:subject:${slug}`) : null;
+      if (saved) setSelectedSubject(saved);
+
+
+      const [chRes, lessRes, pdfRes, testRes, quizRes, progRes, enrRes, profRes, attRes] = await Promise.all([
+        supabase.from("chapters").select("id, title, position, subject").eq("course_id", c.id).order("position"),
         supabase
           .from("lessons")
           .select("id, chapter_id, slug, title, type, duration_seconds")
@@ -109,6 +138,12 @@ const CourseStudyMaterialPage = () => {
           .eq("is_published", true)
           .order("position"),
         supabase.from("tests").select("id, slug, title, course_id").eq("course_id", c.id).eq("is_published", true),
+        supabase
+          .from("chapter_quizzes")
+          .select("id, chapter_id, title, description, position")
+          .eq("course_id", c.id)
+          .eq("is_published", true)
+          .order("position"),
         user
           ? supabase
               .from("lesson_progress")
@@ -128,12 +163,26 @@ const CourseStudyMaterialPage = () => {
         user
           ? supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).maybeSingle()
           : Promise.resolve({ data: null }),
+        user
+          ? supabase
+              .from("chapter_quiz_attempts")
+              .select("quiz_id, score, total")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+          : Promise.resolve({ data: [] as QuizAttempt[] }),
       ]);
       if (!active) return;
       setChapters((chRes.data ?? []) as Chapter[]);
       setLessons((lessRes.data ?? []) as Lesson[]);
       setPdfs((pdfRes.data ?? []) as Pdf[]);
       setTests((testRes.data ?? []) as ChapterTest[]);
+      setChapterQuizzes((quizRes.data ?? []) as ChapterQuiz[]);
+      const attMap: Record<string, QuizAttempt> = {};
+      ((attRes.data ?? []) as QuizAttempt[]).forEach((a) => {
+        // keep the most recent (results are ordered desc, first wins)
+        if (!attMap[a.quiz_id]) attMap[a.quiz_id] = a;
+      });
+      setQuizAttempts(attMap);
       const progMap: Record<string, boolean> = {};
       ((progRes.data ?? []) as ProgressRow[]).forEach((p) => {
         progMap[p.lesson_slug] = p.is_completed;
@@ -332,39 +381,86 @@ const CourseStudyMaterialPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-base lg:text-lg font-black text-foreground">Chapters</h2>
-              <p className="text-xs text-muted-foreground">{chapters.length} total</p>
-            </div>
+            {(() => {
+              const subjects = subjectsForExam(course.target_exam, course.subject);
+              const filteredChapters =
+                subjects.length > 1 && selectedSubject
+                  ? chapters.filter((c) => (chapterSubjectFor(c) ?? course.subject) === selectedSubject)
+                  : chapters;
+              return (
+                <>
+                  {subjects.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground mr-1">Subject:</span>
+                      {subjects.map((s) => {
+                        const active = (selectedSubject ?? subjects[0]) === s;
+                        const count = chapters.filter((c) => (chapterSubjectFor(c) ?? course.subject) === s).length;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => {
+                              setSelectedSubject(s);
+                              if (typeof window !== "undefined") localStorage.setItem(`study:subject:${slug}`, s);
+                            }}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                              active
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "bg-card text-foreground border border-border hover:border-primary/40"
+                            }`}
+                          >
+                            {s}
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-display text-base lg:text-lg font-black text-foreground">
+                      {selectedSubject ?? "Chapters"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{filteredChapters.length} chapters</p>
+                  </div>
 
-            <div className="space-y-3">
-              {chapters.map((ch) => {
-                const { videos, quizzes } = lessonsByChapter.get(ch.id) ?? { videos: [], quizzes: [] };
-                const chPdfs = pdfsByChapter.get(ch.id) ?? [];
-                const open = openChapter === ch.id;
-                const tab = chapterTab[ch.id] ?? "videos";
-                const page = chapterPage[ch.id] ?? 1;
+                  {filteredChapters.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
+                      <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No chapters in {selectedSubject} yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredChapters.map((ch) => {
+                        const { videos, quizzes: lessonQuizzes } = lessonsByChapter.get(ch.id) ?? { videos: [], quizzes: [] };
+                        const chPdfs = pdfsByChapter.get(ch.id) ?? [];
+                        const chQuizzes = chapterQuizzes.filter((q) => q.chapter_id === ch.id);
+                        const open = openChapter === ch.id;
+                        const tab = chapterTab[ch.id] ?? "videos";
+                        const page = chapterPage[ch.id] ?? 1;
 
-                const chapterTotal = videos.length + chPdfs.length + quizzes.length;
-                const chCompleted =
-                  videos.filter((v) => progress[v.slug]).length + quizzes.filter((q) => progress[q.slug]).length;
-                const chPct =
-                  videos.length + quizzes.length
-                    ? Math.round((chCompleted / (videos.length + quizzes.length)) * 100)
-                    : 0;
+                        const quizzes = lessonQuizzes;
+                        const chCompleted =
+                          videos.filter((v) => progress[v.slug]).length + quizzes.filter((q) => progress[q.slug]).length;
+                        const chPct =
+                          videos.length + quizzes.length
+                            ? Math.round((chCompleted / (videos.length + quizzes.length)) * 100)
+                            : 0;
 
-                const items: Array<
-                  | { kind: "video"; data: Lesson }
-                  | { kind: "pdf"; data: Pdf }
-                  | { kind: "quiz"; data: Lesson }
-                > = [];
-                if (tab === "videos") videos.forEach((v) => items.push({ kind: "video", data: v }));
-                if (tab === "pdfs") chPdfs.forEach((p) => items.push({ kind: "pdf", data: p }));
-                if (tab === "quizzes") quizzes.forEach((q) => items.push({ kind: "quiz", data: q }));
+                        const items: Array<
+                          | { kind: "video"; data: Lesson }
+                          | { kind: "pdf"; data: Pdf }
+                          | { kind: "quiz"; data: Lesson }
+                          | { kind: "chquiz"; data: ChapterQuiz }
+                        > = [];
+                        if (tab === "videos") videos.forEach((v) => items.push({ kind: "video", data: v }));
+                        if (tab === "pdfs") chPdfs.forEach((p) => items.push({ kind: "pdf", data: p }));
+                        if (tab === "quizzes") {
+                          chQuizzes.forEach((q) => items.push({ kind: "chquiz", data: q }));
+                          quizzes.forEach((q) => items.push({ kind: "quiz", data: q }));
+                        }
 
-                const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-                const safePage = Math.min(page, totalPages);
-                const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+                        const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+                        const safePage = Math.min(page, totalPages);
+                        const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
                 return (
                   <section
@@ -575,6 +671,7 @@ const CourseStudyMaterialPage = () => {
                 );
               })}
             </div>
+                  )}
 
             {tests.length > 0 && (
               <section className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
@@ -604,6 +701,9 @@ const CourseStudyMaterialPage = () => {
                 </ul>
               </section>
             )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
