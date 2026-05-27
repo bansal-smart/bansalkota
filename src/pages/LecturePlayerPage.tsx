@@ -275,8 +275,9 @@ const LecturePlayerPage = () => {
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(222, 47%, 8%)" }}>
       <header className="flex items-center justify-between px-4 py-3 bg-[hsl(var(--navy))]">
         <div className="flex items-center gap-3 min-w-0">
-          <Link to={`/courses/${slug}`} className="text-white">
+          <Link to={`/my-courses/${slug}`} className="text-white inline-flex items-center gap-1.5 hover:text-white/80">
             <ArrowLeft className="h-5 w-5" />
+            <span className="text-xs font-semibold hidden sm:inline">Study Material</span>
           </Link>
           <span className="text-sm font-bold text-white truncate">{course.name}</span>
         </div>
