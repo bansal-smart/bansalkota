@@ -5,10 +5,16 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
-const tabItems = ["Personal Info", "Subscription"];
+const tabItems = ["Personal Info"];
 
-const EXAMS = ["IIT JEE", "NEET", "Boards", "JEE + NEET", "Other"];
-const GOALS = ["IIT JEE", "NEET", "Boards", "JEE + NEET"];
+const CLASSES = ["8", "9", "10", "11", "12", "Dropper"];
+const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
+const STATES = [
+  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh",
+  "Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha",
+  "Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
+  "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
+];
 
 const ProfilePage = () => {
   const { user } = useAppStore();
@@ -19,10 +25,11 @@ const ProfilePage = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    father_name: "",
     city: "",
-    country: "",
+    state: "",
+    class_level: "",
     target_exam: "",
-    goal: "",
     avatar_url: "",
   });
   const [stats, setStats] = useState({ streak: 0, tests: 0, accuracy: 0, percentile: 0 });
@@ -47,10 +54,11 @@ const ProfilePage = () => {
         setForm({
           full_name: p.full_name || "",
           phone: p.phone || "",
+          father_name: p.father_name || "",
           city: p.city || "",
-          country: p.country || "",
+          state: p.state || "",
+          class_level: p.class_level || "",
           target_exam: p.target_exam || "",
-          goal: p.goal || "",
           avatar_url: p.avatar_url || "",
         });
         if (p.school_id) {
@@ -82,11 +90,12 @@ const ProfilePage = () => {
       .update({
         full_name: form.full_name,
         phone: form.phone,
+        father_name: form.father_name,
         city: form.city,
-        country: form.country,
+        state: form.state,
+        class_level: form.class_level,
         target_exam: form.target_exam,
-        goal: form.goal,
-      })
+      } as any)
       .eq("user_id", authUser.id);
     setSaving(false);
     if (error) {
@@ -164,10 +173,10 @@ const ProfilePage = () => {
           <h2 className="text-xl font-black font-display mt-3 text-white drop-shadow-sm">{form.full_name || "Student"}</h2>
           <div className="flex items-center justify-center gap-2 mt-2">
             {form.target_exam && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">{form.target_exam}</span>}
-            {form.goal && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">{form.goal}</span>}
+            {form.class_level && <span className="rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white">Class {form.class_level}</span>}
             {schoolName && <span className="inline-flex items-center gap-1 rounded-full bg-white/25 backdrop-blur px-2.5 py-0.5 text-[10px] font-bold text-white"><School className="h-3 w-3" />{schoolName}</span>}
           </div>
-          <p className="text-xs text-white/90 mt-2 font-medium">{[form.city, form.country].filter(Boolean).join(", ") || user?.email}</p>
+          <p className="text-xs text-white/90 mt-2 font-medium">{[form.city, form.state].filter(Boolean).join(", ") || user?.email}</p>
         </div>
       </div>
 
@@ -204,10 +213,11 @@ const ProfilePage = () => {
               <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
               <Field label="Email" value={user?.email || ""} disabled />
               <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+              <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} />
+              <SelectField label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} />
+              <SelectField label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} />
               <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-              <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
-              <SelectField label="Target Exam" value={form.target_exam} options={EXAMS} onChange={(v) => setForm({ ...form, target_exam: v })} />
-              <SelectField label="Goal" value={form.goal} options={GOALS} onChange={(v) => setForm({ ...form, goal: v })} />
+              <SelectField label="State" value={form.state} options={STATES} onChange={(v) => setForm({ ...form, state: v })} />
             </div>
             <button
               onClick={handleSave}
@@ -217,12 +227,6 @@ const ProfilePage = () => {
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Save Changes
             </button>
-          </div>
-        )}
-
-        {activeTab === 1 && (
-          <div className="rounded-2xl border border-border bg-card p-5 text-center">
-            <p className="text-sm text-muted-foreground">Subscription details coming soon</p>
           </div>
         )}
       </div>
