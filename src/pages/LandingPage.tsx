@@ -110,7 +110,19 @@ const LandingPage = () => {
                     loading="eager"
                   />
                   <img
+                    src={legacyBanner}
+                    alt="Bansal Classes — 45+ Years of Academic Excellence"
+                    className="w-full h-auto block"
+                    loading="eager"
+                  />
+                  <img
                     src={resultsBanner}
+                    alt=""
+                    aria-hidden="true"
+                    className="w-full h-auto block"
+                  />
+                  <img
+                    src={legacyBanner}
                     alt=""
                     aria-hidden="true"
                     className="w-full h-auto block"
