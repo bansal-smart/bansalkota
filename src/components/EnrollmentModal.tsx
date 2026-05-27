@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { dispatchEmailOnly } from "@/lib/notify";
-import { useAppStore } from "@/store/useAppStore";
+
 
 interface EnrollmentModalProps {
   open: boolean;
@@ -61,9 +61,6 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
     });
     // Send payment-receipt email (respects user preferences). Demo amount = course price.
     if (user.email) {
-      const country = useAppStore.getState().country;
-      const currency = country === "dubai" ? "AED" : "INR";
-      const amount = country === "dubai" ? Math.round(coursePrice / 22) : coursePrice;
       void dispatchEmailOnly({
         recipientUserId: user.id,
         recipientEmail: user.email,
@@ -73,8 +70,8 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
         templateData: {
           name: user.user_metadata?.full_name || "Learner",
           courseName,
-          amount,
-          currency,
+          amount: coursePrice,
+          currency: "INR",
           orderId: `DEMO-${courseId.slice(0, 8)}`,
           paidAt: new Date().toISOString(),
         },

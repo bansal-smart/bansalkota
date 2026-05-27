@@ -1,20 +1,18 @@
 import { Link } from "react-router-dom";
 import { Check, X, Sparkles, Crown, Rocket, Shield, Zap, HelpCircle, ChevronDown, IndianRupee } from "lucide-react";
-import { useAppStore } from "@/store/useAppStore";
 import { useState } from "react";
 
 const PricingPage = () => {
-  const { country } = useAppStore();
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const currency = country === "india" ? "₹" : "AED ";
+  const currency = "₹";
   const yearlyDiscount = 0.8; // 20% off
 
   const formatPrice = (monthly: number) => {
     if (monthly === 0) return "Free";
     const price = billing === "yearly" ? Math.round(monthly * 12 * yearlyDiscount) : monthly;
-    return `${currency}${price.toLocaleString(country === "india" ? "en-IN" : "en-AE")}`;
+    return `${currency}${price.toLocaleString("en-IN")}`;
   };
 
   const plans = [

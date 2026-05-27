@@ -21,7 +21,6 @@ type Payment = {
 
 const fmtCurrency = (amount: number, currency: string) => {
   if (currency === "INR") return `₹${amount.toLocaleString("en-IN")}`;
-  if (currency === "AED") return `AED ${amount.toLocaleString()}`;
   return `${currency} ${amount.toLocaleString()}`;
 };
 
