@@ -95,6 +95,9 @@ import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
 import BoostPage from "./pages/BoostPage";
 import CentersPage from "./pages/CentersPage";
 import AchievementsPage from "./pages/AchievementsPage";
+import LeadershipDetailPage from "./pages/LeadershipDetailPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
+import DisclaimerPage from "./pages/DisclaimerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
