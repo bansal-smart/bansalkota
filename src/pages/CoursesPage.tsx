@@ -2,16 +2,30 @@ import { useState } from "react";
 import { Star, Users, Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
-import { useExams } from "@/hooks/useExams";
 import { useAppStore } from "@/store/useAppStore";
 import EnrollmentModal from "@/components/EnrollmentModal";
-import { SUBJECTS_WITH_ALL } from "@/lib/constants";
 import coursePhysics from "@/assets/course-physics.png";
 import courseChemistry from "@/assets/course-chemistry.png";
 import courseMaths from "@/assets/course-maths.png";
 import courseBiology from "@/assets/course-biology.png";
 
-const subjectFilters: string[] = [...SUBJECTS_WITH_ALL];
+const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
+const courseTypeFilters = ["All", "Online", "Offline", "Residential"] as const;
+
+const matchesGoal = (c: CourseRow, goal: string) => {
+  if (goal === "All") return true;
+  const haystack = `${c.target_exam ?? ""} ${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (goal === "IIT-JEE") return /\b(iit|jee)\b/.test(haystack);
+  if (goal === "NEET") return /\bneet\b/.test(haystack);
+  if (goal === "Pre Foundation") return /(pre[- ]?foundation|foundation)/.test(haystack);
+  return true;
+};
+
+const matchesType = (c: CourseRow, type: string) => {
+  if (type === "All") return true;
+  const haystack = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  return haystack.includes(type.toLowerCase());
+};
 
 const courseImages: Record<string, string> = {
   Physics: coursePhysics,
