@@ -78,10 +78,10 @@ const TeacherLiveClassesPage = () => {
       .replace(/^-+|-+$/g, "")
       .slice(0, 40) || "class";
     const suffix = Math.random().toString(36).slice(2, 8);
-    return `https://meet.jit.si/arke-${slug}-${suffix}`;
+    return `https://meet.jit.si/bansal-${slug}-${suffix}`;
   };
 
-  const isAutoUrl = (url: string) => url.startsWith("https://meet.jit.si/arke-");
+  const isAutoUrl = (url: string) => url.startsWith("https://meet.jit.si/bansal-");
 
   const handleCourseChange = (id: string) => {
     setCourseId(id);

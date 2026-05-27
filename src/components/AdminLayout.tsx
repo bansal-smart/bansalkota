@@ -87,7 +87,7 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Flame className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-sm font-black font-display text-white">ARKE</span>
+          <span className="text-sm font-black font-display text-white">Bansal Classes</span>
         </Link>
         <div className="mt-3 rounded-md bg-primary/20 px-2 py-1 text-center">
           <span className="text-[10px] font-bold uppercase tracking-wider text-primary">

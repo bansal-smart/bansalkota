@@ -93,7 +93,7 @@ const SignupPage = () => {
               <Flame className="h-7 w-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-2xl font-black font-display text-white">ARKE</h1>
+              <h1 className="text-2xl font-black font-display text-white">Bansal Classes</h1>
               <p className="text-sm text-white/85">Start Now, Reach Your Destination</p>
             </div>
           </div>

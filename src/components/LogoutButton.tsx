@@ -33,7 +33,7 @@ const LogoutButton = ({ onConfirm, className, variant = "sidebar", label = "Logo
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Log out of ARKE?</AlertDialogTitle>
+          <AlertDialogTitle>Log out of Bansal Classes?</AlertDialogTitle>
           <AlertDialogDescription>
             You'll need to sign in again to access your dashboard, courses, and progress.
           </AlertDialogDescription>

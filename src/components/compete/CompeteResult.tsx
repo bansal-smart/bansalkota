@@ -90,7 +90,7 @@ const CompeteResult = ({ match, questions, answers, onPlayAgain, onLobby }: Prop
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `arke-compete-${match.id.slice(0, 8)}.svg`;
+    a.download = `bansal-compete-${match.id.slice(0, 8)}.svg`;
     a.click();
     URL.revokeObjectURL(url);
   };

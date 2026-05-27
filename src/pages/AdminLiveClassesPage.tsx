@@ -89,10 +89,10 @@ const buildJitsiUrl = (title: string) => {
     .replace(/^-+|-+$/g, "")
     .slice(0, 40) || "class";
   const suffix = Math.random().toString(36).slice(2, 8);
-  return `https://meet.jit.si/arke-${slug}-${suffix}`;
+  return `https://meet.jit.si/bansal-${slug}-${suffix}`;
 };
 
-const isAutoJitsi = (url: string) => url.startsWith("https://meet.jit.si/arke-");
+const isAutoJitsi = (url: string) => url.startsWith("https://meet.jit.si/bansal-");
 
 const toLocalInput = (iso: string) => {
   const d = new Date(iso);

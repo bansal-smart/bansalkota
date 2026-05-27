@@ -36,9 +36,9 @@ interface AppState {
   setCountry: (country: 'india' | 'dubai') => void;
 }
 
-const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('arke-country') : null) as 'india' | 'dubai' | null;
+const savedCountry = (typeof window !== 'undefined' ? localStorage.getItem('bansal-country') : null) as 'india' | 'dubai' | null;
 
-const USER_CACHE_KEY = 'arke-user-cache';
+const USER_CACHE_KEY = 'bansal-user-cache';
 const loadCachedUser = (): AppUser | null => {
   if (typeof window === 'undefined') return null;
   try {
@@ -85,7 +85,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ notifications: next, unreadCount: next.filter((x) => !x.read_at).length });
   },
   setCountry: (country) => {
-    localStorage.setItem('arke-country', country);
+    localStorage.setItem('bansal-country', country);
     set({ country });
   },
 }));
