@@ -9,10 +9,27 @@ const map: Record<Tone, string> = {
   gray: "bg-bansal-gray-light text-bansal-gray",
 };
 
-const BansalBadge = ({ tone = "blue", children }: { tone?: Tone; children: ReactNode }) => (
-  <span className={cn("inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold", map[tone])}>
-    {children}
-  </span>
-);
+interface Props {
+  tone?: Tone;
+  /** Alias for `tone` to keep page code ergonomic. */
+  variant?: Tone;
+  className?: string;
+  children: ReactNode;
+}
+
+const BansalBadge = ({ tone, variant, className, children }: Props) => {
+  const finalTone: Tone = variant ?? tone ?? "blue";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
+        map[finalTone],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+};
 
 export default BansalBadge;

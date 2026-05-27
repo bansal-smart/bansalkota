@@ -92,6 +92,9 @@ import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
+import BoostPage from "./pages/BoostPage";
+import CentersPage from "./pages/CentersPage";
+import AchievementsPage from "./pages/AchievementsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -144,27 +147,9 @@ const App = () => (
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
-              <Route
-                path="/boost"
-                element={
-                  <BansalPlaceholderPage
-                    title="BOOST Scholarship Test"
-                    description="Win up to 90% scholarship on Bansal Classes courses. Registration is open on our official site for just ₹99."
-                    ctaLabel="Register on bansal.ac.in"
-                    ctaHref="https://www.bansal.ac.in/boost-registration"
-                    external
-                  />
-                }
-              />
-              <Route
-                path="/centers"
-                element={
-                  <BansalPlaceholderPage
-                    title="Our Centers"
-                    description="Find Bansal Classes centers across India. Detailed center listings are coming soon."
-                  />
-                }
-              />
+              <Route path="/boost" element={<BoostPage />} />
+              <Route path="/centers" element={<CentersPage />} />
+              <Route path="/achievements" element={<AchievementsPage />} />
               <Route
                 path="/careers"
                 element={
@@ -180,15 +165,6 @@ const App = () => (
                   <BansalPlaceholderPage
                     title="Bansal Blog"
                     description="Insights, exam tips, and student stories — coming soon."
-                  />
-                }
-              />
-              <Route
-                path="/achievements"
-                element={
-                  <BansalPlaceholderPage
-                    title="Our Achievements"
-                    description="Decades of toppers, ranks, and results. The full wall of fame is on its way."
                   />
                 }
               />
