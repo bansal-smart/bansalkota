@@ -1,13 +1,19 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import {
-  ArrowRight, BookOpen, Users, Award, Headphones, MapPin, GraduationCap,
-  Sparkles, Trophy, Quote, Smartphone, Play, ChevronRight,
+  ArrowRight, BookOpen, Users, Award, MapPin, GraduationCap,
+  Sparkles, Trophy, Quote, Smartphone, Play, ChevronRight, Star,
+  ShieldCheck, Target, Headphones,
 } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
 import BansalBadge from "@/components/bansal/BansalBadge";
+import heroStudents from "@/assets/bansal-hero-students.jpg";
+import mentorTeaching from "@/assets/bansal-mentor-teaching.jpg";
+import toppersImage from "@/assets/bansal-toppers.jpg";
+import indiaMap from "@/assets/bansal-india-map.png";
+import appMockup from "@/assets/bansal-app-mockup.png";
 
 type ExamKey = "jee" | "neet" | "foundation";
 
@@ -29,6 +35,20 @@ const coursesByExam: Record<ExamKey, { name: string; duration: string; mode: str
   ],
 };
 
+const achievements = [
+  { value: "30+", label: "AIR in JEE Top 100", icon: Trophy },
+  { value: "2,500+", label: "IIT Selections", icon: GraduationCap },
+  { value: "5,000+", label: "NEET Qualifiers", icon: Star },
+  { value: "40+", label: "Years of Legacy", icon: ShieldCheck },
+];
+
+const pillars = [
+  { icon: Users, title: "Master Mentors", desc: "Faculty with 20+ years of competitive-exam mentoring." },
+  { icon: BookOpen, title: "Legendary Material", desc: "Refined over 40 years of toppers and JEE/NEET patterns." },
+  { icon: Target, title: "Personal Mentor", desc: "One-to-one mentor for every student — no one studies alone." },
+  { icon: Headphones, title: "24×7 Support", desc: "Doubt solving, test analysis, and round-the-clock guidance." },
+];
+
 const testimonials = [
   { name: "Aarav Sharma", rank: "AIR 47 — JEE Advanced 2024", quote: "Bansal Classes transformed how I approach problems. The faculty guides you with a strategy, not just answers." },
   { name: "Ishita Verma", rank: "AIR 112 — NEET UG 2024", quote: "Personal attention from mentors and constant test practice made all the difference in my final year." },
@@ -40,13 +60,13 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background">
-      {/* HERO */}
+      {/* 1. HERO */}
       <section className="relative bg-bansal-blue text-white overflow-hidden">
         <div className="absolute inset-0 grid-texture opacity-60" />
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bansal-orange/20 blur-3xl" />
         <div className="absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative container mx-auto px-4 py-20 md:py-28 grid lg:grid-cols-2 gap-12 items-center">
+        <div className="relative container mx-auto px-4 py-16 md:py-24 grid lg:grid-cols-2 gap-10 items-center">
           <div className="animate-fade-in-up">
             <BansalBadge tone="orange">
               <Sparkles className="h-3 w-3 mr-1" /> Since 1984 · Kota, Rajasthan
@@ -68,23 +88,39 @@ const LandingPage = () => {
                 <BansalButton variant="ghost-white">Enquire Now</BansalButton>
               </Link>
             </div>
+
+            {/* Trust strip */}
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/75">
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-bansal-orange" /> 40+ Yrs Legacy</span>
+              <span className="flex items-center gap-1.5"><Trophy className="h-4 w-4 text-bansal-orange" /> 2,500+ IIT Selections</span>
+              <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-bansal-orange" /> 100+ Centers</span>
+            </div>
           </div>
 
           <div className="relative animate-fade-in-up-delay-2">
             <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-2xl">
-              <div className="aspect-[4/3] rounded-2xl bg-gradient-to-br from-bansal-blue-dark to-bansal-blue flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 grid-texture opacity-40" />
-                <div className="relative text-center px-6">
-                  <GraduationCap className="h-20 w-20 text-bansal-orange mx-auto mb-3" />
-                  <p className="font-display text-2xl font-bold">Bansal Campus</p>
-                  <p className="font-accent text-sm text-white/80 mt-1">Kota, Rajasthan — India's Coaching Capital</p>
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden relative">
+                <img
+                  src={heroStudents}
+                  alt="Bansal Classes students celebrating in classroom"
+                  className="absolute inset-0 h-full w-full object-cover"
+                  width={1280}
+                  height={960}
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-bansal-blue/70 via-bansal-blue/20 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                  <div>
+                    <p className="font-display text-lg md:text-xl font-bold drop-shadow">Bansal Campus</p>
+                    <p className="text-xs text-white/85">Kota · India's Coaching Capital</p>
+                  </div>
+                  <span className="rounded-full bg-bansal-orange px-3 py-1 text-[10px] font-bold uppercase tracking-wide">Live</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stats strip */}
+        {/* 2. STATS BANNER */}
         <div className="relative border-t border-white/15 bg-white">
           <div className="container mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
             <BansalStat value="Daily" label="Live Interactive Sessions" />
@@ -95,51 +131,83 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* WHY BANSAL */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <BansalBadge tone="blue">Why Choose Us</BansalBadge>
-            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
-              Achieve Your Best with <span className="text-bansal-orange">Bansal Classes</span> &amp; Our <span className="text-bansal-orange">Dedicated Educators</span>
-            </h2>
-            <p className="mt-5 text-bansal-gray leading-relaxed">
-              For over four decades, Bansal Classes has crafted India's most disciplined preparation ecosystem.
-              Our master mentors blend deep subject mastery with personal attention so every scholar reaches their highest potential.
-            </p>
-            <ul className="mt-6 space-y-3">
-              {[
-                "Faculty with 20+ years of competitive-exam mentoring",
-                "Structured material refined over 40 years of toppers",
-                "Personal mentor for every student — no one studies alone",
-                "Comprehensive test series modeled on real JEE / NEET",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3">
-                  <div className="mt-1 h-5 w-5 rounded-full bg-bansal-orange-light flex items-center justify-center shrink-0">
-                    <ChevronRight className="h-3 w-3 text-bansal-orange" />
-                  </div>
-                  <span className="text-bansal-black">{t}</span>
-                </li>
-              ))}
-            </ul>
-            <Link to="/about" className="inline-block mt-8">
-              <BansalButton variant="cta">Read More <ArrowRight className="h-4 w-4" /></BansalButton>
+      {/* 3. ACHIEVEMENTS ROW */}
+      <section className="py-16 bg-bansal-orange-light/40">
+        <div className="container mx-auto px-4">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
+            <div>
+              <BansalBadge tone="orange">Our Legacy</BansalBadge>
+              <h2 className="mt-3 font-display text-3xl md:text-4xl font-extrabold text-bansal-black">
+                Numbers That Speak for Themselves
+              </h2>
+            </div>
+            <Link to="/achievements" className="text-sm font-semibold text-bansal-blue hover:text-bansal-orange inline-flex items-center gap-1">
+              View Wall of Fame <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {achievements.map((a) => (
+              <BansalCard key={a.label} className="text-center">
+                <div className="mx-auto h-12 w-12 rounded-full bg-bansal-orange/10 flex items-center justify-center">
+                  <a.icon className="h-6 w-6 text-bansal-orange" />
+                </div>
+                <div className="mt-3 font-display text-3xl font-extrabold text-bansal-blue">{a.value}</div>
+                <div className="mt-1 text-xs font-medium text-bansal-gray">{a.label}</div>
+              </BansalCard>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <div className="relative">
-            <div className="aspect-square rounded-3xl bg-gradient-to-br from-bansal-blue-light to-white border-4 border-bansal-blue/10 flex items-center justify-center">
-              <Users className="h-32 w-32 text-bansal-blue" />
+      {/* 4. WHY BANSAL */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="relative order-2 lg:order-1">
+            <div className="aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl">
+              <img
+                src={mentorTeaching}
+                alt="Bansal Classes mentor teaching at whiteboard"
+                className="h-full w-full object-cover"
+                loading="lazy"
+                width={1024}
+                height={1024}
+              />
             </div>
             <div className="absolute -bottom-6 -right-6 bg-bansal-orange text-white rounded-2xl p-5 shadow-xl">
               <div className="font-display text-3xl font-extrabold">40+</div>
               <div className="text-xs font-medium">Years of Excellence</div>
             </div>
           </div>
+
+          <div className="order-1 lg:order-2">
+            <BansalBadge tone="blue">Why Bansal</BansalBadge>
+            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
+              Built for <span className="text-bansal-orange">Scholars</span>. Backed by <span className="text-bansal-orange">Legacy</span>.
+            </h2>
+            <p className="mt-4 text-bansal-gray">
+              Four decades of disciplined preparation, master mentors, and a structured ecosystem designed to take every student to their highest potential.
+            </p>
+            <div className="mt-6 grid sm:grid-cols-2 gap-4">
+              {pillars.map((p) => (
+                <div key={p.title} className="flex gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-bansal-blue-light flex items-center justify-center shrink-0">
+                    <p.icon className="h-5 w-5 text-bansal-blue" />
+                  </div>
+                  <div>
+                    <div className="font-display font-bold text-bansal-black">{p.title}</div>
+                    <div className="text-sm text-bansal-gray">{p.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link to="/about" className="inline-block mt-8">
+              <BansalButton variant="cta">Read More <ArrowRight className="h-4 w-4" /></BansalButton>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* COURSES */}
+      {/* 5. COURSES */}
       <section className="py-20 bg-bansal-blue-light/40">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto">
@@ -190,41 +258,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* BOOST */}
-      <section className="py-16 bg-bansal-blue text-white relative overflow-hidden">
-        <div className="absolute inset-0 grid-texture opacity-50" />
-        <div className="relative container mx-auto px-4 grid lg:grid-cols-2 gap-8 items-center">
-          <div>
-            <BansalBadge tone="orange">BOOST 2026</BansalBadge>
-            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold leading-tight">
-              Bansal Open Opportunity Scholarship Test
-            </h2>
-            <p className="mt-4 text-white/85">
-              Up to <span className="text-bansal-orange font-bold">90% Scholarship</span>. Open to Class V to XII. Just <span className="text-bansal-orange font-bold">₹99</span> to register.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {["31 May 2026", "07 Jun 2026", "14 Jun 2026"].map((d) => (
-                <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">{d}</span>
-              ))}
-            </div>
-          </div>
-          <div className="text-center lg:text-right">
-            <a
-              href="https://www.bansal.ac.in/boost-registration"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block"
-            >
-              <BansalButton variant="cta" className="text-base px-8 py-4">
-                Register for ₹99 <ArrowRight className="h-5 w-5" />
-              </BansalButton>
-            </a>
-            <p className="mt-3 text-xs text-white/70">Apply before 30 May 2026, 6:00 PM</p>
-          </div>
-        </div>
-      </section>
-
-      {/* CLP vs DLP */}
+      {/* 6. CLP vs DLP */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto">
@@ -270,16 +304,64 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="py-20 bg-bansal-orange-light/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto">
-            <BansalBadge tone="orange">Toppers Speak</BansalBadge>
-            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black">
-              Voices of Excellence
+      {/* 7. BOOST */}
+      <section className="py-16 bg-bansal-blue text-white relative overflow-hidden">
+        <div className="absolute inset-0 grid-texture opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue via-bansal-blue to-bansal-blue-dark" />
+        <div className="relative container mx-auto px-4 grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <BansalBadge tone="orange">BOOST 2026</BansalBadge>
+            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold leading-tight">
+              Bansal Open Opportunity Scholarship Test
             </h2>
+            <p className="mt-4 text-white/85">
+              Up to <span className="text-bansal-orange font-bold">90% Scholarship</span>. Open to Class V to XII. Just <span className="text-bansal-orange font-bold">₹99</span> to register.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {["31 May 2026", "07 Jun 2026", "14 Jun 2026"].map((d) => (
+                <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">{d}</span>
+              ))}
+            </div>
           </div>
-          <div className="mt-10 grid md:grid-cols-3 gap-6 stagger-children">
+          <div className="text-center lg:text-right">
+            <Link to="/boost" className="inline-block">
+              <BansalButton variant="cta" className="text-base px-8 py-4">
+                Register for ₹99 <ArrowRight className="h-5 w-5" />
+              </BansalButton>
+            </Link>
+            <p className="mt-3 text-xs text-white/70">Apply before 30 May 2026, 6:00 PM</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. TOPPERS / TESTIMONIALS */}
+      <section className="py-20 bg-bansal-orange-light/30 relative overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-3 gap-8 items-center mb-12">
+            <div className="lg:col-span-1">
+              <BansalBadge tone="orange">Toppers Speak</BansalBadge>
+              <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black">
+                Voices of <span className="text-bansal-orange">Excellence</span>
+              </h2>
+              <p className="mt-3 text-bansal-gray">Real stories from real toppers who started their journey at Bansal Classes.</p>
+              <Link to="/achievements" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
+                See All Toppers <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="lg:col-span-2">
+              <div className="rounded-3xl overflow-hidden shadow-xl aspect-[16/9]">
+                <img
+                  src={toppersImage}
+                  alt="Bansal Classes toppers with awards"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  width={1600}
+                  height={900}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 stagger-children">
             {testimonials.map((t) => (
               <BansalCard key={t.name}>
                 <Quote className="h-8 w-8 text-bansal-blue/20" />
@@ -299,9 +381,47 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* APP CTA */}
-      <section className="py-16 bg-bansal-orange text-white">
-        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-10 items-center">
+      {/* 9. CENTERS TEASER */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <BansalBadge tone="blue">Pan-India Presence</BansalBadge>
+            <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
+              100+ Centers Across <span className="text-bansal-orange">India</span>
+            </h2>
+            <p className="mt-4 text-bansal-gray">
+              From our headquarters in Kota to every major city — find a Bansal center near you and start your journey with India's most trusted coaching legacy.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["Kota", "Delhi", "Mumbai", "Bengaluru", "Hyderabad", "Pune", "Jaipur", "Lucknow"].map((c) => (
+                <span key={c} className="rounded-full bg-bansal-blue-light text-bansal-blue px-3 py-1 text-xs font-semibold">
+                  <MapPin className="inline h-3 w-3 mr-1" />{c}
+                </span>
+              ))}
+            </div>
+            <Link to="/centers" className="inline-block mt-8">
+              <BansalButton variant="primary">Find a Center <ArrowRight className="h-4 w-4" /></BansalButton>
+            </Link>
+          </div>
+          <div className="relative">
+            <div className="aspect-square rounded-3xl bg-gradient-to-br from-bansal-blue-light to-bansal-orange-light/40 p-8 flex items-center justify-center">
+              <img
+                src={indiaMap}
+                alt="Bansal Classes centers across India"
+                className="h-full w-full object-contain"
+                loading="lazy"
+                width={1024}
+                height={1024}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 10. APP CTA */}
+      <section className="py-16 bg-bansal-orange text-white relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="relative container mx-auto px-4 grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <BansalBadge tone="gray">Coming Soon</BansalBadge>
             <h2 className="mt-4 font-display text-3xl md:text-4xl font-extrabold">
@@ -324,11 +444,14 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="relative flex justify-center">
-            <div className="h-56 w-56 rounded-3xl bg-white p-4 shadow-2xl flex items-center justify-center">
-              <div className="h-full w-full rounded-2xl border-4 border-bansal-blue flex items-center justify-center">
-                <Smartphone className="h-20 w-20 text-bansal-blue" />
-              </div>
-            </div>
+            <img
+              src={appMockup}
+              alt="Bansal Classes mobile app preview"
+              className="h-80 md:h-96 w-auto object-contain drop-shadow-2xl"
+              loading="lazy"
+              width={800}
+              height={1024}
+            />
           </div>
         </div>
       </section>

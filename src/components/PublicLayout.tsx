@@ -29,7 +29,7 @@ const PublicLayout = () => {
             <BansalLogo className="h-10 md:h-12 w-auto" />
           </Link>
 
-          <div className="hidden lg:flex items-center gap-7">
+          <div className="hidden md:flex items-center gap-5 lg:gap-7">
             {navItems.map((item) => {
               const active = item.path === "/" ? location.pathname === "/" : location.pathname.startsWith(item.path);
               return (
@@ -44,10 +44,10 @@ const PublicLayout = () => {
             })}
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             {user ? (
               <Link to="/dashboard">
-                <BansalButton variant="primary" className="py-2 text-sm">My Dashboard</BansalButton>
+                <BansalButton variant="primary" className="py-2 text-sm">Dashboard</BansalButton>
               </Link>
             ) : (
               <>
@@ -55,7 +55,7 @@ const PublicLayout = () => {
                   <BansalButton variant="outline" className="py-2 text-sm">Login</BansalButton>
                 </Link>
                 <Link to="/contact">
-                  <BansalButton variant="cta" className="py-2 text-sm">Enquire Now</BansalButton>
+                  <BansalButton variant="cta" className="py-2 text-sm">Enquire</BansalButton>
                 </Link>
               </>
             )}
@@ -63,7 +63,7 @@ const PublicLayout = () => {
 
           <button
             onClick={() => setOpen(true)}
-            className="lg:hidden p-2 text-bansal-blue"
+            className="md:hidden p-2 text-bansal-blue"
             aria-label="Open menu"
           >
             <Menu className="h-6 w-6" />
@@ -73,7 +73,7 @@ const PublicLayout = () => {
 
       {/* Mobile menu */}
       {open && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
+        <div className="fixed inset-0 z-[60] md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-bansal-blue text-white p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
