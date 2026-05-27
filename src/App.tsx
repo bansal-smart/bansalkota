@@ -95,6 +95,9 @@ import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
 import BoostPage from "./pages/BoostPage";
 import CentersPage from "./pages/CentersPage";
 import AchievementsPage from "./pages/AchievementsPage";
+import LeadershipDetailPage from "./pages/LeadershipDetailPage";
+import RefundPolicyPage from "./pages/RefundPolicyPage";
+import DisclaimerPage from "./pages/DisclaimerPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -144,6 +147,7 @@ const App = () => (
               <Route path="/admissions" element={<AdmissionsPage />} />
               <Route path="/association" element={<AssociationPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/about/:slug" element={<LeadershipDetailPage />} />
               <Route path="/career" element={<CareerPage />} />
               <Route path="/careers" element={<Navigate to="/career" replace />} />
               <Route path="/contact" element={<ContactPage />} />
@@ -161,24 +165,8 @@ const App = () => (
                   />
                 }
               />
-              <Route
-                path="/refund-policy"
-                element={
-                  <BansalPlaceholderPage
-                    title="Refund Policy"
-                    description="Our refund policy will be published here shortly. For any refund requests please contact admissions."
-                  />
-                }
-              />
-              <Route
-                path="/disclaimer"
-                element={
-                  <BansalPlaceholderPage
-                    title="Disclaimer"
-                    description="All content on this site is for informational purposes. Bansal Classes reserves the right to update materials and policies at any time."
-                  />
-                }
-              />
+              <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route
                 path="/blog"
                 element={
