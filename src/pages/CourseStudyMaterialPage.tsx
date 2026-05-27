@@ -671,6 +671,7 @@ const CourseStudyMaterialPage = () => {
                 );
               })}
             </div>
+                  )}
 
             {tests.length > 0 && (
               <section className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
@@ -700,6 +701,9 @@ const CourseStudyMaterialPage = () => {
                 </ul>
               </section>
             )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
