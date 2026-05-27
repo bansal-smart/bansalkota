@@ -98,6 +98,10 @@ const CourseStudyMaterialPage = () => {
   const [chapterTab, setChapterTab] = useState<Record<string, Tab>>({});
   const [chapterPage, setChapterPage] = useState<Record<string, number>>({});
 
+  const [chapterQuizzes, setChapterQuizzes] = useState<ChapterQuiz[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<Record<string, QuizAttempt>>({});
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+
   useEffect(() => {
     if (!slug) return;
     let active = true;
@@ -105,7 +109,7 @@ const CourseStudyMaterialPage = () => {
       setLoading(true);
       const { data: c } = await supabase
         .from("courses")
-        .select("id, slug, name, subject")
+        .select("id, slug, name, subject, target_exam")
         .eq("slug", slug)
         .maybeSingle();
       if (!active || !c) {
@@ -113,6 +117,11 @@ const CourseStudyMaterialPage = () => {
         return;
       }
       setCourse(c as Course);
+
+      // restore last picked subject
+      const saved = typeof window !== "undefined" ? localStorage.getItem(`study:subject:${slug}`) : null;
+      if (saved) setSelectedSubject(saved);
+
 
       const [chRes, lessRes, pdfRes, testRes, progRes, enrRes, profRes] = await Promise.all([
         supabase.from("chapters").select("id, title, position").eq("course_id", c.id).order("position"),
