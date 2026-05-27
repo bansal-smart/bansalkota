@@ -1,0 +1,70 @@
+export const bansalStats = [
+  { value: "Daily", label: "Live Interactive Sessions" },
+  { value: "10M+", label: "Tests, papers & notes" },
+  { value: "24 × 7", label: "Doubt support" },
+  { value: "100+", label: "Offline centers" },
+];
+
+export const teachingMethodology = [
+  {
+    title: "Classroom Learning Program (CLP)",
+    desc: "In-person, structured classroom sessions with personal mentoring, regular assessments, and conceptual clarity for JEE / NEET / Foundation aspirants.",
+  },
+  {
+    title: "Distance Learning Program (DLP)",
+    desc: "Expertly curated study material, online test series and remote academic support for students who cannot attend our centers physically.",
+  },
+  {
+    title: "Online Live & Recorded",
+    desc: "India's best educators on a digital platform — live interactive sessions plus replayable recordings, doubt solving and weekly tests.",
+  },
+];
+
+export const visionPoints = [
+  "Innovative Learning Hub",
+  "Empowering Future Leaders",
+  "Inclusive Education",
+  "Leading Educational Excellence",
+  "Nationwide Impact",
+  "Student-Centric Approach",
+  "Commitment to Results",
+  "Nurturing Minds, Shaping Futures",
+];
+
+export const missionPoints = [
+  "Provide Equal Opportunities",
+  "Adopt Innovative Methods",
+  "Student-Centered Approach",
+  "Supportive Learning Environment",
+  "Resource Availability",
+  "Student Empowerment",
+  "Quality Teaching",
+  "Regular Assessments & Feedback",
+];
+
+export const leadership = [
+  {
+    slug: "vk-bansal",
+    name: "VK Bansal",
+    role: "Founder",
+    tagline: "Forever Honored — The Icon of Excellence in Education",
+  },
+  {
+    slug: "sameer-bansal",
+    name: "Sameer Bansal",
+    role: "MD & CEO",
+    tagline: "Mathematics Expert · IITian Mentor · Visionary Leader",
+  },
+  {
+    slug: "mahima-bansal",
+    name: "Mahima Bansal",
+    role: "Director & Academic Mentor",
+    tagline: "Academic Leader · Mentor · Women in Education",
+  },
+  {
+    slug: "neelam-bansal",
+    name: "Neelam Bansal",
+    role: "Co-founder & Matriarch",
+    tagline: "Inspiration · Pillar of Strength · Visionary Support",
+  },
+];
