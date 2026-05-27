@@ -381,39 +381,86 @@ const CourseStudyMaterialPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-base lg:text-lg font-black text-foreground">Chapters</h2>
-              <p className="text-xs text-muted-foreground">{chapters.length} total</p>
-            </div>
+            {(() => {
+              const subjects = subjectsForExam(course.target_exam, course.subject);
+              const filteredChapters =
+                subjects.length > 1 && selectedSubject
+                  ? chapters.filter((c) => (chapterSubjectFor(c) ?? course.subject) === selectedSubject)
+                  : chapters;
+              return (
+                <>
+                  {subjects.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground mr-1">Subject:</span>
+                      {subjects.map((s) => {
+                        const active = (selectedSubject ?? subjects[0]) === s;
+                        const count = chapters.filter((c) => (chapterSubjectFor(c) ?? course.subject) === s).length;
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => {
+                              setSelectedSubject(s);
+                              if (typeof window !== "undefined") localStorage.setItem(`study:subject:${slug}`, s);
+                            }}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                              active
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "bg-card text-foreground border border-border hover:border-primary/40"
+                            }`}
+                          >
+                            {s}
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-display text-base lg:text-lg font-black text-foreground">
+                      {selectedSubject ?? "Chapters"}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{filteredChapters.length} chapters</p>
+                  </div>
 
-            <div className="space-y-3">
-              {chapters.map((ch) => {
-                const { videos, quizzes } = lessonsByChapter.get(ch.id) ?? { videos: [], quizzes: [] };
-                const chPdfs = pdfsByChapter.get(ch.id) ?? [];
-                const open = openChapter === ch.id;
-                const tab = chapterTab[ch.id] ?? "videos";
-                const page = chapterPage[ch.id] ?? 1;
+                  {filteredChapters.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border bg-card p-10 text-center">
+                      <BookOpen className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">No chapters in {selectedSubject} yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredChapters.map((ch) => {
+                        const { videos, quizzes: lessonQuizzes } = lessonsByChapter.get(ch.id) ?? { videos: [], quizzes: [] };
+                        const chPdfs = pdfsByChapter.get(ch.id) ?? [];
+                        const chQuizzes = chapterQuizzes.filter((q) => q.chapter_id === ch.id);
+                        const open = openChapter === ch.id;
+                        const tab = chapterTab[ch.id] ?? "videos";
+                        const page = chapterPage[ch.id] ?? 1;
 
-                const chapterTotal = videos.length + chPdfs.length + quizzes.length;
-                const chCompleted =
-                  videos.filter((v) => progress[v.slug]).length + quizzes.filter((q) => progress[q.slug]).length;
-                const chPct =
-                  videos.length + quizzes.length
-                    ? Math.round((chCompleted / (videos.length + quizzes.length)) * 100)
-                    : 0;
+                        const quizzes = lessonQuizzes;
+                        const chCompleted =
+                          videos.filter((v) => progress[v.slug]).length + quizzes.filter((q) => progress[q.slug]).length;
+                        const chPct =
+                          videos.length + quizzes.length
+                            ? Math.round((chCompleted / (videos.length + quizzes.length)) * 100)
+                            : 0;
 
-                const items: Array<
-                  | { kind: "video"; data: Lesson }
-                  | { kind: "pdf"; data: Pdf }
-                  | { kind: "quiz"; data: Lesson }
-                > = [];
-                if (tab === "videos") videos.forEach((v) => items.push({ kind: "video", data: v }));
-                if (tab === "pdfs") chPdfs.forEach((p) => items.push({ kind: "pdf", data: p }));
-                if (tab === "quizzes") quizzes.forEach((q) => items.push({ kind: "quiz", data: q }));
+                        const items: Array<
+                          | { kind: "video"; data: Lesson }
+                          | { kind: "pdf"; data: Pdf }
+                          | { kind: "quiz"; data: Lesson }
+                          | { kind: "chquiz"; data: ChapterQuiz }
+                        > = [];
+                        if (tab === "videos") videos.forEach((v) => items.push({ kind: "video", data: v }));
+                        if (tab === "pdfs") chPdfs.forEach((p) => items.push({ kind: "pdf", data: p }));
+                        if (tab === "quizzes") {
+                          chQuizzes.forEach((q) => items.push({ kind: "chquiz", data: q }));
+                          quizzes.forEach((q) => items.push({ kind: "quiz", data: q }));
+                        }
 
-                const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-                const safePage = Math.min(page, totalPages);
-                const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+                        const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+                        const safePage = Math.min(page, totalPages);
+                        const pageItems = items.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
                 return (
                   <section
