@@ -147,6 +147,7 @@ const App = () => (
               <Route path="/admissions" element={<AdmissionsPage />} />
               <Route path="/association" element={<AssociationPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/about/:slug" element={<LeadershipDetailPage />} />
               <Route path="/career" element={<CareerPage />} />
               <Route path="/careers" element={<Navigate to="/career" replace />} />
               <Route path="/contact" element={<ContactPage />} />
