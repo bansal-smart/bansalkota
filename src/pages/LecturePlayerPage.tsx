@@ -261,8 +261,8 @@ const LecturePlayerPage = () => {
     return (
       <div className="p-10 text-center">
         <h1 className="font-display text-xl font-black text-foreground">No content available</h1>
-        <Link to="/my-courses" className="mt-4 inline-block text-sm text-primary hover:underline">
-          Back to My Courses
+        <Link to={`/my-courses/${slug}`} className="mt-4 inline-block text-sm text-primary hover:underline">
+          Back to Study Material
         </Link>
       </div>
     );
@@ -275,8 +275,9 @@ const LecturePlayerPage = () => {
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(222, 47%, 8%)" }}>
       <header className="flex items-center justify-between px-4 py-3 bg-[hsl(var(--navy))]">
         <div className="flex items-center gap-3 min-w-0">
-          <Link to={`/courses/${slug}`} className="text-white">
+          <Link to={`/my-courses/${slug}`} className="text-white inline-flex items-center gap-1.5 hover:text-white/80">
             <ArrowLeft className="h-5 w-5" />
+            <span className="text-xs font-semibold hidden sm:inline">Study Material</span>
           </Link>
           <span className="text-sm font-bold text-white truncate">{course.name}</span>
         </div>
