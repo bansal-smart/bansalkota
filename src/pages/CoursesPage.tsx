@@ -174,24 +174,35 @@ const CoursesPage = () => {
                   className="rounded-2xl border border-border bg-card overflow-hidden hover-lift group flex flex-col"
                 >
                   <Link to={`/courses/${c.slug}`} className="block">
-                    <div className="h-36 bg-gradient-to-br from-primary to-accent relative flex items-center justify-center overflow-hidden">
-                      <img src={img} alt={c.subject} loading="lazy" className="h-24 w-24 object-contain opacity-60" />
-                      {c.badge && (
-                        <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground">
-                          {c.badge}
-                        </span>
-                      )}
-                      <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
-                          {c.educator_name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)}
-                        </div>
-                        <span className="text-[10px] text-white/80">{c.educator_name}</span>
+                    {c.thumbnail_url ? (
+                      <div className="relative aspect-[3/2] overflow-hidden bg-muted">
+                        <img src={c.thumbnail_url} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
+                        {c.badge && (
+                          <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground shadow">
+                            {c.badge}
+                          </span>
+                        )}
                       </div>
-                    </div>
+                    ) : (
+                      <div className="h-36 bg-gradient-to-br from-primary to-accent relative flex items-center justify-center overflow-hidden">
+                        <img src={img} alt={c.subject} loading="lazy" className="h-24 w-24 object-contain opacity-60" />
+                        {c.badge && (
+                          <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground">
+                            {c.badge}
+                          </span>
+                        )}
+                        <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+                            {c.educator_name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
+                          </div>
+                          <span className="text-[10px] text-white/80">{c.educator_name}</span>
+                        </div>
+                      </div>
+                    )}
                   </Link>
                   <div className="p-4 flex flex-col flex-1">
                     {(() => {
