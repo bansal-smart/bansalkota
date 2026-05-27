@@ -1,13 +1,25 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Phone, MapPin, Mail } from "lucide-react";
+import { Menu, X, Phone, MapPin, Mail, ChevronDown } from "lucide-react";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
 
-const navItems = [
+type NavItem =
+  | { label: string; path: string }
+  | { label: string; path: string; children: { label: string; path: string }[] };
+
+const aboutChildren = [
+  { label: "About Bansal Classes", path: "/about" },
+  { label: "About VK Bansal Sir", path: "/about/vk-bansal" },
+  { label: "About Sameer Bansal Sir", path: "/about/sameer-bansal" },
+  { label: "About Neelam Bansal Ma'am", path: "/about/neelam-bansal" },
+  { label: "About Mahima Bansal Ma'am", path: "/about/mahima-bansal" },
+];
+
+const navItems: NavItem[] = [
   { label: "Home", path: "/" },
-  { label: "About", path: "/about" },
+  { label: "About", path: "/about", children: aboutChildren },
   { label: "Courses", path: "/courses" },
   { label: "Test Series", path: "/test-series" },
   { label: "Centers", path: "/centers" },
