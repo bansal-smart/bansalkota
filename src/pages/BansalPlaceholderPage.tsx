@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { BansalButton } from "@/components/bansal/BansalButton";
+import BansalButton from "@/components/bansal/BansalButton";
 
 interface Props {
   title: string;
