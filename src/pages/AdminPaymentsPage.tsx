@@ -243,7 +243,7 @@ const AdminPaymentsPage = () => {
             <CreditCard className="mx-auto h-10 w-10 text-muted-foreground/40" />
             <p className="text-sm font-semibold text-foreground">No transactions yet</p>
             <p className="text-xs text-muted-foreground">
-              Once Razorpay (India) or Stripe (Dubai) payments are wired in, every successful, failed or refunded charge will land here.
+              Once Razorpay payments are wired in, every successful, failed or refunded charge will land here.
             </p>
           </div>
         ) : (

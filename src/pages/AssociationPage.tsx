@@ -19,7 +19,7 @@ const partnerTypes = [
   {
     icon: Building2,
     title: "Schools & Coaching Centers",
-    description: "We partner with K-12 schools and coaching centers across India and Dubai to bring Bansal Classes programs to their students.",
+    description: "We partner with K-12 schools and coaching centers across India to bring Bansal Classes programs to their students.",
   },
   {
     icon: Globe2,
