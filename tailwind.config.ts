@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Mulish", "sans-serif"],
-        body: ["Plus Jakarta Sans", "sans-serif"],
+        display: ["Poppins", "sans-serif"],
+        body: ["Inter", "sans-serif"],
+        accent: ["Rajdhani", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
