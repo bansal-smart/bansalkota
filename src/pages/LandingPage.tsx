@@ -61,15 +61,17 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background">
-      {/* 0. RESULTS BANNER — horizontally scrollable on mobile */}
+      {/* 0. RESULTS BANNER */}
       <section aria-label="JEE Main Session-I Result 2026" className="bg-white border-b border-bansal-gray-light">
-        <div className="overflow-x-auto scrollbar-thin">
-          <img
-            src={resultsBanner}
-            alt="Bansal Classes — JEE Main Session-I Result 2026. Admissions open for 2026-2027 (JEE | NEET | Pre-Foundation). Call 97733 43246 or 80030 45222."
-            className="block h-auto w-full min-w-[900px] md:min-w-0 object-contain"
-            loading="eager"
-          />
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="mx-auto w-full max-w-5xl overflow-x-auto rounded-xl shadow-sm">
+            <img
+              src={resultsBanner}
+              alt="Bansal Classes — JEE Main Session-I Result 2026. Admissions open 2026-2027 (JEE | NEET | Pre-Foundation)."
+              className="mx-auto block h-auto w-full max-h-[180px] sm:max-h-[240px] md:max-h-[320px] object-contain"
+              loading="eager"
+            />
+          </div>
         </div>
       </section>
 
