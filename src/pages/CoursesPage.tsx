@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Users, Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock } from "lucide-react";
+import { Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock, Video, MapPin, Home } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
 import { useAppStore } from "@/store/useAppStore";
