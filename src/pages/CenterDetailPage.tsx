@@ -54,21 +54,24 @@ const FACILITIES = [
 
 export default function CenterDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const center = slug ? findCenter(slug) : undefined;
+  const { centers: DB_CENTERS } = useCenters();
+  const dbCenter = slug ? DB_CENTERS.find((c) => c.slug === slug) : undefined;
+  const center = dbCenter ?? (slug ? findCenter(slug) : undefined);
 
   const nearby = useMemo(() => {
     if (!center) return [];
-    return CENTERS.filter(
+    const pool = DB_CENTERS.length ? DB_CENTERS : (CENTERS as any[]);
+    return pool.filter(
       (c) => c.slug !== center.slug && (c.state === center.state || c.region === center.region),
     ).slice(0, 6);
-  }, [center]);
+  }, [center, DB_CENTERS]);
 
   if (!center) return <Navigate to="/centers" replace />;
 
   const displayName =
     center.area && center.area !== center.city ? `${center.city} — ${center.area}` : center.city;
   const mapQuery = encodeURIComponent(`Bansal Classes ${displayName}, ${center.state}`);
-  const heroImg = THEME_IMAGE[center.theme];
+  const heroImg = (dbCenter?.image_url) || THEME_IMAGE[center.theme];
 
   return (
     <div className="min-h-screen bg-background">
