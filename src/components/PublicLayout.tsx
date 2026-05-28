@@ -86,6 +86,18 @@ const PublicLayout = () => {
                   </div>
                 );
               }
+              if ("logo" in item && item.logo) {
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    aria-label={item.label}
+                    className="inline-flex items-center hover:scale-105 transition-transform"
+                  >
+                    <img src={item.logo} alt={item.label} className="h-10 lg:h-11 w-auto drop-shadow-sm" />
+                  </Link>
+                );
+              }
               return (
                 <Link
                   key={item.path}
