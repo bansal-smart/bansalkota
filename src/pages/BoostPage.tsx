@@ -1,11 +1,11 @@
+import { useState } from "react";
 import { Trophy, Award, GraduationCap, Calendar, IndianRupee, Clock, CheckCircle2, Sparkles, BookOpen, Users } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import boostHero from "@/assets/boost-hero.png";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
-
-const REG_URL = "https://www.bansal.ac.in/boost-registration";
+import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 
 const benefits = [
   { icon: Trophy, title: "Up to 90% Scholarship", desc: "Win huge fee waivers on Bansal Classes JEE/NEET/Foundation programs based on your rank." },
