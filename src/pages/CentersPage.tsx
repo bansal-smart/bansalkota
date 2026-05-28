@@ -121,14 +121,14 @@ export default function CentersPage() {
                   className="group block rounded-2xl overflow-hidden bg-white border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   {/* Thumbnail */}
-                  <div className="relative h-44 overflow-hidden">
+                  <div className="relative h-44 overflow-hidden bg-bansal-blue">
                     <img
                       src={THEME_IMAGE[c.theme]}
                       alt={`${displayName(c)} city view`}
                       loading="lazy"
-                      className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-bansal-black/80 via-bansal-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-bansal-black/85 via-bansal-black/10 to-transparent pointer-events-none" />
                     {c.isHQ && (
                       <div className="absolute top-3 left-3">
                         <BansalBadge tone="orange" className="flex items-center gap-1 shadow-lg">

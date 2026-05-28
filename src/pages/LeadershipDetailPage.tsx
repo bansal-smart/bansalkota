@@ -128,11 +128,11 @@ export default function LeadershipDetailPage() {
               <div className="relative max-w-sm mx-auto md:max-w-none">
                 <div className="absolute -inset-4 bg-gradient-to-br from-bansal-orange/40 to-transparent blur-2xl rounded-3xl" />
                 {photo ? (
-                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl bg-bansal-blue-dark">
+                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl bg-bansal-blue-dark flex items-center justify-center">
                     <img
                       src={photo}
                       alt={profile.name}
-                      className="w-full h-full object-cover object-top"
+                      className="max-h-full max-w-full object-contain"
                       loading="eager"
                     />
                   </div>

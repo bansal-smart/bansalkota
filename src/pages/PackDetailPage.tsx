@@ -43,7 +43,7 @@ const PackDetailPage = () => {
         <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-2">
           <div className="aspect-[4/5] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10">
             {pack.cover_url ? (
-              <img src={pack.cover_url} alt={pack.title} className="h-full w-full object-cover" />
+              <img src={pack.cover_url} alt={pack.title} className="h-full w-full object-contain p-4" />
             ) : (
               <Boxes className="h-32 w-32 text-[hsl(var(--bansal-orange))]" />
             )}
@@ -109,7 +109,7 @@ const PackDetailPage = () => {
                   <div key={it.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-muted">
                       {it.book?.cover_url ? (
-                        <img src={it.book.cover_url} alt={it.book.title} className="h-full w-full object-cover" />
+                        <img src={it.book.cover_url} alt={it.book.title} className="h-full w-full object-contain p-1" />
                       ) : null}
                     </div>
                     <div className="flex-1">

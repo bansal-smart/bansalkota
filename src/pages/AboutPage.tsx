@@ -192,11 +192,11 @@ const AboutPage = () => {
             {leadership.map((l) => (
               <Link key={l.slug} to={`/about/${l.slug}`} className="group">
                 <BansalCard className="text-center h-full p-0 overflow-hidden">
-                  <div className="aspect-[3/4] w-full overflow-hidden bg-bansal-cream">
+                  <div className="aspect-[3/4] w-full overflow-hidden bg-bansal-cream flex items-center justify-center">
                     <img
                       src={l.photo}
                       alt={l.name}
-                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
                   </div>

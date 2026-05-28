@@ -40,7 +40,7 @@ const CartDrawer = ({ open, onClose }: Props) => {
               <div key={`${c.type}-${c.id}`} className="flex gap-3 rounded-xl border border-border p-3">
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded bg-muted">
                   {c.cover_url ? (
-                    <img src={c.cover_url} alt={c.title} className="h-full w-full object-cover" />
+                    <img src={c.cover_url} alt={c.title} className="h-full w-full object-contain p-1" />
                   ) : null}
                 </div>
                 <div className="flex-1 min-w-0">
