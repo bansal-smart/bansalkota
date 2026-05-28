@@ -63,11 +63,9 @@ export default function BoostPage() {
               Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most trusted JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹99</span> to register.
             </p>
             <div className="flex flex-wrap gap-3">
-              <a href={REG_URL} target="_blank" rel="noopener noreferrer">
-                <BansalButton variant="cta" className="text-base px-8 py-4">
-                  Register for ₹99
-                </BansalButton>
-              </a>
+              <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
+                Register for ₹99
+              </BansalButton>
               <a href="#how-it-works">
                 <BansalButton variant="ghost-white" className="text-base px-8 py-4">
                   How it works
