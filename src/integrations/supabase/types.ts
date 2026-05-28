@@ -77,6 +77,72 @@ export type Database = {
         }
         Relationships: []
       }
+      centers: {
+        Row: {
+          address: string
+          area: string | null
+          city: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          established: number | null
+          id: string
+          image_url: string | null
+          is_hq: boolean
+          is_published: boolean
+          phone: string
+          region: string
+          slug: string
+          sort_order: number
+          state: string
+          theme: string
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          address?: string
+          area?: string | null
+          city: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          established?: number | null
+          id?: string
+          image_url?: string | null
+          is_hq?: boolean
+          is_published?: boolean
+          phone?: string
+          region?: string
+          slug: string
+          sort_order?: number
+          state: string
+          theme?: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          address?: string
+          area?: string | null
+          city?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          established?: number | null
+          id?: string
+          image_url?: string | null
+          is_hq?: boolean
+          is_published?: boolean
+          phone?: string
+          region?: string
+          slug?: string
+          sort_order?: number
+          state?: string
+          theme?: string
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       chapter_quiz_attempts: {
         Row: {
           answers: Json
@@ -2423,6 +2489,48 @@ export type Database = {
         }
         Relationships: []
       }
+      site_banners: {
+        Row: {
+          created_at: string
+          cta_label: string | null
+          cta_link: string | null
+          headline: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          page_key: string
+          subheading: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string | null
+          cta_link?: string | null
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          page_key: string
+          subheading?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string | null
+          cta_link?: string | null
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          page_key?: string
+          subheading?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           created_at: string
@@ -2734,6 +2842,60 @@ export type Database = {
           updated_at?: string
           visibility?: string
           wrong_marks?: number
+        }
+        Relationships: []
+      }
+      toppers: {
+        Row: {
+          category: string | null
+          city: string | null
+          created_at: string
+          created_by: string | null
+          exam: string
+          id: string
+          is_published: boolean
+          name: string
+          photo_url: string | null
+          quote: string | null
+          rank_label: string | null
+          score: string | null
+          sort_order: number
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          exam: string
+          id?: string
+          is_published?: boolean
+          name: string
+          photo_url?: string | null
+          quote?: string | null
+          rank_label?: string | null
+          score?: string | null
+          sort_order?: number
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          exam?: string
+          id?: string
+          is_published?: boolean
+          name?: string
+          photo_url?: string | null
+          quote?: string | null
+          rank_label?: string | null
+          score?: string | null
+          sort_order?: number
+          updated_at?: string
+          year?: number | null
         }
         Relationships: []
       }
