@@ -8,6 +8,7 @@ import coursePhysics from "@/assets/course-physics.png";
 import courseChemistry from "@/assets/course-chemistry.png";
 import courseMaths from "@/assets/course-maths.png";
 import courseBiology from "@/assets/course-biology.png";
+import coursesHero from "@/assets/courses-hero.png";
 
 const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
 const courseTypeFilters = ["All", "Online", "Offline", "Residential"] as const;
@@ -78,7 +79,14 @@ const CoursesPage = () => {
   return (
     <div className="bg-background">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] py-16 md:py-20">
+      <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 md:py-20">
+        <img
+          src={coursesHero}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
         <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 30% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }} />
         <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 70% 30%, hsl(38 92% 50% / 0.2) 0%, transparent 50%)" }} />
         <div className="container relative z-10 mx-auto px-4 text-center animate-fade-in-up">
