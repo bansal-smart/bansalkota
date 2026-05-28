@@ -22,6 +22,9 @@ import {
   FileBarChart,
   BookOpen,
   Trophy,
+  MapPin,
+  Image as ImageIcon,
+  Award,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -45,6 +48,9 @@ const baseNav: NavItem[] = [
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
   { label: "Test Series", icon: Trophy, path: "/admin/test-series" },
   { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
+  { label: "Centres", icon: MapPin, path: "/admin/centers" },
+  { label: "Toppers", icon: Award, path: "/admin/toppers" },
+  { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
   { label: "Question Bank", icon: Library, path: "/admin/question-bank" },
   { label: "Compete Questions", icon: Swords, path: "/admin/compete-questions" },
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },

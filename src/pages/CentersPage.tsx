@@ -3,15 +3,20 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone, Search, Star, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import { CENTERS, THEME_IMAGE, CENTER_COUNT, STATE_COUNT } from "@/data/centers";
+import { STATE_COUNT } from "@/data/centers";
 import centersHero from "@/assets/centers-hero.png";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
+import { useCenters, getCenterImage, type DBCenter } from "@/hooks/useCenters";
+import { useSiteBanner } from "@/hooks/useSiteBanner";
 
 const REGIONS = ["All", "North", "South", "East", "West", "Central"] as const;
 
 export default function CentersPage() {
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState<(typeof REGIONS)[number]>("All");
+  const { centers: CENTERS } = useCenters();
+  const { banner } = useSiteBanner("centers");
+  const CENTER_COUNT = CENTERS.length;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -27,7 +32,7 @@ export default function CentersPage() {
     });
   }, [query, region]);
 
-  const displayName = (c: (typeof CENTERS)[number]) =>
+  const displayName = (c: DBCenter) =>
     c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city;
 
   const regionCount = (r: (typeof REGIONS)[number]) =>
@@ -37,7 +42,7 @@ export default function CentersPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-14 md:py-20 relative overflow-hidden">
-        <img src={centersHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <img src={banner?.image_url || centersHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
         <div className="absolute inset-0 grid-texture opacity-40" />
         <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-bansal-orange/30 blur-3xl" />
@@ -46,11 +51,10 @@ export default function CentersPage() {
         <div className="container mx-auto px-4 max-w-5xl text-center relative">
           <BansalBadge tone="orange" className="mb-4">Offline Network · Pan India</BansalBadge>
           <h1 className="font-display text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
-            Bansal Classes <span className="text-bansal-orange">Centres</span>
+            {banner?.headline ? banner.headline : (<>Bansal Classes <span className="text-bansal-orange">Centres</span></>)}
           </h1>
           <p className="text-white/85 text-base md:text-lg max-w-2xl mx-auto">
-            From the legendary Kota headquarters to {CENTER_COUNT - 1}+ centres across India —
-            walk in to a Bansal centre near you for counselling, demo classes & admissions.
+            {banner?.subheading || `From the legendary Kota headquarters to ${CENTER_COUNT - 1}+ centres across India — walk in to a Bansal centre near you for counselling, demo classes & admissions.`}
           </p>
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto">
             <div className="rounded-2xl bg-white/10 backdrop-blur p-4">
@@ -123,7 +127,7 @@ export default function CentersPage() {
                   {/* Thumbnail */}
                   <div className="relative h-44 overflow-hidden bg-bansal-blue">
                     <img
-                      src={THEME_IMAGE[c.theme]}
+                      src={getCenterImage(c)}
                       alt={`${displayName(c)} city view`}
                       loading="lazy"
                       className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
