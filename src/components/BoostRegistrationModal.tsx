@@ -62,7 +62,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     };
     const { data, error } = await supabase
       .from("boost_registrations")
-      .insert(payload)
+      .insert([payload as any])
       .select("admit_card_number")
       .single();
     setSubmitting(false);
