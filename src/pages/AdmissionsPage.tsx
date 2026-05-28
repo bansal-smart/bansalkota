@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import admissionsHero from "@/assets/admissions-hero.png";
 import {
   GraduationCap,
   FileText,
@@ -61,7 +62,9 @@ const AdmissionsPage = () => {
   return (
     <div className="bg-background">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] py-20 md:py-28">
+      <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 md:py-28">
+        <img src={admissionsHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
         <div
           className="absolute inset-0 opacity-30"
           style={{ background: "radial-gradient(circle at 70% 40%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }}

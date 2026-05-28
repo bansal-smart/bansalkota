@@ -4,6 +4,7 @@ import { MapPin, Phone, Search, Star, ArrowRight, ShieldCheck, Building2 } from 
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, CENTER_COUNT, STATE_COUNT } from "@/data/centers";
+import centersHero from "@/assets/centers-hero.png";
 
 const REGIONS = ["All", "North", "South", "East", "West", "Central"] as const;
 
@@ -35,6 +36,8 @@ export default function CentersPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-14 md:py-20 relative overflow-hidden">
+        <img src={centersHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
         <div className="absolute inset-0 grid-texture opacity-40" />
         <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-bansal-orange/30 blur-3xl" />
         <div className="container mx-auto px-4 max-w-5xl text-center relative">
