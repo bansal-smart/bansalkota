@@ -77,6 +77,95 @@ export type Database = {
         }
         Relationships: []
       }
+      boost_registrations: {
+        Row: {
+          admit_card_number: string | null
+          amount: number
+          city: string | null
+          class_level: string
+          created_at: string
+          date_of_birth: string | null
+          email: string
+          exam_slot: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          parent_name: string | null
+          parent_phone: string | null
+          payment_ref: string | null
+          payment_status: string
+          phone: string
+          preferred_centre_id: string | null
+          preferred_centre_label: string | null
+          school_name: string | null
+          state: string | null
+          status: string
+          target_exam: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          admit_card_number?: string | null
+          amount?: number
+          city?: string | null
+          class_level: string
+          created_at?: string
+          date_of_birth?: string | null
+          email: string
+          exam_slot?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          payment_ref?: string | null
+          payment_status?: string
+          phone: string
+          preferred_centre_id?: string | null
+          preferred_centre_label?: string | null
+          school_name?: string | null
+          state?: string | null
+          status?: string
+          target_exam: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          admit_card_number?: string | null
+          amount?: number
+          city?: string | null
+          class_level?: string
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string
+          exam_slot?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          payment_ref?: string | null
+          payment_status?: string
+          phone?: string
+          preferred_centre_id?: string | null
+          preferred_centre_label?: string | null
+          school_name?: string | null
+          state?: string | null
+          status?: string
+          target_exam?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boost_registrations_preferred_centre_id_fkey"
+            columns: ["preferred_centre_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centers: {
         Row: {
           address: string
