@@ -5,6 +5,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, CENTER_COUNT, STATE_COUNT } from "@/data/centers";
 import centersHero from "@/assets/centers-hero.png";
+import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 
 const REGIONS = ["All", "North", "South", "East", "West", "Central"] as const;
 
@@ -40,6 +41,8 @@ export default function CentersPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
         <div className="absolute inset-0 grid-texture opacity-40" />
         <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-bansal-orange/30 blur-3xl" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-25 decor-fade" />
         <div className="container mx-auto px-4 max-w-5xl text-center relative">
           <BansalBadge tone="orange" className="mb-4">Offline Network · Pan India</BansalBadge>
           <h1 className="font-display text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
