@@ -42,8 +42,10 @@ const faqs = [
 ];
 
 export default function BoostPage() {
+  const [regOpen, setRegOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background">
+      <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-16 md:py-24 relative overflow-hidden">
         <img src={boostHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
