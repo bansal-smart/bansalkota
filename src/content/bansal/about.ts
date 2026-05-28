@@ -47,10 +47,7 @@ export const missionPoints = [
   "Regular Assessments & Feedback",
 ];
 
-import vkBansalPhoto from "@/assets/leadership/vk-bansal.jpg";
-import sameerBansalPhoto from "@/assets/leadership/sameer-bansal.jpg";
-import mahimaBansalPhoto from "@/assets/leadership/mahima-bansal.jpg";
-import neelamBansalPhoto from "@/assets/leadership/neelam-bansal.jpg";
+
 
 export const leadershipPhotos: Record<string, string> = {
   "vk-bansal": vkBansalPhoto,
