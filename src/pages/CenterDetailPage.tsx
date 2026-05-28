@@ -21,6 +21,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centers";
+import { useCenters } from "@/hooks/useCenters";
 
 const PROGRAMS = [
   {
