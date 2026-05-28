@@ -1,71 +1,51 @@
-## Plan: Restructure courses to match Bansal's real catalog (19 courses)
+# E-Store: Books + Module Bundles with Cart & Razorpay Checkout
 
-Replace the current 12 courses with the actual Bansal Classes lineup: **JEE (7), NEET (6), Pre-Foundation (6)**. Each JEE/NEET program (Bulls Eye / Nucleus / Sterling) gets both an **offline** and **online** variant; Pre-Foundation gets the NEEV series + 1 online ZENITH.
+The `/e-store` page and `books` table already exist (6 books, currently with a placeholder "Buy Now" that just inserts a pending order). This plan turns it into a real store with module bundles, a cart, and real Razorpay payments — managed from one admin page.
 
-### Final course list (19)
+## What you'll get
 
-**JEE — 7 courses**
-| Slug | Name | Class | Mode | Price |
-|---|---|---|---|---|
-| `bulls-eye-jee-offline` | BULL'S EYE for JEE | 11th | Offline | ₹1,35,700 |
-| `bulls-eye-jee-online` | ONLINE BULLS EYE (XI) for JEE | 11th | Online | ₹21,000 |
-| `nucleus-jee-offline` | NUCLEUS for JEE | 12th | Offline | ₹1,51,039 |
-| `nucleus-jee-online` | ONLINE NUCLEUS (XII) for JEE | 12th | Online | ₹21,000 |
-| `sterling-jee-offline` | STERLING for JEE | Dropper | Offline | ₹1,51,040 |
-| `sterling-jee-online` | ONLINE STERLING (XII Pass) for JEE | Dropper | Online | ₹21,000 |
-| `jee-free-content` | JEE FREE CONTENT | All | Online | Free |
+1. **E-Store landing (`/e-store`)** with two tabs: **Books** and **Module Packs**, plus existing filters (Exam, Class) and search.
+2. **Module Packs** = curated bundles of existing books sold at a combined discounted price (e.g. "Class 11 JEE Foundation Pack — 4 books, ₹1,999 instead of ₹2,800").
+3. **Pack detail page (`/e-store/pack/:slug`)** showing what's inside, total savings, and Add to Cart.
+4. **Cart drawer** (icon in header on e-store pages) — add/remove items, quantity, live total.
+5. **Checkout page (`/e-store/checkout`)** — shipping address form + Razorpay payment.
+6. **My Orders (`/orders`)** — student sees their purchases and statuses.
+7. **Admin → Books page becomes Admin → Store** with a top toggle **Book / Module Pack** — both managed in one place.
+8. **Nav link**: Add "E-Store" to the public header so people can actually find it.
 
-**NEET — 6 courses**
-| Slug | Name | Class | Mode | Price |
-|---|---|---|---|---|
-| `bulls-eye-neet-offline` | BULL'S EYE for NEET | 11th | Offline | ₹1,35,700 |
-| `bulls-eye-neet-online` | ONLINE BULLS EYE (XI) for NEET | 11th | Online | ₹21,000 |
-| `nucleus-neet-offline` | NUCLEUS for NEET | 12th | Offline | ₹1,51,040 |
-| `nucleus-neet-online` | ONLINE NUCLEUS (XII) for NEET | 12th | Online | ₹21,000 |
-| `sterling-neet-offline` | STERLING for NEET | Dropper | Offline | ₹1,51,040 |
-| `sterling-neet-online` | ONLINE STERLING (XII Pass) for NEET | Dropper | Online | ₹21,000 |
+## Database changes
 
-**Pre-Foundation — 6 courses**
-| Slug | Name | Class | Mode | Price |
-|---|---|---|---|---|
-| `neev-x-zenith-offline` | NEEV – X (ZENITH) | 10th | Offline | ₹54,280 |
-| `neev-x-zenith-online` | ONLINE ZENITH for Class X | 10th | Online | ₹11,000 |
-| `neev-ix-pearl` | NEEV – IX (PEARL) | 9th | Offline | ₹49,560 |
-| `neev-viii-octagon` | NEEV – VIII (OCTAGON) | 8th | Offline | ₹42,480 |
-| `neev-vii-brilliant` | NEEV – VII (BRILLIANT) | 7th | Offline | ₹36,580 |
-| `neev-vi-genius` | NEEV – VI (GENIUS) | 6th | Offline | ₹33,040 |
+- New table **`module_packs`**: `id, slug, title, description, cover_url, target_exam, class_level, price, original_price, is_published, sort_order, timestamps`.
+- New table **`module_pack_items`**: `pack_id, book_id, position` (which books make up each pack).
+- New table **`orders`** (replace the existing thin one) with: `user_id, status (pending/paid/failed/shipped/delivered), subtotal, shipping_fee, total, currency, shipping_name, shipping_phone, shipping_address, shipping_city, shipping_state, shipping_pincode, razorpay_order_id, razorpay_payment_id, razorpay_signature`.
+- New table **`order_items`**: `order_id, item_type ('book'|'pack'), item_id, item_title, unit_price, quantity`.
+- RLS: users see/insert only their own orders; admin/super_admin see all. Packs are publicly readable when published; only admins write.
 
-### Banner thumbnails (reuse what we already have + generate the rest)
+## Razorpay integration
 
-The 12 banners already generated map 1:1 onto the **offline** flagships where possible. We will **reuse** existing art and only generate **new banners for the new variants**, keeping the same color system (JEE = Bansal blue, NEET = green, Pre-Foundation = sky blue) — online variants get the same base art with an "ONLINE" ribbon overlay so they read as a sibling at a glance.
+- Two new edge functions:
+  - `razorpay-create-order` — authenticated; takes cart, validates prices from DB, creates Razorpay order, persists `orders` + `order_items` as `pending`.
+  - `razorpay-verify-payment` — verifies HMAC signature, marks order `paid`, decrements `books.stock` for purchased books (and books inside packs).
+- Secrets required (we'll request them after you approve): `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`. The public key id is also exposed to the client for the checkout widget.
 
-- Reuse existing: Bulls Eye JEE/NEET offline (11), Nucleus JEE/NEET offline (12), Sterling JEE/NEET offline (Dropper), NEEV VI/VII/VIII, ONLINE ZENITH base from `udaan-class-10.jpg` repurposed as `neev-x-zenith-offline`.
-- Generate new (premium tier, 1536×1024, same composition language):
-  - 6 ONLINE variants (Bulls Eye/Nucleus/Sterling × JEE/NEET) — same color per category, "ONLINE" badge top-right, laptop/streaming motif on right
-  - 1 ONLINE ZENITH (Class X) — sky blue, laptop motif
-  - 1 NEEV-IX PEARL — sky blue, pearl/gem motif
-  - 1 JEE FREE CONTENT — JEE blue, "FREE" ribbon
+## Frontend changes
 
-That is ~9 new images.
+- `src/hooks/useModulePacks.ts` (new), extend `useBooks.ts` as is.
+- `src/store/useAppStore.ts` — add cart slice (items, add/remove/clear, persisted to localStorage).
+- `src/pages/EStorePage.tsx` — add Books/Packs tabs, cart button.
+- `src/pages/PackDetailPage.tsx` (new), `src/pages/CheckoutPage.tsx` (new), `src/pages/OrdersPage.tsx` (new).
+- `src/components/CartDrawer.tsx` (new).
+- `src/pages/AdminBooksPage.tsx` → renamed UX to **AdminStorePage** with Book / Pack toggle (route stays `/admin/books`, plus a tab for packs). Pack editor lets you pick existing books and set a combo price.
+- `src/components/PublicLayout.tsx` — add "E-Store" nav link.
+- Routes added in `src/App.tsx`.
 
-### Database changes
+## Out of scope (ask later if needed)
 
-One migration in two parts:
-1. **Wipe & repopulate** — `DELETE FROM courses` (safe: no enrollments in production yet; if any exist we'll instead `UPDATE` matching slugs and `INSERT` the rest, but the cleanest path is delete+insert since 8 of the 12 slugs are renamed).
-2. **Insert 19 rows** with the slug/name/price/target_exam/level shown above, plus `description` (the short class line from your spec), `subject` = "All Subjects", `educator_name` = "Bansal Faculty", `thumbnail_url` pointing at `/courses/<slug>.jpg`.
+- Coupons / promo codes.
+- Multi-address book per user.
+- Refund flow from UI (admin can still mark orders refunded in DB).
+- Dubai region / AED — Razorpay is India only for this pass.
 
-`target_exam` values used: `JEE`, `NEET`, `Foundation`. `level` will store the class/batch label (`11th Class`, `12th Class`, `Dropper`, `10th Class`, etc.) so the cards can show "Batch: offline | Class: 11th Class" exactly like your reference.
+## Approve to proceed
 
-### CoursesPage filter fix
-
-`CoursesPage` already has Online/Offline filters but currently relies on detecting the word in the name. Since every new course has "Online" or no marker in its name, this keeps working — no UI changes required. Mode chip on the card stays driven by `detectMode()`.
-
-### Out of scope
-- No new columns (we encode mode in the name + level field).
-- No changes to enrollment/payment flow.
-- No CourseDetailPage layout changes — it already reads `thumbnail_url` + `level`.
-- Educator name stays generic "Bansal Faculty" — no per-course assignment.
-
-### One open decision
-
-The current DB has **no `mode` column**; we're piggybacking on the name + `level`. If you'd rather have a clean `mode` enum (`online` / `offline`) for filtering and badges, say the word and I'll add a column in the same migration — but it's not required to ship the catalog.
+After you approve, the first build step will request the two Razorpay secrets — please have them ready from your Razorpay dashboard (Settings → API Keys).
