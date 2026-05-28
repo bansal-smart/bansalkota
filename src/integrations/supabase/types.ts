@@ -1825,6 +1825,96 @@ export type Database = {
         }
         Relationships: []
       }
+      module_pack_items: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          pack_id: string
+          position: number
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          pack_id: string
+          position?: number
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          pack_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_pack_items_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "module_pack_items_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "module_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      module_packs: {
+        Row: {
+          class_level: string | null
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_published: boolean
+          original_price: number | null
+          price: number
+          slug: string
+          sort_order: number
+          target_exam: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class_level?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          original_price?: number | null
+          price?: number
+          slug: string
+          sort_order?: number
+          target_exam?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class_level?: string | null
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          original_price?: number | null
+          price?: number
+          slug?: string
+          sort_order?: number
+          target_exam?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -1912,49 +2002,108 @@ export type Database = {
         }
         Relationships: []
       }
-      orders: {
+      order_items: {
         Row: {
-          amount: number
           created_at: string
-          currency: string
           id: string
           item_id: string
           item_title: string
           item_type: string
-          metadata: Json | null
-          payment_provider: string | null
-          payment_reference: string | null
-          status: string
-          updated_at: string
-          user_id: string
+          order_id: string
+          quantity: number
+          unit_price: number
         }
         Insert: {
-          amount?: number
           created_at?: string
-          currency?: string
           id?: string
           item_id: string
           item_title: string
           item_type: string
-          metadata?: Json | null
-          payment_provider?: string | null
-          payment_reference?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
+          order_id: string
+          quantity?: number
+          unit_price: number
         }
         Update: {
-          amount?: number
           created_at?: string
-          currency?: string
           id?: string
           item_id?: string
           item_title?: string
           item_type?: string
-          metadata?: Json | null
-          payment_provider?: string | null
-          payment_reference?: string | null
+          order_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          shipping_address: string | null
+          shipping_city: string | null
+          shipping_fee: number
+          shipping_name: string | null
+          shipping_phone: string | null
+          shipping_pincode: string | null
+          shipping_state: string | null
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_fee?: number
+          shipping_name?: string | null
+          shipping_phone?: string | null
+          shipping_pincode?: string | null
+          shipping_state?: string | null
           status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_fee?: number
+          shipping_name?: string | null
+          shipping_phone?: string | null
+          shipping_pincode?: string | null
+          shipping_state?: string | null
+          status?: string
+          subtotal?: number
+          total?: number
           updated_at?: string
           user_id?: string
         }

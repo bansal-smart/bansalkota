@@ -19,18 +19,30 @@ const BookDetailPage = () => {
     }
     if (!book) return;
     setPlacing(true);
-    const { error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      item_type: "book",
-      item_id: book.id,
-      item_title: book.title,
-      amount: book.price,
-      currency: "INR",
-      status: "pending",
-    });
+    const { data: order, error } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        subtotal: book.price,
+        total: book.price,
+        currency: "INR",
+        status: "pending",
+      })
+      .select("id")
+      .single();
+    if (!error && order) {
+      await supabase.from("order_items").insert({
+        order_id: order.id,
+        item_type: "book",
+        item_id: book.id,
+        item_title: book.title,
+        unit_price: book.price,
+        quantity: 1,
+      });
+    }
     setPlacing(false);
     if (error) toast.error("Could not place order");
-    else toast.success("Order placed — our team will contact you for delivery.");
+    else toast.success("Order placed — proceed to checkout for payment.");
   };
 
   if (loading) {
