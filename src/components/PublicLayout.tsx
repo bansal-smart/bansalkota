@@ -4,9 +4,10 @@ import { Menu, X, Phone, MapPin, Mail, ChevronDown } from "lucide-react";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
+import boostLogo from "@/assets/boost-logo.png";
 
 type NavItem =
-  | { label: string; path: string }
+  | { label: string; path: string; logo?: string }
   | { label: string; path: string; children: { label: string; path: string }[] };
 
 const aboutChildren = [
@@ -23,7 +24,7 @@ const navItems: NavItem[] = [
   { label: "Courses", path: "/courses" },
   { label: "Test Series", path: "/test-series" },
   { label: "Centers", path: "/centers" },
-  { label: "BOOST", path: "/boost" },
+  { label: "BOOST", path: "/boost", logo: boostLogo },
   { label: "E-Store", path: "/e-store" },
   { label: "Career", path: "/career" },
   { label: "Contact", path: "/contact" },
@@ -83,6 +84,18 @@ const PublicLayout = () => {
                       </div>
                     </div>
                   </div>
+                );
+              }
+              if ("logo" in item && item.logo) {
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    aria-label={item.label}
+                    className="inline-flex items-center hover:scale-105 transition-transform"
+                  >
+                    <img src={item.logo} alt={item.label} className="h-10 lg:h-11 w-auto drop-shadow-sm" />
+                  </Link>
                 );
               }
               return (
