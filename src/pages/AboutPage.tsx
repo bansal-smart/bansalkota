@@ -4,7 +4,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import vkBansalPortrait from "@/assets/vk-bansal-portrait.jpg";
+import vkBansalPortrait from "@/assets/leadership/vk-bansal.jpg";
 import {
   bansalStats,
   teachingMethodology,
