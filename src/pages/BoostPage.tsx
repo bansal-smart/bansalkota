@@ -1,11 +1,11 @@
+import { useState } from "react";
 import { Trophy, Award, GraduationCap, Calendar, IndianRupee, Clock, CheckCircle2, Sparkles, BookOpen, Users } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import boostHero from "@/assets/boost-hero.png";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
-
-const REG_URL = "https://www.bansal.ac.in/boost-registration";
+import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 
 const benefits = [
   { icon: Trophy, title: "Up to 90% Scholarship", desc: "Win huge fee waivers on Bansal Classes JEE/NEET/Foundation programs based on your rank." },
@@ -42,8 +42,10 @@ const faqs = [
 ];
 
 export default function BoostPage() {
+  const [regOpen, setRegOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background">
+      <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-16 md:py-24 relative overflow-hidden">
         <img src={boostHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
@@ -61,11 +63,9 @@ export default function BoostPage() {
               Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most trusted JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹99</span> to register.
             </p>
             <div className="flex flex-wrap gap-3">
-              <a href={REG_URL} target="_blank" rel="noopener noreferrer">
-                <BansalButton variant="cta" className="text-base px-8 py-4">
-                  Register for ₹99
-                </BansalButton>
-              </a>
+              <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
+                Register for ₹99
+              </BansalButton>
               <a href="#how-it-works">
                 <BansalButton variant="ghost-white" className="text-base px-8 py-4">
                   How it works
@@ -244,11 +244,9 @@ export default function BoostPage() {
           <p className="text-white/80 mb-7">
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>
-          <a href={REG_URL} target="_blank" rel="noopener noreferrer">
-            <BansalButton variant="cta" className="text-base px-10 py-4">
-              Register on bansal.ac.in
-            </BansalButton>
-          </a>
+          <BansalButton variant="cta" className="text-base px-10 py-4" onClick={() => setRegOpen(true)}>
+            Register for ₹99
+          </BansalButton>
           <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
             <Clock className="h-3 w-3" /> Limited slots every Sunday
           </p>

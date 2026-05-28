@@ -1,45 +1,83 @@
-## Problem
+## Admin panel audit
 
-AI-generated visuals inside cards, thumbnails, avatars, and feature blocks are using `object-cover`, which crops them. Only the page hero background banners (the `*-hero.png` files) should be cover-cropped.
+Here's what already exists in the admin sidebar and what's still missing.
 
-## Fix
+### ✅ Already fully managed
 
-Audit every `<img>` / background image usage across public pages and switch the non-hero ones from `object-cover` to a non-cropping fit.
+| Area | Admin page | Notes |
+|---|---|---|
+| Courses (list, create, edit, publish) | `AdminCoursesPage`, `CreateCoursePage` | |
+| Chapters / Lessons / Subjects per course | `AdminCourseContentPage` | Drag-drop chapter & lesson editor (dnd-kit) |
+| Course PDFs / resources | `AdminCourseContentPage` + `course_resources` | |
+| Tests (catalogue, create, edit) | `AdminTestsPage`, `CreateTestPage` | |
+| Test Series | `AdminTestSeriesPage` | |
+| Question Bank | `AdminQuestionBankPage` | |
+| Compete questions (1v1) | `AdminCompeteQuestionsPage` | |
+| Live classes | `AdminLiveClassesPage` | |
+| Books + Module Packs (E-Store catalogue) | `AdminBooksPage` (tabs: books / packs) | |
+| Centres (pan-India locations) | `AdminCentersPage` *(just added)* | |
+| Toppers / Achievements | `AdminToppersPage` *(just added)* | |
+| Public page hero banners | `AdminBannersPage` *(just added)* | 17 pages |
+| Enquiries (contact form) | `AdminEnquiriesPage` | |
+| Educator applications | `AdminEducatorApplicationsPage` | |
+| Users / Students / Schools | `AdminUsersPage`, `AdminStudentsPage`, `AdminSchoolsPage` | |
+| Mentor assignments & handovers | `AdminMentorAssignmentsPage`, `AdminMentorHandoversPage` | |
+| Exam catalogue (JEE/NEET/etc.) | `AdminExamsPage` | |
+| Notifications | `AdminNotificationsPage` | |
+| Payments & revenue (super-admin) | `AdminPaymentsPage` | |
+| Reports / moderation | `AdminReportsPage`, `AdminModerationPage` | |
+| Platform settings (super-admin) | `AdminSettingsPage` | |
+| Admin management (super-admin) | `AdminAdminsPage` | |
 
-### Rules to apply
+### ❌ Genuine gaps to close
 
-1. **Hero banner backgrounds (keep as-is)** — the full-width `*-hero.png` in each page header stays `object-cover` (with the navy gradient + decor we already added). These are designed to be cropped/adjusted.
+1. **BOOST 2026 scholarship exam** — public `/boost` page exists with a "₹99 to register" CTA, but there is **no registration form, no DB table, and no admin view**.
+2. **E-Store orders** — `orders` + `order_items` tables exist (customers can checkout) but there is **no admin page** to view/manage incoming orders.
 
-2. **All other images (course cards, educator/mentor portraits, achievement cards, store products, testimonial avatars, stream tiles, illustration blocks, etc.)** — switch to:
-   - `object-contain` inside a fixed-aspect container (`aspect-[4/3]`, `aspect-square`, `aspect-[3/4]` depending on slot)
-   - Add `bg-muted` (or `bg-bansal-cream/40`) behind so the letterboxing reads as a deliberate frame, not a gap
-   - Add `p-2 sm:p-3` padding inside the frame so the subject breathes
-   - Keep `rounded-xl` and existing border treatment
+Everything else the user listed (courses, content, chapters, tests, test series, e-store products, centres, enquiries) is already covered.
 
-3. **Portraits / avatars (educators, mentors, testimonials)** — keep `object-cover` ONLY for true circular avatars (`rounded-full`, faces), since faces are centered and crop safely. Larger portrait tiles switch to `object-contain` with light bg.
+---
 
-4. **Responsive sizing** — ensure containers use `w-full h-auto` or fixed `aspect-*` so nothing stretches; remove any forced `h-64`/`h-72` that fight the contain fit.
+## Plan
 
-### Pages to update (non-hero `<img>`s)
+### 1. BOOST exam — full registration flow
 
-LandingPage, CoursesPage, CourseDetailPage, EStorePage, PackDetailPage, BookDetailPage, TestsLandingPage, TestSeriesCatalogPage, LiveClassesLandingPage, MentorshipPage, EducatorsPage, LeadershipDetailPage, CentersPage, CenterDetailPage, AdmissionsPage, BoostPage, AchievementsPage, AssociationPage, CareerPage, ContactPage, PricingPage, AboutPage, CourseReviews, CartDrawer.
+**Database (new migration)**
+- `boost_registrations` table: `full_name`, `email`, `phone`, `whatsapp`, `date_of_birth`, `class_level` (5–12, dropper), `target_exam` (JEE/NEET/NTSE/Olympiad/School), `school_name`, `city`, `state`, `parent_name`, `parent_phone`, `preferred_centre_id` (FK → `centers`), `exam_slot` (date+time choice), `payment_status` ('pending'|'paid'|'failed'), `payment_ref`, `amount` (default ₹99), `admit_card_number` (auto-generated), `status` ('registered'|'confirmed'|'attended'|'cancelled'), `notes`.
+- GRANTs + RLS: anyone can `INSERT` (public registration); admin/super_admin can `SELECT/UPDATE/DELETE`; students can `SELECT` their own rows by email.
+- Trigger to auto-generate admit card number on insert.
+- Notify admins via existing `notify_admins()` helper on new registration.
 
-### Out of scope
+**Public side**
+- Add a "Register now" CTA section to `BoostPage.tsx` opening a multi-step modal/form (personal → academic → centre & slot → payment placeholder).
+- Use `zod` for validation (per project security guideline).
+- On submit → insert row + show admit card number + success screen.
 
-- Admin/teacher/mentor/student portal layouts (AdminLayout, StudentLayout, TeacherLayout, MentorLayout, profile/settings pages) — those use cover for compact admin UI and are not part of the visual marketing surface.
-- Hero banner backgrounds on every public page.
-- No new images generated; no layout/copy changes beyond the image-fit pass.
+**Admin side**
+- New `AdminBoostPage.tsx` at `/admin/boost`:
+  - Filterable table (status, exam slot, centre, payment status)
+  - Bulk export to CSV
+  - Mark paid / confirmed / attended
+  - Stats header (total registered, paid, by centre)
+- Sidebar entry "BOOST Registrations" under base nav.
 
-### Technical notes
+### 2. E-Store orders admin
 
-- Standard replacement pattern:
-  ```tsx
-  // before
-  <img src={...} className="w-full h-48 object-cover rounded-xl" />
-  // after
-  <div className="aspect-[4/3] w-full rounded-xl bg-muted/60 overflow-hidden flex items-center justify-center p-2 sm:p-3">
-    <img src={...} className="max-h-full max-w-full object-contain" />
-  </div>
-  ```
-- For grids, aspect ratio enforced at the wrapper keeps card heights equal even with `object-contain`.
-- Hero banner pattern (unchanged): `<img className="absolute inset-0 w-full h-full object-cover" />` with navy gradient + `FloatingIcons` overlay on top.
+- New `AdminOrdersPage.tsx` at `/admin/orders`:
+  - Table: order ID, customer name + email, items count, total, payment status, shipping status, created date
+  - Detail drawer: line items, shipping address, mark as shipped/delivered/refunded
+  - Filter by status & date range
+- Sidebar entry "E-Store Orders" near "Books / E-Store".
+
+### 3. Wiring
+- Register new routes in `App.tsx` (`/admin/boost`, `/admin/orders`).
+- Add sidebar items in `AdminLayout.tsx`.
+- Both pages gated by existing `ProtectedAdminRoute` (admin + super_admin).
+
+### Out of scope (already covered or explicitly not requested)
+- Subjects: currently free-text fields on courses/chapters/lessons — no dedicated subject master table needed unless you want to constrain values.
+- Faculty directory: the public `/educators` page already reads from `profiles` + `user_roles` (teacher role), managed via Users & Educator Applications.
+
+---
+
+**Approve this plan and I'll implement it.** Reply with anything to tweak (e.g. skip the BOOST payment placeholder, change which fields go on the registration form, add subject master, etc.).

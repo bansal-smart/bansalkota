@@ -48,6 +48,8 @@ const baseNav: NavItem[] = [
   { label: "Tests", icon: ClipboardCheck, path: "/admin/tests" },
   { label: "Test Series", icon: Trophy, path: "/admin/test-series" },
   { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
+  { label: "E-Store Orders", icon: BookOpen, path: "/admin/orders" },
+  { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
   { label: "Centres", icon: MapPin, path: "/admin/centers" },
   { label: "Toppers", icon: Award, path: "/admin/toppers" },
   { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
