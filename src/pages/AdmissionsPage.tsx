@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import admissionsHero from "@/assets/admissions-hero.png";
 import {
-import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
   GraduationCap,
   FileText,
   ClipboardCheck,
@@ -13,6 +12,7 @@ import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalD
   Sparkles,
   Users,
 } from "lucide-react";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const steps = [
   { icon: GraduationCap, title: "Choose Program", body: "Pick the course aligned with your target exam." },

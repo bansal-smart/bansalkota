@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import mentorshipHero from "@/assets/mentorship-hero.png";
 import {
-import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
   GraduationCap,
   Briefcase,
   Stethoscope,
@@ -16,6 +15,7 @@ import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalD
   CheckCircle2,
   Trophy,
 } from "lucide-react";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const iitBadges = [
   "IIT Delhi",
