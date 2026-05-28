@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
+import contactHero from "@/assets/contact-hero.png";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -78,8 +79,10 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
-      <section className="bg-bansal-blue text-white py-14 md:py-20">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
+      <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
+        <img src={contactHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">
           <BansalBadge variant="orange" className="mb-4">Reach Us</BansalBadge>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
             We're here to <span className="text-bansal-orange">guide you</span>.

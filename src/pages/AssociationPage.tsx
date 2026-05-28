@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Building2, Handshake, GraduationCap, Globe2, Award, ArrowRight, Users, Sparkles } from "lucide-react";
+import associationHero from "@/assets/association-hero.png";
 
 const partners = [
   { name: "IIT Delhi", type: "Institute" },
@@ -46,16 +47,18 @@ const AssociationPage = () => {
   return (
     <div className="bg-background">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/10 py-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 mb-6">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-wider text-primary">Partner with Bansal Classes</span>
+      <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 text-white">
+        <img src={associationHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <div className="container relative z-10 mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 mb-6 backdrop-blur">
+            <Sparkles className="h-4 w-4 text-[hsl(var(--bansal-orange))]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-white">Partner with Bansal Classes</span>
           </div>
-          <h1 className="font-display text-4xl md:text-6xl font-black text-foreground mb-4">
-            Our <span className="gradient-text">Association</span>
+          <h1 className="font-display text-4xl md:text-6xl font-black text-white mb-4">
+            Our <span className="text-[hsl(var(--bansal-orange))]">Association</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto max-w-2xl text-lg text-white/85">
             We collaborate with the best institutes, schools, and organizations to give every student access to top-tier mentors, content and opportunities.
           </p>
         </div>

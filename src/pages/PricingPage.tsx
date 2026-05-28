@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Check, X, Sparkles, Crown, Rocket, Shield, Zap, HelpCircle, ChevronDown, IndianRupee } from "lucide-react";
 import { useState } from "react";
+import pricingHero from "@/assets/pricing-hero.png";
 
 const PricingPage = () => {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
@@ -101,32 +102,34 @@ const PricingPage = () => {
   return (
     <div className="bg-background">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/10 py-16 md:py-24">
-        <div className="container mx-auto px-4 text-center">
-          <span className="inline-flex items-center gap-2 rounded-pill border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-bold text-primary">
+      <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 md:py-24 text-white">
+        <img src={pricingHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <div className="container relative z-10 mx-auto px-4 text-center">
+          <span className="inline-flex items-center gap-2 rounded-pill border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold text-white backdrop-blur">
             <IndianRupee className="h-3.5 w-3.5" /> Transparent pricing · No hidden fees
           </span>
-          <h1 className="mt-6 text-4xl font-black font-display text-foreground md:text-6xl">
-            Simple plans for <span className="gradient-text">every aspirant</span>
+          <h1 className="mt-6 text-4xl font-black font-display text-white md:text-6xl">
+            Simple plans for <span className="text-[hsl(var(--bansal-orange))]">every aspirant</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-base text-white/85 md:text-lg">
             Start free, upgrade only when you're ready. Every plan is built to help you crack JEE, NEET, and Board exams without breaking the bank.
           </p>
 
           {/* Billing toggle */}
-          <div className="mt-8 inline-flex items-center rounded-pill border border-border bg-card p-1 shadow-sm">
+          <div className="mt-8 inline-flex items-center rounded-pill border border-white/20 bg-white/10 p-1 shadow-sm backdrop-blur">
             <button
               onClick={() => setBilling("monthly")}
-              className={`rounded-pill px-5 py-2 text-sm font-bold transition-colors ${billing === "monthly" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-pill px-5 py-2 text-sm font-bold transition-colors ${billing === "monthly" ? "bg-white text-[hsl(var(--navy))]" : "text-white/80 hover:text-white"}`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBilling("yearly")}
-              className={`rounded-pill px-5 py-2 text-sm font-bold transition-colors ${billing === "yearly" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              className={`rounded-pill px-5 py-2 text-sm font-bold transition-colors ${billing === "yearly" ? "bg-white text-[hsl(var(--navy))]" : "text-white/80 hover:text-white"}`}
             >
               Yearly
-              <span className="ml-2 rounded-pill bg-secondary/20 px-2 py-0.5 text-[10px] font-black text-secondary">
+              <span className="ml-2 rounded-pill bg-[hsl(var(--bansal-orange))]/30 px-2 py-0.5 text-[10px] font-black text-white">
                 Save 20%
               </span>
             </button>
