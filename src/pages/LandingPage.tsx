@@ -300,7 +300,7 @@ const LandingPage = () => {
                   <img
                     src={s.img}
                     alt={`${s.title} — ${s.subtitle}`}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    className="absolute inset-0 w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue/95 via-bansal-blue/40 to-transparent" />
@@ -326,11 +326,11 @@ const LandingPage = () => {
         <GridTexture tone="blue" className="opacity-40 decor-fade" />
         <div className="relative container mx-auto px-4 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="relative order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
-            <div className="aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl">
+            <div className="aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl bg-bansal-cream/40 flex items-center justify-center p-2 sm:p-3">
               <img
                 src={mentorTeaching}
                 alt="Bansal Classes mentor teaching at whiteboard"
-                className="h-full w-full object-cover"
+                className="max-h-full max-w-full object-contain"
                 loading="lazy"
               />
             </div>
@@ -596,11 +596,11 @@ const LandingPage = () => {
               </Link>
             </div>
             <div className="lg:col-span-2">
-              <div className="rounded-3xl overflow-hidden shadow-xl aspect-[16/9]">
+              <div className="rounded-3xl overflow-hidden shadow-xl aspect-[16/9] bg-bansal-cream/40 flex items-center justify-center p-2 sm:p-3">
                 <img
                   src={toppersImage}
                   alt="Bansal Classes toppers with awards"
-                  className="h-full w-full object-cover"
+                  className="max-h-full max-w-full object-contain"
                   loading="lazy"
                 />
               </div>

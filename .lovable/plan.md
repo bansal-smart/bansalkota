@@ -1,79 +1,45 @@
-## Goal
+## Problem
 
-Make every public page feel more "Bansal-branded": denser visual storytelling, decorative brand elements in low opacity, properly responsive cards (current ones are oversized on laptops), no awkward blank zones, and more marketing copy around courses & expertise. Start with the Landing page, then propagate the system.
+AI-generated visuals inside cards, thumbnails, avatars, and feature blocks are using `object-cover`, which crops them. Only the page hero background banners (the `*-hero.png` files) should be cover-cropped.
 
-## Phase 1 — Brand Decor System (shared, reused everywhere)
+## Fix
 
-Create a small set of reusable decorative pieces so we don't sprinkle one-off divs across pages.
+Audit every `<img>` / background image usage across public pages and switch the non-hero ones from `object-cover` to a non-cropping fit.
 
-1. `src/components/bansal/BansalDecor.tsx`
-   - `<GridTexture />` — subtle dotted/grid SVG, `opacity-5` to `opacity-10`, navy or orange.
-   - `<GlowBlob color="orange|blue" size />` — soft radial blur blob for background depth.
-   - `<CornerSparkles />` — small Lucide `Sparkles` + `Star` cluster in low opacity for card corners.
-   - `<DiagonalAccent />` — thin orange/navy diagonal line stripes for section dividers.
-   - `<FloatingIcons icons={[...]} />` — scattered Lucide icons (Atom, BookOpen, Flask, Calculator, Trophy) at `opacity-10` with subtle float animation.
+### Rules to apply
 
-2. Generate 3 brand decor PNGs (orange/navy palette, transparent backgrounds, low-detail) to layer behind sections:
-   - `brand-pattern-formulas.png` — faint physics/chem formulas pattern
-   - `brand-pattern-shapes.png` — geometric circles/triangles
-   - `brand-pattern-ribbon.png` — soft orange ribbon swoosh
+1. **Hero banner backgrounds (keep as-is)** — the full-width `*-hero.png` in each page header stays `object-cover` (with the navy gradient + decor we already added). These are designed to be cropped/adjusted.
 
-3. Add 2 utility classes to `index.css`:
-   - `.section-decor` — relative + overflow-hidden helper
-   - `.decor-fade` — radial mask so patterns fade into background
+2. **All other images (course cards, educator/mentor portraits, achievement cards, store products, testimonial avatars, stream tiles, illustration blocks, etc.)** — switch to:
+   - `object-contain` inside a fixed-aspect container (`aspect-[4/3]`, `aspect-square`, `aspect-[3/4]` depending on slot)
+   - Add `bg-muted` (or `bg-bansal-cream/40`) behind so the letterboxing reads as a deliberate frame, not a gap
+   - Add `p-2 sm:p-3` padding inside the frame so the subject breathes
+   - Keep `rounded-xl` and existing border treatment
 
-## Phase 2 — Landing Page Redesign
+3. **Portraits / avatars (educators, mentors, testimonials)** — keep `object-cover` ONLY for true circular avatars (`rounded-full`, faces), since faces are centered and crop safely. Larger portrait tiles switch to `object-contain` with light bg.
 
-Apply decor + fix layout. Section-by-section:
+4. **Responsive sizing** — ensure containers use `w-full h-auto` or fixed `aspect-*` so nothing stretches; remove any forced `h-64`/`h-72` that fight the contain fit.
 
-- **Hero**: keep current banner carousel; add `<FloatingIcons />` behind text, tighten grid to `lg:grid-cols-[1.1fr_1fr]`, reduce banner heights on `lg` (380px → 320px) so it fits 1018px viewport without scroll-overflow.
-- **Stats banner**: add `<GridTexture />` behind, add small Lucide icon above each stat number.
-- **Achievements row**: cards currently `grid-cols-2 md:grid-cols-4` — keep, but cap card padding (`p-4` not `p-6`), add `CornerSparkles` to each, add `brand-pattern-shapes.png` behind section at `opacity-5`.
-- **Streams (JEE/NEET/Foundation)**: cards are `aspect-square` — too tall on laptop. Change to `aspect-[4/5]` on `sm`, `aspect-[3/4]` on `lg`. Add stream icon chip top-left (Atom for JEE, Stethoscope for NEET, Sprout for Foundation). Add 2-line marketing tagline below title that's always visible (not just on hover).
-- **Why Bansal**: add `brand-pattern-formulas.png` decor behind image side; expand 4 pillars to 6 with new icons (Microscope, ClipboardCheck added). Add a mini "Expertise stat strip" below pillars (e.g. "12 IIT alumni faculty · 8 PhDs · 40+ AIRs mentored").
-- **Courses tabs**: cards too wide on laptop. Make grid `sm:grid-cols-2 lg:grid-cols-3` with `max-w-xs` per card and center. Add per-course bullet list (3 marketing points: "Live + Recorded · Mentor pod · Weekly tests"). Add `<CornerSparkles />`. Add intro paragraph above tabs with stronger marketing copy.
-- **CLP vs DLP**: add comparison checkmark list (5 items each), add subtle background blob, equalize card heights.
-- **New section: "Bansal Expertise"** between Why-Bansal and Courses — 3-column grid showcasing Faculty depth, Curriculum, Test Engine, with Lucide icons + brand pattern background. Marketing-heavy copy.
-- **Testimonials**: add quote-mark decor, brand pattern background, ensure 1/2/3 col responsive.
-- **App/Pan-India sections**: tighten spacing, add floating icon decor.
+### Pages to update (non-hero `<img>`s)
 
-## Phase 3 — Responsive Card Pass (Landing first)
+LandingPage, CoursesPage, CourseDetailPage, EStorePage, PackDetailPage, BookDetailPage, TestsLandingPage, TestSeriesCatalogPage, LiveClassesLandingPage, MentorshipPage, EducatorsPage, LeadershipDetailPage, CentersPage, CenterDetailPage, AdmissionsPage, BoostPage, AchievementsPage, AssociationPage, CareerPage, ContactPage, PricingPage, AboutPage, CourseReviews, CartDrawer.
 
-Audit every `BansalCard` usage on landing:
-- Padding: `p-4 sm:p-5 md:p-6` instead of fixed `p-6`.
-- Text: `text-sm` body, `text-base sm:text-lg` titles (not `text-xl`).
-- Icon circles: `h-10 w-10 sm:h-12 sm:w-12`.
-- Grid gaps: `gap-3 sm:gap-4 md:gap-6`.
-- Add `min-h-0` and ensure no card stretches >360px wide on `lg` for 3-col grids.
+### Out of scope
 
-## Phase 4 — Roll Out to Other Pages
+- Admin/teacher/mentor/student portal layouts (AdminLayout, StudentLayout, TeacherLayout, MentorLayout, profile/settings pages) — those use cover for compact admin UI and are not part of the visual marketing surface.
+- Hero banner backgrounds on every public page.
+- No new images generated; no layout/copy changes beyond the image-fit pass.
 
-Once landing is approved, apply the same decor system + responsive card pass to:
-About, Courses, EStore, Tests Landing, Live Classes, Mentorship, Educators, Centers, Admissions, Career, Boost, Achievements, Contact, Pricing, Association.
+### Technical notes
 
-Each page gets:
-- One brand pattern decor behind the main content section
-- `<FloatingIcons />` behind page heading
-- Responsive card padding/grid pass
-- 1 extra marketing block where blank space exists
-
-## Technical Notes
-
-- All new colors via existing `bansal-orange`, `bansal-blue`, `bansal-navy` tokens — no raw hex.
-- All icons from `lucide-react` (no emojis).
-- AI-generated decor PNGs go to `src/assets/decor/`, imported via ES6.
-- New component file: `src/components/bansal/BansalDecor.tsx` exports all decor pieces.
-- Animations reuse existing `animate-fade-in-up`, add one new `@keyframes float-slow` in `index.css`.
-- Container max-width stays `container mx-auto px-4`; no layout shell changes.
-
-## Out of Scope
-
-- Auth, dashboards, admin/teacher/student portals (untouched).
-- Backend, data, schema.
-- Removing or restructuring navigation.
-
-## Deliverable Order
-
-1. Decor system + 3 generated PNGs
-2. Landing page redesigned & responsive
-3. Show for review → then propagate to remaining public pages
+- Standard replacement pattern:
+  ```tsx
+  // before
+  <img src={...} className="w-full h-48 object-cover rounded-xl" />
+  // after
+  <div className="aspect-[4/3] w-full rounded-xl bg-muted/60 overflow-hidden flex items-center justify-center p-2 sm:p-3">
+    <img src={...} className="max-h-full max-w-full object-contain" />
+  </div>
+  ```
+- For grids, aspect ratio enforced at the wrapper keeps card heights equal even with `object-contain`.
+- Hero banner pattern (unchanged): `<img className="absolute inset-0 w-full h-full object-cover" />` with navy gradient + `FloatingIcons` overlay on top.
