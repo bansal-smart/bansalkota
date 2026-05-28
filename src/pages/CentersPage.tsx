@@ -127,7 +127,7 @@ export default function CentersPage() {
                   {/* Thumbnail */}
                   <div className="relative h-44 overflow-hidden bg-bansal-blue">
                     <img
-                      src={THEME_IMAGE[c.theme]}
+                      src={getCenterImage(c)}
                       alt={`${displayName(c)} city view`}
                       loading="lazy"
                       className="h-full w-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
