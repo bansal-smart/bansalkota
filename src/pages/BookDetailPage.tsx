@@ -3,46 +3,22 @@ import { ArrowLeft, BookOpen, Loader2, ShoppingCart, Tag, Truck, ShieldCheck } f
 import { useBookDetail } from "@/hooks/useBooks";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
 
 const BookDetailPage = () => {
   const { slug } = useParams();
   const { book, loading } = useBookDetail(slug);
-  const { user } = useAppStore();
-  const [placing, setPlacing] = useState(false);
+  const { addToCart } = useAppStore();
 
-  const handleBuy = async () => {
-    if (!user) {
-      toast.error("Please sign in to purchase");
-      return;
-    }
+  const handleAdd = () => {
     if (!book) return;
-    setPlacing(true);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        subtotal: book.price,
-        total: book.price,
-        currency: "INR",
-        status: "pending",
-      })
-      .select("id")
-      .single();
-    if (!error && order) {
-      await supabase.from("order_items").insert({
-        order_id: order.id,
-        item_type: "book",
-        item_id: book.id,
-        item_title: book.title,
-        unit_price: book.price,
-        quantity: 1,
-      });
-    }
-    setPlacing(false);
-    if (error) toast.error("Could not place order");
-    else toast.success("Order placed — proceed to checkout for payment.");
+    addToCart({
+      type: "book",
+      id: book.id,
+      title: book.title,
+      price: Number(book.price),
+      cover_url: book.cover_url,
+    });
+    toast.success("Added to cart");
   };
 
   if (loading) {
@@ -71,13 +47,13 @@ const BookDetailPage = () => {
 
   return (
     <div className="bg-background">
-      <div className="container mx-auto px-4 max-w-6xl py-8">
+      <div className="container mx-auto max-w-6xl px-4 py-8">
         <Link to="/e-store" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Back to E-Store
         </Link>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-10">
-          <div className="aspect-[4/5] rounded-2xl bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10 flex items-center justify-center overflow-hidden">
+        <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-2">
+          <div className="flex aspect-[4/5] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10">
             {book.cover_url ? (
               <img src={book.cover_url} alt={book.title} className="h-full w-full object-cover" />
             ) : (
@@ -98,14 +74,14 @@ const BookDetailPage = () => {
                 </span>
               )}
             </div>
-            <h1 className="mt-3 font-display text-3xl md:text-4xl font-black text-foreground">{book.title}</h1>
+            <h1 className="mt-3 font-display text-3xl font-black text-foreground md:text-4xl">{book.title}</h1>
             <p className="mt-2 text-sm text-muted-foreground">By {book.author}</p>
 
             <div className="mt-6 flex items-baseline gap-3">
               <span className="text-3xl font-black text-foreground">₹{Number(book.price).toLocaleString()}</span>
               {book.original_price && Number(book.original_price) > Number(book.price) && (
                 <>
-                  <span className="text-lg line-through text-muted-foreground">
+                  <span className="text-lg text-muted-foreground line-through">
                     ₹{Number(book.original_price).toLocaleString()}
                   </span>
                   <span className="inline-flex items-center gap-1 text-sm font-bold text-green-600">
@@ -115,7 +91,7 @@ const BookDetailPage = () => {
               )}
             </div>
 
-            {book.description && <p className="mt-6 text-muted-foreground leading-relaxed">{book.description}</p>}
+            {book.description && <p className="mt-6 leading-relaxed text-muted-foreground">{book.description}</p>}
 
             <div className="mt-8 flex flex-wrap gap-3">
               <button
