@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import careerHero from "@/assets/career-hero.png";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const applicationSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -81,6 +82,8 @@ const CareerPage = () => {
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-16 md:py-20">
         <img src={careerHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">
           <BansalBadge tone="orange" className="mb-4">Career — Opportunities at Bansal Classes</BansalBadge>
           <h1 className="font-display text-4xl md:text-5xl font-extrabold mb-4">Where Passion Meets Profession</h1>

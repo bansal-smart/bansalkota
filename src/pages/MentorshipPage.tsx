@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import mentorshipHero from "@/assets/mentorship-hero.png";
 import {
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
   GraduationCap,
   Briefcase,
   Stethoscope,
@@ -59,6 +60,8 @@ const MentorshipPage = () => {
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 md:py-28">
         <img src={mentorshipHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div
           className="absolute inset-0 opacity-30"
           style={{ background: "radial-gradient(circle at 30% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }}

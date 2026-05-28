@@ -4,6 +4,7 @@ import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import achievementsHero from "@/assets/achievements-hero.png";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 type Topper = {
   name: string;
@@ -49,6 +50,8 @@ export default function AchievementsPage() {
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
         <img src={achievementsHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">
           <BansalBadge variant="orange" className="mb-4">Our Achievements</BansalBadge>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
