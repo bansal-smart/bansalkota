@@ -14,7 +14,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import {
   GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons,
 } from "@/components/bansal/BansalDecor";
-import heroStudents from "@/assets/bansal-hero-v2.jpg";
+
 import mentorTeaching from "@/assets/bansal-mentor-v2.jpg";
 import toppersImage from "@/assets/bansal-toppers-v2.jpg";
 import indiaMap from "@/assets/bansal-pan-india.png";
