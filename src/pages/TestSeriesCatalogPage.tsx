@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ClipboardCheck, Loader2, Tag, Trophy } from "lucide-react";
 import { useTestSeriesList } from "@/hooks/useTestSeries";
 import testSeriesHero from "@/assets/test-series-hero.png";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const exams = ["All", "JEE Advanced", "JEE Main", "NEET", "Foundation"];
 
@@ -15,6 +16,8 @@ const TestSeriesCatalogPage = () => {
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 text-white">
         <img src={testSeriesHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 max-w-6xl">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur">
             <Trophy className="h-3.5 w-3.5" /> All India Test Series

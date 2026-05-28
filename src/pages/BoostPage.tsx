@@ -3,6 +3,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import boostHero from "@/assets/boost-hero.png";
+import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 
 const REG_URL = "https://www.bansal.ac.in/boost-registration";
 
@@ -48,6 +49,8 @@ export default function BoostPage() {
         <img src={boostHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
         <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue via-bansal-blue-dark to-bansal-blue opacity-95" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-25 decor-fade" />
         <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl">
             <BansalBadge variant="orange" className="mb-5">Bansal Flagship Scholarship Test</BansalBadge>

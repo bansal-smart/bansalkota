@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Building2, Handshake, GraduationCap, Globe2, Award, ArrowRight, Users, Sparkles } from "lucide-react";
 import associationHero from "@/assets/association-hero.png";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const partners = [
   { name: "IIT Delhi", type: "Institute" },
@@ -50,6 +51,8 @@ const AssociationPage = () => {
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 text-white">
         <img src={associationHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 mb-6 backdrop-blur">
             <Sparkles className="h-4 w-4 text-[hsl(var(--bansal-orange))]" />

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Check, X, Sparkles, Crown, Rocket, Shield, Zap, HelpCircle, ChevronDown, IndianRupee } from "lucide-react";
 import { useState } from "react";
 import pricingHero from "@/assets/pricing-hero.png";
+import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const PricingPage = () => {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
@@ -105,6 +106,8 @@ const PricingPage = () => {
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 md:py-24 text-white">
         <img src={pricingHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <FloatingIcons defaultTone="white" />
+        <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 text-center">
           <span className="inline-flex items-center gap-2 rounded-pill border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold text-white backdrop-blur">
             <IndianRupee className="h-3.5 w-3.5" /> Transparent pricing · No hidden fees
