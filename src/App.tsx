@@ -284,6 +284,9 @@ const App = () => (
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
               <Route path="/admin/test-series" element={<AdminTestSeriesPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
+              <Route path="/admin/centers" element={<AdminCentersPage />} />
+              <Route path="/admin/toppers" element={<AdminToppersPage />} />
+              <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
               <Route path="/admin/compete-questions" element={<AdminCompeteQuestionsPage />} />
               <Route path="/admin/exams" element={<AdminExamsPage />} />
