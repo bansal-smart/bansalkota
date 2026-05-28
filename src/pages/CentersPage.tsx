@@ -3,15 +3,20 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone, Search, Star, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import { CENTERS, THEME_IMAGE, CENTER_COUNT, STATE_COUNT } from "@/data/centers";
+import { THEME_IMAGE, STATE_COUNT } from "@/data/centers";
 import centersHero from "@/assets/centers-hero.png";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
+import { useCenters, getCenterImage, type DBCenter } from "@/hooks/useCenters";
+import { useSiteBanner } from "@/hooks/useSiteBanner";
 
 const REGIONS = ["All", "North", "South", "East", "West", "Central"] as const;
 
 export default function CentersPage() {
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState<(typeof REGIONS)[number]>("All");
+  const { centers: CENTERS } = useCenters();
+  const { banner } = useSiteBanner("centers");
+  const CENTER_COUNT = CENTERS.length;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
