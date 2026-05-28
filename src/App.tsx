@@ -103,6 +103,9 @@ import RefundPolicyPage from "./pages/RefundPolicyPage";
 import DisclaimerPage from "./pages/DisclaimerPage";
 import EStorePage from "./pages/EStorePage";
 import BookDetailPage from "./pages/BookDetailPage";
+import PackDetailPage from "./pages/PackDetailPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrdersPage from "./pages/OrdersPage";
 import TestSeriesCatalogPage from "./pages/TestSeriesCatalogPage";
 import TestSeriesDetailPage from "./pages/TestSeriesDetailPage";
 import AdminBooksPage from "./pages/AdminBooksPage";
@@ -168,7 +171,10 @@ const App = () => (
               <Route path="/centers/:slug" element={<CenterDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/e-store" element={<EStorePage />} />
+              <Route path="/e-store/checkout" element={<CheckoutPage />} />
+              <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
               <Route path="/e-store/:slug" element={<BookDetailPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
               <Route path="/refund-policy" element={<RefundPolicyPage />} />
               <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route
