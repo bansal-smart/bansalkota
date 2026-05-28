@@ -32,7 +32,7 @@ export default function CentersPage() {
     });
   }, [query, region]);
 
-  const displayName = (c: (typeof CENTERS)[number]) =>
+  const displayName = (c: DBCenter) =>
     c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city;
 
   const regionCount = (r: (typeof REGIONS)[number]) =>
