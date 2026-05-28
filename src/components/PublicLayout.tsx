@@ -4,9 +4,10 @@ import { Menu, X, Phone, MapPin, Mail, ChevronDown } from "lucide-react";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
+import boostLogo from "@/assets/boost-logo.png";
 
 type NavItem =
-  | { label: string; path: string }
+  | { label: string; path: string; logo?: string }
   | { label: string; path: string; children: { label: string; path: string }[] };
 
 const aboutChildren = [
