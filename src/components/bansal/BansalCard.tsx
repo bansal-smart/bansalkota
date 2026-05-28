@@ -6,7 +6,7 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
 }
 
 const BansalCard = ({ className, children, ...rest }: Props) => (
-  <div className={cn("bansal-card p-6 hover-lift", className)} {...rest}>
+  <div className={cn("bansal-card p-4 sm:p-5 md:p-6 hover-lift", className)} {...rest}>
     {children}
   </div>
 );
