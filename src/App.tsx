@@ -113,6 +113,8 @@ import AdminTestSeriesPage from "./pages/AdminTestSeriesPage";
 import AdminCentersPage from "./pages/AdminCentersPage";
 import AdminToppersPage from "./pages/AdminToppersPage";
 import AdminBannersPage from "./pages/AdminBannersPage";
+import AdminBoostPage from "./pages/AdminBoostPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
