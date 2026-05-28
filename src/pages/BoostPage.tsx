@@ -244,11 +244,9 @@ export default function BoostPage() {
           <p className="text-white/80 mb-7">
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>
-          <a href={REG_URL} target="_blank" rel="noopener noreferrer">
-            <BansalButton variant="cta" className="text-base px-10 py-4">
-              Register on bansal.ac.in
-            </BansalButton>
-          </a>
+          <BansalButton variant="cta" className="text-base px-10 py-4" onClick={() => setRegOpen(true)}>
+            Register for ₹99
+          </BansalButton>
           <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
             <Clock className="h-3 w-3" /> Limited slots every Sunday
           </p>
