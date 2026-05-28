@@ -3,6 +3,7 @@ import { ArrowLeft, Quote } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalButton from "@/components/bansal/BansalButton";
+import { leadershipPhotos } from "@/content/bansal/about";
 
 type Profile = {
   name: string;
@@ -111,22 +112,41 @@ export default function LeadershipDetailPage() {
   if (!profile) return <Navigate to="/about" replace />;
 
   const initials = profile.name.split(" ").map((w) => w[0]).slice(0, 2).join("");
+  const photo = leadershipPhotos[slug];
 
   return (
     <div className="bg-background">
-      <section className="bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white py-14">
-        <div className="container mx-auto px-4 max-w-5xl">
+      <section className="relative bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white py-14 overflow-hidden">
+        <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bansal-orange/20 blur-3xl" />
+        <div className="absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
+        <div className="relative container mx-auto px-4 max-w-6xl">
           <Link to="/about" className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm mb-6">
             <ArrowLeft className="h-4 w-4" /> Back to About
           </Link>
-          <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-            <div className="h-32 w-32 md:h-40 md:w-40 rounded-full bg-gradient-to-br from-bansal-orange to-bansal-orange-dark text-white flex items-center justify-center font-display text-4xl font-bold shrink-0 shadow-blue">
-              {initials}
+          <div className="grid md:grid-cols-12 gap-10 items-center">
+            <div className="md:col-span-5">
+              <div className="relative max-w-sm mx-auto md:max-w-none">
+                <div className="absolute -inset-4 bg-gradient-to-br from-bansal-orange/40 to-transparent blur-2xl rounded-3xl" />
+                {photo ? (
+                  <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border-4 border-white/20 shadow-2xl bg-bansal-blue-dark">
+                    <img
+                      src={photo}
+                      alt={profile.name}
+                      className="w-full h-full object-cover object-top"
+                      loading="eager"
+                    />
+                  </div>
+                ) : (
+                  <div className="relative aspect-[3/4] w-full rounded-2xl bg-gradient-to-br from-bansal-orange to-bansal-orange-dark text-white flex items-center justify-center font-display text-7xl font-bold shadow-2xl">
+                    {initials}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="text-center md:text-left">
-              <h1 className="font-display text-3xl md:text-4xl font-extrabold">{profile.name}</h1>
-              <p className="text-bansal-orange font-semibold mt-1">{profile.role}</p>
-              <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
+            <div className="md:col-span-7 text-center md:text-left">
+              <h1 className="font-display text-3xl md:text-5xl font-extrabold leading-tight">{profile.name}</h1>
+              <p className="text-bansal-orange font-semibold mt-2 text-lg">{profile.role}</p>
+              <div className="flex flex-wrap gap-2 mt-5 justify-center md:justify-start">
                 {profile.tags.map((t) => (
                   <BansalBadge key={t} tone="orange">{t}</BansalBadge>
                 ))}

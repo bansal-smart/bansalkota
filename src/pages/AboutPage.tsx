@@ -4,7 +4,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import vkBansalPortrait from "@/assets/vk-bansal-portrait.jpg";
+import vkBansalPortrait from "@/assets/leadership/vk-bansal.jpg";
 import {
   bansalStats,
   teachingMethodology,
@@ -191,16 +191,23 @@ const AboutPage = () => {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {leadership.map((l) => (
               <Link key={l.slug} to={`/about/${l.slug}`} className="group">
-                <BansalCard className="text-center h-full">
-                  <div className="mx-auto h-24 w-24 rounded-full bg-gradient-to-br from-bansal-orange to-bansal-orange-dark text-white flex items-center justify-center font-display text-2xl font-bold mb-4">
-                    {l.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+                <BansalCard className="text-center h-full p-0 overflow-hidden">
+                  <div className="aspect-[3/4] w-full overflow-hidden bg-bansal-cream">
+                    <img
+                      src={l.photo}
+                      alt={l.name}
+                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
                   </div>
-                  <h3 className="font-display text-lg font-bold text-bansal-blue">{l.name}</h3>
-                  <p className="text-xs text-bansal-orange font-semibold uppercase mt-1">{l.role}</p>
-                  <p className="text-xs text-bansal-gray mt-2">{l.tagline}</p>
-                  <span className="inline-flex items-center gap-1 mt-4 text-xs font-semibold text-bansal-blue group-hover:text-bansal-orange">
-                    Read more <ArrowRight className="h-3 w-3" />
-                  </span>
+                  <div className="p-5">
+                    <h3 className="font-display text-lg font-bold text-bansal-blue">{l.name}</h3>
+                    <p className="text-xs text-bansal-orange font-semibold uppercase mt-1">{l.role}</p>
+                    <p className="text-xs text-bansal-gray mt-2">{l.tagline}</p>
+                    <span className="inline-flex items-center gap-1 mt-4 text-xs font-semibold text-bansal-blue group-hover:text-bansal-orange">
+                      Read more <ArrowRight className="h-3 w-3" />
+                    </span>
+                  </div>
                 </BansalCard>
               </Link>
             ))}

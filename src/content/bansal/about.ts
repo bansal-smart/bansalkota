@@ -1,3 +1,8 @@
+import vkBansalPhoto from "@/assets/leadership/vk-bansal.jpg";
+import sameerBansalPhoto from "@/assets/leadership/sameer-bansal.jpg";
+import mahimaBansalPhoto from "@/assets/leadership/mahima-bansal.jpg";
+import neelamBansalPhoto from "@/assets/leadership/neelam-bansal.jpg";
+
 export const bansalStats = [
   { value: "Daily", label: "Live Interactive Sessions" },
   { value: "10M+", label: "Tests, papers & notes" },
@@ -42,29 +47,42 @@ export const missionPoints = [
   "Regular Assessments & Feedback",
 ];
 
+
+
+export const leadershipPhotos: Record<string, string> = {
+  "vk-bansal": vkBansalPhoto,
+  "sameer-bansal": sameerBansalPhoto,
+  "mahima-bansal": mahimaBansalPhoto,
+  "neelam-bansal": neelamBansalPhoto,
+};
+
 export const leadership = [
   {
     slug: "vk-bansal",
     name: "VK Bansal",
     role: "Founder",
     tagline: "Forever Honored — The Icon of Excellence in Education",
+    photo: vkBansalPhoto,
   },
   {
     slug: "sameer-bansal",
     name: "Sameer Bansal",
     role: "MD & CEO",
     tagline: "Mathematics Expert · IITian Mentor · Visionary Leader",
+    photo: sameerBansalPhoto,
   },
   {
     slug: "mahima-bansal",
     name: "Mahima Bansal",
     role: "Director & Academic Mentor",
     tagline: "Academic Leader · Mentor · Women in Education",
+    photo: mahimaBansalPhoto,
   },
   {
     slug: "neelam-bansal",
     name: "Neelam Bansal",
     role: "Co-founder & Matriarch",
     tagline: "Inspiration · Pillar of Strength · Visionary Support",
+    photo: neelamBansalPhoto,
   },
 ];
