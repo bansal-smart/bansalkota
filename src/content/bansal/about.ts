@@ -1,3 +1,8 @@
+import vkBansalPhoto from "@/assets/leadership/vk-bansal.jpg";
+import sameerBansalPhoto from "@/assets/leadership/sameer-bansal.jpg";
+import mahimaBansalPhoto from "@/assets/leadership/mahima-bansal.jpg";
+import neelamBansalPhoto from "@/assets/leadership/neelam-bansal.jpg";
+
 export const bansalStats = [
   { value: "Daily", label: "Live Interactive Sessions" },
   { value: "10M+", label: "Tests, papers & notes" },
