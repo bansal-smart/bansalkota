@@ -24,6 +24,7 @@ const navItems: NavItem[] = [
   { label: "Test Series", path: "/test-series" },
   { label: "Centers", path: "/centers" },
   { label: "BOOST", path: "/boost" },
+  { label: "E-Store", path: "/e-store" },
   { label: "Career", path: "/career" },
   { label: "Contact", path: "/contact" },
 ];
