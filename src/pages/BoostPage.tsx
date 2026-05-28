@@ -2,6 +2,7 @@ import { Trophy, Award, GraduationCap, Calendar, IndianRupee, Clock, CheckCircle
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
+import boostHero from "@/assets/boost-hero.png";
 
 const REG_URL = "https://www.bansal.ac.in/boost-registration";
 
@@ -44,6 +45,8 @@ export default function BoostPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-16 md:py-24 relative overflow-hidden">
+        <img src={boostHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
         <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue via-bansal-blue-dark to-bansal-blue opacity-95" />
         <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl">

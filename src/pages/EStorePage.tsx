@@ -6,6 +6,7 @@ import { useModulePacks } from "@/hooks/useModulePacks";
 import { useAppStore } from "@/store/useAppStore";
 import CartDrawer from "@/components/CartDrawer";
 import { toast } from "sonner";
+import estoreHero from "@/assets/estore-hero.png";
 
 const examFilters = ["All", "JEE Advanced", "JEE Main", "NEET", "Foundation"];
 const classFilters = ["All", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
@@ -32,8 +33,10 @@ const EStorePage = () => {
 
   return (
     <div className="bg-background">
-      <section className="bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] py-16 text-white">
-        <div className="container mx-auto max-w-6xl px-4">
+      <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 text-white">
+        <img src={estoreHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
+        <div className="container relative z-10 mx-auto max-w-6xl px-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur">
