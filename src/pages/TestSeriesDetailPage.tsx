@@ -19,15 +19,28 @@ const TestSeriesDetailPage = () => {
     }
     if (!item) return;
     setPlacing(true);
-    const { error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      item_type: "test_series",
-      item_id: item.id,
-      item_title: item.title,
-      amount: item.price,
-      currency: "INR",
-      status: "pending",
-    });
+    const { data: order, error } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        subtotal: item.price,
+        total: item.price,
+        currency: "INR",
+        status: "pending",
+        notes: `Test series: ${item.title}`,
+      })
+      .select("id")
+      .single();
+    if (!error && order) {
+      await supabase.from("order_items").insert({
+        order_id: order.id,
+        item_type: "book",
+        item_id: item.id,
+        item_title: item.title,
+        unit_price: item.price,
+        quantity: 1,
+      });
+    }
     setPlacing(false);
     if (error) toast.error("Could not place order");
     else toast.success("Enrollment requested — our team will activate your access shortly.");
