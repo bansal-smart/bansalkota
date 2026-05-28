@@ -22,6 +22,9 @@ import {
   FileBarChart,
   BookOpen,
   Trophy,
+  MapPin,
+  Image as ImageIcon,
+  Award,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
