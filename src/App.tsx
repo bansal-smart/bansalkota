@@ -110,6 +110,9 @@ import TestSeriesCatalogPage from "./pages/TestSeriesCatalogPage";
 import TestSeriesDetailPage from "./pages/TestSeriesDetailPage";
 import AdminBooksPage from "./pages/AdminBooksPage";
 import AdminTestSeriesPage from "./pages/AdminTestSeriesPage";
+import AdminCentersPage from "./pages/AdminCentersPage";
+import AdminToppersPage from "./pages/AdminToppersPage";
+import AdminBannersPage from "./pages/AdminBannersPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
