@@ -448,7 +448,7 @@ const DocxBulkImportDialog = ({ open, onClose, onImported, testId, defaultSubjec
                             const ab = img.bytes.buffer.slice(
                               img.bytes.byteOffset,
                               img.bytes.byteOffset + img.bytes.byteLength,
-                            );
+                            ) as ArrayBuffer;
                             const blob = new Blob([ab], { type: img.contentType });
                             const url = URL.createObjectURL(blob);
                             return `<img src="${url}" alt="" class="inline-block max-h-32 rounded" />`;
