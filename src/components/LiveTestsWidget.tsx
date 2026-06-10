@@ -178,6 +178,32 @@ const LiveTestsWidget = () => {
           );
         })}
       </div>
+
+      {recent.length > 0 && (
+        <div className="mt-6 border-t pt-4">
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Recent results</h3>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {recent.map((r) => (
+              <Link
+                key={r.id}
+                to={r.slug ? `/tests/${r.slug}/result/${r.id}` : `/my-tests`}
+                className="group flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:border-primary"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Trophy className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">{r.test_name}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Score {Number(r.score ?? 0).toFixed(1)} · {new Date(r.submitted_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
