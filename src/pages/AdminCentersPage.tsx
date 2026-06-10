@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Loader2, Plus, Save, Trash2, Upload, X } from "lucide-react";
+import { Building2, Loader2, Plus, Save, Trash2, Upload, X, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import CenterStaffModal from "@/components/CenterStaffModal";
 
 type Center = {
   id: string;
@@ -55,6 +56,7 @@ const AdminCentersPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [staffCenter, setStaffCenter] = useState<Center | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -285,6 +287,9 @@ const AdminCentersPage = () => {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                      <button onClick={() => setStaffCenter(c)} className="text-primary hover:underline text-xs font-semibold inline-flex items-center gap-1">
+                        <Users className="h-3 w-3" /> Staff
+                      </button>
                       <button onClick={() => startEdit(c)} className="text-primary hover:underline text-xs font-semibold">Edit</button>
                       <button onClick={() => remove(c.id)} className="text-destructive hover:text-destructive/70">
                         <Trash2 className="h-4 w-4 inline" />
@@ -300,6 +305,14 @@ const AdminCentersPage = () => {
           </div>
         )}
       </div>
+
+      {staffCenter && (
+        <CenterStaffModal
+          centerId={staffCenter.id}
+          centerName={`${staffCenter.city}${staffCenter.area && staffCenter.area !== staffCenter.city ? " — " + staffCenter.area : ""}`}
+          onClose={() => setStaffCenter(null)}
+        />
+      )}
     </div>
   );
 };

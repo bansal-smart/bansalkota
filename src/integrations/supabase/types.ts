@@ -166,6 +166,225 @@ export type Database = {
           },
         ]
       }
+      center_banners: {
+        Row: {
+          center_id: string
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          sort_order: number
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          sort_order?: number
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_banners_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_course_enquiries: {
+        Row: {
+          center_id: string
+          class_level: string | null
+          course_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          center_id: string
+          class_level?: string | null
+          course_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string
+          class_level?: string | null
+          course_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_course_enquiries_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "center_course_enquiries_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "center_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_courses: {
+        Row: {
+          banner_url: string | null
+          brochure_url: string | null
+          center_id: string
+          class_level: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          duration: string | null
+          fees: number | null
+          highlights: Json
+          id: string
+          is_published: boolean
+          schedule: string | null
+          slug: string | null
+          sort_order: number
+          start_date: string | null
+          target_exam: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          banner_url?: string | null
+          brochure_url?: string | null
+          center_id: string
+          class_level?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          duration?: string | null
+          fees?: number | null
+          highlights?: Json
+          id?: string
+          is_published?: boolean
+          schedule?: string | null
+          slug?: string | null
+          sort_order?: number
+          start_date?: string | null
+          target_exam?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          banner_url?: string | null
+          brochure_url?: string | null
+          center_id?: string
+          class_level?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          duration?: string | null
+          fees?: number | null
+          highlights?: Json
+          id?: string
+          is_published?: boolean
+          schedule?: string | null
+          slug?: string | null
+          sort_order?: number
+          start_date?: string | null
+          target_exam?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_courses_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_staff: {
+        Row: {
+          center_id: string
+          created_at: string
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          center_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          center_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_staff_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centers: {
         Row: {
           address: string
@@ -878,47 +1097,67 @@ export type Database = {
       enquiries: {
         Row: {
           assigned_to: string | null
+          category: string | null
+          center_id: string | null
           created_at: string
           email: string
           id: string
           message: string
           name: string
           phone: string | null
+          priority: string
           region: string | null
           source: string
+          source_type: string
           staff_notes: string | null
           status: string
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
+          category?: string | null
+          center_id?: string | null
           created_at?: string
           email: string
           id?: string
           message: string
           name: string
           phone?: string | null
+          priority?: string
           region?: string | null
           source?: string
+          source_type?: string
           staff_notes?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
+          category?: string | null
+          center_id?: string | null
           created_at?: string
           email?: string
           id?: string
           message?: string
           name?: string
           phone?: string | null
+          priority?: string
           region?: string | null
           source?: string
+          source_type?: string
           staff_notes?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "enquiries_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enrollments: {
         Row: {
@@ -1870,6 +2109,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          center_id: string | null
           city: string | null
           class_level: string | null
           country: string | null
@@ -1880,6 +2120,7 @@ export type Database = {
           goal: string | null
           id: string
           is_associated_to_school: boolean
+          is_bansal_offline_student: boolean
           is_suspended: boolean
           onboarding_completed: boolean
           phone: string | null
@@ -1892,6 +2133,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          center_id?: string | null
           city?: string | null
           class_level?: string | null
           country?: string | null
@@ -1902,6 +2144,7 @@ export type Database = {
           goal?: string | null
           id?: string
           is_associated_to_school?: boolean
+          is_bansal_offline_student?: boolean
           is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
@@ -1914,6 +2157,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          center_id?: string | null
           city?: string | null
           class_level?: string | null
           country?: string | null
@@ -1924,6 +2168,7 @@ export type Database = {
           goal?: string | null
           id?: string
           is_associated_to_school?: boolean
+          is_bansal_offline_student?: boolean
           is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
@@ -1935,6 +2180,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_school_id_fkey"
             columns: ["school_id"]
@@ -2775,6 +3027,12 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
+      is_any_center_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_center_staff: {
+        Args: { _center_id: string; _user_id: string }
+        Returns: boolean
+      }
+      lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -2815,7 +3073,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "super_admin" | "admin" | "student" | "teacher" | "mentor"
+      app_role:
+        | "super_admin"
+        | "admin"
+        | "student"
+        | "teacher"
+        | "mentor"
+        | "center_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2943,7 +3207,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin", "student", "teacher", "mentor"],
+      app_role: [
+        "super_admin",
+        "admin",
+        "student",
+        "teacher",
+        "mentor",
+        "center_admin",
+      ],
     },
   },
 } as const

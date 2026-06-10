@@ -111,6 +111,16 @@ import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminTestimonialsPage from "./pages/AdminTestimonialsPage";
 import AdminStatsPage from "./pages/AdminStatsPage";
 import AdminLeadershipPage from "./pages/AdminLeadershipPage";
+import AdminCenterSupportPage from "./pages/AdminCenterSupportPage";
+import CenterLayout from "./components/CenterLayout";
+import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
+import CenterDashboardPage from "./pages/CenterDashboardPage";
+import CenterBannersPage from "./pages/CenterBannersPage";
+import CenterCoursesPage from "./pages/CenterCoursesPage";
+import CenterWebsiteEnquiriesPage from "./pages/CenterWebsiteEnquiriesPage";
+import CenterCourseEnquiriesPage from "./pages/CenterCourseEnquiriesPage";
+import CenterStudentsPage from "./pages/CenterStudentsPage";
+import CenterSupportPage from "./pages/CenterSupportPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -278,6 +288,7 @@ const App = () => (
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
               <Route path="/admin/boost" element={<AdminBoostPage />} />
               <Route path="/admin/centers" element={<AdminCentersPage />} />
+              <Route path="/admin/center-support" element={<AdminCenterSupportPage />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
@@ -298,6 +309,24 @@ const App = () => (
               <Route path="/admin/profile" element={<AdminProfilePage />} />
               <Route path="/admin/overview" element={<AdminDashboard />} />
             </Route>
+
+            {/* Centre admin portal */}
+            <Route
+              element={
+                <ProtectedCenterRoute>
+                  <CenterLayout />
+                </ProtectedCenterRoute>
+              }
+            >
+              <Route path="/center" element={<CenterDashboardPage />} />
+              <Route path="/center/banners" element={<CenterBannersPage />} />
+              <Route path="/center/courses" element={<CenterCoursesPage />} />
+              <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
+              <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
+              <Route path="/center/students" element={<CenterStudentsPage />} />
+              <Route path="/center/support" element={<CenterSupportPage />} />
+            </Route>
+
 
             <Route path="*" element={<NotFound />} />
           </Routes>

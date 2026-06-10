@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 
-export type UserRole = "student" | "teacher" | "mentor" | "admin" | "super_admin";
+export type UserRole = "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
 
 interface AuthContextValue {
   session: Session | null;
@@ -21,6 +21,8 @@ interface AuthContextValue {
   isTeacher: boolean;
   /** True if the user has the 'mentor' role. */
   isMentor: boolean;
+  /** True if the user has the 'center_admin' role (manages a Bansal centre). */
+  isCenterAdmin: boolean;
   /** True if the user has no elevated role (default student). */
   isStudent: boolean;
   /** The resolved primary role of the current user, or null when signed out. */
@@ -61,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isStaff = role === "admin" || role === "super_admin";
   const isTeacher = role === "teacher";
   const isMentor = role === "mentor";
+  const isCenterAdmin = role === "center_admin";
   const isStudent = role === "student";
 
   /**
@@ -70,16 +73,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   const resolveRoleFromServer = useCallback(async (userId: string): Promise<UserRole> => {
     try {
-      const [superRes, adminRes, teacherRes, mentorRes] = await Promise.all([
+      const [superRes, adminRes, teacherRes, mentorRes, centerRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "teacher" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "mentor" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "center_admin" as any }),
       ]);
       if (superRes.data) return "super_admin";
       if (adminRes.data) return "admin";
       if (teacherRes.data) return "teacher";
       if (mentorRes.data) return "mentor";
+      if (centerRes.data) return "center_admin";
       return "student";
     } catch (err) {
       console.error("Failed to resolve role:", err);
@@ -92,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (roles.includes("admin")) return "admin";
       if (roles.includes("teacher")) return "teacher";
       if (roles.includes("mentor")) return "mentor";
+      if (roles.includes("center_admin")) return "center_admin";
       return "student";
     }
   }, []);
@@ -227,6 +233,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin,
         isTeacher,
         isMentor,
+        isCenterAdmin,
         isStudent,
         role,
         roleReady,

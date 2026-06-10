@@ -22,6 +22,7 @@ import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centers";
 import { useCenters } from "@/hooks/useCenters";
+import CenterOfflineSections from "@/components/CenterOfflineSections";
 
 const PROGRAMS = [
   {
@@ -355,6 +356,8 @@ export default function CenterDetailPage() {
           )}
         </div>
       </section>
+
+      {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
 
       {/* CTA */}
       <section className="py-14 bg-bansal-cream">

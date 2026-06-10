@@ -13,20 +13,21 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect");
-  const { session, user, isStaff, isTeacher, isMentor, roleReady, loading } = useAuth();
+  const { session, user, isStaff, isTeacher, isMentor, isCenterAdmin, roleReady, loading } = useAuth();
 
   useEffect(() => {
     if (loading || !session || !roleReady) return;
     if (isStaff) return navigate("/admin/dashboard", { replace: true });
     if (isTeacher) return navigate("/teacher/dashboard", { replace: true });
     if (isMentor) return navigate("/mentor/dashboard", { replace: true });
+    if (isCenterAdmin) return navigate("/center", { replace: true });
     // If profile is missing a name, ask for it once.
     if (!user?.user_metadata?.full_name && !user?.user_metadata?.name) {
       setStep("name");
       return;
     }
     navigate(redirectTo || "/dashboard", { replace: true });
-  }, [loading, session, user, roleReady, isStaff, isTeacher, isMentor, navigate, redirectTo]);
+  }, [loading, session, user, roleReady, isStaff, isTeacher, isMentor, isCenterAdmin, navigate, redirectTo]);
 
   const [step, setStep] = useState<Step>("phone");
   const [mobile, setMobile] = useState("");

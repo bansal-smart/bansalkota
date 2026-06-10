@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SignupPage = () => {
@@ -35,7 +35,21 @@ const SignupPage = () => {
     class_level: "Class 11",
     city: "",
     country: "India",
+    is_bansal_offline_student: "no" as "yes" | "no",
+    center_id: "",
   });
+
+  const [centers, setCenters] = useState<Array<{ id: string; city: string; area: string | null; state: string }>>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("centers")
+        .select("id, city, area, state")
+        .eq("is_published", true)
+        .order("city");
+      setCenters(data ?? []);
+    })();
+  }, []);
 
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -46,6 +60,10 @@ const SignupPage = () => {
     }
     if (form.password.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (form.is_bansal_offline_student === "yes" && !form.center_id) {
+      toast.error("Please select your Bansal centre");
       return;
     }
 
@@ -64,6 +82,8 @@ const SignupPage = () => {
           class_level: form.class_level,
           city: form.city,
           country: form.country,
+          is_bansal_offline_student: form.is_bansal_offline_student === "yes",
+          center_id: form.is_bansal_offline_student === "yes" ? form.center_id : "",
         },
       },
     });
@@ -206,6 +226,43 @@ const SignupPage = () => {
                 </select>
               </div>
             </div>
+
+            <div className="rounded-lg border border-border bg-background/40 p-3 space-y-2">
+              <label className="text-sm font-medium text-foreground inline-flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" /> Are you studying at a Bansal offline centre?
+              </label>
+              <div className="flex gap-2">
+                {(["no", "yes"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => update("is_bansal_offline_student", v)}
+                    className={`flex-1 rounded-md border px-3 py-2 text-xs font-bold uppercase ${
+                      form.is_bansal_offline_student === v
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    {v === "yes" ? "Yes" : "No"}
+                  </button>
+                ))}
+              </div>
+              {form.is_bansal_offline_student === "yes" && (
+                <select
+                  value={form.center_id}
+                  onChange={(e) => update("center_id", e.target.value)}
+                  className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Choose your centre…</option>
+                  {centers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}, {c.state}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             <button onClick={handleSignup} disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-opacity">
               {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating Account...</> : "Create Account"}
             </button>
