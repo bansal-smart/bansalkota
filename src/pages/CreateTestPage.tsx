@@ -153,16 +153,26 @@ const CreateTestPage = () => {
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
       setQuestions(
-        (tqs ?? []).map((q: any) => ({
-          source: "manual" as const,
-          subject: q.subject ?? "Physics",
-          topic: q.topic ?? "",
-          text: q.question_text ?? "",
-          options: Array.isArray(q.options)
-            ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
-            : ["", "", "", ""],
-          correct: typeof q.correct_answer === "number" ? q.correct_answer : 0,
-        })),
+        (tqs ?? []).map((q: any) => {
+          const type = (q.question_type ?? "mcq-single") as QType;
+          const correctIdx = typeof q.correct_answer === "number" ? q.correct_answer : 0;
+          const correctArr = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
+          return {
+            source: "manual" as const,
+            type,
+            subject: q.subject ?? "Physics",
+            topic: q.topic ?? "",
+            text: q.question_text ?? "",
+            options: Array.isArray(q.options)
+              ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
+              : ["", "", "", ""],
+            correct: correctIdx,
+            correctMulti: correctArr,
+            partial: !!q.partial_marking,
+            numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
+            tolerance: Number(q.tolerance ?? 0),
+          };
+        }),
       );
       setLoading(false);
     })();
