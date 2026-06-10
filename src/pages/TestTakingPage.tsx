@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, Delete } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import MathRenderer from "@/components/MathRenderer";
+import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape";
+import CandidateCard from "@/components/test/CandidateCard";
 
 type QuestionType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
 
@@ -55,7 +57,12 @@ const TestTakingPage = () => {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [savedAgo, setSavedAgo] = useState<number | null>(null);
+  const [candidate, setCandidate] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
 
   const lastSavedRef = useRef<number>(0);
   const enteredAtRef = useRef<number>(Date.now());
@@ -91,6 +98,18 @@ const TestTakingPage = () => {
         setStatuses((existing.question_statuses as Record<string, QStatus>) ?? {});
         setStarted(true);
       }
+
+      // Candidate profile
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setCandidate({
+        name: prof?.full_name?.trim() || user.email?.split("@")[0] || "Candidate",
+        avatar: prof?.avatar_url || null,
+      });
+
       setLoading(false);
     })();
   }, [slug, user, authLoading, navigate]);
@@ -150,7 +169,15 @@ const TestTakingPage = () => {
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
       metadata: { tab_switches: tabSwitches },
     }).eq("id", attemptId);
+    setSavedAgo(0);
   }, [attemptId, answers, statuses, startedAt, tabSwitches]);
+
+  // "Saved Xs ago" ticker
+  useEffect(() => {
+    if (savedAgo === null) return;
+    const t = setInterval(() => setSavedAgo((v) => (v === null ? null : v + 1)), 1000);
+    return () => clearInterval(t);
+  }, [savedAgo]);
 
   const startAttempt = async () => {
     if (!user || !test) return;
@@ -164,18 +191,39 @@ const TestTakingPage = () => {
     setStarted(true);
   };
 
-  // Subject grouping
+  // Subject grouping — NTA-style, no "ALL"
   const subjects = useMemo(() => {
-    const set = new Set<string>();
-    questions.forEach((q) => set.add(q.subject || "General"));
-    return ["ALL", ...Array.from(set)];
+    const seen = new Set<string>();
+    const list: string[] = [];
+    questions.forEach((q) => {
+      const s = q.subject || "General";
+      if (!seen.has(s)) { seen.add(s); list.push(s); }
+    });
+    return list;
   }, [questions]);
+
+  // Initialize activeSubject when subjects load
+  useEffect(() => {
+    if (subjects.length && (activeSubject === "ALL" || !subjects.includes(activeSubject))) {
+      setActiveSubject(subjects[0]);
+    }
+  }, [subjects, activeSubject]);
 
   const subjectIndices = useMemo(() => {
     return questions
       .map((q, i) => ({ q, i }))
-      .filter(({ q }) => activeSubject === "ALL" || (q.subject || "General") === activeSubject);
+      .filter(({ q }) => (q.subject || "General") === activeSubject);
   }, [questions, activeSubject]);
+
+  // Indices grouped by subject (for full palette view)
+  const groupedIndices = useMemo(() => {
+    return subjects.map((s) => ({
+      subject: s,
+      items: questions
+        .map((q, i) => ({ q, i }))
+        .filter(({ q }) => (q.subject || "General") === s),
+    }));
+  }, [subjects, questions]);
 
   const q = questions[currentQ];
 
@@ -191,7 +239,13 @@ const TestTakingPage = () => {
     }
     enteredAtRef.current = Date.now();
     setCurrentQ(newIdx);
-  }, [q]);
+    const target = questions[newIdx];
+    if (target) {
+      const targetSub = target.subject || "General";
+      setActiveSubject((cur) => (cur !== targetSub ? targetSub : cur));
+    }
+    setPaletteOpen(false);
+  }, [q, questions]);
 
   // When user lands on a fresh question, mark as not-answered if still unvisited
   useEffect(() => {
@@ -288,19 +342,34 @@ const TestTakingPage = () => {
     }, { answered: 0, notAnswered: 0, marked: 0, answeredMarked: 0, notVisited: 0 });
   }, [questions, statuses]);
 
-  // NTA-style palette colors
-  const getStatusColor = (s?: QStatus) => {
-    switch (s) {
-      case "answered": return "bg-emerald-500 text-white";
-      case "not-answered": return "bg-red-500 text-white";
-      case "marked": return "bg-violet-500 text-white";
-      case "answered-marked": return "bg-violet-500 text-white ring-2 ring-emerald-400";
-      default: return "bg-muted text-foreground/60";
-    }
-  };
+  // Status → palette shape
+  const toShape = (s?: QStatus): PaletteStatus => (s as PaletteStatus) || "not-visited";
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!started) return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowRight") { e.preventDefault(); handleNext(); }
+      else if (e.key === "ArrowLeft") { e.preventDefault(); handlePrev(); }
+      else if (e.key === "m" || e.key === "M") { e.preventDefault(); handleMarkAndNext(); }
+      else if (e.key === "c" || e.key === "C") { e.preventDefault(); handleClear(); }
+      else if (e.key === "Enter") { e.preventDefault(); handleNext(); }
+      else if (/^[1-9]$/.test(e.key) && q && !isNumeric(q.question_type)) {
+        const idx = parseInt(e.key, 10) - 1;
+        if (q.options[idx]) {
+          if (isMulti(q.question_type)) handleMultiToggle(idx); else handleSingleSelect(idx);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, q, currentQ]);
 
   if (loading || authLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
+    return <div className="min-h-screen bg-neutral-50 flex items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
   }
   if (!test) return null;
 
@@ -311,15 +380,17 @@ const TestTakingPage = () => {
           <h2 className="text-xl font-black font-display text-foreground text-center">{test.title}</h2>
           <p className="text-sm text-muted-foreground text-center">{questions.length} questions · {test.duration_minutes} minutes</p>
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
-            <p className="text-xs font-bold text-amber-700 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Important</p>
+            <p className="text-xs font-bold text-amber-700 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Important — please read</p>
             <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
               <li>Once started, the timer cannot be paused.</li>
               <li>Tab switching and right-click are logged.</li>
               <li>Your progress saves automatically every 15 seconds.</li>
               <li>The test auto-submits when time is up.</li>
+              <li>Use the question palette on the right to navigate.</li>
+              <li>Shortcuts: ← → navigate · 1-9 select option · M mark · C clear · Enter Save &amp; Next.</li>
             </ul>
           </div>
-          <button onClick={startAttempt} className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground">Start Test</button>
+          <button onClick={startAttempt} className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground">I'm ready · Start Test</button>
           <Link to="/my-tests" className="block text-center text-xs text-muted-foreground hover:text-foreground">Back to test list</Link>
         </div>
       </div>
@@ -327,181 +398,318 @@ const TestTakingPage = () => {
   }
 
   if (!q) {
-    return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-sm text-muted-foreground">No questions available.</p></div>;
+    return <div className="min-h-screen bg-neutral-50 flex items-center justify-center"><p className="text-sm text-muted-foreground">No questions available.</p></div>;
   }
 
   const mins = Math.floor(secondsLeft / 60);
   const secs = secondsLeft % 60;
+  const hh = Math.floor(mins / 60);
+  const mm = mins % 60;
   const lowTime = secondsLeft < 300;
   const numericValue = isNumeric(q.question_type) ? ((answers[q.id] as any)?.selected as string) || "" : "";
 
+  const subjectIndex = subjectIndices.findIndex(({ i }) => i === currentQ);
+  const subjectPosLabel = subjectIndex >= 0 ? `${subjectIndex + 1} / ${subjectIndices.length}` : `${currentQ + 1} / ${questions.length}`;
+
+  const typeLabel =
+    q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
+    q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
+    q.question_type === "integer" ? "Integer Type" :
+    q.question_type === "numerical" ? "Numerical Answer" :
+    "Assertion & Reason";
+
   return (
-    <div className="min-h-screen bg-background flex flex-col select-none">
-      {/* Top bar */}
-      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-foreground truncate">{test.title}</p>
-          <p className="text-[10px] text-muted-foreground">Question {currentQ + 1} / {questions.length}</p>
+    <div className="min-h-screen bg-neutral-100 flex flex-col select-none">
+      {/* === Strip 1: Brand + test + candidate === */}
+      <header className="bg-[#1E293B] text-white px-4 py-2.5 flex items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-9 w-9 rounded-md bg-primary/20 flex items-center justify-center">
+            <Flame className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wide text-white/60">Computer Based Test</p>
+            <p className="text-sm font-bold truncate">{test.title}</p>
+          </div>
         </div>
-        <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold tabular-nums ${lowTime ? "bg-red-500 text-white animate-pulse" : "bg-primary/10 text-primary"}`}>
-          <Clock className="h-4 w-4" /> {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+        <div className="hidden md:flex items-center gap-2.5">
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wide text-white/60">Candidate</p>
+            <p className="text-sm font-bold truncate max-w-[180px]">{candidate.name || "Candidate"}</p>
+          </div>
+          <div className="h-10 w-10 rounded-md overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center">
+            {candidate.avatar ? (
+              <img src={candidate.avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-base font-black">{(candidate.name || "C").charAt(0).toUpperCase()}</span>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Subject tabs */}
-      {subjects.length > 2 && (
-        <div className="border-b border-border bg-card px-4 py-2 flex gap-2 overflow-x-auto">
-          {subjects.map((s) => (
-            <button key={s} onClick={() => setActiveSubject(s)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${activeSubject === s ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/70 hover:bg-muted/70"}`}>
-              {s === "ALL" ? "All Subjects" : s}
-            </button>
-          ))}
+      {/* === Strip 2: Timer + actions === */}
+      <div className="bg-white border-b border-neutral-200 px-4 py-2 flex items-center gap-3">
+        <button onClick={() => setShowInstructions(true)} className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-neutral-300 px-3 py-1.5 text-xs font-bold text-neutral-700 hover:bg-neutral-50">
+          <Info className="h-3.5 w-3.5" /> View Instructions
+        </button>
+        <button onClick={() => setPaletteOpen((v) => !v)} className="lg:hidden inline-flex items-center gap-1.5 rounded-md border border-neutral-300 px-3 py-1.5 text-xs font-bold text-neutral-700">
+          <Menu className="h-3.5 w-3.5" /> Palette
+        </button>
+        <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-neutral-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          {savedAgo === null ? "Auto-save on" : savedAgo < 5 ? "Saved just now" : `Saved ${savedAgo}s ago`}
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          <div className="text-right hidden sm:block">
+            <p className="text-[10px] uppercase tracking-wide text-neutral-500">Time Left</p>
+          </div>
+          <div className={`flex items-center gap-2 rounded-md px-4 py-2 text-base font-black tabular-nums ${lowTime ? "bg-red-600 text-white animate-pulse" : "bg-[#1E293B] text-white"}`}>
+            <Clock className="h-4 w-4" />
+            {hh > 0 ? `${String(hh).padStart(2, "0")}:` : ""}{String(mm).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+          </div>
+        </div>
+      </div>
+
+      {/* === Strip 3: Subject tabs === */}
+      {subjects.length > 1 && (
+        <div className="border-b border-neutral-200 bg-white px-4 flex items-end gap-1 overflow-x-auto">
+          {subjects.map((s) => {
+            const isActive = activeSubject === s;
+            const firstIdx = questions.findIndex((qq) => (qq.subject || "General") === s);
+            return (
+              <button key={s} onClick={() => { setActiveSubject(s); if (firstIdx >= 0) accrueTimeAndJump(firstIdx); }}
+                className={`shrink-0 px-4 py-2.5 text-xs font-bold border-b-2 transition-colors uppercase tracking-wide ${isActive ? "border-primary text-primary bg-primary/5" : "border-transparent text-neutral-600 hover:text-neutral-900"}`}>
+                {s}
+              </button>
+            );
+          })}
+          <span className="ml-auto py-2.5 text-[11px] text-neutral-500">Section A</span>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col lg:flex-row">
-        <div className="flex-1 p-4 lg:p-6 space-y-4">
-          {/* Question card */}
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-            <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-              {q.subject && <span className="rounded-full bg-primary/10 px-2 py-0.5 font-bold text-primary uppercase">{q.subject}</span>}
-              {q.topic && <span>· {q.topic}</span>}
-              <span className="rounded bg-muted px-1.5 py-0.5 font-bold uppercase">{q.question_type.replace("mcq-", "").replace("-", " ")}</span>
-              <span className="ml-auto font-semibold text-foreground/80">+{q.marks_correct} / {q.marks_wrong}</span>
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+        {/* === Question area === */}
+        <div className="flex-1 overflow-y-auto bg-neutral-50">
+          <div className="max-w-4xl mx-auto p-4 lg:p-6 space-y-4">
+            {/* Question meta */}
+            <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
+              <div>
+                <p className="text-base font-black text-neutral-900">Question No. {currentQ + 1}</p>
+                <p className="text-[11px] text-neutral-500">{activeSubject} · {subjectPosLabel}</p>
+              </div>
+              <div className="text-right text-[11px]">
+                <p className="text-neutral-500">Marks</p>
+                <p className="font-bold tabular-nums"><span className="text-emerald-600">+{q.marks_correct}</span> <span className="text-neutral-400">/</span> <span className="text-red-600">{q.marks_wrong}</span></p>
+              </div>
             </div>
 
-            <div className="text-sm text-foreground leading-relaxed"><MathRenderer content={q.question_text} /></div>
+            <div className="flex flex-wrap items-center gap-2 text-[10px]">
+              <span className="rounded bg-neutral-200 px-2 py-0.5 font-bold text-neutral-700 uppercase">{typeLabel}</span>
+              {q.topic && <span className="text-neutral-500">Topic: {q.topic}</span>}
+            </div>
 
-            {q.question_image_url && (
-              <button onClick={() => setZoomImg(q.question_image_url)} className="relative inline-block group">
-                <img src={q.question_image_url} alt="" className="rounded-lg max-h-64" />
-                <span className="absolute right-2 top-2 rounded bg-black/60 p-1 text-white opacity-0 group-hover:opacity-100">
-                  <ZoomIn className="h-3 w-3" />
-                </span>
-              </button>
-            )}
+            {/* Question card */}
+            <div className="rounded-lg border border-neutral-200 bg-white p-5 space-y-4 shadow-sm">
+              <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
-            {/* Type-specific input */}
-            {isNumeric(q.question_type) ? (
-              <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
-            ) : isMulti(q.question_type) ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {q.options.map((opt) => {
-                  const sel: number[] = Array.isArray((answers[q.id] as any)?.selected) ? (answers[q.id] as any).selected : [];
-                  const selected = sel.includes(opt.id);
-                  const img = q.option_images?.[opt.id];
-                  return (
-                    <button key={opt.id} onClick={() => handleMultiToggle(opt.id)}
-                      className={`w-full text-left rounded-xl border-2 px-4 py-3 text-sm transition-all flex items-start gap-3 ${selected ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}>
-                      <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
-                        {selected && <span className="text-[10px] font-black">✓</span>}
-                      </span>
-                      <div className="flex-1">
-                        <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
-                        <MathRenderer content={opt.text} inline />
-                        {img && <img src={img} alt="" className="mt-2 max-h-32 rounded" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {q.options.map((opt) => {
-                  const selected = (answers[q.id] as any)?.selected === opt.id;
-                  const img = q.option_images?.[opt.id];
-                  return (
-                    <button key={opt.id} onClick={() => handleSingleSelect(opt.id)}
-                      className={`w-full text-left rounded-xl border-2 px-4 py-3 text-sm transition-all flex items-start gap-3 ${selected ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}>
-                      <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${selected ? "border-primary" : "border-muted-foreground/40"}`}>
-                        {selected && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
-                      </span>
-                      <div className="flex-1">
-                        <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
-                        <MathRenderer content={opt.text} inline />
-                        {img && <img src={img} alt="" className="mt-2 max-h-32 rounded" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+              {q.question_image_url && (
+                <button onClick={() => { setZoomImg(q.question_image_url); setZoomLevel(1); }} className="relative inline-block group">
+                  <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72" />
+                  <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-[10px] text-white flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                    <ZoomIn className="h-3 w-3" /> Zoom
+                  </span>
+                </button>
+              )}
 
-          {/* Action bar */}
-          <div className="flex flex-wrap gap-2">
-            <button onClick={handlePrev} disabled={currentQ === 0} className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground disabled:opacity-40 flex items-center gap-1">
-              <ArrowLeft className="h-3 w-3" /> Previous
-            </button>
-            <button onClick={handleClear} className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground">Clear Response</button>
-            <button onClick={handleSaveAndMark} className="rounded-lg border border-violet-500/40 px-3 py-2 text-xs font-medium text-violet-700">
-              Save & Mark for Review
-            </button>
-            <button onClick={handleMarkAndNext} className="rounded-lg border border-violet-500/40 px-3 py-2 text-xs font-medium text-violet-700 flex items-center gap-1">
-              <Flag className="h-3 w-3" /> Mark & Next
-            </button>
-            <button onClick={handleNext} disabled={currentQ === questions.length - 1}
-              className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-40 flex items-center gap-1">
-              Save & Next <ArrowRight className="h-3 w-3" />
-            </button>
-            <button onClick={() => setShowSubmit(true)} disabled={submitting}
-              className="ml-auto rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
-              {submitting ? "Submitting..." : "Submit Test"}
-            </button>
+              {/* Input */}
+              {isNumeric(q.question_type) ? (
+                <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
+              ) : isMulti(q.question_type) ? (
+                <div className="space-y-2">
+                  {q.options.map((opt) => {
+                    const sel: number[] = Array.isArray((answers[q.id] as any)?.selected) ? (answers[q.id] as any).selected : [];
+                    const selected = sel.includes(opt.id);
+                    const img = q.option_images?.[opt.id];
+                    return (
+                      <button key={opt.id} onClick={() => handleMultiToggle(opt.id)}
+                        className={`w-full text-left rounded-md border-2 px-4 py-3 text-[14px] transition-all flex items-start gap-3 ${selected ? "border-primary bg-primary/5" : "border-neutral-200 bg-white hover:border-neutral-400"}`}>
+                        <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 ${selected ? "border-primary bg-primary text-white" : "border-neutral-400"}`}>
+                          {selected && <CheckCircle2 className="h-3 w-3" />}
+                        </span>
+                        <div className="flex-1">
+                          <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
+                          <MathRenderer content={opt.text} inline />
+                          {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {q.options.map((opt) => {
+                    const selected = (answers[q.id] as any)?.selected === opt.id;
+                    const img = q.option_images?.[opt.id];
+                    return (
+                      <button key={opt.id} onClick={() => handleSingleSelect(opt.id)}
+                        className={`w-full text-left rounded-md border-2 px-4 py-3 text-[14px] transition-all flex items-start gap-3 ${selected ? "border-primary bg-primary/5" : "border-neutral-200 bg-white hover:border-neutral-400"}`}>
+                        <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${selected ? "border-primary" : "border-neutral-400"}`}>
+                          {selected && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                        </span>
+                        <div className="flex-1">
+                          <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
+                          <MathRenderer content={opt.text} inline />
+                          {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <p className="text-[10px] text-neutral-400 text-center pb-2">
+              Shortcuts: ← → navigate · 1-9 select · M mark · C clear · Enter save &amp; next
+            </p>
           </div>
         </div>
 
-        {/* Palette */}
-        <aside className="lg:w-[280px] border-t lg:border-t-0 lg:border-l border-border bg-card p-4">
-          <p className="text-xs font-bold text-foreground mb-3">Question Palette</p>
-          <div className="grid grid-cols-6 lg:grid-cols-5 gap-1.5">
-            {subjectIndices.map(({ q: qq, i }) => (
-              <button key={qq.id} onClick={() => accrueTimeAndJump(i)}
-                className={`h-9 rounded-lg text-xs font-bold ${getStatusColor(statuses[qq.id])} ${i === currentQ ? "ring-2 ring-primary ring-offset-1" : ""}`}>
-                {i + 1}
-              </button>
-            ))}
+        {/* === Right rail === */}
+        <aside className={`lg:w-[300px] lg:shrink-0 border-t lg:border-t-0 lg:border-l border-neutral-200 bg-white flex flex-col ${paletteOpen ? "fixed inset-x-0 bottom-0 top-24 z-40 lg:static" : "hidden lg:flex"}`}>
+          <div className="p-3 space-y-3 overflow-y-auto flex-1">
+            <CandidateCard name={candidate.name} avatarUrl={candidate.avatar} />
+
+            {/* Legend */}
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 grid grid-cols-2 gap-y-2 gap-x-3">
+              <LegendRow status="answered" label="Answered" count={counts.answered} />
+              <LegendRow status="not-answered" label="Not Answered" count={counts.notAnswered} />
+              <LegendRow status="not-visited" label="Not Visited" count={counts.notVisited} />
+              <LegendRow status="marked" label="Marked" count={counts.marked} />
+              <LegendRow status="answered-marked" label="Answered & Marked" count={counts.answeredMarked} />
+            </div>
+
+            {/* Palette grouped by subject */}
+            <div className="space-y-3">
+              {groupedIndices.map(({ subject: subj, items }) => (
+                <div key={subj}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-0.5 flex-1 bg-neutral-200" />
+                    <p className="text-[10px] font-black uppercase tracking-wider text-neutral-600">{subj} — Section A</p>
+                    <div className="h-0.5 flex-1 bg-neutral-200" />
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {items.map(({ q: qq, i }) => (
+                      <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} onClick={() => accrueTimeAndJump(i)} title={`Q${i + 1}`}>
+                        {i + 1}
+                      </PaletteShape>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="mt-4 space-y-1.5 text-[10px] text-foreground/70">
-            <LegendRow color="bg-emerald-500" label="Answered" count={counts.answered} />
-            <LegendRow color="bg-red-500" label="Not Answered" count={counts.notAnswered} />
-            <LegendRow color="bg-violet-500" label="Marked for Review" count={counts.marked} />
-            <LegendRow color="bg-violet-500 ring-2 ring-emerald-400" label="Answered & Marked" count={counts.answeredMarked} />
-            <LegendRow color="bg-muted" label="Not Visited" count={counts.notVisited} />
+
+          <div className="border-t border-neutral-200 p-3">
+            <button onClick={() => { setPaletteOpen(false); setShowSubmit(true); }} disabled={submitting}
+              className="w-full rounded-md bg-red-600 hover:bg-red-700 py-2.5 text-sm font-black text-white uppercase tracking-wide disabled:opacity-50">
+              {submitting ? "Submitting..." : "Submit Test"}
+            </button>
           </div>
         </aside>
       </div>
 
-      {/* Zoom modal */}
+      {/* === Sticky action bar === */}
+      <div className="bg-white border-t border-neutral-200 px-3 py-2.5 flex flex-wrap items-center gap-2 shadow-[0_-2px_4px_rgba(0,0,0,0.04)]">
+        <button onClick={handleMarkAndNext}
+          className="rounded-md border border-violet-400 bg-violet-50 px-3 py-2 text-[11px] font-bold text-violet-700 hover:bg-violet-100 flex items-center gap-1.5 uppercase">
+          <Flag className="h-3 w-3" /> Mark for Review &amp; Next
+        </button>
+        <button onClick={handleClear}
+          className="rounded-md border border-neutral-300 px-3 py-2 text-[11px] font-bold text-neutral-700 hover:bg-neutral-50 uppercase">
+          Clear Response
+        </button>
+        <button onClick={handleSaveAndMark}
+          className="rounded-md border border-violet-400 px-3 py-2 text-[11px] font-bold text-violet-700 hover:bg-violet-50 uppercase">
+          Save &amp; Mark for Review
+        </button>
+
+        <div className="ml-auto flex items-center gap-2">
+          <button onClick={handlePrev} disabled={currentQ === 0}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-[11px] font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 flex items-center gap-1 uppercase">
+            <ArrowLeft className="h-3 w-3" /> Back
+          </button>
+          <button onClick={handleNext} disabled={currentQ === questions.length - 1}
+            className="rounded-md bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-[11px] font-black text-white disabled:opacity-40 flex items-center gap-1 uppercase">
+            Save &amp; Next <ArrowRight className="h-3 w-3" />
+          </button>
+          <button onClick={() => setShowSubmit(true)} disabled={submitting}
+            className="rounded-md bg-red-600 hover:bg-red-700 px-4 py-2 text-[11px] font-black text-white disabled:opacity-50 uppercase">
+            Submit
+          </button>
+        </div>
+      </div>
+
+      {/* === Image zoom modal === */}
       {zoomImg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setZoomImg(null)}>
-          <button className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white" onClick={() => setZoomImg(null)}><X className="h-5 w-5" /></button>
-          <img src={zoomImg} alt="" className="max-h-[90vh] max-w-[95vw] rounded-lg" onClick={(e) => e.stopPropagation()} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setZoomImg(null)}>
+          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <button onClick={(e) => { e.stopPropagation(); setZoomLevel((z) => Math.max(0.5, z - 0.25)); }} className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"><ZoomOut className="h-5 w-5" /></button>
+            <span className="text-white text-xs font-bold tabular-nums w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
+            <button onClick={(e) => { e.stopPropagation(); setZoomLevel((z) => Math.min(4, z + 0.25)); }} className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"><ZoomIn className="h-5 w-5" /></button>
+            <button onClick={() => setZoomImg(null)} className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"><X className="h-5 w-5" /></button>
+          </div>
+          <div className="overflow-auto max-h-[90vh] max-w-[95vw]" onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => { e.preventDefault(); setZoomLevel((z) => Math.max(0.5, Math.min(4, z + (e.deltaY < 0 ? 0.1 : -0.1)))); }}>
+            <img src={zoomImg} alt="" className="rounded-lg transition-transform origin-center"
+              style={{ transform: `scale(${zoomLevel})` }} />
+          </div>
         </div>
       )}
 
-      {/* Submit summary modal */}
+      {/* === Instructions modal === */}
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowInstructions(false)}>
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-lg font-black text-neutral-900">Test Instructions</h3>
+              <button onClick={() => setShowInstructions(false)} className="rounded-full p-1 hover:bg-neutral-100"><X className="h-4 w-4" /></button>
+            </div>
+            <ul className="text-xs text-neutral-700 space-y-2 list-disc pl-4">
+              <li>The test is timed. Auto-submits when time is up.</li>
+              <li>Use the right palette to jump to any question.</li>
+              <li>Answered &amp; Marked questions <b>are evaluated</b>.</li>
+              <li>Only Marked (without an answer) is treated as unanswered.</li>
+              <li>Tab switching, right-click and copy are logged.</li>
+              <li>Shortcuts: ← → navigate · 1-9 select option · M mark · C clear · Enter save &amp; next.</li>
+            </ul>
+            <button onClick={() => setShowInstructions(false)} className="mt-5 w-full rounded-md bg-primary py-2 text-xs font-bold text-primary-foreground uppercase">Got it</button>
+          </div>
+        </div>
+      )}
+
+      {/* === Submit summary modal === */}
       {showSubmit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-2xl">
-            <h3 className="font-display text-lg font-black text-foreground">Submit your test?</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Review your attempt summary below. Once submitted you can't change answers.</p>
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+            <h3 className="font-display text-lg font-black text-neutral-900">Are you sure you want to submit for evaluation?</h3>
+            <p className="mt-1 text-xs text-neutral-500">Review your attempt summary below. Once submitted you cannot change your answers.</p>
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <SummaryRow color="bg-emerald-500" label="Answered" v={counts.answered} />
-              <SummaryRow color="bg-red-500" label="Not Answered" v={counts.notAnswered} />
-              <SummaryRow color="bg-violet-500" label="Marked" v={counts.marked} />
-              <SummaryRow color="bg-violet-500 ring-2 ring-emerald-400" label="Ans + Marked" v={counts.answeredMarked} />
-              <SummaryRow color="bg-muted" label="Not Visited" v={counts.notVisited} />
-              <SummaryRow color="bg-primary" label="Total" v={questions.length} />
+              <SummaryRow status="answered" label="Answered" v={counts.answered} />
+              <SummaryRow status="not-answered" label="Not Answered" v={counts.notAnswered} />
+              <SummaryRow status="marked" label="Marked" v={counts.marked} />
+              <SummaryRow status="answered-marked" label="Answered & Marked" v={counts.answeredMarked} />
+              <SummaryRow status="not-visited" label="Not Visited" v={counts.notVisited} />
+              <div className="flex items-center gap-2 rounded-md border-2 border-primary/40 bg-primary/5 px-3 py-2">
+                <span className="flex-1 text-neutral-700 font-bold">Total</span>
+                <span className="font-black tabular-nums text-neutral-900">{questions.length}</span>
+              </div>
             </div>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Answered &amp; Marked questions <b>will be evaluated</b>.
+            <p className="mt-3 text-[11px] text-neutral-500">
+              Answered &amp; Marked questions <b>will be evaluated</b>. Click <b>Yes</b> to submit.
             </p>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setShowSubmit(false)} className="rounded-lg border border-border px-4 py-2 text-xs font-bold">Cancel</button>
+              <button onClick={() => setShowSubmit(false)} className="rounded-md border border-neutral-300 px-5 py-2 text-xs font-bold uppercase">No</button>
               <button onClick={() => { setShowSubmit(false); handleSubmit(false); }}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white">Submit Final</button>
+                className="rounded-md bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-black text-white uppercase">Yes, Submit</button>
             </div>
           </div>
         </div>
@@ -510,21 +718,25 @@ const TestTakingPage = () => {
   );
 };
 
-const LegendRow = ({ color, label, count }: { color: string; label: string; count: number }) => (
-  <div className="flex items-center gap-2">
-    <span className={`inline-block h-3 w-3 rounded ${color}`} />
-    <span className="flex-1">{label}</span>
-    <span className="font-bold tabular-nums">{count}</span>
+const LegendRow = ({ status, label, count }: { status: PaletteStatus; label: string; count: number }) => (
+  <div className="flex items-center gap-2 text-[10px] text-neutral-700">
+    <PaletteShape status={status} size={22} asButton={false}>
+      <span className="text-[9px]">{count}</span>
+    </PaletteShape>
+    <span className="flex-1 leading-tight">{label}</span>
   </div>
 );
 
-const SummaryRow = ({ color, label, v }: { color: string; label: string; v: number }) => (
-  <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
-    <span className={`inline-block h-3 w-3 rounded ${color}`} />
-    <span className="flex-1 text-foreground/80">{label}</span>
-    <span className="font-black tabular-nums text-foreground">{v}</span>
+const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string; v: number }) => (
+  <div className="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-2">
+    <PaletteShape status={status} size={22} asButton={false}>
+      <span className="text-[9px]">{v}</span>
+    </PaletteShape>
+    <span className="flex-1 text-neutral-700 truncate">{label}</span>
+    <span className="font-black tabular-nums text-neutral-900">{v}</span>
   </div>
 );
+
 
 const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: string }) => {
   const allowDecimal = format !== "integer";
