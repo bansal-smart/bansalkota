@@ -288,8 +288,12 @@ const App = () => (
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               <Route path="/admin/tests" element={<AdminTestsPage />} />
+              <Route path="/admin/tests-hub" element={<AdminTestsHubPage />} />
+              <Route path="/admin/test-attempts" element={<AdminTestAttemptsPage />} />
+              <Route path="/admin/test-imports" element={<AdminImportBatchesPage />} />
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+              <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
               <Route path="/admin/test-series" element={<AdminTestSeriesPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
