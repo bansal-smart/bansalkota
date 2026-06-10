@@ -490,6 +490,17 @@ const CreateTestPage = () => {
                   placeholder="Topic"
                   className="flex-1 min-w-[120px] rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
                 />
+                <select
+                  value={q.type}
+                  onChange={(e) => updateQ(i, { type: e.target.value as QType })}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
+                  title="Question type"
+                >
+                  <option value="mcq-single">Single Correct</option>
+                  <option value="mcq-multi">Multiple Correct</option>
+                  <option value="numerical">Numerical</option>
+                  <option value="integer">Integer</option>
+                </select>
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
@@ -502,45 +513,92 @@ const CreateTestPage = () => {
               <textarea
                 value={q.text}
                 onChange={(e) => updateQ(i, { text: e.target.value })}
-                placeholder="Question text..."
+                placeholder="Question text (LaTeX supported, e.g. $x^2$)"
                 rows={2}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
               />
-              <div className="space-y-1.5">
-                {q.options.map((opt, oi) => {
-                  const isCorrect = q.correct === oi;
-                  return (
-                    <label
-                      key={oi}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
-                        isCorrect
-                          ? "border-secondary bg-secondary/10"
-                          : "border-border bg-background hover:border-primary/40"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        checked={isCorrect}
-                        onChange={() => updateQ(i, { correct: oi })}
-                        className="shrink-0 accent-secondary"
-                      />
-                      <span className="text-xs font-bold w-5 text-foreground">
-                        {String.fromCharCode(65 + oi)}.
-                      </span>
-                      <input
-                        value={opt}
-                        onChange={(e) => {
-                          const next = [...q.options];
-                          next[oi] = e.target.value;
-                          updateQ(i, { options: next });
-                        }}
-                        placeholder={`Option ${oi + 1}`}
-                        className="flex-1 bg-transparent text-sm outline-none"
-                      />
+
+              {(q.type === "mcq-single" || q.type === "mcq-multi") && (
+                <div className="space-y-1.5">
+                  {q.options.map((opt, oi) => {
+                    const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : q.correct === oi;
+                    return (
+                      <label
+                        key={oi}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
+                          isCorrect ? "border-secondary bg-secondary/10" : "border-border bg-background hover:border-primary/40"
+                        }`}
+                      >
+                        {q.type === "mcq-multi" ? (
+                          <input
+                            type="checkbox"
+                            checked={isCorrect}
+                            onChange={() => {
+                              const set = new Set(q.correctMulti);
+                              if (set.has(oi)) set.delete(oi); else set.add(oi);
+                              updateQ(i, { correctMulti: Array.from(set).sort((a, b) => a - b) });
+                            }}
+                            className="shrink-0 accent-secondary"
+                          />
+                        ) : (
+                          <input
+                            type="radio"
+                            checked={isCorrect}
+                            onChange={() => updateQ(i, { correct: oi })}
+                            className="shrink-0 accent-secondary"
+                          />
+                        )}
+                        <span className="text-xs font-bold w-5 text-foreground">{String.fromCharCode(65 + oi)}.</span>
+                        <input
+                          value={opt}
+                          onChange={(e) => {
+                            const next = [...q.options];
+                            next[oi] = e.target.value;
+                            updateQ(i, { options: next });
+                          }}
+                          placeholder={`Option ${oi + 1}`}
+                          className="flex-1 bg-transparent text-sm outline-none"
+                        />
+                      </label>
+                    );
+                  })}
+                  {q.type === "mcq-multi" && (
+                    <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
+                      Enable partial marking (proportional credit when subset of correct options is selected, no wrong picks)
                     </label>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+              )}
+
+              {(q.type === "numerical" || q.type === "integer") && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-2">
+                    <label className="text-[11px] font-semibold text-foreground">
+                      Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
+                    </label>
+                    <input
+                      value={q.numericalAnswer}
+                      onChange={(e) => updateQ(i, { numericalAnswer: e.target.value })}
+                      placeholder={q.type === "integer" ? "e.g. 7" : "e.g. 3.14"}
+                      inputMode="decimal"
+                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                    />
+                  </div>
+                  {q.type === "numerical" && (
+                    <div>
+                      <label className="text-[11px] font-semibold text-foreground">Tolerance (±)</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={q.tolerance}
+                        onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                        className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </DropZone>
