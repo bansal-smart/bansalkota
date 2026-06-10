@@ -180,7 +180,7 @@ const CreateTestPage = () => {
       setLoading(false);
     })();
     return () => { ignore = true; };
-  }, [isEditMode, slugParam, testIdParam, isAdminContext, navigate]);
+  }, [isEditMode, slugParam, testIdParam, isAdminContext, navigate, reloadKey]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
@@ -452,6 +452,15 @@ const CreateTestPage = () => {
                 </div>
               </SheetContent>
             </Sheet>
+            {resolvedTestId && (
+              <button
+                onClick={() => setDocxImportOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                title="Import questions from a Word (.docx) file with inline diagrams"
+              >
+                <FileText className="h-3.5 w-3.5" /> Word import
+              </button>
+            )}
             <button
               onClick={() => setQuestions([...questions, blankQuestion()])}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
