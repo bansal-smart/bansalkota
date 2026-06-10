@@ -1003,6 +1003,95 @@ export type Database = {
         }
         Relationships: []
       }
+      leadership_profiles: {
+        Row: {
+          created_at: string
+          headline: string | null
+          hero_photo_url: string | null
+          id: string
+          intro: string | null
+          is_active: boolean
+          name: string
+          pull_quote: string | null
+          recognition_text: string | null
+          slug: string
+          sort_order: number
+          tags: string[] | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          headline?: string | null
+          hero_photo_url?: string | null
+          id?: string
+          intro?: string | null
+          is_active?: boolean
+          name: string
+          pull_quote?: string | null
+          recognition_text?: string | null
+          slug: string
+          sort_order?: number
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          headline?: string | null
+          hero_photo_url?: string | null
+          id?: string
+          intro?: string | null
+          is_active?: boolean
+          name?: string
+          pull_quote?: string | null
+          recognition_text?: string | null
+          slug?: string
+          sort_order?: number
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leadership_sections: {
+        Row: {
+          body: string
+          created_at: string
+          heading: string
+          id: string
+          leadership_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          heading: string
+          id?: string
+          leadership_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          heading?: string
+          id?: string
+          leadership_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leadership_sections_leadership_id_fkey"
+            columns: ["leadership_id"]
+            isOneToOne: false
+            referencedRelation: "leadership_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lecture_bucket: {
         Row: {
           created_at: string
@@ -2119,6 +2208,87 @@ export type Database = {
         }
         Relationships: []
       }
+      site_stats: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          key: string
+          label: string
+          sort_order: number
+          suffix: string | null
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          key: string
+          label: string
+          sort_order?: number
+          suffix?: string | null
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          key?: string
+          label?: string
+          sort_order?: number
+          suffix?: string | null
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      site_testimonials: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          quote: string
+          rank_label: string | null
+          rating: number | null
+          region: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          quote: string
+          rank_label?: string | null
+          rating?: number | null
+          region?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          quote?: string
+          rank_label?: string | null
+          rating?: number | null
+          region?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       study_sessions: {
         Row: {
           created_at: string
@@ -2393,6 +2563,7 @@ export type Database = {
       }
       tests: {
         Row: {
+          auto_release: boolean
           correct_marks: number
           course_id: string | null
           created_at: string
@@ -2403,6 +2574,7 @@ export type Database = {
           exam_pattern: string
           id: string
           is_published: boolean
+          results_released_at: string | null
           slug: string
           starts_at: string | null
           subjects: string[] | null
@@ -2415,6 +2587,7 @@ export type Database = {
           wrong_marks: number
         }
         Insert: {
+          auto_release?: boolean
           correct_marks?: number
           course_id?: string | null
           created_at?: string
@@ -2425,6 +2598,7 @@ export type Database = {
           exam_pattern?: string
           id?: string
           is_published?: boolean
+          results_released_at?: string | null
           slug: string
           starts_at?: string | null
           subjects?: string[] | null
@@ -2437,6 +2611,7 @@ export type Database = {
           wrong_marks?: number
         }
         Update: {
+          auto_release?: boolean
           correct_marks?: number
           course_id?: string | null
           created_at?: string
@@ -2447,6 +2622,7 @@ export type Database = {
           exam_pattern?: string
           id?: string
           is_published?: boolean
+          results_released_at?: string | null
           slug?: string
           starts_at?: string | null
           subjects?: string[] | null
@@ -2589,6 +2765,7 @@ export type Database = {
           tolerance: number
         }[]
       }
+      get_test_rank: { Args: { _attempt_id: string }; Returns: Json }
       get_user_streak: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
@@ -2622,6 +2799,7 @@ export type Database = {
       }
       slugify_text: { Args: { input: string }; Returns: string }
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
+      test_results_released: { Args: { _test_id: string }; Returns: boolean }
       upcoming_live_class_reminders: {
         Args: { _lookahead_minutes?: number }
         Returns: {

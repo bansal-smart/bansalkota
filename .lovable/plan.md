@@ -1,57 +1,102 @@
 ## Goal
-Restyle `/about/:slug` (VK Bansal, Sameer, Mahima, Neelam) so each page feels like a magazine feature: the person's photo dominates as a full-bleed cinematic hero, with bold typography and an attractive, well-paced story below. Brand palette (navy + orange) stays.
 
-## Scope
-Only `src/pages/LeadershipDetailPage.tsx`. Main `/about` page, data, and routes stay untouched.
+Three connected changes:
 
-## New layout
+1. **Move static public content into the admin panel** so anything that may change over time is editable without code.
+2. **Redesign the live-test result screen** with rich (standard-depth) analytics and **auto-release rank/comparison** once the test's scheduled `ends_at` passes.
+3. **Surface scheduled live tests on the Student Dashboard** with a full "Tests" section (upcoming + live now + recent results).
 
-```text
-┌──────────────────────────────────────────────────┐
-│  FULL-BLEED HERO (100vw, ~85–90vh)               │
-│  ┌─ Portrait fills entire frame ─┐                │
-│  │  dark navy gradient overlay   │                │
-│  │  bottom-left content stack:   │                │
-│  │    ◂ Back to About            │                │
-│  │    Eyebrow: role chip         │                │
-│  │    HUGE display name (clamp,  │                │
-│  │      up to 7–8rem, tight)     │                │
-│  │    Tag pills row              │                │
-│  │    Scroll hint ↓              │                │
-│  └───────────────────────────────┘                │
-└──────────────────────────────────────────────────┘
+---
 
-┌──── Pull-quote band (cream, oversized italic) ───┐
+## 1. Admin-editable public content
 
-┌──── Intro paragraph (large lead text, max-w-3xl)─┐
+Today `site_banners`, `centers`, `toppers` are already admin-driven. The remaining hardcoded items live in:
 
-┌──── Story sections (alternating, numbered 01/02) │
-│     left: big number + orange rule               │
-│     right: heading + body                        │
-└──────────────────────────────────────────────────┘
+- `LandingPage.tsx` → `testimonials[]`, `achievements[]` (stats counters)
+- `AboutPage.tsx` + `LeadershipDetailPage.tsx` → hardcoded `profiles{}` (VK / Sameer / Mahima / Neelam) with photo, headline, quote, story sections, recognition
 
-┌──── Recognition card (navy, orange accent) ──────┐
+### New tables (admin-managed, public-read)
 
-┌──── Sticky-feel CTA footer (Enquire / Back) ─────┘
-```
+- `site_testimonials` — name, role/exam, quote, avatar_url, rating, region, sort_order, is_active
+- `site_stats` — key, label, value, suffix, icon, sort_order, is_active (powers the homepage counter strip)
+- `leadership_profiles` — slug, name, title, hero_photo_url, headline, pull_quote, intro, recognition_text, sort_order, is_active
+- `leadership_sections` — leadership_id (fk), number, heading, body, sort_order (the numbered editorial blocks)
 
-## Key visual moves
-- **Hero**: replace current split layout with `min-h-[85vh]` full-bleed `<img>` using `object-cover object-top`, layered with a navy gradient (`from-bansal-blue-dark/95 via-bansal-blue/40 to-transparent`) so text stays legible. Subtle orange glow blob top-right.
-- **Name typography**: `font-display font-extrabold tracking-tight text-[clamp(2.75rem,9vw,7rem)] leading-[0.9]`, white with orange accent on last word.
-- **Fallback** (when no photo): keep initials block but scale to full-bleed with the same gradient.
-- **Quote band**: full-width cream strip, large serif-feel italic quote, oversized Quote icon as decorative watermark.
-- **Sections**: drop card grid in favor of a numbered editorial list — `01`, `02` in giant orange display numerals on the left, heading + paragraph on the right; thin orange rule between items.
-- **Recognition**: navy panel with orange heading, slight inset shadow.
-- **Spacing & rhythm**: generous `py-20/24`, `max-w-4xl` body, refined letter-spacing on headings.
-- **Motion**: light fade/slide-up on hero text and section reveals using CSS (no new deps).
+All four: GRANT to `authenticated` + `service_role`, GRANT `SELECT` to `anon` (public read), RLS = admins write, everyone reads when `is_active`. Seeded via migration with the current values so nothing visually regresses.
 
-## Technical notes
-- File touched: `src/pages/LeadershipDetailPage.tsx` only.
-- Keep existing `profiles` data, `leadershipPhotos` lookup, routing, and props — purely presentational rewrite.
-- Continue using `BansalBadge` / `BansalButton`; drop `BansalCard` for the section list in favor of plain semantic blocks.
-- Use existing Tailwind tokens (`bansal-blue`, `bansal-blue-dark`, `bansal-orange`, `bansal-cream`, `bansal-gray`) — no new colors.
-- Ensure mobile: hero collapses to `min-h-[70vh]`, name clamps down, content stack stays bottom-left with safe padding.
-- Image: keep `loading="eager"` on hero, add `fetchPriority="high"`.
+### New admin pages (under `/admin`)
+
+- `AdminTestimonialsPage.tsx`
+- `AdminStatsPage.tsx`
+- `AdminLeadershipPage.tsx` (list + per-leader editor with sections repeater + photo upload to `site-content` bucket)
+
+Add nav entries in the admin sidebar. Public pages refactored to fetch from these tables (with a small fallback to keep SSR-less first paint clean). Centres/Toppers/Banners pages already exist — no change.
+
+---
+
+## 2. Live-test result redesign + auto rank release
+
+### Schema
+
+- Add `results_released_at timestamptz` and `auto_release boolean default true` on `tests`.
+- Add a SECURITY DEFINER function `public.get_test_rank(_attempt_id uuid)` returning `{rank, total, percentile, topper_score, avg_score, your_score}` — only returns data when `now() >= tests.ends_at` (or test has no `ends_at`, i.e. always-on practice → immediate).
+- Add view/RPC `public.test_results_released(_test_id)` → boolean helper used by UI gating.
+
+No cron needed: release is computed on read by comparing `now()` to `ends_at`. (Cheap, correct, and works for "anytime later" replay.)
+
+### Result screen (`TestResultPage.tsx` — rewrite)
+
+Two-state UI driven by `results_released`:
+
+**Phase A — immediately on submit (score-only card)**
+- Big score / total marks
+- Correct / Wrong / Unattempted chips
+- Accuracy %, time taken, avg time per question
+- "Rank & comparison will unlock at HH:MM" banner with live countdown to `ends_at`
+- Buttons: Review answers (if allowed), Back to tests
+
+**Phase B — after `ends_at` (full report, also shown on any later visit)**
+- Header: score, percentile, **rank / total attempts**, time, accuracy
+- **Subject-wise analysis** table: attempted, correct, accuracy %, score, avg time
+- **Charts** (recharts, already in stack):
+  - Pie: Correct / Wrong / Unattempted
+  - Bar: subject-wise score vs max
+  - Horizontal bar: subject accuracy %
+  - Comparison strip: Your score vs Topper vs Average
+- Question-level review link (uses existing `get_test_question_answers` RPC)
+- Download/share buttons reuse existing patterns
+
+Reachable from **My Tests → past attempts** at any time; gating is purely by `ends_at`, so re-visits always show the full report once released.
+
+### Realtime
+
+Subscribe `TestResultPage` to `tests` row changes so if admin overrides `ends_at` or `is_published`, the screen flips Phase A → B without reload.
+
+---
+
+## 3. Dashboard "Live Tests" section
+
+New component `UpcomingTestsSection.tsx` on `StudentDashboard.tsx`, above existing widgets. Three groups in one card:
+
+- **Live now** — tests where `now() BETWEEN starts_at AND ends_at` and student matches target_exam → red "Live" pill, "Enter test" CTA
+- **Upcoming** — next 5 by `starts_at` → countdown, "Set reminder" (writes to `notification_preferences` if available, else local), "View instructions"
+- **Recent results** — last 3 submitted attempts → score chip, "View report" (deep-links to result page; Phase A or B auto)
+
+Pulls from `tests` + `test_attempts` with a single query each, filtered client-side by exam/target. Realtime subscribed to both tables.
+
+---
 
 ## Out of scope
-- Main About page, leadership grid, data edits, new photos, route changes.
+
+- Advanced analytics (difficulty curve, peer band, PDF export) — you chose Standard.
+- Admin override of rank release — auto-only.
+- Editing footer / SEO / contact — not requested in this round.
+- Touching course/test creation flows already shipped.
+
+## Technical notes
+
+- All new tables follow the 4-step migration order (CREATE → GRANT → ENABLE RLS → POLICY).
+- Charts: `recharts` (already a dep).
+- Countdown: lightweight `useCountdown` hook, no new dep.
+- Photo uploads: existing `site-content` bucket.
+- All copy/colors stay on the navy + orange tokens; Mulish/Plus Jakarta fonts; Lucide icons only.

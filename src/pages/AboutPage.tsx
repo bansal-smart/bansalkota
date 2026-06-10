@@ -12,8 +12,14 @@ import {
   missionPoints,
   leadership,
 } from "@/content/bansal/about";
+import { useSiteStats } from "@/hooks/useSiteContent";
 
 const AboutPage = () => {
+  const { rows: dbStats } = useSiteStats();
+  const liveStats = dbStats.length
+    ? dbStats.map((s) => ({ value: s.value + (s.suffix ?? ""), label: s.label }))
+    : bansalStats;
+
   return (
     <div className="bg-background">
       {/* CINEMATIC FULL-BLEED HERO — Founder tribute */}
@@ -105,7 +111,7 @@ const AboutPage = () => {
       {/* Legacy stats */}
       <section className="bg-white py-10 border-b border-border">
         <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6">
-          {bansalStats.map((s) => (
+          {liveStats.map((s) => (
             <BansalStat key={s.label} value={s.value} label={s.label} />
           ))}
         </div>

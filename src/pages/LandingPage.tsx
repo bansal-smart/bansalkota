@@ -14,6 +14,12 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import {
   GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons,
 } from "@/components/bansal/BansalDecor";
+import { useSiteTestimonials, useSiteStats } from "@/hooks/useSiteContent";
+
+const iconMap: Record<string, any> = {
+  Trophy, GraduationCap, Star, ShieldCheck, Award, Sparkles, Target,
+  BookOpen, Users, Brain, Lightbulb, Rocket, BarChart3, Building2,
+};
 
 import mentorTeaching from "@/assets/bansal-mentor-v2.jpg";
 import toppersImage from "@/assets/bansal-toppers-v2.jpg";
@@ -152,6 +158,15 @@ const dlpFeatures = [
 
 const LandingPage = () => {
   const [exam, setExam] = useState<ExamKey>("jee");
+  const { rows: dbTestimonials } = useSiteTestimonials();
+  const { rows: dbStats } = useSiteStats();
+  const liveTestimonials = dbTestimonials.length
+    ? dbTestimonials.map((t) => ({ name: t.name, rank: t.rank_label ?? "", quote: t.quote }))
+    : testimonials;
+  const liveAchievements = dbStats.length
+    ? dbStats.map((s) => ({ value: s.value + (s.suffix ?? ""), label: s.label, icon: iconMap[s.icon ?? "Award"] ?? Award }))
+    : achievements;
+
 
   return (
     <div className="bg-background">
@@ -252,7 +267,7 @@ const LandingPage = () => {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {achievements.map((a) => (
+            {liveAchievements.map((a) => (
               <BansalCard key={a.label} className="relative !p-4 sm:!p-5 text-center">
                 <CornerSparkles position="tr" />
                 <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-bansal-orange/10 flex items-center justify-center">
@@ -607,7 +622,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 stagger-children">
-            {testimonials.map((t) => (
+            {liveTestimonials.map((t) => (
               <BansalCard key={t.name} className="relative !p-5">
                 <Quote className="h-7 w-7 text-bansal-blue/20" />
                 <CornerSparkles position="br" />

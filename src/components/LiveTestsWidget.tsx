@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock, FileText, ChevronRight, Radio, CalendarClock } from "lucide-react";
+import { Clock, FileText, ChevronRight, Radio, CalendarClock, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
@@ -42,13 +42,14 @@ const LiveTestsWidget = () => {
   const { user } = useAuth();
   const [tests, setTests] = useState<TestRow[]>([]);
   const [attempts, setAttempts] = useState<Record<string, string>>({});
+  const [recent, setRecent] = useState<Array<{ id: string; test_name: string; score: number | null; submitted_at: string; slug: string | null; test_id: string | null }>>([]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!user) return;
     let active = true;
-    (async () => {
-      const [tRes, aRes] = await Promise.all([
+    const load = async () => {
+      const [tRes, aRes, rRes] = await Promise.all([
         supabase
           .from("tests")
           .select("id,title,slug,exam_pattern,test_type,duration_minutes,total_questions,total_marks,starts_at,ends_at")
@@ -56,15 +57,33 @@ const LiveTestsWidget = () => {
           .order("starts_at", { ascending: true, nullsFirst: false })
           .limit(20),
         supabase.from("test_attempts").select("test_id,status").eq("user_id", user.id),
+        supabase
+          .from("test_attempts")
+          .select("id, test_name, score, submitted_at, test_id, tests(slug)")
+          .eq("user_id", user.id)
+          .in("status", ["submitted", "auto_submitted"])
+          .order("submitted_at", { ascending: false })
+          .limit(3),
       ]);
       if (!active) return;
       setTests((tRes.data ?? []) as TestRow[]);
       const m: Record<string, string> = {};
       (aRes.data ?? []).forEach((a: any) => { if (a.test_id) m[a.test_id] = a.status; });
       setAttempts(m);
-    })();
-    return () => { active = false; };
+      setRecent(((rRes.data ?? []) as any[]).map((r) => ({
+        id: r.id, test_name: r.test_name, score: r.score, submitted_at: r.submitted_at,
+        test_id: r.test_id, slug: r.tests?.slug ?? null,
+      })));
+    };
+    load();
+    const ch = supabase
+      .channel("dash_tests")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tests" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "test_attempts", filter: `user_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { active = false; supabase.removeChannel(ch); };
   }, [user]);
+
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -93,7 +112,7 @@ const LiveTestsWidget = () => {
       .slice(0, 4);
   }, [tests, now]);
 
-  if (visible.length === 0) return null;
+  if (visible.length === 0 && recent.length === 0) return null;
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
@@ -159,6 +178,32 @@ const LiveTestsWidget = () => {
           );
         })}
       </div>
+
+      {recent.length > 0 && (
+        <div className="mt-6 border-t pt-4">
+          <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Recent results</h3>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {recent.map((r) => (
+              <Link
+                key={r.id}
+                to={r.slug ? `/tests/${r.slug}/result/${r.id}` : `/my-tests`}
+                className="group flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:border-primary"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Trophy className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">{r.test_name}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Score {Number(r.score ?? 0).toFixed(1)} · {new Date(r.submitted_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
