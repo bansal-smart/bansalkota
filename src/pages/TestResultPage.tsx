@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Trophy, Target, TrendingUp, RotateCcw, Home, Loader2, CheckCircle2, XCircle,
-  MinusCircle, Clock, Award, ChevronRight, Lock, Medal, Users, Activity,
+  MinusCircle, Clock, Award, ChevronRight, Lock, Medal, Users, Activity, RefreshCcw,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { calcPercent } from "@/lib/progress";
 
 const slugifySubject = (s: string) =>
