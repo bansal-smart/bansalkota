@@ -53,6 +53,7 @@ const TestTakingPage = () => {
 
   const [currentQ, setCurrentQ] = useState(0);
   const [activeSubject, setActiveSubject] = useState<string>("ALL");
+  const [activeTopic, setActiveTopic] = useState<string>("ALL");
   const [answers, setAnswers] = useState<Record<string, AnswerVal>>({});
   const [statuses, setStatuses] = useState<Record<string, QStatus>>({});
   const [secondsLeft, setSecondsLeft] = useState(0);
