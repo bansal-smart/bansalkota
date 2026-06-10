@@ -243,8 +243,8 @@ const AdminCourseContentPage = () => {
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
     const [{ data: ch }, { data: ls }, { data: rs }] = await Promise.all([
-      supabase.from("chapters").select("id,title,position").eq("course_id", courseId).order("position"),
-      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,type").eq("course_id", courseId).order("position"),
+      supabase.from("chapters").select("id,title,position,is_published").eq("course_id", courseId).order("position"),
+      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,is_published,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
     ]);
     setChapters((ch as Chapter[]) ?? []);
@@ -256,6 +256,18 @@ const AdminCourseContentPage = () => {
   useEffect(() => {
     if (selectedCourse) loadCourseDetail(selectedCourse.id);
     else { setChapters([]); setLessons([]); setResources([]); setChapterFilter("all"); }
+  }, [selectedCourse]);
+
+  // Real-time sync: refresh open course whenever its content changes
+  useEffect(() => {
+    if (!selectedCourse) return;
+    const channel = supabase
+      .channel(`admin-course-content-${selectedCourse.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chapters", filter: `course_id=eq.${selectedCourse.id}` }, () => loadCourseDetail(selectedCourse.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "lessons", filter: `course_id=eq.${selectedCourse.id}` }, () => loadCourseDetail(selectedCourse.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "course_resources", filter: `course_id=eq.${selectedCourse.id}` }, () => loadCourseDetail(selectedCourse.id))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [selectedCourse]);
 
   const openAddLecture = (chapterId: string) => {
