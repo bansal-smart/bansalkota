@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Send, CheckCircle2, Loader2, Phone, Mail, User, GraduationCap } from "lucide-react";
+import { Send, CheckCircle2, Loader2, Phone, Mail, User, GraduationCap, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import { toast } from "sonner";
+import { postSubmission } from "@/content/postSubmissionMessages";
 
 const exams = ["JEE", "NEET", "Foundation", "Olympiad", "Not sure yet"];
 const classes = ["Class 6-8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
