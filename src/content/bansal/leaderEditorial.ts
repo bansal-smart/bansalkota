@@ -11,6 +11,20 @@ import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
 import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
 import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
 import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg.asset.json";
+import mahimaPortrait from "@/assets/mahima-portrait.jpg.asset.json";
+import neelamPortrait from "@/assets/neelam-portrait.jpg.asset.json";
+import bookCalculus from "@/assets/book-calculus.jpg.asset.json";
+import bookAlgebra from "@/assets/book-algebra.jpg.asset.json";
+import bookCoordinate from "@/assets/book-coordinate.jpg.asset.json";
+import bookTrigonometry from "@/assets/book-trigonometry.jpg.asset.json";
+
+// Sameer Sir's authored books — shown on his About page
+export const sameerBooks = [
+  { title: "Problems in Calculus", subtitle: "JEE Main + Advanced", cover: bookCalculus.url, edition: "Bansal Classes" },
+  { title: "Problems in Algebra", subtitle: "JEE Main + Advanced", cover: bookAlgebra.url, edition: "Bansal Classes" },
+  { title: "Problems in Coordinate Geometry", subtitle: "JEE Main + Advanced", cover: bookCoordinate.url, edition: "Bansal Classes" },
+  { title: "Problems in Trigonometry & Vectors", subtitle: "JEE Main + Advanced", cover: bookTrigonometry.url, edition: "Bansal Classes" },
+];
 
 export type LeaderTimelineItem = { year: string; title: string; body: string };
 export type LeaderPillar = { title: string; body: string };
