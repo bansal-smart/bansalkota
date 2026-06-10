@@ -39,7 +39,7 @@ export default function AlumniPage() {
       const { data } = await supabase
         .from("toppers")
         .select(
-          "id,name,rank,exam,year,photo_url,quote,current_position,company,batch_year,is_alumni",
+          "id,name,rank_label,exam,year,photo_url,quote,current_position,company,batch_year,is_alumni",
         )
         .eq("is_alumni", true)
         .order("batch_year", { ascending: false, nullsFirst: false })
@@ -168,9 +168,9 @@ export default function AlumniPage() {
                       <h3 className="font-display text-lg font-extrabold text-bansal-blue truncate">
                         {a.name}
                       </h3>
-                      {a.rank && (
+                      {a.rank_label && (
                         <div className="mt-0.5 text-xs font-bold text-bansal-orange uppercase tracking-wide">
-                          {a.rank} {a.exam ? `· ${a.exam}` : ""}
+                          {a.rank_label} {a.exam ? `· ${a.exam}` : ""}
                         </div>
                       )}
                       {(a.current_position || a.company) && (
@@ -218,7 +218,7 @@ export default function AlumniPage() {
               <BansalButton variant="cta">Join Alumni Network</BansalButton>
             </Link>
             <Link to="/about">
-              <BansalButton variant="ghost">Back to About</BansalButton>
+              <BansalButton variant="outline">Back to About</BansalButton>
             </Link>
           </div>
         </div>
