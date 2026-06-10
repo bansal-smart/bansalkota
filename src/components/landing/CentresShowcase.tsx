@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Search, ArrowRight, Building2 } from "lucide-react";
+import { MapPin, Search, ArrowRight, Building2, Star, Crown } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { useCentresShowcase } from "@/hooks/useLandingData";
 
