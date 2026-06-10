@@ -74,8 +74,16 @@ const LandingCTAForm = () => {
               <div className="h-16 w-16 rounded-full bg-emerald-100 grid place-items-center mx-auto">
                 <CheckCircle2 className="h-8 w-8 text-emerald-600" />
               </div>
-              <h3 className="mt-4 font-display text-xl font-bold">Thank you, {form.name.split(" ")[0]}!</h3>
-              <p className="mt-2 text-sm text-bansal-gray">Our counsellor will call you on {form.phone} within 24 hours.</p>
+              <h3 className="mt-4 font-display text-xl font-bold">{postSubmission.enquiry.title(form.name.split(" ")[0])}</h3>
+              <p className="mt-2 text-sm text-bansal-gray">{postSubmission.enquiry.body(form.phone)}</p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                <a href={postSubmission.enquiry.whatsappHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 text-white px-4 py-2 text-xs font-bold hover:bg-emerald-700">
+                  <MessageCircle className="h-3.5 w-3.5" /> {postSubmission.enquiry.ctaLabel}
+                </a>
+                <a href={postSubmission.enquiry.callHref} className="inline-flex items-center gap-1.5 rounded-full border border-bansal-blue/30 text-bansal-blue px-4 py-2 text-xs font-bold hover:bg-bansal-blue hover:text-white transition-colors">
+                  <Phone className="h-3.5 w-3.5" /> {postSubmission.enquiry.callLabel}
+                </a>
+              </div>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-3">
