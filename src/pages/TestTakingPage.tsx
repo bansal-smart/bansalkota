@@ -66,6 +66,8 @@ const TestTakingPage = () => {
 
   const lastSavedRef = useRef<number>(0);
   const enteredAtRef = useRef<number>(Date.now());
+  const answersRef = useRef<Record<string, AnswerVal>>({});
+  const statusesRef = useRef<Record<string, QStatus>>({});
 
   // Load test + existing in-progress attempt
   useEffect(() => {
@@ -152,25 +154,41 @@ const TestTakingPage = () => {
     };
   }, [started]);
 
-  // Auto-save every 15s
-  useEffect(() => {
-    if (!attemptId) return;
-    const t = setInterval(autoSave, 15000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attemptId, answers, statuses]);
+  // Sync refs so auto-save always reads latest state
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { statusesRef.current = statuses; }, [statuses]);
 
   const autoSave = useCallback(async () => {
     if (!attemptId) return;
     if (Date.now() - lastSavedRef.current < 3000) return;
     lastSavedRef.current = Date.now();
     await supabase.from("test_attempts").update({
-      answers, question_statuses: statuses,
+      answers: answersRef.current,
+      question_statuses: statusesRef.current,
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
       metadata: { tab_switches: tabSwitches },
     }).eq("id", attemptId);
     setSavedAgo(0);
-  }, [attemptId, answers, statuses, startedAt, tabSwitches]);
+  }, [attemptId, startedAt, tabSwitches]);
+
+  const saveNow = useCallback(async (nextAnswers?: Record<string, AnswerVal>, nextStatuses?: Record<string, QStatus>) => {
+    if (!attemptId) return;
+    await supabase.from("test_attempts").update({
+      answers: nextAnswers ?? answersRef.current,
+      question_statuses: nextStatuses ?? statusesRef.current,
+      time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
+      metadata: { tab_switches: tabSwitches },
+    }).eq("id", attemptId);
+    lastSavedRef.current = Date.now();
+    setSavedAgo(0);
+  }, [attemptId, startedAt, tabSwitches]);
+
+  // Auto-save every 15s
+  useEffect(() => {
+    if (!attemptId) return;
+    const t = setInterval(autoSave, 15000);
+    return () => clearInterval(t);
+  }, [attemptId, autoSave]);
 
   // "Saved Xs ago" ticker
   useEffect(() => {
@@ -253,7 +271,11 @@ const TestTakingPage = () => {
     setStatuses((s) => (s[q.id] ? s : { ...s, [q.id]: "not-answered" }));
   }, [q]);
 
-  const updateStatus = (id: string, status: QStatus) => setStatuses((prev) => ({ ...prev, [id]: status }));
+  const updateStatus = (id: string, status: QStatus) => setStatuses((prev) => {
+    const next = { ...prev, [id]: status };
+    statusesRef.current = next;
+    return next;
+  });
 
   const hasAnswer = (qq: TestQuestion, a?: AnswerVal): boolean => {
     if (!a) return false;
@@ -296,18 +318,29 @@ const TestTakingPage = () => {
   const handlePrev = () => currentQ > 0 && accrueTimeAndJump(currentQ - 1);
   const handleMarkAndNext = () => {
     if (!q) return;
-    updateStatus(q.id, hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked");
+    const nextStatus = hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked";
+    updateStatus(q.id, nextStatus);
+    saveNow(undefined, { ...statusesRef.current, [q.id]: nextStatus });
     handleNext();
   };
   const handleSaveAndMark = () => {
     if (!q) return;
-    updateStatus(q.id, hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked");
-    autoSave();
+    const nextStatus = hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked";
+    updateStatus(q.id, nextStatus);
+    saveNow(undefined, { ...statusesRef.current, [q.id]: nextStatus });
   };
   const handleClear = () => {
     if (!q) return;
-    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: isMulti(q.question_type) ? [] : isNumeric(q.question_type) ? "" : null } as AnswerVal }));
-    updateStatus(q.id, "not-answered");
+    const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
+    const nextStatus: QStatus = wasMarked ? "marked" : "not-answered";
+    const cleared: AnswerVal = isMulti(q.question_type)
+      ? { selected: [], time_spent: (answers[q.id] as any)?.time_spent }
+      : isNumeric(q.question_type)
+        ? { selected: "", time_spent: (answers[q.id] as any)?.time_spent }
+        : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
+    setAnswers((prev) => ({ ...prev, [q.id]: cleared }));
+    updateStatus(q.id, nextStatus);
+    saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus });
   };
 
   const handleSubmit = async (auto = false) => {
@@ -495,6 +528,11 @@ const TestTakingPage = () => {
               <div>
                 <p className="text-base font-black text-neutral-900">Question No. {currentQ + 1}</p>
                 <p className="text-[11px] text-neutral-500">{activeSubject} · {subjectPosLabel}</p>
+                {(statuses[q.id] === "marked" || statuses[q.id] === "answered-marked") && (
+                  <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
+                    <Flag className="h-3 w-3" /> Marked for Review
+                  </div>
+                )}
               </div>
               <div className="text-right text-[11px]">
                 <p className="text-neutral-500">Marks</p>
