@@ -126,6 +126,9 @@ const AdminTestsPage = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
+                        <Link to={`/admin/tests/${t.slug}`} className="rounded-md px-2 py-1 text-[10px] font-bold text-primary hover:bg-primary/10" title="Manage">
+                          Manage
+                        </Link>
                         <a href={`/tests/${t.slug}/take`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </a>

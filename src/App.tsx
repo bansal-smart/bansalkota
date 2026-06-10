@@ -55,6 +55,10 @@ import CreateCoursePage from "./pages/CreateCoursePage";
 import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestsPage from "./pages/AdminTestsPage";
+import AdminTestsHubPage from "./pages/AdminTestsHubPage";
+import AdminTestAttemptsPage from "./pages/AdminTestAttemptsPage";
+import AdminTestDetailPage from "./pages/AdminTestDetailPage";
+import AdminImportBatchesPage from "./pages/AdminImportBatchesPage";
 import AdminQuestionBankPage from "./pages/AdminQuestionBankPage";
 import AdminCompeteQuestionsPage from "./pages/AdminCompeteQuestionsPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
@@ -284,8 +288,12 @@ const App = () => (
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               <Route path="/admin/tests" element={<AdminTestsPage />} />
+              <Route path="/admin/tests-hub" element={<AdminTestsHubPage />} />
+              <Route path="/admin/test-attempts" element={<AdminTestAttemptsPage />} />
+              <Route path="/admin/test-imports" element={<AdminImportBatchesPage />} />
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+              <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
               <Route path="/admin/test-series" element={<AdminTestSeriesPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />

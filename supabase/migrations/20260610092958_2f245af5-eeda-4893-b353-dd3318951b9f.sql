@@ -1,0 +1,1 @@
+CREATE POLICY "Super admins delete test attempts" ON public.test_attempts FOR DELETE USING (has_role(auth.uid(), 'super_admin'::app_role));

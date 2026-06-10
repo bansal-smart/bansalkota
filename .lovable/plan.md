@@ -1,101 +1,130 @@
+# Super Admin – Test Platform Control Center
 
-# Word (.docx) Bulk Question Import — Phase 5
+Goal: extend the existing Admin/Super-Admin panel so a super admin can monitor and manage **every part of the JEE/NEET live test engine** built in earlier phases (tests, questions, imports, attempts, results) from one place.
 
-Implement the bulk uploader that matches your sample format (`01_PCM_JEE_Main_Sample.docx`): numbered questions with inline diagrams, `(A)–(D)` options, and an answer-key table at the end. Images embedded in the doc are extracted, uploaded to storage, and rendered on the question screen during tests.
+The current admin panel already has standalone pages for Tests, Test Series, Question Bank, and Student Reports. They work in isolation. This plan adds:
+- A single **Test Platform overview** with live KPIs.
+- A real **Attempts explorer** (no admin view of attempts exists today).
+- A proper **per-test admin detail page** with question table, attempts, leaderboard, and analytics.
+- An **Import Batches** page (we created `question_import_batches` for Word uploads but have no UI to view/undo them).
+- Tightened question-bank + tests pages so a super admin can edit / delete anything.
 
-## 1. Storage for question images
+No changes to the test-taking experience or scoring logic.
 
-- New **public** bucket `question-images` (read for everyone, write for admins/teachers only).
-- Path layout: `question-images/{importBatchId}/q{n}_{slot}.png` (slot = `stem`, `optA`, `optB`, …, `solution`).
-- RLS policies on `storage.objects`:
-  - Public `SELECT` on this bucket.
-  - `INSERT/UPDATE/DELETE` restricted to `admin | super_admin | teacher`.
+---
 
-## 2. Database additions
+## 1. New sidebar group — "Test Platform"
 
-- `test_questions`: add `image_urls jsonb` (`{ stem: [], optionA: [], optionB: [], optionC: [], optionD: [], solution: [] }`) and `image_url text` (legacy first stem image, for backward compat).
-- `question_bank`: same two columns + `import_batch_id uuid`, `source_filename text`.
-- New table `question_import_batches` (audit/undo):
-  - `target_type` (`test` | `bank`), `target_id` (nullable for bank), `filename`, `uploaded_by`, `question_count`, `image_count`, `status`, `error_log jsonb`.
-  - Standard `created_at`. GRANTs to `authenticated` + `service_role`; RLS so only admins/teachers see their own batches; super_admin sees all.
+In `src/components/AdminLayout.tsx`, insert a new labelled section between "Tests" and "Books":
 
-## 3. Parser (client-side, runs in admin browser)
+```
+Test Platform
+  • Overview            /admin/tests-hub
+  • All Tests           /admin/tests           (existing)
+  • Test Series         /admin/test-series     (existing)
+  • Question Bank       /admin/question-bank   (existing, upgraded)
+  • Test Attempts       /admin/test-attempts   (new)
+  • Import Batches      /admin/test-imports    (new, super-admin only)
+```
 
-Library: `mammoth` (already lightweight, MIT) + `jszip` to walk `word/media/` for images.
+## 2. New page — `AdminTestsHubPage.tsx`  →  `/admin/tests-hub`
 
-Pipeline:
-1. Read `.docx` as ArrayBuffer.
-2. `mammoth.convertToHtml({ buffer, convertImage: mammoth.images.imgElement(...) })` — capture each embedded image with a unique placeholder.
-3. Walk the HTML in order, splitting on the numeric markers `1`, `2`, `3` … at paragraph start.
-4. For each block: extract stem text + inline images, then peel off `(A) … (B) … (C) … (D) …` into option text/images.
-5. Locate every answer-key **table** in the doc and merge rows `{ questionNo → answerCell }`.
-6. Type detection (your chosen "Both, with auto-detect fallback"):
-   - If a heading like `Section B – Numerical` precedes a block → force `numerical`/`integer`.
-   - Else if the answer cell is `A|B|C|D` → `mcq-single`.
-   - Else if the cell parses as a number → `integer` (whole) or `numerical` (decimal).
-   - Mismatches surfaced in the preview step.
+KPI cards + quick links.
 
-## 4. Image handling during import
+KPIs (all from `tests`, `test_attempts`, `test_questions`, `question_bank`, `question_import_batches`):
+- Tests total / published / draft
+- Questions in bank / by subject (Physics, Chemistry, Maths, Biology)
+- Attempts today / this week / all-time
+- Avg score % (last 7d), avg duration, completion rate
+- Pending imports (`status != 'completed'`)
+- Top 5 tests by attempts (last 30d) with avg score + link
+- Recent 10 attempts (student, test, score, percentile, submitted_at)
+- Subject difficulty chart — avg accuracy per subject (recharts bar)
 
-- For every parsed image: upload bytes directly from the browser to `question-images/{batchId}/...` via the Supabase JS client.
-- Get the public URL, place it into the right slot in `image_urls`.
-- The first stem image is mirrored to legacy `image_url` so old render code keeps working.
-- Progress bar shows `uploaded / total images`.
+Layout: 4-up stat grid, 30-day attempt line chart, two-column lists.
 
-## 5. Admin UI
+## 3. New page — `AdminTestAttemptsPage.tsx`  →  `/admin/test-attempts`
 
-### Entry point — "Bulk import" button
-Added in two places:
-- `AdminQuestionBankPage.tsx` → imports into the **question bank**.
-- Inside an existing test on `CreateTestPage.tsx` → imports into **that test** (append at end).
+Server-paginated table of `test_attempts` (RLS already allows admin/super-admin/teacher via existing policies).
 
-### Upload modal flow
-1. **Pick target** (already implied by entry point) + subject/chapter for bank imports.
-2. **Drop .docx** → parser runs → progress bar.
-3. **Preview & fix** screen:
-   - Table of parsed questions: number, detected type, marks (defaults: `+4 / -1`, MCQ-multi `+4 / -2`, numerical `+4 / 0`), correct answer, image previews.
-   - Inline edit for any field, delete bad rows, re-pick type.
-   - Validation badges (missing answer, image upload failed, mismatched options).
-4. **Confirm import** → inserts rows in `test_questions` *or* `question_bank` in one transaction via an RPC; writes the batch row.
-5. Toast with link to the new test/bank section. "Undo last import" button uses the batch id.
+Columns: student name, test title, status, score, percentile, correct/total, started_at, submitted_at, actions (View result / Reset attempt).
 
-## 6. Render side (read path)
+Filters: test (select), status (in_progress / submitted / auto_submitted), student search, date range.
 
-`TestTakingPage.tsx`, instruction page, and review screen:
-- When rendering question stem and each option, also render `image_urls.stem[]`, `image_urls.optionA[]`, … as `<img loading="lazy" />` inside the existing zoom-modal.
-- KaTeX/LaTeX rendering (already wired) stays untouched — Word equations come through as MathML/text and are passed through `katex` when wrapped in `$…$`.
+Actions:
+- "View result" → opens `/tests/{slug}/result/{attemptId}` (existing route, admin already permitted).
+- "Reset attempt" (super-admin only) → confirm dialog, deletes the row so the student can retake. Uses existing RLS.
+- CSV export of the filtered list.
 
-## 7. Limits & safety
+## 4. New page — `AdminTestDetailPage.tsx`  →  `/admin/tests/:slug`
 
-- Max file size: 25 MB.
-- Max questions per file: 300 (configurable).
-- Reject non-`.docx` (old `.doc` blocked with friendly message).
-- All parsing is client-side — no edge function needed for v1; storage uploads use the existing auth session.
+Tabs:
+1. **Summary** — meta (type, exam pattern, duration, marks, total Qs), publish toggle, edit/delete buttons.
+2. **Questions** — list pulled from `test_questions`; inline reorder, edit, delete, "Add from bank", "Bulk import .docx" (re-using existing `DocxBulkImportDialog`).
+3. **Attempts** — embedded attempts table filtered to this test.
+4. **Leaderboard** — top 20 by score with percentile and time taken.
+5. **Analytics** — per-question accuracy (% correct vs attempts), avg time per question (if `answers.timeSpent` present), hardest 5 / easiest 5 questions, subject break-down chart.
 
-## Technical notes
+The existing `AdminTestsPage` row gets a "Manage" link pointing here (in addition to the current edit icon which still opens the create/edit form).
 
-- New deps: `mammoth` (≈ 600 KB gz), `jszip` (already used elsewhere — reuse if present).
-- Reuses existing `submit_test_attempt` RPC; no scoring changes needed because question types are already supported from Phase 3.
-- Backward compatible: questions with no `image_urls` render identically to today.
-- No changes to existing tests/data.
+## 5. New page — `AdminImportBatchesPage.tsx`  →  `/admin/test-imports` (super-admin only)
 
-## Files touched (planned)
+Reads `question_import_batches`. Shows filename, target (test/bank), uploaded_by (joined to `profiles.full_name`), question count, image count, status, errors collapsible.
+
+Actions:
+- View parsed questions (links to question bank filtered by `import_batch_id`).
+- **Undo batch** — deletes rows from `question_bank`/`test_questions` where `import_batch_id = batch.id`, then deletes the batch row. Confirm dialog with row counts.
+
+## 6. Upgrade `AdminQuestionBankPage.tsx`
+
+It is currently a 26-line stub. Replace with a real table reusing the same `QuestionBankPanel` UI already used inside test-edit, plus:
+- Filters: subject, chapter, difficulty, type, source filename, import batch.
+- Bulk select → delete / move to test / change difficulty.
+- Stats header: total questions, by type, by subject.
+- "Bulk import .docx" button (re-uses `DocxBulkImportDialog`, target = bank).
+
+## 7. Routing
+
+In `src/App.tsx`, add five routes inside the existing `AdminLayout` block:
+
+```tsx
+<Route path="tests-hub" element={<AdminTestsHubPage />} />
+<Route path="tests/:slug" element={<AdminTestDetailPage />} />
+<Route path="test-attempts" element={<AdminTestAttemptsPage />} />
+<Route path="test-imports" element={<RequireSuperAdmin><AdminImportBatchesPage /></RequireSuperAdmin>} />
+```
+
+(`RequireSuperAdmin` is the existing guard used by Admin Management / Platform Settings.)
+
+## 8. Data access
+
+All reads use the existing client and current RLS — admin / super_admin / teacher already have read on `tests`, `test_questions`, `test_attempts`, `question_bank`, `question_import_batches`. No new policies needed.
+
+Mutations used by the new pages:
+- Toggle publish, delete test → already covered by `tests` policies.
+- Delete attempt → super-admin only, allowed by current `test_attempts` admin policy.
+- Undo import batch → super-admin only, deletes child rows then batch.
+
+No SQL migration is required for this plan.
+
+## Files
 
 **New**
-- `src/lib/docxImport/parseDocx.ts` — pure parser (mammoth + answer-key matcher).
-- `src/lib/docxImport/uploadImages.ts` — storage upload helper.
-- `src/lib/docxImport/types.ts` — `ParsedQuestion` types.
-- `src/components/admin/BulkImportDialog.tsx` — upload + preview modal.
-- `src/components/admin/QuestionPreviewTable.tsx` — editable preview grid.
-- Migration: new bucket policies, new columns, `question_import_batches` table, `bulk_insert_questions` RPC.
+- `src/pages/AdminTestsHubPage.tsx`
+- `src/pages/AdminTestAttemptsPage.tsx`
+- `src/pages/AdminTestDetailPage.tsx`
+- `src/pages/AdminImportBatchesPage.tsx`
+- `src/components/admin/TestKpiCards.tsx`
+- `src/components/admin/TestAttemptsTable.tsx` (reused by hub + detail + standalone page)
 
 **Edited**
-- `src/pages/AdminQuestionBankPage.tsx` — "Bulk import .docx" button.
-- `src/pages/CreateTestPage.tsx` — same button inside test editor.
-- `src/pages/TestTakingPage.tsx` — render `image_urls` slots.
-- `src/components/QuestionRenderer.tsx` (or equivalent) — same render extension.
+- `src/components/AdminLayout.tsx` (new "Test Platform" sidebar group)
+- `src/App.tsx` (4 new routes)
+- `src/pages/AdminQuestionBankPage.tsx` (real implementation with filters + import)
+- `src/pages/AdminTestsPage.tsx` (add "Manage" link → detail page)
 
-## Out of scope for this phase
-- Matrix-match / passage / assertion-reason imports (Phase 3 follow-up).
-- Server-side OCR or LaTeX equation re-typesetting.
-- Re-evaluation RPC and rank CSV export (Phase 6).
+## Out of scope
+- Changes to scoring, the test-taking UI, or student dashboard widgets.
+- New database tables, columns, or RLS changes.
+- Email/notification triggers when an attempt is reset or batch is undone.
+- Re-evaluation RPC and rank CSV (still Phase 6, separate task).
