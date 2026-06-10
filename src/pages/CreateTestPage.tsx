@@ -19,33 +19,50 @@ import { useExams } from "@/hooks/useExams";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer";
+
 type DraftQuestion = {
   source: "manual" | "bank";
   bank_id?: string;
+  type: QType;
   subject: string;
   topic: string;
   text: string;
-  options: string[];
-  correct: number;
+  options: string[];           // used by mcq-*
+  correct: number;             // used by mcq-single
+  correctMulti: number[];      // used by mcq-multi
+  partial: boolean;            // used by mcq-multi
+  numericalAnswer: string;     // used by numerical / integer
+  tolerance: number;           // used by numerical
 };
 
 const blankQuestion = (): DraftQuestion => ({
   source: "manual",
+  type: "mcq-single",
   subject: "Physics",
   topic: "",
   text: "",
   options: ["", "", "", ""],
   correct: 0,
+  correctMulti: [],
+  partial: false,
+  numericalAnswer: "",
+  tolerance: 0,
 });
 
 const fromBank = (q: BankQuestion): DraftQuestion => ({
   source: "bank",
   bank_id: q.id,
+  type: "mcq-single",
   subject: q.subject,
   topic: q.topic || "",
   text: q.question_text,
   options: q.options.map((o) => o.text),
   correct: typeof q.correct_answer === "number" ? q.correct_answer : 0,
+  correctMulti: [],
+  partial: false,
+  numericalAnswer: "",
+  tolerance: 0,
 });
 
 const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boolean }) => {
@@ -136,16 +153,26 @@ const CreateTestPage = () => {
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
       setQuestions(
-        (tqs ?? []).map((q: any) => ({
-          source: "manual" as const,
-          subject: q.subject ?? "Physics",
-          topic: q.topic ?? "",
-          text: q.question_text ?? "",
-          options: Array.isArray(q.options)
-            ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
-            : ["", "", "", ""],
-          correct: typeof q.correct_answer === "number" ? q.correct_answer : 0,
-        })),
+        (tqs ?? []).map((q: any) => {
+          const type = (q.question_type ?? "mcq-single") as QType;
+          const correctIdx = typeof q.correct_answer === "number" ? q.correct_answer : 0;
+          const correctArr = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
+          return {
+            source: "manual" as const,
+            type,
+            subject: q.subject ?? "Physics",
+            topic: q.topic ?? "",
+            text: q.question_text ?? "",
+            options: Array.isArray(q.options)
+              ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
+              : ["", "", "", ""],
+            correct: correctIdx,
+            correctMulti: correctArr,
+            partial: !!q.partial_marking,
+            numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
+            tolerance: Number(q.tolerance ?? 0),
+          };
+        }),
       );
       setLoading(false);
     })();
@@ -173,7 +200,14 @@ const CreateTestPage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
-    const validQ = questions.filter((q) => q.text.trim() && q.options.every((o) => o.trim()));
+    const isComplete = (q: DraftQuestion) => {
+      if (!q.text.trim()) return false;
+      if (q.type === "mcq-single") return q.options.every((o) => o.trim());
+      if (q.type === "mcq-multi") return q.options.every((o) => o.trim()) && q.correctMulti.length > 0;
+      if (q.type === "numerical" || q.type === "integer") return q.numericalAnswer.trim() !== "" && !Number.isNaN(Number(q.numericalAnswer));
+      return false;
+    };
+    const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
 
     setSubmitting(true);
@@ -204,7 +238,6 @@ const CreateTestPage = () => {
         setSubmitting(false);
         return;
       }
-      // Replace questions
       await supabase.from("test_questions").delete().eq("test_id", resolvedTestId);
     } else {
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
@@ -221,18 +254,35 @@ const CreateTestPage = () => {
       savedTestId = test.id;
     }
 
-    const rows = validQ.map((q, i) => ({
-      test_id: savedTestId,
-      position: i,
-      subject: q.subject,
-      topic: q.topic || null,
-      question_text: q.text,
-      question_type: "mcq-single",
-      options: q.options.map((t, id) => ({ id, text: t })),
-      correct_answer: q.correct,
-      marks_correct: correctMarks,
-      marks_wrong: wrongMarks,
-    }));
+    const rows = validQ.map((q, i) => {
+      const base: any = {
+        test_id: savedTestId,
+        position: i,
+        subject: q.subject,
+        topic: q.topic || null,
+        question_text: q.text,
+        question_type: q.type,
+        marks_correct: correctMarks,
+        marks_wrong: wrongMarks,
+        options: [],
+        correct_answer: null,
+      };
+      if (q.type === "mcq-single") {
+        base.options = q.options.map((t, id) => ({ id, text: t }));
+        base.correct_answer = q.correct;
+      } else if (q.type === "mcq-multi") {
+        base.options = q.options.map((t, id) => ({ id, text: t }));
+        base.correct_answer = q.correctMulti.slice().sort((a, b) => a - b);
+        base.partial_marking = q.partial;
+      } else if (q.type === "numerical" || q.type === "integer") {
+        base.options = [];
+        base.correct_answer = { value: Number(q.numericalAnswer) };
+        base.numerical_answer = Number(q.numericalAnswer);
+        base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+        base.answer_format = q.type === "integer" ? "integer" : "decimal";
+      }
+      return base;
+    });
     const { error: qErr } = await supabase.from("test_questions").insert(rows);
     if (qErr) {
       toast.error(qErr.message);
@@ -440,6 +490,17 @@ const CreateTestPage = () => {
                   placeholder="Topic"
                   className="flex-1 min-w-[120px] rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
                 />
+                <select
+                  value={q.type}
+                  onChange={(e) => updateQ(i, { type: e.target.value as QType })}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
+                  title="Question type"
+                >
+                  <option value="mcq-single">Single Correct</option>
+                  <option value="mcq-multi">Multiple Correct</option>
+                  <option value="numerical">Numerical</option>
+                  <option value="integer">Integer</option>
+                </select>
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
@@ -452,45 +513,92 @@ const CreateTestPage = () => {
               <textarea
                 value={q.text}
                 onChange={(e) => updateQ(i, { text: e.target.value })}
-                placeholder="Question text..."
+                placeholder="Question text (LaTeX supported, e.g. $x^2$)"
                 rows={2}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
               />
-              <div className="space-y-1.5">
-                {q.options.map((opt, oi) => {
-                  const isCorrect = q.correct === oi;
-                  return (
-                    <label
-                      key={oi}
-                      className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
-                        isCorrect
-                          ? "border-secondary bg-secondary/10"
-                          : "border-border bg-background hover:border-primary/40"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        checked={isCorrect}
-                        onChange={() => updateQ(i, { correct: oi })}
-                        className="shrink-0 accent-secondary"
-                      />
-                      <span className="text-xs font-bold w-5 text-foreground">
-                        {String.fromCharCode(65 + oi)}.
-                      </span>
-                      <input
-                        value={opt}
-                        onChange={(e) => {
-                          const next = [...q.options];
-                          next[oi] = e.target.value;
-                          updateQ(i, { options: next });
-                        }}
-                        placeholder={`Option ${oi + 1}`}
-                        className="flex-1 bg-transparent text-sm outline-none"
-                      />
+
+              {(q.type === "mcq-single" || q.type === "mcq-multi") && (
+                <div className="space-y-1.5">
+                  {q.options.map((opt, oi) => {
+                    const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : q.correct === oi;
+                    return (
+                      <label
+                        key={oi}
+                        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
+                          isCorrect ? "border-secondary bg-secondary/10" : "border-border bg-background hover:border-primary/40"
+                        }`}
+                      >
+                        {q.type === "mcq-multi" ? (
+                          <input
+                            type="checkbox"
+                            checked={isCorrect}
+                            onChange={() => {
+                              const set = new Set(q.correctMulti);
+                              if (set.has(oi)) set.delete(oi); else set.add(oi);
+                              updateQ(i, { correctMulti: Array.from(set).sort((a, b) => a - b) });
+                            }}
+                            className="shrink-0 accent-secondary"
+                          />
+                        ) : (
+                          <input
+                            type="radio"
+                            checked={isCorrect}
+                            onChange={() => updateQ(i, { correct: oi })}
+                            className="shrink-0 accent-secondary"
+                          />
+                        )}
+                        <span className="text-xs font-bold w-5 text-foreground">{String.fromCharCode(65 + oi)}.</span>
+                        <input
+                          value={opt}
+                          onChange={(e) => {
+                            const next = [...q.options];
+                            next[oi] = e.target.value;
+                            updateQ(i, { options: next });
+                          }}
+                          placeholder={`Option ${oi + 1}`}
+                          className="flex-1 bg-transparent text-sm outline-none"
+                        />
+                      </label>
+                    );
+                  })}
+                  {q.type === "mcq-multi" && (
+                    <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
+                      Enable partial marking (proportional credit when subset of correct options is selected, no wrong picks)
                     </label>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+              )}
+
+              {(q.type === "numerical" || q.type === "integer") && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-2">
+                    <label className="text-[11px] font-semibold text-foreground">
+                      Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
+                    </label>
+                    <input
+                      value={q.numericalAnswer}
+                      onChange={(e) => updateQ(i, { numericalAnswer: e.target.value })}
+                      placeholder={q.type === "integer" ? "e.g. 7" : "e.g. 3.14"}
+                      inputMode="decimal"
+                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                    />
+                  </div>
+                  {q.type === "numerical" && (
+                    <div>
+                      <label className="text-[11px] font-semibold text-foreground">Tolerance (±)</label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        value={q.tolerance}
+                        onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                        className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </DropZone>

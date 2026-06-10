@@ -2742,54 +2742,75 @@ export type Database = {
       }
       test_questions: {
         Row: {
+          answer_format: string | null
           correct_answer: Json
           created_at: string
           difficulty: string | null
           explanation: string | null
           id: string
           marks_correct: number | null
+          marks_unanswered: number
           marks_wrong: number | null
+          numerical_answer: number | null
+          option_images: Json
           options: Json
+          partial_marking: boolean
           position: number
           question_image_url: string | null
           question_text: string
           question_type: string
+          solution_image_url: string | null
           subject: string | null
           test_id: string
+          tolerance: number
           topic: string | null
         }
         Insert: {
+          answer_format?: string | null
           correct_answer: Json
           created_at?: string
           difficulty?: string | null
           explanation?: string | null
           id?: string
           marks_correct?: number | null
+          marks_unanswered?: number
           marks_wrong?: number | null
+          numerical_answer?: number | null
+          option_images?: Json
           options?: Json
+          partial_marking?: boolean
           position?: number
           question_image_url?: string | null
           question_text: string
           question_type?: string
+          solution_image_url?: string | null
           subject?: string | null
           test_id: string
+          tolerance?: number
           topic?: string | null
         }
         Update: {
+          answer_format?: string | null
           correct_answer?: Json
           created_at?: string
           difficulty?: string | null
           explanation?: string | null
           id?: string
           marks_correct?: number | null
+          marks_unanswered?: number
           marks_wrong?: number | null
+          numerical_answer?: number | null
+          option_images?: Json
           options?: Json
+          partial_marking?: boolean
           position?: number
           question_image_url?: string | null
           question_text?: string
           question_type?: string
+          solution_image_url?: string | null
           subject?: string | null
           test_id?: string
+          tolerance?: number
           topic?: string | null
         }
         Relationships: [
@@ -3066,6 +3087,9 @@ export type Database = {
           correct_answer: Json
           explanation: string
           id: string
+          numerical_answer: number
+          question_type: string
+          tolerance: number
         }[]
       }
       get_user_streak: { Args: { _user_id: string }; Returns: number }
