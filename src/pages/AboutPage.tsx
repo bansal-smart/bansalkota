@@ -12,6 +12,7 @@ import {
   missionPoints,
   leadership,
 } from "@/content/bansal/about";
+import { useSiteStats } from "@/hooks/useSiteContent";
 
 const AboutPage = () => {
   return (
