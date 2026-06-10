@@ -216,7 +216,7 @@ const CreateTestPage = () => {
       toast.info("Already added to this test");
       return;
     }
-    setQuestions((prev) => [...prev, fromBank(bankQ)]);
+    setQuestions((prev) => [...prev, fromBank(bankQ, { correct: correctMarks, wrong: wrongMarks })]);
     toast.success("Question added");
   };
 
