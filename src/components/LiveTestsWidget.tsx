@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock, FileText, ChevronRight, Radio, CalendarClock } from "lucide-react";
+import { Clock, FileText, ChevronRight, Radio, CalendarClock, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
