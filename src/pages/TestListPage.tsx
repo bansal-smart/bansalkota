@@ -141,7 +141,7 @@ const TestListPage = () => {
                         return (
                           <Link
                             key={t.id}
-                            to={`/tests/${t.slug}/take`}
+                            to={status === "in_progress" ? `/tests/${t.slug}/take` : `/tests/${t.slug}/instructions`}
                             className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
                           >
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary shrink-0">
