@@ -794,6 +794,13 @@ const AdminCourseContentPage = () => {
                                     </a>
                                   )}
                                   <button
+                                    onClick={() => toggleLessonPublish(lec)}
+                                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                    title={lec.is_published ? "Hide lecture from students" : "Publish lecture"}
+                                  >
+                                    {lec.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                  </button>
+                                  <button
                                     onClick={() => openEditLecture(lec)}
                                     className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
                                     title="Edit"
