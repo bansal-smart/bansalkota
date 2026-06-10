@@ -247,7 +247,7 @@ const CreateTestPage = () => {
       correct_marks: correctMarks,
       wrong_marks: wrongMarks,
       total_questions: validQ.length,
-      total_marks: validQ.length * correctMarks,
+      total_marks: validQ.reduce((s, q) => s + Number(q.marksCorrect || 0), 0),
       is_published: publish,
       course_id: courseId || null,
     };
