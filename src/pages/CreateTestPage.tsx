@@ -192,6 +192,8 @@ const CreateTestPage = () => {
             partial: !!q.partial_marking,
             numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
             tolerance: Number(q.tolerance ?? 0),
+            marksCorrect: Number(q.marks_correct ?? 4),
+            marksWrong: Number(q.marks_wrong ?? -1),
           };
         }),
       );
