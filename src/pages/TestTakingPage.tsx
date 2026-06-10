@@ -85,7 +85,7 @@ const TestTakingPage = () => {
 
       const { data: qs } = await supabase
         .from("test_questions")
-        .select("id, position, subject, topic, question_text, question_image_url, question_type, options, option_images, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
+        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
         .eq("test_id", t.id).order("position");
       setQuestions((qs ?? []) as unknown as TestQuestion[]);
 
