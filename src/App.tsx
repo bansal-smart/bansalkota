@@ -16,6 +16,7 @@ import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
 import StudentDashboard from "./pages/StudentDashboard";
 import TestListPage from "./pages/TestListPage";
+import TestInstructionsPage from "./pages/TestInstructionsPage";
 import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
 import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
