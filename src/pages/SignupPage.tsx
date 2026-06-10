@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const SignupPage = () => {
