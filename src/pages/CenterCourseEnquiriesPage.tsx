@@ -29,7 +29,7 @@ const CenterCourseEnquiriesPage = () => {
   useEffect(() => { load(); }, [primaryCenterId, filter]);
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("center_course_enquiries" as any).update({ status }).eq("id", id);
+    const { error } = await (supabase as any).from("center_course_enquiries" as any).update({ status }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
     load();

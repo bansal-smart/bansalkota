@@ -73,8 +73,8 @@ const CenterBannersPage = () => {
     setSaving(true);
     const payload = { ...editing, center_id: primaryCenterId };
     const { error } = editing.id
-      ? await supabase.from("center_banners" as any).update(payload).eq("id", editing.id)
-      : await supabase.from("center_banners" as any).insert(payload);
+      ? await (supabase as any).from("center_banners" as any).update(payload).eq("id", editing.id)
+      : await (supabase as any).from("center_banners" as any).insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Banner saved");
@@ -84,7 +84,7 @@ const CenterBannersPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this banner?")) return;
-    await supabase.from("center_banners" as any).delete().eq("id", id);
+    await (supabase as any).from("center_banners" as any).delete().eq("id", id);
     toast.success("Deleted");
     load();
   };

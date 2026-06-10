@@ -92,8 +92,8 @@ const CenterCoursesPage = () => {
     if (payload.fees === "") payload.fees = null;
     if (payload.start_date === "") payload.start_date = null;
     const { error } = payload.id
-      ? await supabase.from("center_courses" as any).update(payload).eq("id", payload.id)
-      : await supabase.from("center_courses" as any).insert(payload);
+      ? await (supabase as any).from("center_courses" as any).update(payload).eq("id", payload.id)
+      : await (supabase as any).from("center_courses" as any).insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Saved");
@@ -103,7 +103,7 @@ const CenterCoursesPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this course?")) return;
-    await supabase.from("center_courses" as any).delete().eq("id", id);
+    await (supabase as any).from("center_courses" as any).delete().eq("id", id);
     toast.success("Deleted");
     load();
   };
