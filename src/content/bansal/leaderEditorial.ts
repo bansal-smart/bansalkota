@@ -145,8 +145,9 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "Behind every great institute is a household that believed in it first. Hers did.",
     galleryCaption: "The home that built an institution",
+    heroPhotoOverride: neelamPortrait.url,
     gallery: [
-      { src: u("photo-1511895426328-dc8714191300"), alt: "Family at home", tall: true },
+      { src: neelamPortrait.url, alt: "Neelam Bansal — Co-founder & Matriarch", tall: true },
       { src: u("photo-1545239351-1141bd82e8a6"), alt: "Warm lamp-lit study" },
       { src: u("photo-1499063078284-f78f7d89616a"), alt: "Old family photograph" },
       { src: u("photo-1532012197267-da84d127e765"), alt: "Books on a table" },
