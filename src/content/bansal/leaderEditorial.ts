@@ -1,0 +1,139 @@
+// Unique editorial content for each leadership profile page.
+// Used as fallbacks / enrichments on top of DB-driven `useLeader()` data
+// so every leader page tells a *different* story with its own gallery,
+// timeline and signature pillars.
+
+export type LeaderTimelineItem = { year: string; title: string; body: string };
+export type LeaderPillar = { title: string; body: string };
+
+export type LeaderEditorial = {
+  // Visual identity
+  accentLabel: string;            // small uppercase tag in hero band
+  signatureLine: string;          // single-line signature shown over gallery
+  galleryCaption: string;         // caption above mosaic
+  gallery: { src: string; alt: string; tall?: boolean }[];
+  // Story
+  timelineHeading: string;
+  timeline: LeaderTimelineItem[];
+  // Philosophy block
+  pillarsHeading: string;
+  pillars: LeaderPillar[];
+  // Outro
+  closingNote: string;
+};
+
+const u = (id: string, w = 1200) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+
+export const leaderEditorial: Record<string, LeaderEditorial> = {
+  "vk-bansal": {
+    accentLabel: "The Architect of Kota",
+    signatureLine:
+      "A single chalkboard in 1981 — and a teaching tradition that reshaped Indian engineering education.",
+    galleryCaption: "Four decades, one classroom philosophy",
+    gallery: [
+      { src: u("photo-1503676260728-1c00da094a0b"), alt: "Classic blackboard mathematics", tall: true },
+      { src: u("photo-1497486751825-1233686d5d80"), alt: "Vintage Kota classroom" },
+      { src: u("photo-1509062522246-3755977927d7"), alt: "Handwritten formulas" },
+      { src: u("photo-1532012197267-da84d127e765"), alt: "Old books and notes" },
+    ],
+    timelineHeading: "Defining Moments",
+    timeline: [
+      { year: "1949", title: "Born in Jhansi", body: "A small-town boyhood that quietly built an extraordinary appetite for mathematics." },
+      { year: "1971", title: "Graduates from IIT-BHU", body: "Mechanical engineering at the Indian Institute of Technology, Banaras Hindu University." },
+      { year: "1974", title: "Joins J.K. Synthetics, Kota", body: "A young engineer arrives in a sleepy industrial town that history would soon rewrite." },
+      { year: "1981", title: "Bansal Classes is born", body: "The first batch of seven students learns mathematics in a borrowed room. Kota's coaching era begins here." },
+      { year: "1991", title: "JEE results stun the country", body: "An unknown institute starts producing All-India ranks. Aspirants begin migrating to Kota." },
+      { year: "Today", title: "A living legacy", body: "Honoured by educators across India, his pedagogy is still taught — and still loved." },
+    ],
+    pillarsHeading: "His Teaching Code",
+    pillars: [
+      { title: "Concept before shortcut", body: "Never let a formula travel without its idea." },
+      { title: "Ruthless basics", body: "If the foundation cracks, the building cannot be saved by speed." },
+      { title: "Quiet discipline", body: "Show up, prepare, teach. Repeat for forty years." },
+    ],
+    closingNote: "Every Bansal Classes blackboard, in every city, still answers to the standard he set in 1981.",
+  },
+
+  "sameer-bansal": {
+    accentLabel: "Mathematics, Re-engineered",
+    signatureLine:
+      "An IITian son who turned his father's classroom into a national learning system — without losing its soul.",
+    galleryCaption: "Where heritage meets digital learning",
+    gallery: [
+      { src: u("photo-1531482615713-2afd69097998"), alt: "Modern lecture session", tall: true },
+      { src: u("photo-1517245386807-bb43f82c33c4"), alt: "Mathematics whiteboard" },
+      { src: u("photo-1454165804606-c3d57bc86b40"), alt: "Strategy meeting" },
+      { src: u("photo-1551434678-e076c223a692"), alt: "Digital classroom" },
+    ],
+    timelineHeading: "Chapters of Leadership",
+    timeline: [
+      { year: "School", title: "Top of every maths class", body: "A relentless problem-solver, even before he had a desk of his own." },
+      { year: "IIT", title: "Engineering at the IITs", body: "Trained inside the very system his institute prepares students for." },
+      { year: "Teacher", title: "Returns to the classroom", body: "Joins his father — not as heir, but as an instructor evaluated by his students first." },
+      { year: "CEO", title: "Takes the institute national", body: "Launches multi-city expansion, online live classes and a unified test platform." },
+      { year: "Now", title: "Architect of the new Bansal", body: "Tech-first, mentor-led, exam-obsessed — without abandoning a single original value." },
+    ],
+    pillarsHeading: "How He Builds",
+    pillars: [
+      { title: "Student-first product thinking", body: "Every feature, fee structure and faculty hire is judged by one question — does it help a real aspirant?" },
+      { title: "Mentor density", body: "Scale must never dilute the 1:1 conversations that change ranks." },
+      { title: "Data over drama", body: "Decisions live and die by attempt analytics, mock-test medians and concept mastery curves." },
+    ],
+    closingNote: "Under his watch, the Bansal blackboard learned to talk to a phone screen — and still teach like a master.",
+  },
+
+  "mahima-bansal": {
+    accentLabel: "Academic Mentor · Director",
+    signatureLine:
+      "A modern educator shaping the next generation of women aspirants — with empathy, structure and uncompromising standards.",
+    galleryCaption: "Mentorship in motion",
+    gallery: [
+      { src: u("photo-1573496359142-b8d87734a5a2"), alt: "Woman mentor with students", tall: true },
+      { src: u("photo-1577896851231-70ef18881754"), alt: "Library study session" },
+      { src: u("photo-1543269865-cbf427effbad"), alt: "Group discussion" },
+      { src: u("photo-1580582932707-520aed937b7b"), alt: "Counselling session" },
+    ],
+    timelineHeading: "Her Journey So Far",
+    timeline: [
+      { year: "Education", title: "Trained in academic leadership", body: "Built early credentials in pedagogy and student counselling." },
+      { year: "Entry", title: "Joins Bansal Classes", body: "Steps into the family institute — choosing the longest and toughest path: teaching first." },
+      { year: "Director", title: "Leads academic strategy", body: "Owns curriculum design, mentor training and student-experience programmes." },
+      { year: "Today", title: "Champion of inclusive coaching", body: "Drives initiatives that bring more women aspirants — and more empathy — into Kota." },
+    ],
+    pillarsHeading: "What She Stands For",
+    pillars: [
+      { title: "Mentor, not monitor", body: "Children don't need surveillance. They need belief, structure and a person who turns up." },
+      { title: "Gender-aware coaching", body: "Safe hostels, role models, peer circles — small details that change life outcomes." },
+      { title: "Quietly raising the bar", body: "She measures success not by toppers alone, but by how the average student grows." },
+    ],
+    closingNote: "Her chapter is being written right now — and it's already shifting what coaching feels like.",
+  },
+
+  "neelam-bansal": {
+    accentLabel: "Co-founder · The Quiet Pillar",
+    signatureLine:
+      "Behind every great institute is a household that believed in it first. Hers did.",
+    galleryCaption: "The home that built an institution",
+    gallery: [
+      { src: u("photo-1511895426328-dc8714191300"), alt: "Family at home", tall: true },
+      { src: u("photo-1545239351-1141bd82e8a6"), alt: "Warm lamp-lit study" },
+      { src: u("photo-1499063078284-f78f7d89616a"), alt: "Old family photograph" },
+      { src: u("photo-1532012197267-da84d127e765"), alt: "Books on a table" },
+    ],
+    timelineHeading: "A Life of Quiet Building",
+    timeline: [
+      { year: "Early years", title: "Partner from day one", body: "Stood beside Mr. V.K. Bansal when the institute was still a single classroom and an uncertain idea." },
+      { year: "1980s", title: "Anchor of the founding family", body: "Held the home steady as the Kota coaching revolution began — making the long hours possible." },
+      { year: "Always", title: "Mentor to her own children", body: "Raised the next generation of leaders with the same patience she gave the institute." },
+      { year: "Today", title: "Matriarch & moral compass", body: "Her voice still shapes the values every Bansal teacher quietly carries into class." },
+    ],
+    pillarsHeading: "What She Gives",
+    pillars: [
+      { title: "Unseen labour", body: "The kind that institutes are actually built on — and rarely talk about." },
+      { title: "Steadiness", body: "When the world changes fast, somebody must stay still on purpose." },
+      { title: "Family-grade integrity", body: "Treat every student the way you'd treat your own child. Then do it again tomorrow." },
+    ],
+    closingNote: "Bansal Classes is, first, a family. She is the reason that sentence is true.",
+  },
+};
