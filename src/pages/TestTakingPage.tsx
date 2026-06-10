@@ -323,13 +323,22 @@ const TestTakingPage = () => {
   };
   const handleSaveAndMark = () => {
     if (!q) return;
-    updateStatus(q.id, hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked");
-    autoSave();
+    const nextStatus = hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked";
+    updateStatus(q.id, nextStatus);
+    saveNow(undefined, { ...statusesRef.current, [q.id]: nextStatus });
   };
   const handleClear = () => {
     if (!q) return;
-    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: isMulti(q.question_type) ? [] : isNumeric(q.question_type) ? "" : null } as AnswerVal }));
-    updateStatus(q.id, "not-answered");
+    const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
+    const nextStatus: QStatus = wasMarked ? "marked" : "not-answered";
+    const cleared: AnswerVal = isMulti(q.question_type)
+      ? { selected: [], time_spent: (answers[q.id] as any)?.time_spent }
+      : isNumeric(q.question_type)
+        ? { selected: "", time_spent: (answers[q.id] as any)?.time_spent }
+        : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
+    setAnswers((prev) => ({ ...prev, [q.id]: cleared }));
+    updateStatus(q.id, nextStatus);
+    saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus });
   };
 
   const handleSubmit = async (auto = false) => {
