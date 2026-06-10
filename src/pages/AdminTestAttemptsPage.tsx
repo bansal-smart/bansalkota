@@ -169,6 +169,44 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
         </div>
       )}
 
+      {/* Pending Re-attempt Requests */}
+      {(() => {
+        const pending = reattempts.filter((r) => r.status === "pending");
+        if (pending.length === 0) return null;
+        return (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <RefreshCcw className="h-4 w-4 text-amber-700" />
+              <h2 className="text-sm font-black uppercase tracking-wider text-amber-800">
+                {pending.length} pending re-attempt request{pending.length > 1 ? "s" : ""}
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {pending.map((r) => {
+                const t = tests.find((x) => x.id === r.test_id);
+                const name = profiles.get(r.user_id) ?? "Student";
+                return (
+                  <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-white border border-amber-200 p-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-foreground">{name} <span className="text-muted-foreground">· {t?.title ?? "—"}</span></p>
+                      {r.reason && <p className="mt-0.5 text-muted-foreground italic line-clamp-2">"{r.reason}"</p>}
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">Requested {format(new Date(r.created_at), "dd MMM HH:mm")}</p>
+                    </div>
+                    <button onClick={() => decideReattempt(r, "approved")} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                    </button>
+                    <button onClick={() => decideReattempt(r, "rejected")} className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 font-bold text-white hover:bg-red-700">
+                      <XCircle className="h-3.5 w-3.5" /> Reject
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
