@@ -198,16 +198,8 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Founder quote */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <Quote className="h-10 w-10 text-bansal-orange mx-auto mb-4" />
-          <blockquote className="font-display text-xl md:text-2xl text-bansal-blue font-semibold leading-relaxed">
-            "Believe in yourself and strive for excellence with unwavering dedication. Success comes to those who persevere through challenges with a positive mindset and a thirst for knowledge."
-          </blockquote>
-          <p className="mt-4 text-sm font-semibold text-bansal-gray">— V.K. Bansal, Founder</p>
-        </div>
-      </section>
+
+
 
       {/* Leadership */}
       <section className="bg-bansal-cream py-16">
