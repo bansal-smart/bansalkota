@@ -127,7 +127,10 @@ const CentresShowcase = () => {
               </div>
             ))}
           </div>
+          )}
+          </>
         )}
+
 
         <div className="mt-8 text-center">
           <Link to="/centers" className="inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
