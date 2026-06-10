@@ -191,18 +191,39 @@ const TestTakingPage = () => {
     setStarted(true);
   };
 
-  // Subject grouping
+  // Subject grouping — NTA-style, no "ALL"
   const subjects = useMemo(() => {
-    const set = new Set<string>();
-    questions.forEach((q) => set.add(q.subject || "General"));
-    return ["ALL", ...Array.from(set)];
+    const seen = new Set<string>();
+    const list: string[] = [];
+    questions.forEach((q) => {
+      const s = q.subject || "General";
+      if (!seen.has(s)) { seen.add(s); list.push(s); }
+    });
+    return list;
   }, [questions]);
+
+  // Initialize activeSubject when subjects load
+  useEffect(() => {
+    if (subjects.length && (activeSubject === "ALL" || !subjects.includes(activeSubject))) {
+      setActiveSubject(subjects[0]);
+    }
+  }, [subjects, activeSubject]);
 
   const subjectIndices = useMemo(() => {
     return questions
       .map((q, i) => ({ q, i }))
-      .filter(({ q }) => activeSubject === "ALL" || (q.subject || "General") === activeSubject);
+      .filter(({ q }) => (q.subject || "General") === activeSubject);
   }, [questions, activeSubject]);
+
+  // Indices grouped by subject (for full palette view)
+  const groupedIndices = useMemo(() => {
+    return subjects.map((s) => ({
+      subject: s,
+      items: questions
+        .map((q, i) => ({ q, i }))
+        .filter(({ q }) => (q.subject || "General") === s),
+    }));
+  }, [subjects, questions]);
 
   const q = questions[currentQ];
 
