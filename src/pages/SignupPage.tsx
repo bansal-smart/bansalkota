@@ -35,7 +35,21 @@ const SignupPage = () => {
     class_level: "Class 11",
     city: "",
     country: "India",
+    is_bansal_offline_student: "no" as "yes" | "no",
+    center_id: "",
   });
+
+  const [centers, setCenters] = useState<Array<{ id: string; city: string; area: string | null; state: string }>>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("centers")
+        .select("id, city, area, state")
+        .eq("is_published", true)
+        .order("city");
+      setCenters(data ?? []);
+    })();
+  }, []);
 
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -46,6 +60,10 @@ const SignupPage = () => {
     }
     if (form.password.length < 8) {
       toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (form.is_bansal_offline_student === "yes" && !form.center_id) {
+      toast.error("Please select your Bansal centre");
       return;
     }
 
@@ -64,6 +82,8 @@ const SignupPage = () => {
           class_level: form.class_level,
           city: form.city,
           country: form.country,
+          is_bansal_offline_student: form.is_bansal_offline_student === "yes",
+          center_id: form.is_bansal_offline_student === "yes" ? form.center_id : "",
         },
       },
     });
