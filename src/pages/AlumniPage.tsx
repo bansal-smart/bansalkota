@@ -8,7 +8,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 type Alumnus = {
   id: string;
   name: string;
-  rank: string | null;
+  rank_label: string | null;
   exam: string | null;
   year: number | null;
   photo_url: string | null;
