@@ -39,7 +39,7 @@ const LandingCTAForm = () => {
       return;
     }
     setDone(true);
-    toast.success("We'll reach out within 24 hours.");
+    toast.success(postSubmission.enquiry.toast);
   };
 
   return (
