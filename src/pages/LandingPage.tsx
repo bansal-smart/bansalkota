@@ -15,6 +15,12 @@ import {
   GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons,
 } from "@/components/bansal/BansalDecor";
 import { useSiteTestimonials, useSiteStats } from "@/hooks/useSiteContent";
+import UpcomingBatches from "@/components/landing/UpcomingBatches";
+import ToppersWall from "@/components/landing/ToppersWall";
+import ResourcesTeaser from "@/components/landing/ResourcesTeaser";
+import CentresShowcase from "@/components/landing/CentresShowcase";
+import LandingFAQ from "@/components/landing/LandingFAQ";
+import LandingCTAForm from "@/components/landing/LandingCTAForm";
 
 const iconMap: Record<string, any> = {
   Trophy, GraduationCap, Star, ShieldCheck, Award, Sparkles, Target,
@@ -715,6 +721,24 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* 11. Upcoming Batches (live from DB) */}
+      <UpcomingBatches />
+
+      {/* 12. Toppers Wall (live from DB) */}
+      <ToppersWall />
+
+      {/* 13. Free Resources teaser */}
+      <ResourcesTeaser />
+
+      {/* 14. Centres Showcase (live from DB) */}
+      <CentresShowcase />
+
+      {/* 15. FAQ */}
+      <LandingFAQ />
+
+      {/* 16. Final CTA — writes to enquiries */}
+      <LandingCTAForm />
     </div>
   );
 };
