@@ -54,7 +54,7 @@ const baseNav: NavItem[] = [
   { label: "Centres", icon: MapPin, path: "/admin/centers" },
   { label: "Toppers", icon: Award, path: "/admin/toppers" },
   { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
-  { label: "Compete Questions", icon: Swords, path: "/admin/compete-questions" },
+  { label: "Lecture Bucket", icon: Youtube, path: "/admin/lecture-bucket" },
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
