@@ -57,7 +57,12 @@ const TestTakingPage = () => {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [savedAgo, setSavedAgo] = useState<number | null>(null);
+  const [candidate, setCandidate] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
 
   const lastSavedRef = useRef<number>(0);
   const enteredAtRef = useRef<number>(Date.now());
