@@ -3032,6 +3032,7 @@ export type Database = {
         Args: { _center_id: string; _user_id: string }
         Returns: boolean
       }
+      lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
       move_to_dlq: {
         Args: {
           dlq_name: string
