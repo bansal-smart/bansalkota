@@ -36,7 +36,9 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
         ? "/teacher/dashboard"
         : role === "mentor"
           ? "/mentor/dashboard"
-          : "/dashboard";
+          : role === "center_admin"
+            ? "/center"
+            : "/dashboard";
     return <Navigate to={home} replace />;
   }
 
