@@ -67,6 +67,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isCenterAdmin = role === "center_admin";
   const isStudent = role === "student";
 
+  // Single-device login enforcement — claims the slot and signs out other devices.
+  useSingleDeviceLogin(session?.user?.id ?? null);
+
+
   /**
    * Server-verified role check. Calls the `has_role` security-definer RPC for
    * each elevated role so the answer comes from the database. Defaults to
