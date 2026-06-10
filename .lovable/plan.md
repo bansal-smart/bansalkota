@@ -1,102 +1,108 @@
-## Goal
+## Centre System Overhaul
 
-Three connected changes:
-
-1. **Move static public content into the admin panel** so anything that may change over time is editable without code.
-2. **Redesign the live-test result screen** with rich (standard-depth) analytics and **auto-release rank/comparison** once the test's scheduled `ends_at` passes.
-3. **Surface scheduled live tests on the Student Dashboard** with a full "Tests" section (upcoming + live now + recent results).
+Builds a self-serve **Centre Panel** for each Bansal offline centre, plus signup mapping and a support channel to super admin.
 
 ---
 
-## 1. Admin-editable public content
+### 1. Database (migration)
 
-Today `site_banners`, `centers`, `toppers` are already admin-driven. The remaining hardcoded items live in:
+**New enum value**
+- Extend `app_role` with `center_admin`.
 
-- `LandingPage.tsx` → `testimonials[]`, `achievements[]` (stats counters)
-- `AboutPage.tsx` + `LeadershipDetailPage.tsx` → hardcoded `profiles{}` (VK / Sameer / Mahima / Neelam) with photo, headline, quote, story sections, recognition
+**New tables**
 
-### New tables (admin-managed, public-read)
+- `center_staff` — multi-admin per centre
+  - `center_id` (fk → centers), `user_id` (fk → auth.users), `role` ('owner' | 'manager'), unique(center_id, user_id)
+  - RLS: centre staff read own rows; super_admin manages all.
+  - Trigger: on insert, also insert `(user_id, 'center_admin')` into `user_roles` if missing.
 
-- `site_testimonials` — name, role/exam, quote, avatar_url, rating, region, sort_order, is_active
-- `site_stats` — key, label, value, suffix, icon, sort_order, is_active (powers the homepage counter strip)
-- `leadership_profiles` — slug, name, title, hero_photo_url, headline, pull_quote, intro, recognition_text, sort_order, is_active
-- `leadership_sections` — leadership_id (fk), number, heading, body, sort_order (the numbered editorial blocks)
+- `center_courses` — offline courses created by a centre
+  - `center_id`, `title`, `slug`, `banner_url`, `start_date`, `duration`, `fees`, `schedule`, `target_exam`, `class_level`, `description`, `highlights jsonb`, `is_published`, `created_by`, timestamps.
+  - RLS: public read where `is_published=true`; centre staff write only for their centre; super_admin full.
 
-All four: GRANT to `authenticated` + `service_role`, GRANT `SELECT` to `anon` (public read), RLS = admins write, everyone reads when `is_active`. Seeded via migration with the current values so nothing visually regresses.
+- `center_course_enquiries` — leads for offline courses
+  - `center_id`, `course_id` (fk → center_courses), `name`, `phone`, `email`, `class_level`, `message`, `status` ('new'|'contacted'|'admitted'|'closed'), `created_at`.
+  - RLS: centre staff of that centre read/update; super_admin full; public insert (with simple rate-limit via existing pattern).
 
-### New admin pages (under `/admin`)
+- `center_banners` — centre-page hero/promo banners (centre-editable)
+  - `center_id`, `title`, `subtitle`, `image_url`, `cta_label`, `cta_url`, `sort_order`, `is_active`.
 
-- `AdminTestimonialsPage.tsx`
-- `AdminStatsPage.tsx`
-- `AdminLeadershipPage.tsx` (list + per-leader editor with sections repeater + photo upload to `site-content` bucket)
+**Extend existing tables**
+- `profiles`: add `center_id uuid null references centers(id)`, `is_bansal_offline_student boolean default false`.
+- `enquiries`: add `source_type text` ('website' | 'center_support' | 'admission'), `center_id uuid null`, `priority text`, `category text`. Existing rows backfill `source_type='website'`.
+- `tests`/`courses`: unchanged. Online courses already flow to all centres by default.
 
-Add nav entries in the admin sidebar. Public pages refactored to fetch from these tables (with a small fallback to keep SSR-less first paint clean). Centres/Toppers/Banners pages already exist — no change.
+**Helper functions**
+- `is_center_staff(_user_id uuid, _center_id uuid) returns boolean` (SECURITY DEFINER).
+- Reuse `has_role(_, 'center_admin')` for portal gating.
 
----
-
-## 2. Live-test result redesign + auto rank release
-
-### Schema
-
-- Add `results_released_at timestamptz` and `auto_release boolean default true` on `tests`.
-- Add a SECURITY DEFINER function `public.get_test_rank(_attempt_id uuid)` returning `{rank, total, percentile, topper_score, avg_score, your_score}` — only returns data when `now() >= tests.ends_at` (or test has no `ends_at`, i.e. always-on practice → immediate).
-- Add view/RPC `public.test_results_released(_test_id)` → boolean helper used by UI gating.
-
-No cron needed: release is computed on read by comparing `now()` to `ends_at`. (Cheap, correct, and works for "anytime later" replay.)
-
-### Result screen (`TestResultPage.tsx` — rewrite)
-
-Two-state UI driven by `results_released`:
-
-**Phase A — immediately on submit (score-only card)**
-- Big score / total marks
-- Correct / Wrong / Unattempted chips
-- Accuracy %, time taken, avg time per question
-- "Rank & comparison will unlock at HH:MM" banner with live countdown to `ends_at`
-- Buttons: Review answers (if allowed), Back to tests
-
-**Phase B — after `ends_at` (full report, also shown on any later visit)**
-- Header: score, percentile, **rank / total attempts**, time, accuracy
-- **Subject-wise analysis** table: attempted, correct, accuracy %, score, avg time
-- **Charts** (recharts, already in stack):
-  - Pie: Correct / Wrong / Unattempted
-  - Bar: subject-wise score vs max
-  - Horizontal bar: subject accuracy %
-  - Comparison strip: Your score vs Topper vs Average
-- Question-level review link (uses existing `get_test_question_answers` RPC)
-- Download/share buttons reuse existing patterns
-
-Reachable from **My Tests → past attempts** at any time; gating is purely by `ends_at`, so re-visits always show the full report once released.
-
-### Realtime
-
-Subscribe `TestResultPage` to `tests` row changes so if admin overrides `ends_at` or `is_published`, the screen flips Phase A → B without reload.
+All new public tables get the standard GRANTs and `updated_at` triggers.
 
 ---
 
-## 3. Dashboard "Live Tests" section
+### 2. Centre Panel (`/center/*`)
 
-New component `UpcomingTestsSection.tsx` on `StudentDashboard.tsx`, above existing widgets. Three groups in one card:
+New route group, mirroring `AdminLayout` styling but scoped.
 
-- **Live now** — tests where `now() BETWEEN starts_at AND ends_at` and student matches target_exam → red "Live" pill, "Enter test" CTA
-- **Upcoming** — next 5 by `starts_at` → countdown, "Set reminder" (writes to `notification_preferences` if available, else local), "View instructions"
-- **Recent results** — last 3 submitted attempts → score chip, "View report" (deep-links to result page; Phase A or B auto)
+- `CenterLoginPage` — same `/login` works; redirect rule: if user has `center_admin` role and no other admin role → land on `/center`.
+- `CenterLayout` + `ProtectedCenterRoute` — guards on `has_role('center_admin')` and resolves their `center_id` from `center_staff`.
 
-Pulls from `tests` + `test_attempts` with a single query each, filtered client-side by exam/target. Realtime subscribed to both tables.
+**Modules (sidebar)**
+1. **Dashboard** — quick counts (enquiries today, published offline courses, open support tickets).
+2. **Centre Page Banners** — CRUD on `center_banners` (image upload to `site-content` bucket under `centers/{center_id}/`).
+3. **Offline Courses** — CRUD on `center_courses` with banner upload, start date, schedule, fees, brochure link. Cannot toggle online courses.
+4. **Website Enquiries** — read-only list of `enquiries` where `center_id = mine`, filterable by status; mark contacted/closed.
+5. **Course Enquiries** — `center_course_enquiries` for their centre; status pipeline.
+6. **My Students** — `profiles` where `center_id = mine`; columns: name, class, target exam, phone, joined. Read-only.
+7. **Support** — raise ticket to super admin (writes to `enquiries` with `source_type='center_support'`, `center_id=mine`); thread of past tickets with status.
 
 ---
 
-## Out of scope
+### 3. Public Centre Page (`/centers/:slug`)
 
-- Advanced analytics (difficulty curve, peer band, PDF export) — you chose Standard.
-- Admin override of rank release — auto-only.
-- Editing footer / SEO / contact — not requested in this round.
-- Touching course/test creation flows already shipped.
+Refactor `CenterDetailPage.tsx` to hydrate from DB and add:
+- **Hero/banner carousel** from `center_banners`.
+- **Online Courses** section — pulls global published `courses` (existing data).
+- **Offline Courses** section — pulls `center_courses` for this centre; each card shows banner, title, start date, schedule, fees, and an **"Enquire about this course"** button → modal posting to `center_course_enquiries`.
+- **Admission / General enquiry form** at bottom → posts to `enquiries` with `center_id=this.center.id`, `source_type='admission'`.
 
-## Technical notes
+---
 
-- All new tables follow the 4-step migration order (CREATE → GRANT → ENABLE RLS → POLICY).
-- Charts: `recharts` (already a dep).
-- Countdown: lightweight `useCountdown` hook, no new dep.
-- Photo uploads: existing `site-content` bucket.
-- All copy/colors stay on the navy + orange tokens; Mulish/Plus Jakarta fonts; Lucide icons only.
+### 4. Signup centre mapping (`SignupPage.tsx`)
+
+Add a step in the existing form (between basic details and submit):
+- Radio: *"Are you studying at a Bansal offline centre?"* (Yes / No)
+- If Yes → searchable centre dropdown (from `centers` where `is_published`).
+- On signup, write to `profiles.center_id` and `is_bansal_offline_student` via the existing `handle_new_user` flow (extend trigger to read `raw_user_meta_data->>'center_id'`).
+- Also editable later from `ProfilePage`.
+
+---
+
+### 5. Super Admin additions
+
+- **Centres → Staff tab** in `AdminCentersPage`: invite/assign users as centre staff (search by email → upsert into `center_staff`, auto-grants `center_admin` role).
+- **Centre Complaints** page (`AdminCenterSupportPage`) in sidebar: lists `enquiries` where `source_type='center_support'`, threaded replies via existing reply pattern, status workflow (open → in_progress → resolved). Reuses enquiries table to avoid a new ticket model.
+- Existing `AdminEnquiriesPage` gets a `source_type` filter to separate website vs centre-support.
+
+---
+
+### 6. Routing & nav
+
+- `App.tsx`: add `/center`, `/center/banners`, `/center/courses`, `/center/enquiries`, `/center/course-enquiries`, `/center/students`, `/center/support` under `ProtectedCenterRoute`.
+- `AdminLayout` sidebar: add **Centre Complaints** entry.
+- Post-login redirect (in `AuthContext` or `LoginPage`): centre_admin without admin → `/center`.
+
+---
+
+### Technical notes
+
+- All centre-write RLS uses `public.is_center_staff(auth.uid(), center_id)`; super_admin always passes via `is_admin_or_super`.
+- Image uploads reuse the public `site-content` bucket under `centers/{center_id}/...`.
+- No changes to payment, test, or live-class flows.
+- New notification triggers (optional, low-risk): notify centre staff on new `center_course_enquiries`; notify super admin on `source_type='center_support'`.
+
+---
+
+### Out of scope (will not change)
+- Existing online course creation, test engine, live classes, payments.
+- Public Centres listing page styling (only data source remains the same).
