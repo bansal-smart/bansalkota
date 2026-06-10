@@ -33,7 +33,7 @@ import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
-type Chapter = { id: string; title: string; position: number };
+type Chapter = { id: string; title: string; position: number; is_published: boolean };
 type Resource = {
   id: string;
   course_id: string;
@@ -58,6 +58,7 @@ type Lesson = {
   duration_seconds: number;
   video_url: string | null;
   is_free_preview: boolean;
+  is_published: boolean;
   type: string;
 };
 
@@ -242,8 +243,8 @@ const AdminCourseContentPage = () => {
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
     const [{ data: ch }, { data: ls }, { data: rs }] = await Promise.all([
-      supabase.from("chapters").select("id,title,position").eq("course_id", courseId).order("position"),
-      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,type").eq("course_id", courseId).order("position"),
+      supabase.from("chapters").select("id,title,position,is_published").eq("course_id", courseId).order("position"),
+      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,is_published,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
     ]);
     setChapters((ch as Chapter[]) ?? []);
@@ -255,6 +256,18 @@ const AdminCourseContentPage = () => {
   useEffect(() => {
     if (selectedCourse) loadCourseDetail(selectedCourse.id);
     else { setChapters([]); setLessons([]); setResources([]); setChapterFilter("all"); }
+  }, [selectedCourse]);
+
+  // Real-time sync: refresh open course whenever its content changes
+  useEffect(() => {
+    if (!selectedCourse) return;
+    const channel = supabase
+      .channel(`admin-course-content-${selectedCourse.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chapters", filter: `course_id=eq.${selectedCourse.id}` }, () => loadCourseDetail(selectedCourse.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "lessons", filter: `course_id=eq.${selectedCourse.id}` }, () => loadCourseDetail(selectedCourse.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "course_resources", filter: `course_id=eq.${selectedCourse.id}` }, () => loadCourseDetail(selectedCourse.id))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [selectedCourse]);
 
   const openAddLecture = (chapterId: string) => {
@@ -458,6 +471,30 @@ const AdminCourseContentPage = () => {
     if (error) { toast.error(error.message); return; }
     toast.success("Chapter deleted");
     if (selectedCourse) loadCourseDetail(selectedCourse.id);
+  };
+
+  const toggleChapterPublish = async (ch: Chapter) => {
+    const next = !ch.is_published;
+    setChapters((prev) => prev.map((x) => x.id === ch.id ? { ...x, is_published: next } : x));
+    const { error } = await supabase.from("chapters").update({ is_published: next }).eq("id", ch.id);
+    if (error) {
+      setChapters((prev) => prev.map((x) => x.id === ch.id ? { ...x, is_published: !next } : x));
+      toast.error(error.message);
+      return;
+    }
+    toast.success(next ? "Chapter published" : "Chapter hidden from students");
+  };
+
+  const toggleLessonPublish = async (lesson: Lesson) => {
+    const next = !lesson.is_published;
+    setLessons((prev) => prev.map((x) => x.id === lesson.id ? { ...x, is_published: next } : x));
+    const { error } = await supabase.from("lessons").update({ is_published: next }).eq("id", lesson.id);
+    if (error) {
+      setLessons((prev) => prev.map((x) => x.id === lesson.id ? { ...x, is_published: !next } : x));
+      toast.error(error.message);
+      return;
+    }
+    toast.success(next ? "Lecture published" : "Lecture hidden from students");
   };
 
 
@@ -699,7 +736,10 @@ const AdminCourseContentPage = () => {
                     <SortableChapter key={ch.id} chapter={ch}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-bold text-foreground truncate">{ch.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-foreground truncate">{ch.title}</p>
+                            {!ch.is_published && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">Hidden</Badge>}
+                          </div>
                           <p className="text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -707,6 +747,13 @@ const AdminCourseContentPage = () => {
                           <Button size="sm" variant="outline" onClick={() => openAddLecture(ch.id)}>
                             <Plus className="h-3.5 w-3.5" /> Add lecture
                           </Button>
+                          <button
+                            onClick={() => toggleChapterPublish(ch)}
+                            className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                            title={ch.is_published ? "Hide chapter from students" : "Publish chapter"}
+                          >
+                            {ch.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                          </button>
                           <button
                             onClick={() => deleteChapter(ch)}
                             className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
@@ -727,6 +774,7 @@ const AdminCourseContentPage = () => {
                                   <div className="flex items-center gap-2">
                                     <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
                                     {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
+                                    {!lec.is_published && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">Hidden</Badge>}
                                   </div>
                                   <p className="text-xs text-muted-foreground truncate">
                                     {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
@@ -745,6 +793,13 @@ const AdminCourseContentPage = () => {
                                       <Eye className="h-4 w-4" />
                                     </a>
                                   )}
+                                  <button
+                                    onClick={() => toggleLessonPublish(lec)}
+                                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                    title={lec.is_published ? "Hide lecture from students" : "Publish lecture"}
+                                  >
+                                    {lec.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                  </button>
                                   <button
                                     onClick={() => openEditLecture(lec)}
                                     className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"

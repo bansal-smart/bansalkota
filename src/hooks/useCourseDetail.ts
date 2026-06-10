@@ -62,6 +62,7 @@ export const useCourseDetail = (slug: string | undefined) => {
         .from("chapters")
         .select("id, course_id, title, position")
         .eq("course_id", courseData.id)
+        .eq("is_published", true)
         .order("position");
 
       const chapterIds = (chs ?? []).map((c) => c.id);
@@ -70,6 +71,7 @@ export const useCourseDetail = (slug: string | undefined) => {
             .from("lessons")
             .select("id, chapter_id, course_id, slug, title, position, duration_seconds, video_url, is_free_preview, type")
             .in("chapter_id", chapterIds)
+            .eq("is_published", true)
             .order("position")
         : { data: [] as LessonRow[] };
 

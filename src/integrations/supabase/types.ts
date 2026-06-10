@@ -352,6 +352,7 @@ export type Database = {
           course_id: string
           created_at: string
           id: string
+          is_published: boolean
           position: number
           subject: string | null
           title: string
@@ -361,6 +362,7 @@ export type Database = {
           course_id: string
           created_at?: string
           id?: string
+          is_published?: boolean
           position?: number
           subject?: string | null
           title: string
@@ -370,6 +372,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           id?: string
+          is_published?: boolean
           position?: number
           subject?: string | null
           title?: string
@@ -1138,6 +1141,7 @@ export type Database = {
           duration_seconds: number
           id: string
           is_free_preview: boolean
+          is_published: boolean
           lecture_id: string | null
           position: number
           slug: string
@@ -1153,6 +1157,7 @@ export type Database = {
           duration_seconds?: number
           id?: string
           is_free_preview?: boolean
+          is_published?: boolean
           lecture_id?: string | null
           position?: number
           slug: string
@@ -1168,6 +1173,7 @@ export type Database = {
           duration_seconds?: number
           id?: string
           is_free_preview?: boolean
+          is_published?: boolean
           lecture_id?: string | null
           position?: number
           slug?: string

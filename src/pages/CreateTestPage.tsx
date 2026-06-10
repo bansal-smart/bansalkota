@@ -35,9 +35,11 @@ type DraftQuestion = {
   partial: boolean;            // used by mcq-multi
   numericalAnswer: string;     // used by numerical / integer
   tolerance: number;           // used by numerical
+  marksCorrect: number;        // per-question positive marks
+  marksWrong: number;          // per-question negative marks
 };
 
-const blankQuestion = (): DraftQuestion => ({
+const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuestion => ({
   source: "manual",
   type: "mcq-single",
   subject: "Physics",
@@ -49,22 +51,38 @@ const blankQuestion = (): DraftQuestion => ({
   partial: false,
   numericalAnswer: "",
   tolerance: 0,
+  marksCorrect: defaults.correct,
+  marksWrong: defaults.wrong,
 });
 
-const fromBank = (q: BankQuestion): DraftQuestion => ({
-  source: "bank",
-  bank_id: q.id,
-  type: "mcq-single",
-  subject: q.subject,
-  topic: q.topic || "",
-  text: q.question_text,
-  options: q.options.map((o) => o.text),
-  correct: typeof q.correct_answer === "number" ? q.correct_answer : 0,
-  correctMulti: [],
-  partial: false,
-  numericalAnswer: "",
-  tolerance: 0,
-});
+const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number }): DraftQuestion => {
+  const bankType = ((q as any).question_type ?? "mcq-single") as QType;
+  const corr = (q as any).correct_answer;
+  const correctIdx = typeof corr === "number" ? corr
+    : (corr && typeof corr === "object" && "value" in corr) ? 0
+    : 0;
+  const correctArr = Array.isArray(corr) ? (corr as number[]) : [];
+  const numericalVal = (q as any).numerical_answer != null
+    ? String((q as any).numerical_answer)
+    : (corr && typeof corr === "object" && "value" in corr ? String((corr as any).value) : "");
+  return {
+    source: "bank",
+    bank_id: q.id,
+    type: bankType,
+    subject: q.subject,
+    topic: q.topic || "",
+    text: q.question_text,
+    options: (q.options ?? []).map((o) => o.text),
+    correct: correctIdx,
+    correctMulti: correctArr,
+    partial: !!(q as any).partial_marking,
+    numericalAnswer: numericalVal,
+    tolerance: Number((q as any).tolerance ?? 0),
+    // Auto-set marks from the bank question; fall back to test defaults
+    marksCorrect: Number(q.marks_correct ?? defaults.correct),
+    marksWrong: Number(q.marks_wrong ?? defaults.wrong),
+  };
+};
 
 const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boolean }) => {
   const { setNodeRef, isOver } = useDroppable({ id: "test-drop" });
@@ -174,6 +192,8 @@ const CreateTestPage = () => {
             partial: !!q.partial_marking,
             numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
             tolerance: Number(q.tolerance ?? 0),
+            marksCorrect: Number(q.marks_correct ?? 4),
+            marksWrong: Number(q.marks_wrong ?? -1),
           };
         }),
       );
@@ -196,7 +216,7 @@ const CreateTestPage = () => {
       toast.info("Already added to this test");
       return;
     }
-    setQuestions((prev) => [...prev, fromBank(bankQ)]);
+    setQuestions((prev) => [...prev, fromBank(bankQ, { correct: correctMarks, wrong: wrongMarks })]);
     toast.success("Question added");
   };
 
@@ -227,7 +247,7 @@ const CreateTestPage = () => {
       correct_marks: correctMarks,
       wrong_marks: wrongMarks,
       total_questions: validQ.length,
-      total_marks: validQ.length * correctMarks,
+      total_marks: validQ.reduce((s, q) => s + Number(q.marksCorrect || 0), 0),
       is_published: publish,
       course_id: courseId || null,
     };
@@ -265,8 +285,8 @@ const CreateTestPage = () => {
         topic: q.topic || null,
         question_text: q.text,
         question_type: q.type,
-        marks_correct: correctMarks,
-        marks_wrong: wrongMarks,
+        marks_correct: Number(q.marksCorrect ?? correctMarks),
+        marks_wrong: Number(q.marksWrong ?? wrongMarks),
         options: [],
         correct_answer: null,
       };
@@ -462,7 +482,7 @@ const CreateTestPage = () => {
               </button>
             )}
             <button
-              onClick={() => setQuestions([...questions, blankQuestion()])}
+              onClick={() => setQuestions([...questions, blankQuestion({ correct: correctMarks, wrong: wrongMarks })])}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" /> Add Manual
@@ -513,6 +533,26 @@ const CreateTestPage = () => {
                   <option value="numerical">Numerical</option>
                   <option value="integer">Integer</option>
                 </select>
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground" title="Auto-set from the question bank; edit per question">
+                  <span>+</span>
+                  <input
+                    type="number"
+                    step="0.25"
+                    value={q.marksCorrect}
+                    onChange={(e) => updateQ(i, { marksCorrect: Number(e.target.value) })}
+                    className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
+                    aria-label="Marks for correct"
+                  />
+                  <span>/</span>
+                  <input
+                    type="number"
+                    step="0.25"
+                    value={q.marksWrong}
+                    onChange={(e) => updateQ(i, { marksWrong: Number(e.target.value) })}
+                    className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
+                    aria-label="Marks for wrong"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, j) => j !== i))}

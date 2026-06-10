@@ -124,11 +124,12 @@ const CourseStudyMaterialPage = () => {
 
 
       const [chRes, lessRes, pdfRes, testRes, quizRes, progRes, enrRes, profRes, attRes] = await Promise.all([
-        supabase.from("chapters").select("id, title, position, subject").eq("course_id", c.id).order("position"),
+        supabase.from("chapters").select("id, title, position, subject").eq("course_id", c.id).eq("is_published", true).order("position"),
         supabase
           .from("lessons")
           .select("id, chapter_id, slug, title, type, duration_seconds")
           .eq("course_id", c.id)
+          .eq("is_published", true)
           .order("position"),
         supabase
           .from("course_resources")

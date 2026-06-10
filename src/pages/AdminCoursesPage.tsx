@@ -68,6 +68,14 @@ const AdminCoursesPage = () => {
 
   useEffect(() => {
     load();
+    // Real-time sync: refresh whenever courses / chapters / lessons change
+    const channel = supabase
+      .channel("admin-courses-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "courses" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "chapters" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "lessons" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const togglePublish = async (c: AdminCourse, publish: boolean) => {
