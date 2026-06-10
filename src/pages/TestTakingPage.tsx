@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, Delete } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import MathRenderer from "@/components/MathRenderer";
+import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape";
+import CandidateCard from "@/components/test/CandidateCard";
 
 type QuestionType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
 
