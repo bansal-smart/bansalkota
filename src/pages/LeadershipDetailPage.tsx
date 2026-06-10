@@ -1,13 +1,15 @@
 import { Link, useParams, Navigate } from "react-router-dom";
-import { ArrowLeft, Quote, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Quote, ChevronDown, Loader2, Sparkles, Calendar, Compass } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import { leadershipPhotos } from "@/content/bansal/about";
+import { leaderEditorial } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
 
 export default function LeadershipDetailPage() {
   const { slug = "" } = useParams();
   const { profile, sections, loading } = useLeader(slug);
+  const extra = leaderEditorial[slug];
 
   if (loading) {
     return (
@@ -180,6 +182,129 @@ export default function LeadershipDetailPage() {
           </div>
         </section>
       )}
+
+      {/* ===== UNIQUE PER-LEADER EDITORIAL ===== */}
+      {extra && (
+        <>
+          {/* GALLERY MOSAIC */}
+          <section className="bg-white pb-16 md:pb-24">
+            <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+              <div className="flex items-end justify-between gap-6 mb-8">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="h-px w-10 bg-bansal-orange" />
+                    <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                      {extra.accentLabel}
+                    </span>
+                  </div>
+                  <h2 className="font-display text-2xl md:text-4xl font-extrabold text-bansal-blue tracking-tight max-w-2xl">
+                    {extra.galleryCaption}
+                  </h2>
+                </div>
+                <Sparkles className="hidden md:block h-8 w-8 text-bansal-orange/60 shrink-0" />
+              </div>
+              <p className="font-display italic text-lg md:text-xl text-bansal-gray max-w-3xl mb-10">
+                {extra.signatureLine}
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[120px] md:auto-rows-[160px]">
+                {extra.gallery.map((g, i) => (
+                  <div
+                    key={i}
+                    className={`relative overflow-hidden rounded-xl group ${
+                      g.tall ? "row-span-2 col-span-2 md:col-span-2" : ""
+                    }`}
+                  >
+                    <img
+                      src={g.src}
+                      alt={g.alt}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* TIMELINE */}
+          <section className="bg-bansal-cream py-16 md:py-24">
+            <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+              <div className="flex items-center gap-3 mb-3">
+                <Calendar className="h-5 w-5 text-bansal-orange" />
+                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                  Timeline
+                </span>
+              </div>
+              <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-12 tracking-tight">
+                {extra.timelineHeading}
+              </h2>
+              <div className="relative">
+                <span className="absolute left-3 md:left-1/2 top-0 bottom-0 w-px bg-bansal-blue/15" />
+                <div className="space-y-10 md:space-y-14">
+                  {extra.timeline.map((t, i) => (
+                    <div
+                      key={i}
+                      className={`relative md:grid md:grid-cols-2 md:gap-12 ${
+                        i % 2 === 0 ? "" : "md:[&>div:first-child]:order-2"
+                      }`}
+                    >
+                      <span className="absolute left-3 md:left-1/2 -translate-x-1/2 mt-2 h-3 w-3 rounded-full bg-bansal-orange ring-4 ring-bansal-cream" />
+                      <div className={`pl-10 md:pl-0 ${i % 2 === 0 ? "md:pr-10 md:text-right" : "md:pl-10"}`}>
+                        <div className="font-display text-3xl md:text-4xl font-extrabold text-bansal-blue">
+                          {t.year}
+                        </div>
+                      </div>
+                      <div className={`pl-10 md:pl-0 mt-2 md:mt-0 ${i % 2 === 0 ? "md:pl-10" : "md:pr-10 md:text-right"}`}>
+                        <h3 className="font-display text-xl md:text-2xl font-bold text-bansal-blue mb-2">
+                          {t.title}
+                        </h3>
+                        <p className="text-bansal-gray leading-relaxed">{t.body}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* PILLARS */}
+          <section className="bg-white py-16 md:py-24">
+            <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+              <div className="flex items-center gap-3 mb-3">
+                <Compass className="h-5 w-5 text-bansal-orange" />
+                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                  Philosophy
+                </span>
+              </div>
+              <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-12 tracking-tight max-w-3xl">
+                {extra.pillarsHeading}
+              </h2>
+              <div className="grid gap-6 md:grid-cols-3">
+                {extra.pillars.map((p, i) => (
+                  <div
+                    key={p.title}
+                    className="relative rounded-2xl border border-bansal-blue/10 bg-bansal-cream/40 p-7 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all"
+                  >
+                    <div className="font-display text-5xl font-extrabold text-bansal-orange/30 leading-none">
+                      0{i + 1}
+                    </div>
+                    <h3 className="font-display text-xl font-bold text-bansal-blue mt-3 mb-2">
+                      {p.title}
+                    </h3>
+                    <p className="text-bansal-gray leading-relaxed">{p.body}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="font-display italic text-lg md:text-xl text-bansal-blue/80 mt-12 max-w-3xl border-l-4 border-bansal-orange pl-6">
+                {extra.closingNote}
+              </p>
+            </div>
+          </section>
+        </>
+      )}
+
+
 
       {/* CTA FOOTER */}
       <section className="bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white py-16">
