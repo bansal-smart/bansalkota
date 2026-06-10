@@ -13,11 +13,14 @@ const CentresShowcase = () => {
     return centres.filter((c) => c.city.toLowerCase().includes(k) || c.state.toLowerCase().includes(k));
   }, [centres, q]);
 
+  const featured = useMemo(() => filtered.filter((c) => c.is_featured), [filtered]);
+  const rest = useMemo(() => filtered.filter((c) => !c.is_featured), [filtered]);
+
   const byRegion = useMemo(() => {
-    const m: Record<string, typeof filtered> = {};
-    filtered.forEach((c) => { (m[c.region] ||= []).push(c); });
+    const m: Record<string, typeof rest> = {};
+    rest.forEach((c) => { (m[c.region] ||= []).push(c); });
     return m;
-  }, [filtered]);
+  }, [rest]);
 
   return (
     <section className="relative py-12 md:py-20 bg-bansal-cream/40">
