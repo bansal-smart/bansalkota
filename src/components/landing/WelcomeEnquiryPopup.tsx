@@ -56,7 +56,7 @@ const WelcomeEnquiryPopup = () => {
     }
     setDone(true);
     localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-    toast.success("We'll call you within 24 hours!");
+    toast.success(postSubmission.welcomePopup.toast);
     setTimeout(() => setOpen(false), 2400);
   };
 
