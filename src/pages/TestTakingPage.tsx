@@ -537,6 +537,38 @@ const TestTakingPage = () => {
         </div>
       )}
 
+      {/* === Strip 3b: Topic pills (within active subject) === */}
+      {topicsForSubject.length > 1 && (
+        <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-1.5 flex items-center gap-1.5 overflow-x-auto">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 pr-1 shrink-0">Topic:</span>
+          <button
+            onClick={() => setActiveTopic("ALL")}
+            className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors ${activeTopic === "ALL" ? "bg-primary text-white" : "bg-white border border-neutral-200 text-neutral-700 hover:border-primary/40"}`}
+          >
+            All
+          </button>
+          {topicsForSubject.map((t) => {
+            const count = questions.filter((qq) => (qq.subject || "General") === activeSubject && (qq.topic || "Other") === t).length;
+            const isActive = activeTopic === t;
+            return (
+              <button
+                key={t}
+                onClick={() => {
+                  setActiveTopic(t);
+                  const firstIdx = questions.findIndex((qq) => (qq.subject || "General") === activeSubject && (qq.topic || "Other") === t);
+                  if (firstIdx >= 0) accrueTimeAndJump(firstIdx);
+                }}
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${isActive ? "bg-primary text-white" : "bg-white border border-neutral-200 text-neutral-700 hover:border-primary/40"}`}
+              >
+                {t} <span className="opacity-70">({count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+
+
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* === Question area === */}
         <div className="flex-1 overflow-y-auto bg-neutral-50">
