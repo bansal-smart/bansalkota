@@ -332,10 +332,12 @@ export default function LeadershipDetailPage() {
                   <AwardIcon className="h-7 w-7 text-bansal-orange" />
                 </div>
                 <p className="font-display text-lg md:text-2xl font-semibold leading-relaxed">
+                  <span className="text-bansal-orange">Author of 4 best-selling JEE preparation books</span>
+                  <span className="mx-2 text-white/40">·</span>
                   Mentor of <span className="text-bansal-orange">All India Rank 1</span> and{" "}
-                  <span className="text-bansal-orange">single-digit ranks</span> several times — and Author of{" "}
-                  <span className="text-bansal-orange">4 best-selling books</span> for JEE preparation.
+                  <span className="text-bansal-orange">single-digit ranks</span> several times.
                 </p>
+
               </div>
             </div>
           </section>
