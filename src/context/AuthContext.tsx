@@ -3,7 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 
-export type UserRole = "student" | "teacher" | "mentor" | "admin" | "super_admin";
+export type UserRole = "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
 
 interface AuthContextValue {
   session: Session | null;
