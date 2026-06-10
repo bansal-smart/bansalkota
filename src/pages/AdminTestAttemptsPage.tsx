@@ -71,7 +71,37 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [testId]);
+  const loadReattempts = async () => {
+    let q = supabase
+      .from("test_reattempt_requests")
+      .select("id, user_id, test_id, attempt_id, reason, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (testId) q = q.eq("test_id", testId);
+    const { data } = await q;
+    setReattempts((data ?? []) as ReattemptReq[]);
+  };
+
+  const decideReattempt = async (req: ReattemptReq, decision: "approved" | "rejected") => {
+    const { error } = await supabase
+      .from("test_reattempt_requests")
+      .update({
+        status: decision,
+        decided_by: user?.id ?? null,
+        decided_at: new Date().toISOString(),
+      })
+      .eq("id", req.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Request ${decision}`);
+    // If approved, also clear the prior attempt so the student can take a fresh one.
+    if (decision === "approved" && req.attempt_id) {
+      await supabase.from("test_attempts").delete().eq("id", req.attempt_id);
+    }
+    loadReattempts();
+    load();
+  };
+
+  useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId]);
 
   const filtered = useMemo(() => {
     return attempts.filter((a) => {
