@@ -154,25 +154,41 @@ const TestTakingPage = () => {
     };
   }, [started]);
 
+  // Sync refs so auto-save always reads latest state
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { statusesRef.current = statuses; }, [statuses]);
+
   // Auto-save every 15s
   useEffect(() => {
     if (!attemptId) return;
     const t = setInterval(autoSave, 15000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attemptId, answers, statuses]);
+  }, [attemptId, autoSave]);
 
   const autoSave = useCallback(async () => {
     if (!attemptId) return;
     if (Date.now() - lastSavedRef.current < 3000) return;
     lastSavedRef.current = Date.now();
     await supabase.from("test_attempts").update({
-      answers, question_statuses: statuses,
+      answers: answersRef.current,
+      question_statuses: statusesRef.current,
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
       metadata: { tab_switches: tabSwitches },
     }).eq("id", attemptId);
     setSavedAgo(0);
-  }, [attemptId, answers, statuses, startedAt, tabSwitches]);
+  }, [attemptId, startedAt, tabSwitches]);
+
+  const saveNow = useCallback(async (nextAnswers?: Record<string, AnswerVal>, nextStatuses?: Record<string, QStatus>) => {
+    if (!attemptId) return;
+    await supabase.from("test_attempts").update({
+      answers: nextAnswers ?? answersRef.current,
+      question_statuses: nextStatuses ?? statusesRef.current,
+      time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
+      metadata: { tab_switches: tabSwitches },
+    }).eq("id", attemptId);
+    lastSavedRef.current = Date.now();
+    setSavedAgo(0);
+  }, [attemptId, startedAt, tabSwitches]);
 
   // "Saved Xs ago" ticker
   useEffect(() => {
