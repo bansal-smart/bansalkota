@@ -232,8 +232,24 @@ const TestTakingPage = () => {
   const subjectIndices = useMemo(() => {
     return questions
       .map((q, i) => ({ q, i }))
-      .filter(({ q }) => (q.subject || "General") === activeSubject);
+      .filter(({ q }) => (q.subject || "General") === activeSubject)
+      .filter(({ q }) => activeTopic === "ALL" || (q.topic || "Other") === activeTopic);
+  }, [questions, activeSubject, activeTopic]);
+
+  // Topics available within the active subject
+  const topicsForSubject = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    questions.forEach((q) => {
+      if ((q.subject || "General") !== activeSubject) return;
+      const t = q.topic || "Other";
+      if (!seen.has(t)) { seen.add(t); list.push(t); }
+    });
+    return list;
   }, [questions, activeSubject]);
+
+  // Reset topic when subject changes
+  useEffect(() => { setActiveTopic("ALL"); }, [activeSubject]);
 
   // Indices grouped by subject (for full palette view)
   const groupedIndices = useMemo(() => {
