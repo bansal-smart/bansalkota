@@ -239,7 +239,13 @@ const TestTakingPage = () => {
     }
     enteredAtRef.current = Date.now();
     setCurrentQ(newIdx);
-  }, [q]);
+    const target = questions[newIdx];
+    if (target) {
+      const targetSub = target.subject || "General";
+      setActiveSubject((cur) => (cur !== targetSub ? targetSub : cur));
+    }
+    setPaletteOpen(false);
+  }, [q, questions]);
 
   // When user lands on a fresh question, mark as not-answered if still unvisited
   useEffect(() => {
