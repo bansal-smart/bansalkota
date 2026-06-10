@@ -15,9 +15,7 @@ import {
   Bell,
   Settings,
   ShieldCheck,
-  HeartHandshake,
   Library,
-  Swords,
   School,
   FileBarChart,
   BookOpen,
@@ -25,6 +23,7 @@ import {
   MapPin,
   Image as ImageIcon,
   Award,
+  Youtube,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
