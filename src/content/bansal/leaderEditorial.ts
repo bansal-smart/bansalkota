@@ -97,6 +97,8 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     timeline: [
       { year: "School", title: "Top of every maths class", body: "A relentless problem-solver, even before he had a desk of his own." },
       { year: "IIT", title: "Engineering at the IITs", body: "Trained inside the very system his institute prepares students for." },
+      { year: "Author", title: "Four best-selling JEE titles", body: "Writes the books an entire generation of aspirants studies from — Problems in Calculus, Algebra, Coordinate Geometry, and Trigonometry & Vectors." },
+      { year: "Mentor", title: "Coach to All India Rank 1 and single-digit ranks — repeatedly", body: "Personally mentors top JEE Advanced ranks year after year, including AIR 1 and multiple single-digit AIRs." },
       { year: "Teacher", title: "Returns to the classroom", body: "Joins his father — not as heir, but as an instructor evaluated by his students first." },
       { year: "CEO", title: "Takes the institute national", body: "Launches multi-city expansion, online live classes and a unified test platform." },
       { year: "Now", title: "Architect of the new Bansal", body: "Tech-first, mentor-led, exam-obsessed — without abandoning a single original value." },
