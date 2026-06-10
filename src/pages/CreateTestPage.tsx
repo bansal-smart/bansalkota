@@ -19,33 +19,50 @@ import { useExams } from "@/hooks/useExams";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer";
+
 type DraftQuestion = {
   source: "manual" | "bank";
   bank_id?: string;
+  type: QType;
   subject: string;
   topic: string;
   text: string;
-  options: string[];
-  correct: number;
+  options: string[];           // used by mcq-*
+  correct: number;             // used by mcq-single
+  correctMulti: number[];      // used by mcq-multi
+  partial: boolean;            // used by mcq-multi
+  numericalAnswer: string;     // used by numerical / integer
+  tolerance: number;           // used by numerical
 };
 
 const blankQuestion = (): DraftQuestion => ({
   source: "manual",
+  type: "mcq-single",
   subject: "Physics",
   topic: "",
   text: "",
   options: ["", "", "", ""],
   correct: 0,
+  correctMulti: [],
+  partial: false,
+  numericalAnswer: "",
+  tolerance: 0,
 });
 
 const fromBank = (q: BankQuestion): DraftQuestion => ({
   source: "bank",
   bank_id: q.id,
+  type: "mcq-single",
   subject: q.subject,
   topic: q.topic || "",
   text: q.question_text,
   options: q.options.map((o) => o.text),
   correct: typeof q.correct_answer === "number" ? q.correct_answer : 0,
+  correctMulti: [],
+  partial: false,
+  numericalAnswer: "",
+  tolerance: 0,
 });
 
 const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boolean }) => {
