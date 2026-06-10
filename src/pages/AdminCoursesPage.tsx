@@ -193,7 +193,7 @@ const AdminCoursesPage = () => {
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => navigate(`/admin/course-content?courseId=${c.id}`)}
+                          onClick={() => navigate(`/admin/courses/${c.id}/content`)}
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
                           title="Manage content"
                         >
