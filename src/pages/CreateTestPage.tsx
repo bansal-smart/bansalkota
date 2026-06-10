@@ -285,8 +285,8 @@ const CreateTestPage = () => {
         topic: q.topic || null,
         question_text: q.text,
         question_type: q.type,
-        marks_correct: correctMarks,
-        marks_wrong: wrongMarks,
+        marks_correct: Number(q.marksCorrect ?? correctMarks),
+        marks_wrong: Number(q.marksWrong ?? wrongMarks),
         options: [],
         correct_answer: null,
       };
