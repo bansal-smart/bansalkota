@@ -304,6 +304,14 @@ const AdminCentersPage = () => {
           </div>
         )}
       </div>
+
+      {staffCenter && (
+        <CenterStaffModal
+          centerId={staffCenter.id}
+          centerName={`${staffCenter.city}${staffCenter.area && staffCenter.area !== staffCenter.city ? " — " + staffCenter.area : ""}`}
+          onClose={() => setStaffCenter(null)}
+        />
+      )}
     </div>
   );
 };
