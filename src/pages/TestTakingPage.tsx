@@ -318,7 +318,9 @@ const TestTakingPage = () => {
   const handlePrev = () => currentQ > 0 && accrueTimeAndJump(currentQ - 1);
   const handleMarkAndNext = () => {
     if (!q) return;
-    updateStatus(q.id, hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked");
+    const nextStatus = hasAnswer(q, answers[q.id]) ? "answered-marked" : "marked";
+    updateStatus(q.id, nextStatus);
+    saveNow(undefined, { ...statusesRef.current, [q.id]: nextStatus });
     handleNext();
   };
   const handleSaveAndMark = () => {
