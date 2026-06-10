@@ -106,8 +106,8 @@ const AdminImportBatchesPage = () => {
                 const errors: any[] = Array.isArray(b.error_log) ? b.error_log : (b.error_log?.errors ?? []);
                 const hasErrors = errors.length > 0;
                 return (
-                  <>
-                    <tr key={b.id} className="border-b border-border last:border-0">
+                  <Fragment key={b.id}>
+                    <tr className="border-b border-border last:border-0">
                       <td className="px-4 py-2">
                         {hasErrors && (
                           <button onClick={() => toggle(b.id)} className="text-muted-foreground hover:text-foreground">
