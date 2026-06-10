@@ -17,10 +17,10 @@ const CenterSupportPage = () => {
 
   const load = async () => {
     if (!primaryCenterId) return;
-    const { data } = await supabase
-      .from("enquiries" as any)
+    const { data } = await (supabase as any)
+      .from("enquiries")
       .select("*")
-      .eq("center_id" as any, primaryCenterId)
+      .eq("center_id", primaryCenterId)
       .eq("source", "center_support")
       .order("created_at", { ascending: false });
     setItems(data ?? []);
