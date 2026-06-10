@@ -73,16 +73,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   const resolveRoleFromServer = useCallback(async (userId: string): Promise<UserRole> => {
     try {
-      const [superRes, adminRes, teacherRes, mentorRes] = await Promise.all([
+      const [superRes, adminRes, teacherRes, mentorRes, centerRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "teacher" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "mentor" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "center_admin" as any }),
       ]);
       if (superRes.data) return "super_admin";
       if (adminRes.data) return "admin";
       if (teacherRes.data) return "teacher";
       if (mentorRes.data) return "mentor";
+      if (centerRes.data) return "center_admin";
       return "student";
     } catch (err) {
       console.error("Failed to resolve role:", err);
@@ -95,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (roles.includes("admin")) return "admin";
       if (roles.includes("teacher")) return "teacher";
       if (roles.includes("mentor")) return "mentor";
+      if (roles.includes("center_admin")) return "center_admin";
       return "student";
     }
   }, []);
