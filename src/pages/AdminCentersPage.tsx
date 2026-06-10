@@ -285,6 +285,9 @@ const AdminCentersPage = () => {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                      <button onClick={() => setStaffCenter(c)} className="text-primary hover:underline text-xs font-semibold inline-flex items-center gap-1">
+                        <Users className="h-3 w-3" /> Staff
+                      </button>
                       <button onClick={() => startEdit(c)} className="text-primary hover:underline text-xs font-semibold">Edit</button>
                       <button onClick={() => remove(c.id)} className="text-destructive hover:text-destructive/70">
                         <Trash2 className="h-4 w-4 inline" />
