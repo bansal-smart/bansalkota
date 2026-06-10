@@ -31,8 +31,9 @@ export const uploadParsedImages = async (
     const ext = extFromType(img.contentType);
     const path = `${batchId}/q${q.number}_${img.slot}_${img.id}.${ext}`;
     try {
-      // Convert Uint8Array to Blob explicitly
-      const blob = new Blob([img.bytes], { type: img.contentType });
+      // Convert Uint8Array to Blob explicitly (copy into a fresh ArrayBuffer to satisfy DOM types)
+      const ab = img.bytes.buffer.slice(img.bytes.byteOffset, img.bytes.byteOffset + img.bytes.byteLength) as ArrayBuffer;
+      const blob = new Blob([ab], { type: img.contentType });
       const { error } = await supabase.storage
         .from("question-images")
         .upload(path, blob, { contentType: img.contentType, upsert: true });
