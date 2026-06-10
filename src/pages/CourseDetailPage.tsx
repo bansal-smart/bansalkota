@@ -50,12 +50,6 @@ type EnrollmentInfo = {
 };
 
 // ----- Fallback data (Bansal-styled demo) -----
-const FALLBACK_TEACHERS = [
-  { name: "Vikram Thapar", subject: "Physical Chemistry", years: "15+ years" },
-  { name: "Ananya Iyer", subject: "Organic Chemistry", years: "12+ years" },
-  { name: "Siddharth Nair", subject: "Physics", years: "15+ years" },
-  { name: "Kavitha Menon", subject: "Mathematics", years: "17+ years" },
-];
 
 const FALLBACK_COMMENCEMENT = [
   { stream: "JEE (Main + Advanced)", phase: "Phase I", medium: "English", target: "2028", eligibility: "Class 10th to 11th Moving", mode: "Direct/BOOST", date: "01/04/2026" },
