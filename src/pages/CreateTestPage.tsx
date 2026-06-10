@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, GripVertical, BookMarked } from "lucide-react";
+import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
+import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
@@ -107,6 +108,8 @@ const CreateTestPage = () => {
   const [courseId, setCourseId] = useState<string>("");
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
+  const [docxImportOpen, setDocxImportOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
