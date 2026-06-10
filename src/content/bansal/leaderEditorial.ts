@@ -11,6 +11,20 @@ import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
 import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
 import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
 import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg.asset.json";
+import mahimaPortrait from "@/assets/mahima-portrait.jpg.asset.json";
+import neelamPortrait from "@/assets/neelam-portrait.jpg.asset.json";
+import bookCalculus from "@/assets/book-calculus.jpg.asset.json";
+import bookAlgebra from "@/assets/book-algebra.jpg.asset.json";
+import bookCoordinate from "@/assets/book-coordinate.jpg.asset.json";
+import bookTrigonometry from "@/assets/book-trigonometry.jpg.asset.json";
+
+// Sameer Sir's authored books — shown on his About page
+export const sameerBooks = [
+  { title: "Problems in Calculus", subtitle: "JEE Main + Advanced", cover: bookCalculus.url, edition: "Bansal Classes" },
+  { title: "Problems in Algebra", subtitle: "JEE Main + Advanced", cover: bookAlgebra.url, edition: "Bansal Classes" },
+  { title: "Problems in Coordinate Geometry", subtitle: "JEE Main + Advanced", cover: bookCoordinate.url, edition: "Bansal Classes" },
+  { title: "Problems in Trigonometry & Vectors", subtitle: "JEE Main + Advanced", cover: bookTrigonometry.url, edition: "Bansal Classes" },
+];
 
 export type LeaderTimelineItem = { year: string; title: string; body: string };
 export type LeaderPillar = { title: string; body: string };
@@ -83,6 +97,8 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     timeline: [
       { year: "School", title: "Top of every maths class", body: "A relentless problem-solver, even before he had a desk of his own." },
       { year: "IIT", title: "Engineering at the IITs", body: "Trained inside the very system his institute prepares students for." },
+      { year: "Author", title: "Four best-selling JEE titles", body: "Writes the books an entire generation of aspirants studies from — Problems in Calculus, Algebra, Coordinate Geometry, and Trigonometry & Vectors." },
+      { year: "Mentor", title: "Coach to All India Rank 1 and single-digit ranks — repeatedly", body: "Personally mentors top JEE Advanced ranks year after year, including AIR 1 and multiple single-digit AIRs." },
       { year: "Teacher", title: "Returns to the classroom", body: "Joins his father — not as heir, but as an instructor evaluated by his students first." },
       { year: "CEO", title: "Takes the institute national", body: "Launches multi-city expansion, online live classes and a unified test platform." },
       { year: "Now", title: "Architect of the new Bansal", body: "Tech-first, mentor-led, exam-obsessed — without abandoning a single original value." },
@@ -101,8 +117,9 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "A modern educator shaping the next generation of women aspirants — with empathy, structure and uncompromising standards.",
     galleryCaption: "Mentorship in motion",
+    heroPhotoOverride: mahimaPortrait.url,
     gallery: [
-      { src: u("photo-1573496359142-b8d87734a5a2"), alt: "Woman mentor with students", tall: true },
+      { src: mahimaPortrait.url, alt: "Mahima Bansal — Academic Mentor & Director", tall: true },
       { src: u("photo-1577896851231-70ef18881754"), alt: "Library study session" },
       { src: u("photo-1543269865-cbf427effbad"), alt: "Group discussion" },
       { src: u("photo-1580582932707-520aed937b7b"), alt: "Counselling session" },
@@ -128,8 +145,9 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "Behind every great institute is a household that believed in it first. Hers did.",
     galleryCaption: "The home that built an institution",
+    heroPhotoOverride: neelamPortrait.url,
     gallery: [
-      { src: u("photo-1511895426328-dc8714191300"), alt: "Family at home", tall: true },
+      { src: neelamPortrait.url, alt: "Neelam Bansal — Co-founder & Matriarch", tall: true },
       { src: u("photo-1545239351-1141bd82e8a6"), alt: "Warm lamp-lit study" },
       { src: u("photo-1499063078284-f78f7d89616a"), alt: "Old family photograph" },
       { src: u("photo-1532012197267-da84d127e765"), alt: "Books on a table" },

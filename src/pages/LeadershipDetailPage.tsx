@@ -1,10 +1,11 @@
 import { Link, useParams, Navigate } from "react-router-dom";
-import { ArrowLeft, Quote, ChevronDown, Loader2, Sparkles, Calendar, Compass } from "lucide-react";
+import { ArrowLeft, Quote, ChevronDown, Loader2, Sparkles, Calendar, Compass, BookOpen, Award as AwardIcon } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import { leadershipPhotos } from "@/content/bansal/about";
-import { leaderEditorial } from "@/content/bansal/leaderEditorial";
+import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
+import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
 
 export default function LeadershipDetailPage() {
   const { slug = "" } = useParams();
@@ -304,7 +305,92 @@ export default function LeadershipDetailPage() {
         </>
       )}
 
+      {/* ===== SAMEER SIR: AUTHORED BOOKS + V.K. BANSAL CONTINUITY ===== */}
+      {slug === "sameer-bansal" && (
+        <>
+          {/* Credential ribbon */}
+          <section className="bg-bansal-blue text-white py-10">
+            <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                <div className="shrink-0 inline-flex items-center justify-center h-16 w-16 rounded-full bg-bansal-orange/20 ring-2 ring-bansal-orange/40">
+                  <AwardIcon className="h-7 w-7 text-bansal-orange" />
+                </div>
+                <p className="font-display text-lg md:text-2xl font-semibold leading-relaxed">
+                  Mentor of <span className="text-bansal-orange">All India Rank 1</span> and{" "}
+                  <span className="text-bansal-orange">single-digit ranks</span> several times — and Author of{" "}
+                  <span className="text-bansal-orange">4 best-selling books</span> for JEE preparation.
+                </p>
+              </div>
+            </div>
+          </section>
 
+          {/* Books grid */}
+          <section className="bg-bansal-cream py-16 md:py-24">
+            <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+              <div className="flex items-center gap-3 mb-3">
+                <BookOpen className="h-5 w-5 text-bansal-orange" />
+                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                  Authored Library
+                </span>
+              </div>
+              <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-3 tracking-tight">
+                Books by Sameer Sir
+              </h2>
+              <p className="text-bansal-gray max-w-2xl mb-10">
+                A four-volume problem-solving series read by JEE aspirants across India — written from a quarter-century inside the classroom.
+              </p>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {sameerBooks.map((b) => (
+                  <div key={b.title} className="group rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl">
+                    <div className="aspect-[2/3] overflow-hidden rounded-xl bg-bansal-blue/5 mb-4">
+                      <img
+                        src={b.cover}
+                        alt={`${b.title} cover`}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="font-display text-lg font-extrabold text-bansal-blue leading-tight">{b.title}</div>
+                    <div className="mt-1 text-xs font-semibold text-bansal-orange uppercase tracking-wide">{b.subtitle}</div>
+                    <div className="mt-2 text-[11px] text-bansal-gray">{b.edition}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* V.K. Bansal continuity */}
+          <section className="bg-white py-16 md:py-24">
+            <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+              <div className="grid gap-8 md:grid-cols-[auto_1fr] items-center rounded-3xl border border-bansal-blue/10 bg-gradient-to-br from-bansal-cream/60 to-white p-6 md:p-10">
+                <Link to="/about/vk-bansal" className="shrink-0 mx-auto md:mx-0 block">
+                  <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl overflow-hidden ring-4 ring-bansal-orange/20 shadow-xl">
+                    <img src={vkPortrait.url} alt="V.K. Bansal Sir" className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                </Link>
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="h-px w-8 bg-bansal-orange" />
+                    <span className="text-bansal-orange uppercase tracking-[0.25em] text-[11px] font-bold">
+                      Continuing the legacy
+                    </span>
+                  </div>
+                  <h3 className="font-display text-2xl md:text-3xl font-extrabold text-bansal-blue leading-tight">
+                    In continuation of <span className="text-bansal-orange">Mr. V.K. Bansal Sir</span>
+                  </h3>
+                  <p className="mt-3 text-bansal-gray leading-relaxed">
+                    Every classroom, every test, every blackboard carries forward the standard that V.K. Bansal Sir set in 1981.
+                    Sameer Sir's leadership is the next chapter of the same teaching tradition that built Kota.
+                  </p>
+                  <Link to="/about/vk-bansal" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-bansal-orange hover:text-bansal-blue transition-colors">
+                    Read about V.K. Bansal Sir <ArrowLeft className="h-4 w-4 rotate-180" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* CTA FOOTER */}
       <section className="bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white py-16">

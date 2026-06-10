@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Loader2, Eye, Trash2, Download, RotateCcw } from "lucide-react";
+import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,8 +26,18 @@ type Attempt = {
 
 type Props = { testId?: string; compact?: boolean };
 
+type ReattemptReq = {
+  id: string;
+  user_id: string;
+  test_id: string;
+  attempt_id: string | null;
+  reason: string | null;
+  status: string;
+  created_at: string;
+};
+
 const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { confirm, ConfirmDialog } = useConfirm();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [tests, setTests] = useState<{ id: string; title: string; slug: string }[]>([]);
@@ -36,6 +46,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [testFilter, setTestFilter] = useState<string>(testId ?? "all");
+  const [reattempts, setReattempts] = useState<ReattemptReq[]>([]);
 
   const load = async () => {
     setLoading(true);
@@ -60,7 +71,37 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [testId]);
+  const loadReattempts = async () => {
+    let q = supabase
+      .from("test_reattempt_requests")
+      .select("id, user_id, test_id, attempt_id, reason, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (testId) q = q.eq("test_id", testId);
+    const { data } = await q;
+    setReattempts((data ?? []) as ReattemptReq[]);
+  };
+
+  const decideReattempt = async (req: ReattemptReq, decision: "approved" | "rejected") => {
+    const { error } = await supabase
+      .from("test_reattempt_requests")
+      .update({
+        status: decision,
+        decided_by: user?.id ?? null,
+        decided_at: new Date().toISOString(),
+      })
+      .eq("id", req.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Request ${decision}`);
+    // If approved, also clear the prior attempt so the student can take a fresh one.
+    if (decision === "approved" && req.attempt_id) {
+      await supabase.from("test_attempts").delete().eq("id", req.attempt_id);
+    }
+    loadReattempts();
+    load();
+  };
+
+  useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId]);
 
   const filtered = useMemo(() => {
     return attempts.filter((a) => {
@@ -127,6 +168,44 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           <p className="text-white/90 text-sm mt-1">Every student attempt with results, filters and reset controls.</p>
         </div>
       )}
+
+      {/* Pending Re-attempt Requests */}
+      {(() => {
+        const pending = reattempts.filter((r) => r.status === "pending");
+        if (pending.length === 0) return null;
+        return (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <RefreshCcw className="h-4 w-4 text-amber-700" />
+              <h2 className="text-sm font-black uppercase tracking-wider text-amber-800">
+                {pending.length} pending re-attempt request{pending.length > 1 ? "s" : ""}
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {pending.map((r) => {
+                const t = tests.find((x) => x.id === r.test_id);
+                const name = profiles.get(r.user_id) ?? "Student";
+                return (
+                  <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-white border border-amber-200 p-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-foreground">{name} <span className="text-muted-foreground">· {t?.title ?? "—"}</span></p>
+                      {r.reason && <p className="mt-0.5 text-muted-foreground italic line-clamp-2">"{r.reason}"</p>}
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">Requested {format(new Date(r.created_at), "dd MMM HH:mm")}</p>
+                    </div>
+                    <button onClick={() => decideReattempt(r, "approved")} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 font-bold text-white hover:bg-emerald-700">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                    </button>
+                    <button onClick={() => decideReattempt(r, "rejected")} className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 font-bold text-white hover:bg-red-700">
+                      <XCircle className="h-3.5 w-3.5" /> Reject
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">

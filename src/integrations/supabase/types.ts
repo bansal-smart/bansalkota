@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_sessions: {
+        Row: {
+          created_at: string
+          device_label: string | null
+          last_seen: string
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_label?: string | null
+          last_seen?: string
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_label?: string | null
+          last_seen?: string
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           author: string | null
@@ -394,8 +421,10 @@ export type Database = {
           created_by: string | null
           email: string | null
           established: number | null
+          featured_rank: number | null
           id: string
           image_url: string | null
+          is_featured: boolean
           is_hq: boolean
           is_published: boolean
           phone: string
@@ -415,8 +444,10 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           established?: number | null
+          featured_rank?: number | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           is_hq?: boolean
           is_published?: boolean
           phone?: string
@@ -436,8 +467,10 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           established?: number | null
+          featured_rank?: number | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           is_hq?: boolean
           is_published?: boolean
           phone?: string
@@ -2683,6 +2716,7 @@ export type Database = {
           question_type: string
           solution_image_url: string | null
           source_filename: string | null
+          sub_topic: string | null
           subject: string | null
           test_id: string
           tolerance: number
@@ -2709,6 +2743,7 @@ export type Database = {
           question_type?: string
           solution_image_url?: string | null
           source_filename?: string | null
+          sub_topic?: string | null
           subject?: string | null
           test_id: string
           tolerance?: number
@@ -2735,6 +2770,7 @@ export type Database = {
           question_type?: string
           solution_image_url?: string | null
           source_filename?: string | null
+          sub_topic?: string | null
           subject?: string | null
           test_id?: string
           tolerance?: number
@@ -2743,6 +2779,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_reattempt_requests: {
+        Row: {
+          admin_note: string | null
+          attempt_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          reason: string | null
+          status: string
+          test_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          attempt_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          reason?: string | null
+          status?: string
+          test_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          attempt_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          reason?: string | null
+          status?: string
+          test_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_reattempt_requests_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_reattempt_requests_test_id_fkey"
             columns: ["test_id"]
             isOneToOne: false
             referencedRelation: "tests"
@@ -2890,12 +2983,16 @@ export type Database = {
       }
       toppers: {
         Row: {
+          batch_year: number | null
           category: string | null
           city: string | null
+          company: string | null
           created_at: string
           created_by: string | null
+          current_position: string | null
           exam: string
           id: string
+          is_alumni: boolean
           is_published: boolean
           name: string
           photo_url: string | null
@@ -2907,12 +3004,16 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          batch_year?: number | null
           category?: string | null
           city?: string | null
+          company?: string | null
           created_at?: string
           created_by?: string | null
+          current_position?: string | null
           exam: string
           id?: string
+          is_alumni?: boolean
           is_published?: boolean
           name: string
           photo_url?: string | null
@@ -2924,12 +3025,16 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          batch_year?: number | null
           category?: string | null
           city?: string | null
+          company?: string | null
           created_at?: string
           created_by?: string | null
+          current_position?: string | null
           exam?: string
           id?: string
+          is_alumni?: boolean
           is_published?: boolean
           name?: string
           photo_url?: string | null
@@ -2974,6 +3079,10 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      can_reattempt_test: {
+        Args: { _test_id: string; _user_id: string }
+        Returns: boolean
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }

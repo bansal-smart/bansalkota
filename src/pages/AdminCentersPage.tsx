@@ -21,6 +21,8 @@ type Center = {
   verified: boolean;
   is_published: boolean;
   sort_order: number;
+  is_featured: boolean;
+  featured_rank: number | null;
 };
 
 const REGIONS = ["North", "South", "East", "West", "Central"];
@@ -42,6 +44,8 @@ const blank: Partial<Center> = {
   verified: false,
   is_published: true,
   sort_order: 0,
+  is_featured: false,
+  featured_rank: null,
 };
 
 const slugify = (s: string) =>
@@ -134,6 +138,8 @@ const AdminCentersPage = () => {
       verified: !!form.verified,
       is_published: form.is_published ?? true,
       sort_order: Number(form.sort_order ?? 0),
+      is_featured: !!form.is_featured,
+      featured_rank: form.featured_rank == null || (form.featured_rank as any) === "" ? null : Number(form.featured_rank),
     };
     const { error } = editingId
       ? await supabase.from("centers").update(payload).eq("id", editingId)
@@ -207,6 +213,8 @@ const AdminCentersPage = () => {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.is_hq} onChange={(e) => setForm({ ...form, is_hq: e.target.checked })} /> Headquarters</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.verified} onChange={(e) => setForm({ ...form, verified: e.target.checked })} /> Verified</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_published ?? true} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /> Published</label>
+          <label className="flex items-center gap-2 text-sm md:col-span-1"><input type="checkbox" checked={!!form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} /> Flagship (homepage highlight)</label>
+          <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Flagship order (1 = first)" value={form.featured_rank ?? ("" as any)} onChange={(e) => setForm({ ...form, featured_rank: e.target.value === "" ? null : Number(e.target.value) })} />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>

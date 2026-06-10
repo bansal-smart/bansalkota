@@ -1,131 +1,77 @@
-# Landing Page Marketing Overhaul + Unified Admin Overview
+A single coordinated rollout for the 12 items from your note. I'll group them so related changes ship together.
 
-Two focused workstreams. No backend/schema changes — everything reads from existing tables (`courses`, `centers`, `toppers`, `site_stats`, `site_testimonials`, `site_banners`, `enrollments`, `orders`, `payments`, `enquiries`, `center_courses`, `center_course_enquiries`, `reports`).
+## Group A — Marketing & Content (frontend only)
 
----
+1. **Highlight Kota Centre on landing.**
+   - Add `is_featured` boolean + `featured_rank` int to `centers` table (default false). Migration + GRANT/RLS keep as-is.
+   - Update `components/landing/CentresShowcase.tsx` to sort featured-first and render a "Flagship — Kota" ribbon on the featured card. Admin can toggle via `AdminCentersPage`.
 
-## 1. Public Landing Page — Sales-First Rewrite
+2. **Sameer Sir About page — strengthen credentials.**
+   - Edit `src/content/bansal/leaderEditorial.ts` for Sameer to include the line: *"Mentor of All India Rank 1 and single-digit ranks several times; Author of 4 best-selling books for JEE preparation."*
+   - Add a "Books by Sameer Sir" section on `LeadershipDetailPage` (4 book cards with cover + title + buy/learn-more link). Covers will be AI-generated placeholders until you upload real ones.
 
-File: `src/pages/LandingPage.tsx` (full restructure, keeps existing hero hooks `useSiteStats`, `useSiteTestimonials`, `useSiteBanners`).
+3. **V.K. Bansal Sir continuity on Sameer's page.**
+   - Add a "In continuation of V.K. Bansal Sir's legacy" footer block on Sameer's About page linking to V.K. Bansal Sir's leadership profile with portrait + 1-line bio.
 
-### New section order (top → bottom)
+4. **Remove "Know Your Teachers" from Course pages.**
+   - Delete the block at `CourseDetailPage.tsx` line ~348 and the `FALLBACK_TEACHERS` constant.
 
-1. **Hero — "India's Most Trusted JEE/NEET Legacy"**
-   - Bold headline + sub-headline, 2 CTAs (Explore Courses / Book Free Counselling), trust strip (45+ Yrs · 2L+ Selections · 50+ Centres · 4.8★).
-   - Right-side: layered image collage (mentor, toppers, app mockup) with floating "Live class now" + "Rank 1 AIR" badges.
+5. **Bansal Alumni page (new).**
+   - New route `/alumni` with hero + alumni grid (reusing existing `toppers` table; filter `is_alumni=true` if we add the column, otherwise show all toppers categorized by year).
+   - Migration: add `is_alumni boolean default true`, `current_role text`, `company text`, `batch_year int` to `toppers`.
+   - Add nav link in main header.
 
-2. **Marquee Trust Bar** — exam logos, partner schools, "Featured in" press strip.
+6. **Faculty photos — Mahima Ma'am & Neelam Ma'am.**
+   - Generate stylized AI portraits (kept consistent with existing Bansal/Sameer styling) as Lovable Assets. Real photos can replace them later by overwriting the asset pointers.
 
-3. **Why Bansal — 4 pillar bento grid** (Legacy, Faculty, Results, Pan-India).
+## Group B — Test Platform
 
-4. **Choose Your Goal — Exam Selector** (JEE / NEET / Foundation / Olympiad)
-   - Tabs that swap into a 3-card "Recommended Programs" rail pulled from `courses` table (filtered by exam slug, `is_published=true`, ordered by `is_featured`, limit 3). Each card: thumbnail, title, duration, mode badge (Online/Offline/Hybrid), price (₹/AED based on region), "View Details" + "Enroll Now".
+7. **Topic / Sub-topic tabs in the Online Test Paper platform.**
+   - Migration: add `topic text`, `sub_topic text` to `test_questions`. Allow null for backward compatibility.
+   - In `AdminTestDetailPage` / question editor: add Topic + Sub-topic inputs.
+   - In `TestTakingPage`: subject tabs already exist; add a second-level pill row showing Topics in current subject, and a third-level Sub-topic dropdown to jump to questions.
 
-5. **Course Formats Explainer** — 3 columns: Classroom (CLP), Distance (DLP), Online Live. Each with feature list, sample faculty, "Best for…" line, CTA.
+8. **Partial marking for MCQ-multi only.**
+   - The DB function `submit_test_attempt` already supports `partial_marking` for `mcq-multi` (JEE-Advanced style: +1 per correct chosen, 0 if none wrong & not exact). Confirm it's enabled by default for new `mcq-multi` questions: migration sets `partial_marking default true` on `test_questions` and the import pipeline marks multi-correct as partial.
+   - Admin UI toggle remains; single-MCQ stays all-or-nothing.
 
-6. **Live & Upcoming Batches Strip** — horizontal scroll of next 6 batches from `courses` where `start_date >= today`. Countdown chip + seats-left bar.
+9. **Re-attempt by admin approval (Online Test).**
+   - New table `test_reattempt_requests` (student_id, test_id, attempt_id, reason, status: pending/approved/rejected, decided_by, decided_at).
+   - Student UI on `TestResultPage`: "Request Re-attempt" button → submits request.
+   - Admin page `AdminTestAttemptsPage`: pending requests panel; on approval, the existing locked attempt is marked `reattempt_approved` and student can start a fresh attempt for that test (RLS check via new helper `can_reattempt_test(user, test)`).
 
-7. **Toppers Wall** — masonry grid from `toppers` table (top 8 by rank), with AIR badge, exam, year, centre. "See all 5000+ selections →".
+## Group C — Auth & Session
 
-8. **Centres Across India + Dubai** — interactive map illustration + searchable centre cards (from `centers`). Filter by city. Each card → `/centers/:slug`.
+10. **Single-device login (kick old session).**
+    - New table `active_sessions (user_id PK, session_id text, device_label text, last_seen)`.
+    - On login, client writes a fresh session_id (uuid in localStorage) and updates the row. A Supabase Realtime channel `auth-session:{user_id}` broadcasts the new session_id.
+    - Other tabs/devices listening see a different session_id → auto sign-out + toast "Signed in on another device".
+    - Works alongside existing Google + email login.
 
-9. **Student Outcomes / Stats counter band** — animated counters from `site_stats`.
+## Group D — Post-submission UX
 
-10. **Free Resources Teaser** — Sample papers, NCERT solutions, YouTube masterclasses, AI Doubt Solver demo. Drives signup.
+11. **Post-submission thank-you messages.**
+    - Centralize in `src/content/postSubmissionMessages.ts`:
+      - Enquiry/CTA forms → warm "Our counsellor will reach you within 24 hours" with WhatsApp/Phone CTA.
+      - Welcome popup → already shows thanks; align tone.
+      - Payments/Enrollment success → "Welcome to Bansal Classes — your journey to AIR begins now" with next-step links (Dashboard, Live Classes, Test Series).
 
-11. **Testimonials carousel** — from `site_testimonials` with parent + student split tabs.
+12. **Wire web enquiries to Admin Panel** — already complete (Landing CTA filter + label live in AdminEnquiriesPage). No further work needed; included here only for confirmation.
 
-12. **App Download Band** — phone mockup, QR, Play/App Store buttons, feature checklist (offline lectures, AI planner, mock tests).
+## Technical Notes
 
-13. **Pricing & Scholarship Band** — "BOOST Scholarship Test" promo card + "EMI from ₹X/mo" + "100% refund in 7 days".
+- Migrations needed (in order):
+  1. `centers.is_featured`, `centers.featured_rank`
+  2. `toppers` alumni columns
+  3. `test_questions.topic`, `test_questions.sub_topic`, default `partial_marking=true` for mcq-multi inserts
+  4. `test_reattempt_requests` table + helper function + RLS + GRANTs
+  5. `active_sessions` table + RLS + GRANTs + realtime publication
+- New routes: `/alumni`. Updated routes: leadership detail (books + V.K. Bansal block), course detail (remove teachers), test taking (topic tabs), test result (request re-attempt), admin attempts (approve re-attempt), admin centers (feature toggle).
+- No new third-party packages.
 
-14. **FAQ accordion** (10 sales-objection questions).
+## Out of scope (will not touch)
 
-15. **Final CTA banner** — "Start Your Rank Journey Today" with counselling form (name, phone, class, exam) → writes to `enquiries` with `source_type='landing_cta'`.
+- Real photos of Bansal Sir, Sameer Sir, Mahima Ma'am, Neelam Ma'am — using existing + AI placeholders. Swap-in is a 30-second asset replacement when you share them.
+- Payment provider changes; payments thank-you copy only.
 
-16. **Footer enhancements** — sitemap, exam pages, centre cities, social, app links, compliance.
-
-### Copy & visual rules
-- Every section has a unique headline + one-line subhead — no recycled wording.
-- Heading font Mulish, body Plus Jakarta Sans. Primary `#F97316`, navy `#1E293B`, cream `#FFFBF5` per project core memory.
-- Lucide icons only, no emojis.
-- New seeded images via `imagegen` (premium for any with text/badge), stored in `src/assets/landing/`:
-  - `hero-collage-mentor.jpg`, `hero-collage-toppers.jpg`, `hero-collage-app.png`
-  - `goal-jee.jpg`, `goal-neet.jpg`, `goal-foundation.jpg`, `goal-olympiad.jpg`
-  - `format-classroom.jpg`, `format-distance.jpg`, `format-online.jpg`
-  - `centres-map-illustration.png`
-  - `resources-ai-doubt.jpg`, `resources-mock.jpg`
-  - `app-mockup-v3.png`
-  - `scholarship-banner.jpg`
-- Microanimations: subtle parallax on hero collage, count-up on stats (intersection observer), card lift on hover, marquee for trust bar.
-
-### New small components (under `src/components/landing/`)
-- `HeroCollage.tsx`, `TrustMarquee.tsx`, `GoalSelector.tsx`, `CourseRail.tsx`, `FormatCards.tsx`, `UpcomingBatches.tsx`, `ToppersWall.tsx`, `CentresShowcase.tsx`, `OutcomesStats.tsx`, `ResourcesTeaser.tsx`, `AppDownloadBand.tsx`, `ScholarshipBand.tsx`, `LandingFAQ.tsx`, `LandingCTAForm.tsx`.
-
-### Data hooks (new, read-only)
-- `useLandingCourses(examSlug)` — `courses` filtered + ordered.
-- `useUpcomingBatches()` — `courses` upcoming start_date.
-- `useTopToppers(limit)` — `toppers` ordered by rank.
-- `useCentresShowcase()` — `centers` with city grouping.
-
----
-
-## 2. Admin Overview — Unified Command Centre
-
-File: `src/pages/AdminDashboard.tsx` (rewrite of the overview page, keeps route).
-
-### New layout
-
-```text
-┌──────────────────────────────────────────────────────────┐
-│ Greeting + date + "Today snapshot" KPI strip (6 cards)   │
-│ Students · Active Courses · Centres · Revenue (₹+AED)    │
-│ · Pending Enquiries · Open Centre Tickets                │
-├──────────────────────────────────────────────────────────┤
-│ Revenue chart (30d, area)  │  Enrollments chart (30d)    │
-├──────────────────────────────────────────────────────────┤
-│ Centres at-a-glance table  │  Top Courses leaderboard    │
-│ (city, students, revenue,  │  (title, enrolments, rev,   │
-│  open tickets, → Manage)   │   conversion, → View)       │
-├──────────────────────────────────────────────────────────┤
-│ Recent Enquiries feed  │ Live Classes today │ Pending    │
-│ (landing+centre mixed) │ (status, attendees)│ moderation │
-├──────────────────────────────────────────────────────────┤
-│ Quick Actions grid: New Course · New Banner · Add Centre │
-│ · Add Topper · Add Testimonial · Broadcast Notification  │
-└──────────────────────────────────────────────────────────┘
-```
-
-### Data sources (all existing tables, parallel `react-query`)
-- KPIs: counts from `profiles`, `courses (is_published)`, `centers`, sum `payments.amount` (current month, split by currency), `enquiries` where status='new', `enquiries` where source_type='center_support' & status!='closed'.
-- Revenue chart: `payments` last 30d grouped by day + currency.
-- Enrollments chart: `enrollments` last 30d grouped by day.
-- Centres table: join `centers` + counts of `profiles.center_id` + sum `payments` via `enrollments`→`courses`→`center_id` (fallback: order by created students). Reuse simple per-centre RPC if too heavy; otherwise client-side aggregate over a single windowed query.
-- Top courses: `enrollments` grouped by course_id, top 5.
-- Recent enquiries: `enquiries` order desc limit 8, badge by `source_type`.
-- Live classes today: `live_classes` where `scheduled_at::date = today`.
-- Moderation queue: `reports` where status='open' limit 5.
-
-### New components (`src/components/admin/overview/`)
-- `KpiStrip.tsx`, `RevenueChart.tsx`, `EnrollmentChart.tsx`, `CentresGlance.tsx`, `TopCoursesCard.tsx`, `RecentEnquiriesFeed.tsx`, `TodayLiveClasses.tsx`, `ModerationQueueCard.tsx`, `QuickActionsGrid.tsx`.
-- Charts via existing `recharts` already in project.
-
-### Hooks
-- `useAdminOverview()` — single hook orchestrating parallel queries, returns `{ kpis, revenueSeries, enrollSeries, centres, topCourses, enquiries, liveToday, moderation, isLoading }`.
-
-### UX details
-- Skeletons per card while loading, no full-page spinner.
-- Currency toggle (INR / AED) on revenue card.
-- Each card has a "View all →" link to its existing admin module.
-- Respects roles: super_admin sees everything; admin sees same minus revenue totals (kept simple — single page, conditional render via `useAuth().isSuperAdmin`).
-
----
-
-## Out of scope
-- No DB migrations, no edge functions, no auth changes.
-- No changes to the Centre Panel or Student Portal.
-- No changes to existing admin sub-pages (only the overview).
-
-## Acceptance
-- Landing page is visually richer, every section has unique copy and imagery, and the CTA form writes to `enquiries`.
-- Admin overview loads under 2s with skeletons, shows live counts across centres/courses/revenue/enquiries, and links into the relevant modules.
+Approve and I'll execute groups A → D in that order.

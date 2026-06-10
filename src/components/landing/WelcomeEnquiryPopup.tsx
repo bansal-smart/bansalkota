@@ -4,6 +4,7 @@ import { Sparkles, Rocket, Stethoscope, Loader2, CheckCircle2, Phone, User } fro
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BansalButton from "@/components/bansal/BansalButton";
+import { postSubmission } from "@/content/postSubmissionMessages";
 
 const STORAGE_KEY = "bansal_welcome_popup_v1";
 
@@ -55,7 +56,7 @@ const WelcomeEnquiryPopup = () => {
     }
     setDone(true);
     localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-    toast.success("We'll call you within 24 hours!");
+    toast.success(postSubmission.welcomePopup.toast);
     setTimeout(() => setOpen(false), 2400);
   };
 
@@ -87,8 +88,8 @@ const WelcomeEnquiryPopup = () => {
                 <div className="h-14 w-14 rounded-full bg-emerald-100 grid place-items-center mx-auto">
                   <CheckCircle2 className="h-7 w-7 text-emerald-600" />
                 </div>
-                <h4 className="mt-3 font-display text-lg font-bold text-bansal-black">Thank you, {name.split(" ")[0]}!</h4>
-                <p className="mt-1 text-sm text-bansal-gray">Our counsellor will call you on {phone} shortly.</p>
+                <h4 className="mt-3 font-display text-lg font-bold text-bansal-black">{postSubmission.welcomePopup.title(name.split(" ")[0])}</h4>
+                <p className="mt-1 text-sm text-bansal-gray">{postSubmission.welcomePopup.body(phone)}</p>
               </div>
             ) : (
               <form onSubmit={submit} className="space-y-3">

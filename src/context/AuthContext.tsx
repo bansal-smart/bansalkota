@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
+import { useSingleDeviceLogin } from "@/hooks/useSingleDeviceLogin";
 
 export type UserRole = "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
 
@@ -65,6 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isMentor = role === "mentor";
   const isCenterAdmin = role === "center_admin";
   const isStudent = role === "student";
+
+  // Single-device login enforcement — claims the slot and signs out other devices.
+  useSingleDeviceLogin(session?.user?.id ?? null);
+
 
   /**
    * Server-verified role check. Calls the `has_role` security-definer RPC for
