@@ -35,9 +35,12 @@ const statusStyle: Record<string, string> = {
 };
 
 const sourceLabel: Record<string, string> = {
+  landing_page: "Landing CTA",
   contact: "Contact",
   admission: "Admission",
   mentorship: "Mentorship",
+  payout_setup: "Payout Setup",
+  website: "Website",
   other: "Other",
 };
 
@@ -126,7 +129,7 @@ const AdminEnquiriesPage = () => {
       <div>
         <h1 className="text-2xl font-black font-display text-foreground">Enquiry Management</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Submissions from Contact, Admission and Mentorship forms.
+          Live feed from the Landing CTA, Contact, Admission, Mentorship and Career forms — all in one inbox.
         </p>
       </div>
 
@@ -172,9 +175,11 @@ const AdminEnquiriesPage = () => {
             <SelectTrigger className="w-full md:w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All sources</SelectItem>
+              <SelectItem value="landing_page">Landing CTA</SelectItem>
               <SelectItem value="contact">Contact</SelectItem>
               <SelectItem value="admission">Admission</SelectItem>
               <SelectItem value="mentorship">Mentorship</SelectItem>
+              <SelectItem value="payout_setup">Payout Setup</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
