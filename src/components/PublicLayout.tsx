@@ -16,6 +16,7 @@ const aboutChildren = [
   { label: "About Sameer Bansal Sir", path: "/about/sameer-bansal" },
   { label: "About Neelam Bansal Ma'am", path: "/about/neelam-bansal" },
   { label: "About Mahima Bansal Ma'am", path: "/about/mahima-bansal" },
+  { label: "Bansal Alumni Network", path: "/alumni" },
 ];
 
 const navItems: NavItem[] = [
