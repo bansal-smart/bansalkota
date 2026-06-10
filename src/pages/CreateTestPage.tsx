@@ -533,6 +533,25 @@ const CreateTestPage = () => {
                   <option value="numerical">Numerical</option>
                   <option value="integer">Integer</option>
                 </select>
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground" title="Auto-set from the question bank; edit per question">
+                  <span>+</span>
+                  <input
+                    type="number"
+                    step="0.25"
+                    value={q.marksCorrect}
+                    onChange={(e) => updateQ(i, { marksCorrect: Number(e.target.value) })}
+                    className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
+                    aria-label="Marks for correct"
+                  />
+                  <span>/</span>
+                  <input
+                    type="number"
+                    step="0.25"
+                    value={q.marksWrong}
+                    onChange={(e) => updateQ(i, { marksWrong: Number(e.target.value) })}
+                    className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
+                    aria-label="Marks for wrong"
+                  />
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
