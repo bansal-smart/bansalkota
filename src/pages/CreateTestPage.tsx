@@ -659,6 +659,16 @@ const CreateTestPage = () => {
           </div>
         </div>
       </div>
+      <DocxBulkImportDialog
+        open={docxImportOpen}
+        onClose={() => setDocxImportOpen(false)}
+        onImported={() => {
+          setDocxImportOpen(false);
+          setReloadKey((k) => k + 1);
+          toast.success("Questions appended — reloading list");
+        }}
+        testId={resolvedTestId ?? undefined}
+      />
     </DndContext>
   );
 };
