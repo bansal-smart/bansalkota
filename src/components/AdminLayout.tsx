@@ -24,6 +24,8 @@ import {
   Image as ImageIcon,
   Award,
   Youtube,
+  Quote,
+  BarChart3,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -54,6 +56,9 @@ const baseNav: NavItem[] = [
   { label: "Centres", icon: MapPin, path: "/admin/centers" },
   { label: "Toppers", icon: Award, path: "/admin/toppers" },
   { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
+  { label: "Testimonials", icon: Quote, path: "/admin/testimonials" },
+  { label: "Homepage Stats", icon: BarChart3, path: "/admin/stats" },
+  { label: "Leadership", icon: Users, path: "/admin/leadership" },
   { label: "Lecture Bucket", icon: Youtube, path: "/admin/lecture-bucket" },
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },

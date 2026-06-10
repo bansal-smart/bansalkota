@@ -108,6 +108,9 @@ import AdminToppersPage from "./pages/AdminToppersPage";
 import AdminBannersPage from "./pages/AdminBannersPage";
 import AdminBoostPage from "./pages/AdminBoostPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
+import AdminTestimonialsPage from "./pages/AdminTestimonialsPage";
+import AdminStatsPage from "./pages/AdminStatsPage";
+import AdminLeadershipPage from "./pages/AdminLeadershipPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -277,6 +280,9 @@ const App = () => (
               <Route path="/admin/centers" element={<AdminCentersPage />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
+              <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
+              <Route path="/admin/stats" element={<AdminStatsPage />} />
+              <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
               <Route path="/admin/lecture-bucket" element={<AdminLectureBucketPage />} />
               {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
