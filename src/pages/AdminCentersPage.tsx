@@ -55,6 +55,7 @@ const AdminCentersPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [staffCenter, setStaffCenter] = useState<Center | null>(null);
 
   const load = async () => {
     setLoading(true);
