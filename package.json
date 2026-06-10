@@ -60,6 +60,7 @@
     "jspdf-autotable": "^5.0.7",
     "katex": "^0.16.45",
     "lucide-react": "^0.462.0",
+    "mammoth": "^1.12.0",
     "mathlive": "^0.109.2",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
