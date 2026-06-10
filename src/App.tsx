@@ -310,6 +310,24 @@ const App = () => (
               <Route path="/admin/overview" element={<AdminDashboard />} />
             </Route>
 
+            {/* Centre admin portal */}
+            <Route
+              element={
+                <ProtectedCenterRoute>
+                  <CenterLayout />
+                </ProtectedCenterRoute>
+              }
+            >
+              <Route path="/center" element={<CenterDashboardPage />} />
+              <Route path="/center/banners" element={<CenterBannersPage />} />
+              <Route path="/center/courses" element={<CenterCoursesPage />} />
+              <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
+              <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
+              <Route path="/center/students" element={<CenterStudentsPage />} />
+              <Route path="/center/support" element={<CenterSupportPage />} />
+            </Route>
+
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
