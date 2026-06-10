@@ -1,83 +1,107 @@
-## Admin panel audit
 
-Here's what already exists in the admin sidebar and what's still missing.
+# Live Test Platform — Phased Build Plan
 
-### ✅ Already fully managed
+Your existing setup already covers a meaningful slice: `tests` / `test_questions` / `test_attempts` tables, a `submit_test_attempt()` server-side scorer, a `TestTakingPage` (timer + palette + auto-save), `TestResultPage`, `TestSubjectBreakdownPage`, a `BulkQuestionUploadDialog`, a `QuestionEditorDialog`, and a KaTeX `MathRenderer`. The plan upgrades this incrementally instead of replacing it.
 
-| Area | Admin page | Notes |
-|---|---|---|
-| Courses (list, create, edit, publish) | `AdminCoursesPage`, `CreateCoursePage` | |
-| Chapters / Lessons / Subjects per course | `AdminCourseContentPage` | Drag-drop chapter & lesson editor (dnd-kit) |
-| Course PDFs / resources | `AdminCourseContentPage` + `course_resources` | |
-| Tests (catalogue, create, edit) | `AdminTestsPage`, `CreateTestPage` | |
-| Test Series | `AdminTestSeriesPage` | |
-| Question Bank | `AdminQuestionBankPage` | |
-| Compete questions (1v1) | `AdminCompeteQuestionsPage` | |
-| Live classes | `AdminLiveClassesPage` | |
-| Books + Module Packs (E-Store catalogue) | `AdminBooksPage` (tabs: books / packs) | |
-| Centres (pan-India locations) | `AdminCentersPage` *(just added)* | |
-| Toppers / Achievements | `AdminToppersPage` *(just added)* | |
-| Public page hero banners | `AdminBannersPage` *(just added)* | 17 pages |
-| Enquiries (contact form) | `AdminEnquiriesPage` | |
-| Educator applications | `AdminEducatorApplicationsPage` | |
-| Users / Students / Schools | `AdminUsersPage`, `AdminStudentsPage`, `AdminSchoolsPage` | |
-| Mentor assignments & handovers | `AdminMentorAssignmentsPage`, `AdminMentorHandoversPage` | |
-| Exam catalogue (JEE/NEET/etc.) | `AdminExamsPage` | |
-| Notifications | `AdminNotificationsPage` | |
-| Payments & revenue (super-admin) | `AdminPaymentsPage` | |
-| Reports / moderation | `AdminReportsPage`, `AdminModerationPage` | |
-| Platform settings (super-admin) | `AdminSettingsPage` | |
-| Admin management (super-admin) | `AdminAdminsPage` | |
-
-### ❌ Genuine gaps to close
-
-1. **BOOST 2026 scholarship exam** — public `/boost` page exists with a "₹99 to register" CTA, but there is **no registration form, no DB table, and no admin view**.
-2. **E-Store orders** — `orders` + `order_items` tables exist (customers can checkout) but there is **no admin page** to view/manage incoming orders.
-
-Everything else the user listed (courses, content, chapters, tests, test series, e-store products, centres, enquiries) is already covered.
+I am **not** building Institutes, Batches, Teacher/Question-Setter approval workflows, proctoring, AI generation, or payments here — they are out of MVP scope.
 
 ---
 
-## Plan
+## Phase 1 — Live test surface on the Student Dashboard (small, ship first)
 
-### 1. BOOST exam — full registration flow
+Goal: a student can see and join scheduled live tests from the dashboard.
 
-**Database (new migration)**
-- `boost_registrations` table: `full_name`, `email`, `phone`, `whatsapp`, `date_of_birth`, `class_level` (5–12, dropper), `target_exam` (JEE/NEET/NTSE/Olympiad/School), `school_name`, `city`, `state`, `parent_name`, `parent_phone`, `preferred_centre_id` (FK → `centers`), `exam_slot` (date+time choice), `payment_status` ('pending'|'paid'|'failed'), `payment_ref`, `amount` (default ₹99), `admit_card_number` (auto-generated), `status` ('registered'|'confirmed'|'attended'|'cancelled'), `notes`.
-- GRANTs + RLS: anyone can `INSERT` (public registration); admin/super_admin can `SELECT/UPDATE/DELETE`; students can `SELECT` their own rows by email.
-- Trigger to auto-generate admit card number on insert.
-- Notify admins via existing `notify_admins()` helper on new registration.
+- **`LiveTestsWidget`** on `StudentDashboard.tsx`: lists tests where `is_published = true` and `starts_at` is within ±N minutes, plus next 7 days upcoming. States: `Live now`, `Starts in 12 min`, `Upcoming`, `Missed`.
+- **`/live-tests` page** (full list, filters by exam pattern + subject + status).
+- **Instruction screen** (`/tests/:slug/instructions`) — marking scheme, palette legend, declaration checkbox, "Start test" button (disabled until `starts_at`).
+- Reuse existing `TestTakingPage` for the attempt itself.
+- Sidebar entry in `StudentLayout`: "Live Tests" with a red `LIVE` dot when one is active.
 
-**Public side**
-- Add a "Register now" CTA section to `BoostPage.tsx` opening a multi-step modal/form (personal → academic → centre & slot → payment placeholder).
-- Use `zod` for validation (per project security guideline).
-- On submit → insert row + show admit card number + success screen.
-
-**Admin side**
-- New `AdminBoostPage.tsx` at `/admin/boost`:
-  - Filterable table (status, exam slot, centre, payment status)
-  - Bulk export to CSV
-  - Mark paid / confirmed / attended
-  - Stats header (total registered, paid, by centre)
-- Sidebar entry "BOOST Registrations" under base nav.
-
-### 2. E-Store orders admin
-
-- New `AdminOrdersPage.tsx` at `/admin/orders`:
-  - Table: order ID, customer name + email, items count, total, payment status, shipping status, created date
-  - Detail drawer: line items, shipping address, mark as shipped/delivered/refunded
-  - Filter by status & date range
-- Sidebar entry "E-Store Orders" near "Books / E-Store".
-
-### 3. Wiring
-- Register new routes in `App.tsx` (`/admin/boost`, `/admin/orders`).
-- Add sidebar items in `AdminLayout.tsx`.
-- Both pages gated by existing `ProtectedAdminRoute` (admin + super_admin).
-
-### Out of scope (already covered or explicitly not requested)
-- Subjects: currently free-text fields on courses/chapters/lessons — no dedicated subject master table needed unless you want to constrain values.
-- Faculty directory: the public `/educators` page already reads from `profiles` + `user_roles` (teacher role), managed via Users & Educator Applications.
+No DB schema changes in this phase — uses existing `tests.starts_at` / `ends_at`.
 
 ---
 
-**Approve this plan and I'll implement it.** Reply with anything to tweak (e.g. skip the BOOST payment placeholder, change which fields go on the registration form, add subject master, etc.).
+## Phase 2 — CBT screen upgrades (NTA parity)
+
+Edits to `TestTakingPage.tsx` + a new `QuestionPalette` component:
+
+- Subject tabs derived from `test_questions.subject`.
+- 5 palette statuses with the exact NTA colors: Not Visited (grey), Not Answered (red), Answered (green), Marked for Review (purple), Answered & Marked for Review (purple + green dot). "Answered & marked" is still evaluated.
+- Buttons: Save & Next, Save & Mark for Review, Mark for Review & Next, Clear Response, Previous, Next.
+- Per-question `time_spent_seconds` tracking (added to `answers` JSON).
+- Timer hardened: persisted `started_at`, recomputed on refresh; warn-on-unload; auto-submit on expiry (already partially present — verified and patched).
+- Submit summary modal with answered / not answered / marked / answered+marked / not visited counts.
+- Numerical-answer virtual keypad for numerical questions.
+- Image zoom modal (click question/option image).
+
+---
+
+## Phase 3 — Question types & marking engine
+
+Extend `test_questions` and the `submit_test_attempt` SQL function:
+
+- Add columns: `marks_unanswered numeric default 0`, `partial_marking boolean default false`, `tolerance numeric`, `numerical_answer numeric`, `answer_format text` (`integer|decimal|range`), `option_images jsonb`, `solution_image_url text`, `passage_id uuid null`.
+- New table `passages` (id, title, text, images, created_by) for comprehension parents.
+- Question types supported in scorer: `mcq-single`, `mcq-multi` (with partial-marking rule), `numerical`, `integer`, `matrix-match`, `assertion-reason` (scored as single-correct), `passage-child` (delegates to inner type).
+- `submit_test_attempt` rewritten as a dispatcher over `question_type`. All evaluation stays server-side so the client never sees `correct_answer` during the attempt.
+- `marks_correct` / `marks_wrong` / `marks_unanswered` honored per-question (already partially supported).
+
+---
+
+## Phase 4 — Question Editor & Question Bank upgrades
+
+Edits to `QuestionEditorDialog.tsx` and `AdminQuestionBankPage.tsx`:
+
+- Type picker (single / multi / numerical / integer / matrix / assertion-reason / passage-child).
+- Dynamic form per type (multi → checkbox list of correct options; numerical → answer + tolerance + format; matrix → row/col grid).
+- Image uploads via existing `educator-uploads` bucket for: question body, each option, solution. Live preview with KaTeX.
+- Bank filters: exam_pattern, subject, chapter, topic, type, difficulty, has_image, status, import source.
+- "Add to test" action (writes a `test_questions` row from a bank question).
+
+---
+
+## Phase 5 — Word (.docx) bulk upload with images
+
+Rewrite `BulkQuestionUploadDialog.tsx` and add `src/lib/docxQuestionParser.ts`:
+
+- Use `mammoth` (HTML + image extraction) on the client.
+- Parse both formats listed in the brief: paragraph-style (`Q1. [Single Correct] … Answer: B … Solution:`) and table-style.
+- Detect type tags (`[SCQ]`, `[Numerical]`, `[Multi]`, `[Matrix]`, `[Passage]`, `[AR]`).
+- Extract embedded images, upload to `educator-uploads`, and bind to the right slot (question body / option A-D / solution / passage) based on positional order within the question block.
+- Preview table with per-row validation (missing answer, bad marks, image bind failed, unknown type → "Needs review"), inline fix, then "Import N questions" inserts into `test_questions` (or `question_bank` if a test isn't selected).
+
+Excel/CSV upload reuses the same preview/validate/commit pipeline via `xlsx` (already in deps if present, else add).
+
+---
+
+## Phase 6 — Result, analytics & re-evaluation
+
+- `TestResultPage`: add accuracy, time taken, rank (already computed via `percentile`), per-question review row with Your Answer / Correct / Marks / Solution (uses `get_test_question_answers` RPC, already exists).
+- New RPC `reevaluate_test(_test_id)` — admin can update a question's `correct_answer` / mark it dropped / set bonus, then trigger recompute of all submitted attempts. Adds `is_dropped boolean`, `bonus_marks numeric` to `test_questions`.
+- `AdminTestsPage`: result-visibility toggle, solution-visibility toggle, "Recompute results" button, rank list export (CSV).
+
+---
+
+## Technical notes
+
+- Stack stays React + TS + Tailwind + Lovable Cloud (Supabase). No new framework.
+- All scoring stays in Postgres SECURITY DEFINER functions — never trust client.
+- Images live in existing `educator-uploads` bucket; URLs stored on rows.
+- KaTeX (`MathRenderer`) already wired — used in question, options, solution, passage.
+- Migrations: ~2 (Phase 3 schema + Phase 6 re-eval); GRANTs included for every new column/table.
+
+---
+
+## Out of MVP (will not build now, can be added later)
+
+Institutes / batches / teacher-setter approval workflow, proctoring, AI generators, payments/subscription, parent reports, WhatsApp alerts, mobile app, SVG-as-image, video solutions.
+
+---
+
+## What I need from you before coding
+
+1. **Start with Phase 1 only?** (dashboard widget + live-test list + instruction screen — ~1 short build) or **bundle Phase 1+2** (also upgrade the CBT screen)?
+2. **Which question types are must-have for v1?** Default I'll ship: single, multi (with partial), numerical, integer. Matrix-match + passage + assertion-reason can come in a follow-up.
+3. **Word upload priority** — needed in this round, or after the live-test surface is verified? It's the heaviest single piece (≈ half of the total work).
+
+Reply with picks (e.g. "Phase 1+2, all 4 types, Word later") and I'll implement.

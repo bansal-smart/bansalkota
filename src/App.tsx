@@ -16,6 +16,7 @@ import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
 import StudentDashboard from "./pages/StudentDashboard";
 import TestListPage from "./pages/TestListPage";
+import TestInstructionsPage from "./pages/TestInstructionsPage";
 import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
 import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
@@ -201,6 +202,7 @@ const App = () => (
               <Route element={<StudentLayout />}>
                 <Route path="/dashboard" element={<StudentDashboard />} />
                 <Route path="/my-tests" element={<TestListPage />} />
+                <Route path="/tests/:slug/instructions" element={<TestInstructionsPage />} />
                 <Route path="/tests/:slug/result/:attemptId" element={<TestResultPage />} />
                 <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
                 <Route path="/my-live-classes" element={<LiveClassesListPage />} />

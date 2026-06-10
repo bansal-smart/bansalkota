@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAppStore } from "@/store/useAppStore";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import LiveBadge from "@/components/LiveBadge";
+import LiveTestsWidget from "@/components/LiveTestsWidget";
 
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
@@ -184,6 +185,9 @@ const StudentDashboard = () => {
           )}
         </div>
       </section>
+
+      {/* Live & upcoming tests */}
+      <LiveTestsWidget />
 
       {/* Continue learning */}
       <section className="rounded-2xl border border-border bg-card p-6">
