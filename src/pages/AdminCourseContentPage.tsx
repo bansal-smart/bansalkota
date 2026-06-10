@@ -736,7 +736,10 @@ const AdminCourseContentPage = () => {
                     <SortableChapter key={ch.id} chapter={ch}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="font-bold text-foreground truncate">{ch.title}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-foreground truncate">{ch.title}</p>
+                            {!ch.is_published && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">Hidden</Badge>}
+                          </div>
                           <p className="text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
@@ -744,6 +747,13 @@ const AdminCourseContentPage = () => {
                           <Button size="sm" variant="outline" onClick={() => openAddLecture(ch.id)}>
                             <Plus className="h-3.5 w-3.5" /> Add lecture
                           </Button>
+                          <button
+                            onClick={() => toggleChapterPublish(ch)}
+                            className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                            title={ch.is_published ? "Hide chapter from students" : "Publish chapter"}
+                          >
+                            {ch.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                          </button>
                           <button
                             onClick={() => deleteChapter(ch)}
                             className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
