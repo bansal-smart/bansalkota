@@ -4,6 +4,7 @@ import { Sparkles, Rocket, Stethoscope, Loader2, CheckCircle2, Phone, User } fro
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BansalButton from "@/components/bansal/BansalButton";
+import { postSubmission } from "@/content/postSubmissionMessages";
 
 const STORAGE_KEY = "bansal_welcome_popup_v1";
 
