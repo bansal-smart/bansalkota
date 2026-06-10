@@ -356,6 +356,8 @@ export default function CenterDetailPage() {
         </div>
       </section>
 
+      {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
+
       {/* CTA */}
       <section className="py-14 bg-bansal-cream">
         <div className="container mx-auto px-4 max-w-2xl text-center">
