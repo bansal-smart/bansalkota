@@ -26,6 +26,7 @@ import {
   Youtube,
   Quote,
   BarChart3,
+  LifeBuoy,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
