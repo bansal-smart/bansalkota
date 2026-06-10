@@ -98,6 +98,22 @@ export default function LeadershipDetailPage() {
         </div>
       </section>
 
+      {/* ===== V.K. BANSAL: PERSISTENT IDENTITY RIBBON ===== */}
+      {slug === "vk-bansal" && (
+        <section className="bg-bansal-blue text-white py-5 border-b-2 border-bansal-orange/40">
+          <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+            <p className="font-display text-base md:text-xl font-semibold text-center md:text-left leading-snug">
+              <span className="text-bansal-orange">Mr. V.K. Bansal Sir</span>
+              <span className="mx-2 text-white/40">—</span>
+              Founder, Bansal Classes
+              <span className="mx-2 text-white/40">·</span>
+              The Architect of Kota (since 1981)
+            </p>
+          </div>
+        </section>
+      )}
+
+
       {/* PULL-QUOTE BAND */}
       {profile.pull_quote && (
         <section className="relative bg-bansal-cream py-16 md:py-20 overflow-hidden">
@@ -316,10 +332,12 @@ export default function LeadershipDetailPage() {
                   <AwardIcon className="h-7 w-7 text-bansal-orange" />
                 </div>
                 <p className="font-display text-lg md:text-2xl font-semibold leading-relaxed">
+                  <span className="text-bansal-orange">Author of 4 best-selling JEE preparation books</span>
+                  <span className="mx-2 text-white/40">·</span>
                   Mentor of <span className="text-bansal-orange">All India Rank 1</span> and{" "}
-                  <span className="text-bansal-orange">single-digit ranks</span> several times — and Author of{" "}
-                  <span className="text-bansal-orange">4 best-selling books</span> for JEE preparation.
+                  <span className="text-bansal-orange">single-digit ranks</span> several times.
                 </p>
+
               </div>
             </div>
           </section>

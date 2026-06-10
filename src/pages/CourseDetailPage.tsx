@@ -339,7 +339,7 @@ const CourseDetailPage = () => {
             </section>
           )}
 
-          {/* Know Your Teachers — removed per product update */}
+
 
 
           {/* Know More Details */}
