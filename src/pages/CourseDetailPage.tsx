@@ -339,30 +339,8 @@ const CourseDetailPage = () => {
             </section>
           )}
 
-          {/* Know Your Teachers */}
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <h3 className="font-display text-lg font-black text-foreground mb-4">Know Your Teachers</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {FALLBACK_TEACHERS.map((t) => (
-                <div key={t.name} className="rounded-xl border border-border bg-background overflow-hidden">
-                  <div className="aspect-square bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center">
-                    <span className="font-display text-2xl font-black text-primary">
-                      {t.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-sm font-bold text-foreground truncate">{t.name}</p>
-                    <div className="flex items-center justify-between gap-1 mt-1">
-                      <p className="text-[11px] text-muted-foreground truncate">{t.subject}</p>
-                      <span className="text-[10px] font-bold rounded-full bg-primary/10 text-primary px-1.5 py-0.5 shrink-0">
-                        {t.years}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          {/* Know Your Teachers — removed per product update */}
+
 
           {/* Know More Details */}
           <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
