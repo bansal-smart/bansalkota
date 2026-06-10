@@ -111,6 +111,16 @@ import AdminOrdersPage from "./pages/AdminOrdersPage";
 import AdminTestimonialsPage from "./pages/AdminTestimonialsPage";
 import AdminStatsPage from "./pages/AdminStatsPage";
 import AdminLeadershipPage from "./pages/AdminLeadershipPage";
+import AdminCenterSupportPage from "./pages/AdminCenterSupportPage";
+import CenterLayout from "./components/CenterLayout";
+import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
+import CenterDashboardPage from "./pages/CenterDashboardPage";
+import CenterBannersPage from "./pages/CenterBannersPage";
+import CenterCoursesPage from "./pages/CenterCoursesPage";
+import CenterWebsiteEnquiriesPage from "./pages/CenterWebsiteEnquiriesPage";
+import CenterCourseEnquiriesPage from "./pages/CenterCourseEnquiriesPage";
+import CenterStudentsPage from "./pages/CenterStudentsPage";
+import CenterSupportPage from "./pages/CenterSupportPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
