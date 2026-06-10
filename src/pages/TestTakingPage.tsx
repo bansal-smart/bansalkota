@@ -737,13 +737,6 @@ const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string
   </div>
 );
 
-const SummaryRow = ({ color, label, v }: { color: string; label: string; v: number }) => (
-  <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
-    <span className={`inline-block h-3 w-3 rounded ${color}`} />
-    <span className="flex-1 text-foreground/80">{label}</span>
-    <span className="font-black tabular-nums text-foreground">{v}</span>
-  </div>
-);
 
 const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: string }) => {
   const allowDecimal = format !== "integer";
