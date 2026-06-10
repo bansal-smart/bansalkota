@@ -152,6 +152,9 @@ const AdminCoursesPage = () => {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Lectures</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Students</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
@@ -163,6 +166,9 @@ const AdminCoursesPage = () => {
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
+                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
+                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
+                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.test_count ?? 0}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{(c.total_enrolled ?? 0).toLocaleString()}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
                     <td className="px-4 py-3 text-center">
