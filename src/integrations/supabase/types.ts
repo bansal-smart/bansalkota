@@ -2427,14 +2427,22 @@ export type Database = {
           difficulty: string
           explanation: string | null
           id: string
+          import_batch_id: string | null
           is_public: boolean
           marks_correct: number
           marks_wrong: number
+          numerical_answer: number | null
+          option_images: Json
           options: Json
+          partial_marking: boolean
           question_image_url: string | null
           question_text: string
+          question_type: string
+          solution_image_url: string | null
+          source_filename: string | null
           subject: string
           tags: string[]
+          tolerance: number
           topic: string | null
           updated_at: string
         }
@@ -2445,14 +2453,22 @@ export type Database = {
           difficulty?: string
           explanation?: string | null
           id?: string
+          import_batch_id?: string | null
           is_public?: boolean
           marks_correct?: number
           marks_wrong?: number
+          numerical_answer?: number | null
+          option_images?: Json
           options?: Json
+          partial_marking?: boolean
           question_image_url?: string | null
           question_text: string
+          question_type?: string
+          solution_image_url?: string | null
+          source_filename?: string | null
           subject: string
           tags?: string[]
+          tolerance?: number
           topic?: string | null
           updated_at?: string
         }
@@ -2463,16 +2479,63 @@ export type Database = {
           difficulty?: string
           explanation?: string | null
           id?: string
+          import_batch_id?: string | null
           is_public?: boolean
           marks_correct?: number
           marks_wrong?: number
+          numerical_answer?: number | null
+          option_images?: Json
           options?: Json
+          partial_marking?: boolean
           question_image_url?: string | null
           question_text?: string
+          question_type?: string
+          solution_image_url?: string | null
+          source_filename?: string | null
           subject?: string
           tags?: string[]
+          tolerance?: number
           topic?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      question_import_batches: {
+        Row: {
+          created_at: string
+          error_log: Json
+          filename: string
+          id: string
+          image_count: number
+          question_count: number
+          status: string
+          target_id: string | null
+          target_type: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          error_log?: Json
+          filename: string
+          id?: string
+          image_count?: number
+          question_count?: number
+          status?: string
+          target_id?: string | null
+          target_type: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          error_log?: Json
+          filename?: string
+          id?: string
+          image_count?: number
+          question_count?: number
+          status?: string
+          target_id?: string | null
+          target_type?: string
+          uploaded_by?: string
         }
         Relationships: []
       }
@@ -2748,6 +2811,7 @@ export type Database = {
           difficulty: string | null
           explanation: string | null
           id: string
+          import_batch_id: string | null
           marks_correct: number | null
           marks_unanswered: number
           marks_wrong: number | null
@@ -2760,6 +2824,7 @@ export type Database = {
           question_text: string
           question_type: string
           solution_image_url: string | null
+          source_filename: string | null
           subject: string | null
           test_id: string
           tolerance: number
@@ -2772,6 +2837,7 @@ export type Database = {
           difficulty?: string | null
           explanation?: string | null
           id?: string
+          import_batch_id?: string | null
           marks_correct?: number | null
           marks_unanswered?: number
           marks_wrong?: number | null
@@ -2784,6 +2850,7 @@ export type Database = {
           question_text: string
           question_type?: string
           solution_image_url?: string | null
+          source_filename?: string | null
           subject?: string | null
           test_id: string
           tolerance?: number
@@ -2796,6 +2863,7 @@ export type Database = {
           difficulty?: string | null
           explanation?: string | null
           id?: string
+          import_batch_id?: string | null
           marks_correct?: number | null
           marks_unanswered?: number
           marks_wrong?: number | null
@@ -2808,6 +2876,7 @@ export type Database = {
           question_text?: string
           question_type?: string
           solution_image_url?: string | null
+          source_filename?: string | null
           subject?: string | null
           test_id?: string
           tolerance?: number

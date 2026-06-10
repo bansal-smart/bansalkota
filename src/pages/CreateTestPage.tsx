@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, GripVertical, BookMarked } from "lucide-react";
+import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
+import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
@@ -107,6 +108,8 @@ const CreateTestPage = () => {
   const [courseId, setCourseId] = useState<string>("");
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
+  const [docxImportOpen, setDocxImportOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -177,7 +180,7 @@ const CreateTestPage = () => {
       setLoading(false);
     })();
     return () => { ignore = true; };
-  }, [isEditMode, slugParam, testIdParam, isAdminContext, navigate]);
+  }, [isEditMode, slugParam, testIdParam, isAdminContext, navigate, reloadKey]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
@@ -449,6 +452,15 @@ const CreateTestPage = () => {
                 </div>
               </SheetContent>
             </Sheet>
+            {resolvedTestId && (
+              <button
+                onClick={() => setDocxImportOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                title="Import questions from a Word (.docx) file with inline diagrams"
+              >
+                <FileText className="h-3.5 w-3.5" /> Word import
+              </button>
+            )}
             <button
               onClick={() => setQuestions([...questions, blankQuestion()])}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
@@ -647,6 +659,16 @@ const CreateTestPage = () => {
           </div>
         </div>
       </div>
+      <DocxBulkImportDialog
+        open={docxImportOpen}
+        onClose={() => setDocxImportOpen(false)}
+        onImported={() => {
+          setDocxImportOpen(false);
+          setReloadKey((k) => k + 1);
+          toast.success("Questions appended — reloading list");
+        }}
+        testId={resolvedTestId ?? undefined}
+      />
     </DndContext>
   );
 };
