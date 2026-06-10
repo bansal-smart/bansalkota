@@ -14,6 +14,12 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import {
   GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons,
 } from "@/components/bansal/BansalDecor";
+import { useSiteTestimonials, useSiteStats } from "@/hooks/useSiteContent";
+
+const iconMap: Record<string, any> = {
+  Trophy, GraduationCap, Star, ShieldCheck, Award, Sparkles, Target,
+  BookOpen, Users, Brain, Lightbulb, Rocket, BarChart3, Building2,
+};
 
 import mentorTeaching from "@/assets/bansal-mentor-v2.jpg";
 import toppersImage from "@/assets/bansal-toppers-v2.jpg";
