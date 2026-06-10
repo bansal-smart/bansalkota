@@ -154,7 +154,7 @@ const AdminImportBatchesPage = () => {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
