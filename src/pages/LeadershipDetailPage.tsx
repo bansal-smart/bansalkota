@@ -1,13 +1,15 @@
 import { Link, useParams, Navigate } from "react-router-dom";
-import { ArrowLeft, Quote, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Quote, ChevronDown, Loader2, Sparkles, Calendar, Compass } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import { leadershipPhotos } from "@/content/bansal/about";
+import { leaderEditorial } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
 
 export default function LeadershipDetailPage() {
   const { slug = "" } = useParams();
   const { profile, sections, loading } = useLeader(slug);
+  const extra = leaderEditorial[slug];
 
   if (loading) {
     return (
