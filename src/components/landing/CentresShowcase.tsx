@@ -50,9 +50,51 @@ const CentresShowcase = () => {
               <div key={i} className="h-20 rounded-xl bg-white border border-border animate-pulse" />
             ))}
           </div>
-        ) : Object.keys(byRegion).length === 0 ? (
+        ) : Object.keys(byRegion).length === 0 && featured.length === 0 ? (
           <p className="text-center text-sm text-bansal-gray py-10">No centres match "{q}". Try another city.</p>
         ) : (
+          <>
+            {/* Flagship featured cards */}
+            {featured.length > 0 && (
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-3">
+                  <Crown className="h-4 w-4 text-bansal-orange" />
+                  <span className="text-xs font-bold uppercase tracking-wide text-bansal-orange">Flagship Centre{featured.length > 1 ? "s" : ""}</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {featured.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/centers/${c.slug}`}
+                      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white p-5 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+                    >
+                      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-bansal-orange/20 blur-3xl pointer-events-none" />
+                      <div className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-bansal-orange/90 text-white text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider">
+                        <Star className="h-3 w-3 fill-white" /> Flagship
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="h-11 w-11 rounded-xl bg-bansal-orange/30 flex items-center justify-center shrink-0">
+                          <MapPin className="h-5 w-5 text-bansal-orange" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-display text-2xl font-extrabold leading-tight">
+                            {c.city} {c.is_hq && <span className="text-[10px] text-bansal-orange ml-1 align-middle">HQ</span>}
+                          </div>
+                          <div className="text-[12px] text-white/75">{c.state} · {c.region}</div>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs text-white/80 leading-relaxed">
+                        The original Bansal Classes campus — where forty years of JEE legacy began.
+                      </p>
+                      <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-bansal-orange group-hover:underline">
+                        Visit flagship campus <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          {Object.keys(byRegion).length > 0 && (
           <div className="space-y-6">
             {Object.entries(byRegion).map(([region, list]) => (
               <div key={region}>
