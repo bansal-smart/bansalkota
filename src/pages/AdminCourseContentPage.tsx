@@ -33,7 +33,7 @@ import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
-type Chapter = { id: string; title: string; position: number };
+type Chapter = { id: string; title: string; position: number; is_published: boolean };
 type Resource = {
   id: string;
   course_id: string;
