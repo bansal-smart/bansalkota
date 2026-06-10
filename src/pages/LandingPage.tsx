@@ -21,6 +21,7 @@ import ResourcesTeaser from "@/components/landing/ResourcesTeaser";
 import CentresShowcase from "@/components/landing/CentresShowcase";
 import LandingFAQ from "@/components/landing/LandingFAQ";
 import LandingCTAForm from "@/components/landing/LandingCTAForm";
+import WelcomeEnquiryPopup from "@/components/landing/WelcomeEnquiryPopup";
 
 const iconMap: Record<string, any> = {
   Trophy, GraduationCap, Star, ShieldCheck, Award, Sparkles, Target,
@@ -176,6 +177,7 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background">
+      <WelcomeEnquiryPopup />
       {/* 1. HERO */}
       <section className="relative bg-bansal-blue text-white overflow-hidden">
         <div className="absolute inset-0 grid-texture opacity-60" />
