@@ -12,10 +12,10 @@ const CenterStudentsPage = () => {
     if (!primaryCenterId) return;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("profiles" as any)
+      const { data } = await (supabase as any)
+        .from("profiles")
         .select("id, full_name, phone, target_exam, class_level, city, created_at")
-        .eq("center_id" as any, primaryCenterId)
+        .eq("center_id", primaryCenterId)
         .order("created_at", { ascending: false });
       setItems(data ?? []);
       setLoading(false);
