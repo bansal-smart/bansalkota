@@ -158,13 +158,6 @@ const TestTakingPage = () => {
   useEffect(() => { answersRef.current = answers; }, [answers]);
   useEffect(() => { statusesRef.current = statuses; }, [statuses]);
 
-  // Auto-save every 15s
-  useEffect(() => {
-    if (!attemptId) return;
-    const t = setInterval(autoSave, 15000);
-    return () => clearInterval(t);
-  }, [attemptId, autoSave]);
-
   const autoSave = useCallback(async () => {
     if (!attemptId) return;
     if (Date.now() - lastSavedRef.current < 3000) return;
@@ -189,6 +182,13 @@ const TestTakingPage = () => {
     lastSavedRef.current = Date.now();
     setSavedAgo(0);
   }, [attemptId, startedAt, tabSwitches]);
+
+  // Auto-save every 15s
+  useEffect(() => {
+    if (!attemptId) return;
+    const t = setInterval(autoSave, 15000);
+    return () => clearInterval(t);
+  }, [attemptId, autoSave]);
 
   // "Saved Xs ago" ticker
   useEffect(() => {
