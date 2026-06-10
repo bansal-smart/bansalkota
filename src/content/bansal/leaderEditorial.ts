@@ -2,6 +2,10 @@
 // Used as fallbacks / enrichments on top of DB-driven `useLeader()` data
 // so every leader page tells a *different* story with its own gallery,
 // timeline and signature pillars.
+import sameerPortraitDark from "@/assets/sameer-portrait-dark.png.asset.json";
+import sameerBranded from "@/assets/sameer-branded.png.asset.json";
+import sameerHeadshot from "@/assets/sameer-headshot.jpg.asset.json";
+import sameerSpeaking from "@/assets/sameer-speaking.jpg.asset.json";
 
 export type LeaderTimelineItem = { year: string; title: string; body: string };
 export type LeaderPillar = { title: string; body: string };
@@ -12,6 +16,8 @@ export type LeaderEditorial = {
   signatureLine: string;          // single-line signature shown over gallery
   galleryCaption: string;         // caption above mosaic
   gallery: { src: string; alt: string; tall?: boolean }[];
+  // Optional overrides
+  heroPhotoOverride?: string;     // overrides DB hero_photo_url on the page
   // Story
   timelineHeading: string;
   timeline: LeaderTimelineItem[];
@@ -59,12 +65,13 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     accentLabel: "Mathematics, Re-engineered",
     signatureLine:
       "An IITian son who turned his father's classroom into a national learning system — without losing its soul.",
-    galleryCaption: "Where heritage meets digital learning",
+    galleryCaption: "Inside the chair of the CEO",
+    heroPhotoOverride: sameerPortraitDark.url,
     gallery: [
-      { src: u("photo-1531482615713-2afd69097998"), alt: "Modern lecture session", tall: true },
-      { src: u("photo-1517245386807-bb43f82c33c4"), alt: "Mathematics whiteboard" },
-      { src: u("photo-1454165804606-c3d57bc86b40"), alt: "Strategy meeting" },
-      { src: u("photo-1551434678-e076c223a692"), alt: "Digital classroom" },
+      { src: sameerBranded.url, alt: "Sameer Bansal — MD & CEO, Bansal Classes", tall: true },
+      { src: sameerHeadshot.url, alt: "Sameer Bansal portrait" },
+      { src: sameerSpeaking.url, alt: "Sameer Bansal addressing students" },
+      { src: sameerPortraitDark.url, alt: "Sameer Bansal — formal portrait" },
     ],
     timelineHeading: "Chapters of Leadership",
     timeline: [
