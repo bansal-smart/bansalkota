@@ -42,13 +42,14 @@ const LiveTestsWidget = () => {
   const { user } = useAuth();
   const [tests, setTests] = useState<TestRow[]>([]);
   const [attempts, setAttempts] = useState<Record<string, string>>({});
+  const [recent, setRecent] = useState<Array<{ id: string; test_name: string; score: number | null; submitted_at: string; slug: string | null; test_id: string | null }>>([]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!user) return;
     let active = true;
-    (async () => {
-      const [tRes, aRes] = await Promise.all([
+    const load = async () => {
+      const [tRes, aRes, rRes] = await Promise.all([
         supabase
           .from("tests")
           .select("id,title,slug,exam_pattern,test_type,duration_minutes,total_questions,total_marks,starts_at,ends_at")
@@ -56,15 +57,33 @@ const LiveTestsWidget = () => {
           .order("starts_at", { ascending: true, nullsFirst: false })
           .limit(20),
         supabase.from("test_attempts").select("test_id,status").eq("user_id", user.id),
+        supabase
+          .from("test_attempts")
+          .select("id, test_name, score, submitted_at, test_id, tests(slug)")
+          .eq("user_id", user.id)
+          .in("status", ["submitted", "auto_submitted"])
+          .order("submitted_at", { ascending: false })
+          .limit(3),
       ]);
       if (!active) return;
       setTests((tRes.data ?? []) as TestRow[]);
       const m: Record<string, string> = {};
       (aRes.data ?? []).forEach((a: any) => { if (a.test_id) m[a.test_id] = a.status; });
       setAttempts(m);
-    })();
-    return () => { active = false; };
+      setRecent(((rRes.data ?? []) as any[]).map((r) => ({
+        id: r.id, test_name: r.test_name, score: r.score, submitted_at: r.submitted_at,
+        test_id: r.test_id, slug: r.tests?.slug ?? null,
+      })));
+    };
+    load();
+    const ch = supabase
+      .channel("dash_tests")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tests" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "test_attempts", filter: `user_id=eq.${user.id}` }, load)
+      .subscribe();
+    return () => { active = false; supabase.removeChannel(ch); };
   }, [user]);
+
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
