@@ -15,6 +15,7 @@ type TestQuestion = {
   position: number;
   subject: string | null;
   topic: string | null;
+  sub_topic: string | null;
   question_text: string;
   question_image_url: string | null;
   question_type: QuestionType;
