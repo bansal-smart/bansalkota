@@ -158,6 +158,15 @@ const dlpFeatures = [
 
 const LandingPage = () => {
   const [exam, setExam] = useState<ExamKey>("jee");
+  const { rows: dbTestimonials } = useSiteTestimonials();
+  const { rows: dbStats } = useSiteStats();
+  const liveTestimonials = dbTestimonials.length
+    ? dbTestimonials.map((t) => ({ name: t.name, rank: t.rank_label ?? "", quote: t.quote }))
+    : testimonials;
+  const liveAchievements = dbStats.length
+    ? dbStats.map((s) => ({ value: s.value + (s.suffix ?? ""), label: s.label, icon: iconMap[s.icon ?? "Award"] ?? Award }))
+    : achievements;
+
 
   return (
     <div className="bg-background">
