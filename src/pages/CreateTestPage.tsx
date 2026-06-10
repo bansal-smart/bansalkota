@@ -200,7 +200,14 @@ const CreateTestPage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
-    const validQ = questions.filter((q) => q.text.trim() && q.options.every((o) => o.trim()));
+    const isComplete = (q: DraftQuestion) => {
+      if (!q.text.trim()) return false;
+      if (q.type === "mcq-single") return q.options.every((o) => o.trim());
+      if (q.type === "mcq-multi") return q.options.every((o) => o.trim()) && q.correctMulti.length > 0;
+      if (q.type === "numerical" || q.type === "integer") return q.numericalAnswer.trim() !== "" && !Number.isNaN(Number(q.numericalAnswer));
+      return false;
+    };
+    const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
 
     setSubmitting(true);
@@ -231,7 +238,6 @@ const CreateTestPage = () => {
         setSubmitting(false);
         return;
       }
-      // Replace questions
       await supabase.from("test_questions").delete().eq("test_id", resolvedTestId);
     } else {
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
@@ -248,18 +254,35 @@ const CreateTestPage = () => {
       savedTestId = test.id;
     }
 
-    const rows = validQ.map((q, i) => ({
-      test_id: savedTestId,
-      position: i,
-      subject: q.subject,
-      topic: q.topic || null,
-      question_text: q.text,
-      question_type: "mcq-single",
-      options: q.options.map((t, id) => ({ id, text: t })),
-      correct_answer: q.correct,
-      marks_correct: correctMarks,
-      marks_wrong: wrongMarks,
-    }));
+    const rows = validQ.map((q, i) => {
+      const base: any = {
+        test_id: savedTestId,
+        position: i,
+        subject: q.subject,
+        topic: q.topic || null,
+        question_text: q.text,
+        question_type: q.type,
+        marks_correct: correctMarks,
+        marks_wrong: wrongMarks,
+        options: [],
+        correct_answer: null,
+      };
+      if (q.type === "mcq-single") {
+        base.options = q.options.map((t, id) => ({ id, text: t }));
+        base.correct_answer = q.correct;
+      } else if (q.type === "mcq-multi") {
+        base.options = q.options.map((t, id) => ({ id, text: t }));
+        base.correct_answer = q.correctMulti.slice().sort((a, b) => a - b);
+        base.partial_marking = q.partial;
+      } else if (q.type === "numerical" || q.type === "integer") {
+        base.options = [];
+        base.correct_answer = { value: Number(q.numericalAnswer) };
+        base.numerical_answer = Number(q.numericalAnswer);
+        base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+        base.answer_format = q.type === "integer" ? "integer" : "decimal";
+      }
+      return base;
+    });
     const { error: qErr } = await supabase.from("test_questions").insert(rows);
     if (qErr) {
       toast.error(qErr.message);
