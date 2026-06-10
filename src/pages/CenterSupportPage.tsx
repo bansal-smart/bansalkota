@@ -18,7 +18,7 @@ const CenterSupportPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     const { data } = await supabase
-      .from("enquiries")
+      .from("enquiries" as any)
       .select("*")
       .eq("center_id" as any, primaryCenterId)
       .eq("source", "center_support")
@@ -31,7 +31,7 @@ const CenterSupportPage = () => {
     if (!subject.trim() || !message.trim()) return toast.error("Subject and message are required");
     if (!user || !primaryCenterId) return;
     setSubmitting(true);
-    const { error } = await supabase.from("enquiries").insert({
+    const { error } = await supabase.from("enquiries" as any).insert({
       name: user.email || "Centre Admin",
       email: user.email || "",
       message: `[${subject}]\n${message}`,

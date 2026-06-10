@@ -15,7 +15,7 @@ const AdminCenterSupportPage = () => {
   const load = async () => {
     setLoading(true);
     let q = supabase
-      .from("enquiries")
+      .from("enquiries" as any)
       .select("*, center:centers(id, slug, city, area, state)")
       .eq("source", "center_support")
       .order("created_at", { ascending: false });
@@ -31,7 +31,7 @@ const AdminCenterSupportPage = () => {
     const payload: any = {};
     if (replyDrafts[id] !== undefined) payload.staff_notes = replyDrafts[id];
     if (status) payload.status = status;
-    const { error } = await supabase.from("enquiries").update(payload).eq("id", id);
+    const { error } = await supabase.from("enquiries" as any).update(payload).eq("id", id);
     setSavingId(null);
     if (error) return toast.error(error.message);
     toast.success("Updated");

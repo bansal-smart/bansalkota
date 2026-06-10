@@ -15,7 +15,7 @@ const CenterWebsiteEnquiriesPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     setLoading(true);
-    let q = supabase.from("enquiries").select("*").eq("center_id" as any, primaryCenterId).order("created_at", { ascending: false });
+    let q = supabase.from("enquiries" as any).select("*").eq("center_id" as any, primaryCenterId).order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("status", filter);
     const { data } = await q;
     setItems(data ?? []);
@@ -25,7 +25,7 @@ const CenterWebsiteEnquiriesPage = () => {
   useEffect(() => { load(); }, [primaryCenterId, filter]);
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("enquiries").update({ status }).eq("id", id);
+    const { error } = await supabase.from("enquiries" as any).update({ status }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
     load();

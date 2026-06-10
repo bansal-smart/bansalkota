@@ -13,7 +13,7 @@ const CenterStudentsPage = () => {
     (async () => {
       setLoading(true);
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles" as any)
         .select("id, full_name, phone, target_exam, class_level, city, created_at")
         .eq("center_id" as any, primaryCenterId)
         .order("created_at", { ascending: false });

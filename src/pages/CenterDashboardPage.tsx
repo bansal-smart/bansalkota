@@ -31,10 +31,10 @@ const CenterDashboardPage = () => {
       const [banners, courses, web, courseE, students, support] = await Promise.all([
         supabase.from("center_banners" as any).select("id", { count: "exact", head: true }).eq("center_id", cId),
         supabase.from("center_courses" as any).select("id", { count: "exact", head: true }).eq("center_id", cId),
-        supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("center_id" as any, cId),
+        supabase.from("enquiries" as any).select("id", { count: "exact", head: true }).eq("center_id" as any, cId),
         supabase.from("center_course_enquiries" as any).select("id", { count: "exact", head: true }).eq("center_id", cId).eq("status", "new"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("center_id" as any, cId),
-        supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("center_id" as any, cId).eq("source", "center_support").neq("status", "resolved"),
+        supabase.from("profiles" as any).select("id", { count: "exact", head: true }).eq("center_id" as any, cId),
+        supabase.from("enquiries" as any).select("id", { count: "exact", head: true }).eq("center_id" as any, cId).eq("source", "center_support").neq("status", "resolved"),
       ]);
       setCounts({
         banners: banners.count ?? 0,
