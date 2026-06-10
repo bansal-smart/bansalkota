@@ -169,7 +169,15 @@ const TestTakingPage = () => {
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
       metadata: { tab_switches: tabSwitches },
     }).eq("id", attemptId);
+    setSavedAgo(0);
   }, [attemptId, answers, statuses, startedAt, tabSwitches]);
+
+  // "Saved Xs ago" ticker
+  useEffect(() => {
+    if (savedAgo === null) return;
+    const t = setInterval(() => setSavedAgo((v) => (v === null ? null : v + 1)), 1000);
+    return () => clearInterval(t);
+  }, [savedAgo]);
 
   const startAttempt = async () => {
     if (!user || !test) return;
