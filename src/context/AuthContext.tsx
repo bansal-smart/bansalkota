@@ -233,6 +233,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin,
         isTeacher,
         isMentor,
+        isCenterAdmin,
         isStudent,
         role,
         roleReady,
