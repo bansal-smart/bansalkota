@@ -112,7 +112,7 @@ const LiveTestsWidget = () => {
       .slice(0, 4);
   }, [tests, now]);
 
-  if (visible.length === 0) return null;
+  if (visible.length === 0 && recent.length === 0) return null;
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6">
