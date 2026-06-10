@@ -1,108 +1,131 @@
-## Centre System Overhaul
+# Landing Page Marketing Overhaul + Unified Admin Overview
 
-Builds a self-serve **Centre Panel** for each Bansal offline centre, plus signup mapping and a support channel to super admin.
-
----
-
-### 1. Database (migration)
-
-**New enum value**
-- Extend `app_role` with `center_admin`.
-
-**New tables**
-
-- `center_staff` — multi-admin per centre
-  - `center_id` (fk → centers), `user_id` (fk → auth.users), `role` ('owner' | 'manager'), unique(center_id, user_id)
-  - RLS: centre staff read own rows; super_admin manages all.
-  - Trigger: on insert, also insert `(user_id, 'center_admin')` into `user_roles` if missing.
-
-- `center_courses` — offline courses created by a centre
-  - `center_id`, `title`, `slug`, `banner_url`, `start_date`, `duration`, `fees`, `schedule`, `target_exam`, `class_level`, `description`, `highlights jsonb`, `is_published`, `created_by`, timestamps.
-  - RLS: public read where `is_published=true`; centre staff write only for their centre; super_admin full.
-
-- `center_course_enquiries` — leads for offline courses
-  - `center_id`, `course_id` (fk → center_courses), `name`, `phone`, `email`, `class_level`, `message`, `status` ('new'|'contacted'|'admitted'|'closed'), `created_at`.
-  - RLS: centre staff of that centre read/update; super_admin full; public insert (with simple rate-limit via existing pattern).
-
-- `center_banners` — centre-page hero/promo banners (centre-editable)
-  - `center_id`, `title`, `subtitle`, `image_url`, `cta_label`, `cta_url`, `sort_order`, `is_active`.
-
-**Extend existing tables**
-- `profiles`: add `center_id uuid null references centers(id)`, `is_bansal_offline_student boolean default false`.
-- `enquiries`: add `source_type text` ('website' | 'center_support' | 'admission'), `center_id uuid null`, `priority text`, `category text`. Existing rows backfill `source_type='website'`.
-- `tests`/`courses`: unchanged. Online courses already flow to all centres by default.
-
-**Helper functions**
-- `is_center_staff(_user_id uuid, _center_id uuid) returns boolean` (SECURITY DEFINER).
-- Reuse `has_role(_, 'center_admin')` for portal gating.
-
-All new public tables get the standard GRANTs and `updated_at` triggers.
+Two focused workstreams. No backend/schema changes — everything reads from existing tables (`courses`, `centers`, `toppers`, `site_stats`, `site_testimonials`, `site_banners`, `enrollments`, `orders`, `payments`, `enquiries`, `center_courses`, `center_course_enquiries`, `reports`).
 
 ---
 
-### 2. Centre Panel (`/center/*`)
+## 1. Public Landing Page — Sales-First Rewrite
 
-New route group, mirroring `AdminLayout` styling but scoped.
+File: `src/pages/LandingPage.tsx` (full restructure, keeps existing hero hooks `useSiteStats`, `useSiteTestimonials`, `useSiteBanners`).
 
-- `CenterLoginPage` — same `/login` works; redirect rule: if user has `center_admin` role and no other admin role → land on `/center`.
-- `CenterLayout` + `ProtectedCenterRoute` — guards on `has_role('center_admin')` and resolves their `center_id` from `center_staff`.
+### New section order (top → bottom)
 
-**Modules (sidebar)**
-1. **Dashboard** — quick counts (enquiries today, published offline courses, open support tickets).
-2. **Centre Page Banners** — CRUD on `center_banners` (image upload to `site-content` bucket under `centers/{center_id}/`).
-3. **Offline Courses** — CRUD on `center_courses` with banner upload, start date, schedule, fees, brochure link. Cannot toggle online courses.
-4. **Website Enquiries** — read-only list of `enquiries` where `center_id = mine`, filterable by status; mark contacted/closed.
-5. **Course Enquiries** — `center_course_enquiries` for their centre; status pipeline.
-6. **My Students** — `profiles` where `center_id = mine`; columns: name, class, target exam, phone, joined. Read-only.
-7. **Support** — raise ticket to super admin (writes to `enquiries` with `source_type='center_support'`, `center_id=mine`); thread of past tickets with status.
+1. **Hero — "India's Most Trusted JEE/NEET Legacy"**
+   - Bold headline + sub-headline, 2 CTAs (Explore Courses / Book Free Counselling), trust strip (45+ Yrs · 2L+ Selections · 50+ Centres · 4.8★).
+   - Right-side: layered image collage (mentor, toppers, app mockup) with floating "Live class now" + "Rank 1 AIR" badges.
+
+2. **Marquee Trust Bar** — exam logos, partner schools, "Featured in" press strip.
+
+3. **Why Bansal — 4 pillar bento grid** (Legacy, Faculty, Results, Pan-India).
+
+4. **Choose Your Goal — Exam Selector** (JEE / NEET / Foundation / Olympiad)
+   - Tabs that swap into a 3-card "Recommended Programs" rail pulled from `courses` table (filtered by exam slug, `is_published=true`, ordered by `is_featured`, limit 3). Each card: thumbnail, title, duration, mode badge (Online/Offline/Hybrid), price (₹/AED based on region), "View Details" + "Enroll Now".
+
+5. **Course Formats Explainer** — 3 columns: Classroom (CLP), Distance (DLP), Online Live. Each with feature list, sample faculty, "Best for…" line, CTA.
+
+6. **Live & Upcoming Batches Strip** — horizontal scroll of next 6 batches from `courses` where `start_date >= today`. Countdown chip + seats-left bar.
+
+7. **Toppers Wall** — masonry grid from `toppers` table (top 8 by rank), with AIR badge, exam, year, centre. "See all 5000+ selections →".
+
+8. **Centres Across India + Dubai** — interactive map illustration + searchable centre cards (from `centers`). Filter by city. Each card → `/centers/:slug`.
+
+9. **Student Outcomes / Stats counter band** — animated counters from `site_stats`.
+
+10. **Free Resources Teaser** — Sample papers, NCERT solutions, YouTube masterclasses, AI Doubt Solver demo. Drives signup.
+
+11. **Testimonials carousel** — from `site_testimonials` with parent + student split tabs.
+
+12. **App Download Band** — phone mockup, QR, Play/App Store buttons, feature checklist (offline lectures, AI planner, mock tests).
+
+13. **Pricing & Scholarship Band** — "BOOST Scholarship Test" promo card + "EMI from ₹X/mo" + "100% refund in 7 days".
+
+14. **FAQ accordion** (10 sales-objection questions).
+
+15. **Final CTA banner** — "Start Your Rank Journey Today" with counselling form (name, phone, class, exam) → writes to `enquiries` with `source_type='landing_cta'`.
+
+16. **Footer enhancements** — sitemap, exam pages, centre cities, social, app links, compliance.
+
+### Copy & visual rules
+- Every section has a unique headline + one-line subhead — no recycled wording.
+- Heading font Mulish, body Plus Jakarta Sans. Primary `#F97316`, navy `#1E293B`, cream `#FFFBF5` per project core memory.
+- Lucide icons only, no emojis.
+- New seeded images via `imagegen` (premium for any with text/badge), stored in `src/assets/landing/`:
+  - `hero-collage-mentor.jpg`, `hero-collage-toppers.jpg`, `hero-collage-app.png`
+  - `goal-jee.jpg`, `goal-neet.jpg`, `goal-foundation.jpg`, `goal-olympiad.jpg`
+  - `format-classroom.jpg`, `format-distance.jpg`, `format-online.jpg`
+  - `centres-map-illustration.png`
+  - `resources-ai-doubt.jpg`, `resources-mock.jpg`
+  - `app-mockup-v3.png`
+  - `scholarship-banner.jpg`
+- Microanimations: subtle parallax on hero collage, count-up on stats (intersection observer), card lift on hover, marquee for trust bar.
+
+### New small components (under `src/components/landing/`)
+- `HeroCollage.tsx`, `TrustMarquee.tsx`, `GoalSelector.tsx`, `CourseRail.tsx`, `FormatCards.tsx`, `UpcomingBatches.tsx`, `ToppersWall.tsx`, `CentresShowcase.tsx`, `OutcomesStats.tsx`, `ResourcesTeaser.tsx`, `AppDownloadBand.tsx`, `ScholarshipBand.tsx`, `LandingFAQ.tsx`, `LandingCTAForm.tsx`.
+
+### Data hooks (new, read-only)
+- `useLandingCourses(examSlug)` — `courses` filtered + ordered.
+- `useUpcomingBatches()` — `courses` upcoming start_date.
+- `useTopToppers(limit)` — `toppers` ordered by rank.
+- `useCentresShowcase()` — `centers` with city grouping.
 
 ---
 
-### 3. Public Centre Page (`/centers/:slug`)
+## 2. Admin Overview — Unified Command Centre
 
-Refactor `CenterDetailPage.tsx` to hydrate from DB and add:
-- **Hero/banner carousel** from `center_banners`.
-- **Online Courses** section — pulls global published `courses` (existing data).
-- **Offline Courses** section — pulls `center_courses` for this centre; each card shows banner, title, start date, schedule, fees, and an **"Enquire about this course"** button → modal posting to `center_course_enquiries`.
-- **Admission / General enquiry form** at bottom → posts to `enquiries` with `center_id=this.center.id`, `source_type='admission'`.
+File: `src/pages/AdminDashboard.tsx` (rewrite of the overview page, keeps route).
+
+### New layout
+
+```text
+┌──────────────────────────────────────────────────────────┐
+│ Greeting + date + "Today snapshot" KPI strip (6 cards)   │
+│ Students · Active Courses · Centres · Revenue (₹+AED)    │
+│ · Pending Enquiries · Open Centre Tickets                │
+├──────────────────────────────────────────────────────────┤
+│ Revenue chart (30d, area)  │  Enrollments chart (30d)    │
+├──────────────────────────────────────────────────────────┤
+│ Centres at-a-glance table  │  Top Courses leaderboard    │
+│ (city, students, revenue,  │  (title, enrolments, rev,   │
+│  open tickets, → Manage)   │   conversion, → View)       │
+├──────────────────────────────────────────────────────────┤
+│ Recent Enquiries feed  │ Live Classes today │ Pending    │
+│ (landing+centre mixed) │ (status, attendees)│ moderation │
+├──────────────────────────────────────────────────────────┤
+│ Quick Actions grid: New Course · New Banner · Add Centre │
+│ · Add Topper · Add Testimonial · Broadcast Notification  │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Data sources (all existing tables, parallel `react-query`)
+- KPIs: counts from `profiles`, `courses (is_published)`, `centers`, sum `payments.amount` (current month, split by currency), `enquiries` where status='new', `enquiries` where source_type='center_support' & status!='closed'.
+- Revenue chart: `payments` last 30d grouped by day + currency.
+- Enrollments chart: `enrollments` last 30d grouped by day.
+- Centres table: join `centers` + counts of `profiles.center_id` + sum `payments` via `enrollments`→`courses`→`center_id` (fallback: order by created students). Reuse simple per-centre RPC if too heavy; otherwise client-side aggregate over a single windowed query.
+- Top courses: `enrollments` grouped by course_id, top 5.
+- Recent enquiries: `enquiries` order desc limit 8, badge by `source_type`.
+- Live classes today: `live_classes` where `scheduled_at::date = today`.
+- Moderation queue: `reports` where status='open' limit 5.
+
+### New components (`src/components/admin/overview/`)
+- `KpiStrip.tsx`, `RevenueChart.tsx`, `EnrollmentChart.tsx`, `CentresGlance.tsx`, `TopCoursesCard.tsx`, `RecentEnquiriesFeed.tsx`, `TodayLiveClasses.tsx`, `ModerationQueueCard.tsx`, `QuickActionsGrid.tsx`.
+- Charts via existing `recharts` already in project.
+
+### Hooks
+- `useAdminOverview()` — single hook orchestrating parallel queries, returns `{ kpis, revenueSeries, enrollSeries, centres, topCourses, enquiries, liveToday, moderation, isLoading }`.
+
+### UX details
+- Skeletons per card while loading, no full-page spinner.
+- Currency toggle (INR / AED) on revenue card.
+- Each card has a "View all →" link to its existing admin module.
+- Respects roles: super_admin sees everything; admin sees same minus revenue totals (kept simple — single page, conditional render via `useAuth().isSuperAdmin`).
 
 ---
 
-### 4. Signup centre mapping (`SignupPage.tsx`)
+## Out of scope
+- No DB migrations, no edge functions, no auth changes.
+- No changes to the Centre Panel or Student Portal.
+- No changes to existing admin sub-pages (only the overview).
 
-Add a step in the existing form (between basic details and submit):
-- Radio: *"Are you studying at a Bansal offline centre?"* (Yes / No)
-- If Yes → searchable centre dropdown (from `centers` where `is_published`).
-- On signup, write to `profiles.center_id` and `is_bansal_offline_student` via the existing `handle_new_user` flow (extend trigger to read `raw_user_meta_data->>'center_id'`).
-- Also editable later from `ProfilePage`.
-
----
-
-### 5. Super Admin additions
-
-- **Centres → Staff tab** in `AdminCentersPage`: invite/assign users as centre staff (search by email → upsert into `center_staff`, auto-grants `center_admin` role).
-- **Centre Complaints** page (`AdminCenterSupportPage`) in sidebar: lists `enquiries` where `source_type='center_support'`, threaded replies via existing reply pattern, status workflow (open → in_progress → resolved). Reuses enquiries table to avoid a new ticket model.
-- Existing `AdminEnquiriesPage` gets a `source_type` filter to separate website vs centre-support.
-
----
-
-### 6. Routing & nav
-
-- `App.tsx`: add `/center`, `/center/banners`, `/center/courses`, `/center/enquiries`, `/center/course-enquiries`, `/center/students`, `/center/support` under `ProtectedCenterRoute`.
-- `AdminLayout` sidebar: add **Centre Complaints** entry.
-- Post-login redirect (in `AuthContext` or `LoginPage`): centre_admin without admin → `/center`.
-
----
-
-### Technical notes
-
-- All centre-write RLS uses `public.is_center_staff(auth.uid(), center_id)`; super_admin always passes via `is_admin_or_super`.
-- Image uploads reuse the public `site-content` bucket under `centers/{center_id}/...`.
-- No changes to payment, test, or live-class flows.
-- New notification triggers (optional, low-risk): notify centre staff on new `center_course_enquiries`; notify super admin on `source_type='center_support'`.
-
----
-
-### Out of scope (will not change)
-- Existing online course creation, test engine, live classes, payments.
-- Public Centres listing page styling (only data source remains the same).
+## Acceptance
+- Landing page is visually richer, every section has unique copy and imagery, and the CTA form writes to `enquiries`.
+- Admin overview loads under 2s with skeletons, shows live counts across centres/courses/revenue/enquiries, and links into the relevant modules.
