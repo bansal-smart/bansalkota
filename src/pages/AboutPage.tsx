@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, Target, BookOpen, Quote, Heart, Sparkles } from "lucide-react";
+import { ArrowRight, Eye, Target, BookOpen, Quote, Heart, ChevronDown } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
@@ -16,63 +16,91 @@ import {
 const AboutPage = () => {
   return (
     <div className="bg-background">
-      {/* Hero — Founder tribute */}
-      <section className="relative bg-gradient-to-br from-bansal-blue via-bansal-blue to-bansal-blue-dark text-white overflow-hidden">
-        <div className="absolute inset-0 grid-texture opacity-50" />
-        <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-bansal-orange/25 blur-3xl" />
-        <div className="absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+      {/* CINEMATIC FULL-BLEED HERO — Founder tribute */}
+      <section className="relative w-full min-h-[80vh] md:min-h-[92vh] overflow-hidden bg-bansal-blue-dark">
+        <img
+          src={vkBansalPortrait}
+          alt="Shri V.K. Bansal — Founder of Bansal Classes"
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          loading="eager"
+          // @ts-expect-error - fetchpriority is valid
+          fetchpriority="high"
+        />
 
-        <div className="relative container mx-auto px-4 py-16 md:py-24 grid lg:grid-cols-12 gap-10 items-center">
-          {/* Portrait */}
-          <div className="lg:col-span-5 order-2 lg:order-1">
-            <div className="relative max-w-sm mx-auto lg:max-w-none">
-              <div className="absolute -inset-4 bg-gradient-to-br from-bansal-orange/40 to-transparent blur-2xl rounded-full" />
-              <div className="relative rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl bg-bansal-blue-dark">
-                <img
-                  src={vkBansalPortrait}
-                  alt="Shri V.K. Bansal — Founder of Bansal Classes"
-                  className="w-full h-auto object-cover"
-                  width={896}
-                  height={1152}
-                  loading="eager"
-                />
-              </div>
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-bansal-orange text-white px-5 py-2.5 rounded-full shadow-xl flex items-center gap-2 whitespace-nowrap">
-                <Heart className="h-4 w-4 fill-white" />
-                <span className="text-xs font-bold uppercase tracking-wide">Forever Honored</span>
-              </div>
-            </div>
-          </div>
+        {/* Gradient overlays for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark via-bansal-blue-dark/75 via-45% to-bansal-blue-dark/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue-dark/85 via-bansal-blue-dark/25 to-transparent" />
+        <div className="absolute -right-40 -top-40 h-[28rem] w-[28rem] rounded-full bg-bansal-orange/30 blur-3xl pointer-events-none" />
+        <div className="absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
-          {/* Tribute copy */}
-          <div className="lg:col-span-7 order-1 lg:order-2">
-            <BansalBadge tone="orange" className="mb-4">
-              <Sparkles className="h-3 w-3 mr-1" /> About Bansal Classes
-            </BansalBadge>
-            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight">
-              Born from a Father's Vision.
-              <span className="block text-bansal-orange mt-2">Carried by a Family's Promise.</span>
-            </h1>
-            <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed">
-              Shri <strong>V.K. Bansal</strong> founded Bansal Classes in 1981 with one belief — that every aspirant deserves <em>ideal guidance</em>. Four decades later, he remains our guiding light, our enduring inspiration, and the soul of every classroom that bears his name.
-            </p>
-            <blockquote className="mt-6 border-l-4 border-bansal-orange pl-5 italic text-white/90">
-              "Believe in yourself and strive for excellence with unwavering dedication."
-              <span className="block mt-2 text-xs font-semibold not-italic text-bansal-orange">— V.K. Bansal, Founder</span>
-            </blockquote>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/about/vk-bansal">
-                <BansalButton variant="cta">
-                  Read His Full Story <ArrowRight className="h-4 w-4" />
-                </BansalButton>
-              </Link>
-              <Link to="/centers">
-                <BansalButton variant="ghost-white">Visit a Centre</BansalButton>
-              </Link>
+        {/* Top eyebrow */}
+        <div className="absolute top-0 inset-x-0 z-10">
+          <div className="container mx-auto px-4 sm:px-6 pt-8">
+            <div className="inline-flex items-center gap-2 text-white/85 text-xs uppercase tracking-[0.3em] font-bold backdrop-blur-sm bg-white/5 border border-white/15 px-4 py-2 rounded-full">
+              <Heart className="h-3.5 w-3.5 text-bansal-orange fill-bansal-orange" />
+              About Bansal Classes
             </div>
           </div>
         </div>
+
+        {/* Bottom-left content stack */}
+        <div className="absolute inset-x-0 bottom-0 z-10">
+          <div className="container mx-auto px-4 sm:px-6 pb-12 md:pb-20">
+            <div className="max-w-4xl animate-fade-in">
+              <div className="flex items-center gap-3 mb-5">
+                <span className="h-px w-12 bg-bansal-orange" />
+                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                  Founder · 1949 – Forever Honored
+                </span>
+              </div>
+              <h1
+                className="font-display font-extrabold text-white leading-[0.92] tracking-tight"
+                style={{ fontSize: "clamp(2.5rem, 8vw, 6.5rem)" }}
+              >
+                Born from a Father's Vision.
+                <span className="block text-bansal-orange mt-2">
+                  Carried by a Family's Promise.
+                </span>
+              </h1>
+              <p className="mt-6 text-base md:text-xl text-white/85 leading-relaxed max-w-2xl">
+                Shri <strong className="text-white">V.K. Bansal</strong> founded Bansal Classes in 1981 with one belief — that every aspirant deserves <em>ideal guidance</em>. Four decades on, he remains the soul of every classroom that bears his name.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/about/vk-bansal">
+                  <BansalButton variant="cta">
+                    Read His Full Story <ArrowRight className="h-4 w-4" />
+                  </BansalButton>
+                </Link>
+                <Link to="/centers">
+                  <BansalButton variant="ghost-white">Visit a Centre</BansalButton>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll hint */}
+        <div className="absolute bottom-4 right-6 z-10 hidden md:flex items-center gap-2 text-white/60 text-xs uppercase tracking-widest animate-pulse">
+          Scroll <ChevronDown className="h-4 w-4" />
+        </div>
       </section>
+
+      {/* PULL-QUOTE BAND */}
+      <section className="relative bg-bansal-cream py-16 md:py-24 overflow-hidden">
+        <Quote className="absolute -top-6 left-4 md:left-12 h-40 w-40 text-bansal-orange/10" strokeWidth={1} />
+        <div className="container mx-auto px-4 sm:px-6 max-w-4xl relative">
+          <blockquote className="font-display italic text-2xl md:text-4xl lg:text-5xl font-semibold text-bansal-blue leading-[1.15] tracking-tight">
+            &ldquo;Believe in yourself and strive for excellence with unwavering dedication. Success comes to those who persevere through challenges with a positive mindset and a thirst for knowledge.&rdquo;
+          </blockquote>
+          <div className="mt-8 flex items-center gap-3">
+            <span className="h-px w-10 bg-bansal-orange" />
+            <span className="text-bansal-orange uppercase tracking-[0.2em] text-xs font-bold">
+              V.K. Bansal · Founder
+            </span>
+          </div>
+        </div>
+      </section>
+
 
       {/* Legacy stats */}
       <section className="bg-white py-10 border-b border-border">
@@ -170,16 +198,8 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Founder quote */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <Quote className="h-10 w-10 text-bansal-orange mx-auto mb-4" />
-          <blockquote className="font-display text-xl md:text-2xl text-bansal-blue font-semibold leading-relaxed">
-            "Believe in yourself and strive for excellence with unwavering dedication. Success comes to those who persevere through challenges with a positive mindset and a thirst for knowledge."
-          </blockquote>
-          <p className="mt-4 text-sm font-semibold text-bansal-gray">— V.K. Bansal, Founder</p>
-        </div>
-      </section>
+
+
 
       {/* Leadership */}
       <section className="bg-bansal-cream py-16">
