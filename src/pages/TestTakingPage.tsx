@@ -593,6 +593,7 @@ const TestTakingPage = () => {
             <div className="flex flex-wrap items-center gap-2 text-[10px]">
               <span className="rounded bg-neutral-200 px-2 py-0.5 font-bold text-neutral-700 uppercase">{typeLabel}</span>
               {q.topic && <span className="text-neutral-500">Topic: {q.topic}</span>}
+              {q.sub_topic && <span className="text-neutral-400">· {q.sub_topic}</span>}
             </div>
 
             {/* Question card */}
