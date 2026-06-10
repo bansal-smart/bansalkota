@@ -117,8 +117,9 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "A modern educator shaping the next generation of women aspirants — with empathy, structure and uncompromising standards.",
     galleryCaption: "Mentorship in motion",
+    heroPhotoOverride: mahimaPortrait.url,
     gallery: [
-      { src: u("photo-1573496359142-b8d87734a5a2"), alt: "Woman mentor with students", tall: true },
+      { src: mahimaPortrait.url, alt: "Mahima Bansal — Academic Mentor & Director", tall: true },
       { src: u("photo-1577896851231-70ef18881754"), alt: "Library study session" },
       { src: u("photo-1543269865-cbf427effbad"), alt: "Group discussion" },
       { src: u("photo-1580582932707-520aed937b7b"), alt: "Counselling session" },
