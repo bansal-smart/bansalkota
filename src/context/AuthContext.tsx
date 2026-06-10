@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback,
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
+import { useSingleDeviceLogin } from "@/hooks/useSingleDeviceLogin";
 
 export type UserRole = "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
 
