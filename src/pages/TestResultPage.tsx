@@ -70,11 +70,62 @@ const PIE_COLORS = ["#10b981", "#ef4444", "#94a3b8"];
 
 const TestResultPage = () => {
   const { attemptId: id, slug } = useParams<{ attemptId: string; slug: string }>();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
   const [test, setTest] = useState<TestRow | null>(null);
   const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
+  const [reattemptStatus, setReattemptStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
+  const [reattemptReason, setReattemptReason] = useState("");
+  const [reattemptOpen, setReattemptOpen] = useState(false);
+  const [reattemptSubmitting, setReattemptSubmitting] = useState(false);
+
+  // Load latest re-attempt request status for this user + test
+  useEffect(() => {
+    if (!user || !attempt?.test_id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("test_reattempt_requests")
+        .select("status")
+        .eq("user_id", user.id)
+        .eq("test_id", attempt.test_id!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      const s = (data?.status as typeof reattemptStatus | undefined) ?? "none";
+      setReattemptStatus(s);
+    })();
+    return () => { cancelled = true; };
+  }, [user, attempt?.test_id]);
+
+  const submitReattemptRequest = async () => {
+    if (!user || !attempt?.test_id) return;
+    if (!reattemptReason.trim()) {
+      toast.error("Please add a short reason for your request.");
+      return;
+    }
+    setReattemptSubmitting(true);
+    const { error } = await supabase.from("test_reattempt_requests").insert({
+      user_id: user.id,
+      test_id: attempt.test_id,
+      attempt_id: attempt.id,
+      reason: reattemptReason.trim().slice(0, 500),
+      status: "pending",
+    });
+    setReattemptSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setReattemptStatus("pending");
+    setReattemptOpen(false);
+    setReattemptReason("");
+    toast.success("Re-attempt request sent to admin for approval.");
+  };
+
 
   const fetchRank = async (attemptId: string) => {
     const { data } = await supabase.rpc("get_test_rank", { _attempt_id: attemptId });
