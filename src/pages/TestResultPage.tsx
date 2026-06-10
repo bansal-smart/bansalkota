@@ -1,27 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Trophy,
-  Target,
-  TrendingUp,
-  RotateCcw,
-  Home,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  MinusCircle,
-  Clock,
-  Award,
-  ChevronRight,
+  Trophy, Target, TrendingUp, RotateCcw, Home, Loader2, CheckCircle2, XCircle,
+  MinusCircle, Clock, Award, ChevronRight, Lock, Medal, Users, Activity,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
+} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
 
-
-type SubjectStat = { total: number; correct: number; attempted: number; score: number };
+type SubjectStat = { total: number; correct: number; attempted: number; score: number; maxScore: number };
 
 type Attempt = {
   id: string;
@@ -35,12 +27,57 @@ type Attempt = {
   answers: Record<string, { selected: number | null }> | null;
 };
 
+type TestRow = {
+  id: string;
+  ends_at: string | null;
+  auto_release: boolean | null;
+  results_released_at: string | null;
+  total_marks: number | null;
+};
+
+type RankInfo = {
+  released: boolean;
+  rank?: number;
+  total?: number;
+  percentile?: number;
+  your_score?: number;
+  topper_score?: number;
+  average_score?: number;
+  release_at?: string | null;
+};
+
+const useCountdown = (target: string | null | undefined) => {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!target) return;
+    const t = setInterval(() => setTick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [target]);
+  if (!target) return null;
+  const ms = new Date(target).getTime() - Date.now();
+  if (ms <= 0) return "now";
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  return `${m}m ${sec}s`;
+};
+
+const PIE_COLORS = ["#10b981", "#ef4444", "#94a3b8"];
+
 const TestResultPage = () => {
   const { attemptId: id, slug } = useParams<{ attemptId: string; slug: string }>();
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
+  const [test, setTest] = useState<TestRow | null>(null);
+  const [rankInfo, setRankInfo] = useState<RankInfo | null>(null);
 
+  const fetchRank = async (attemptId: string) => {
+    const { data } = await supabase.rpc("get_test_rank", { _attempt_id: attemptId });
+    if (data) setRankInfo(data as RankInfo);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -48,29 +85,27 @@ const TestResultPage = () => {
     (async () => {
       const { data } = await supabase
         .from("test_attempts")
-        .select(
-          "id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers",
-        )
+        .select("id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers")
         .eq("id", id)
         .maybeSingle();
       if (cancelled) return;
-      if (!data) {
-        setLoading(false);
-        return;
-      }
+      if (!data) { setLoading(false); return; }
       setAttempt(data as Attempt);
 
       if (data.test_id) {
-        const { data: qs } = await supabase
-          .from("test_questions")
-          .select("id, subject, correct_answer, marks_correct, marks_wrong")
-          .eq("test_id", data.test_id);
+        const [{ data: t }, { data: qs }] = await Promise.all([
+          supabase.from("tests").select("id, ends_at, auto_release, results_released_at, total_marks").eq("id", data.test_id).maybeSingle(),
+          supabase.from("test_questions").select("id, subject, correct_answer, marks_correct, marks_wrong").eq("test_id", data.test_id),
+        ]);
+        if (cancelled) return;
+        setTest(t as TestRow);
         const ans = (data.answers ?? {}) as Record<string, { selected: number | null }>;
         const breakdown: Record<string, SubjectStat> = {};
         (qs ?? []).forEach((q) => {
           const subj = q.subject ?? "General";
-          if (!breakdown[subj]) breakdown[subj] = { total: 0, correct: 0, attempted: 0, score: 0 };
+          if (!breakdown[subj]) breakdown[subj] = { total: 0, correct: 0, attempted: 0, score: 0, maxScore: 0 };
           breakdown[subj].total += 1;
+          breakdown[subj].maxScore += Number(q.marks_correct ?? 4);
           const sel = ans[q.id]?.selected;
           if (sel != null) {
             breakdown[subj].attempted += 1;
@@ -82,25 +117,33 @@ const TestResultPage = () => {
             }
           }
         });
-        if (!cancelled) setSubjects(breakdown);
+        setSubjects(breakdown);
+        await fetchRank(id);
       }
       setLoading(false);
     })();
-    return () => {
-      cancelled = true;
-    };
+
+    const ch = supabase
+      .channel(`result_${id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tests" }, () => { fetchRank(id); })
+      .subscribe();
+
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-      </div>
-    );
-  }
-  if (!attempt) {
-    return <div className="p-10 text-center text-sm text-muted-foreground">Result not found.</div>;
-  }
+  // Re-poll rank when countdown likely passed
+  useEffect(() => {
+    if (rankInfo?.released || !test?.ends_at) return;
+    const ms = new Date(test.ends_at).getTime() - Date.now();
+    if (ms <= 0 || ms > 60 * 60 * 1000) return;
+    const t = setTimeout(() => id && fetchRank(id), ms + 1500);
+    return () => clearTimeout(t);
+  }, [rankInfo, test, id]);
+
+  const countdown = useCountdown(rankInfo?.released ? null : (rankInfo?.release_at ?? test?.ends_at));
+
+  if (loading) return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
+  if (!attempt) return <div className="p-10 text-center text-sm text-muted-foreground">Result not found.</div>;
 
   const total = Number(attempt.total_questions ?? 0);
   const correct = Number(attempt.correct_answers ?? 0);
@@ -110,13 +153,25 @@ const TestResultPage = () => {
   const wrong = Math.max(0, attempted - correct);
   const unattempted = Math.max(0, total - attempted);
   const accuracy = calcPercent(correct, attempted || total);
-  const percentile = attempt.percentile != null ? Number(attempt.percentile) : null;
   const seconds = Number(attempt.time_spent_seconds ?? 0);
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
+  const avgSecPerQ = total > 0 ? Math.round(seconds / total) : 0;
 
-  const performanceLabel =
-    accuracy >= 80 ? "Excellent" : accuracy >= 60 ? "Good" : accuracy >= 40 ? "Keep going" : "Needs work";
+  const released = !!rankInfo?.released;
+  const performanceLabel = accuracy >= 80 ? "Excellent" : accuracy >= 60 ? "Good" : accuracy >= 40 ? "Keep going" : "Needs work";
+
+  const pieData = [
+    { name: "Correct", value: correct },
+    { name: "Wrong", value: wrong },
+    { name: "Unattempted", value: unattempted },
+  ];
+  const subjectChartData = Object.entries(subjects).map(([s, st]) => ({
+    subject: s,
+    score: Math.max(0, Number(st.score.toFixed(1))),
+    max: Number(st.maxScore.toFixed(1)),
+    accuracy: calcPercent(st.correct, st.attempted || st.total),
+  }));
 
   return (
     <div className="pb-20 lg:pb-0">
@@ -128,33 +183,70 @@ const TestResultPage = () => {
             <Award className="h-3.5 w-3.5" /> {performanceLabel}
           </div>
           <h1 className="font-display text-2xl font-black text-white">{attempt.test_name}</h1>
-          <p className="mt-1 text-xs text-white/80">Test submitted successfully</p>
+          <p className="mt-2 text-xs text-white/80">Your score</p>
+          <p className="font-display text-5xl font-black text-white">{score.toFixed(1)}</p>
+          {test?.total_marks ? <p className="text-xs text-white/70">out of {test.total_marks}</p> : null}
 
-          <div className="mx-auto mt-5 grid max-w-md grid-cols-3 gap-3">
-            <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
-              <Trophy className="mx-auto mb-1 h-5 w-5 text-white" />
-              <p className="text-xl font-black text-white">{score.toFixed(1)}</p>
-              <p className="text-[10px] text-white/80">Score</p>
-            </div>
+          <div className="mt-4 grid max-w-md mx-auto grid-cols-3 gap-3">
             <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
               <Target className="mx-auto mb-1 h-5 w-5 text-white" />
               <p className="text-xl font-black text-white">{accuracy}%</p>
               <p className="text-[10px] text-white/80">Accuracy</p>
             </div>
             <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
+              <Clock className="mx-auto mb-1 h-5 w-5 text-white" />
+              <p className="text-xl font-black text-white">{minutes}m</p>
+              <p className="text-[10px] text-white/80">Time</p>
+            </div>
+            <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
               <TrendingUp className="mx-auto mb-1 h-5 w-5 text-white" />
-              <p className="text-xl font-black text-white">{percentile != null ? `${percentile}%` : "—"}</p>
+              <p className="text-xl font-black text-white">{released && rankInfo?.percentile != null ? `${Number(rankInfo.percentile).toFixed(1)}%` : "—"}</p>
               <p className="text-[10px] text-white/80">Percentile</p>
             </div>
           </div>
-
           <p className="mt-3 inline-flex items-center gap-1 text-xs text-white/80">
-            <Clock className="h-3 w-3" /> Completed in {minutes}m {secs}s
+            <Clock className="h-3 w-3" /> Completed in {minutes}m {secs}s · ~{avgSecPerQ}s/Q
           </p>
         </div>
       </div>
 
-      <div className="space-y-5 p-4 lg:p-6">
+      <div className="space-y-5 p-4 lg:p-6 max-w-6xl mx-auto">
+        {/* Rank panel */}
+        {released ? (
+          <div className="grid gap-3 sm:grid-cols-4 rounded-2xl border border-border bg-card p-5">
+            <div className="text-center">
+              <Medal className="mx-auto h-5 w-5 text-primary" />
+              <p className="mt-1 font-display text-2xl font-black text-foreground">#{rankInfo?.rank}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Your Rank</p>
+            </div>
+            <div className="text-center">
+              <Users className="mx-auto h-5 w-5 text-muted-foreground" />
+              <p className="mt-1 font-display text-2xl font-black text-foreground">{rankInfo?.total}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Attempts</p>
+            </div>
+            <div className="text-center">
+              <Trophy className="mx-auto h-5 w-5 text-amber-500" />
+              <p className="mt-1 font-display text-2xl font-black text-foreground">{Number(rankInfo?.topper_score ?? 0).toFixed(1)}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Topper Score</p>
+            </div>
+            <div className="text-center">
+              <Activity className="mx-auto h-5 w-5 text-blue-500" />
+              <p className="mt-1 font-display text-2xl font-black text-foreground">{Number(rankInfo?.average_score ?? 0).toFixed(1)}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Average Score</p>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-5 text-center">
+            <Lock className="mx-auto h-6 w-6 text-primary" />
+            <p className="mt-2 font-display text-sm font-bold text-foreground">Rank & comparison unlock after the test window closes</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {test?.ends_at ? (
+                <>Releases on {new Date(test.ends_at).toLocaleString()} {countdown && countdown !== "now" ? <span className="font-semibold text-primary"> · in {countdown}</span> : null}</>
+              ) : "Awaiting release"}
+            </p>
+          </div>
+        )}
+
         {/* Question stats */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatTile icon={CheckCircle2} label="Correct" value={correct} tone="success" />
@@ -163,51 +255,111 @@ const TestResultPage = () => {
           <StatTile icon={Target} label="Total" value={total} tone="primary" />
         </div>
 
-        {/* Subject breakdown */}
+        {/* Charts */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-bold text-foreground">Answer breakdown</h2>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} label>
+                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-bold text-foreground">Subject-wise score vs max</h2>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={subjectChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis dataKey="subject" fontSize={11} />
+                  <YAxis fontSize={11} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="score" fill="#F97316" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="max" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Comparison strip */}
+        {released && rankInfo && (
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-3 text-sm font-bold text-foreground">You vs Topper vs Average</h2>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  { name: "You", value: Number(score.toFixed(1)) },
+                  { name: "Topper", value: Number((rankInfo.topper_score ?? 0).toFixed(1)) },
+                  { name: "Average", value: Number((rankInfo.average_score ?? 0).toFixed(1)) },
+                ]} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis type="number" fontSize={11} />
+                  <YAxis type="category" dataKey="name" fontSize={12} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#1E293B" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Subject breakdown table */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-4 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
           {Object.keys(subjects).length === 0 ? (
             <p className="text-xs text-muted-foreground">No subject data available.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-              {Object.entries(subjects).map(([subj, stat]) => {
-                const acc = calcPercent(stat.correct, stat.attempted || stat.total);
-                const subjSlug = slugifySubject(subj);
-                return (
-                  <Link
-                    key={subj}
-                    to={`/tests/${slug}/result/${id}/subject/${subjSlug}`}
-                    className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
-                  >
-                    <CircularProgress value={acc} />
-                    <div className="text-center">
-                      <p className="flex items-center justify-center gap-0.5 text-xs font-bold text-foreground group-hover:text-primary">
-                        {subj}
-                        <ChevronRight className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {stat.correct}/{stat.total} · {Number(stat.score).toFixed(1)}m
-                      </p>
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-xs text-muted-foreground">
+                    <th className="px-2 py-2 text-left font-semibold">Subject</th>
+                    <th className="px-2 py-2 text-right font-semibold">Attempted</th>
+                    <th className="px-2 py-2 text-right font-semibold">Correct</th>
+                    <th className="px-2 py-2 text-right font-semibold">Accuracy</th>
+                    <th className="px-2 py-2 text-right font-semibold">Score</th>
+                    <th className="px-2 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(subjects).map(([subj, stat]) => {
+                    const acc = calcPercent(stat.correct, stat.attempted || stat.total);
+                    return (
+                      <tr key={subj} className="border-b last:border-0">
+                        <td className="px-2 py-3 font-bold text-foreground">{subj}</td>
+                        <td className="px-2 py-3 text-right">{stat.attempted}/{stat.total}</td>
+                        <td className="px-2 py-3 text-right text-emerald-600 font-semibold">{stat.correct}</td>
+                        <td className="px-2 py-3 text-right">{acc}%</td>
+                        <td className="px-2 py-3 text-right font-semibold">{stat.score.toFixed(1)} / {stat.maxScore.toFixed(0)}</td>
+                        <td className="px-2 py-3 text-right">
+                          <Link to={`/tests/${slug}/result/${id}/subject/${slugifySubject(subj)}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
+                            Review <ChevronRight className="h-3 w-3" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Link
-            to="/my-tests"
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50"
-          >
+          <Link to="/my-tests" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50">
             <RotateCcw className="h-3.5 w-3.5" /> Back to Tests
           </Link>
-          <Link
-            to="/dashboard"
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-          >
+          <Link to="/dashboard" className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90">
             <Home className="h-3.5 w-3.5" /> Go to Dashboard
           </Link>
         </div>
@@ -216,20 +368,13 @@ const TestResultPage = () => {
   );
 };
 
-const StatTile = ({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
+const StatTile = ({ icon: Icon, label, value, tone }: {
+  icon: React.ComponentType<{ className?: string }>; label: string; value: number;
   tone: "success" | "danger" | "muted" | "primary";
 }) => {
   const tones: Record<string, string> = {
-    success: "bg-secondary/10 text-secondary",
-    danger: "bg-destructive/10 text-destructive",
+    success: "bg-emerald-50 text-emerald-700",
+    danger: "bg-red-50 text-red-700",
     muted: "bg-muted text-muted-foreground",
     primary: "bg-primary/10 text-primary",
   };
@@ -240,41 +385,6 @@ const StatTile = ({
       </div>
       <p className="font-display text-xl font-black text-foreground">{value}</p>
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-    </div>
-  );
-};
-
-const CircularProgress = ({ value, size = 64, stroke = 6 }: { value: number; size?: number; stroke?: number }) => {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const target = Math.min(100, Math.max(0, value));
-  const [animated, setAnimated] = useState(0);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setAnimated(target), 50);
-    return () => window.clearTimeout(t);
-  }, [target]);
-
-  const offset = circumference - (animated / 100) * circumference;
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={stroke} className="fill-none stroke-muted" />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22, 1, 0.36, 1)" }}
-          className="fill-none stroke-primary"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-xs font-black text-foreground">
-        {Math.round(animated)}%
-      </div>
     </div>
   );
 };
