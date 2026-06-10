@@ -552,6 +552,7 @@ const CreateTestPage = () => {
                     className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
                     aria-label="Marks for wrong"
                   />
+                </div>
                 <button
                   type="button"
                   onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
