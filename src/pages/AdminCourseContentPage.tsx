@@ -473,6 +473,30 @@ const AdminCourseContentPage = () => {
     if (selectedCourse) loadCourseDetail(selectedCourse.id);
   };
 
+  const toggleChapterPublish = async (ch: Chapter) => {
+    const next = !ch.is_published;
+    setChapters((prev) => prev.map((x) => x.id === ch.id ? { ...x, is_published: next } : x));
+    const { error } = await supabase.from("chapters").update({ is_published: next }).eq("id", ch.id);
+    if (error) {
+      setChapters((prev) => prev.map((x) => x.id === ch.id ? { ...x, is_published: !next } : x));
+      toast.error(error.message);
+      return;
+    }
+    toast.success(next ? "Chapter published" : "Chapter hidden from students");
+  };
+
+  const toggleLessonPublish = async (lesson: Lesson) => {
+    const next = !lesson.is_published;
+    setLessons((prev) => prev.map((x) => x.id === lesson.id ? { ...x, is_published: next } : x));
+    const { error } = await supabase.from("lessons").update({ is_published: next }).eq("id", lesson.id);
+    if (error) {
+      setLessons((prev) => prev.map((x) => x.id === lesson.id ? { ...x, is_published: !next } : x));
+      toast.error(error.message);
+      return;
+    }
+    toast.success(next ? "Lecture published" : "Lecture hidden from students");
+  };
+
 
   const filteredCourses = useMemo(() => {
     const q = search.trim().toLowerCase();
