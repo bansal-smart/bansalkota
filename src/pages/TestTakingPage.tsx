@@ -271,7 +271,11 @@ const TestTakingPage = () => {
     setStatuses((s) => (s[q.id] ? s : { ...s, [q.id]: "not-answered" }));
   }, [q]);
 
-  const updateStatus = (id: string, status: QStatus) => setStatuses((prev) => ({ ...prev, [id]: status }));
+  const updateStatus = (id: string, status: QStatus) => setStatuses((prev) => {
+    const next = { ...prev, [id]: status };
+    statusesRef.current = next;
+    return next;
+  });
 
   const hasAnswer = (qq: TestQuestion, a?: AnswerVal): boolean => {
     if (!a) return false;
