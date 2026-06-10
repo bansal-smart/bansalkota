@@ -482,7 +482,7 @@ const CreateTestPage = () => {
               </button>
             )}
             <button
-              onClick={() => setQuestions([...questions, blankQuestion()])}
+              onClick={() => setQuestions([...questions, blankQuestion({ correct: correctMarks, wrong: wrongMarks })])}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" /> Add Manual
