@@ -267,7 +267,7 @@ const LandingPage = () => {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {achievements.map((a) => (
+            {liveAchievements.map((a) => (
               <BansalCard key={a.label} className="relative !p-4 sm:!p-5 text-center">
                 <CornerSparkles position="tr" />
                 <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-bansal-orange/10 flex items-center justify-center">
@@ -622,7 +622,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 stagger-children">
-            {testimonials.map((t) => (
+            {liveTestimonials.map((t) => (
               <BansalCard key={t.name} className="relative !p-5">
                 <Quote className="h-7 w-7 text-bansal-blue/20" />
                 <CornerSparkles position="br" />
