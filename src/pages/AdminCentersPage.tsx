@@ -138,6 +138,8 @@ const AdminCentersPage = () => {
       verified: !!form.verified,
       is_published: form.is_published ?? true,
       sort_order: Number(form.sort_order ?? 0),
+      is_featured: !!form.is_featured,
+      featured_rank: form.featured_rank == null || (form.featured_rank as any) === "" ? null : Number(form.featured_rank),
     };
     const { error } = editingId
       ? await supabase.from("centers").update(payload).eq("id", editingId)
