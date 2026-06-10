@@ -58,6 +58,7 @@ type Lesson = {
   duration_seconds: number;
   video_url: string | null;
   is_free_preview: boolean;
+  is_published: boolean;
   type: string;
 };
 
