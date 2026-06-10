@@ -22,7 +22,7 @@ const PAGES: { key: string; label: string; route: string }[] = [
   { key: "test-series", label: "Test Series", route: "/test-series" },
   { key: "live-classes", label: "Live Classes", route: "/live-classes" },
   { key: "educators", label: "Educators", route: "/educators" },
-  { key: "mentorship", label: "Mentorship", route: "/mentorship" },
+  
   { key: "admissions", label: "Admissions", route: "/admissions" },
   { key: "association", label: "Association", route: "/association" },
   { key: "boost", label: "BOOST 2026", route: "/boost" },

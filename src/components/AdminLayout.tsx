@@ -15,9 +15,7 @@ import {
   Bell,
   Settings,
   ShieldCheck,
-  HeartHandshake,
   Library,
-  Swords,
   School,
   FileBarChart,
   BookOpen,
@@ -25,6 +23,7 @@ import {
   MapPin,
   Image as ImageIcon,
   Award,
+  Youtube,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -40,9 +39,7 @@ const baseNav: NavItem[] = [
   { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
   { label: "Users", icon: Users, path: "/admin/users" },
   { label: "Students", icon: GraduationCap, path: "/admin/students" },
-  { label: "Schools", icon: School, path: "/admin/schools" },
-  { label: "Mentor Assignments", icon: HeartHandshake, path: "/admin/mentor-assignments" },
-  { label: "Mentor Handovers", icon: HeartHandshake, path: "/admin/mentor-handovers" },
+  { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
   { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
   { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
   { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
@@ -57,7 +54,7 @@ const baseNav: NavItem[] = [
   { label: "Centres", icon: MapPin, path: "/admin/centers" },
   { label: "Toppers", icon: Award, path: "/admin/toppers" },
   { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
-  { label: "Compete Questions", icon: Swords, path: "/admin/compete-questions" },
+  { label: "Lecture Bucket", icon: Youtube, path: "/admin/lecture-bucket" },
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },

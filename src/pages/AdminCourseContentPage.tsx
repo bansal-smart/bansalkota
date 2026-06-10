@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
   FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X,
@@ -215,6 +216,8 @@ const AdminCourseContentPage = () => {
   const lectureVideoId = useMemo(() => extractYouTubeId(lectureForm.youtubeUrl), [lectureForm.youtubeUrl]);
   const hasTypedYouTubeUrl = lectureForm.youtubeUrl.trim().length > 0;
 
+  const { courseId: routeCourseId } = useParams<{ courseId: string }>();
+
   // Load courses
   useEffect(() => {
     (async () => {
@@ -223,10 +226,17 @@ const AdminCourseContentPage = () => {
         .select("id,name,slug,subject,educator_name,thumbnail_url")
         .order("created_at", { ascending: false });
       if (error) toast.error(error.message);
-      setCourses((data as Course[]) ?? []);
+      const list = (data as Course[]) ?? [];
+      setCourses(list);
       setCoursesLoading(false);
+      // Auto-select if URL specifies a course
+      if (routeCourseId) {
+        const found = list.find((c) => c.id === routeCourseId);
+        if (found) setSelectedCourse(found);
+      }
     })();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeCourseId]);
 
   // Load chapters + lessons + resources when a course is selected
   const loadCourseDetail = async (courseId: string) => {

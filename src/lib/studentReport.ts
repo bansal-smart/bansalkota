@@ -49,22 +49,13 @@ export async function fetchStudentReport(
   const startDate = range.start.toISOString().slice(0, 10);
   const endDate = range.end.toISOString().slice(0, 10);
 
-  const [profileRes, mentorRes, attemptsRes, attendanceRes, enrollRes, doubtsRes, sessionsRes] =
+  const [profileRes, attemptsRes, attendanceRes, enrollRes, doubtsRes, sessionsRes] =
     await Promise.all([
       safe(
         supabase
           .from("profiles")
           .select("full_name, target_exam, class_level")
           .eq("user_id", studentId)
-          .maybeSingle(),
-      ),
-      safe(
-        (supabase as any)
-          .from("mentor_student_assignments")
-          .select("mentor_id")
-          .eq("student_id", studentId)
-          .is("removed_at", null)
-          .limit(1)
           .maybeSingle(),
       ),
       safe(
@@ -110,14 +101,7 @@ export async function fetchStudentReport(
     ]);
 
   const profile = (profileRes as any)?.data ?? {};
-  let mentorName: string | null = null;
-  const mentorId = (mentorRes as any)?.data?.mentor_id;
-  if (mentorId) {
-    const m = await safe(
-      supabase.from("profiles").select("full_name").eq("user_id", mentorId).maybeSingle(),
-    );
-    mentorName = (m as any)?.data?.full_name ?? null;
-  }
+  const mentorName: string | null = null;
 
   const attempts = ((attemptsRes as any)?.data ?? []) as any[];
   const totalQ = attempts.reduce((s, a) => s + (a.total_questions || 0), 0);

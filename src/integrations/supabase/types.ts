@@ -385,278 +385,6 @@ export type Database = {
           },
         ]
       }
-      compete_match_answers: {
-        Row: {
-          created_at: string
-          id: string
-          is_correct: boolean
-          match_id: string
-          points: number
-          question_id: string
-          question_index: number
-          selected_index: number | null
-          time_taken_ms: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_correct?: boolean
-          match_id: string
-          points?: number
-          question_id: string
-          question_index: number
-          selected_index?: number | null
-          time_taken_ms?: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_correct?: boolean
-          match_id?: string
-          points?: number
-          question_id?: string
-          question_index?: number
-          selected_index?: number | null
-          time_taken_ms?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "compete_match_answers_match_id_fkey"
-            columns: ["match_id"]
-            isOneToOne: false
-            referencedRelation: "compete_matches"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      compete_matches: {
-        Row: {
-          countdown_until: string | null
-          created_at: string
-          current_question_index: number
-          current_question_started_at: string | null
-          finished_at: string | null
-          id: string
-          is_bot: boolean
-          is_private: boolean
-          player1_avatar: string | null
-          player1_id: string
-          player1_name: string | null
-          player1_rating_after: number | null
-          player1_rating_before: number | null
-          player1_score: number
-          player2_avatar: string | null
-          player2_id: string | null
-          player2_name: string | null
-          player2_rating_after: number | null
-          player2_rating_before: number | null
-          player2_score: number
-          question_ids: string[]
-          room_code: string | null
-          started_at: string | null
-          status: string
-          subject: string
-          topic: string
-          total_questions: number
-          updated_at: string
-          winner_id: string | null
-        }
-        Insert: {
-          countdown_until?: string | null
-          created_at?: string
-          current_question_index?: number
-          current_question_started_at?: string | null
-          finished_at?: string | null
-          id?: string
-          is_bot?: boolean
-          is_private?: boolean
-          player1_avatar?: string | null
-          player1_id: string
-          player1_name?: string | null
-          player1_rating_after?: number | null
-          player1_rating_before?: number | null
-          player1_score?: number
-          player2_avatar?: string | null
-          player2_id?: string | null
-          player2_name?: string | null
-          player2_rating_after?: number | null
-          player2_rating_before?: number | null
-          player2_score?: number
-          question_ids?: string[]
-          room_code?: string | null
-          started_at?: string | null
-          status?: string
-          subject: string
-          topic: string
-          total_questions?: number
-          updated_at?: string
-          winner_id?: string | null
-        }
-        Update: {
-          countdown_until?: string | null
-          created_at?: string
-          current_question_index?: number
-          current_question_started_at?: string | null
-          finished_at?: string | null
-          id?: string
-          is_bot?: boolean
-          is_private?: boolean
-          player1_avatar?: string | null
-          player1_id?: string
-          player1_name?: string | null
-          player1_rating_after?: number | null
-          player1_rating_before?: number | null
-          player1_score?: number
-          player2_avatar?: string | null
-          player2_id?: string | null
-          player2_name?: string | null
-          player2_rating_after?: number | null
-          player2_rating_before?: number | null
-          player2_score?: number
-          question_ids?: string[]
-          room_code?: string | null
-          started_at?: string | null
-          status?: string
-          subject?: string
-          topic?: string
-          total_questions?: number
-          updated_at?: string
-          winner_id?: string | null
-        }
-        Relationships: []
-      }
-      compete_questions: {
-        Row: {
-          class_level: string | null
-          correct_index: number
-          created_at: string
-          created_by: string | null
-          difficulty: string
-          explanation: string | null
-          id: string
-          is_active: boolean
-          options: Json
-          question_text: string
-          subject: string
-          target_exam: string | null
-          topic: string
-          updated_at: string
-        }
-        Insert: {
-          class_level?: string | null
-          correct_index: number
-          created_at?: string
-          created_by?: string | null
-          difficulty?: string
-          explanation?: string | null
-          id?: string
-          is_active?: boolean
-          options: Json
-          question_text: string
-          subject: string
-          target_exam?: string | null
-          topic: string
-          updated_at?: string
-        }
-        Update: {
-          class_level?: string | null
-          correct_index?: number
-          created_at?: string
-          created_by?: string | null
-          difficulty?: string
-          explanation?: string | null
-          id?: string
-          is_active?: boolean
-          options?: Json
-          question_text?: string
-          subject?: string
-          target_exam?: string | null
-          topic?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      compete_queue: {
-        Row: {
-          class_level: string | null
-          created_at: string
-          id: string
-          match_id: string | null
-          rating: number
-          status: string
-          subject: string
-          target_exam: string
-          topic: string
-          user_id: string
-        }
-        Insert: {
-          class_level?: string | null
-          created_at?: string
-          id?: string
-          match_id?: string | null
-          rating?: number
-          status?: string
-          subject: string
-          target_exam?: string
-          topic: string
-          user_id: string
-        }
-        Update: {
-          class_level?: string | null
-          created_at?: string
-          id?: string
-          match_id?: string | null
-          rating?: number
-          status?: string
-          subject?: string
-          target_exam?: string
-          topic?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      compete_ratings: {
-        Row: {
-          best_streak: number
-          current_streak: number
-          draws: number
-          id: string
-          losses: number
-          rating: number
-          target_exam: string
-          updated_at: string
-          user_id: string
-          wins: number
-        }
-        Insert: {
-          best_streak?: number
-          current_streak?: number
-          draws?: number
-          id?: string
-          losses?: number
-          rating?: number
-          target_exam?: string
-          updated_at?: string
-          user_id: string
-          wins?: number
-        }
-        Update: {
-          best_streak?: number
-          current_streak?: number
-          draws?: number
-          id?: string
-          losses?: number
-          rating?: number
-          target_exam?: string
-          updated_at?: string
-          user_id?: string
-          wins?: number
-        }
-        Relationships: []
-      }
       course_pdfs: {
         Row: {
           course_id: string
@@ -1272,6 +1000,51 @@ export type Database = {
         }
         Relationships: []
       }
+      lecture_bucket: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          subject: string
+          tags: string[]
+          thumbnail_url: string | null
+          title: string
+          topic: string | null
+          updated_at: string
+          youtube_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          subject: string
+          tags?: string[]
+          thumbnail_url?: string | null
+          title: string
+          topic?: string | null
+          updated_at?: string
+          youtube_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          subject?: string
+          tags?: string[]
+          thumbnail_url?: string | null
+          title?: string
+          topic?: string | null
+          updated_at?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
       lesson_notes: {
         Row: {
           content: string
@@ -1365,6 +1138,7 @@ export type Database = {
           duration_seconds: number
           id: string
           is_free_preview: boolean
+          lecture_id: string | null
           position: number
           slug: string
           title: string
@@ -1379,6 +1153,7 @@ export type Database = {
           duration_seconds?: number
           id?: string
           is_free_preview?: boolean
+          lecture_id?: string | null
           position?: number
           slug: string
           title: string
@@ -1393,6 +1168,7 @@ export type Database = {
           duration_seconds?: number
           id?: string
           is_free_preview?: boolean
+          lecture_id?: string | null
           position?: number
           slug?: string
           title?: string
@@ -1413,6 +1189,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_lecture_id_fkey"
+            columns: ["lecture_id"]
+            isOneToOne: false
+            referencedRelation: "lecture_bucket"
             referencedColumns: ["id"]
           },
         ]
@@ -1626,359 +1409,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      mentor_announcement_rsvps: {
-        Row: {
-          announcement_id: string
-          created_at: string
-          id: string
-          responded_at: string | null
-          response: string
-          student_id: string
-        }
-        Insert: {
-          announcement_id: string
-          created_at?: string
-          id?: string
-          responded_at?: string | null
-          response?: string
-          student_id: string
-        }
-        Update: {
-          announcement_id?: string
-          created_at?: string
-          id?: string
-          responded_at?: string | null
-          response?: string
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mentor_announcement_rsvps_announcement_id_fkey"
-            columns: ["announcement_id"]
-            isOneToOne: false
-            referencedRelation: "mentor_announcements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mentor_announcements: {
-        Row: {
-          agenda: string | null
-          created_at: string
-          duration_minutes: number
-          id: string
-          meeting_at: string
-          meeting_url: string | null
-          mentor_id: string
-          parent_template_id: string | null
-          recurrence: string
-          recurrence_active: boolean
-          recurrence_interval_days: number | null
-          reminder_sent_at: string | null
-          status: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          agenda?: string | null
-          created_at?: string
-          duration_minutes?: number
-          id?: string
-          meeting_at: string
-          meeting_url?: string | null
-          mentor_id: string
-          parent_template_id?: string | null
-          recurrence?: string
-          recurrence_active?: boolean
-          recurrence_interval_days?: number | null
-          reminder_sent_at?: string | null
-          status?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          agenda?: string | null
-          created_at?: string
-          duration_minutes?: number
-          id?: string
-          meeting_at?: string
-          meeting_url?: string | null
-          mentor_id?: string
-          parent_template_id?: string | null
-          recurrence?: string
-          recurrence_active?: boolean
-          recurrence_interval_days?: number | null
-          reminder_sent_at?: string | null
-          status?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mentor_announcements_parent_template_id_fkey"
-            columns: ["parent_template_id"]
-            isOneToOne: false
-            referencedRelation: "mentor_announcements"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mentor_backup_pool: {
-        Row: {
-          added_by: string
-          backup_mentor_id: string
-          created_at: string
-          id: string
-          primary_mentor_id: string
-        }
-        Insert: {
-          added_by: string
-          backup_mentor_id: string
-          created_at?: string
-          id?: string
-          primary_mentor_id: string
-        }
-        Update: {
-          added_by?: string
-          backup_mentor_id?: string
-          created_at?: string
-          id?: string
-          primary_mentor_id?: string
-        }
-        Relationships: []
-      }
-      mentor_group_members: {
-        Row: {
-          group_id: string
-          id: string
-          joined_at: string
-          student_id: string
-        }
-        Insert: {
-          group_id: string
-          id?: string
-          joined_at?: string
-          student_id: string
-        }
-        Update: {
-          group_id?: string
-          id?: string
-          joined_at?: string
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mentor_group_members_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "mentor_groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mentor_group_reads: {
-        Row: {
-          group_id: string
-          id: string
-          last_read_at: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          group_id: string
-          id?: string
-          last_read_at?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          group_id?: string
-          id?: string
-          last_read_at?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      mentor_groups: {
-        Row: {
-          created_at: string
-          id: string
-          mentor_id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          mentor_id: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          mentor_id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      mentor_handovers: {
-        Row: {
-          backup_mentor_id: string
-          created_at: string
-          created_by: string
-          ended_early_at: string | null
-          ends_at: string
-          id: string
-          primary_mentor_id: string
-          reason: string | null
-          started_at: string
-        }
-        Insert: {
-          backup_mentor_id: string
-          created_at?: string
-          created_by: string
-          ended_early_at?: string | null
-          ends_at: string
-          id?: string
-          primary_mentor_id: string
-          reason?: string | null
-          started_at?: string
-        }
-        Update: {
-          backup_mentor_id?: string
-          created_at?: string
-          created_by?: string
-          ended_early_at?: string | null
-          ends_at?: string
-          id?: string
-          primary_mentor_id?: string
-          reason?: string | null
-          started_at?: string
-        }
-        Relationships: []
-      }
-      mentor_messages: {
-        Row: {
-          content: string | null
-          conversation_type: string
-          created_at: string
-          file_mime: string | null
-          file_name: string | null
-          file_path: string | null
-          file_size_bytes: number | null
-          file_url: string | null
-          group_id: string | null
-          id: string
-          image_url: string | null
-          is_deleted: boolean
-          read_at: string | null
-          recipient_id: string | null
-          sender_id: string
-        }
-        Insert: {
-          content?: string | null
-          conversation_type: string
-          created_at?: string
-          file_mime?: string | null
-          file_name?: string | null
-          file_path?: string | null
-          file_size_bytes?: number | null
-          file_url?: string | null
-          group_id?: string | null
-          id?: string
-          image_url?: string | null
-          is_deleted?: boolean
-          read_at?: string | null
-          recipient_id?: string | null
-          sender_id: string
-        }
-        Update: {
-          content?: string | null
-          conversation_type?: string
-          created_at?: string
-          file_mime?: string | null
-          file_name?: string | null
-          file_path?: string | null
-          file_size_bytes?: number | null
-          file_url?: string | null
-          group_id?: string | null
-          id?: string
-          image_url?: string | null
-          is_deleted?: boolean
-          read_at?: string | null
-          recipient_id?: string | null
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mentor_messages_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "mentor_groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mentor_reviews: {
-        Row: {
-          created_at: string
-          id: string
-          mentor_id: string
-          rating: number
-          review: string | null
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          mentor_id: string
-          rating: number
-          review?: string | null
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          mentor_id?: string
-          rating?: number
-          review?: string | null
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      mentor_student_assignments: {
-        Row: {
-          assigned_at: string
-          assigned_by: string
-          id: string
-          mentor_id: string
-          removed_at: string | null
-          student_id: string
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by: string
-          id?: string
-          mentor_id: string
-          removed_at?: string | null
-          student_id: string
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string
-          id?: string
-          mentor_id?: string
-          removed_at?: string | null
-          student_id?: string
-        }
-        Relationships: []
       }
       module_pack_items: {
         Row: {
@@ -3135,14 +2565,6 @@ export type Database = {
           id: string
         }[]
       }
-      get_compete_question_answers: {
-        Args: { _match_id: string }
-        Returns: {
-          correct_index: number
-          explanation: string
-          id: string
-        }[]
-      }
       get_live_class_join_url: {
         Args: { _class_id: string }
         Returns: {
@@ -3169,23 +2591,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_active_backup_for_mentor: {
-        Args: { _backup: string; _primary: string }
-        Returns: boolean
-      }
-      is_active_backup_for_student: {
-        Args: { _mentor: string; _student: string }
-        Returns: boolean
-      }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
-      is_member_of_group: {
-        Args: { _group_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_mentor_of_group: {
-        Args: { _group_id: string; _user_id: string }
-        Returns: boolean
-      }
       move_to_dlq: {
         Args: {
           dlq_name: string

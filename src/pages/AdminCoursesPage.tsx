@@ -17,6 +17,9 @@ type AdminCourse = {
   total_enrolled: number;
   price: number;
   created_at: string;
+  chapter_count?: number;
+  test_count?: number;
+  lesson_count?: number;
 };
 
 const AdminCoursesPage = () => {
@@ -33,7 +36,33 @@ const AdminCoursesPage = () => {
       .from("courses")
       .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at")
       .order("created_at", { ascending: false });
-    setCourses((data ?? []) as AdminCourse[]);
+    const base = (data ?? []) as AdminCourse[];
+
+    // Fetch chapters + tests + lessons counts in parallel
+    const ids = base.map((c) => c.id);
+    if (ids.length) {
+      const [chaptersRes, testsRes, lessonsRes] = await Promise.all([
+        supabase.from("chapters").select("course_id").in("course_id", ids),
+        supabase.from("tests").select("course_id").in("course_id", ids),
+        supabase.from("lessons").select("course_id").in("course_id", ids),
+      ]);
+      const countBy = (rows: any[] | null) => {
+        const m: Record<string, number> = {};
+        (rows ?? []).forEach((r) => {
+          m[r.course_id] = (m[r.course_id] ?? 0) + 1;
+        });
+        return m;
+      };
+      const cMap = countBy(chaptersRes.data as any);
+      const tMap = countBy(testsRes.data as any);
+      const lMap = countBy(lessonsRes.data as any);
+      base.forEach((c) => {
+        c.chapter_count = cMap[c.id] ?? 0;
+        c.test_count = tMap[c.id] ?? 0;
+        c.lesson_count = lMap[c.id] ?? 0;
+      });
+    }
+    setCourses(base);
     setLoading(false);
   };
 
@@ -123,6 +152,9 @@ const AdminCoursesPage = () => {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Lectures</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Students</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
@@ -134,6 +166,9 @@ const AdminCoursesPage = () => {
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
+                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
+                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
+                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.test_count ?? 0}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{(c.total_enrolled ?? 0).toLocaleString()}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
                     <td className="px-4 py-3 text-center">
@@ -158,7 +193,7 @@ const AdminCoursesPage = () => {
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => navigate(`/admin/course-content?courseId=${c.id}`)}
+                          onClick={() => navigate(`/admin/courses/${c.id}/content`)}
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
                           title="Manage content"
                         >
