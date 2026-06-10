@@ -21,7 +21,7 @@ export default function LeadershipDetailPage() {
   if (!profile) return <Navigate to="/about" replace />;
 
   const initials = profile.name.split(" ").map((w) => w[0]).slice(0, 2).join("");
-  const photo = profile.hero_photo_url || leadershipPhotos[slug];
+  const photo = extra?.heroPhotoOverride || profile.hero_photo_url || leadershipPhotos[slug];
   const nameParts = profile.name.split(" ");
   const firstName = nameParts.slice(0, -1).join(" ");
   const lastName = nameParts[nameParts.length - 1];
