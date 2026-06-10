@@ -26,8 +26,18 @@ type Attempt = {
 
 type Props = { testId?: string; compact?: boolean };
 
+type ReattemptReq = {
+  id: string;
+  user_id: string;
+  test_id: string;
+  attempt_id: string | null;
+  reason: string | null;
+  status: string;
+  created_at: string;
+};
+
 const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { confirm, ConfirmDialog } = useConfirm();
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [tests, setTests] = useState<{ id: string; title: string; slug: string }[]>([]);
@@ -36,6 +46,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [testFilter, setTestFilter] = useState<string>(testId ?? "all");
+  const [reattempts, setReattempts] = useState<ReattemptReq[]>([]);
 
   const load = async () => {
     setLoading(true);
