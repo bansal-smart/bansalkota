@@ -226,6 +226,43 @@ const SignupPage = () => {
                 </select>
               </div>
             </div>
+
+            <div className="rounded-lg border border-border bg-background/40 p-3 space-y-2">
+              <label className="text-sm font-medium text-foreground inline-flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" /> Are you studying at a Bansal offline centre?
+              </label>
+              <div className="flex gap-2">
+                {(["no", "yes"] as const).map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => update("is_bansal_offline_student", v)}
+                    className={`flex-1 rounded-md border px-3 py-2 text-xs font-bold uppercase ${
+                      form.is_bansal_offline_student === v
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground"
+                    }`}
+                  >
+                    {v === "yes" ? "Yes" : "No"}
+                  </button>
+                ))}
+              </div>
+              {form.is_bansal_offline_student === "yes" && (
+                <select
+                  value={form.center_id}
+                  onChange={(e) => update("center_id", e.target.value)}
+                  className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                >
+                  <option value="">Choose your centre…</option>
+                  {centers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}, {c.state}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             <button onClick={handleSignup} disabled={submitting} className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-opacity">
               {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating Account...</> : "Create Account"}
             </button>
