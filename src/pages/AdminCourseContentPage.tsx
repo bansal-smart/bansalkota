@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
   FileText, Upload, Loader2, Trash2, Eye, EyeOff, Search, BookOpen, ArrowLeft, Download, X,
