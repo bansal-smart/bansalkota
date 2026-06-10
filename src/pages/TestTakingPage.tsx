@@ -98,6 +98,18 @@ const TestTakingPage = () => {
         setStatuses((existing.question_statuses as Record<string, QStatus>) ?? {});
         setStarted(true);
       }
+
+      // Candidate profile
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setCandidate({
+        name: prof?.full_name?.trim() || user.email?.split("@")[0] || "Candidate",
+        avatar: prof?.avatar_url || null,
+      });
+
       setLoading(false);
     })();
   }, [slug, user, authLoading, navigate]);
