@@ -774,6 +774,7 @@ const AdminCourseContentPage = () => {
                                   <div className="flex items-center gap-2">
                                     <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
                                     {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
+                                    {!lec.is_published && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">Hidden</Badge>}
                                   </div>
                                   <p className="text-xs text-muted-foreground truncate">
                                     {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
