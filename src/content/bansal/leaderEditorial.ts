@@ -6,6 +6,11 @@ import sameerPortraitDark from "@/assets/sameer-portrait-dark.png.asset.json";
 import sameerBranded from "@/assets/sameer-branded.png.asset.json";
 import sameerHeadshot from "@/assets/sameer-headshot.jpg.asset.json";
 import sameerSpeaking from "@/assets/sameer-speaking.jpg.asset.json";
+import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
+import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
+import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
+import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
+import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg.asset.json";
 
 export type LeaderTimelineItem = { year: string; title: string; body: string };
 export type LeaderPillar = { title: string; body: string };
@@ -37,11 +42,12 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "A single chalkboard in 1981 — and a teaching tradition that reshaped Indian engineering education.",
     galleryCaption: "Four decades, one classroom philosophy",
+    heroPhotoOverride: vkPortrait.url,
     gallery: [
-      { src: u("photo-1503676260728-1c00da094a0b"), alt: "Classic blackboard mathematics", tall: true },
-      { src: u("photo-1497486751825-1233686d5d80"), alt: "Vintage Kota classroom" },
-      { src: u("photo-1509062522246-3755977927d7"), alt: "Handwritten formulas" },
-      { src: u("photo-1532012197267-da84d127e765"), alt: "Old books and notes" },
+      { src: vkStatesman.url, alt: "Mr. V.K. Bansal — formal statesman portrait", tall: true },
+      { src: vkDesk.url, alt: "V.K. Bansal at his founder's desk" },
+      { src: vkChalkboard.url, alt: "V.K. Bansal teaching mathematics at the chalkboard" },
+      { src: vkLibrary.url, alt: "V.K. Bansal in his study with books" },
     ],
     timelineHeading: "Defining Moments",
     timeline: [
