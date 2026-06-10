@@ -21,6 +21,8 @@ type Center = {
   verified: boolean;
   is_published: boolean;
   sort_order: number;
+  is_featured: boolean;
+  featured_rank: number | null;
 };
 
 const REGIONS = ["North", "South", "East", "West", "Central"];
