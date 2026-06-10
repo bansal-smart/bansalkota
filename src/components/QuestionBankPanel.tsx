@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
 import BulkQuestionUploadDialog from "./BulkQuestionUploadDialog";
+import DocxBulkImportDialog from "./DocxBulkImportDialog";
 import MathRenderer from "./MathRenderer";
 import TablePagination from "./TablePagination";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,6 +103,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<BankQuestion | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [docxOpen, setDocxOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("question_text");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -231,8 +233,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           <h3 className="text-sm font-bold text-foreground flex-1">Question Bank</h3>
           {manage && (
             <>
+              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Import questions from a Word .docx file (with inline images)">
+                <FileText className="h-3 w-3" /> Word import
+              </button>
               <button onClick={() => setBulkOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
-                <Upload className="h-3 w-3" /> Bulk upload
+                <Upload className="h-3 w-3" /> Bulk CSV
               </button>
               <button onClick={() => { setEditing(null); setEditorOpen(true); }} className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground">
                 <Plus className="h-3 w-3" /> New
@@ -372,6 +377,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
 
       <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
       <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} />
+      <DocxBulkImportDialog open={docxOpen} onClose={() => setDocxOpen(false)} onImported={reload} />
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
         <DialogContent>
