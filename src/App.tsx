@@ -23,7 +23,6 @@ import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
 
-import CompetePage from "./pages/CompetePage";
 import DoubtPage from "./pages/DoubtPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
@@ -47,7 +46,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminStudentsPage from "./pages/AdminStudentsPage";
 import AdminStudentReportsPage from "./pages/AdminStudentReportsPage";
-import AdminMentorAssignmentsPage from "./pages/AdminMentorAssignmentsPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import AdminCoursesPage from "./pages/AdminCoursesPage";
@@ -60,7 +58,7 @@ import AdminTestAttemptsPage from "./pages/AdminTestAttemptsPage";
 import AdminTestDetailPage from "./pages/AdminTestDetailPage";
 import AdminImportBatchesPage from "./pages/AdminImportBatchesPage";
 import AdminQuestionBankPage from "./pages/AdminQuestionBankPage";
-import AdminCompeteQuestionsPage from "./pages/AdminCompeteQuestionsPage";
+import AdminLectureBucketPage from "./pages/AdminLectureBucketPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
 import AdminAdminsPage from "./pages/AdminAdminsPage";
 import AdminModerationPage from "./pages/AdminModerationPage";
@@ -78,7 +76,6 @@ import PublicLayout from "./components/PublicLayout";
 import TestsLandingPage from "./pages/TestsLandingPage";
 import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
 import PricingPage from "./pages/PricingPage";
-import MentorshipPage from "./pages/MentorshipPage";
 import AdmissionsPage from "./pages/AdmissionsPage";
 import AssociationPage from "./pages/AssociationPage";
 import AboutPage from "./pages/AboutPage";
@@ -86,16 +83,7 @@ import ContactPage from "./pages/ContactPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/TermsOfServicePage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
-import MentorLayout from "./components/MentorLayout";
-import MentorDashboard from "./pages/MentorDashboard";
-import MentorChatsPage from "./pages/MentorChatsPage";
-import MentorPerformancePage from "./pages/MentorPerformancePage";
-import MentorSettingsPage from "./pages/MentorSettingsPage";
-import MentorStudentsPage from "./pages/MentorStudentsPage";
-import MentorAnnouncementsPage from "./pages/MentorAnnouncementsPage";
-import AdminMentorHandoversPage from "./pages/AdminMentorHandoversPage";
 import AdminSchoolsPage from "./pages/AdminSchoolsPage";
-import StudentMentorChatPage from "./pages/StudentMentorChatPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
@@ -166,7 +154,6 @@ const App = () => (
               <Route path="/live-classes" element={<LiveClassesLandingPage />} />
               <Route path="/educators" element={<EducatorsPage />} />
               <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/mentorship" element={<MentorshipPage />} />
               <Route path="/admissions" element={<AdmissionsPage />} />
               <Route path="/association" element={<AssociationPage />} />
               <Route path="/about" element={<AboutPage />} />
@@ -196,6 +183,8 @@ const App = () => (
                   />
                 }
               />
+              {/* Removed pages → redirects */}
+              <Route path="/mentorship" element={<Navigate to="/" replace />} />
             </Route>
 
             {/* Legacy /store redirect */}
@@ -211,8 +200,7 @@ const App = () => (
                 <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
                 <Route path="/my-live-classes" element={<LiveClassesListPage />} />
                 <Route path="/live-classes/:slug" element={<LiveClassRoomPage />} />
-                
-                <Route path="/compete" element={<CompetePage />} />
+
                 <Route path="/doubts" element={<DoubtPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
@@ -223,14 +211,13 @@ const App = () => (
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/mentor-chat" element={<StudentMentorChatPage />} />
+                {/* Removed mentor/compete redirects */}
+                <Route path="/compete" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/mentor-chat" element={<Navigate to="/dashboard" replace />} />
               </Route>
             </Route>
 
-            {/* Teacher layout — teachers only. Per role restructure, teachers
-                only handle live classes and assigned doubts. Everything else
-                (courses, tests, students, analytics, question bank) lives in
-                the admin portal. */}
+            {/* Teacher layout — teachers only. */}
             <Route element={<ProtectedRoute allow={["teacher"]} />}>
               <Route element={<TeacherLayout />}>
                 <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
@@ -238,7 +225,6 @@ const App = () => (
                 <Route path="/teacher/live-classes/:slug" element={<TeacherLiveClassRoomPage />} />
                 <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
                 <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
-                {/* Legacy teacher URLs now redirect into the trimmed portal. */}
                 <Route path="/teacher/courses" element={<Navigate to="/teacher/dashboard" replace />} />
                 <Route path="/teacher/courses/create" element={<Navigate to="/teacher/dashboard" replace />} />
                 <Route path="/teacher/tests/create" element={<Navigate to="/teacher/dashboard" replace />} />
@@ -248,17 +234,8 @@ const App = () => (
               </Route>
             </Route>
 
-            {/* Mentor layout — mentors only */}
-            <Route element={<ProtectedRoute allow={["mentor"]} />}>
-              <Route element={<MentorLayout />}>
-                <Route path="/mentor/dashboard" element={<MentorDashboard />} />
-                <Route path="/mentor/students" element={<MentorStudentsPage />} />
-                <Route path="/mentor/announcements" element={<MentorAnnouncementsPage />} />
-                <Route path="/mentor/chats" element={<MentorChatsPage />} />
-                <Route path="/mentor/performance" element={<MentorPerformancePage />} />
-                <Route path="/mentor/settings" element={<MentorSettingsPage />} />
-              </Route>
-            </Route>
+            {/* Mentor routes removed → redirect to home */}
+            <Route path="/mentor/*" element={<Navigate to="/" replace />} />
 
             {/* Staff auth */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -281,11 +258,10 @@ const App = () => (
               <Route path="/admin/students" element={<AdminStudentsPage />} />
               <Route path="/admin/student-reports" element={<AdminStudentReportsPage />} />
               <Route path="/admin/schools" element={<AdminSchoolsPage />} />
-              <Route path="/admin/mentor-assignments" element={<AdminMentorAssignmentsPage />} />
-              <Route path="/admin/mentor-handovers" element={<AdminMentorHandoversPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
               <Route path="/admin/courses/new" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
+              <Route path="/admin/courses/:courseId/content" element={<AdminCourseContentPage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               <Route path="/admin/tests" element={<AdminTestsPage />} />
               <Route path="/admin/tests-hub" element={<AdminTestsHubPage />} />
@@ -302,7 +278,11 @@ const App = () => (
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
-              <Route path="/admin/compete-questions" element={<AdminCompeteQuestionsPage />} />
+              <Route path="/admin/lecture-bucket" element={<AdminLectureBucketPage />} />
+              {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
+              <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/mentor-assignments" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/mentor-handovers" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/exams" element={<AdminExamsPage />} />
               <Route path="/admin/payments" element={<AdminPaymentsPage />} />
               <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
