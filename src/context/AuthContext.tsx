@@ -21,6 +21,8 @@ interface AuthContextValue {
   isTeacher: boolean;
   /** True if the user has the 'mentor' role. */
   isMentor: boolean;
+  /** True if the user has the 'center_admin' role (manages a Bansal centre). */
+  isCenterAdmin: boolean;
   /** True if the user has no elevated role (default student). */
   isStudent: boolean;
   /** The resolved primary role of the current user, or null when signed out. */
