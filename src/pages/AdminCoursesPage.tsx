@@ -17,6 +17,9 @@ type AdminCourse = {
   total_enrolled: number;
   price: number;
   created_at: string;
+  chapter_count?: number;
+  test_count?: number;
+  lesson_count?: number;
 };
 
 const AdminCoursesPage = () => {
@@ -33,7 +36,33 @@ const AdminCoursesPage = () => {
       .from("courses")
       .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at")
       .order("created_at", { ascending: false });
-    setCourses((data ?? []) as AdminCourse[]);
+    const base = (data ?? []) as AdminCourse[];
+
+    // Fetch chapters + tests + lessons counts in parallel
+    const ids = base.map((c) => c.id);
+    if (ids.length) {
+      const [chaptersRes, testsRes, lessonsRes] = await Promise.all([
+        supabase.from("chapters").select("course_id").in("course_id", ids),
+        supabase.from("tests").select("course_id").in("course_id", ids),
+        supabase.from("lessons").select("course_id").in("course_id", ids),
+      ]);
+      const countBy = (rows: any[] | null) => {
+        const m: Record<string, number> = {};
+        (rows ?? []).forEach((r) => {
+          m[r.course_id] = (m[r.course_id] ?? 0) + 1;
+        });
+        return m;
+      };
+      const cMap = countBy(chaptersRes.data as any);
+      const tMap = countBy(testsRes.data as any);
+      const lMap = countBy(lessonsRes.data as any);
+      base.forEach((c) => {
+        c.chapter_count = cMap[c.id] ?? 0;
+        c.test_count = tMap[c.id] ?? 0;
+        c.lesson_count = lMap[c.id] ?? 0;
+      });
+    }
+    setCourses(base);
     setLoading(false);
   };
 
