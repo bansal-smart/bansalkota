@@ -134,6 +134,33 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
     }
   };
 
+  const uploadOptionImage = async (oi: number, file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    setUploadingOpt(oi);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      setOptionImages((prev) => {
+        const next = [...prev];
+        while (next.length <= oi) next.push("");
+        next[oi] = data.publicUrl;
+        return next;
+      });
+      toast.success("Option image uploaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingOpt(null);
+    }
+  };
+
   const isMcq = questionType === "mcq-single" || questionType === "mcq-multi" || questionType === "assertion-reason";
   const isMulti = questionType === "mcq-multi";
   const isNumeric = questionType === "numerical" || questionType === "integer";
