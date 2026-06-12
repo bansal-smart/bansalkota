@@ -79,6 +79,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     imageUrl: (q as any).question_image_url ?? null,
     options: (q.options ?? []).map((o) => o.text),
     optionImages: Array.isArray((q as any).option_images) ? (q as any).option_images.map((s: any) => String(s ?? "")) : ["", "", "", ""],
+    correct: correctIdx,
     correctMulti: correctArr,
     partial: !!(q as any).partial_marking,
     numericalAnswer: numericalVal,
