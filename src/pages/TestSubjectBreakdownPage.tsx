@@ -19,6 +19,7 @@ type Question = {
   id: string;
   subject: string | null;
   question_text: string;
+  question_image_url: string | null;
   options: { id: number; text: string }[] | unknown;
   correct_answer: number;
   marks_correct: number | null;
@@ -57,7 +58,7 @@ const TestSubjectBreakdownPage = () => {
       const [qsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, subject, question_text, options, marks_correct, marks_wrong")
+          .select("id, subject, question_text, question_image_url, options, marks_correct, marks_wrong")
           .eq("test_id", att.test_id),
         supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
       ]);
@@ -149,6 +150,11 @@ const TestSubjectBreakdownPage = () => {
                   <XCircle className="h-4 w-4 shrink-0 text-destructive" />
                 )}
               </div>
+              {q.question_image_url && (
+                <div className="mt-3">
+                  <img src={q.question_image_url} alt="Question figure" className="max-h-72 rounded-lg border border-border" />
+                </div>
+              )}
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {opts.map((opt) => {
                   const isAns = opt.id === q.correct_answer;
