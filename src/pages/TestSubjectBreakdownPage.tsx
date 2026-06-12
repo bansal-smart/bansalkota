@@ -21,6 +21,7 @@ type Question = {
   question_text: string;
   question_image_url: string | null;
   options: { id: number; text: string }[] | unknown;
+  option_images: string[] | null;
   correct_answer: number;
   marks_correct: number | null;
   marks_wrong: number | null;
