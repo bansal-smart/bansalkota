@@ -288,6 +288,7 @@ const CreateTestPage = () => {
         subject: q.subject,
         topic: q.topic || null,
         question_text: q.text,
+        question_image_url: q.imageUrl || null,
         question_type: q.type,
         marks_correct: Number(q.marksCorrect ?? correctMarks),
         marks_wrong: Number(q.marksWrong ?? wrongMarks),
