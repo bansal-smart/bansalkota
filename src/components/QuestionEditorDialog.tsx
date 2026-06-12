@@ -74,6 +74,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
       setText(initial.question_text);
       setImageUrl(initial.question_image_url || null);
       setOptions(initial.options.map((o) => o.text).concat(["", "", "", ""]).slice(0, 4));
+      setOptionImages(((initial as any).option_images ?? []).concat(["", "", "", ""]).slice(0, 4).map((s: any) => String(s ?? "")));
       if (Array.isArray(initial.correct_answer)) {
         setCorrectMulti(initial.correct_answer as number[]);
         setCorrect(0);
