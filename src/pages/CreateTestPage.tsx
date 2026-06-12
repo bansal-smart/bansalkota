@@ -74,6 +74,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     subject: q.subject,
     topic: q.topic || "",
     text: q.question_text,
+    imageUrl: (q as any).question_image_url ?? null,
     options: (q.options ?? []).map((o) => o.text),
     correct: correctIdx,
     correctMulti: correctArr,
