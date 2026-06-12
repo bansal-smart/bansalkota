@@ -241,6 +241,33 @@ const CreateTestPage = () => {
     }
   };
 
+  const [uploadingOpt, setUploadingOpt] = useState<string | null>(null); // `${i}:${oi}`
+  const uploadOptionImage = async (i: number, oi: number, file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    const key = `${i}:${oi}`;
+    setUploadingOpt(key);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      const next = [...(questions[i].optionImages ?? ["", "", "", ""])];
+      while (next.length <= oi) next.push("");
+      next[oi] = data.publicUrl;
+      updateQ(i, { optionImages: next });
+      toast.success("Option image uploaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingOpt(null);
+    }
+  };
+
   const handleDragEnd = (e: DragEndEvent) => {
     if (e.over?.id !== "test-drop") return;
     const bankQ = e.active.data.current?.question as BankQuestion | undefined;
