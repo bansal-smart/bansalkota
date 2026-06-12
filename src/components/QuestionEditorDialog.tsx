@@ -203,6 +203,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
       question_text: cleanText,
       question_image_url: imageUrl,
       options: isMcq ? cleanOptions.map((t, id) => ({ id, text: t })) : [],
+      option_images: isMcq ? optionImages.slice(0, cleanOptions.length).map((s) => s || "") : [],
       correct_answer: correctAnswer,
       numerical_answer: isNumeric ? Number(numericalAnswer) : null,
       tolerance: isNumeric ? Number(tolerance || 0) : 0,
