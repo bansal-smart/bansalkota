@@ -233,6 +233,7 @@ export default function LeadershipDetailPage() {
               </div>
             </div>
           </section>
+          )}
 
           {/* TIMELINE */}
           <section className="bg-bansal-cream py-16 md:py-24">
