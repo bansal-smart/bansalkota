@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText, Image as ImageIcon, Upload } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
