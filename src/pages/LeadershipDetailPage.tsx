@@ -62,11 +62,19 @@ export default function LeadershipDetailPage() {
                 </span>
               </div>
               <h1
-                className="font-display font-extrabold text-white leading-[0.9] tracking-tight"
-                style={{ fontSize: "clamp(2.75rem, 9vw, 7.5rem)" }}
+                className="font-display font-extrabold text-white leading-[0.9] tracking-tight whitespace-nowrap"
+                style={{ fontSize: slug === "vk-bansal" ? "clamp(2rem, 7vw, 5.5rem)" : "clamp(2.75rem, 9vw, 7.5rem)" }}
               >
-                {firstName && <span className="block">{firstName}</span>}
-                <span className="block text-bansal-orange">{lastName}</span>
+                {slug === "vk-bansal" ? (
+                  <>
+                    V.K <span className="text-bansal-orange">Bansal Sir</span>
+                  </>
+                ) : (
+                  <>
+                    {firstName && <span className="block">{firstName}</span>}
+                    <span className="block text-bansal-orange">{lastName}</span>
+                  </>
+                )}
               </h1>
               {profile.headline && (
                 <p className="mt-5 max-w-2xl text-base md:text-lg text-white/85 font-medium">
