@@ -31,6 +31,7 @@ type DraftQuestion = {
   text: string;
   imageUrl: string | null;     // optional diagram / figure
   options: string[];           // used by mcq-*
+  optionImages: string[];      // per-option image URLs (index-aligned, "" = none)
   correct: number;             // used by mcq-single
   correctMulti: number[];      // used by mcq-multi
   partial: boolean;            // used by mcq-multi
@@ -48,6 +49,7 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   text: "",
   imageUrl: null,
   options: ["", "", "", ""],
+  optionImages: ["", "", "", ""],
   correct: 0,
   correctMulti: [],
   partial: false,
@@ -76,6 +78,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     text: q.question_text,
     imageUrl: (q as any).question_image_url ?? null,
     options: (q.options ?? []).map((o) => o.text),
+    optionImages: Array.isArray((q as any).option_images) ? (q as any).option_images.map((s: any) => String(s ?? "")) : ["", "", "", ""],
     correct: correctIdx,
     correctMulti: correctArr,
     partial: !!(q as any).partial_marking,
@@ -191,6 +194,9 @@ const CreateTestPage = () => {
             options: Array.isArray(q.options)
               ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
               : ["", "", "", ""],
+            optionImages: Array.isArray(q.option_images)
+              ? (q.option_images as any[]).map((s) => String(s ?? ""))
+              : ["", "", "", ""],
             correct: correctIdx,
             correctMulti: correctArr,
             partial: !!q.partial_marking,
@@ -232,6 +238,33 @@ const CreateTestPage = () => {
       toast.error(e?.message || "Upload failed");
     } finally {
       setUploadingIdx(null);
+    }
+  };
+
+  const [uploadingOpt, setUploadingOpt] = useState<string | null>(null); // `${i}:${oi}`
+  const uploadOptionImage = async (i: number, oi: number, file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    const key = `${i}:${oi}`;
+    setUploadingOpt(key);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      const next = [...(questions[i].optionImages ?? ["", "", "", ""])];
+      while (next.length <= oi) next.push("");
+      next[oi] = data.publicUrl;
+      updateQ(i, { optionImages: next });
+      toast.success("Option image uploaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingOpt(null);
     }
   };
 
@@ -316,8 +349,16 @@ const CreateTestPage = () => {
         marks_correct: Number(q.marksCorrect ?? correctMarks),
         marks_wrong: Number(q.marksWrong ?? wrongMarks),
         options: [],
+        option_images: [],
         correct_answer: null,
       };
+      // Normalize option_images to match option count
+      const optImgs = (q.optionImages ?? []).slice(0, q.options.length);
+      while (optImgs.length < q.options.length) optImgs.push("");
+      if (q.type !== "numerical" && q.type !== "integer") {
+        base.option_images = optImgs;
+      }
+      // Remove the duplicate stub `correct_answer: null` below by overwriting later
       if (q.type === "mcq-single") {
         base.options = q.options.map((t, id) => ({ id, text: t }));
         base.correct_answer = q.correct;
@@ -650,44 +691,70 @@ const CreateTestPage = () => {
                 <div className="space-y-1.5">
                   {q.options.map((opt, oi) => {
                     const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : q.correct === oi;
+                    const optImg = q.optionImages?.[oi] || "";
+                    const optKey = `${i}:${oi}`;
                     return (
-                      <label
+                      <div
                         key={oi}
-                        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 cursor-pointer transition-colors ${
-                          isCorrect ? "border-secondary bg-secondary/10" : "border-border bg-background hover:border-primary/40"
+                        className={`rounded-lg border px-3 py-1.5 transition-colors ${
+                          isCorrect ? "border-secondary bg-secondary/10" : "border-border bg-background"
                         }`}
                       >
-                        {q.type === "mcq-multi" ? (
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          {q.type === "mcq-multi" ? (
+                            <input
+                              type="checkbox"
+                              checked={isCorrect}
+                              onChange={() => {
+                                const set = new Set(q.correctMulti);
+                                if (set.has(oi)) set.delete(oi); else set.add(oi);
+                                updateQ(i, { correctMulti: Array.from(set).sort((a, b) => a - b) });
+                              }}
+                              className="shrink-0 accent-secondary"
+                            />
+                          ) : (
+                            <input
+                              type="radio"
+                              checked={isCorrect}
+                              onChange={() => updateQ(i, { correct: oi })}
+                              className="shrink-0 accent-secondary"
+                            />
+                          )}
+                          <span className="text-xs font-bold w-5 text-foreground">{String.fromCharCode(65 + oi)}.</span>
                           <input
-                            type="checkbox"
-                            checked={isCorrect}
-                            onChange={() => {
-                              const set = new Set(q.correctMulti);
-                              if (set.has(oi)) set.delete(oi); else set.add(oi);
-                              updateQ(i, { correctMulti: Array.from(set).sort((a, b) => a - b) });
+                            value={opt}
+                            onChange={(e) => {
+                              const next = [...q.options];
+                              next[oi] = e.target.value;
+                              updateQ(i, { options: next });
                             }}
-                            className="shrink-0 accent-secondary"
+                            placeholder={`Option ${oi + 1} — LaTeX OK ($x^2$)`}
+                            className="flex-1 bg-transparent text-sm outline-none"
                           />
-                        ) : (
-                          <input
-                            type="radio"
-                            checked={isCorrect}
-                            onChange={() => updateQ(i, { correct: oi })}
-                            className="shrink-0 accent-secondary"
-                          />
-                        )}
-                        <span className="text-xs font-bold w-5 text-foreground">{String.fromCharCode(65 + oi)}.</span>
-                        <input
-                          value={opt}
-                          onChange={(e) => {
-                            const next = [...q.options];
-                            next[oi] = e.target.value;
-                            updateQ(i, { options: next });
-                          }}
-                          placeholder={`Option ${oi + 1}`}
-                          className="flex-1 bg-transparent text-sm outline-none"
-                        />
-                      </label>
+                          {optImg ? (
+                            <span className="relative inline-flex items-center">
+                              <img src={optImg} alt="" className="h-8 w-8 rounded border border-border object-cover" />
+                              <label className="ml-1 cursor-pointer rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary" title="Replace">
+                                ↻
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(i, oi, f); e.target.value = ""; }} />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); const next = [...(q.optionImages ?? [])]; next[oi] = ""; updateQ(i, { optionImages: next }); }}
+                                className="ml-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                                title="Remove image"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ) : (
+                            <label className="cursor-pointer rounded-md border border-dashed border-border px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-muted" title="Add image to this option">
+                              {uploadingOpt === optKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(i, oi, f); e.target.value = ""; }} />
+                            </label>
+                          )}
+                        </label>
+                      </div>
                     );
                   })}
                   {q.type === "mcq-multi" && (

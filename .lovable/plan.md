@@ -1,43 +1,68 @@
-## Problem
+## Goal
+1. Extract all diagram images from the RT-03 question PDF and attach them to the correct questions in both `tests` (test_questions) and `question_bank`.
+2. Upgrade options across the app so each option can render LaTeX/math AND carry an optional image (not just text).
 
-In the live test, option text is showing the raw LaTeX source instead of the formatted formula, e.g. the user sees literal `$\left(\dfrac{\alpha\beta}{\alpha+\beta}\right)t$` instead of the rendered fraction.
+---
 
-Data is correct in the database — every option is stored with proper `$...$` LaTeX. The current `MathRenderer` pipes the string through `react-markdown` + `remark-math` + `rehype-katex`, which is fragile for short inline strings that start with a backslash (`$\left(...)$`, `$\dfrac{...}$`, `$\ce{...}$`). Markdown parsing also occasionally swallows or splits the `$...$` delimiters, leaving the source visible.
+## Part 1 — RT-03 image extraction
 
-The fix is to stop relying on the markdown layer for math and render KaTeX directly, then use that everywhere a question / option / explanation is displayed.
+**Source PDFs:** the RT-03 question paper + answer sheet already uploaded.
 
-## What I will change
+**Approach:**
+- Render each PDF page at 300 DPI using PyMuPDF.
+- For each question position that contains a diagram (identified by visually scanning the rendered pages — Phys Q2/3/4/6/22/39/44/54 already done; Chem Q5 benzene ring, Chem Q17 four-isomer panel; plus any others missed on a fresh pass of all 75 questions), crop the diagram region.
+- Upload each crop to the `question-images` bucket under `rt03/qNN.png`, get a signed/public URL.
+- Update `test_questions.question_image_url` for the RT-03 test row matching that position.
+- Mirror the same `question_image_url` into the corresponding `question_bank` row (matched by `question_text` + `source_filename = 'RT-03'`).
 
-### 1. Rewrite `src/components/MathRenderer.tsx`
-- Drop `react-markdown` / `remark-math` for math handling.
-- Use `katex` directly: split the input on `$$...$$` (display) and `$...$` (inline), render each math segment with `katex.renderToString` (with `throwOnError: false`, `strict: false`, `trust: true`, mhchem macro loaded), and render text segments as plain text (with `\n` → `<br/>`).
-- Keep the same props (`content`, `className`, `inline`) so no callers need to change.
-- Continue to import `katex/contrib/mhchem` so `\ce{...}` chemistry keeps working.
-- Preserve the existing `.math-content` CSS hooks in `src/index.css` (responsive overflow, image scaling).
+**Verification:** open the test in the UI and confirm each diagram renders next to its question; spot-check the Question Bank entries.
 
-### 2. Replace raw HTML rendering of question text with `MathRenderer`
-These spots currently use `dangerouslySetInnerHTML` and will show raw `$...$` to staff:
-- `src/pages/AdminTestDetailPage.tsx` — questions table (Q text + hardest/easiest analytics rows).
-- `src/components/QuestionBankPanel.tsx` — bank list previews.
-- `src/components/QuestionEditorDialog.tsx` — live preview area, if it does the same.
-- `src/pages/AdminQuestionBankPage.tsx` and `src/pages/TeacherQuestionBankPage.tsx` — list rows.
+---
 
-Each becomes `<MathRenderer content={q.question_text} inline />` (use `inline` inside table cells, block elsewhere).
+## Part 2 — Option-level LaTeX + images
 
-### 3. Verify end-to-end
-After the change, load `/tests/rt-03-jee-main-14jun2026/take` in the preview and confirm:
-- Q1 Physics options render as proper fractions (α, β, dfrac, parentheses).
-- Q14 Chemistry options with `\ce{...}` render with correct subscripts.
-- Q4 Maths Venn-diagram question image still shows.
-- The post-submit review page (`TestSubjectBreakdownPage`) and result page (`TestResultPage`) also render options correctly (they already use `MathRenderer`, so they automatically benefit).
+**Current state:** `options` is stored as `jsonb` (array of strings) in both `test_questions` and `question_bank`. The renderer treats each option as plain text wrapped in `<MathRenderer>` for `$...$` segments.
 
-### Out of scope
-- No schema or seeded data changes — the stored LaTeX is already correct.
-- No edits to the CBT timer, scoring, or palette logic.
-- No design / color changes.
+**Schema change (backward compatible):**
+Allow each option to be either a string (legacy) OR an object:
+```json
+{ "text": "string with $latex$", "image_url": "https://..." | null }
+```
+No SQL migration needed — `jsonb` already supports this. Reader code normalizes on load.
 
-## Technical notes
+**Code changes:**
+1. **`CreateTestPage.tsx`** (test editor):
+   - Change option input row: keep the text field (already supports LaTeX via MathRenderer preview), add a small "Add image" button per option (same uploader as the question image, stored under `question-images/options/...`).
+   - Show thumbnail + replace/remove controls when an option has an image.
+   - On save, write options as `[{text, image_url}, ...]`.
 
-- `katex.renderToString` returns sanitized HTML; we inject it via `dangerouslySetInnerHTML` only on the math segments we generated ourselves, so no untrusted HTML reaches the DOM.
-- The splitter must be greedy-safe: scan left-to-right, prefer `$$...$$` before `$...$`, and treat an unmatched trailing `$` as literal text so partially-typed LaTeX in the question editor doesn't blow up the preview.
-- Backslash-newline and `\\` (line break in matrices) are preserved by handing the raw segment straight to KaTeX.
+2. **Question Bank editor** (`AdminQuestionBankPage` or wherever options are edited) — same per-option image uploader.
+
+3. **Bulk .docx importer** — already pulls option text; extend to detect inline images near option letters and attach to the option object.
+
+4. **Renderers** (test-taking page, review page, admin preview, question bank list):
+   - Add a `normalizeOption(opt)` helper returning `{text, image_url}`.
+   - Render `<MathRenderer value={text}/>` and, if `image_url`, an `<img>` below it.
+
+5. **Grading (`submit_test_attempt` RPC):** unchanged — `correct_answer` still references option index/letter, not content.
+
+**Files to touch:**
+- `src/pages/CreateTestPage.tsx`
+- `src/pages/AdminTestDetailPage.tsx`
+- `src/pages/TestTakingPage.tsx` (or equivalent)
+- `src/pages/TestReviewPage.tsx`
+- `src/pages/AdminQuestionBankPage.tsx` (editor + list)
+- `src/lib/options.ts` (new — `normalizeOption` helper + TS types)
+- `src/components/MathRenderer.tsx` (no change expected)
+
+---
+
+## Order of execution
+1. Build `normalizeOption` helper + types.
+2. Update all renderers to use it (safe — backward compatible with string options).
+3. Update editors (CreateTest + Question Bank) with per-option image upload.
+4. Run RT-03 extraction script and patch DB.
+5. Visually verify in preview.
+
+## Open question
+Should the `.docx` importer auto-attach images that appear inline next to options (A./B./C./D.), or should that stay a manual step in the editor for now?

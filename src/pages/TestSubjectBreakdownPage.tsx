@@ -21,6 +21,7 @@ type Question = {
   question_text: string;
   question_image_url: string | null;
   options: { id: number; text: string }[] | unknown;
+  option_images: string[] | null;
   correct_answer: number;
   marks_correct: number | null;
   marks_wrong: number | null;
@@ -58,7 +59,7 @@ const TestSubjectBreakdownPage = () => {
       const [qsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, subject, question_text, question_image_url, options, marks_correct, marks_wrong")
+          .select("id, subject, question_text, question_image_url, options, option_images, marks_correct, marks_wrong")
           .eq("test_id", att.test_id),
         supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
       ]);
@@ -159,6 +160,7 @@ const TestSubjectBreakdownPage = () => {
                 {opts.map((opt) => {
                   const isAns = opt.id === q.correct_answer;
                   const isSel = opt.id === sel;
+                  const optImg = Array.isArray(q.option_images) ? q.option_images[opt.id] : null;
                   return (
                     <div
                       key={opt.id}
@@ -172,6 +174,9 @@ const TestSubjectBreakdownPage = () => {
                     >
                       <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
                       <MathRenderer content={opt.text} inline />
+                      {optImg && (
+                        <img src={optImg} alt="" className="mt-1.5 max-h-24 rounded border border-border" />
+                      )}
                     </div>
                   );
                 })}
