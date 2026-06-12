@@ -1,94 +1,49 @@
-# Implementation Plan
 
-## What I’ll build
+## Status check — what's done vs. still pending
 
-### 1) Centre login + proper centre admin panel
-- Keep the existing `/center` portal as the base and upgrade it into the real centre admin workspace.
-- Use **admin-created credentials** for centre admins.
-- Make centre admins able to fully manage the phase-1 modules you selected:
-  - **Leads + enquiries**
-  - **Website content**
-- Tighten the centre assignment flow so a centre login only sees its own centre’s data and content.
-- Improve the centre dashboard/navigation so it feels like a complete centre panel, not a partial stub.
+### Already shipped earlier
+- `CenterContentPage.tsx` created, `CenterStaffModal.tsx` + `manage-center-admin` edge function in place, `center_admin` role wired into AdminUsersPage.
+- `question_image_url` and `partial_marking` already render in `TestTakingPage` and serialize through `CreateTestPage`.
+- Partial-marking checkbox exists in `CreateTestPage` for `mcq-multi`.
+- New editorial banner assets for Sameer / V.K. / Mahima / Neelam exist.
+- Sameer Sir credentials ribbon (AIR 1 + 4 books) already on his About page.
+- Hero background photo removed and Neelam's gallery hidden (last turn).
 
-### 2) Question bank + test engine image support
-- Add a proper **question image** field for the question stem.
-- Support that image through the full flow you requested:
-  - Question bank authoring
-  - Test creation / saved test questions
-  - Test taking UI
-  - Results/review screens where relevant
-- Use the existing question image storage path and surface upload/preview/remove controls in the editor.
-- Keep LaTeX rendering fully compatible with text + image questions.
+### Still pending (this plan)
 
-### 3) Multiple-correct partial marking controls
-- Upgrade authoring for `mcq-multi` questions so marking is explicitly configurable per question.
-- Keep these marking inputs together:
-  - Positive marks
-  - Negative marks
-  - Partial marking toggle / value behavior
-- Align the authoring UI with the current scoring engine so teachers/admins can intentionally create multi-correct partial-marking questions instead of relying on hidden defaults.
+**1. Centre admin panel wiring**
+- Route `CenterContentPage` under `/center/content` in `src/App.tsx` and add it to the `CenterLayout` sidebar so centre admins can actually open it.
+- Restrict centre side-nav to the phase-1 scope chosen (Leads + Enquiries, Website Content, Banners, Courses, Support). Hide modules outside that scope from the centre dashboard cards.
+- Make sure `ProtectedCenterRoute` lets only users with `center_admin` / linked `center_staff` in.
 
-### 4) Leadership/about copy fixes
-- Fix the V.K. Bansal hero heading so it stays on one line as:
-  - **V.K Bansal Sir**
-- Reconfirm the Sameer Bansal highlight copy prominently on his page:
-  - Mentor of AIR 1 & single-digit rank several times
-  - Author of 4 best-selling JEE books
+**2. Question images + partial marking in the authoring UIs**
+- `QuestionEditorDialog.tsx` (used by Question Bank): add a Question Image upload field (uploads to existing `question-images` bucket), preview + remove, persist to `question_bank.question_image_url`. Also expose Positive / Negative / Unanswered marks and a Partial Marking toggle (only enabled for `mcq-multi`).
+- `QuestionBankPanel.tsx`: show a small thumbnail when a question has an image, and forward `question_image_url` + `partial_marking` when "Add to Test" pushes questions into `CreateTestPage`.
+- `CreateTestPage.tsx`: when a row has a `question_image_url`, render preview and allow replace/remove inline so the image survives into `test_questions` on save.
+- `TestResultPage.tsx` review section: render `question_image_url` if present (parity with `TestTakingPage`).
 
-### 5) Replace old real photos + reduce bad face crops across the site
-- Replace existing older person photos with the newly uploaded real images.
-- Use a **hybrid image strategy** as chosen:
-  - originals where a real portrait works best
-  - generated editorial hero/banner variants where a wide banner needs better composition
-- Update leadership and public-facing hero/section images so faces remain visible and attractive instead of being cut.
-- Standardize image treatment across problem areas by adjusting object-position / container ratios instead of letting banners crop faces arbitrarily.
+**3. V.K. Bansal hero heading — force single line**
+- In `LeadershipDetailPage.tsx`, for `slug === "vk-bansal"` render the H1 as one continuous line: **"V.K Bansal Sir"** (no first/last split, no `block` stacking), clamp font-size down on mobile so it never wraps.
 
-## Technical plan
+**4. Photo cleanup (no AI regeneration this pass)**
+- The hero background image was already removed last turn, so face-cropping in hero is no longer an issue.
+- Audit remaining person images on `LandingPage`, `AboutPage`, `EducatorsPage`, `CentresShowcase`, and toppers/educator cards — switch any `object-cover` portrait that crops faces to `object-top` or `aspect-[3/4]` containers so faces stay visible. No new image generation; we reuse the existing uploaded assets.
 
-### Centre admin access
-- Review current center role mapping (`center_staff`, `user_roles`, center helper functions) and strengthen route gating around `/center`.
-- Ensure admin-created centre users can be assigned cleanly to a centre and inherit `center_admin` access.
-- Expand centre panel pages/components already present (`CenterDashboardPage`, `CenterLayout`, centre enquiry/content pages) rather than creating a second system.
+**5. Sameer Sir highlight reconfirm**
+- The orange credentials ribbon already shows "Author of 4 best-selling JEE preparation books · Mentor of All India Rank 1 and single-digit ranks several times." Verify position (directly under hero) and bump visual weight if it's buried. No content change unless wording drift is found.
 
-### Question image rollout
-- Audit `question_bank`, `test_questions`, editor dialogs, importers, and exam pages.
-- If needed, add any missing schema fields for image metadata/path consistency using a migration.
-- Rework the authoring UI in `QuestionEditorDialog` and related test-creation flows to expose question image upload.
-- Render question images consistently in `QuestionBankPanel`, test-taking pages, and review/result UIs.
-
-### Partial marking authoring
-- Reuse existing `test_questions.partial_marking` support and the server-side scoring logic already present in `submit_test_attempt`.
-- Expose per-question marking controls in the creation/edit flows so multi-correct questions can be authored correctly.
-- Verify that saved configs pass through from question bank to test questions without losing marking settings.
-
-### Photo system cleanup
-- Replace hardcoded/older person assets in leadership content with the newly uploaded source images.
-- Generate new banner-safe derivatives only where wide editorial treatments are needed.
-- Normalize image presentation in key public pages so hero/section compositions preserve faces.
-- Update alt text and keep the existing cinematic Bansal editorial direction.
-
-## Files / areas likely involved
-- `src/components/CenterLayout.tsx`
-- `src/pages/CenterDashboardPage.tsx`
-- centre portal pages under `src/pages/Center*.tsx`
-- `src/components/QuestionEditorDialog.tsx`
-- `src/components/QuestionBankPanel.tsx`
-- `src/pages/CreateTestPage.tsx`
-- `src/pages/TestTakingPage.tsx`
-- `src/pages/TestResultPage.tsx`
-- `src/pages/LeadershipDetailPage.tsx`
-- `src/content/bansal/leaderEditorial.ts`
-- public landing/about/hero sections using person images
-- migration(s) only if image/marking fields are incomplete
+## Technical notes
+- No DB migration needed — `question_image_url`, `partial_marking`, and `center_admin` columns/roles already exist.
+- Image uploads reuse the existing private `question-images` bucket with signed URLs (same pattern `TestTakingPage` already consumes).
+- Centre nav changes are presentation-only; access rules stay on `ProtectedCenterRoute` + RLS.
 
 ## Delivery order
-1. Centre admin access and portal tightening
-2. Question image support end-to-end
-3. Multi-correct partial marking authoring
-4. Leadership text fixes
-5. Person image replacement + cropping cleanup across public pages
+1. Route + sidebar wiring for centre content page (small, unblocks centre admins).
+2. `QuestionEditorDialog` image upload + marking controls.
+3. `QuestionBankPanel` thumbnail + forwarding, `CreateTestPage` image preview, `TestResultPage` review image.
+4. V.K. Bansal single-line H1.
+5. Image-crop audit pass on public pages.
 
-## Notes
-- I’ll keep this scoped to the modules you selected for centre admins in phase 1, not expand into student/tests control unless you ask.
-- For regenerated banners, I’ll use your uploaded faces as the source reference and keep the brand’s orange/navy editorial look.
+## Out of scope (kept off, per earlier scope)
+- New AI-generated portraits (skipping regeneration — using existing uploaded assets only).
+- Student / test control modules inside the centre panel.
