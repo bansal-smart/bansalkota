@@ -118,6 +118,7 @@ import CenterLayout from "./components/CenterLayout";
 import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
 import CenterDashboardPage from "./pages/CenterDashboardPage";
 import CenterBannersPage from "./pages/CenterBannersPage";
+import CenterContentPage from "./pages/CenterContentPage";
 import CenterCoursesPage from "./pages/CenterCoursesPage";
 import CenterWebsiteEnquiriesPage from "./pages/CenterWebsiteEnquiriesPage";
 import CenterCourseEnquiriesPage from "./pages/CenterCourseEnquiriesPage";
