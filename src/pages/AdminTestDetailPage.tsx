@@ -240,10 +240,10 @@ const AdminTestDetailPage = () => {
             { label: "Total Marks", value: test.total_marks },
             { label: "Marks (correct)", value: `+${test.correct_marks}` },
             { label: "Marks (wrong)", value: test.wrong_marks },
-            { label: "Subjects", value: (test.subjects ?? []).join(", ") || "—" },
-            { label: "Created", value: format(new Date(test.created_at), "dd MMM yyyy") },
-            { label: "Opens", value: test.starts_at ? format(new Date(test.starts_at), "dd MMM HH:mm") : "Anytime" },
-            { label: "Closes", value: test.ends_at ? format(new Date(test.ends_at), "dd MMM HH:mm") : "No deadline" },
+            { label: "Subjects", value: (Array.isArray(test.subjects) ? test.subjects : []).join(", ") || "—" },
+            { label: "Created", value: safeFmt(test.created_at, "dd MMM yyyy") },
+            { label: "Opens", value: test.starts_at ? safeFmt(test.starts_at, "dd MMM HH:mm") : "Anytime" },
+            { label: "Closes", value: test.ends_at ? safeFmt(test.ends_at, "dd MMM HH:mm") : "No deadline" },
           ].map((s) => (
             <div key={s.label} className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground">{s.label}</p>
