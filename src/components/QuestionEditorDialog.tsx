@@ -98,6 +98,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
       setText("");
       setImageUrl(null);
       setOptions(["", "", "", ""]);
+      setOptionImages(["", "", "", ""]);
       setCorrect(0);
       setCorrectMulti([]);
       setNumericalAnswer("");
