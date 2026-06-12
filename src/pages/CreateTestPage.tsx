@@ -349,8 +349,16 @@ const CreateTestPage = () => {
         marks_correct: Number(q.marksCorrect ?? correctMarks),
         marks_wrong: Number(q.marksWrong ?? wrongMarks),
         options: [],
+        option_images: [],
         correct_answer: null,
       };
+      // Normalize option_images to match option count
+      const optImgs = (q.optionImages ?? []).slice(0, q.options.length);
+      while (optImgs.length < q.options.length) optImgs.push("");
+      if (q.type !== "numerical" && q.type !== "integer") {
+        base.option_images = optImgs;
+      }
+      // Remove the duplicate stub `correct_answer: null` below by overwriting later
       if (q.type === "mcq-single") {
         base.options = q.options.map((t, id) => ({ id, text: t }));
         base.correct_answer = q.correct;
