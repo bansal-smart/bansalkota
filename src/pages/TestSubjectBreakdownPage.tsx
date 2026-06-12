@@ -160,6 +160,7 @@ const TestSubjectBreakdownPage = () => {
                 {opts.map((opt) => {
                   const isAns = opt.id === q.correct_answer;
                   const isSel = opt.id === sel;
+                  const optImg = Array.isArray(q.option_images) ? q.option_images[opt.id] : null;
                   return (
                     <div
                       key={opt.id}
@@ -173,6 +174,9 @@ const TestSubjectBreakdownPage = () => {
                     >
                       <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
                       <MathRenderer content={opt.text} inline />
+                      {optImg && (
+                        <img src={optImg} alt="" className="mt-1.5 max-h-24 rounded border border-border" />
+                      )}
                     </div>
                   );
                 })}
