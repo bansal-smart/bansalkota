@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText, Image as ImageIcon, Upload } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -29,6 +29,7 @@ type DraftQuestion = {
   subject: string;
   topic: string;
   text: string;
+  imageUrl: string | null;     // optional diagram / figure
   options: string[];           // used by mcq-*
   correct: number;             // used by mcq-single
   correctMulti: number[];      // used by mcq-multi
@@ -45,6 +46,7 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   subject: "Physics",
   topic: "",
   text: "",
+  imageUrl: null,
   options: ["", "", "", ""],
   correct: 0,
   correctMulti: [],
@@ -72,6 +74,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     subject: q.subject,
     topic: q.topic || "",
     text: q.question_text,
+    imageUrl: (q as any).question_image_url ?? null,
     options: (q.options ?? []).map((o) => o.text),
     correct: correctIdx,
     correctMulti: correctArr,
@@ -184,6 +187,7 @@ const CreateTestPage = () => {
             subject: q.subject ?? "Physics",
             topic: q.topic ?? "",
             text: q.question_text ?? "",
+            imageUrl: q.question_image_url ?? null,
             options: Array.isArray(q.options)
               ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
               : ["", "", "", ""],
@@ -206,6 +210,29 @@ const CreateTestPage = () => {
     const next = [...questions];
     next[i] = { ...next[i], ...patch };
     setQuestions(next);
+  };
+
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const uploadQuestionImage = async (i: number, file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    setUploadingIdx(i);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      updateQ(i, { imageUrl: data.publicUrl });
+      toast.success("Image uploaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingIdx(null);
+    }
   };
 
   const handleDragEnd = (e: DragEndEvent) => {
@@ -284,6 +311,7 @@ const CreateTestPage = () => {
         subject: q.subject,
         topic: q.topic || null,
         question_text: q.text,
+        question_image_url: q.imageUrl || null,
         question_type: q.type,
         marks_correct: Number(q.marksCorrect ?? correctMarks),
         marks_wrong: Number(q.marksWrong ?? wrongMarks),
@@ -569,6 +597,54 @@ const CreateTestPage = () => {
                 rows={2}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
               />
+
+              {/* Question image (diagram / figure) */}
+              <div className="flex items-start gap-3">
+                {q.imageUrl ? (
+                  <div className="relative">
+                    <img src={q.imageUrl} alt="Question diagram" className="max-h-36 rounded-md border border-border" />
+                    <div className="absolute -top-2 -right-2 flex gap-1">
+                      <label className="cursor-pointer rounded-full bg-primary text-primary-foreground p-1 shadow" title="Replace image">
+                        <Upload className="h-3 w-3" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadQuestionImage(i, f);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => updateQ(i, { imageUrl: null })}
+                        className="rounded-full bg-destructive text-destructive-foreground p-1 shadow"
+                        title="Remove image"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="inline-flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground hover:bg-muted cursor-pointer">
+                    {uploadingIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                    {uploadingIdx === i ? "Uploading…" : "Add image (PNG/JPG ≤5MB)"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadQuestionImage(i, f);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
 
               {(q.type === "mcq-single" || q.type === "mcq-multi") && (
                 <div className="space-y-1.5">
