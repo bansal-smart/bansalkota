@@ -194,6 +194,9 @@ const CreateTestPage = () => {
             options: Array.isArray(q.options)
               ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
               : ["", "", "", ""],
+            optionImages: Array.isArray(q.option_images)
+              ? (q.option_images as any[]).map((s) => String(s ?? ""))
+              : ["", "", "", ""],
             correct: correctIdx,
             correctMulti: correctArr,
             partial: !!q.partial_marking,
