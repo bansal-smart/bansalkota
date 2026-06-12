@@ -3151,6 +3151,7 @@ export type Database = {
         }
         Returns: number
       }
+      noop_manage_center_admin_marker: { Args: never; Returns: boolean }
       notify_admins: {
         Args: { _body: string; _link: string; _title: string; _type: string }
         Returns: undefined

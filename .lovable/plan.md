@@ -1,42 +1,94 @@
-# Leadership Copy Polish + Course Page Cleanup
+# Implementation Plan
 
-Three small, content-only edits on existing pages. No schema or logic changes.
+## What I’ll build
 
-## 1. Sameer Bansal — credential ribbon wording
+### 1) Centre login + proper centre admin panel
+- Keep the existing `/center` portal as the base and upgrade it into the real centre admin workspace.
+- Use **admin-created credentials** for centre admins.
+- Make centre admins able to fully manage the phase-1 modules you selected:
+  - **Leads + enquiries**
+  - **Website content**
+- Tighten the centre assignment flow so a centre login only sees its own centre’s data and content.
+- Improve the centre dashboard/navigation so it feels like a complete centre panel, not a partial stub.
 
-File: `src/pages/LeadershipDetailPage.tsx` (the existing orange-on-navy ribbon, ~lines 312–325).
+### 2) Question bank + test engine image support
+- Add a proper **question image** field for the question stem.
+- Support that image through the full flow you requested:
+  - Question bank authoring
+  - Test creation / saved test questions
+  - Test taking UI
+  - Results/review screens where relevant
+- Use the existing question image storage path and surface upload/preview/remove controls in the editor.
+- Keep LaTeX rendering fully compatible with text + image questions.
 
-Rewrite the single line to read exactly:
+### 3) Multiple-correct partial marking controls
+- Upgrade authoring for `mcq-multi` questions so marking is explicitly configurable per question.
+- Keep these marking inputs together:
+  - Positive marks
+  - Negative marks
+  - Partial marking toggle / value behavior
+- Align the authoring UI with the current scoring engine so teachers/admins can intentionally create multi-correct partial-marking questions instead of relying on hidden defaults.
 
-> **Author of 4 best-selling JEE preparation books** · **Mentor of All India Rank 1 and single-digit ranks several times.**
+### 4) Leadership/about copy fixes
+- Fix the V.K. Bansal hero heading so it stays on one line as:
+  - **V.K Bansal Sir**
+- Reconfirm the Sameer Bansal highlight copy prominently on his page:
+  - Mentor of AIR 1 & single-digit rank several times
+  - Author of 4 best-selling JEE books
 
-Two-clause layout, orange emphasis on "4 best-selling JEE preparation books", "All India Rank 1", and "single-digit ranks". Keep the AwardIcon and surrounding ribbon styling untouched.
+### 5) Replace old real photos + reduce bad face crops across the site
+- Replace existing older person photos with the newly uploaded real images.
+- Use a **hybrid image strategy** as chosen:
+  - originals where a real portrait works best
+  - generated editorial hero/banner variants where a wide banner needs better composition
+- Update leadership and public-facing hero/section images so faces remain visible and attractive instead of being cut.
+- Standardize image treatment across problem areas by adjusting object-position / container ratios instead of letting banners crop faces arbitrarily.
 
-Also update the matching timeline entry in `src/content/bansal/leaderEditorial.ts` (the `Author` row) so the body copy reads: *"Author of 4 best-selling books for JEE preparation — Problems in Calculus, Algebra, Coordinate Geometry, and Trigonometry & Vectors."* — keeps wording consistent across ribbon, timeline, and the Books grid heading.
+## Technical plan
 
-## 2. V.K. Bansal Sir — persistent identity line on his page
+### Centre admin access
+- Review current center role mapping (`center_staff`, `user_roles`, center helper functions) and strengthen route gating around `/center`.
+- Ensure admin-created centre users can be assigned cleanly to a centre and inherit `center_admin` access.
+- Expand centre panel pages/components already present (`CenterDashboardPage`, `CenterLayout`, centre enquiry/content pages) rather than creating a second system.
 
-User wants the words **"V.K. Bansal Sir"** to always be visible on his profile page as a single dedicated line.
+### Question image rollout
+- Audit `question_bank`, `test_questions`, editor dialogs, importers, and exam pages.
+- If needed, add any missing schema fields for image metadata/path consistency using a migration.
+- Rework the authoring UI in `QuestionEditorDialog` and related test-creation flows to expose question image upload.
+- Render question images consistently in `QuestionBankPanel`, test-taking pages, and review/result UIs.
 
-File: `src/pages/LeadershipDetailPage.tsx`, inside the `slug === "vk-bansal"` branch.
+### Partial marking authoring
+- Reuse existing `test_questions.partial_marking` support and the server-side scoring logic already present in `submit_test_attempt`.
+- Expose per-question marking controls in the creation/edit flows so multi-correct questions can be authored correctly.
+- Verify that saved configs pass through from question bank to test questions without losing marking settings.
 
-Add a slim navy ribbon directly below the hero (mirroring Sameer's ribbon pattern) containing one line:
+### Photo system cleanup
+- Replace hardcoded/older person assets in leadership content with the newly uploaded source images.
+- Generate new banner-safe derivatives only where wide editorial treatments are needed.
+- Normalize image presentation in key public pages so hero/section compositions preserve faces.
+- Update alt text and keep the existing cinematic Bansal editorial direction.
 
-> **Mr. V.K. Bansal Sir** — Founder, Bansal Classes · The Architect of Kota (since 1981)
+## Files / areas likely involved
+- `src/components/CenterLayout.tsx`
+- `src/pages/CenterDashboardPage.tsx`
+- centre portal pages under `src/pages/Center*.tsx`
+- `src/components/QuestionEditorDialog.tsx`
+- `src/components/QuestionBankPanel.tsx`
+- `src/pages/CreateTestPage.tsx`
+- `src/pages/TestTakingPage.tsx`
+- `src/pages/TestResultPage.tsx`
+- `src/pages/LeadershipDetailPage.tsx`
+- `src/content/bansal/leaderEditorial.ts`
+- public landing/about/hero sections using person images
+- migration(s) only if image/marking fields are incomplete
 
-- Sticky-feel placement: immediately after the hero band, before the gallery.
-- Same `bg-bansal-blue text-white` ribbon style as Sameer's for visual symmetry.
-- Single line on desktop; wraps cleanly on mobile.
+## Delivery order
+1. Centre admin access and portal tightening
+2. Question image support end-to-end
+3. Multi-correct partial marking authoring
+4. Leadership text fixes
+5. Person image replacement + cropping cleanup across public pages
 
-This guarantees the "V.K. Bansal Sir" wording appears prominently on every visit to that page, regardless of which section the user scrolls to.
-
-## 3. Course Detail page — Know Your Teachers
-
-File: `src/pages/CourseDetailPage.tsx` line 342.
-
-The section's JSX was already removed in a prior pass; only a placeholder comment remains. Delete the leftover `{/* Know Your Teachers — removed per product update */}` comment and the extra blank line so the file is clean.
-
-## Out of scope
-
-- No DB migrations, no route changes, no new assets.
-- No edits to other leader profiles (Mahima / Neelam) or to course content blocks beyond the comment cleanup.
+## Notes
+- I’ll keep this scoped to the modules you selected for centre admins in phase 1, not expand into student/tests control unless you ask.
+- For regenerated banners, I’ll use your uploaded faces as the source reference and keep the brand’s orange/navy editorial look.

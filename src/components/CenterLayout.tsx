@@ -9,6 +9,7 @@ import {
   Users,
   LifeBuoy,
   CircleDot,
+  Building2,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 
 const nav = [
   { label: "Overview", icon: LayoutDashboard, path: "/center" },
+  { label: "Centre Content", icon: Building2, path: "/center/content" },
   { label: "Page Banners", icon: ImageIcon, path: "/center/banners" },
   { label: "Offline Courses", icon: BookOpen, path: "/center/courses" },
   { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries" },
@@ -61,8 +63,7 @@ const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout 
       <nav className="flex-1 px-3 space-y-1">
         <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Modules</p>
         {nav.map((item) => {
-          const active =
-            item.path === "/center" ? pathname === "/center" : pathname.startsWith(item.path);
+          const active = item.path === "/center" ? pathname === "/center" : pathname.startsWith(item.path);
           return (
             <Link
               key={item.path}
