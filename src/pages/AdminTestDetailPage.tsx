@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
+import MathRenderer from "@/components/MathRenderer";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
 
@@ -290,7 +291,9 @@ const AdminTestDetailPage = () => {
                 {questions.map((q) => (
                   <tr key={q.id} className="border-b border-border last:border-0">
                     <td className="px-3 py-2 text-muted-foreground">{q.position}</td>
-                    <td className="px-3 py-2 text-foreground max-w-md truncate" dangerouslySetInnerHTML={{ __html: q.question_text }} />
+                    <td className="px-3 py-2 text-foreground max-w-md truncate">
+                      <MathRenderer content={q.question_text} inline />
+                    </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.question_type ?? "mcq"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.subject ?? "—"}</td>
                     <td className="px-3 py-2 text-center text-xs">+{q.marks_correct ?? 0}/{q.marks_wrong ?? 0}</td>
@@ -357,7 +360,7 @@ const AdminTestDetailPage = () => {
                   {hardest.map((q) => (
                     <li key={q.id} className="flex items-center gap-2 text-xs">
                       <span className="font-bold w-6 text-muted-foreground">Q{q.position}</span>
-                      <span className="flex-1 truncate text-foreground" dangerouslySetInnerHTML={{ __html: q.question_text }} />
+                      <span className="flex-1 truncate text-foreground"><MathRenderer content={q.question_text} inline /></span>
                       <span className="font-bold text-destructive">{q.accuracy.toFixed(0)}%</span>
                     </li>
                   ))}
@@ -371,7 +374,7 @@ const AdminTestDetailPage = () => {
                   {easiest.map((q) => (
                     <li key={q.id} className="flex items-center gap-2 text-xs">
                       <span className="font-bold w-6 text-muted-foreground">Q{q.position}</span>
-                      <span className="flex-1 truncate text-foreground" dangerouslySetInnerHTML={{ __html: q.question_text }} />
+                      <span className="flex-1 truncate text-foreground"><MathRenderer content={q.question_text} inline /></span>
                       <span className="font-bold text-secondary">{q.accuracy.toFixed(0)}%</span>
                     </li>
                   ))}
