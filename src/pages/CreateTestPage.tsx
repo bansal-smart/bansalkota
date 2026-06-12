@@ -31,6 +31,7 @@ type DraftQuestion = {
   text: string;
   imageUrl: string | null;     // optional diagram / figure
   options: string[];           // used by mcq-*
+  optionImages: string[];      // per-option image URLs (index-aligned, "" = none)
   correct: number;             // used by mcq-single
   correctMulti: number[];      // used by mcq-multi
   partial: boolean;            // used by mcq-multi
@@ -48,6 +49,7 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   text: "",
   imageUrl: null,
   options: ["", "", "", ""],
+  optionImages: ["", "", "", ""],
   correct: 0,
   correctMulti: [],
   partial: false,
