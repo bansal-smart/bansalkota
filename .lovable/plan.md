@@ -1,49 +1,91 @@
+## Goal
 
-## Status check — what's done vs. still pending
+Seed the **Bansal Review Test-03 (14-06-2026, JEE Main, Class XIII)** as a real, published live test with all 75 questions (Physics + Chemistry + Maths, 20 SCQ + 5 Integer per subject) using the answer key from the second PDF, **and** fix every place where LaTeX / question images don't render in the test-taking + review flow.
 
-### Already shipped earlier
-- `CenterContentPage.tsx` created, `CenterStaffModal.tsx` + `manage-center-admin` edge function in place, `center_admin` role wired into AdminUsersPage.
-- `question_image_url` and `partial_marking` already render in `TestTakingPage` and serialize through `CreateTestPage`.
-- Partial-marking checkbox exists in `CreateTestPage` for `mcq-multi`.
-- New editorial banner assets for Sameer / V.K. / Mahima / Neelam exist.
-- Sameer Sir credentials ribbon (AIR 1 + 4 books) already on his About page.
-- Hero background photo removed and Neelam's gallery hidden (last turn).
+---
 
-### Still pending (this plan)
+## Part A — Seed the live test
 
-**1. Centre admin panel wiring**
-- Route `CenterContentPage` under `/center/content` in `src/App.tsx` and add it to the `CenterLayout` sidebar so centre admins can actually open it.
-- Restrict centre side-nav to the phase-1 scope chosen (Leads + Enquiries, Website Content, Banners, Courses, Support). Hide modules outside that scope from the centre dashboard cards.
-- Make sure `ProtectedCenterRoute` lets only users with `center_admin` / linked `center_staff` in.
+### Test metadata
+- Title: `RT-03 · JEE Main · 14 Jun 2026 (Class XIII)`
+- Pattern: `jee-main`, 3 sections (Physics, Chemistry, Maths)
+- Duration: 180 min, Total marks: 300
+- Marking: SCQ → +4 / −1 / 0 unanswered; Integer → +4 / −1 / 0
+- Schedule: live now (starts_at = now − 1 min, ends_at = now + 7 days), `is_published = true`, `auto_release = true`
+- Mode: open to all JEE-Main students
 
-**2. Question images + partial marking in the authoring UIs**
-- `QuestionEditorDialog.tsx` (used by Question Bank): add a Question Image upload field (uploads to existing `question-images` bucket), preview + remove, persist to `question_bank.question_image_url`. Also expose Positive / Negative / Unanswered marks and a Partial Marking toggle (only enabled for `mcq-multi`).
-- `QuestionBankPanel.tsx`: show a small thumbnail when a question has an image, and forward `question_image_url` + `partial_marking` when "Add to Test" pushes questions into `CreateTestPage`.
-- `CreateTestPage.tsx`: when a row has a `question_image_url`, render preview and allow replace/remove inline so the image survives into `test_questions` on save.
-- `TestResultPage.tsx` review section: render `question_image_url` if present (parity with `TestTakingPage`).
+### Questions (75 total, answers mapped from PDF-2)
 
-**3. V.K. Bansal hero heading — force single line**
-- In `LeadershipDetailPage.tsx`, for `slug === "vk-bansal"` render the H1 as one continuous line: **"V.K Bansal Sir"** (no first/last split, no `block` stacking), clamp font-size down on mobile so it never wraps.
+For each subject, Q1–Q20 = `mcq-single` (4 options), Q21–Q25 = `integer` (numerical_answer = answer-key value, tolerance 0).
 
-**4. Photo cleanup (no AI regeneration this pass)**
-- The hero background image was already removed last turn, so face-cropping in hero is no longer an issue.
-- Audit remaining person images on `LandingPage`, `AboutPage`, `EducatorsPage`, `CentresShowcase`, and toppers/educator cards — switch any `object-cover` portrait that crops faces to `object-top` or `aspect-[3/4]` containers so faces stay visible. No new image generation; we reuse the existing uploaded assets.
+Answer key applied verbatim from PDF-2:
+- **Physics**: D,D,A,B,B,D,A,A,B,B,D,B,B,C,C,C,D,A,B,B,9,2,2,2,100
+- **Chemistry**: B,B,B,D,B,B,A,D,B,B,A,C,C,D,A,D,C,A,D,B,48,8,30,8,4
+- **Mathematics**: B,A,D,B,B,A,A,B,A,A,D,C,C,A,C,A,D,D,D,C,8,9,60,7,324
 
-**5. Sameer Sir highlight reconfirm**
-- The orange credentials ribbon already shows "Author of 4 best-selling JEE preparation books · Mentor of All India Rank 1 and single-digit ranks several times." Verify position (directly under hero) and bump visual weight if it's buried. No content change unless wording drift is found.
+### Question text & LaTeX
+All stems / options stored as Markdown with KaTeX math (`$…$`, `$$…$$`) and `\ce{}` for chemistry — same pipeline already used by `MathRenderer`. Symbols like vectors (`\vec{AB}`), fractions, super/sub, Greek letters all converted to LaTeX. Atomic-data preamble lives in test `instructions`.
+
+### Diagram questions → image attachments
+The following questions have figures the parser couldn't recover as clean SVG. We upload **cropped page snippets** as `question_image_url` into the existing `question-images` bucket (public-read via signed/public URL):
+
+| Subject | Q | What the image shows |
+|---|---|---|
+| Physics | 2 | v vs t graphs (A–D) |
+| Physics | 3 | V² vs S graph |
+| Physics | 4 | velocity–displacement curves (A–D) |
+| Physics | 6 | projectile trajectory A→B |
+| Physics | 22 | x(m) vs t(s) graph |
+| Chemistry | 14 | structure for IUPAC naming |
+| Chemistry | 20 | Fischer projections (a–d) |
+| Chemistry | 24 | bromochlorobutane isomers reference |
+| Maths | 4 | Venn diagram for symmetric difference |
+
+Mechanism: `pdftoppm` the source PDF at 220 DPI → `nix run nixpkgs#imagemagick -- convert` to crop the right band per question → upload to `question-images/seed/rt03/<subject>-q<n>.png` → write the public URL into `test_questions.question_image_url`.
+
+### Insertion path
+Single SQL migration (idempotent on a fixed UUID for the test row) that:
+1. Inserts the `tests` row.
+2. Inserts 75 `test_questions` rows (`position` 1–75, `subject`, `question_type`, `question_text`, `options` jsonb, `correct_answer`, `numerical_answer`, `tolerance`, `marks_correct=4`, `marks_wrong=-1`, `marks_unanswered=0`, `question_image_url`).
+3. Re-runs cleanly: `ON CONFLICT (id) DO NOTHING` for the test, and a `DELETE … WHERE test_id = <fixed>` before re-inserting questions.
+
+---
+
+## Part B — Render LaTeX + question images everywhere in the test flow
+
+Audit + fix the following surfaces so `question_text`, every option, `explanation`, and `question_image_url` always render:
+
+1. **`TestTakingPage.tsx`** — question stem currently rendered as plain text in places; switch every stem/option/explanation render through `<MathRenderer>` and show `question_image_url` above the options (max-h-72, rounded border, click-to-zoom).
+2. **`TestResultPage.tsx`** — per-question review: render stem + each option + correct-answer highlight + explanation through `<MathRenderer>`, and show `question_image_url`.
+3. **`TestSubjectBreakdownPage.tsx`** — same treatment for question previews.
+4. **`QuestionBankPanel.tsx`** — list rows show a small thumbnail when `question_image_url` is set, and the preview popover renders LaTeX.
+5. **`ChapterQuizPage.tsx`** — already uses MathRenderer for stems; add option-level rendering + image support to stay consistent.
+6. **CSS** — ensure `katex` styles are imported once globally (already in `main.tsx` via `MathRenderer`), and add `.math-content img { max-width: 100%; }` so embedded chem/diagram images don't overflow on mobile.
+7. **Storage policy** — confirm `question-images` bucket has a public-read policy for `SELECT` so students can view diagrams without signed URLs; add policy in the migration if missing.
+
+---
+
+## Verification
+
+1. Re-query DB: `SELECT subject, count(*) FROM test_questions WHERE test_id = '<seed-id>' GROUP BY subject` → expect 25/25/25.
+2. Spot-check 6 questions (3 SCQ, 3 integer) against PDF-2 key.
+3. Open `/tests` as a student → start the RT-03 attempt → verify:
+   - LaTeX renders in Physics Q1 (α, β fractions), Maths Q3 ($\sin/\cos$), Chemistry Q10 ($_{26}Fe^{2+}$).
+   - Diagram images appear for Physics Q2/Q3/Q22 and Maths Q4.
+4. Submit a partial attempt → confirm score matches expected JEE-Main marking (+4 / −1 / 0).
+5. On the result page, verify explanations + images render and the correct option is highlighted.
+
+---
 
 ## Technical notes
-- No DB migration needed — `question_image_url`, `partial_marking`, and `center_admin` columns/roles already exist.
-- Image uploads reuse the existing private `question-images` bucket with signed URLs (same pattern `TestTakingPage` already consumes).
-- Centre nav changes are presentation-only; access rules stay on `ProtectedCenterRoute` + RLS.
 
-## Delivery order
-1. Route + sidebar wiring for centre content page (small, unblocks centre admins).
-2. `QuestionEditorDialog` image upload + marking controls.
-3. `QuestionBankPanel` thumbnail + forwarding, `CreateTestPage` image preview, `TestResultPage` review image.
-4. V.K. Bansal single-line H1.
-5. Image-crop audit pass on public pages.
+- Schema already supports everything needed: `test_questions.question_image_url text`, `question_type text`, `correct_answer jsonb`, `numerical_answer numeric`, `tolerance numeric`, `marks_*`.
+- `submit_test_attempt` is already JEE-correct after the last migration (SCQ exact match, integer tolerance, MSQ JEE-Adv rules — not used here).
+- Migration writes only to `public.tests` + `public.test_questions` + storage policy on `storage.objects` for the `question-images` bucket. No schema changes.
+- Diagram crops are produced inside the sandbox during the build step and uploaded via `supabase--storage_upload`; the resulting public URLs are inlined into the SQL migration as literals so the migration is reproducible.
 
-## Out of scope (kept off, per earlier scope)
-- New AI-generated portraits (skipping regeneration — using existing uploaded assets only).
-- Student / test control modules inside the centre panel.
+---
+
+## Out of scope (call out before building)
+- Re-typesetting the chemistry structural formulas as SMILES/MOL — we ship them as images.
+- Adding a calculator / OMR-style UI changes — keeping current CBT interface.
