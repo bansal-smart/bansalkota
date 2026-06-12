@@ -157,18 +157,24 @@ const AdminTestDetailPage = () => {
 
   const perQuestion = useMemo(() => {
     const stats: Record<string, { correct: number; attempted: number }> = {};
-    submitted.forEach((a) => {
-      const ans = a.answers ?? {};
-      questions.forEach((q) => {
-        const s = stats[q.id] ?? { correct: 0, attempted: 0 };
-        const u = ans[q.id];
-        if (u?.selected != null && (Array.isArray(u.selected) ? u.selected.length > 0 : String(u.selected).length > 0)) {
-          s.attempted++;
-          if (u.isCorrect) s.correct++;
-        }
-        stats[q.id] = s;
+    try {
+      submitted.forEach((a) => {
+        const ans = (a && typeof a.answers === "object" && a.answers !== null) ? a.answers : {};
+        questions.forEach((q) => {
+          const s = stats[q.id] ?? { correct: 0, attempted: 0 };
+          const u = ans[q.id];
+          const sel = u?.selected;
+          const hasSel = sel != null && (Array.isArray(sel) ? sel.length > 0 : String(sel).length > 0);
+          if (hasSel) {
+            s.attempted++;
+            if (u?.isCorrect) s.correct++;
+          }
+          stats[q.id] = s;
+        });
       });
-    });
+    } catch (e) {
+      console.warn("[AdminTestDetail] perQuestion calc skipped", e);
+    }
     return questions.map((q) => {
       const s = stats[q.id] ?? { correct: 0, attempted: 0 };
       const acc = s.attempted ? (s.correct / s.attempted) * 100 : 0;
