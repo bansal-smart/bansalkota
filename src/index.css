@@ -176,3 +176,10 @@
 }
 .animate-marquee-x { animation: marquee-x 30s linear infinite; }
 .animate-marquee-x:hover { animation-play-state: paused; }
+
+/* MathRenderer content — keep KaTeX horizontal scroll, prevent embedded
+   chemistry/diagram images from overflowing on narrow screens. */
+.math-content { overflow-wrap: anywhere; }
+.math-content img { max-width: 100%; height: auto; display: inline-block; }
+.math-content .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.25rem 0; }
+.math-content .katex { font-size: 1em; }
