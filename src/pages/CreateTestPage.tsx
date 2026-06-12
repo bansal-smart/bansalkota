@@ -29,6 +29,7 @@ type DraftQuestion = {
   subject: string;
   topic: string;
   text: string;
+  imageUrl: string | null;     // optional diagram / figure
   options: string[];           // used by mcq-*
   correct: number;             // used by mcq-single
   correctMulti: number[];      // used by mcq-multi
@@ -45,6 +46,7 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   subject: "Physics",
   topic: "",
   text: "",
+  imageUrl: null,
   options: ["", "", "", ""],
   correct: 0,
   correctMulti: [],
