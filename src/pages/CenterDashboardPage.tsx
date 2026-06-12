@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Inbox, ClipboardList, Users, LifeBuoy, Image as ImageIcon, ArrowRight } from "lucide-react";
+import { BookOpen, Inbox, ClipboardList, Users, LifeBuoy, Image as ImageIcon, ArrowRight, Building2 } from "lucide-react";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -64,6 +64,7 @@ const CenterDashboardPage = () => {
   }
 
   const tiles = [
+    { label: "Centre Content", value: "Page", icon: Building2, to: "/center/content" },
     { label: "Page Banners", value: counts.banners, icon: ImageIcon, to: "/center/banners" },
     { label: "Offline Courses", value: counts.courses, icon: BookOpen, to: "/center/courses" },
     { label: "Website Enquiries", value: counts.websiteEnquiries, icon: Inbox, to: "/center/enquiries" },
@@ -78,7 +79,7 @@ const CenterDashboardPage = () => {
         <h1 className="text-2xl font-black font-display text-foreground">
           Welcome, {primaryCenter?.city}
         </h1>
-        <p className="text-sm text-muted-foreground">Manage your centre page, offline courses, enquiries and students.</p>
+        <p className="text-sm text-muted-foreground">Manage your centre page, website content, banners, enquiries and students.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

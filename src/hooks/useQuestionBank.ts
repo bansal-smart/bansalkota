@@ -9,11 +9,16 @@ export type BankQuestion = {
   difficulty: string;
   question_text: string;
   question_image_url: string | null;
+  question_type: "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
   options: { id: number; text: string }[];
-  correct_answer: number | number[];
+  option_images: string[] | null;
+  correct_answer: number | number[] | { value: number };
+  numerical_answer: number | null;
+  tolerance: number;
   explanation: string | null;
   marks_correct: number;
   marks_wrong: number;
+  partial_marking: boolean;
   tags: string[];
   is_public: boolean;
   created_at: string;
@@ -35,8 +40,9 @@ const fetchBank = async (filters: BankFilters) => {
     .order("created_at", { ascending: false })
     .limit(500);
   if (filters.subject && filters.subject !== "All") q = q.eq("subject", filters.subject);
-  if (filters.difficulty && filters.difficulty !== "All")
+  if (filters.difficulty && filters.difficulty !== "All") {
     q = q.eq("difficulty", filters.difficulty.toLowerCase());
+  }
   if (filters.search) q = q.ilike("question_text", `%${filters.search}%`);
   const { data, error } = await q;
   if (error) throw error;

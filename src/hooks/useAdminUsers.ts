@@ -13,7 +13,7 @@ export type AdminUserRow = {
   is_suspended: boolean;
   created_at: string;
   email: string | null;
-  role: "student" | "teacher" | "mentor" | "admin" | "super_admin";
+  role: "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
 };
 
 const PAGE_SIZE = 50;
@@ -40,12 +40,20 @@ const fetchAdminUsers = async (filter: string, search: string, page: number) => 
     ? await supabase.from("user_roles").select("user_id, role").in("user_id", userIds)
     : { data: [] as { user_id: string; role: AdminUserRow["role"] }[] };
 
-  const priority: Record<string, number> = { super_admin: 5, admin: 4, teacher: 3, mentor: 2, student: 1 };
+  const priority: Record<string, number> = {
+    super_admin: 6,
+    admin: 5,
+    center_admin: 4,
+    teacher: 3,
+    mentor: 2,
+    student: 1,
+  };
   const roleByUser = new Map<string, AdminUserRow["role"]>();
   (roleRows ?? []).forEach((r) => {
     const cur = roleByUser.get(r.user_id);
-    if (!cur || (priority[r.role] ?? 0) > (priority[cur] ?? 0))
+    if (!cur || (priority[r.role] ?? 0) > (priority[cur] ?? 0)) {
       roleByUser.set(r.user_id, r.role as AdminUserRow["role"]);
+    }
   });
 
   const merged: AdminUserRow[] = (profiles ?? []).map((p) => ({
