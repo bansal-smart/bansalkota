@@ -36,34 +36,85 @@ const AdminTestDetailPage = () => {
   const [attempts, setAttempts] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
 
   const load = async () => {
-    if (!slug) return;
-    setLoading(true);
-    const { data: t } = await supabase.from("tests").select("*").eq("slug", slug).maybeSingle();
-    if (!t) { setLoading(false); return; }
-    setTest(t as TestRow);
-
-    const [qRes, aRes] = await Promise.all([
-      supabase.from("test_questions").select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong").eq("test_id", t.id).order("position"),
-      supabase.from("test_attempts").select("id, user_id, score, percentile, correct_answers, total_questions, status, submitted_at, time_spent_seconds, answers").eq("test_id", t.id).order("score", { ascending: false }).limit(500),
-    ]);
-    setQuestions(((qRes as any).data ?? []) as QRow[]);
-    const aRows = ((aRes as any).data ?? []) as any[];
-    setAttempts(aRows);
-    const userIds = Array.from(new Set(aRows.map((a) => a.user_id)));
-    if (userIds.length) {
-      const { data: p } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
-      setProfiles(new Map(((p as any) ?? []).map((x: any) => [x.user_id, x.full_name ?? "Student"])));
+    if (!slug) {
+      setLoadError("Missing test slug in URL.");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const { data: t, error: tErr } = await supabase.from("tests").select("*").eq("slug", slug).maybeSingle();
+      if (tErr) throw tErr;
+      if (!t) {
+        setTest(null);
+        setLoading(false);
+        return;
+      }
+      setTest(t as TestRow);
+
+      const [qRes, aRes] = await Promise.all([
+        supabase
+          .from("test_questions")
+          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong")
+          .eq("test_id", t.id)
+          .order("position"),
+        supabase
+          .from("test_attempts")
+          .select("id, user_id, score, percentile, correct_answers, total_questions, status, submitted_at, time_spent_seconds, answers")
+          .eq("test_id", t.id)
+          .order("score", { ascending: false })
+          .limit(500),
+      ]);
+      if ((qRes as any).error) console.warn("[AdminTestDetail] questions load error", (qRes as any).error);
+      if ((aRes as any).error) console.warn("[AdminTestDetail] attempts load error", (aRes as any).error);
+      setQuestions((((qRes as any).data ?? []) as QRow[]));
+      const aRows = (((aRes as any).data ?? []) as any[]);
+      setAttempts(aRows);
+      const userIds = Array.from(new Set(aRows.map((a) => a.user_id).filter(Boolean)));
+      if (userIds.length) {
+        const { data: p } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+        setProfiles(new Map((((p as any) ?? []) as any[]).map((x: any) => [x.user_id, x.full_name ?? "Student"])));
+      } else {
+        setProfiles(new Map());
+      }
+    } catch (e: any) {
+      console.error("[AdminTestDetail] load failed", e);
+      setLoadError(e?.message ?? "Failed to load test.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [slug]);
 
   if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
-  if (!test) return <div className="p-10 text-center text-sm text-muted-foreground">Test not found.</div>;
+  if (loadError) {
+    return (
+      <div className="p-6 lg:p-10">
+        <Link to="/admin/tests" className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary mb-4">
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to all tests
+        </Link>
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
+          <p className="text-sm font-bold text-destructive">Could not load this test</p>
+          <p className="mt-1 text-xs text-muted-foreground break-words">{loadError}</p>
+          <button onClick={load} className="mt-3 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90">
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (!test) return (
+    <div className="p-10 text-center text-sm text-muted-foreground">
+      <p>Test not found for slug "{slug}".</p>
+      <Link to="/admin/tests" className="mt-3 inline-block text-primary font-semibold hover:underline">Back to all tests</Link>
+    </div>
+  );
 
   const togglePublish = async () => {
     const { error } = await supabase.from("tests").update({ is_published: !test.is_published }).eq("id", test.id);
