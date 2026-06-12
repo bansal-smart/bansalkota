@@ -31,22 +31,11 @@ export default function LeadershipDetailPage() {
     <div className="bg-background">
       {/* CINEMATIC FULL-BLEED HERO */}
       <section className="relative w-full min-h-[70vh] md:min-h-[90vh] overflow-hidden bg-bansal-blue-dark">
-        {photo ? (
-          <img
-            src={photo}
-            alt={profile.name}
-            className="absolute inset-0 w-full h-full object-cover object-top"
-            loading="eager"
-            // @ts-expect-error - fetchpriority is valid
-            fetchpriority="high"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-bansal-orange to-bansal-orange-dark flex items-center justify-center">
-            <span className="font-display text-[20rem] font-extrabold text-white/20 leading-none select-none">
-              {initials}
-            </span>
-          </div>
-        )}
+        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue-dark via-bansal-blue to-bansal-orange-dark flex items-center justify-center">
+          <span className="font-display text-[20rem] font-extrabold text-white/10 leading-none select-none">
+            {initials}
+          </span>
+        </div>
 
         <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark via-bansal-blue-dark/70 via-40% to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue-dark/80 via-bansal-blue-dark/20 to-transparent" />
