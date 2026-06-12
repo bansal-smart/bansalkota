@@ -51,6 +51,8 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [options, setOptions] = useState(["", "", "", ""]);
+  const [optionImages, setOptionImages] = useState<string[]>(["", "", "", ""]);
+  const [uploadingOpt, setUploadingOpt] = useState<number | null>(null);
   const [correct, setCorrect] = useState(0);
   const [correctMulti, setCorrectMulti] = useState<number[]>([]);
   const [numericalAnswer, setNumericalAnswer] = useState<string>("");
