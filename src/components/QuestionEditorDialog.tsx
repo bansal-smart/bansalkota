@@ -358,20 +358,40 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
               )}
               <span className="text-xs font-bold w-5 mt-3">{String.fromCharCode(65 + oi)}.</span>
               <div className="flex-1 space-y-1">
-                <input
-                  value={opt}
-                  onChange={(e) => {
-                    const next = [...options];
-                    next[oi] = e.target.value;
-                    setOptions(next);
-                  }}
-                  placeholder={`Option ${oi + 1} (LaTeX allowed: $x=2$)`}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none font-mono"
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    value={opt}
+                    onChange={(e) => {
+                      const next = [...options];
+                      next[oi] = e.target.value;
+                      setOptions(next);
+                    }}
+                    placeholder={`Option ${oi + 1} (LaTeX allowed: $x=2$)`}
+                    className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none font-mono"
+                  />
+                  {optionImages[oi] ? (
+                    <div className="flex items-center gap-1">
+                      <img src={optionImages[oi]} alt="" className="h-9 w-9 rounded border border-border object-cover" />
+                      <label className="cursor-pointer rounded bg-primary/10 px-1.5 py-1 text-[10px] font-semibold text-primary" title="Replace">
+                        ↻
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(oi, f); e.target.value = ""; }} />
+                      </label>
+                      <button type="button" onClick={() => setOptionImages((prev) => { const n = [...prev]; n[oi] = ""; return n; })} className="rounded bg-destructive/10 px-1.5 py-1 text-[10px] font-semibold text-destructive">×</button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer rounded-md border border-dashed border-border px-2 py-2 text-[10px] font-semibold text-muted-foreground hover:bg-muted" title="Add image to this option">
+                      {uploadingOpt === oi ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(oi, f); e.target.value = ""; }} />
+                    </label>
+                  )}
+                </div>
                 {opt && (
                   <div className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
                     <MathRenderer content={opt} inline />
                   </div>
+                )}
+                {optionImages[oi] && (
+                  <img src={optionImages[oi]} alt="" className="max-h-28 rounded border border-border" />
                 )}
               </div>
             </div>
