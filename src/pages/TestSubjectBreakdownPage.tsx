@@ -58,7 +58,7 @@ const TestSubjectBreakdownPage = () => {
       const [qsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, subject, question_text, question_image_url, options, marks_correct, marks_wrong")
+          .select("id, subject, question_text, question_image_url, options, option_images, marks_correct, marks_wrong")
           .eq("test_id", att.test_id),
         supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
       ]);
