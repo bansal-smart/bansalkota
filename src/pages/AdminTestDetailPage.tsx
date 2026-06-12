@@ -11,6 +11,15 @@ import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
 
+const safeFmt = (d: string | Date | null | undefined, fmt: string) => {
+  if (!d) return "—";
+  try {
+    const dt = typeof d === "string" ? new Date(d) : d;
+    if (isNaN(dt.getTime())) return "—";
+    return format(dt, fmt);
+  } catch { return "—"; }
+};
+
 type TestRow = {
   id: string; title: string; slug: string; description: string | null;
   test_type: string; exam_pattern: string; duration_minutes: number;
