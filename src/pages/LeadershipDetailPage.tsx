@@ -193,6 +193,7 @@ export default function LeadershipDetailPage() {
       {extra && (
         <>
           {/* GALLERY MOSAIC */}
+          {slug !== "neelam-bansal" && (
           <section className="bg-white pb-16 md:pb-24">
             <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
               <div className="flex items-end justify-between gap-6 mb-8">
