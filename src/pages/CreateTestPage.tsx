@@ -187,6 +187,7 @@ const CreateTestPage = () => {
             subject: q.subject ?? "Physics",
             topic: q.topic ?? "",
             text: q.question_text ?? "",
+            imageUrl: q.question_image_url ?? null,
             options: Array.isArray(q.options)
               ? q.options.map((o: any) => (typeof o === "string" ? o : o?.text ?? ""))
               : ["", "", "", ""],
