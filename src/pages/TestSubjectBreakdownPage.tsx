@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
 import MathRenderer from "@/components/MathRenderer";
+import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -20,9 +21,11 @@ type Question = {
   subject: string | null;
   question_text: string;
   question_image_url: string | null;
+  question_type: string | null;
   options: { id: number; text: string }[] | unknown;
   option_images: string[] | null;
-  correct_answer: number;
+  match_left: MatchItem[] | null;
+  correct_answer: any;
   marks_correct: number | null;
   marks_wrong: number | null;
   explanation: string | null;
