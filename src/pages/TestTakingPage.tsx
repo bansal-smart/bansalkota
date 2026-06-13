@@ -428,7 +428,7 @@ const TestTakingPage = () => {
       else if (e.key === "m" || e.key === "M") { e.preventDefault(); handleMarkAndNext(); }
       else if (e.key === "c" || e.key === "C") { e.preventDefault(); handleClear(); }
       else if (e.key === "Enter") { e.preventDefault(); handleNext(); }
-      else if (/^[1-9]$/.test(e.key) && q && !isNumeric(q.question_type)) {
+      else if (/^[1-9]$/.test(e.key) && q && !isNumeric(q.question_type) && !isMatch(q.question_type)) {
         const idx = parseInt(e.key, 10) - 1;
         if (q.options[idx]) {
           if (isMulti(q.question_type)) handleMultiToggle(idx); else handleSingleSelect(idx);
