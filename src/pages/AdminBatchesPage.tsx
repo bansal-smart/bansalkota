@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Users, Database, Trash2 } from "lucide-react";
+import { Loader2, Plus, Users, Database, Trash2, Globe, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import roster from "@/data/cbtRoster.json";
