@@ -72,7 +72,7 @@ const AdminTestResultPage = () => {
       return;
     }
     setTest(t as TestRow);
-    const { data: r, error: rErr } = await supabase.rpc("admin_test_result_sheet", { _test_id: t.id });
+    const { data: r, error: rErr } = await (supabase.rpc as any)("admin_test_result_sheet", { _test_id: t.id });
     if (rErr) {
       setError(rErr.message);
     } else {
