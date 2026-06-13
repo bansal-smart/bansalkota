@@ -156,9 +156,18 @@ const CreateTestPage = () => {
     return () => { ignore = true; };
   }, [user, isAdminContext]);
 
+  // Load all batches for CBT batch picker
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("course_batches").select("id, code, name").order("code");
+      setBatchOptions((data ?? []) as { id: string; code: string; name: string }[]);
+    })();
+  }, []);
+
   // Load existing test for edit mode (by slug or id)
   useEffect(() => {
     if (!isEditMode) return;
+    let ignore = false;
     let ignore = false;
     (async () => {
       const baseQ = supabase.from("tests").select("*");
