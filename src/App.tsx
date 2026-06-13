@@ -52,12 +52,8 @@ import AdminCoursesPage from "./pages/AdminCoursesPage";
 import CreateCoursePage from "./pages/CreateCoursePage";
 import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
-import AdminTestsPage from "./pages/AdminTestsPage";
-import AdminTestsHubPage from "./pages/AdminTestsHubPage";
-import AdminTestAttemptsPage from "./pages/AdminTestAttemptsPage";
+import AdminTestPlatformHub from "./pages/AdminTestPlatformHub";
 import AdminTestDetailPage from "./pages/AdminTestDetailPage";
-import AdminImportBatchesPage from "./pages/AdminImportBatchesPage";
-import AdminQuestionBankPage from "./pages/AdminQuestionBankPage";
 import AdminLectureBucketPage from "./pages/AdminLectureBucketPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
 import AdminAdminsPage from "./pages/AdminAdminsPage";
@@ -281,14 +277,17 @@ const App = () => (
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/content" element={<AdminCourseContentPage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
-              <Route path="/admin/tests" element={<AdminTestsPage />} />
-              <Route path="/admin/tests-hub" element={<AdminTestsHubPage />} />
-              <Route path="/admin/test-attempts" element={<AdminTestAttemptsPage />} />
-              <Route path="/admin/test-imports" element={<AdminImportBatchesPage />} />
+              {/* Unified Test Platform hub (tabs: overview, all, upcoming, series, bank, attempts, imports) */}
+              <Route path="/admin/tests-hub" element={<AdminTestPlatformHub />} />
+              <Route path="/admin/tests" element={<Navigate to="/admin/tests-hub?tab=all" replace />} />
+              <Route path="/admin/test-attempts" element={<Navigate to="/admin/tests-hub?tab=attempts" replace />} />
+              <Route path="/admin/test-imports" element={<Navigate to="/admin/tests-hub?tab=imports" replace />} />
+              <Route path="/admin/test-series" element={<Navigate to="/admin/tests-hub?tab=series" replace />} />
+              <Route path="/admin/question-bank" element={<Navigate to="/admin/tests-hub?tab=bank" replace />} />
+              {/* Editor flows keep their own routes */}
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
-              <Route path="/admin/test-series" element={<AdminTestSeriesPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
               <Route path="/admin/boost" element={<AdminBoostPage />} />
@@ -299,7 +298,6 @@ const App = () => (
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
-              <Route path="/admin/question-bank" element={<AdminQuestionBankPage />} />
               <Route path="/admin/lecture-bucket" element={<AdminLectureBucketPage />} />
               {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
               <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
