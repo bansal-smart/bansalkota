@@ -391,11 +391,28 @@ const CreateTestPage = () => {
     else setDocxImportOpen(true);
   };
 
-  const afterImport = () => {
+  const afterImport = async (targetTestId?: string | null) => {
     setDocxImportOpen(false);
     setCommonImportOpen(false);
-    setReloadKey((k) => k + 1);
     toast.success("Questions appended — reloading list");
+
+    // If the import landed in a test that's not the one currently being edited,
+    // navigate to its editor so the user actually sees the imported questions.
+    if (targetTestId && targetTestId !== resolvedTestId) {
+      const { data: t } = await supabase
+        .from("tests")
+        .select("slug")
+        .eq("id", targetTestId)
+        .maybeSingle();
+      if (t?.slug) {
+        navigate(`/admin/tests/${t.slug}/edit`, { replace: true });
+        return;
+      }
+    }
+
+    // Same test we're already editing — just trigger the reload effect.
+    setResolvedTestId(targetTestId ?? resolvedTestId);
+    setReloadKey((k) => k + 1);
     if (!isEditMode && createdDraftSlug) {
       navigate(`/admin/tests/${createdDraftSlug}/edit`, { replace: true });
     }
