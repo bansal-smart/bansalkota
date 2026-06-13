@@ -486,6 +486,8 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
       <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
       <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} />
       <DocxBulkImportDialog open={docxOpen} onClose={() => setDocxOpen(false)} onImported={reload} />
+      <DocxCommonImportDialog open={commonDocxOpen} onClose={() => setCommonDocxOpen(false)} onImported={reload} target="bank" />
+
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
         <DialogContent>
