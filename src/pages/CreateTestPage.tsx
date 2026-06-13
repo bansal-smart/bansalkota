@@ -353,6 +353,20 @@ const CreateTestPage = () => {
     addFromBank(bankQ);
   };
 
+  // Build a schedule payload — returns null fields if not provided.
+  const buildSchedulePayload = () => {
+    const toISO = (d: string, t: string) => {
+      if (!d || !t) return null;
+      const dt = new Date(`${d}T${t}:00`);
+      return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+    };
+    return {
+      starts_at: toISO(testDate, startTime),
+      ends_at: toISO(testDate, endTime),
+      auto_release: autoRelease,
+    };
+  };
+
   const ensureDraftForImport = async (): Promise<string | null> => {
     if (resolvedTestId) return resolvedTestId;
     if (!user) {
