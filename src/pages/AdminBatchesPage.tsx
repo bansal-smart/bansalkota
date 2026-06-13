@@ -1,9 +1,21 @@
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Users, Database, Trash2, Globe, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Plus, Users, Database, Trash2, Globe, Copy, FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import roster from "@/data/cbtRoster.json";
 import { CBT_KIOSK_URL, SECRET_ADMIN_URL } from "@/lib/brand";
+
+type ImportRow = {
+  roll_number: string;
+  full_name: string;
+  phone: string;
+  dob: string | null;
+  course: string;
+  stream: string;
+  batch_code: string;
+  class_level: string;
+};
 
 type CourseRow = { id: string; name: string; slug: string };
 type BatchRow = {
