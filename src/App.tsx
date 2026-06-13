@@ -54,6 +54,7 @@ import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestPlatformHub from "./pages/AdminTestPlatformHub";
 import AdminTestDetailPage from "./pages/AdminTestDetailPage";
+import AdminTestResultPage from "./pages/AdminTestResultPage";
 import AdminLectureBucketPage from "./pages/AdminLectureBucketPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
 import AdminAdminsPage from "./pages/AdminAdminsPage";
