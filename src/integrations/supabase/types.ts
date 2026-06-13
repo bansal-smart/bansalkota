@@ -3000,6 +3000,7 @@ export type Database = {
           slug: string
           starts_at: string | null
           subjects: string[] | null
+          test_mode: string
           test_type: string
           title: string
           total_marks: number
@@ -3028,6 +3029,7 @@ export type Database = {
           slug: string
           starts_at?: string | null
           subjects?: string[] | null
+          test_mode?: string
           test_type?: string
           title: string
           total_marks?: number
@@ -3056,6 +3058,7 @@ export type Database = {
           slug?: string
           starts_at?: string | null
           subjects?: string[] | null
+          test_mode?: string
           test_type?: string
           title?: string
           total_marks?: number
@@ -3168,6 +3171,20 @@ export type Database = {
       can_reattempt_test: {
         Args: { _test_id: string; _user_id: string }
         Returns: boolean
+      }
+      cbt_live_tests_for_batch: {
+        Args: { _batch_id: string }
+        Returns: {
+          description: string
+          duration_minutes: number
+          ends_at: string
+          id: string
+          starts_at: string
+          subjects: string[]
+          title: string
+          total_marks: number
+          total_questions: number
+        }[]
       }
       cbt_lookup_student: {
         Args: { _phone: string; _roll: string }
