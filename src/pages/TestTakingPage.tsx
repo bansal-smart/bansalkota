@@ -94,10 +94,14 @@ const TestTakingPage = () => {
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       setTest(t);
 
-      const { data: qs } = await supabase
+      const { data: qs, error: qErr } = await supabase
         .from("test_questions")
         .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
         .eq("test_id", t.id).order("position");
+      if (qErr) {
+        console.error("[TestTakingPage] questions load failed", qErr);
+        toast.error(`Could not load questions: ${qErr.message}`);
+      }
       setQuestions((qs ?? []) as unknown as TestQuestion[]);
 
       const { data: existing } = await supabase
@@ -211,6 +215,10 @@ const TestTakingPage = () => {
 
   const startAttempt = async () => {
     if (!user || !test) return;
+    if (questions.length === 0) {
+      toast.error("No questions found for this test. Please contact your administrator.");
+      return;
+    }
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
@@ -466,7 +474,13 @@ const TestTakingPage = () => {
               <li>Shortcuts: ← → navigate · 1-9 select option · M mark · C clear · Enter Save &amp; Next.</li>
             </ul>
           </div>
-          <button onClick={startAttempt} className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground">I'm ready · Start Test</button>
+          <button
+            onClick={startAttempt}
+            disabled={questions.length === 0}
+            className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {questions.length === 0 ? "No questions in this test yet" : "I'm ready · Start Test"}
+          </button>
           <Link to="/my-tests" className="block text-center text-xs text-muted-foreground hover:text-foreground">Back to test list</Link>
         </div>
       </div>
