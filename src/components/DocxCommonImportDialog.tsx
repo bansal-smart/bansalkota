@@ -86,7 +86,7 @@ const DocxCommonImportDialog = ({
   const [questions, setQuestions] = useState<ParsedDocxQuestion[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [imgProgress, setImgProgress] = useState({ done: 0, total: 0 });
-  const [subject, setSubject] = useState<string>(defaultSubject ?? "Physics");
+  const [subject, setSubject] = useState<string>(defaultSubject && allowedSubjects.includes(defaultSubject) ? defaultSubject : allowedSubjects[0]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
 
