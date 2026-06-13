@@ -526,6 +526,55 @@ const CreateTestPage = () => {
         <h2 className="text-lg font-bold text-foreground">Test Details</h2>
 
         <div>
+          <label className={labelCls}>Test Mode</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { v: "digital", label: "Digital (Web + App)", hint: "Students take this from inside the LMS after logging in." },
+              { v: "cbt", label: "CBT (Kiosk Only)", hint: "Students take this on lab computers at /cbt using roll no + mobile." },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setTestMode(opt.v)}
+                className={`text-left rounded-xl border p-3 transition ${testMode === opt.v ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
+              >
+                <p className={`text-sm font-bold ${testMode === opt.v ? "text-primary" : "text-foreground"}`}>{opt.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{opt.hint}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {testMode === "cbt" && (
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Kiosk URL</p>
+              <code className="text-xs bg-background rounded px-2 py-1 inline-block mt-1">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>
+              <p className="text-[10px] text-muted-foreground mt-1">All CBT tests use this single fixed link. Students log in with roll no + mobile.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5">Allowed batches <span className="text-muted-foreground font-normal">({allowedBatches.length === 0 ? "open to all batches" : `${allowedBatches.length} selected`})</span></p>
+              <div className="flex flex-wrap gap-1.5">
+                {batchOptions.length === 0 && <p className="text-[11px] text-muted-foreground">No batches yet — create them under Batches & CBT Setup.</p>}
+                {batchOptions.map((b) => {
+                  const sel = allowedBatches.includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setAllowedBatches(sel ? allowedBatches.filter((x) => x !== b.id) : [...allowedBatches, b.id])}
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${sel ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >
+                      {b.code}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div>
           <label className={labelCls}>Test Name</label>
           <input
             value={title}
