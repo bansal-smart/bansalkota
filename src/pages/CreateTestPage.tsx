@@ -196,6 +196,10 @@ const CreateTestPage = () => {
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
+      setTestMode(((test as { test_mode?: string }).test_mode === "cbt" ? "cbt" : "digital"));
+      setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
+        ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
+        : []);
       setQuestions(
         (tqs ?? []).map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
