@@ -97,6 +97,10 @@ const AdminDashboard = () => {
   const recentEnq = data?.recentEnq ?? [];
   const pending = data?.pending ?? { educators: 0, enquiries: 0, reports: 0, centreSupport: 0 };
   const toppersCount = data?.toppersCount ?? 0;
+  const testAttemptsToday = data?.testAttemptsToday ?? 0;
+  const testsUpcoming = data?.testsUpcoming ?? 0;
+  const testsTotal = data?.testsTotal ?? 0;
+  const questionBankCount = data?.questionBankCount ?? 0;
 
   const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
 
