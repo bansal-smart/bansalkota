@@ -1,38 +1,41 @@
-# CBT Question UI Fixes
+# CBT Test-Taking UI Fixes
 
-Three small, scoped fixes to the test-taking interface and the docx importers.
+Three scoped fixes in `src/pages/TestTakingPage.tsx`. No DB or schema changes.
 
 ## 1. Duplicate question image
 
-**Cause:** The docx importers embed `<img>` tags inline inside `question_text` (via `replaceMarkersWithUrls`) AND also set `question_image_url` to the first stem image. `TestTakingPage` renders both → image appears twice.
+**Cause:** Older questions imported before the previous fix have an `<img>` inline inside `question_text` AND a separate `question_image_url`. The page renders both → image appears twice.
 
-**Fix:** In both importers, set `question_image_url` to `null` whenever `stemHtml` already contains an `<img` tag. Keeps backward compatibility for stems that have no inline marker.
+**Fix:** Render the standalone `<img>` (lines 643–650) only when `question_text` does **not** already contain an `<img` tag. The image then never duplicates, regardless of when the question was imported.
 
-Files:
-- `src/components/DocxCommonImportDialog.tsx` (line ~238)
-- `src/components/DocxBulkImportDialog.tsx` (line ~206)
+```ts
+const stemHasInlineImg = /<img\b/i.test(q.question_text || "");
+{q.question_image_url && !stemHasInlineImg && ( ... )}
+```
 
-## 2. Integer question rejects decimals
+## 2. Subject-wise question numbering + subject switcher in palette
 
-**Cause:** `NumericInput` disables the `.` key when `format === "integer"`.
+Currently every question is numbered globally (1…75) — Q42 is "Physics 42/75" even if it's only the 2nd Physics question. The right-rail palette also stacks ALL subjects together.
 
-**Fix:** Allow decimal input for all numeric question types (integer + numerical). Set `allowDecimal = true` unconditionally and update the helper text to say "Enter a number (decimals allowed)."
+**Fixes (UI only, no data changes):**
 
-File: `src/pages/TestTakingPage.tsx` (NumericInput, ~line 879)
+- **Header (line 619):** Show `Question No. {subjectIndex + 1}` instead of global `currentQ + 1`, with subtitle `{activeSubject} · {subjectIndex+1} / {subjectCount}`.
+- **Right-rail palette (lines 727–745):** Replace the "all subjects stacked" view with a **subject switcher** at the top of the palette (Physics / Chemistry / Math / Biology pills based on `subjects`), and show only the active subject's question boxes below. Numbers shown inside boxes become 1…N per subject (display only — internal `i` index unchanged so jumps still work).
+- The switcher in the palette stays in sync with the existing top Subject tabs (Strip 3) — clicking either updates `activeSubject`.
 
-## 3. Options A, B, C, D shown vertically — make horizontal
+This matches the user's request: "subject wise numbering will be there so numbering, question number boxes in right side will be subject wise. mean switch subject option should be there."
 
-**Cause:** Single-correct and multi-correct option lists use `space-y-2` (stacked).
+## 3. Sticky bottom action bar
 
-**Fix:** Use a responsive grid:
-- mobile: `grid-cols-1`
-- sm and up: `grid-cols-2`
-- lg and up: `grid-cols-4` (all four on one row)
+The action bar (Mark for Review & Next / Clear / Save & Mark / Previous / Save & Next) currently sits as the last child of the page flex column. On smaller laptop viewports the question area can push it out of view.
 
-Apply to both the multi-select (`isMulti`) and single-select option blocks. Match-the-following and Numeric inputs are untouched.
-
-File: `src/pages/TestTakingPage.tsx` (lines ~663–704)
+**Fix:** Make the bar a true sticky footer:
+- Add `sticky bottom-0 z-30` to the action-bar wrapper (line 758) so it stays pinned at the bottom of the viewport over the scrollable question area.
+- Keep the existing top shadow so it visually detaches from content.
+- The right-rail Submit Test button (inside the aside) is already pinned via `border-t` at the bottom of the flex column — unchanged.
 
 ## Out of scope
 
-No DB/schema changes. No changes to QuestionEditorDialog, scoring, or publish flow.
+- No changes to scoring, submission, palette legend, topic pills, MatchFollowing, NumericInput, or the docx importers.
+- No DB/schema/RLS changes.
+- Subject ordering follows existing `subjects` array order (first-seen in `questions`).
