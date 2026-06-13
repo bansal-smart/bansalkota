@@ -113,6 +113,108 @@ const AdminBatchesPage = () => {
     }
   };
 
+  // ----- Excel import (RegNo / StudentName / CONTACTNO / Dob / COURSE / STREAM / BATCH) -----
+  const deriveClassLevel = (batch: string): string => {
+    const m = batch.trim().toUpperCase().match(/^(XIII|XII|XI|X|IX)\b/);
+    return m ? m[1] : "XI";
+  };
+
+  const excelDateToISO = (v: unknown): string | null => {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === "number") {
+      // Excel serial date
+      const d = XLSX.SSF.parse_date_code(v);
+      if (!d) return null;
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.y}-${pad(d.m)}-${pad(d.d)}`;
+    }
+    const s = String(v).trim();
+    if (!s) return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toISOString().slice(0, 10);
+  };
+
+  const handleFile = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+      const mapped: ImportRow[] = rows
+        .map((r) => {
+          const get = (...keys: string[]): string => {
+            for (const k of keys) {
+              const found = Object.keys(r).find((kk) => kk.trim().toLowerCase() === k.toLowerCase());
+              if (found && r[found] != null && String(r[found]).trim() !== "") return String(r[found]).trim();
+            }
+            return "";
+          };
+          const batch = get("BATCH", "batch_code");
+          return {
+            roll_number: get("RegNo", "roll_number", "Roll No", "ROLL NO").replace(/\.0$/, ""),
+            full_name: get("StudentName", "full_name", "Name"),
+            phone: get("CONTACTNO", "phone", "Mobile").replace(/\.0$/, "").replace(/\D/g, "").slice(-10),
+            dob: excelDateToISO(r[Object.keys(r).find((k) => k.trim().toLowerCase() === "dob") ?? ""] ?? null),
+            course: get("COURSE", "course"),
+            stream: get("STREAM", "stream") || "JEE",
+            batch_code: batch,
+            class_level: deriveClassLevel(batch),
+          };
+        })
+        .filter((r) => r.roll_number && r.full_name && r.phone && r.batch_code);
+      if (!mapped.length) {
+        toast.error("No valid rows found. Check column headers: RegNo, StudentName, CONTACTNO, COURSE, STREAM, BATCH.");
+        return;
+      }
+      setParsedRows(mapped);
+      setParsedFileName(file.name);
+      setImportErrors([]);
+      toast.success(`Parsed ${mapped.length} students from ${file.name}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not read Excel file");
+    }
+  };
+
+  const submitImport = async () => {
+    if (!parsedRows.length) return;
+    setImporting(true);
+    setImportErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("cbt-bulk-setup", {
+        body: { rows: parsedRows },
+      });
+      if (error) throw error;
+      const payload = data as {
+        summary?: { total: number; created: number; updated: number; errors: number };
+        results?: Array<{ roll_number: string; status: string; error?: string }>;
+      };
+      const summary = payload?.summary;
+      if (summary) {
+        toast.success(`Import done · ${summary.created} created · ${summary.updated} updated · ${summary.errors} errors`);
+      } else {
+        toast.success("Import finished");
+      }
+      const errs = (payload?.results ?? []).filter((r) => r.status === "error");
+      setImportErrors(errs);
+      if (!errs.length) {
+        setParsedRows([]);
+        setParsedFileName("");
+        if (fileRef.current) fileRef.current.value = "";
+      }
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const uniqueBatchesInParse = Array.from(new Set(parsedRows.map((r) => r.batch_code)));
+  const uniqueCoursesInParse = Array.from(new Set(parsedRows.map((r) => r.course)));
+
+
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
