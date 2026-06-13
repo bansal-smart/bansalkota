@@ -299,6 +299,7 @@ const App = () => (
               {/* Editor flows keep their own routes */}
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+              <Route path="/admin/tests/:slug/result" element={<AdminTestResultPage />} />
               <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
