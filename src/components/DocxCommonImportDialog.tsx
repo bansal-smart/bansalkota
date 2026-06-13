@@ -78,8 +78,17 @@ const DocxCommonImportDialog = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
 
+  // Subject-by-range tagging: e.g. [{from:1,to:30,subject:"Physics"}, ...]
+  type SubjectRange = { from: number; to: number; subject: string };
+  const [subjectRanges, setSubjectRanges] = useState<SubjectRange[]>([]);
+
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
+
+  const subjectForNumber = (n: number): string => {
+    const hit = subjectRanges.find((r) => n >= r.from && n <= r.to);
+    return hit?.subject || subject;
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -106,6 +115,7 @@ const DocxCommonImportDialog = ({
     setImgProgress({ done: 0, total: 0 });
     setErrorMsg(null);
     setImported({ ok: 0, failed: 0 });
+    setSubjectRanges([]);
     if (!testId) setSelectedTestId(null);
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -139,6 +149,10 @@ const DocxCommonImportDialog = ({
       }
       setQuestions(result.questions);
       setWarnings(result.warnings);
+      const nums = result.questions.map((q) => q.number).filter((n) => Number.isFinite(n));
+      const minN = nums.length ? Math.min(...nums) : 1;
+      const maxN = nums.length ? Math.max(...nums) : result.questions.length;
+      setSubjectRanges([{ from: minN, to: maxN, subject: defaultSubject ?? "Physics" }]);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
@@ -233,7 +247,7 @@ const DocxCommonImportDialog = ({
       : ["", "", "", ""];
 
     return {
-      subject: q.subject || subject,
+      subject: q.subject || subjectForNumber(q.number),
       topic: q.topic || null,
       question_text: stemHtml || q.stemText,
       question_image_url: stemHasInlineImg ? null : stemImg,
@@ -545,6 +559,93 @@ const DocxCommonImportDialog = ({
                 </div>
               </div>
 
+              {/* Subject-by-range tagger */}
+              <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Subject tagging by question range</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      e.g. Q1–30 Physics, Q31–60 Chemistry, Q61–90 Maths. Required for subject-wise results.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const last = subjectRanges[subjectRanges.length - 1];
+                      const nextFrom = last ? last.to + 1 : 1;
+                      setSubjectRanges([
+                        ...subjectRanges,
+                        { from: nextFrom, to: nextFrom + 9, subject: SUBJECTS[0] },
+                      ]);
+                    }}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+                  >
+                    + Add range
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {subjectRanges.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] text-muted-foreground">Q</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={r.from}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setSubjectRanges((prev) =>
+                            prev.map((x, j) => (j === i ? { ...x, from: v } : x)),
+                          );
+                        }}
+                        className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                      />
+                      <span className="text-[11px] text-muted-foreground">to Q</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={r.to}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setSubjectRanges((prev) =>
+                            prev.map((x, j) => (j === i ? { ...x, to: v } : x)),
+                          );
+                        }}
+                        className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                      />
+                      <span className="text-[11px] text-muted-foreground">→</span>
+                      <select
+                        value={r.subject}
+                        onChange={(e) =>
+                          setSubjectRanges((prev) =>
+                            prev.map((x, j) => (j === i ? { ...x, subject: e.target.value } : x)),
+                          )
+                        }
+                        className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
+                      >
+                        {SUBJECTS.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSubjectRanges((prev) => prev.filter((_, j) => j !== i))
+                        }
+                        className="rounded p-1 text-destructive hover:bg-destructive/10"
+                        title="Remove range"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {subjectRanges.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      No ranges yet — every question will use the default subject "{subject}".
+                    </p>
+                  )}
+                </div>
+              </div>
+
               {warnings.length > 0 && (
                 <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 space-y-1">
                   <p className="font-bold">Parser warnings ({warnings.length})</p>
@@ -573,6 +674,16 @@ const DocxCommonImportDialog = ({
                         <span className="text-[10px] text-muted-foreground">
                           marks {DEFAULT_MARKS[q.type].c}/{DEFAULT_MARKS[q.type].w}
                         </span>
+                        <select
+                          value={q.subject || subjectForNumber(q.number)}
+                          onChange={(e) => updateQ(idx, { subject: e.target.value })}
+                          className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-semibold text-primary"
+                          title="Subject for this question"
+                        >
+                          {SUBJECTS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
                       </div>
                       <button
                         onClick={() => removeQ(idx)}
