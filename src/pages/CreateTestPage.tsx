@@ -782,6 +782,11 @@ const CreateTestPage = () => {
                     From Bank
                   </span>
                 )}
+                {q.imported && (
+                  <span className="rounded-md bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold text-secondary">
+                    Imported
+                  </span>
+                )}
                 <select
                   value={q.subject}
                   onChange={(e) => updateQ(i, { subject: e.target.value })}
@@ -838,13 +843,19 @@ const CreateTestPage = () => {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-              <textarea
-                value={q.text}
-                onChange={(e) => updateQ(i, { text: e.target.value })}
-                placeholder="Question text (LaTeX supported, e.g. $x^2$)"
-                rows={2}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
-              />
+              {q.imported ? (
+                <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+                  <MathRenderer content={q.text} />
+                </div>
+              ) : (
+                <textarea
+                  value={q.text}
+                  onChange={(e) => updateQ(i, { text: e.target.value })}
+                  placeholder="Question text (LaTeX supported, e.g. $x^2$)"
+                  rows={2}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
+                />
+              )}
 
               {/* Question image (diagram / figure) */}
               <div className="flex items-start gap-3">
