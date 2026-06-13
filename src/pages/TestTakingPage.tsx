@@ -876,7 +876,7 @@ const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string
 
 
 const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: string }) => {
-  const allowDecimal = format !== "integer";
+  const allowDecimal = true;
   const allowNeg = true;
 
   const press = (k: string) => {
