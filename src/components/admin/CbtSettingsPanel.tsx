@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Copy, ShieldCheck, Monitor, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CBT_KIOSK_URL } from "@/lib/brand";
 
 type Batch = { id: string; code: string; name: string };
 
