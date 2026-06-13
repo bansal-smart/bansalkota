@@ -37,6 +37,13 @@ const AdminBatchesPage = () => {
 
   const [form, setForm] = useState({ courseId: "", code: "", name: "", class_level: "XI" });
 
+  // XLSX import state
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [parsedRows, setParsedRows] = useState<ImportRow[]>([]);
+  const [parsedFileName, setParsedFileName] = useState<string>("");
+  const [importing, setImporting] = useState(false);
+  const [importErrors, setImportErrors] = useState<Array<{ roll_number: string; error?: string }>>([]);
+
   const load = async () => {
     setLoading(true);
     const [{ data: cs }, { data: bs }] = await Promise.all([
