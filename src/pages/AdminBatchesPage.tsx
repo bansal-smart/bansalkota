@@ -269,6 +269,94 @@ const AdminBatchesPage = () => {
         </div>
       </div>
 
+      {/* Excel Importer */}
+      <div className="rounded-2xl border-2 border-dashed border-primary/40 bg-card p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-primary/10 p-2"><FileSpreadsheet className="h-4 w-4 text-primary" /></div>
+            <div>
+              <p className="text-sm font-bold text-foreground">Import students from Excel</p>
+              <p className="text-[11px] text-muted-foreground">Columns expected: <code>RegNo · StudentName · CONTACTNO · Dob · COURSE · STREAM · BATCH</code></p>
+            </div>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted">
+            <Upload className="h-3.5 w-3.5" /> Choose .xlsx file
+          </button>
+        </div>
+
+        {parsedRows.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2 flex-wrap text-[11px]">
+              <span className="rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{parsedFileName}</span>
+              <span className="rounded-full bg-secondary/10 px-2 py-1 font-bold text-secondary">{parsedRows.length} students</span>
+              <span className="rounded-full bg-muted px-2 py-1 font-medium text-foreground">Courses: {uniqueCoursesInParse.join(", ")}</span>
+              <span className="rounded-full bg-muted px-2 py-1 font-medium text-foreground">Batches: {uniqueBatchesInParse.join(", ")}</span>
+            </div>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-[11px]">
+                <thead className="bg-muted text-muted-foreground">
+                  <tr>
+                    <th className="p-2 text-left">Roll</th><th className="p-2 text-left">Name</th>
+                    <th className="p-2 text-left">Phone</th><th className="p-2 text-left">Course</th>
+                    <th className="p-2 text-left">Batch</th><th className="p-2 text-left">Class</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedRows.slice(0, 10).map((r) => (
+                    <tr key={r.roll_number} className="border-t border-border">
+                      <td className="p-2 font-mono">{r.roll_number}</td>
+                      <td className="p-2">{r.full_name}</td>
+                      <td className="p-2 font-mono">{r.phone}</td>
+                      <td className="p-2">{r.course}</td>
+                      <td className="p-2 font-bold text-primary">{r.batch_code}</td>
+                      <td className="p-2">{r.class_level}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {parsedRows.length > 10 && (
+                <div className="bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground text-center">
+                  + {parsedRows.length - 10} more rows
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={submitImport}
+                disabled={importing}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60">
+                {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+                Import {parsedRows.length} students
+              </button>
+              <button
+                onClick={() => { setParsedRows([]); setParsedFileName(""); setImportErrors([]); if (fileRef.current) fileRef.current.value = ""; }}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-muted-foreground">
+                Clear
+              </button>
+            </div>
+            {importErrors.length > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-[11px]">
+                <p className="font-bold text-destructive mb-1">{importErrors.length} row(s) failed:</p>
+                <ul className="space-y-0.5 max-h-32 overflow-auto">
+                  {importErrors.map((e) => (
+                    <li key={e.roll_number} className="font-mono text-destructive/80">{e.roll_number} — {e.error ?? "unknown error"}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="text-sm font-bold text-foreground mb-3">Add a new batch</p>
         <div className="grid md:grid-cols-5 gap-3">
