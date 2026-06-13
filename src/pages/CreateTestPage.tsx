@@ -417,8 +417,12 @@ const CreateTestPage = () => {
     if (!title.trim()) return toast.error("Title required");
     const isComplete = (q: DraftQuestion) => {
       if (!q.text.trim()) return false;
-      if (q.type === "mcq-single") return q.options.every((o) => o.trim());
-      if (q.type === "mcq-multi") return q.options.every((o) => o.trim()) && q.correctMulti.length > 0;
+      const hasOptionContent =
+        q.options.some((o) => o.trim()) ||
+        q.optionImages.some(Boolean) ||
+        /<img\b/i.test(q.text);
+      if (q.type === "mcq-single") return q.options.length >= 2 && hasOptionContent && Number.isInteger(q.correct);
+      if (q.type === "mcq-multi") return q.options.length >= 2 && hasOptionContent && q.correctMulti.length > 0;
       if (q.type === "numerical" || q.type === "integer") return q.numericalAnswer.trim() !== "" && !Number.isNaN(Number(q.numericalAnswer));
       return false;
     };
