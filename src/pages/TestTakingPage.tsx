@@ -907,7 +907,7 @@ const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v
         ))}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        {allowDecimal ? "Enter a decimal number." : "Enter an integer only."} Use the keypad above.
+        Enter a number (decimals allowed). Use the keypad above.
       </p>
     </div>
   );
