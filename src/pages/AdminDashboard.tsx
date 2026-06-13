@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Users, IndianRupee, BookOpen, ArrowRight, Loader2, Inbox, Briefcase, Flag,
   Building2, Trophy, MessageSquareWarning, Megaphone, Sparkles, PlusCircle, Image as ImageIcon,
-  Star, TrendingUp,
+  Star, TrendingUp, ClipboardCheck, Upload, Youtube,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
