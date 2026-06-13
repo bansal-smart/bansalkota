@@ -18,6 +18,7 @@ import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
+import { syncTestStats } from "@/lib/tests/syncTestStats";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -141,6 +142,7 @@ const CreateTestPage = () => {
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+  const importedQuestionCount = useRef(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -188,6 +190,7 @@ const CreateTestPage = () => {
         .order("position");
       if (ignore) return;
       setResolvedTestId(test.id);
+      importedQuestionCount.current = (tqs ?? []).length;
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
       setTestType(test.test_type ?? "mock");
@@ -374,6 +377,38 @@ const CreateTestPage = () => {
     toast.success("Questions appended — reloading list");
     if (!isEditMode && createdDraftSlug) {
       navigate(`/admin/tests/${createdDraftSlug}/edit`, { replace: true });
+    }
+  };
+
+  const publishImportedDraft = async () => {
+    if (!resolvedTestId) return toast.error("Create or import into a test first");
+    setSubmitting(true);
+    try {
+      await syncTestStats(resolvedTestId);
+      const { error } = await supabase
+        .from("tests")
+        .update({
+          title,
+          description,
+          test_type: testType,
+          exam_pattern: examPattern,
+          duration_minutes: duration,
+          correct_marks: correctMarks,
+          wrong_marks: wrongMarks,
+          course_id: courseId || null,
+          test_mode: testMode,
+          cbt_enabled: testMode === "cbt",
+          cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+          is_published: true,
+        })
+        .eq("id", resolvedTestId);
+      if (error) throw error;
+      toast.success("Test published with imported questions");
+      navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not publish imported test");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -984,7 +1019,7 @@ const CreateTestPage = () => {
             </button>
             <button
               disabled={submitting}
-              onClick={() => submit(true)}
+              onClick={() => questions.length === 0 && importedQuestionCount.current > 0 ? publishImportedDraft() : submit(true)}
               className="flex-1 rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-secondary-foreground hover:opacity-90 disabled:opacity-50"
             >
               {submitting ? (
