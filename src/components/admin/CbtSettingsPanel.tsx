@@ -49,7 +49,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
     if (ok) setAllowed(next);
   };
 
-  const kioskUrl = typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt";
+  const kioskUrl = CBT_KIOSK_URL;
 
   if (loading) return <div className="p-6 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
 
