@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
 
     // 2. Ensure courses
     const courseIdByKey: Record<string, string> = {};
-    const distinctCourses = Array.from(new Set(rows.map((r) => r.course.toUpperCase())));
+    const distinctCourses = Array.from(new Set(rows.map((r) => normaliseCourseKey(r.course))));
     for (const key of distinctCourses) {
       const meta = COURSE_MAP[key] ?? { name: key, slug: key.toLowerCase().replace(/\s+/g, "-"), subject: "JEE", educator: "Bansal Faculty" };
       const { data: existing } = await admin.from("courses").select("id").eq("slug", meta.slug).maybeSingle();
@@ -107,8 +107,8 @@ Deno.serve(async (req) => {
     const batchKey = (course: string, code: string) => `${course}::${code}`;
     const batchIdByKey: Record<string, string> = {};
     const distinctBatches = Array.from(
-      new Map(rows.map((r) => [batchKey(r.course.toUpperCase(), r.batch_code), {
-        courseKey: r.course.toUpperCase(),
+      new Map(rows.map((r) => [batchKey(normaliseCourseKey(r.course), r.batch_code), {
+        courseKey: normaliseCourseKey(r.course),
         code: r.batch_code,
         class_level: r.class_level,
       }])).values()
@@ -150,8 +150,8 @@ Deno.serve(async (req) => {
     for (const r of rows) {
       try {
         const email = `${r.roll_number}@cbt.bansal.local`.toLowerCase();
-        const courseId = courseIdByKey[r.course.toUpperCase()];
-        const batchId = batchIdByKey[batchKey(r.course.toUpperCase(), r.batch_code)];
+        const courseId = courseIdByKey[normaliseCourseKey(r.course)];
+        const batchId = batchIdByKey[batchKey(normaliseCourseKey(r.course), r.batch_code)];
 
         let userId = emailToId.get(email);
         let createdNew = false;
