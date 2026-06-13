@@ -407,6 +407,9 @@ const CreateTestPage = () => {
       total_marks: validQ.reduce((s, q) => s + Number(q.marksCorrect || 0), 0),
       is_published: publish,
       course_id: courseId || null,
+      test_mode: testMode,
+      cbt_enabled: testMode === "cbt",
+      cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
     };
 
     let savedTestId: string | null = resolvedTestId;
