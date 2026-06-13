@@ -110,6 +110,17 @@ const AdminBatchesPage = () => {
         </button>
       </div>
 
+      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
+        <p className="text-xs font-bold uppercase tracking-wider text-primary">CBT Kiosk URL (single fixed link)</p>
+        <div className="mt-1 flex items-center gap-2 flex-wrap">
+          <code className="text-sm bg-background rounded px-2 py-1 border border-border">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>
+          <button
+            onClick={() => { const u = `${window.location.origin}/cbt`; navigator.clipboard.writeText(u); toast.success("Kiosk link copied"); }}
+            className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted">Copy</button>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">Open this URL on lab computers in kiosk mode. Students log in with their roll number + mobile and see every live CBT test for their batch.</p>
+      </div>
+
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="text-sm font-bold text-foreground mb-3">Add a new batch</p>
         <div className="grid md:grid-cols-5 gap-3">
