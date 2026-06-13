@@ -151,6 +151,8 @@ const App = () => (
             <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            <Route path="/cbt/:token" element={<CbtLoginPage />} />
+
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
             <Route element={<ProtectedRoute allow={["student"]} />}>
