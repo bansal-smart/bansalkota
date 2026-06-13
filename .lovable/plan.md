@@ -1,57 +1,89 @@
-## Goal
-Let admins schedule every test with a date/time window. Once the end time passes, results auto-release and admins can download a subject-wise result sheet matching the uploaded "RT-03 JEE MAIN PATTERN" format (Roll No, Name, Batch, Phy, Chem, Maths, Total, %age, Rank + Absents + Max/Min/Avg).
+# Plan
 
-## 1. Test scheduling (admin UI)
-In the Create/Edit Test form (`src/pages/CreateTestPage.tsx` and the test detail/edit screens):
-- Add three required-when-scheduled fields:
-  - **Test date** (date picker)
-  - **Start time** (writes to `tests.starts_at`)
-  - **End time / Results release time** (writes to `tests.ends_at`)
-- Keep existing `auto_release = true` default — DB function `test_results_released()` already releases results when `now() >= ends_at`.
-- Add a `Manual release now` button on the test detail page that sets `results_released_at = now()` (useful if admin wants to release early).
-- Show a clear scheduled badge: `Scheduled · 07 Jun 2026 · 09:00 – 12:00` and a live countdown to release.
+## 1. "Result" button on every test in admin listings
 
-No schema migration required — `starts_at`, `ends_at`, `auto_release`, `results_released_at` already exist.
+**Where**: `src/pages/AdminTestsPage.tsx` (the main test list) and the "All tests" tab inside `src/pages/AdminTestsHubPage.tsx`.
 
-## 2. Result aggregation
-Create a SECURITY DEFINER SQL function `admin_test_result_sheet(_test_id uuid)` that returns one row per enrolled / attempted student:
+- Add a new action icon (FileSpreadsheet) in the Actions column linking to `/admin/tests/:slug/result` (route already exists → `AdminTestResultPage.tsx`).
+- Tooltip: "Result sheet".
+- Same button is already on the test detail page; this just brings it forward to the list so admin doesn't need to open each test.
 
+## 2. Individual student result view
+
+`AdminTestResultPage.tsx` currently shows the table with per-student rows. Enhance:
+
+- Make each student row clickable → opens a slide-over / modal showing that student's full attempt: question-by-question correct/wrong, time, subject-wise breakdown. Data source: `test_attempts` row + `test_questions` + `get_test_question_answers`.
+- Add "Download student PDF" inside the modal (single-page summary using jsPDF).
+
+## 3. Master Result PDF (Bansal-branded)
+
+Replace the current plain jsPDF export with a branded master sheet, only downloadable once `test_results_released(test_id) = true` (existing rule). Layout:
+
+```text
+┌─────────────────────────────────────────────────────┐
+│  [Bansal Logo watermark — centered, 8% opacity]     │
+│                                                     │
+│  THE BANSAL CLASSES PVT. LTD.                       │
+│  <Test Title>                                       │
+│  Date: <starts_at date>   Time: <start–end>         │
+│  Pattern: JEE/NEET   Total Marks: xx                │
+│  Batches: <names>   Total students: N   Attempted: M│
+│                                                     │
+│  ┌──────┬──────────┬───────┬─────┬─────┬─────┬────┐ │
+│  │ Rank │ Roll No  │ Name  │ Phy │ Chem│ Math│ Tot│ │
+│  ├──────┼──────────┼───────┼─────┼─────┼─────┼────┤ │
+│  │ ...rows including ABS for absentees...         │ │
+│  ├──────┴──────────┴───────┼─────┼─────┼─────┼────┤ │
+│  │ MAX / MIN / AVG          │ ... │ ... │ ... │... │ │
+│  └─────────────────────────┴─────┴─────┴─────┴────┘ │
+│  Footer: generated <timestamp> · page x/y           │
+└─────────────────────────────────────────────────────┘
 ```
-roll_no, full_name, batch_name,
-<subject>: marks  (one column per subject of the test)
-total_marks, percentage, rank, status ('present' | 'absent')
-```
 
-Logic:
-- Subjects come from `tests.subjects` (already an array).
-- Per-subject marks pulled from `test_attempts.metadata->'subjects'->><subject>->>'score'` (already populated by `submit_test_attempt`).
-- Absent = student is in the allowed batch (`tests.cbt_allowed_batch_ids` ∪ enrollments through the course) but has no submitted attempt.
-- Rank = dense_rank on total, absents go to bottom with rank label `ABS`.
-- Also return summary `{max, min, avg}` per subject and overall.
-- Guarded with `is_admin_or_super(auth.uid()) OR has_role(..., 'teacher')`.
+Technical details:
+- Use `jspdf` + `jspdf-autotable` (already installed).
+- Load `bansal-logo.png` as base64, draw via `doc.addImage` on every page with `GState({opacity:0.08})` and large size, centered, before the table.
+- Header block drawn in `didDrawPage` so it repeats; autoTable handles pagination automatically.
+- Keep existing XLSX export button as-is.
+- Lock state: if not released, hide "Download Master PDF" and show countdown + (admin only) "Release now" (already present).
 
-## 3. Admin Results page
-New route `/admin/tests/:testId/results` (link from Admin Tests Hub and from each scheduled test card after release):
-- Header: test title, date, M.M. (total_marks), batch(es).
-- Table identical to the uploaded PDF layout: Roll No · Name · Batch · per-subject cols · Total · %age · Rank.
-- Footer rows: MAX / MIN / AVG per column.
-- Buttons:
-  - **Download PDF** — react-pdf or html2pdf rendering of the same table layout (institute-style heading "XI-JEE BULLS EYE / RT-03 JEE MAIN PATTERN" pulled from test title + date + M.M.).
-  - **Download CSV / Excel** — same columns via SheetJS.
-- If results not yet released, show a locked state with countdown and the early-release button (admins only).
+## 4. Bulk "Delete all questions" in test editor
 
-## 4. Student-side effect
-- Students already see results only after `test_results_released()` returns true via `get_test_rank`. No change beyond ensuring the UI shows the scheduled release time when locked.
+**Where**: `AdminTestDetailPage.tsx` → Questions tab, and the test editor page used when clicking Edit.
 
-## Technical notes
-- Files to edit:
-  - `src/pages/CreateTestPage.tsx`, `src/pages/AdminTestDetailPage.tsx`, `src/pages/AdminTestsHubPage.tsx`
-  - New: `src/pages/AdminTestResultPage.tsx`, `src/lib/results/exportResultSheet.ts` (PDF + XLSX)
-  - New migration: `admin_test_result_sheet` function + grant execute to authenticated.
-- Libs to add: `xlsx` (already may be present — check) and `jspdf` + `jspdf-autotable` for the PDF.
-- Batch label comes from `course_batches.name` joined via `profiles.batch_id`.
-- Roll number from `profiles.roll_number`.
+- Add a red "Delete all questions" button next to "Master import / Common import".
+- Confirms via `useConfirm` ("Delete all N questions in this test?").
+- Runs `supabase.from("test_questions").delete().eq("test_id", test.id)`, then reloads.
+- Also resets `tests.total_questions` and `total_marks` to 0 via a follow-up update so summary stays consistent.
 
-## Out of scope (ask before adding)
-- Emailing the PDF to parents automatically.
-- Multi-test consolidated rank sheets across an RT series.
+## 5. Common Import — force subject tagging after upload
+
+**Where**: `src/components/DocxCommonImportDialog.tsx`.
+
+Today the subject-by-range UI exists but is optional. Make it a required step:
+
+- After successful parse, switch the dialog into a new **"Step 2 — Tag subjects"** view before the question list. The "Save to test" button stays disabled until every parsed question number falls inside at least one range (validation message lists the uncovered numbers).
+- Pre-fill subject options based on the parent test's `exam_pattern`:
+  - JEE patterns → Physics, Chemistry, Mathematics
+  - NEET patterns → Physics, Chemistry, Biology
+  - Other → all four (existing `SUBJECTS`).
+- "Auto-split equally" helper: given subject count k and total N, generates k equal ranges in one click.
+- The subject dropdown inside each range only shows the pattern-specific subjects.
+
+## Technical Section
+
+- **Files to edit**:
+  - `src/pages/AdminTestsPage.tsx` — add Result icon link.
+  - `src/pages/AdminTestsHubPage.tsx` — add Result link in the "All tests" listing rows (if present) and recent tests cards.
+  - `src/pages/AdminTestResultPage.tsx` — branded PDF generator, student detail drawer, single-student PDF.
+  - `src/pages/AdminTestDetailPage.tsx` — "Delete all questions" button + confirm + cascade update of `total_questions/total_marks`.
+  - `src/components/DocxCommonImportDialog.tsx` — required subject-tagging step, exam-pattern-aware subject list, auto-split helper, validation.
+- **New file**: `src/lib/results/masterResultPdf.ts` — encapsulates branded PDF rendering (logo watermark, header, autoTable, footer).
+- **No DB migration needed** — `admin_test_result_sheet`, `test_results_released`, and scheduling fields already exist.
+- **Permissions**: master PDF download still respects `test_results_released`; "Release now" remains admin/super_admin only.
+
+## Out of Scope
+
+- Emailing PDFs to students/parents.
+- Cross-test consolidated rank sheets (RT series totals).
+- Editing individual student answers from the result page.
