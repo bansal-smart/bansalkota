@@ -100,8 +100,16 @@ const TestSubjectBreakdownPage = () => {
   let score = 0;
   questions.forEach((q) => {
     const sel = answers[q.id]?.selected;
-    if (sel == null) unattempted += 1;
-    else if (sel === q.correct_answer) {
+    const isMatch = q.question_type === "match-following";
+    if (sel == null || (typeof sel === "object" && !Array.isArray(sel) && Object.keys(sel || {}).length === 0)) {
+      unattempted += 1;
+    } else if (isMatch && q.correct_answer && typeof q.correct_answer === "object") {
+      const cm = q.correct_answer as Record<string, string>;
+      const ans = sel as Record<string, string>;
+      const allCorrect = Object.keys(cm).every((k) => ans[k] === cm[k]);
+      if (allCorrect) { correct += 1; score += Number(q.marks_correct ?? 4); }
+      else { wrong += 1; score += Number(q.marks_wrong ?? -1); }
+    } else if (sel === q.correct_answer) {
       correct += 1;
       score += Number(q.marks_correct ?? 4);
     } else {
