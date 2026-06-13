@@ -724,25 +724,47 @@ const TestTakingPage = () => {
               <LegendRow status="answered-marked" label="Answered & Marked" count={counts.answeredMarked} />
             </div>
 
-            {/* Palette grouped by subject */}
+            {/* Palette — subject switcher + active subject only */}
             <div className="space-y-3">
-              {groupedIndices.map(({ subject: subj, items }) => (
-                <div key={subj}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-0.5 flex-1 bg-neutral-200" />
-                    <p className="text-[10px] font-black uppercase tracking-wider text-neutral-600">{subj} — Section A</p>
-                    <div className="h-0.5 flex-1 bg-neutral-200" />
-                  </div>
-                  <div className="grid grid-cols-5 gap-2">
-                    {items.map(({ q: qq, i }) => (
-                      <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} onClick={() => accrueTimeAndJump(i)} title={`Q${i + 1}`}>
-                        {i + 1}
-                      </PaletteShape>
-                    ))}
-                  </div>
+              {subjects.length > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {subjects.map((s) => {
+                    const isActive = activeSubject === s;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setActiveSubject(s);
+                          const firstIdx = questions.findIndex((qq) => (qq.subject || "General") === s);
+                          if (firstIdx >= 0) accrueTimeAndJump(firstIdx);
+                        }}
+                        className={`flex-1 min-w-[70px] rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${isActive ? "bg-primary text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"}`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-0.5 flex-1 bg-neutral-200" />
+                  <p className="text-[10px] font-black uppercase tracking-wider text-neutral-600">{activeSubject} — Section A</p>
+                  <div className="h-0.5 flex-1 bg-neutral-200" />
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {subjectIndices.map(({ i }, posIdx) => {
+                    const qq = questions[i];
+                    return (
+                      <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} onClick={() => accrueTimeAndJump(i)} title={`Q${posIdx + 1}`}>
+                        {posIdx + 1}
+                      </PaletteShape>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
+
           </div>
 
           <div className="border-t border-neutral-200 p-3">
