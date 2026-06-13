@@ -641,12 +641,9 @@ const TestTakingPage = () => {
               <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
               {q.question_image_url && !/<img\b/i.test(q.question_text || "") && (
-                <button onClick={() => { setZoomImg(q.question_image_url); setZoomLevel(1); }} className="relative inline-block group">
-                  <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72" />
-                  <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-[10px] text-white flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                    <ZoomIn className="h-3 w-3" /> Zoom
-                  </span>
-                </button>
+                <div className="relative inline-block">
+                  <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72 select-none pointer-events-none" draggable="false" />
+                </div>
               )}
 
               {/* Input */}
