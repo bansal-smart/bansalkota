@@ -22,6 +22,7 @@ import {
 } from "@/lib/docxImport/uploadImages";
 import { SUBJECTS } from "@/lib/constants";
 import MathRenderer from "@/components/MathRenderer";
+import { syncTestStats } from "@/lib/tests/syncTestStats";
 
 type Props = {
   open: boolean;
@@ -324,17 +325,21 @@ const DocxCommonImportDialog = ({
     let failCount = 0;
     if (insErr) {
       failCount = rows.length;
+      await supabase
+        .from("question_import_batches")
+        .update({
+          status: "failed",
+          question_count: 0,
+          error_log: { errors: [insErr.message] },
+        })
+        .eq("id", batchId);
       toast.error(`Failed to import: ${insErr.message}`);
+      setImported({ ok: 0, failed: failCount });
+      setStep("done");
+      return;
     } else {
       okCount = rows.length;
-      // Keep tests.total_questions in sync so the test page stats reflect the new count.
-      const { count } = await supabase
-        .from("test_questions")
-        .select("id", { count: "exact", head: true })
-        .eq("test_id", targetTestId);
-      if (typeof count === "number") {
-        await supabase.from("tests").update({ total_questions: count }).eq("id", targetTestId);
-      }
+      await syncTestStats(targetTestId);
     }
 
     await supabase

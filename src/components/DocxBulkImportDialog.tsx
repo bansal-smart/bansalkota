@@ -24,6 +24,7 @@ import {
 } from "@/lib/docxImport/uploadImages";
 import { SUBJECTS } from "@/lib/constants";
 import MathRenderer from "@/components/MathRenderer";
+import { syncTestStats } from "@/lib/tests/syncTestStats";
 
 type Props = {
   open: boolean;
@@ -343,18 +344,15 @@ const DocxBulkImportDialog = ({
         .insert(testRows as any);
       if (testErr) {
         failCount = testRows.length;
+        await supabase
+          .from("question_import_batches")
+          .update({ error_log: { errors: [testErr.message] } })
+          .eq("id", batchId);
         toast.error(`Failed to push questions to test: ${testErr.message}`);
       } else {
         okCount = Math.max(okCount, testRows.length);
         toast.success(`Pushed ${testRows.length} question${testRows.length === 1 ? "" : "s"} into the test.`);
-        // Keep tests.total_questions in sync so the test page shows the new count.
-        const { count } = await supabase
-          .from("test_questions")
-          .select("id", { count: "exact", head: true })
-          .eq("test_id", selectedTestId);
-        if (typeof count === "number") {
-          await supabase.from("tests").update({ total_questions: count }).eq("id", selectedTestId);
-        }
+        await syncTestStats(selectedTestId);
       }
     }
 
