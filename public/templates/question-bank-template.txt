@@ -1,0 +1,51 @@
+BANSAL CLASSES — QUESTION BANK BULK IMPORT (ARKE FORMAT)
+==========================================================
+
+This file demonstrates the format you should follow in your .docx
+file when bulk-uploading questions via "Word import". Save your
+document as .docx (not .doc) and upload it from the Question Bank
+or from inside a test.
+
+----------------------------------------------------------
+1.  A car travels 60 km in 1.5 hours. What is its average speed?
+    (1) 30 km/h
+    (2) 40 km/h
+    (3) 45 km/h
+    (4) 90 km/h
+    Answer: (2)
+    Topic: Motion in a Straight Line
+    Solution: Average speed = total distance / total time = 60 / 1.5 = 40 km/h.
+
+2.  Which of the following statements are true for an isothermal process? (Select all)
+    (1) Temperature is constant
+    (2) Heat exchange is zero
+    (3) Internal energy of an ideal gas is unchanged
+    (4) Work done is zero
+    Answer: (1),(3)
+    Solution: For ideal-gas isothermal: T constant; ΔU depends only on T so ΔU = 0.
+
+3.  Evaluate $\int_0^1 x^2 \, dx$. (Integer answer expected.)
+    Answer: 0
+    Solution: $\int_0^1 x^2 dx = 1/3 \approx 0$ (nearest integer).
+
+4.  Match the following:
+    +-----------+--------------------+
+    | Column A  | Column B           |
+    +-----------+--------------------+
+    | A. Newton | P. Energy          |
+    | B. Joule  | Q. Force           |
+    | C. Watt   | R. Pressure        |
+    | D. Pascal | S. Power           |
+    +-----------+--------------------+
+    Answer: A-Q, B-P, C-S, D-R
+
+NOTES
+-----
+- Each question starts with "N." on its own line (1. 2. 3. …).
+- MCQ options: "(1) … (2) … (3) … (4) …" or A–D variants.
+- Answer line is required.
+- "Topic: …" is optional metadata.
+- "Solution: …" is treated as the explanation.
+- Inline LaTeX uses single dollars: $x^2$.
+- Display LaTeX uses double dollars: $$\int_0^1 x dx$$.
+- Inline images inside the .docx are extracted automatically.
