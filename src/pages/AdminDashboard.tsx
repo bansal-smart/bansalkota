@@ -212,7 +212,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map((k) => (
           <Link key={k.label} to={k.to} className="group relative rounded-2xl overflow-hidden border border-border bg-card hover-lift">
             <div className={`absolute inset-0 bg-gradient-to-br ${k.tone} opacity-10 group-hover:opacity-20 transition-opacity`} />
