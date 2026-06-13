@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Users, IndianRupee, BookOpen, ArrowRight, Loader2, Inbox, Briefcase, Flag,
   Building2, Trophy, MessageSquareWarning, Megaphone, Sparkles, PlusCircle, Image as ImageIcon,
-  Star, TrendingUp,
+  Star, TrendingUp, ClipboardCheck, Upload, Youtube,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -28,6 +28,7 @@ const fetchOverview = async () => {
     profilesRes, coursesRes, enrollmentsRes, liveRes, attemptsRes,
     eduRes, enqOpenRes, repRes, supportRes,
     centresRes, recentEnqRes, toppersRes,
+    testsLiveRes, testsTotalRes, qbankRes,
   ] = await Promise.all([
     supabase.from("profiles").select("user_id, full_name, plan, created_at, country, center_id").order("created_at", { ascending: false }).limit(500),
     supabase.from("courses").select("id, name, educator_name, total_enrolled, rating, price").eq("is_published", true),
@@ -41,6 +42,9 @@ const fetchOverview = async () => {
     supabase.from("centers").select("id, city, state, slug, region, is_hq").eq("is_published", true).order("sort_order", { ascending: true }),
     supabase.from("enquiries").select("id, name, email, source_type, status, priority, created_at, center_id").order("created_at", { ascending: false }).limit(8),
     supabase.from("toppers").select("id", { count: "exact", head: true }).eq("is_published", true),
+    supabase.from("tests").select("id", { count: "exact", head: true }).eq("is_published", true).gte("starts_at", todayStart),
+    supabase.from("tests").select("id", { count: "exact", head: true }),
+    supabase.from("question_bank").select("id", { count: "exact", head: true }),
   ]);
 
   return {
@@ -51,6 +55,9 @@ const fetchOverview = async () => {
     centres: (centresRes.data ?? []) as CentreRow[],
     recentEnq: (recentEnqRes.data ?? []) as EnquiryRow[],
     testAttemptsToday: attemptsRes.count ?? 0,
+    testsUpcoming: testsLiveRes.count ?? 0,
+    testsTotal: testsTotalRes.count ?? 0,
+    questionBankCount: qbankRes.count ?? 0,
     toppersCount: toppersRes.count ?? 0,
     pending: {
       educators: eduRes.count ?? 0,
@@ -90,6 +97,10 @@ const AdminDashboard = () => {
   const recentEnq = data?.recentEnq ?? [];
   const pending = data?.pending ?? { educators: 0, enquiries: 0, reports: 0, centreSupport: 0 };
   const toppersCount = data?.toppersCount ?? 0;
+  const testAttemptsToday = data?.testAttemptsToday ?? 0;
+  const testsUpcoming = data?.testsUpcoming ?? 0;
+  const testsTotal = data?.testsTotal ?? 0;
+  const questionBankCount = data?.questionBankCount ?? 0;
 
   const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
 
@@ -108,6 +119,8 @@ const AdminDashboard = () => {
   const kpis = [
     { label: "Students", value: profiles.length.toLocaleString(), sub: `+${newUsersToday} today`, Icon: Users, tone: "from-bansal-blue to-bansal-blue/70", to: "/admin/students" },
     { label: "Active Courses", value: courses.length.toString(), sub: `${courses.reduce((s, c) => s + (c.total_enrolled ?? 0), 0)} learners`, Icon: BookOpen, tone: "from-bansal-orange to-amber-500", to: "/admin/courses" },
+    { label: "Tests", value: testsTotal.toString(), sub: `${testAttemptsToday} attempts today · ${testsUpcoming} upcoming`, Icon: ClipboardCheck, tone: "from-indigo-600 to-purple-500", to: "/admin/tests-hub" },
+    { label: "Question Bank", value: questionBankCount.toLocaleString(), sub: "Total questions", Icon: Upload, tone: "from-cyan-600 to-sky-500", to: "/admin/tests-hub?tab=bank" },
     { label: "Centres Live", value: centres.length.toString(), sub: `${offlineStudents} offline students mapped`, Icon: Building2, tone: "from-emerald-600 to-teal-500", to: "/admin/centers" },
     { label: "Revenue (30d)", value: formatINR(monthlyRevenue), sub: `${enrollments.length} enrolments`, Icon: IndianRupee, tone: "from-rose-500 to-orange-500", to: "/admin/payments" },
     { label: "New Enquiries", value: pending.enquiries.toString(), sub: "Awaiting reply", Icon: Inbox, tone: "from-violet-600 to-fuchsia-500", to: "/admin/enquiries" },
@@ -161,12 +174,15 @@ const AdminDashboard = () => {
   const upcoming = liveClasses.filter((c) => c.status === "scheduled").slice(0, 4);
 
   const quickActions = [
+    { label: "New Test", to: "/admin/tests/new", Icon: ClipboardCheck, tone: "bg-indigo-600 text-white" },
+    { label: "Bulk Q Import", to: "/admin/tests-hub?tab=imports", Icon: Upload, tone: "bg-cyan-600 text-white" },
     { label: "New Course", to: "/admin/courses", Icon: BookOpen, tone: "bg-bansal-blue text-white" },
+    { label: "Lecture Bucket", to: "/admin/lecture-bucket", Icon: Youtube, tone: "bg-rose-500 text-white" },
     { label: "Add Centre", to: "/admin/centers", Icon: Building2, tone: "bg-emerald-600 text-white" },
     { label: "New Banner", to: "/admin/banners", Icon: ImageIcon, tone: "bg-bansal-orange text-white" },
-    { label: "Add Topper", to: "/admin/student-reports", Icon: Trophy, tone: "bg-amber-500 text-white" },
+    { label: "Add Topper", to: "/admin/toppers", Icon: Trophy, tone: "bg-amber-500 text-white" },
     { label: "Testimonial", to: "/admin/testimonials", Icon: Star, tone: "bg-violet-600 text-white" },
-    { label: "Broadcast", to: "/admin/notifications", Icon: Megaphone, tone: "bg-rose-500 text-white" },
+    { label: "Broadcast", to: "/admin/notifications", Icon: Megaphone, tone: "bg-pink-600 text-white" },
   ];
 
   if (isLoading) {
@@ -196,7 +212,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         {kpis.map((k) => (
           <Link key={k.label} to={k.to} className="group relative rounded-2xl overflow-hidden border border-border bg-card hover-lift">
             <div className={`absolute inset-0 bg-gradient-to-br ${k.tone} opacity-10 group-hover:opacity-20 transition-opacity`} />
@@ -427,7 +443,7 @@ const AdminDashboard = () => {
         <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
           <PlusCircle className="h-4 w-4 text-bansal-orange" /> Quick Actions
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2">
           {quickActions.map((a) => (
             <Link
               key={a.label}
