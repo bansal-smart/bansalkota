@@ -131,6 +131,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [editing, setEditing] = useState<BankQuestion | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [docxOpen, setDocxOpen] = useState(false);
+  const [commonDocxOpen, setCommonDocxOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("question_text");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
