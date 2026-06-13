@@ -31,6 +31,27 @@ const renderMath = (src: string, displayMode: boolean) => {
   }
 };
 
+const escapeAttr = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const extractSafeImages = (raw: string) => {
+  const images: Record<string, string> = {};
+  const text = raw
+    .replace(/<img\b[^>]*>/gi, (tag) => {
+      const src = tag.match(/\bsrc\s*=\s*(["'])(.*?)\1/i)?.[2] ?? "";
+      if (!/^https?:\/\//i.test(src) && !/^data:image\//i.test(src)) return "";
+      const alt = tag.match(/\balt\s*=\s*(["'])(.*?)\1/i)?.[2] ?? "Question image";
+      const key = `__MATH_RENDERER_IMG_${Object.keys(images).length}__`;
+      images[key] = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" class="my-2 inline-block max-w-full rounded-md border border-border align-middle" />`;
+      return key;
+    })
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/p>\s*<p[^>]*>/gi, "\n")
+    .replace(/<\/?p[^>]*>/gi, "\n");
+
+  return { text, images };
+};
+
 /**
  * Render a string that may contain $...$ inline or $$...$$ display math.
  * Math segments go through KaTeX; everything else is treated as plain text
@@ -39,6 +60,8 @@ const renderMath = (src: string, displayMode: boolean) => {
  */
 const renderContent = (raw: string): string => {
   if (!raw) return "";
+  const extracted = extractSafeImages(raw);
+  raw = extracted.text;
   let out = "";
   let i = 0;
   const n = raw.length;
@@ -72,6 +95,9 @@ const renderContent = (raw: string): string => {
     out += escapeHtml(raw.slice(i, k));
     i = k;
   }
+  Object.entries(extracted.images).forEach(([key, img]) => {
+    out = out.split(key).join(img);
+  });
   return out;
 };
 

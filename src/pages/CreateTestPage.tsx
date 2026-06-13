@@ -19,12 +19,15 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
+import MathRenderer from "@/components/MathRenderer";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer";
 
 type DraftQuestion = {
+  id?: string;
+  imported?: boolean;
   source: "manual" | "bank";
   bank_id?: string;
   type: QType;
@@ -91,6 +94,9 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     marksWrong: Number(q.marks_wrong ?? defaults.wrong),
   };
 };
+
+const hasRenderableContent = (value: string) =>
+  value.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\b/i.test(value);
 
 const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boolean }) => {
   const { setNodeRef, isOver } = useDroppable({ id: "test-drop" });
@@ -210,6 +216,8 @@ const CreateTestPage = () => {
           const correctArr = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
           return {
             source: "manual" as const,
+            id: q.id,
+            imported: Boolean(q.import_batch_id || q.source_filename),
             type,
             subject: q.subject ?? "Physics",
             topic: q.topic ?? "",
@@ -416,7 +424,7 @@ const CreateTestPage = () => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
     const isComplete = (q: DraftQuestion) => {
-      if (!q.text.trim()) return false;
+      if (!hasRenderableContent(q.text)) return false;
       const hasOptionContent =
         q.options.some((o) => o.trim()) ||
         q.optionImages.some(Boolean) ||
@@ -426,6 +434,10 @@ const CreateTestPage = () => {
       if (q.type === "numerical" || q.type === "integer") return q.numericalAnswer.trim() !== "" && !Number.isNaN(Number(q.numericalAnswer));
       return false;
     };
+    if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
+      return publishImportedDraft();
+    }
+
     const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
 
@@ -770,6 +782,11 @@ const CreateTestPage = () => {
                     From Bank
                   </span>
                 )}
+                {q.imported && (
+                  <span className="rounded-md bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold text-secondary">
+                    Imported
+                  </span>
+                )}
                 <select
                   value={q.subject}
                   onChange={(e) => updateQ(i, { subject: e.target.value })}
@@ -826,13 +843,19 @@ const CreateTestPage = () => {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-              <textarea
-                value={q.text}
-                onChange={(e) => updateQ(i, { text: e.target.value })}
-                placeholder="Question text (LaTeX supported, e.g. $x^2$)"
-                rows={2}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
-              />
+              {q.imported ? (
+                <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+                  <MathRenderer content={q.text} />
+                </div>
+              ) : (
+                <textarea
+                  value={q.text}
+                  onChange={(e) => updateQ(i, { text: e.target.value })}
+                  placeholder="Question text (LaTeX supported, e.g. $x^2$)"
+                  rows={2}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
+                />
+              )}
 
               {/* Question image (diagram / figure) */}
               <div className="flex items-start gap-3">
