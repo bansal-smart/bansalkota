@@ -398,7 +398,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           </div>
         ) : (
           <div className="p-3 space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{processed.length} questions{draggable ? " · drag to add" : ""}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {processed.length} questions
+              {draggable && !onAdd ? " · drag to add" : ""}
+              {onAdd ? " · click + Add or drag" : ""}
+            </p>
             <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
               {processed.map((q) => (
                 <QuestionCard
@@ -408,6 +412,8 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                   compact={compact}
                   onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
                   onDelete={manage ? handleDelete : undefined}
+                  onAdd={onAdd}
+                  alreadyAdded={addedBankIds?.has(q.id)}
                 />
               ))}
             </div>
