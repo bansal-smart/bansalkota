@@ -661,7 +661,7 @@ const TestTakingPage = () => {
               ) : isNumeric(q.question_type) ? (
                 <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
               ) : isMulti(q.question_type) ? (
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {q.options.map((opt) => {
                     const sel: number[] = Array.isArray((answers[q.id] as any)?.selected) ? (answers[q.id] as any).selected : [];
                     const selected = sel.includes(opt.id);
@@ -682,7 +682,7 @@ const TestTakingPage = () => {
                   })}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {q.options.map((opt) => {
                     const selected = (answers[q.id] as any)?.selected === opt.id;
                     const img = q.option_images?.[opt.id];
@@ -876,7 +876,7 @@ const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string
 
 
 const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: string }) => {
-  const allowDecimal = format !== "integer";
+  const allowDecimal = true;
   const allowNeg = true;
 
   const press = (k: string) => {
@@ -907,7 +907,7 @@ const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v
         ))}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        {allowDecimal ? "Enter a decimal number." : "Enter an integer only."} Use the keypad above.
+        Enter a number (decimals allowed). Use the keypad above.
       </p>
     </div>
   );
