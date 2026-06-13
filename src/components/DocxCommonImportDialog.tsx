@@ -405,7 +405,7 @@ const DocxCommonImportDialog = ({
     setStep("done");
     if (okCount > 0) {
       toast.success(`Imported ${okCount} question${okCount === 1 ? "" : "s"} (Common method)`);
-      onImported();
+      onImported(targetTestId);
     }
   };
 
