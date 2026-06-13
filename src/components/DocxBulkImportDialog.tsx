@@ -394,11 +394,11 @@ const DocxBulkImportDialog = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-foreground">
-                Bulk import from Word (.docx)
+                Master method — bulk import from Word (.docx)
               </h2>
               <p className="text-xs text-muted-foreground">
                 {step === "upload" &&
-                  "Single Arke format — supports MCQ single/multi, Integer/Numerical, and Match-the-Following"}
+                  "Arke format — parses numbered questions with (1)–(4) options, Answer line, MCQ/Integer/Numerical/Match"}
                 {step === "preview" && `Preview · ${fileName}`}
                 {step === "uploading" &&
                   `Uploading images… ${imgProgress.done}/${imgProgress.total}`}
