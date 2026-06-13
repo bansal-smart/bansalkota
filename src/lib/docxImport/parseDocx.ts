@@ -1,34 +1,113 @@
-// Word (.docx) bulk question import parser
-// Pragmatic parser for the format used by Bansal-style JEE/NEET question docs:
-//   - Questions are paragraphs with inline options "(A) ... (B) ... (C) ... (D) ..."
-//   - Answer-key tables appear separately listing { questionNumber → A|B|C|D or numeric }
-//   - Images are embedded inline; first images before (A) belong to the stem,
-//     images between option markers belong to that option.
+// Arke unified .docx question importer
+// =====================================
+// Supports a SINGLE Word format that accepts every question type the
+// platform uses, with LaTeX in stem + options, embedded images per slot,
+// and Match-the-Following 2-column tables.
+//
+// Two equivalent input styles, auto-detected:
+//
+// 1) STYLED (preferred — uses Word paragraph styles):
+//     Q-Topic   →  "Topic: Kinematics"
+//     Q-Number  →  "1."
+//     Q-Stem    →  question body (one or more paragraphs)
+//     Q-Option  →  one paragraph per option, prefixed with "(1)" or "(A)"
+//     Q-Answer  →  "Answer: (3)"  or  "Answer: (1),(2),(4)"  or  "Answer: 9"
+//                  or  "Answer: A-Q, B-S, C-P, D-R"
+//     Q-Solution→  explanation (one or more paragraphs)
+//
+// 2) PATTERN (works on plain Word docs that just follow the convention):
+//     "Topic: ..." line,
+//     "1." question header,
+//     stem text,
+//     "(1) ... (2) ... (3) ... (4) ..." options (each on its own line),
+//     "Answer: ..." line,
+//     italic / regular paragraph that follows = solution.
+//
+// A 2-column table that contains the header row Column A / Column B (case
+// insensitive) inside the stem area marks the question as
+// **match-following**. The left-column rows go to `matchLeft`, the right
+// column rows become the question's `options`. The answer line
+// `A-Q, B-S, C-P, D-R` becomes `correctMap`.
+//
+// Images embedded inline are attached to the slot they appear in:
+//   - before any option         → stem
+//   - inside (1)/(A) paragraph  → optionA, optionB, ...
+//   - inside a Q-Solution line  → solution
+//
+// LaTeX is kept verbatim (`$…$`, `$$…$$`); MathRenderer renders it.
+//
+// The returned ParsedDocxQuestion list is what `uploadImages.ts` and the
+// DocxBulkImportDialog consume.
+
 import mammoth from "mammoth";
 
+export type DocxImageSlot =
+  | "stem"
+  | "optionA"
+  | "optionB"
+  | "optionC"
+  | "optionD"
+  | "matchA"
+  | "matchB"
+  | "matchC"
+  | "matchD"
+  | "matchP"
+  | "matchQ"
+  | "matchR"
+  | "matchS"
+  | "solution";
+
 export type DocxImage = {
-  /** Stable id within this parse */
   id: string;
-  /** mime type, e.g. image/png */
   contentType: string;
-  /** Raw bytes */
   bytes: Uint8Array;
-  /** Slot it belongs to */
-  slot: "stem" | "optionA" | "optionB" | "optionC" | "optionD" | "solution";
-  /** Optional uploaded public URL after upload step */
+  slot: DocxImageSlot;
   publicUrl?: string;
 };
 
+export type ParsedQuestionType =
+  | "mcq-single"
+  | "mcq-multi"
+  | "integer"
+  | "numerical"
+  | "match-following";
+
+export type ParsedMatchItem = { key: string; text: string };
+
 export type ParsedDocxQuestion = {
-  number: number;                     // 1-based sequence in doc
-  type: "mcq-single" | "numerical" | "integer";
-  stemHtml: string;                   // HTML (img tags replaced with markers)
-  stemText: string;                   // plain text (for preview)
-  options: { id: number; text: string }[]; // empty for numerical
-  images: DocxImage[];                // all images for this question
+  number: number;
+  type: ParsedQuestionType;
+
+  // Stem
+  stemHtml: string;
+  stemText: string;
+
+  // MCQ / match Column B
+  options: { id: number; text: string }[];
+
+  // Match-the-Following Column A
+  matchLeft?: ParsedMatchItem[];
+  /** Mapping like {"A":"Q","B":"S",...} */
+  correctMap?: Record<string, string>;
+
+  // Solution / explanation
+  solutionHtml?: string;
+  solutionText?: string;
+
+  // Metadata
+  topic?: string;
+  subject?: string;
+
+  // Images for all slots
+  images: DocxImage[];
+
+  // Generic correct answer:
+  //   mcq-single        → number (0-based index)
+  //   mcq-multi         → number[] (0-based indices)
+  //   integer/numerical → { value: number }
+  //   match-following   → undefined (use correctMap)
   correctAnswer: number | number[] | { value: number } | null;
-  correctRaw: string | null;          // the cell value from the key
-  subject?: string;                   // optional derived from filename
+  correctRaw: string | null;
 };
 
 export type ParseResult = {
@@ -37,21 +116,19 @@ export type ParseResult = {
   totalImages: number;
 };
 
-// ---------- HTML utility helpers ----------
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const stripTags = (html: string) => {
   const tmp = document.createElement("div");
   tmp.innerHTML = html;
   return (tmp.textContent || "").replace(/\u00a0/g, " ").trim();
 };
 
-const decodeEntities = (s: string) => {
-  const tmp = document.createElement("textarea");
-  tmp.innerHTML = s;
-  return tmp.value;
-};
-
-// data:image/png;base64,XXXX -> {bytes, contentType}
-const dataUrlToBytes = (url: string): { bytes: Uint8Array; contentType: string } | null => {
+const dataUrlToBytes = (
+  url: string,
+): { bytes: Uint8Array; contentType: string } | null => {
   const m = /^data:([^;]+);base64,(.+)$/i.exec(url);
   if (!m) return null;
   const bin = atob(m[2]);
@@ -60,93 +137,12 @@ const dataUrlToBytes = (url: string): { bytes: Uint8Array; contentType: string }
   return { bytes, contentType: m[1] };
 };
 
-// ---------- Answer-key table detection ----------
-type AnswerMap = Map<number, string>;
-
-const collectAnswerKey = (doc: Document): AnswerMap => {
-  const map: AnswerMap = new Map();
-  const tables = Array.from(doc.querySelectorAll("table"));
-  for (const t of tables) {
-    const rows = Array.from(t.querySelectorAll("tr"));
-    for (const r of rows) {
-      const cells = Array.from(r.children)
-        .map((c) => (c.textContent || "").trim())
-        .filter((c) => c.length > 0);
-      if (cells.length < 2) continue;
-      // Look for pattern: [numStr, ..., answerStr]
-      // The answer is the last cell, the number is the first cell.
-      const first = cells[0];
-      const last = cells[cells.length - 1];
-      if (/^\d{1,3}$/.test(first)) {
-        const n = parseInt(first, 10);
-        // answer can be A/B/C/D (single letter), or numeric like 7, 2.5
-        if (/^[A-D]$/i.test(last) || /^-?\d+(\.\d+)?$/.test(last)) {
-          map.set(n, last.toUpperCase());
-        }
-      }
-    }
-    // Remove answer-key tables from the DOM so they don't pollute question parsing
-    if (map.size > 0) t.remove();
-  }
-  return map;
-};
-
-// ---------- Question splitter ----------
-// Inside a single block of HTML, split into stem + options A..D.
-// Option markers: "(A)", "(B)", "(C)", "(D)" — sometimes with surrounding whitespace.
-const OPT_REGEX = /\((A|B|C|D)\)/g;
-
-type Split = {
-  stemHtml: string;
-  optionHtml: Record<"A" | "B" | "C" | "D", string>;
-  hasOptions: boolean;
-};
-
-const splitBlock = (html: string): Split => {
-  const matches: { letter: "A" | "B" | "C" | "D"; index: number; len: number }[] = [];
-  OPT_REGEX.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = OPT_REGEX.exec(html))) {
-    matches.push({ letter: m[1] as any, index: m.index, len: m[0].length });
-  }
-  if (matches.length < 2) {
-    return { stemHtml: html, optionHtml: { A: "", B: "", C: "", D: "" }, hasOptions: false };
-  }
-  const stemHtml = html.slice(0, matches[0].index);
-  const optionHtml: Record<"A" | "B" | "C" | "D", string> = { A: "", B: "", C: "", D: "" };
-  for (let i = 0; i < matches.length; i++) {
-    const start = matches[i].index + matches[i].len;
-    const end = i + 1 < matches.length ? matches[i + 1].index : html.length;
-    optionHtml[matches[i].letter] = html.slice(start, end);
-  }
-  return { stemHtml, optionHtml, hasOptions: true };
-};
-
-// ---------- Question detection over the body ----------
-// Strategy: gather paragraph-level HTML blocks and accumulate them until we see
-// option markers (A)...(D), then emit a question. Paragraphs with no markers
-// are treated as numerical-type questions IF the next answer-key entry is numeric.
-const flattenBlocks = (root: Element): string[] => {
-  // Get top-level paragraphs and headings; ignore tables (already stripped).
-  const out: string[] = [];
-  for (const child of Array.from(root.children)) {
-    const tag = child.tagName.toLowerCase();
-    if (tag === "table") continue;
-    if (tag === "p" || tag.startsWith("h") || tag === "div" || tag === "ul" || tag === "ol") {
-      const html = child.innerHTML.trim();
-      if (html.length > 0) out.push(html);
-    }
-  }
-  return out;
-};
-
 const extractImages = (
   html: string,
-  slot: DocxImage["slot"],
+  slot: DocxImageSlot,
   collected: DocxImage[],
   idPrefix: string,
 ): string => {
-  // Replace each <img src="data:..."> with a stable marker; collect bytes.
   const tmp = document.createElement("div");
   tmp.innerHTML = html;
   const imgs = Array.from(tmp.querySelectorAll("img"));
@@ -157,7 +153,7 @@ const extractImages = (
       img.remove();
       return;
     }
-    const id = `${idPrefix}-${slot}-${i}`;
+    const id = `${idPrefix}-${slot}-${i}-${collected.length}`;
     collected.push({ id, slot, bytes: parsed.bytes, contentType: parsed.contentType });
     const marker = document.createElement("span");
     marker.setAttribute("data-img", id);
@@ -166,15 +162,339 @@ const extractImages = (
   return tmp.innerHTML;
 };
 
-// ---------- Main entry ----------
+// Strip a leading "(1)" / "(A)" / "1." / "A." marker, returning the inner HTML.
+const STRIP_OPTION_PREFIX =
+  /^\s*(?:<(?:strong|b|em|i|u|span)[^>]*>\s*)*\(?\s*([A-Da-d1-4])\s*\)?[.)]?\s*(?:<\/(?:strong|b|em|i|u|span)>\s*)*/;
+
+const stripOptionPrefix = (html: string): { key: string; html: string } | null => {
+  const txt = stripTags(html);
+  const m = txt.match(/^\s*\(?\s*([A-Da-d1-4])\s*\)?[.)]?\s+/);
+  if (!m) return null;
+  const key = m[1].toUpperCase();
+  // Try to chop the HTML by matching the prefix in the underlying text.
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT);
+  let toRemove = m[0].length;
+  while (toRemove > 0) {
+    const node = walker.nextNode() as Text | null;
+    if (!node) break;
+    const len = node.data.length;
+    if (len <= toRemove) {
+      toRemove -= len;
+      node.data = "";
+    } else {
+      node.data = node.data.slice(toRemove);
+      toRemove = 0;
+    }
+  }
+  return { key, html: tmp.innerHTML };
+};
+
+// Extract `Topic: ...` from text. Returns the topic, or null.
+const extractTopic = (text: string): string | null => {
+  const m = text.match(/^\s*topic\s*[:\-–]\s*(.+?)\s*$/i);
+  return m ? m[1].trim() : null;
+};
+
+// Extract `Answer: ...` payload. Returns raw string after the colon, or null.
+const extractAnswerLine = (text: string): string | null => {
+  const m = text.match(/^\s*(?:answer|ans\.?|correct)\s*[:\-–]\s*(.+?)\s*$/i);
+  return m ? m[1].trim() : null;
+};
+
+// Determine question type + parsed answer from a raw answer string.
+const parseAnswer = (raw: string): {
+  type: ParsedQuestionType;
+  correctAnswer: number | number[] | { value: number } | null;
+  correctMap?: Record<string, string>;
+} => {
+  const cleaned = raw.replace(/[()\s]/g, "");
+  // Match-the-following: A-Q,B-S,C-P,D-R  (also A→Q, A:Q allowed)
+  const mfPairs = raw.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
+  if (mfPairs && mfPairs.length >= 2) {
+    const map: Record<string, string> = {};
+    for (const pair of mfPairs) {
+      const m = pair.match(/([A-Da-d])\s*[-→:>]\s*([P-Sp-s1-4])/);
+      if (m) map[m[1].toUpperCase()] = m[2].toUpperCase();
+    }
+    return { type: "match-following", correctAnswer: null, correctMap: map };
+  }
+  // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"
+  if (/[,;|]/.test(cleaned) || /^[A-D]{2,4}$/i.test(cleaned)) {
+    const tokens = cleaned.split(/[,;|]/).filter(Boolean);
+    const idxs: number[] = [];
+    if (tokens.length >= 2) {
+      for (const t of tokens) {
+        if (/^[1-4]$/.test(t)) idxs.push(parseInt(t, 10) - 1);
+        else if (/^[A-Da-d]$/.test(t)) idxs.push(t.toUpperCase().charCodeAt(0) - 65);
+      }
+    } else if (/^[A-D]{2,4}$/i.test(cleaned)) {
+      for (const ch of cleaned) idxs.push(ch.toUpperCase().charCodeAt(0) - 65);
+    }
+    if (idxs.length >= 2) {
+      return { type: "mcq-multi", correctAnswer: idxs.sort((a, b) => a - b) };
+    }
+  }
+  // MCQ single
+  const single = cleaned.match(/^([1-4]|[A-Da-d])$/);
+  if (single) {
+    const ch = single[1];
+    const idx = /^[1-4]$/.test(ch) ? parseInt(ch, 10) - 1 : ch.toUpperCase().charCodeAt(0) - 65;
+    return { type: "mcq-single", correctAnswer: idx };
+  }
+  // Integer / numerical
+  const num = cleaned.match(/^-?\d+(?:\.\d+)?$/);
+  if (num) {
+    const v = Number(num[0]);
+    return { type: Number.isInteger(v) ? "integer" : "numerical", correctAnswer: { value: v } };
+  }
+  return { type: "mcq-single", correctAnswer: null };
+};
+
+type Block =
+  | { kind: "p"; html: string; text: string; style: string }
+  | { kind: "table"; el: HTMLTableElement };
+
+const flattenBlocks = (root: Element): Block[] => {
+  const out: Block[] = [];
+  for (const child of Array.from(root.children)) {
+    const tag = child.tagName.toLowerCase();
+    if (tag === "table") {
+      out.push({ kind: "table", el: child as HTMLTableElement });
+      continue;
+    }
+    if (tag === "p" || tag.startsWith("h") || tag === "div" || tag === "ul" || tag === "ol") {
+      const html = child.innerHTML.trim();
+      const text = (child.textContent || "").replace(/\u00a0/g, " ").trim();
+      if (html.length === 0 && !html.includes("<img")) continue;
+      // mammoth styleMap below writes "p.q-stem" etc; pick first matching className
+      const cls = (child.getAttribute("class") || "")
+        .split(/\s+/)
+        .find((c) => c.startsWith("q-")) || "";
+      out.push({ kind: "p", html, text, style: cls });
+    }
+  }
+  return out;
+};
+
+// Detect a Match-the-following table and convert it to {left, right} arrays.
+const parseMatchTable = (
+  table: HTMLTableElement,
+  collected: DocxImage[],
+  idPrefix: string,
+): { left: ParsedMatchItem[]; right: ParsedMatchItem[] } | null => {
+  const rows = Array.from(table.querySelectorAll("tr"));
+  if (rows.length < 2) return null;
+  const header = rows[0];
+  const headerCells = Array.from(header.children).map((c) =>
+    (c.textContent || "").trim().toLowerCase(),
+  );
+  if (
+    headerCells.length < 2 ||
+    !headerCells[0].includes("column a") ||
+    !headerCells[1].includes("column b")
+  ) {
+    return null;
+  }
+  const left: ParsedMatchItem[] = [];
+  const right: ParsedMatchItem[] = [];
+  for (let r = 1; r < rows.length; r++) {
+    const cells = Array.from(rows[r].children);
+    if (cells.length < 2) continue;
+    const lHtmlRaw = (cells[0] as HTMLElement).innerHTML.trim();
+    const rHtmlRaw = (cells[1] as HTMLElement).innerHTML.trim();
+    if (!lHtmlRaw && !rHtmlRaw) continue;
+
+    const lParsed = stripOptionPrefix(lHtmlRaw);
+    const rParsed = stripOptionPrefix(rHtmlRaw);
+    const lKey = lParsed?.key ?? String.fromCharCode(65 + left.length); // A,B,C…
+    const rKey = rParsed?.key ?? String.fromCharCode(80 + right.length); // P,Q,R…
+    const lHtml = extractImages(
+      lParsed?.html ?? lHtmlRaw,
+      ("match" + lKey) as DocxImageSlot,
+      collected,
+      idPrefix,
+    );
+    const rHtml = extractImages(
+      rParsed?.html ?? rHtmlRaw,
+      ("match" + rKey) as DocxImageSlot,
+      collected,
+      idPrefix,
+    );
+    left.push({ key: lKey, text: lHtml });
+    right.push({ key: rKey, text: rHtml });
+  }
+  return left.length > 0 ? { left, right } : null;
+};
+
+// ---------------------------------------------------------------------------
+// Question builder: walks blocks and emits one ParsedDocxQuestion at a time.
+// ---------------------------------------------------------------------------
+
+type Buffer = {
+  number: number | null;
+  stem: string[];
+  options: { key: string; html: string }[];
+  answer: string | null;
+  solution: string[];
+  topic: string | null;
+  matchTable: HTMLTableElement | null;
+  // raw blocks captured so we can extract images per slot later
+  optionBlocks: { key: string; html: string }[];
+};
+
+const newBuffer = (): Buffer => ({
+  number: null,
+  stem: [],
+  options: [],
+  answer: null,
+  solution: [],
+  topic: null,
+  matchTable: null,
+  optionBlocks: [],
+});
+
+const KEY_TO_SLOT: Record<string, DocxImageSlot> = {
+  A: "optionA",
+  B: "optionB",
+  C: "optionC",
+  D: "optionD",
+  "1": "optionA",
+  "2": "optionB",
+  "3": "optionC",
+  "4": "optionD",
+};
+
+const flushBuffer = (
+  buf: Buffer,
+  out: ParsedDocxQuestion[],
+  warnings: string[],
+  ordinal: number,
+) => {
+  if (
+    buf.number == null &&
+    buf.stem.length === 0 &&
+    buf.options.length === 0 &&
+    buf.answer == null
+  ) {
+    return;
+  }
+
+  const number = buf.number ?? ordinal;
+  const idPrefix = `q${number}`;
+  const collected: DocxImage[] = [];
+
+  // 1) Stem
+  const rawStemHtml = buf.stem.join("<br/>");
+  const stemHtml = extractImages(rawStemHtml, "stem", collected, idPrefix);
+  const stemText = stripTags(stemHtml).replace(/\s+/g, " ").trim();
+
+  // 2) Match table (if any) → matchLeft + options
+  let matchLeft: ParsedMatchItem[] | undefined;
+  let matchOptions: { id: number; text: string }[] | undefined;
+  let isMatch = false;
+  if (buf.matchTable) {
+    const parsed = parseMatchTable(buf.matchTable, collected, idPrefix);
+    if (parsed) {
+      matchLeft = parsed.left;
+      matchOptions = parsed.right.map((r, i) => ({ id: i, text: r.text }));
+      isMatch = true;
+    }
+  }
+
+  // 3) MCQ options (only if not a match question)
+  let options: { id: number; text: string }[] = matchOptions ?? [];
+  if (!isMatch && buf.options.length > 0) {
+    options = buf.options.slice(0, 4).map((o, i) => {
+      const slot = KEY_TO_SLOT[o.key] ?? "stem";
+      const html = extractImages(o.html, slot, collected, idPrefix);
+      return { id: i, text: stripTags(html) ? html : html /* keep html for image-only opts */ };
+    });
+  }
+
+  // 4) Solution
+  const rawSolHtml = buf.solution.join("<br/>");
+  const solutionHtml = extractImages(rawSolHtml, "solution", collected, idPrefix);
+  const solutionText = stripTags(solutionHtml);
+
+  // 5) Answer → type
+  let type: ParsedQuestionType = "mcq-single";
+  let correctAnswer: ParsedDocxQuestion["correctAnswer"] = null;
+  let correctMap: Record<string, string> | undefined;
+  if (buf.answer) {
+    const parsed = parseAnswer(buf.answer);
+    type = parsed.type;
+    correctAnswer = parsed.correctAnswer;
+    correctMap = parsed.correctMap;
+  } else if (isMatch) {
+    type = "match-following";
+  }
+  if (isMatch) type = "match-following";
+
+  // Sanity: integer/numerical question dropped its bogus options
+  if ((type === "integer" || type === "numerical") && options.length > 0) {
+    options = [];
+  }
+
+  // For MCQ types we need real options
+  if ((type === "mcq-single" || type === "mcq-multi") && options.length < 2) {
+    warnings.push(`Q${number}: fewer than 2 options detected.`);
+  }
+  if (
+    (type === "mcq-single" || type === "mcq-multi") &&
+    correctAnswer == null &&
+    !correctMap
+  ) {
+    warnings.push(`Q${number}: no answer detected.`);
+  }
+  if (type === "match-following" && (!correctMap || Object.keys(correctMap).length === 0)) {
+    warnings.push(`Q${number}: match question missing answer mapping (e.g. "Answer: A-Q, B-S").`);
+  }
+
+  // Build the option text without the prefix marker for MCQ
+  const cleanOptionText = options.map((o) => {
+    // Strip wrapping <p> wrapper since DB stores inline text
+    return o.text.replace(/^\s*<p[^>]*>/i, "").replace(/<\/p>\s*$/i, "").trim();
+  });
+
+  out.push({
+    number,
+    type,
+    stemHtml,
+    stemText,
+    options: cleanOptionText.map((t, id) => ({ id, text: t })),
+    matchLeft,
+    correctMap,
+    solutionHtml: solutionHtml || undefined,
+    solutionText: solutionText || undefined,
+    topic: buf.topic ?? undefined,
+    images: collected,
+    correctAnswer,
+    correctRaw: buf.answer,
+  });
+};
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
 export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const warnings: string[] = [];
   const buffer = await file.arrayBuffer();
 
-  // Convert with mammoth → HTML, images embedded as data URIs
   const result = await mammoth.convertToHtml(
     { arrayBuffer: buffer },
     {
+      // Preserve our custom paragraph styles so the parser can rely on them.
+      styleMap: [
+        "p[style-name='Q-Number'] => p.q-number",
+        "p[style-name='Q-Stem']   => p.q-stem",
+        "p[style-name='Q-Option'] => p.q-option",
+        "p[style-name='Q-Answer'] => p.q-answer",
+        "p[style-name='Q-Solution'] => p.q-solution",
+        "p[style-name='Q-Topic']  => p.q-topic",
+      ],
       convertImage: mammoth.images.imgElement((image) =>
         image.read("base64").then((data) => ({
           src: `data:${image.contentType};base64,${data}`,
@@ -193,131 +513,186 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const doc = parser.parseFromString(`<div id="root">${result.value}</div>`, "text/html");
   const root = doc.getElementById("root")!;
 
-  // 1. Extract answer key (also removes those tables)
-  const answers = collectAnswerKey(doc);
-
-  // 2. Walk paragraphs in order, group into question blocks
   const blocks = flattenBlocks(root);
-  const questions: ParsedDocxQuestion[] = [];
-  let accumulator: string[] = [];
+  const out: ParsedDocxQuestion[] = [];
+  let buf = newBuffer();
+  let ordinal = 0;
 
-  const emitFromAccumulator = (n: number) => {
-    if (accumulator.length === 0) return;
-    const html = accumulator.join("<br/>");
-    accumulator = [];
+  // Helper: detect if a text starts a new question ("1." / "12.")
+  const startsNewQuestion = (text: string) =>
+    /^\s*\d{1,3}\s*[.)]\s*/.test(text) && text.length < 12;
 
-    const split = splitBlock(html);
-    const collected: DocxImage[] = [];
-    const idPrefix = `q${n}`;
+  const startsNewQuestionAtAny = (text: string) =>
+    /^\s*\d{1,3}\s*[.)]\s*/.test(text);
 
-    const stemHtml = extractImages(split.stemHtml, "stem", collected, idPrefix);
-    const stemText = stripTags(stemHtml).replace(/\s+/g, " ").trim();
+  // Section headers like "SECTION I (Single Correct Choice)" → skip
+  const isSectionHeader = (text: string) =>
+    /^\s*section\s+[ivx0-9]+\b/i.test(text);
 
-    let options: { id: number; text: string }[] = [];
-    if (split.hasOptions) {
-      const slotMap: Record<"A" | "B" | "C" | "D", DocxImage["slot"]> = {
-        A: "optionA",
-        B: "optionB",
-        C: "optionC",
-        D: "optionD",
-      };
-      (["A", "B", "C", "D"] as const).forEach((letter, idx) => {
-        const cleaned = extractImages(split.optionHtml[letter], slotMap[letter], collected, idPrefix);
-        const text = stripTags(cleaned);
-        if (text.length > 0 || cleaned.includes("data-img")) {
-          options.push({ id: idx, text });
-        }
-      });
-    }
+  // "Topic:" marker
+  const tryTopic = (text: string) => extractTopic(text);
 
-    // Determine type + correct answer from answer-key
-    const keyRaw = answers.get(n) ?? null;
-    let type: ParsedDocxQuestion["type"] = "mcq-single";
-    let correct: ParsedDocxQuestion["correctAnswer"] = null;
+  // "Answer:" marker
+  const tryAnswer = (text: string) => extractAnswerLine(text);
 
-    if (keyRaw && /^[A-D]$/.test(keyRaw)) {
-      type = "mcq-single";
-      correct = "ABCD".indexOf(keyRaw); // 0..3
-    } else if (keyRaw && /^-?\d+(\.\d+)?$/.test(keyRaw)) {
-      const num = Number(keyRaw);
-      type = Number.isInteger(num) ? "integer" : "numerical";
-      correct = { value: num };
-      if (options.length === 0) {
-        // no options — pure numerical
-      } else {
-        // had options but answer is numeric → trust numeric, drop options
-        options = [];
+  const isOptionLine = (text: string) =>
+    /^\s*\(?\s*[A-D1-4]\s*\)\s+/.test(text) || /^\s*\(?\s*[A-D1-4]\s*\)\s*[.)]?\s*$/.test(text);
+
+  const looksLikeNumberOnly = (text: string) =>
+    /^\s*\d{1,3}\s*[.)]\s*$/.test(text);
+
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+
+    if (b.kind === "table") {
+      // First Column A / Column B table inside a question is the match table.
+      const headerCells = Array.from(b.el.querySelectorAll("tr")[0]?.children ?? []).map(
+        (c) => (c.textContent || "").trim().toLowerCase(),
+      );
+      if (
+        headerCells.length >= 2 &&
+        headerCells[0].includes("column a") &&
+        headerCells[1].includes("column b")
+      ) {
+        // Flush stem/options that came before if this finalises a new question
+        buf.matchTable = b.el;
       }
-    } else {
-      warnings.push(`Q${n}: no answer key found, defaulting to MCQ with no correct answer`);
+      continue;
     }
 
-    questions.push({
-      number: n,
-      type,
-      stemHtml,
-      stemText,
-      options,
-      images: collected,
-      correctAnswer: correct,
-      correctRaw: keyRaw,
-    });
-  };
+    const { html, text, style } = b;
 
-  let questionNo = 0;
-  for (const block of blocks) {
-    // Skip pure whitespace / page headers
-    const text = stripTags(block);
-    if (text.length === 0 && !block.includes("<img")) continue;
+    // Section header → skip
+    if (isSectionHeader(text)) continue;
 
-    accumulator.push(block);
-    // Decide whether the accumulator forms a complete question:
-    // - It contains "(D)" → MCQ block complete
-    // - Or the next paragraph starts what looks like a new question (numeric stem)
-    // - Or it's a standalone numerical (no options) and the next block doesn't extend it
-    const joined = accumulator.join(" ");
-    const hasD = /\(D\)/.test(joined);
-    if (hasD) {
-      questionNo += 1;
-      emitFromAccumulator(questionNo);
+    // Topic
+    if (style === "q-topic" || tryTopic(text)) {
+      const t = tryTopic(text) ?? text.replace(/^q-?topic\s*[:\-–]?\s*/i, "");
+      buf.topic = t.trim() || buf.topic;
+      continue;
     }
-  }
-  // Flush remainder as one (or several) numerical questions split by length heuristic:
-  // For simplicity, treat any remaining accumulator as ONE more numerical question if non-empty.
-  if (accumulator.length > 0) {
-    questionNo += 1;
-    emitFromAccumulator(questionNo);
-  }
 
-  // Pair up any remaining unmatched numerical answer-key entries: emit empty stubs
-  // (lets the admin fix in preview rather than silently drop answers).
-  const maxKey = answers.size > 0 ? Math.max(...Array.from(answers.keys())) : 0;
-  while (questionNo < maxKey) {
-    questionNo += 1;
-    const keyRaw = answers.get(questionNo) ?? null;
-    if (keyRaw == null) continue;
-    let type: ParsedDocxQuestion["type"] = "mcq-single";
-    let correct: ParsedDocxQuestion["correctAnswer"] = null;
-    if (/^[A-D]$/.test(keyRaw)) {
-      correct = "ABCD".indexOf(keyRaw);
-    } else if (/^-?\d+(\.\d+)?$/.test(keyRaw)) {
-      const num = Number(keyRaw);
-      type = Number.isInteger(num) ? "integer" : "numerical";
-      correct = { value: num };
+    // Answer
+    if (style === "q-answer" || tryAnswer(text)) {
+      const ans = tryAnswer(text) ?? text.replace(/^q-?answer\s*[:\-–]?\s*/i, "");
+      buf.answer = ans.trim();
+      continue;
     }
-    questions.push({
-      number: questionNo,
-      type,
-      stemHtml: "",
-      stemText: "(question text missing — please fill in)",
-      options: type === "mcq-single" ? [{ id: 0, text: "" }, { id: 1, text: "" }, { id: 2, text: "" }, { id: 3, text: "" }] : [],
-      images: [],
-      correctAnswer: correct,
-      correctRaw: keyRaw,
-    });
-    warnings.push(`Q${questionNo}: only the answer key was found, question text missing.`);
+
+    // Solution paragraphs
+    if (style === "q-solution") {
+      buf.solution.push(html);
+      continue;
+    }
+    // If we've already seen an answer, treat following paragraphs as solution
+    if (buf.answer && !looksLikeNumberOnly(text) && !isOptionLine(text)) {
+      if (startsNewQuestion(text)) {
+        ordinal += 1;
+        flushBuffer(buf, out, warnings, ordinal);
+        buf = newBuffer();
+        const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
+        if (m) {
+          buf.number = parseInt(m[1], 10);
+          const rest = m[2].trim();
+          if (rest) buf.stem.push(rest);
+        }
+        continue;
+      }
+      buf.solution.push(html);
+      continue;
+    }
+
+    // Question number marker (styled or pattern)
+    if (style === "q-number" || looksLikeNumberOnly(text)) {
+      // Flush prior question
+      if (
+        buf.number != null ||
+        buf.stem.length > 0 ||
+        buf.options.length > 0 ||
+        buf.answer != null
+      ) {
+        ordinal += 1;
+        flushBuffer(buf, out, warnings, ordinal);
+        buf = newBuffer();
+      }
+      const m = text.match(/^\s*(\d{1,3})/);
+      if (m) buf.number = parseInt(m[1], 10);
+      continue;
+    }
+
+    // Number + question on same line
+    if (startsNewQuestionAtAny(text) && !isOptionLine(text)) {
+      // Flush prior
+      if (
+        buf.number != null ||
+        buf.stem.length > 0 ||
+        buf.options.length > 0 ||
+        buf.answer != null
+      ) {
+        ordinal += 1;
+        flushBuffer(buf, out, warnings, ordinal);
+        buf = newBuffer();
+      }
+      const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
+      if (m) {
+        buf.number = parseInt(m[1], 10);
+        const rest = m[2].trim();
+        if (rest) {
+          // keep HTML structure: strip the "n." prefix from the html node
+          const tmp = document.createElement("div");
+          tmp.innerHTML = html;
+          // walk text nodes to remove the prefix
+          const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT);
+          let toRemove = (text.length - rest.length);
+          while (toRemove > 0) {
+            const node = walker.nextNode() as Text | null;
+            if (!node) break;
+            const len = node.data.length;
+            if (len <= toRemove) {
+              toRemove -= len;
+              node.data = "";
+            } else {
+              node.data = node.data.slice(toRemove);
+              toRemove = 0;
+            }
+          }
+          buf.stem.push(tmp.innerHTML);
+        }
+      }
+      continue;
+    }
+
+    // Option line
+    if (style === "q-option" || isOptionLine(text)) {
+      const stripped = stripOptionPrefix(html);
+      if (stripped) {
+        buf.options.push({ key: stripped.key, html: stripped.html });
+      } else {
+        buf.options.push({ key: String.fromCharCode(65 + buf.options.length), html });
+      }
+      continue;
+    }
+
+    // Default: stem content
+    if (style === "q-stem" || buf.number != null || buf.options.length === 0) {
+      buf.stem.push(html);
+      continue;
+    }
+
+    // Anything else: ignore
   }
 
-  const totalImages = questions.reduce((s, q) => s + q.images.length, 0);
-  return { questions, warnings, totalImages };
+  // Flush final question
+  if (
+    buf.number != null ||
+    buf.stem.length > 0 ||
+    buf.options.length > 0 ||
+    buf.answer != null
+  ) {
+    ordinal += 1;
+    flushBuffer(buf, out, warnings, ordinal);
+  }
+
+  const totalImages = out.reduce((s, q) => s + q.images.length, 0);
+  return { questions: out, warnings, totalImages };
 };
