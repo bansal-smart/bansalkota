@@ -1,81 +1,97 @@
-## Goal
 
-Introduce a second test-authoring flow called **Common method** while keeping all current behaviour as **Master method**. Common-method tests are built from a "cropped" Word file where every question is one printed block (stem + four options together) plus a single answer-key letter/number.
+## 1. Data wipe (clean slate)
 
-## 1. Rename existing flow → "Master method"
+Run a one-time cleanup migration:
+- Delete all rows from `question_bank`, `test_questions`, `tests`, `test_attempts`, `test_reattempt_requests`, `question_import_batches`.
+- Delete all existing **student** auth users (only users whose `user_roles.role = 'student'` and who are NOT also admin/super_admin/teacher/center_admin), plus their `profiles`, `enrollments`, `lesson_progress`, `study_sessions`, `doubts`, `notifications`.
+- Admin / teacher / center_admin accounts are preserved.
 
-- Wherever the UI currently says "Bulk import" / "Docx import" / "Standard" for test creation, label it **Master method**. No behaviour change.
-- Touch points: Test Platform Hub tabs, Create Test page method picker, DocxBulkImportDialog title, AdminImportBatchesPage labels.
+## 2. New "Batches" feature
 
-## 2. New "Common method" entry point
+A course (Bulls Eye JEE, Sterling JEE, Nucleus JEE…) holds multiple batches (J1/J2, V1/V2, A1/A2…).
 
-- On `CreateTestPage` and the Test Platform Hub "Imports" tab, add a second card: **Common method (cropped .docx)**.
-- Opens a new dialog `DocxCommonImportDialog` (separate from the Master one — different parser, different preview).
-- Test row gets `import_method: 'common' | 'master'` (default `master`) so we can show a badge on existing tests.
+New table `course_batches`:
+- `course_id` (FK → courses)
+- `code` (e.g. `XI-J1`) and `name`
+- `class_level` (`XI` / `XII` / `XIII`)
+- `center_id` (FK → centers, optional)
+- `is_active`
 
-## 3. Common-method .docx parser
+`profiles` gets `batch_id uuid` (FK → course_batches).
 
-New file `src/lib/docxImport/parseCommonDocx.ts`.
+Admin UI:
+- In Admin → Courses → course detail: new **Batches** tab to create/edit/list batches.
+- In Admin → Students: show batch column, allow re-assigning batch.
 
-Format detected from the uploaded sample:
-- Document is a sequence of 3-column tables (or one big table). Each "question block" =
-  - Row 1: `[number] [stem + (A) (B) (C) (D) lines printed together] [answer]`
-  - Rows 2–5: empty `(A) (B) (C) (D)` placeholder rows (skip).
+## 3. Bulk import 84 Kota students from the uploaded Excel
 
-Parser steps:
-1. Use mammoth to convert to HTML preserving images.
-2. Walk top-level tables; for each row whose first cell is a pure integer and third cell is a non-empty A/B/C/D/integer token, treat it as a question.
-3. **Stem rendering** — render the middle cell's HTML (text + inline images + LaTeX) into a single PNG via `html-to-image` (already in deps; otherwise add) at ~1200px width. That PNG becomes the stem image. The cell's plain text is kept as `stemText` for search/accessibility.
-4. **Options** — fixed labels `A / B / C / D` with empty `text` (renderer will show just the letter chip). Integer questions get no options.
-5. **Type detection** from the answer cell, per user's choice:
-   - `^[A-D]$` → `mcq-single`
-   - 2–4 distinct letters (`AB`, `A,C`, `A C D`) → `mcq-multi`
-   - Pure number → `integer` (value stored in `numerical_answer`)
-   - Override is editable in the preview (next step).
-6. **Marks** auto-applied: single `+4/-1`, multi `+4/-2` with `partial_marking=true`, integer `+4/0`.
+Parse `st_data_1.xlsx` (2 sheets, 84 rows):
+- Bulls Eye JEE → 5 batches: `XI-J1` (13), `XI-J2` (4), `XI-P*` (5), `XI-P1` (8), `XI-P2` (22)
+- Sterling JEE → 2 batches: `XIII-V1` (23), `XIII-V2` (9)
 
-## 4. Common-method preview dialog
+Migration / one-off edge function will:
+1. Find or create Kota center (link `centers` row).
+2. Create courses **Bulls Eye JEE** and **Sterling JEE** if missing (offline / center-tagged).
+3. Create the 7 batches above under the right course.
+4. For each student row create an auth user:
+   - **email** = `<RegNo>@cbt.bansal.local` (synthetic; only used internally for auth)
+   - **password** = `CONTACTNO` (mobile number, string)
+   - profile: `full_name`, `phone = CONTACTNO`, `dob`, `center_id = Kota`, `batch_id`, `target_exam = 'JEE'`, `class_level` (`XI` or `XIII`), `is_bansal_offline_student = true`
+   - extra column `roll_number` on `profiles` = RegNo (indexed, unique).
+   - Role: `student`.
+   - Auto-enroll in the matching course.
 
-New `DocxCommonImportDialog.tsx`:
-- Drop zone → runs parser → shows table:
-  | # | Stem preview (image thumbnail) | Detected type (dropdown) | Answer | Marks |
-- Dropdown lets admin flip type per question; changing to integer reveals a numeric input pre-filled from any digits found.
-- Bulk actions: "Set all to single-correct", "Re-detect types".
-- "Import N questions" → uploads stem images to `question-images` bucket via existing `uploadImages.ts` (extended with a `stem-image` slot), inserts rows into `test_questions` with `question_type`, `numerical_answer`, marks, `correct_answer`, and the public image URL stored in a new `stem_image_url` column (nullable; backwards-compatible).
+## 4. CBT mode (secret-link exam)
 
-## 5. Student-side rendering
+Same test-taking UI, but no LMS login required.
 
-- `test_questions` already supports rich HTML. Update `TestTakingPage` question renderer: if `stem_image_url` is set and `question_text` is empty/short, render the image (`<img>` with `max-w-full`) as the stem. Options render as plain letter chips when option text is empty.
-- No other student-side changes.
+**Per test settings (new columns on `tests`):**
+- `cbt_enabled boolean default false`
+- `cbt_token text unique` (random 32-char slug, generated when enabled)
+- `cbt_allowed_batch_ids uuid[]` — which batches can sit this CBT (optional; empty = all imported students)
 
-## 6. Database
+**Public route:** `/cbt/:token`
 
-Single migration adds two nullable columns and keeps everything backwards-compatible:
+Flow:
+1. Student opens the secret link (admin shares it).
+2. Page shows: test title, instructions, **Roll Number** + **Mobile Number** inputs.
+3. Submit calls a new edge function `cbt-login`:
+   - Looks up `profiles` by `roll_number`, verifies `phone == mobile entered`, verifies batch is allowed for this CBT.
+   - Signs the student in by calling `signInWithPassword` on the server using their synthetic email + mobile-as-password and returns the session to the browser.
+4. Browser sets the Supabase session → redirected to a CBT-specific test-taking page that reuses the existing `TestTakingPage` UI (same palette, same timer, same submit flow), but:
+   - Header shows "CBT Mode · {test title} · Roll {regno}"
+   - On submit/auto-submit → CBT-specific result screen ("Submitted. Results released by your centre.") and the session is signed out (so the secret link can't become an LMS backdoor).
+5. One active attempt per (student × CBT test); re-entry resumes the same attempt until time runs out.
 
-- `tests.import_method text default 'master'`
-- `test_questions.stem_image_url text`
+**Admin UI changes (Test detail page → new "CBT" tab):**
+- Toggle "Enable CBT mode" → generates/copies the secret URL.
+- Multi-select batches allowed.
+- Button **Copy CBT link** and **Regenerate token**.
+- Live list of CBT attempts (roll no, batch, status, score once released).
 
-(No new tables, no policy changes.)
+## 5. Cleanup of stale paths
+- Remove the "Mentor"/"Compete" references already deprecated where they touch test pages (only if they collide with CBT routes).
+- Keep existing LMS test flow unchanged for students who DO log in.
 
-## 7. Files
+---
 
-**Created**
-- `src/lib/docxImport/parseCommonDocx.ts`
-- `src/components/DocxCommonImportDialog.tsx`
-- `supabase/migrations/<ts>_common_method.sql`
+## Technical notes (for the implementing pass)
 
-**Edited**
-- `src/pages/CreateTestPage.tsx` — method picker (Master | Common)
-- `src/pages/AdminTestPlatformHub.tsx` — Imports tab gets two buttons
-- `src/components/DocxBulkImportDialog.tsx` — relabel to "Master method"
-- `src/pages/AdminImportBatchesPage.tsx` — show method column
-- `src/pages/AdminTestsPage.tsx` — badge per row (Master/Common)
-- `src/lib/docxImport/uploadImages.ts` — add `stem-image` slot helper
-- `src/pages/TestTakingPage.tsx` — render `stem_image_url` when present
+- New tables/columns done in one migration with GRANTs + RLS:
+  - `course_batches` (admins manage; students can read their own batch).
+  - `profiles.batch_id`, `profiles.roll_number` (unique, nullable).
+  - `tests.cbt_enabled`, `tests.cbt_token`, `tests.cbt_allowed_batch_ids`.
+- Edge functions:
+  - `bulk-import-cbt-students` — runs the Excel-derived payload (admins only, service role).
+  - `cbt-login` — service-role lookup by roll_number+phone, returns session via `auth.admin.generateLink` + `signInWithPassword` server-side; response includes `access_token` / `refresh_token` so the client can `supabase.auth.setSession(...)`.
+- Public route `/cbt/:token` added in `App.tsx`, outside any `ProtectedRoute`.
+- CBT result page does `supabase.auth.signOut()` on unmount to prevent lingering sessions on shared lab machines.
+- Single-device login (`useSingleDeviceLogin`) will be disabled inside the CBT route so multiple students can use the same browser sequentially.
 
-## Technical notes
+## Defaults I'm assuming (tell me if any are wrong)
 
-- Rendering cell HTML → PNG uses `html-to-image` (`toPng`) on a hidden offscreen `<div>`; LaTeX is rendered via existing `MathRenderer` before snapshot so equations are crisp.
-- Images live in the existing private `question-images` bucket; signed URLs already handled by `uploadImages.ts`.
-- No change to `submit_test_attempt` RPC — marking already supports all three types.
-- All existing tests automatically become `import_method='master'` via the column default.
+1. Synthetic emails use the `@cbt.bansal.local` suffix; students never see/use them.
+2. Mobile number is stored as-is (10-digit string) and is used as their password.
+3. Only the 7 batches present in the Excel are created now (Nucleus A1/A2 will be added when you give the data).
+4. All 84 students are tagged to a single **Kota** center; if one doesn't exist, I'll create it.
+5. CBT secret link is per-test (one link covers all allowed batches). Switch to per-batch links later if you prefer.

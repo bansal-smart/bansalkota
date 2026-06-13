@@ -10,6 +10,7 @@ import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import MathRenderer from "@/components/MathRenderer";
+import CbtSettingsPanel from "@/components/admin/CbtSettingsPanel";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
 
@@ -273,6 +274,9 @@ const AdminTestDetailPage = () => {
               <p className="text-sm text-foreground whitespace-pre-wrap">{test.description}</p>
             </div>
           )}
+          <div className="md:col-span-2 lg:col-span-4">
+            <CbtSettingsPanel testId={test.id} />
+          </div>
         </div>
       )}
 

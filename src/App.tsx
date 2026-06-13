@@ -84,6 +84,8 @@ import AdminSchoolsPage from "./pages/AdminSchoolsPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
+import CbtLoginPage from "./pages/CbtLoginPage";
+import AdminBatchesPage from "./pages/AdminBatchesPage";
 import BoostPage from "./pages/BoostPage";
 import CentersPage from "./pages/CentersPage";
 import CenterDetailPage from "./pages/CenterDetailPage";
@@ -149,6 +151,8 @@ const App = () => (
             <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
             <Route path="/unsubscribe" element={<UnsubscribePage />} />
+            <Route path="/cbt/:token" element={<CbtLoginPage />} />
+
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
             <Route element={<ProtectedRoute allow={["student"]} />}>
@@ -273,6 +277,7 @@ const App = () => (
               <Route path="/admin/student-reports" element={<AdminStudentReportsPage />} />
               <Route path="/admin/schools" element={<AdminSchoolsPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
+              <Route path="/admin/batches" element={<AdminBatchesPage />} />
               <Route path="/admin/courses/new" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/content" element={<AdminCourseContentPage />} />

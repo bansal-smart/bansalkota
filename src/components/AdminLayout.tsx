@@ -43,6 +43,7 @@ const baseNav: NavItem[] = [
   { label: "Users", icon: Users, path: "/admin/users" },
   { label: "Students", icon: GraduationCap, path: "/admin/students" },
   { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
+  { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
   { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
   { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
   { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
