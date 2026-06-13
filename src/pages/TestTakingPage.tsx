@@ -616,7 +616,7 @@ const TestTakingPage = () => {
             {/* Question meta */}
             <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
               <div>
-                <p className="text-base font-black text-neutral-900">Question No. {currentQ + 1}</p>
+                <p className="text-base font-black text-neutral-900">Question No. {subjectIndex >= 0 ? subjectIndex + 1 : currentQ + 1}</p>
                 <p className="text-[11px] text-neutral-500">{activeSubject} · {subjectPosLabel}</p>
                 {(statuses[q.id] === "marked" || statuses[q.id] === "answered-marked") && (
                   <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
@@ -640,7 +640,7 @@ const TestTakingPage = () => {
             <div className="rounded-lg border border-neutral-200 bg-white p-5 space-y-4 shadow-sm">
               <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
-              {q.question_image_url && (
+              {q.question_image_url && !/<img\b/i.test(q.question_text || "") && (
                 <button onClick={() => { setZoomImg(q.question_image_url); setZoomLevel(1); }} className="relative inline-block group">
                   <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72" />
                   <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-[10px] text-white flex items-center gap-1 opacity-0 group-hover:opacity-100">
@@ -724,25 +724,47 @@ const TestTakingPage = () => {
               <LegendRow status="answered-marked" label="Answered & Marked" count={counts.answeredMarked} />
             </div>
 
-            {/* Palette grouped by subject */}
+            {/* Palette — subject switcher + active subject only */}
             <div className="space-y-3">
-              {groupedIndices.map(({ subject: subj, items }) => (
-                <div key={subj}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-0.5 flex-1 bg-neutral-200" />
-                    <p className="text-[10px] font-black uppercase tracking-wider text-neutral-600">{subj} — Section A</p>
-                    <div className="h-0.5 flex-1 bg-neutral-200" />
-                  </div>
-                  <div className="grid grid-cols-5 gap-2">
-                    {items.map(({ q: qq, i }) => (
-                      <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} onClick={() => accrueTimeAndJump(i)} title={`Q${i + 1}`}>
-                        {i + 1}
-                      </PaletteShape>
-                    ))}
-                  </div>
+              {subjects.length > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {subjects.map((s) => {
+                    const isActive = activeSubject === s;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setActiveSubject(s);
+                          const firstIdx = questions.findIndex((qq) => (qq.subject || "General") === s);
+                          if (firstIdx >= 0) accrueTimeAndJump(firstIdx);
+                        }}
+                        className={`flex-1 min-w-[70px] rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${isActive ? "bg-primary text-white" : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"}`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-0.5 flex-1 bg-neutral-200" />
+                  <p className="text-[10px] font-black uppercase tracking-wider text-neutral-600">{activeSubject} — Section A</p>
+                  <div className="h-0.5 flex-1 bg-neutral-200" />
+                </div>
+                <div className="grid grid-cols-5 gap-2">
+                  {subjectIndices.map(({ i }, posIdx) => {
+                    const qq = questions[i];
+                    return (
+                      <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} onClick={() => accrueTimeAndJump(i)} title={`Q${posIdx + 1}`}>
+                        {posIdx + 1}
+                      </PaletteShape>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
+
           </div>
 
           <div className="border-t border-neutral-200 p-3">
@@ -755,7 +777,7 @@ const TestTakingPage = () => {
       </div>
 
       {/* === Sticky action bar === */}
-      <div className="bg-white border-t border-neutral-200 px-3 py-2.5 flex flex-wrap items-center gap-2 shadow-[0_-2px_4px_rgba(0,0,0,0.04)]">
+      <div className="sticky bottom-0 z-30 bg-white border-t border-neutral-200 px-3 py-2.5 flex flex-wrap items-center gap-2 shadow-[0_-2px_4px_rgba(0,0,0,0.04)]">
         <button onClick={handleMarkAndNext}
           className="rounded-md border border-violet-400 bg-violet-50 px-3 py-2 text-[11px] font-bold text-violet-700 hover:bg-violet-100 flex items-center gap-1.5 uppercase">
           <Flag className="h-3 w-3" /> Mark for Review &amp; Next
