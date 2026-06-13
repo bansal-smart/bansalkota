@@ -135,6 +135,7 @@ const CreateTestPage = () => {
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
   const [docxImportOpen, setDocxImportOpen] = useState(false);
   const [commonImportOpen, setCommonImportOpen] = useState(false);
+  const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -294,15 +295,15 @@ const CreateTestPage = () => {
     addFromBank(bankQ);
   };
 
-  const ensureDraftForImport = async () => {
-    if (resolvedTestId) return true;
+  const ensureDraftForImport = async (): Promise<string | null> => {
+    if (resolvedTestId) return resolvedTestId;
     if (!user) {
       toast.error("Sign in required");
-      return false;
+      return null;
     }
     if (!title.trim()) {
       toast.error("Enter a test name first");
-      return false;
+      return null;
     }
 
     setSubmitting(true);
@@ -331,18 +332,19 @@ const CreateTestPage = () => {
 
     if (error || !test) {
       toast.error(error?.message ?? "Could not create draft test");
-      return false;
+      return null;
     }
 
     setResolvedTestId(test.id);
     setCreatedDraftSlug(test.slug);
-    toast.success("Draft test created — import questions now");
-    return true;
+    toast.success("Draft test created — questions will import directly into it");
+    return test.id;
   };
 
   const openDocxImport = async (method: "master" | "common") => {
-    const ready = await ensureDraftForImport();
-    if (!ready) return;
+    const tid = await ensureDraftForImport();
+    if (!tid) return;
+    setImportTargetTestId(tid);
     if (method === "common") setCommonImportOpen(true);
     else setDocxImportOpen(true);
   };
@@ -930,13 +932,13 @@ const CreateTestPage = () => {
         open={docxImportOpen}
         onClose={() => setDocxImportOpen(false)}
         onImported={afterImport}
-        testId={resolvedTestId ?? undefined}
+        testId={importTargetTestId ?? resolvedTestId ?? undefined}
       />
       <DocxCommonImportDialog
         open={commonImportOpen}
         onClose={() => setCommonImportOpen(false)}
         onImported={afterImport}
-        testId={resolvedTestId ?? undefined}
+        testId={importTargetTestId ?? resolvedTestId ?? undefined}
       />
     </DndContext>
   );
