@@ -92,6 +92,9 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
   };
 };
 
+const hasRenderableContent = (value: string) =>
+  value.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\b/i.test(value);
+
 const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boolean }) => {
   const { setNodeRef, isOver } = useDroppable({ id: "test-drop" });
   return (
@@ -416,7 +419,7 @@ const CreateTestPage = () => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
     const isComplete = (q: DraftQuestion) => {
-      if (!q.text.trim()) return false;
+      if (!hasRenderableContent(q.text)) return false;
       const hasOptionContent =
         q.options.some((o) => o.trim()) ||
         q.optionImages.some(Boolean) ||
