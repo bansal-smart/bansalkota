@@ -327,6 +327,14 @@ const DocxCommonImportDialog = ({
       toast.error(`Failed to import: ${insErr.message}`);
     } else {
       okCount = rows.length;
+      // Keep tests.total_questions in sync so the test page stats reflect the new count.
+      const { count } = await supabase
+        .from("test_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("test_id", targetTestId);
+      if (typeof count === "number") {
+        await supabase.from("tests").update({ total_questions: count }).eq("id", targetTestId);
+      }
     }
 
     await supabase
