@@ -168,7 +168,6 @@ const CreateTestPage = () => {
   useEffect(() => {
     if (!isEditMode) return;
     let ignore = false;
-    let ignore = false;
     (async () => {
       const baseQ = supabase.from("tests").select("*");
       const isUuid = (s?: string) => !!s && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
