@@ -135,6 +135,9 @@ const AdminTestsPage = () => {
                         <Link to={`/admin/tests/${t.slug || t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
+                        <Link to={`/admin/tests/${t.slug || t.id}/result`} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Result sheet">
+                          <FileSpreadsheet className="h-3.5 w-3.5" />
+                        </Link>
                         {!t.is_published ? (
                           <button onClick={() => togglePublish(t, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10">
                             <Check className="h-3.5 w-3.5" />
