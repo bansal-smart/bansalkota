@@ -30,6 +30,8 @@ type Props = {
   onImported: () => void;
   testId?: string;
   defaultSubject?: string;
+  /** "test" (default) imports into test_questions; "bank" imports into question_bank. */
+  target?: "test" | "bank";
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
