@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
+import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import MathRenderer from "@/components/MathRenderer";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
@@ -48,6 +49,7 @@ const AdminTestDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [showCommonImport, setShowCommonImport] = useState(false);
 
   const load = async () => {
     if (!slug) {
@@ -276,9 +278,12 @@ const AdminTestDetailPage = () => {
 
       {tab === "questions" && (
         <div className="space-y-3">
-          <div className="flex justify-end gap-2">
-            <button onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90">
-              <Upload className="h-4 w-4" /> Bulk import .docx
+          <div className="flex justify-end gap-2 flex-wrap">
+            <button onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted">
+              <Upload className="h-4 w-4" /> Master import
+            </button>
+            <button onClick={() => setShowCommonImport(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90">
+              <Upload className="h-4 w-4" /> Common import
             </button>
             <Link to={`/admin/tests/${test.slug}/edit`} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted">Open editor</Link>
           </div>
@@ -391,6 +396,7 @@ const AdminTestDetailPage = () => {
       )}
 
       <DocxBulkImportDialog open={showImport} onClose={() => setShowImport(false)} onImported={() => { setShowImport(false); load(); }} testId={test.id} />
+      <DocxCommonImportDialog open={showCommonImport} onClose={() => setShowCommonImport(false)} onImported={() => { setShowCommonImport(false); load(); }} testId={test.id} />
     </div>
   );
 };
