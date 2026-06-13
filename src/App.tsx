@@ -181,6 +181,8 @@ const App = () => (
               <Route path="/about/:slug" element={<LeadershipDetailPage />} />
               <Route path="/career" element={<CareerPage />} />
               <Route path="/careers" element={<Navigate to="/career" replace />} />
+              {/* Secret super-admin entry — do not link publicly */}
+              <Route path="/bansal-control-room-9F2K" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />

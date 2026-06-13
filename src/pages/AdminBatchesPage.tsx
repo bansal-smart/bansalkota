@@ -3,6 +3,7 @@ import { Loader2, Plus, Users, Database, Trash2, Globe, Copy } from "lucide-reac
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import roster from "@/data/cbtRoster.json";
+import { CBT_KIOSK_URL, SECRET_ADMIN_URL } from "@/lib/brand";
 
 type CourseRow = { id: string; name: string; slug: string };
 type BatchRow = {
@@ -117,16 +118,34 @@ const AdminBatchesPage = () => {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
-            <p className="text-lg font-bold text-foreground truncate">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "https://bansal.doctylia.com/cbt"}</p>
+            <p className="text-lg font-bold text-foreground truncate">{CBT_KIOSK_URL}</p>
             <p className="text-[10px] text-muted-foreground">Single fixed link for all CBT tests</p>
           </div>
           <button
-            onClick={() => { const u = `${window.location.origin}/cbt`; navigator.clipboard.writeText(u); toast.success("Kiosk link copied"); }}
+            onClick={() => { navigator.clipboard.writeText(CBT_KIOSK_URL); toast.success("Kiosk link copied"); }}
             className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
             <Copy className="h-3.5 w-3.5" /> Copy Link
           </button>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">Open this URL on lab computers in kiosk mode. Students log in with their roll number + mobile and see every live CBT test for their batch.</p>
+      </div>
+
+      <div className="rounded-2xl border border-bansal-navy/30 bg-bansal-navy/5 p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Globe className="h-4 w-4 text-bansal-navy" />
+          <p className="text-xs font-bold uppercase tracking-wider text-bansal-navy">Secret Admin URL · super_admin only</p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <p className="text-lg font-bold text-foreground truncate">{SECRET_ADMIN_URL}</p>
+            <p className="text-[10px] text-muted-foreground">Hidden command-centre entry — not linked anywhere public.</p>
+          </div>
+          <button
+            onClick={() => { navigator.clipboard.writeText(SECRET_ADMIN_URL); toast.success("Secret URL copied"); }}
+            className="rounded-lg bg-bansal-navy px-3 py-2 text-xs font-bold text-white hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
+            <Copy className="h-3.5 w-3.5" /> Copy
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4">
