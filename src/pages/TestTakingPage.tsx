@@ -343,6 +343,14 @@ const TestTakingPage = () => {
     updateStatus(q.id, value.trim() ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
   };
 
+  const handleMatchChange = (next: Record<string, string>) => {
+    if (!q) return;
+    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: next } as AnswerVal }));
+    const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
+    const filled = Object.keys(next).length > 0;
+    updateStatus(q.id, filled ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
+  };
+
   const handleNext = () => { autoSave(); if (currentQ < questions.length - 1) accrueTimeAndJump(currentQ + 1); };
   const handlePrev = () => currentQ > 0 && accrueTimeAndJump(currentQ - 1);
   const handleMarkAndNext = () => {
@@ -366,7 +374,9 @@ const TestTakingPage = () => {
       ? { selected: [], time_spent: (answers[q.id] as any)?.time_spent }
       : isNumeric(q.question_type)
         ? { selected: "", time_spent: (answers[q.id] as any)?.time_spent }
-        : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
+        : isMatch(q.question_type)
+          ? { selected: {}, time_spent: (answers[q.id] as any)?.time_spent }
+          : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
     setAnswers((prev) => ({ ...prev, [q.id]: cleared }));
     updateStatus(q.id, nextStatus);
     saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus });
