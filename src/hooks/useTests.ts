@@ -25,7 +25,7 @@ export const useTests = (testType?: string) => {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      let q = supabase.from("tests").select("*").eq("is_published", true).order("created_at", { ascending: false });
+      let q = supabase.from("tests").select("*").eq("is_published", true).neq("test_mode", "cbt").order("created_at", { ascending: false });
       if (testType && testType !== "all") q = q.eq("test_type", testType);
       const { data } = await q;
       setTests((data ?? []) as TestRow[]);
