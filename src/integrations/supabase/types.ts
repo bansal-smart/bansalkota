@@ -3168,6 +3168,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_test_result_sheet: {
+        Args: { _test_id: string }
+        Returns: {
+          batch_code: string
+          batch_id: string
+          batch_name: string
+          full_name: string
+          percentage: number
+          rank_label: string
+          rank_num: number
+          roll_number: string
+          status: string
+          subjects: Json
+          total_score: number
+          user_id: string
+        }[]
+      }
       can_reattempt_test: {
         Args: { _test_id: string; _user_id: string }
         Returns: boolean
