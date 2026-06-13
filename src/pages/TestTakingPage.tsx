@@ -616,7 +616,7 @@ const TestTakingPage = () => {
             {/* Question meta */}
             <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
               <div>
-                <p className="text-base font-black text-neutral-900">Question No. {currentQ + 1}</p>
+                <p className="text-base font-black text-neutral-900">Question No. {subjectIndex >= 0 ? subjectIndex + 1 : currentQ + 1}</p>
                 <p className="text-[11px] text-neutral-500">{activeSubject} · {subjectPosLabel}</p>
                 {(statuses[q.id] === "marked" || statuses[q.id] === "answered-marked") && (
                   <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
@@ -640,7 +640,7 @@ const TestTakingPage = () => {
             <div className="rounded-lg border border-neutral-200 bg-white p-5 space-y-4 shadow-sm">
               <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
-              {q.question_image_url && (
+              {q.question_image_url && !/<img\b/i.test(q.question_text || "") && (
                 <button onClick={() => { setZoomImg(q.question_image_url); setZoomLevel(1); }} className="relative inline-block group">
                   <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72" />
                   <span className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-[10px] text-white flex items-center gap-1 opacity-0 group-hover:opacity-100">
