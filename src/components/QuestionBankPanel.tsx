@@ -449,19 +449,36 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
               {onAdd ? " · click + Add or drag" : ""}
             </p>
             <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
-              {processed.map((q) => (
-                <QuestionCard
-                  key={q.id}
-                  q={q}
-                  draggable={draggable}
-                  compact={compact}
-                  onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
-                  onDelete={manage ? handleDelete : undefined}
-                  onAdd={onAdd}
-                  alreadyAdded={addedBankIds?.has(q.id)}
-                />
-              ))}
+              {processed.map((q) => {
+                const card = (
+                  <QuestionCard
+                    q={q}
+                    draggable={draggable}
+                    compact={compact}
+                    onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
+                    onDelete={manage ? handleDelete : undefined}
+                    onAdd={onAdd}
+                    alreadyAdded={addedBankIds?.has(q.id)}
+                  />
+                );
+                if (!onAddMany) return <div key={q.id}>{card}</div>;
+                const isSel = selected.has(q.id);
+                return (
+                  <div key={q.id} className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isSel}
+                      onChange={() => toggleRow(q.id)}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="mt-3 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0"
+                      aria-label="Select question"
+                    />
+                    <div className="flex-1 min-w-0">{card}</div>
+                  </div>
+                );
+              })}
             </div>
+
           </div>
         )}
       </div>
