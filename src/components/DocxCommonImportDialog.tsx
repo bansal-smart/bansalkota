@@ -63,6 +63,7 @@ const DocxCommonImportDialog = ({
   onImported,
   testId,
   defaultSubject,
+  target = "test",
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
