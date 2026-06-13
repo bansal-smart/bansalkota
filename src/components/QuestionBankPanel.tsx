@@ -322,7 +322,45 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
             </button>
           </div>
         )}
+        {onAddMany && onAdd && (
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5">
+            <button
+              onClick={() => {
+                const next = new Set(selected);
+                const allPicked = pageIds.every((id) => selected.has(id));
+                if (allPicked) pageIds.forEach((id) => next.delete(id));
+                else pageIds.forEach((id) => next.add(id));
+                setSelected(next);
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+              title="Toggle selection of every question visible on this page"
+            >
+              <CheckSquare className="h-3 w-3" />
+              {pageIds.length > 0 && pageIds.every((id) => selected.has(id)) ? "Unselect page" : "Select page"}
+            </button>
+            {selected.size > 0 && (
+              <>
+                <span className="text-[11px] font-semibold text-foreground">{selected.size} selected</span>
+                <div className="flex-1" />
+                <button
+                  onClick={() => {
+                    const picks = processed.filter((q) => selected.has(q.id));
+                    onAddMany(picks);
+                    clearSelection();
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground hover:opacity-90"
+                >
+                  <Plus className="h-3 w-3" /> Add {selected.size} to test
+                </button>
+                <button onClick={clearSelection} className="rounded-md p-1 text-muted-foreground hover:bg-muted" title="Clear selection">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
+
 
       {/* Questions list */}
       <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
