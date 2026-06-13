@@ -619,14 +619,16 @@ const CreateTestPage = () => {
               </SheetContent>
             </Sheet>
             <button
-              onClick={() => setDocxImportOpen(true)}
+              onClick={() => openDocxImport("master")}
+              disabled={submitting}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
               title="Master method — parses numbered questions with (1)–(4) options and Answer: line"
             >
               <FileText className="h-3.5 w-3.5" /> Master import
             </button>
             <button
-              onClick={() => setCommonImportOpen(true)}
+              onClick={() => openDocxImport("common")}
+              disabled={submitting}
               className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
               title="Common method — cropped 3-column .docx where the printed question + options are one block"
             >
@@ -927,21 +929,13 @@ const CreateTestPage = () => {
       <DocxBulkImportDialog
         open={docxImportOpen}
         onClose={() => setDocxImportOpen(false)}
-        onImported={() => {
-          setDocxImportOpen(false);
-          setReloadKey((k) => k + 1);
-          toast.success("Questions appended — reloading list");
-        }}
+        onImported={afterImport}
         testId={resolvedTestId ?? undefined}
       />
       <DocxCommonImportDialog
         open={commonImportOpen}
         onClose={() => setCommonImportOpen(false)}
-        onImported={() => {
-          setCommonImportOpen(false);
-          setReloadKey((k) => k + 1);
-          toast.success("Questions appended — reloading list");
-        }}
+        onImported={afterImport}
         testId={resolvedTestId ?? undefined}
       />
     </DndContext>
