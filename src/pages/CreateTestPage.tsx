@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
+import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
@@ -133,6 +134,7 @@ const CreateTestPage = () => {
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
   const [docxImportOpen, setDocxImportOpen] = useState(false);
+  const [commonImportOpen, setCommonImportOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -553,13 +555,22 @@ const CreateTestPage = () => {
               </SheetContent>
             </Sheet>
             {resolvedTestId && (
-              <button
-                onClick={() => setDocxImportOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-                title="Import questions from a Word (.docx) file with inline diagrams"
-              >
-                <FileText className="h-3.5 w-3.5" /> Word import
-              </button>
+              <>
+                <button
+                  onClick={() => setDocxImportOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                  title="Master method — parses numbered questions with (1)–(4) options and Answer: line"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Master import
+                </button>
+                <button
+                  onClick={() => setCommonImportOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
+                  title="Common method — cropped 3-column .docx where the printed question + options are one block"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Common import
+                </button>
+              </>
             )}
             <button
               onClick={() => setQuestions([...questions, blankQuestion({ correct: correctMarks, wrong: wrongMarks })])}
@@ -858,6 +869,16 @@ const CreateTestPage = () => {
         onClose={() => setDocxImportOpen(false)}
         onImported={() => {
           setDocxImportOpen(false);
+          setReloadKey((k) => k + 1);
+          toast.success("Questions appended — reloading list");
+        }}
+        testId={resolvedTestId ?? undefined}
+      />
+      <DocxCommonImportDialog
+        open={commonImportOpen}
+        onClose={() => setCommonImportOpen(false)}
+        onImported={() => {
+          setCommonImportOpen(false);
           setReloadKey((k) => k + 1);
           toast.success("Questions appended — reloading list");
         }}
