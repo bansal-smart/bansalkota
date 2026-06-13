@@ -10,6 +10,7 @@ import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import MathRenderer from "@/components/MathRenderer";
+import CbtSettingsPanel from "@/components/admin/CbtSettingsPanel";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
 
