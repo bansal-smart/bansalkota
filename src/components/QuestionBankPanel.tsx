@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X, Download, Check } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X, Download, Check, CheckSquare } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
 import BulkQuestionUploadDialog from "./BulkQuestionUploadDialog";
 import DocxBulkImportDialog from "./DocxBulkImportDialog";
+import DocxCommonImportDialog from "./DocxCommonImportDialog";
 import MathRenderer from "./MathRenderer";
 import TablePagination from "./TablePagination";
 import { supabase } from "@/integrations/supabase/client";
