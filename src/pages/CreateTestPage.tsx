@@ -148,6 +148,11 @@ const CreateTestPage = () => {
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+  // Scheduling — controls when test opens, closes, and results auto-release
+  const [testDate, setTestDate] = useState<string>(""); // YYYY-MM-DD
+  const [startTime, setStartTime] = useState<string>(""); // HH:mm
+  const [endTime, setEndTime] = useState<string>(""); // HH:mm
+  const [autoRelease, setAutoRelease] = useState<boolean>(true);
   const importedQuestionCount = useRef(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -209,6 +214,20 @@ const CreateTestPage = () => {
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
+      // Load schedule (starts_at / ends_at) into date + time inputs (local TZ).
+      const sAt = (test as any).starts_at ? new Date((test as any).starts_at) : null;
+      const eAt = (test as any).ends_at ? new Date((test as any).ends_at) : null;
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const dateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const timeStr = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (sAt) {
+        setTestDate(dateStr(sAt));
+        setStartTime(timeStr(sAt));
+      } else if (eAt) {
+        setTestDate(dateStr(eAt));
+      }
+      if (eAt) setEndTime(timeStr(eAt));
+      setAutoRelease((test as any).auto_release !== false);
       setQuestions(
         (tqs ?? []).map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
@@ -334,6 +353,20 @@ const CreateTestPage = () => {
     addFromBank(bankQ);
   };
 
+  // Build a schedule payload — returns null fields if not provided.
+  const buildSchedulePayload = () => {
+    const toISO = (d: string, t: string) => {
+      if (!d || !t) return null;
+      const dt = new Date(`${d}T${t}:00`);
+      return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
+    };
+    return {
+      starts_at: toISO(testDate, startTime),
+      ends_at: toISO(testDate, endTime),
+      auto_release: autoRelease,
+    };
+  };
+
   const ensureDraftForImport = async (): Promise<string | null> => {
     if (resolvedTestId) return resolvedTestId;
     if (!user) {
@@ -365,6 +398,7 @@ const CreateTestPage = () => {
         test_mode: testMode,
         cbt_enabled: testMode === "cbt",
         cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+        ...buildSchedulePayload(),
         slug,
         created_by: user.id,
       })
@@ -437,6 +471,7 @@ const CreateTestPage = () => {
           test_mode: testMode,
           cbt_enabled: testMode === "cbt",
           cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+          ...buildSchedulePayload(),
           is_published: true,
         })
         .eq("id", resolvedTestId);
@@ -495,6 +530,7 @@ const CreateTestPage = () => {
       test_mode: testMode,
       cbt_enabled: testMode === "cbt",
       cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+      ...buildSchedulePayload(),
     };
 
     let savedTestId: string | null = resolvedTestId;
@@ -753,6 +789,63 @@ const CreateTestPage = () => {
               className={inputCls}
             />
           </div>
+        </div>
+
+        {/* Schedule */}
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Schedule & result release</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Pick the test date and window. Results auto-release after the end time (admins can release earlier from the test detail page).
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-foreground">
+              <input
+                type="checkbox"
+                checked={autoRelease}
+                onChange={(e) => setAutoRelease(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              Auto-release results after end time
+            </label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className={labelCls}>Test date</label>
+              <input
+                type="date"
+                value={testDate}
+                onChange={(e) => setTestDate(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Start time</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>End time (results release)</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          </div>
+          {testDate && (startTime || endTime) && (
+            <p className="text-[11px] text-muted-foreground">
+              Scheduled: <span className="font-semibold text-foreground">{testDate}</span>
+              {startTime && <> · opens <span className="font-semibold text-foreground">{startTime}</span></>}
+              {endTime && <> · closes & results at <span className="font-semibold text-foreground">{endTime}</span></>}
+            </p>
+          )}
         </div>
       </section>
 

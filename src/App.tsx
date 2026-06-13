@@ -54,6 +54,7 @@ import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestPlatformHub from "./pages/AdminTestPlatformHub";
 import AdminTestDetailPage from "./pages/AdminTestDetailPage";
+import AdminTestResultPage from "./pages/AdminTestResultPage";
 import AdminLectureBucketPage from "./pages/AdminLectureBucketPage";
 import AdminExamsPage from "./pages/AdminExamsPage";
 import AdminAdminsPage from "./pages/AdminAdminsPage";
@@ -298,6 +299,7 @@ const App = () => (
               {/* Editor flows keep their own routes */}
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+              <Route path="/admin/tests/:slug/result" element={<AdminTestResultPage />} />
               <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />

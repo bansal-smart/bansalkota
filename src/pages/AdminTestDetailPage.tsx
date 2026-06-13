@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Loader2, ArrowLeft, Pencil, Trash2, Check, X, Eye, Upload, BarChart3, Trophy } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Trash2, Check, X, Eye, Upload, BarChart3, Trophy, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -228,6 +228,9 @@ const AdminTestDetailPage = () => {
           </Link>
           <Link to={`/tests/${test.slug}/take`} target="_blank" className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" /> Preview
+          </Link>
+          <Link to={`/admin/tests/${test.slug}/result`} className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground inline-flex items-center gap-1 hover:opacity-90">
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Result Sheet
           </Link>
           {isSuperAdmin && (
             <button onClick={deleteTest} className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-xs font-semibold hover:bg-destructive/10 inline-flex items-center gap-1">
