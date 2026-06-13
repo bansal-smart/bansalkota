@@ -27,21 +27,31 @@ export const uploadParsedImages = async (
   let done = 0;
   let failed = 0;
 
+  // ~100 years — bucket is private (workspace policy blocks public buckets),
+  // so we mint long-lived signed URLs at upload time so <img src> works
+  // anonymously in the test player and review screens.
+  const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 100;
+
   for (const { q, img } of flat) {
     const ext = extFromType(img.contentType);
     const path = `${batchId}/q${q.number}_${img.slot}_${img.id}.${ext}`;
     try {
-      // Convert Uint8Array to Blob explicitly (copy into a fresh ArrayBuffer to satisfy DOM types)
       const ab = img.bytes.buffer.slice(img.bytes.byteOffset, img.bytes.byteOffset + img.bytes.byteLength) as ArrayBuffer;
       const blob = new Blob([ab], { type: img.contentType });
-      const { error } = await supabase.storage
+      const { error: upErr } = await supabase.storage
         .from("question-images")
         .upload(path, blob, { contentType: img.contentType, upsert: true });
-      if (error) {
+      if (upErr) {
         failed += 1;
       } else {
-        const { data } = supabase.storage.from("question-images").getPublicUrl(path);
-        img.publicUrl = data.publicUrl;
+        const { data: signed, error: signErr } = await supabase.storage
+          .from("question-images")
+          .createSignedUrl(path, SIGNED_URL_TTL);
+        if (signErr || !signed?.signedUrl) {
+          failed += 1;
+        } else {
+          img.publicUrl = signed.signedUrl;
+        }
       }
     } catch {
       failed += 1;
