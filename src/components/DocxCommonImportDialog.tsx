@@ -115,6 +115,7 @@ const DocxCommonImportDialog = ({
     setImgProgress({ done: 0, total: 0 });
     setErrorMsg(null);
     setImported({ ok: 0, failed: 0 });
+    setSubjectRanges([]);
     if (!testId) setSelectedTestId(null);
     if (fileRef.current) fileRef.current.value = "";
   };
