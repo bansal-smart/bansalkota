@@ -311,6 +311,7 @@ const TestTakingPage = () => {
     if (s === null || s === undefined) return false;
     if (Array.isArray(s)) return s.length > 0;
     if (typeof s === "string") return s.trim().length > 0;
+    if (typeof s === "object") return Object.keys(s).length > 0;
     return true;
   };
 
