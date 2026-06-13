@@ -58,7 +58,12 @@ const AdminTestDetailPage = () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data: t, error: tErr } = await supabase.from("tests").select("*").eq("slug", slug).maybeSingle();
+      // Try by slug first, then by id (in case the URL carries an id)
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+      const q = isUuid
+        ? supabase.from("tests").select("*").eq("id", slug).maybeSingle()
+        : supabase.from("tests").select("*").eq("slug", slug).maybeSingle();
+      const { data: t, error: tErr } = await q;
       if (tErr) throw tErr;
       if (!t) {
         setTest(null);

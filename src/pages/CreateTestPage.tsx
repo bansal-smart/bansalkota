@@ -155,9 +155,11 @@ const CreateTestPage = () => {
     let ignore = false;
     (async () => {
       const baseQ = supabase.from("tests").select("*");
-      const { data: test } = slugParam
-        ? await baseQ.eq("slug", slugParam).maybeSingle()
-        : await baseQ.eq("id", testIdParam!).maybeSingle();
+      const isUuid = (s?: string) => !!s && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+      const useId = testIdParam || (slugParam && isUuid(slugParam) ? slugParam : null);
+      const { data: test } = useId
+        ? await baseQ.eq("id", useId).maybeSingle()
+        : await baseQ.eq("slug", slugParam!).maybeSingle();
       if (ignore) return;
       if (!test) {
         toast.error("Test not found");
