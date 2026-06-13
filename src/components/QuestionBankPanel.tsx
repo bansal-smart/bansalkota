@@ -104,6 +104,10 @@ type Props = {
   compact?: boolean;
   tableView?: boolean;
   className?: string;
+  /** When provided, each card shows a click-to-add button. */
+  onAdd?: (q: BankQuestion) => void;
+  /** Bank question IDs already in the current test (to render "Added" state). */
+  addedBankIds?: Set<string>;
 };
 
 const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: string; active: boolean; dir: SortDir; onClick: () => void; className?: string }) => (
@@ -115,7 +119,7 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
   </th>
 );
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "" }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, addedBankIds }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
