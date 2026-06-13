@@ -399,6 +399,10 @@ const TestTakingPage = () => {
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
+    if (user?.email?.endsWith("@cbt.bansal.local")) {
+      navigate("/cbt/submitted", { replace: true });
+      return;
+    }
     navigate(`/tests/${slug}/result/${attemptId}`);
   };
 

@@ -138,6 +138,9 @@ const CreateTestPage = () => {
   const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
+  const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
+  const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -152,6 +155,14 @@ const CreateTestPage = () => {
     })();
     return () => { ignore = true; };
   }, [user, isAdminContext]);
+
+  // Load all batches for CBT batch picker
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("course_batches").select("id, code, name").order("code");
+      setBatchOptions((data ?? []) as { id: string; code: string; name: string }[]);
+    })();
+  }, []);
 
   // Load existing test for edit mode (by slug or id)
   useEffect(() => {
@@ -185,6 +196,10 @@ const CreateTestPage = () => {
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
+      setTestMode(((test as { test_mode?: string }).test_mode === "cbt" ? "cbt" : "digital"));
+      setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
+        ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
+        : []);
       setQuestions(
         (tqs ?? []).map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
@@ -323,6 +338,9 @@ const CreateTestPage = () => {
         total_marks: 0,
         is_published: false,
         course_id: courseId || null,
+        test_mode: testMode,
+        cbt_enabled: testMode === "cbt",
+        cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
         slug,
         created_by: user.id,
       })
@@ -389,6 +407,9 @@ const CreateTestPage = () => {
       total_marks: validQ.reduce((s, q) => s + Number(q.marksCorrect || 0), 0),
       is_published: publish,
       course_id: courseId || null,
+      test_mode: testMode,
+      cbt_enabled: testMode === "cbt",
+      cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
     };
 
     let savedTestId: string | null = resolvedTestId;
@@ -503,6 +524,55 @@ const CreateTestPage = () => {
       {/* Test Details card */}
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
         <h2 className="text-lg font-bold text-foreground">Test Details</h2>
+
+        <div>
+          <label className={labelCls}>Test Mode</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { v: "digital", label: "Digital (Web + App)", hint: "Students take this from inside the LMS after logging in." },
+              { v: "cbt", label: "CBT (Kiosk Only)", hint: "Students take this on lab computers at /cbt using roll no + mobile." },
+            ] as const).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => setTestMode(opt.v)}
+                className={`text-left rounded-xl border p-3 transition ${testMode === opt.v ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
+              >
+                <p className={`text-sm font-bold ${testMode === opt.v ? "text-primary" : "text-foreground"}`}>{opt.label}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{opt.hint}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {testMode === "cbt" && (
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Kiosk URL</p>
+              <code className="text-xs bg-background rounded px-2 py-1 inline-block mt-1">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>
+              <p className="text-[10px] text-muted-foreground mt-1">All CBT tests use this single fixed link. Students log in with roll no + mobile.</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5">Allowed batches <span className="text-muted-foreground font-normal">({allowedBatches.length === 0 ? "open to all batches" : `${allowedBatches.length} selected`})</span></p>
+              <div className="flex flex-wrap gap-1.5">
+                {batchOptions.length === 0 && <p className="text-[11px] text-muted-foreground">No batches yet — create them under Batches & CBT Setup.</p>}
+                {batchOptions.map((b) => {
+                  const sel = allowedBatches.includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setAllowedBatches(sel ? allowedBatches.filter((x) => x !== b.id) : [...allowedBatches, b.id])}
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${sel ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-foreground hover:bg-muted"}`}
+                    >
+                      {b.code}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className={labelCls}>Test Name</label>

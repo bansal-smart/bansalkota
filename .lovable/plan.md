@@ -1,97 +1,83 @@
+## Goal
+Replace the per-test secret CBT link with one fixed kiosk URL (`/cbt`). Students log in with roll number + mobile, see all currently-live CBT tests assigned to their batch, and take them. Test creation gets a clean **Test Mode** selector (Digital web/app  OR  CBT — not both).
 
-## 1. Data wipe (clean slate)
+## 1. Schema changes (one migration)
 
-Run a one-time cleanup migration:
-- Delete all rows from `question_bank`, `test_questions`, `tests`, `test_attempts`, `test_reattempt_requests`, `question_import_batches`.
-- Delete all existing **student** auth users (only users whose `user_roles.role = 'student'` and who are NOT also admin/super_admin/teacher/center_admin), plus their `profiles`, `enrollments`, `lesson_progress`, `study_sessions`, `doubts`, `notifications`.
-- Admin / teacher / center_admin accounts are preserved.
+`tests` table:
+- Add `test_mode text not null default 'digital'` with check `in ('digital','cbt')`.
+- Backfill `test_mode = 'cbt'` where `cbt_enabled = true`, else `'digital'`.
+- Keep `cbt_allowed_batch_ids uuid[]` (drives batch gating).
+- Drop / ignore `cbt_token` (no longer needed — single fixed URL). Keep the column for now, just stop using it; remove after a release.
+- Replace `cbt_enabled` usage with `test_mode = 'cbt'`.
 
-## 2. New "Batches" feature
+New RPCs (security-definer):
+- `cbt_live_tests_for_batch(_batch_id uuid)` → returns id, title, description, duration_minutes, total_questions, total_marks, starts_at, ends_at for every test where `test_mode='cbt'`, `is_published=true`, `now() between starts_at and ends_at` (or `starts_at` null), and `(_batch_id = any(cbt_allowed_batch_ids) or cbt_allowed_batch_ids is null or array_length(cbt_allowed_batch_ids,1) is null)`.
+- Keep `cbt_lookup_student(roll, phone)` as-is for the edge function.
 
-A course (Bulls Eye JEE, Sterling JEE, Nucleus JEE…) holds multiple batches (J1/J2, V1/V2, A1/A2…).
+## 2. Edge function
 
-New table `course_batches`:
-- `course_id` (FK → courses)
-- `code` (e.g. `XI-J1`) and `name`
-- `class_level` (`XI` / `XII` / `XIII`)
-- `center_id` (FK → centers, optional)
-- `is_active`
+Rename concept: `cbt-login` now returns the **session only** (no specific test). The kiosk page asks for credentials → signs the student in → router loads the live-tests list filtered by their batch.
 
-`profiles` gets `batch_id uuid` (FK → course_batches).
+`cbt-login` payload now: `{ roll_number, phone }` (no token). It:
+1. Looks up student by roll+phone (RPC).
+2. Signs in via synthetic email + mobile password.
+3. Returns `{ session, student: { user_id, full_name, batch_id, roll_number } }`.
 
-Admin UI:
-- In Admin → Courses → course detail: new **Batches** tab to create/edit/list batches.
-- In Admin → Students: show batch column, allow re-assigning batch.
+## 3. Routes & pages
 
-## 3. Bulk import 84 Kota students from the uploaded Excel
+- `/cbt` (public) — Kiosk login page. Roll no + Mobile. On success → `/cbt/tests`.
+- `/cbt/tests` (auth) — Lists live CBT tests for the student's batch. Each card → "Start Test" button → instructions screen → existing `TestTakingPage`.
+- `/cbt/test/:testId` — Wrapper around the existing test taking UI but in "kiosk chrome": no LMS sidebar, header shows `CBT · {studentName} · Roll {regno}`, and on submit/auto-submit shows a brief "Submitted ✓ — results released by your centre" screen for ~5s, then `supabase.auth.signOut()` and `navigate('/cbt')`.
+- Drop `/cbt/:token` route (replaced by `/cbt`).
 
-Parse `st_data_1.xlsx` (2 sheets, 84 rows):
-- Bulls Eye JEE → 5 batches: `XI-J1` (13), `XI-J2` (4), `XI-P*` (5), `XI-P1` (8), `XI-P2` (22)
-- Sterling JEE → 2 batches: `XIII-V1` (23), `XIII-V2` (9)
+Kiosk layout:
+- Full-screen, no app shell, no nav, prevent accidental navigation back to LMS routes.
+- `useSingleDeviceLogin` disabled inside `/cbt/*` so multiple students can use the same kiosk sequentially.
 
-Migration / one-off edge function will:
-1. Find or create Kota center (link `centers` row).
-2. Create courses **Bulls Eye JEE** and **Sterling JEE** if missing (offline / center-tagged).
-3. Create the 7 batches above under the right course.
-4. For each student row create an auth user:
-   - **email** = `<RegNo>@cbt.bansal.local` (synthetic; only used internally for auth)
-   - **password** = `CONTACTNO` (mobile number, string)
-   - profile: `full_name`, `phone = CONTACTNO`, `dob`, `center_id = Kota`, `batch_id`, `target_exam = 'JEE'`, `class_level` (`XI` or `XIII`), `is_bansal_offline_student = true`
-   - extra column `roll_number` on `profiles` = RegNo (indexed, unique).
-   - Role: `student`.
-   - Auto-enroll in the matching course.
+## 4. Admin test creation UI
 
-## 4. CBT mode (secret-link exam)
+In `CreateTestPage` (and `AdminTestDetailPage` summary):
+- New **Test Mode** segmented control at the top of the form: **Digital (Web + App)** vs **CBT (Kiosk Only)**.
+- When `CBT` is selected:
+  - Show a multi-select of batches (`cbt_allowed_batch_ids`). Empty = all batches.
+  - Show a read-only callout: "Students take this on the kiosk at `https://<site>/cbt` using roll no + mobile."
+  - Hide LMS-only settings (e.g. "show in student LMS test list") if any.
+- When `Digital` is selected:
+  - Hide batch picker & kiosk callout.
+  - Test appears in the normal LMS tests list as today.
+- Replace `CbtSettingsPanel` (per-test token/link UI) with the new mode toggle + batch picker. Remove "Copy link" / "Regenerate" buttons.
 
-Same test-taking UI, but no LMS login required.
+## 5. LMS visibility rule
 
-**Per test settings (new columns on `tests`):**
-- `cbt_enabled boolean default false`
-- `cbt_token text unique` (random 32-char slug, generated when enabled)
-- `cbt_allowed_batch_ids uuid[]` — which batches can sit this CBT (optional; empty = all imported students)
+`useTests` (and any student-facing test list) excludes `test_mode = 'cbt'` tests so kiosk-only tests don't leak into the logged-in LMS test list. Admin lists still show everything with a "CBT" badge.
 
-**Public route:** `/cbt/:token`
+## 6. Cleanup
+- Remove `CbtSettingsPanel` token UI; replace with simple "Allowed batches" panel shown only when mode = CBT.
+- Update `cbtRoster.json` flow / Admin Batches page text to reference the single `/cbt` URL.
+- Keep `cbt_token` column for one release for safety; no code reads it.
 
-Flow:
-1. Student opens the secret link (admin shares it).
-2. Page shows: test title, instructions, **Roll Number** + **Mobile Number** inputs.
-3. Submit calls a new edge function `cbt-login`:
-   - Looks up `profiles` by `roll_number`, verifies `phone == mobile entered`, verifies batch is allowed for this CBT.
-   - Signs the student in by calling `signInWithPassword` on the server using their synthetic email + mobile-as-password and returns the session to the browser.
-4. Browser sets the Supabase session → redirected to a CBT-specific test-taking page that reuses the existing `TestTakingPage` UI (same palette, same timer, same submit flow), but:
-   - Header shows "CBT Mode · {test title} · Roll {regno}"
-   - On submit/auto-submit → CBT-specific result screen ("Submitted. Results released by your centre.") and the session is signed out (so the secret link can't become an LMS backdoor).
-5. One active attempt per (student × CBT test); re-entry resumes the same attempt until time runs out.
+## Technical notes
 
-**Admin UI changes (Test detail page → new "CBT" tab):**
-- Toggle "Enable CBT mode" → generates/copies the secret URL.
-- Multi-select batches allowed.
-- Button **Copy CBT link** and **Regenerate token**.
-- Live list of CBT attempts (roll no, batch, status, score once released).
+- Single-test-attempt rule per (student × test) already enforced — re-entry resumes existing attempt until timer ends (good for kiosk-sequential use, since the *same* student returning will resume; a *different* student logging in starts their own attempt).
+- After signOut on the kiosk, Supabase client clears local storage so the next student sees a clean login.
+- `test_mode` check constraint keeps the two modes mutually exclusive at the DB level, matching the "Either/Or" UX.
+- Existing `TestTakingPage` UI is reused verbatim inside the kiosk wrapper — same timer, palette, submit flow, marking — only the chrome and post-submit behavior differ.
 
-## 5. Cleanup of stale paths
-- Remove the "Mentor"/"Compete" references already deprecated where they touch test pages (only if they collide with CBT routes).
-- Keep existing LMS test flow unchanged for students who DO log in.
+## Files to add / edit
 
----
+Add:
+- `src/pages/CbtKioskLoginPage.tsx` (replaces `CbtLoginPage` content for `/cbt`)
+- `src/pages/CbtLiveTestsPage.tsx` (`/cbt/tests`)
+- `src/pages/CbtTestTakingPage.tsx` (kiosk wrapper around the test UI)
+- New migration: `test_mode` column + `cbt_live_tests_for_batch` RPC + backfill.
 
-## Technical notes (for the implementing pass)
+Edit:
+- `supabase/functions/cbt-login/index.ts` — drop token, return session only.
+- `src/App.tsx` — new `/cbt`, `/cbt/tests`, `/cbt/test/:id` public routes; remove `/cbt/:token`.
+- `src/pages/CreateTestPage.tsx` and `src/pages/AdminTestDetailPage.tsx` — add Test Mode selector, swap CBT panel.
+- `src/components/admin/CbtSettingsPanel.tsx` — simplify to "Allowed batches" picker (no token UI).
+- `src/hooks/useTests.ts` — filter out `test_mode='cbt'`.
+- `src/pages/AdminBatchesPage.tsx` — show the single kiosk URL prominently.
 
-- New tables/columns done in one migration with GRANTs + RLS:
-  - `course_batches` (admins manage; students can read their own batch).
-  - `profiles.batch_id`, `profiles.roll_number` (unique, nullable).
-  - `tests.cbt_enabled`, `tests.cbt_token`, `tests.cbt_allowed_batch_ids`.
-- Edge functions:
-  - `bulk-import-cbt-students` — runs the Excel-derived payload (admins only, service role).
-  - `cbt-login` — service-role lookup by roll_number+phone, returns session via `auth.admin.generateLink` + `signInWithPassword` server-side; response includes `access_token` / `refresh_token` so the client can `supabase.auth.setSession(...)`.
-- Public route `/cbt/:token` added in `App.tsx`, outside any `ProtectedRoute`.
-- CBT result page does `supabase.auth.signOut()` on unmount to prevent lingering sessions on shared lab machines.
-- Single-device login (`useSingleDeviceLogin`) will be disabled inside the CBT route so multiple students can use the same browser sequentially.
-
-## Defaults I'm assuming (tell me if any are wrong)
-
-1. Synthetic emails use the `@cbt.bansal.local` suffix; students never see/use them.
-2. Mobile number is stored as-is (10-digit string) and is used as their password.
-3. Only the 7 batches present in the Excel are created now (Nucleus A1/A2 will be added when you give the data).
-4. All 84 students are tagged to a single **Kota** center; if one doesn't exist, I'll create it.
-5. CBT secret link is per-test (one link covers all allowed batches). Switch to per-batch links later if you prefer.
+## Open question
+Should I also add a kiosk-mode CSS guard (disable right-click, F11 fullscreen prompt, block keyboard shortcuts like Ctrl+T/Ctrl+W)? Useful for true lab kiosks but can be added in a follow-up. Defaulting to **no** unless you say otherwise.
