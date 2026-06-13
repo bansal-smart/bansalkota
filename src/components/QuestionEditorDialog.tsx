@@ -286,13 +286,23 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-foreground">Question</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-foreground">Question</label>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Live preview ↓</span>
+            </div>
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} placeholder="Solve $x^2 + 5x + 6 = 0$" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none font-mono" />
-            {text && (
-              <div className="mt-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
-                <MathRenderer content={text} />
-              </div>
-            )}
+            {(() => {
+              const err = text ? validateLatex(text) : null;
+              return (
+                <div className={`mt-2 rounded-lg border px-3 py-2 text-sm min-h-[2.25rem] ${err ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/40"}`}>
+                  {text ? (
+                    err ? <p className="text-xs text-destructive">⚠ {err}</p> : <MathRenderer content={text} />
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Preview appears here as you type…</p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* QUESTION IMAGE */}
@@ -385,11 +395,18 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
                     </label>
                   )}
                 </div>
-                {opt && (
-                  <div className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
-                    <MathRenderer content={opt} inline />
-                  </div>
-                )}
+                {(() => {
+                  const err = opt ? validateLatex(opt) : null;
+                  return (
+                    <div className={`rounded-md border px-2 py-1 text-xs min-h-[1.75rem] ${err ? "border-destructive/40 bg-destructive/5" : "border-border bg-muted/40"}`}>
+                      {opt ? (
+                        err ? <span className="text-destructive">⚠ {err}</span> : <MathRenderer content={opt} inline />
+                      ) : (
+                        <span className="text-muted-foreground italic">Live preview…</span>
+                      )}
+                    </div>
+                  );
+                })()}
                 {optionImages[oi] && (
                   <img src={optionImages[oi]} alt="" className="max-h-28 rounded border border-border" />
                 )}
