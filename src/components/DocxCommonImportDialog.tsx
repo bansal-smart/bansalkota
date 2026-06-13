@@ -238,6 +238,16 @@ const DocxCommonImportDialog = ({
   };
 
   const validate = (): string | null => {
+    // Require every parsed question to be covered by a subject range (or have explicit subject)
+    const uncovered: number[] = [];
+    for (const q of questions) {
+      if (q.subject && allowedSubjects.includes(q.subject)) continue;
+      const hit = subjectRanges.find((r) => q.number >= r.from && q.number <= r.to);
+      if (!hit) uncovered.push(q.number);
+    }
+    if (uncovered.length) {
+      return `Tag a subject for question${uncovered.length === 1 ? "" : "s"} ${uncovered.slice(0, 8).join(", ")}${uncovered.length > 8 ? "…" : ""}. Use "Add range" or "Auto-split equally".`;
+    }
     for (const q of questions) {
       if (!q.stemHtml && !q.stemText) return `Q${q.number} has no question content`;
       if (q.type === "mcq-single" && typeof q.correctAnswer !== "number")
@@ -248,6 +258,23 @@ const DocxCommonImportDialog = ({
         return `Q${q.number} needs a numeric answer`;
     }
     return null;
+  };
+
+  const autoSplitSubjects = () => {
+    const nums = questions.map((q) => q.number).filter((n) => Number.isFinite(n));
+    if (!nums.length) return;
+    const minN = Math.min(...nums);
+    const maxN = Math.max(...nums);
+    const total = maxN - minN + 1;
+    const k = allowedSubjects.length;
+    const per = Math.ceil(total / k);
+    const ranges = allowedSubjects.map((s, i) => ({
+      from: minN + i * per,
+      to: Math.min(maxN, minN + (i + 1) * per - 1),
+      subject: s,
+    })).filter((r) => r.from <= r.to);
+    setSubjectRanges(ranges);
+    toast.success(`Split into ${ranges.length} subjects equally`);
   };
 
   const buildRow = (q: ParsedDocxQuestion, batchId: string) => {
