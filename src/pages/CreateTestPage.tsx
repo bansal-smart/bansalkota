@@ -135,6 +135,7 @@ const CreateTestPage = () => {
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
   const [docxImportOpen, setDocxImportOpen] = useState(false);
   const [commonImportOpen, setCommonImportOpen] = useState(false);
+  const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -291,6 +292,69 @@ const CreateTestPage = () => {
     const bankQ = e.active.data.current?.question as BankQuestion | undefined;
     if (!bankQ) return;
     addFromBank(bankQ);
+  };
+
+  const ensureDraftForImport = async () => {
+    if (resolvedTestId) return true;
+    if (!user) {
+      toast.error("Sign in required");
+      return false;
+    }
+    if (!title.trim()) {
+      toast.error("Enter a test name first");
+      return false;
+    }
+
+    setSubmitting(true);
+    const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+    const { data: test, error } = await supabase
+      .from("tests")
+      .insert({
+        title,
+        description,
+        test_type: testType,
+        exam_pattern: examPattern,
+        subjects: [],
+        duration_minutes: duration,
+        correct_marks: correctMarks,
+        wrong_marks: wrongMarks,
+        total_questions: 0,
+        total_marks: 0,
+        is_published: false,
+        course_id: courseId || null,
+        slug,
+        created_by: user.id,
+      })
+      .select("id, slug")
+      .single();
+    setSubmitting(false);
+
+    if (error || !test) {
+      toast.error(error?.message ?? "Could not create draft test");
+      return false;
+    }
+
+    setResolvedTestId(test.id);
+    setCreatedDraftSlug(test.slug);
+    toast.success("Draft test created — import questions now");
+    return true;
+  };
+
+  const openDocxImport = async (method: "master" | "common") => {
+    const ready = await ensureDraftForImport();
+    if (!ready) return;
+    if (method === "common") setCommonImportOpen(true);
+    else setDocxImportOpen(true);
+  };
+
+  const afterImport = () => {
+    setDocxImportOpen(false);
+    setCommonImportOpen(false);
+    setReloadKey((k) => k + 1);
+    toast.success("Questions appended — reloading list");
+    if (!isEditMode && createdDraftSlug) {
+      navigate(`/admin/tests/${createdDraftSlug}/edit`, { replace: true });
+    }
   };
 
   const submit = async (publish: boolean) => {
