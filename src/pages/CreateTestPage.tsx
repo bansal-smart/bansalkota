@@ -932,13 +932,13 @@ const CreateTestPage = () => {
         open={docxImportOpen}
         onClose={() => setDocxImportOpen(false)}
         onImported={afterImport}
-        testId={resolvedTestId ?? undefined}
+        testId={importTargetTestId ?? resolvedTestId ?? undefined}
       />
       <DocxCommonImportDialog
         open={commonImportOpen}
         onClose={() => setCommonImportOpen(false)}
         onImported={afterImport}
-        testId={resolvedTestId ?? undefined}
+        testId={importTargetTestId ?? resolvedTestId ?? undefined}
       />
     </DndContext>
   );
