@@ -398,6 +398,7 @@ const CreateTestPage = () => {
         test_mode: testMode,
         cbt_enabled: testMode === "cbt",
         cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+        ...buildSchedulePayload(),
         slug,
         created_by: user.id,
       })
