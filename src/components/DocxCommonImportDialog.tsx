@@ -82,6 +82,7 @@ const DocxCommonImportDialog = ({
 
   useEffect(() => {
     if (!open) return;
+    if (target === "bank") return;
     if (testId) {
       setSelectedTestId(testId);
       return;
@@ -92,7 +93,7 @@ const DocxCommonImportDialog = ({
       .order("created_at", { ascending: false })
       .limit(150)
       .then(({ data }) => setTests((data ?? []) as TestRow[]));
-  }, [open, testId]);
+  }, [open, testId, target]);
 
   if (!open) return null;
 
