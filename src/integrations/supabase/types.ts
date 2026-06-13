@@ -2241,6 +2241,7 @@ export type Database = {
           is_public: boolean
           marks_correct: number
           marks_wrong: number
+          match_left: Json | null
           numerical_answer: number | null
           option_images: Json
           options: Json
@@ -2267,6 +2268,7 @@ export type Database = {
           is_public?: boolean
           marks_correct?: number
           marks_wrong?: number
+          match_left?: Json | null
           numerical_answer?: number | null
           option_images?: Json
           options?: Json
@@ -2293,6 +2295,7 @@ export type Database = {
           is_public?: boolean
           marks_correct?: number
           marks_wrong?: number
+          match_left?: Json | null
           numerical_answer?: number | null
           option_images?: Json
           options?: Json
@@ -2706,6 +2709,7 @@ export type Database = {
           marks_correct: number | null
           marks_unanswered: number
           marks_wrong: number | null
+          match_left: Json | null
           numerical_answer: number | null
           option_images: Json
           options: Json
@@ -2733,6 +2737,7 @@ export type Database = {
           marks_correct?: number | null
           marks_unanswered?: number
           marks_wrong?: number | null
+          match_left?: Json | null
           numerical_answer?: number | null
           option_images?: Json
           options?: Json
@@ -2760,6 +2765,7 @@ export type Database = {
           marks_correct?: number | null
           marks_unanswered?: number
           marks_wrong?: number | null
+          match_left?: Json | null
           numerical_answer?: number | null
           option_images?: Json
           options?: Json

@@ -7,8 +7,15 @@ import { useAuth } from "@/context/AuthContext";
 import MathRenderer from "@/components/MathRenderer";
 import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape";
 import CandidateCard from "@/components/test/CandidateCard";
+import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 
-type QuestionType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
+type QuestionType =
+  | "mcq-single"
+  | "mcq-multi"
+  | "numerical"
+  | "integer"
+  | "assertion-reason"
+  | "match-following";
 
 type TestQuestion = {
   id: string;
@@ -21,6 +28,7 @@ type TestQuestion = {
   question_type: QuestionType;
   options: { id: number; text: string }[];
   option_images: string[] | null;
+  match_left: MatchItem[] | null;
   marks_correct: number;
   marks_wrong: number;
   marks_unanswered: number;
@@ -33,10 +41,12 @@ type QStatus = "not-visited" | "answered" | "not-answered" | "marked" | "answere
 type AnswerVal =
   | { selected: number | null; time_spent?: number }
   | { selected: number[]; time_spent?: number }
-  | { selected: string; time_spent?: number };
+  | { selected: string; time_spent?: number }
+  | { selected: Record<string, string>; time_spent?: number };
 
 const isMulti = (t: QuestionType) => t === "mcq-multi";
 const isNumeric = (t: QuestionType) => t === "numerical" || t === "integer";
+const isMatch = (t: QuestionType) => t === "match-following";
 
 const TestTakingPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -86,7 +96,7 @@ const TestTakingPage = () => {
 
       const { data: qs } = await supabase
         .from("test_questions")
-        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
+        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
         .eq("test_id", t.id).order("position");
       setQuestions((qs ?? []) as unknown as TestQuestion[]);
 
@@ -301,6 +311,7 @@ const TestTakingPage = () => {
     if (s === null || s === undefined) return false;
     if (Array.isArray(s)) return s.length > 0;
     if (typeof s === "string") return s.trim().length > 0;
+    if (typeof s === "object") return Object.keys(s).length > 0;
     return true;
   };
 
@@ -332,6 +343,14 @@ const TestTakingPage = () => {
     updateStatus(q.id, value.trim() ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
   };
 
+  const handleMatchChange = (next: Record<string, string>) => {
+    if (!q) return;
+    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: next } as AnswerVal }));
+    const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
+    const filled = Object.keys(next).length > 0;
+    updateStatus(q.id, filled ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
+  };
+
   const handleNext = () => { autoSave(); if (currentQ < questions.length - 1) accrueTimeAndJump(currentQ + 1); };
   const handlePrev = () => currentQ > 0 && accrueTimeAndJump(currentQ - 1);
   const handleMarkAndNext = () => {
@@ -355,7 +374,9 @@ const TestTakingPage = () => {
       ? { selected: [], time_spent: (answers[q.id] as any)?.time_spent }
       : isNumeric(q.question_type)
         ? { selected: "", time_spent: (answers[q.id] as any)?.time_spent }
-        : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
+        : isMatch(q.question_type)
+          ? { selected: {}, time_spent: (answers[q.id] as any)?.time_spent }
+          : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
     setAnswers((prev) => ({ ...prev, [q.id]: cleared }));
     updateStatus(q.id, nextStatus);
     saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus });
@@ -407,7 +428,7 @@ const TestTakingPage = () => {
       else if (e.key === "m" || e.key === "M") { e.preventDefault(); handleMarkAndNext(); }
       else if (e.key === "c" || e.key === "C") { e.preventDefault(); handleClear(); }
       else if (e.key === "Enter") { e.preventDefault(); handleNext(); }
-      else if (/^[1-9]$/.test(e.key) && q && !isNumeric(q.question_type)) {
+      else if (/^[1-9]$/.test(e.key) && q && !isNumeric(q.question_type) && !isMatch(q.question_type)) {
         const idx = parseInt(e.key, 10) - 1;
         if (q.options[idx]) {
           if (isMulti(q.question_type)) handleMultiToggle(idx); else handleSingleSelect(idx);
@@ -467,6 +488,7 @@ const TestTakingPage = () => {
     q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
     q.question_type === "integer" ? "Integer Type" :
     q.question_type === "numerical" ? "Numerical Answer" :
+    q.question_type === "match-following" ? "Match the Following" :
     "Assertion & Reason";
 
   return (
@@ -610,7 +632,15 @@ const TestTakingPage = () => {
               )}
 
               {/* Input */}
-              {isNumeric(q.question_type) ? (
+              {isMatch(q.question_type) ? (
+                <MatchFollowing
+                  left={(q.match_left ?? []) as MatchItem[]}
+                  options={q.options}
+                  optionImages={q.option_images ?? undefined}
+                  value={((answers[q.id] as any)?.selected as Record<string, string>) || {}}
+                  onChange={handleMatchChange}
+                />
+              ) : isNumeric(q.question_type) ? (
                 <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
               ) : isMulti(q.question_type) ? (
                 <div className="space-y-2">

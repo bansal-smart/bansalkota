@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
 import MathRenderer from "@/components/MathRenderer";
+import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -20,9 +21,11 @@ type Question = {
   subject: string | null;
   question_text: string;
   question_image_url: string | null;
+  question_type: string | null;
   options: { id: number; text: string }[] | unknown;
   option_images: string[] | null;
-  correct_answer: number;
+  match_left: MatchItem[] | null;
+  correct_answer: any;
   marks_correct: number | null;
   marks_wrong: number | null;
   explanation: string | null;
@@ -36,7 +39,7 @@ const TestSubjectBreakdownPage = () => {
   }>();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<string, { selected: number | null }>>({});
+  const [answers, setAnswers] = useState<Record<string, { selected: any }>>({});
   const [subjectName, setSubjectName] = useState<string>(subject ?? "");
   const [testName, setTestName] = useState<string>("");
 
@@ -54,12 +57,12 @@ const TestSubjectBreakdownPage = () => {
         return;
       }
       setTestName(att.test_name ?? "");
-      setAnswers((att.answers ?? {}) as Record<string, { selected: number | null }>);
+      setAnswers((att.answers ?? {}) as Record<string, { selected: any }>);
 
       const [qsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, subject, question_text, question_image_url, options, option_images, marks_correct, marks_wrong")
+          .select("id, subject, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong")
           .eq("test_id", att.test_id),
         supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
       ]);
@@ -97,8 +100,16 @@ const TestSubjectBreakdownPage = () => {
   let score = 0;
   questions.forEach((q) => {
     const sel = answers[q.id]?.selected;
-    if (sel == null) unattempted += 1;
-    else if (sel === q.correct_answer) {
+    const isMatch = q.question_type === "match-following";
+    if (sel == null || (typeof sel === "object" && !Array.isArray(sel) && Object.keys(sel || {}).length === 0)) {
+      unattempted += 1;
+    } else if (isMatch && q.correct_answer && typeof q.correct_answer === "object") {
+      const cm = q.correct_answer as Record<string, string>;
+      const ans = sel as Record<string, string>;
+      const allCorrect = Object.keys(cm).every((k) => ans[k] === cm[k]);
+      if (allCorrect) { correct += 1; score += Number(q.marks_correct ?? 4); }
+      else { wrong += 1; score += Number(q.marks_wrong ?? -1); }
+    } else if (sel === q.correct_answer) {
       correct += 1;
       score += Number(q.marks_correct ?? 4);
     } else {
@@ -133,8 +144,16 @@ const TestSubjectBreakdownPage = () => {
       <div className="space-y-3">
         {questions.map((q, idx) => {
           const sel = answers[q.id]?.selected;
-          const isCorrect = sel === q.correct_answer;
-          const isUnattempted = sel == null;
+          const isMatch = q.question_type === "match-following";
+          const isUnattempted =
+            sel == null ||
+            (typeof sel === "object" && !Array.isArray(sel) && Object.keys(sel || {}).length === 0);
+          const isCorrect = isMatch
+            ? !isUnattempted && q.correct_answer && typeof q.correct_answer === "object" &&
+              Object.keys(q.correct_answer as object).every(
+                (k) => (sel as Record<string, string>)[k] === (q.correct_answer as Record<string, string>)[k],
+              )
+            : sel === q.correct_answer;
           const opts = (Array.isArray(q.options) ? q.options : []) as { id: number; text: string }[];
           return (
             <div key={q.id} className="rounded-2xl border border-border bg-card p-4 animate-fade-in">
@@ -156,31 +175,44 @@ const TestSubjectBreakdownPage = () => {
                   <img src={q.question_image_url} alt="Question figure" className="max-h-72 rounded-lg border border-border" />
                 </div>
               )}
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {opts.map((opt) => {
-                  const isAns = opt.id === q.correct_answer;
-                  const isSel = opt.id === sel;
-                  const optImg = Array.isArray(q.option_images) ? q.option_images[opt.id] : null;
-                  return (
-                    <div
-                      key={opt.id}
-                      className={`rounded-lg border px-3 py-2 text-xs ${
-                        isAns
-                          ? "border-secondary bg-secondary/10 text-foreground"
-                          : isSel
-                          ? "border-destructive bg-destructive/10 text-foreground"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
-                      <MathRenderer content={opt.text} inline />
-                      {optImg && (
-                        <img src={optImg} alt="" className="mt-1.5 max-h-24 rounded border border-border" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              {isMatch ? (
+                <div className="mt-3">
+                  <MatchFollowing
+                    left={(q.match_left ?? []) as MatchItem[]}
+                    options={opts}
+                    optionImages={q.option_images ?? undefined}
+                    value={(sel as Record<string, string>) || {}}
+                    correctMap={(q.correct_answer as Record<string, string>) || {}}
+                    disabled
+                  />
+                </div>
+              ) : (
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {opts.map((opt) => {
+                    const isAns = opt.id === q.correct_answer;
+                    const isSel = opt.id === sel;
+                    const optImg = Array.isArray(q.option_images) ? q.option_images[opt.id] : null;
+                    return (
+                      <div
+                        key={opt.id}
+                        className={`rounded-lg border px-3 py-2 text-xs ${
+                          isAns
+                            ? "border-secondary bg-secondary/10 text-foreground"
+                            : isSel
+                            ? "border-destructive bg-destructive/10 text-foreground"
+                            : "border-border text-muted-foreground"
+                        }`}
+                      >
+                        <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
+                        <MathRenderer content={opt.text} inline />
+                        {optImg && (
+                          <img src={optImg} alt="" className="mt-1.5 max-h-24 rounded border border-border" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {q.explanation && (
                 <div className="mt-3 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
                   <span className="font-bold text-foreground">Explanation: </span>
