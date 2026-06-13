@@ -437,6 +437,10 @@ const CreateTestPage = () => {
     if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
       return publishImportedDraft();
     }
+    // If the editor is empty but the DB has imported rows, never wipe them — publish as-is.
+    if (isEditMode && resolvedTestId && questions.length === 0 && importedQuestionCount.current > 0) {
+      return publishImportedDraft();
+    }
 
     const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
