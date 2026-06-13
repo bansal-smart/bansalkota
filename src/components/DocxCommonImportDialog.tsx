@@ -674,6 +674,16 @@ const DocxCommonImportDialog = ({
                         <span className="text-[10px] text-muted-foreground">
                           marks {DEFAULT_MARKS[q.type].c}/{DEFAULT_MARKS[q.type].w}
                         </span>
+                        <select
+                          value={q.subject || subjectForNumber(q.number)}
+                          onChange={(e) => updateQ(idx, { subject: e.target.value })}
+                          className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-semibold text-primary"
+                          title="Subject for this question"
+                        >
+                          {SUBJECTS.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
                       </div>
                       <button
                         onClick={() => removeQ(idx)}
