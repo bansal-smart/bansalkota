@@ -2788,7 +2788,7 @@ export type Database = {
           sub_topic: string | null
           subject: string | null
           test_id: string
-          tolerance: number
+          tolerance: number | null
           topic: string | null
         }
         Insert: {
@@ -2817,7 +2817,7 @@ export type Database = {
           sub_topic?: string | null
           subject?: string | null
           test_id: string
-          tolerance?: number
+          tolerance?: number | null
           topic?: string | null
         }
         Update: {
@@ -2846,7 +2846,7 @@ export type Database = {
           sub_topic?: string | null
           subject?: string | null
           test_id?: string
-          tolerance?: number
+          tolerance?: number | null
           topic?: string | null
         }
         Relationships: [
