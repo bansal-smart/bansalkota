@@ -640,6 +640,57 @@ export type Database = {
           },
         ]
       }
+      course_batches: {
+        Row: {
+          center_id: string | null
+          class_level: string | null
+          code: string
+          course_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          center_id?: string | null
+          class_level?: string | null
+          code: string
+          course_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          center_id?: string | null
+          class_level?: string | null
+          code?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_batches_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_batches_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_pdfs: {
         Row: {
           course_id: string
@@ -2142,6 +2193,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          batch_id: string | null
           center_id: string | null
           city: string | null
           class_level: string | null
@@ -2158,6 +2210,7 @@ export type Database = {
           onboarding_completed: boolean
           phone: string | null
           plan: string
+          roll_number: string | null
           school_id: string | null
           state: string | null
           target_exam: string | null
@@ -2166,6 +2219,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          batch_id?: string | null
           center_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -2182,6 +2236,7 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
+          roll_number?: string | null
           school_id?: string | null
           state?: string | null
           target_exam?: string | null
@@ -2190,6 +2245,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          batch_id?: string | null
           center_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -2206,6 +2262,7 @@ export type Database = {
           onboarding_completed?: boolean
           phone?: string | null
           plan?: string
+          roll_number?: string | null
           school_id?: string | null
           state?: string | null
           target_exam?: string | null
@@ -2213,6 +2270,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "course_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_center_id_fkey"
             columns: ["center_id"]
@@ -2918,6 +2982,9 @@ export type Database = {
       tests: {
         Row: {
           auto_release: boolean
+          cbt_allowed_batch_ids: string[]
+          cbt_enabled: boolean
+          cbt_token: string | null
           correct_marks: number
           course_id: string | null
           created_at: string
@@ -2943,6 +3010,9 @@ export type Database = {
         }
         Insert: {
           auto_release?: boolean
+          cbt_allowed_batch_ids?: string[]
+          cbt_enabled?: boolean
+          cbt_token?: string | null
           correct_marks?: number
           course_id?: string | null
           created_at?: string
@@ -2968,6 +3038,9 @@ export type Database = {
         }
         Update: {
           auto_release?: boolean
+          cbt_allowed_batch_ids?: string[]
+          cbt_enabled?: boolean
+          cbt_token?: string | null
           correct_marks?: number
           course_id?: string | null
           created_at?: string
@@ -3095,6 +3168,29 @@ export type Database = {
       can_reattempt_test: {
         Args: { _test_id: string; _user_id: string }
         Returns: boolean
+      }
+      cbt_lookup_student: {
+        Args: { _phone: string; _roll: string }
+        Returns: {
+          batch_id: string
+          full_name: string
+          phone: string
+          user_id: string
+        }[]
+      }
+      cbt_test_by_token: {
+        Args: { _token: string }
+        Returns: {
+          cbt_allowed_batch_ids: string[]
+          description: string
+          duration_minutes: number
+          ends_at: string
+          id: string
+          starts_at: string
+          title: string
+          total_marks: number
+          total_questions: number
+        }[]
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
