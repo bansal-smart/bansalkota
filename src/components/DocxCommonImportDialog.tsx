@@ -30,6 +30,8 @@ type Props = {
   onImported: () => void;
   testId?: string;
   defaultSubject?: string;
+  /** "test" (default) imports into test_questions; "bank" imports into question_bank. */
+  target?: "test" | "bank";
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -61,6 +63,7 @@ const DocxCommonImportDialog = ({
   onImported,
   testId,
   defaultSubject,
+  target = "test",
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -79,6 +82,7 @@ const DocxCommonImportDialog = ({
 
   useEffect(() => {
     if (!open) return;
+    if (target === "bank") return;
     if (testId) {
       setSelectedTestId(testId);
       return;
@@ -89,7 +93,7 @@ const DocxCommonImportDialog = ({
       .order("created_at", { ascending: false })
       .limit(150)
       .then(({ data }) => setTests((data ?? []) as TestRow[]));
-  }, [open, testId]);
+  }, [open, testId, target]);
 
   if (!open) return null;
 
@@ -256,18 +260,18 @@ const DocxCommonImportDialog = ({
       toast.error(v);
       return;
     }
-    if (!testId && !selectedTestId) {
+    if (target === "test" && !testId && !selectedTestId) {
       toast.error("Pick a test to import questions into.");
       return;
     }
-    const targetTestId = testId ?? selectedTestId!;
+    const targetTestId = target === "test" ? (testId ?? selectedTestId!) : null;
 
     setStep("uploading");
     const { data: batch, error: batchErr } = await supabase
       .from("question_import_batches")
       .insert({
         uploaded_by: user.id,
-        target_type: "test",
+        target_type: target,
         target_id: targetTestId,
         filename: fileName,
         question_count: questions.length,
@@ -294,52 +298,98 @@ const DocxCommonImportDialog = ({
 
     setStep("saving");
 
-    // Mark the test as common-method
-    await supabase.from("tests").update({ import_method: "common" } as any).eq("id", targetTestId);
-
-    // Compute starting position for ordering
-    const { data: existing } = await supabase
-      .from("test_questions")
-      .select("position")
-      .eq("test_id", targetTestId)
-      .order("position", { ascending: false })
-      .limit(1);
-    const startPos = (existing?.[0]?.position ?? -1) + 1;
-
-    const rows = questions.map((q, i) => {
-      const base = buildRow(q, batchId);
-      const marks = DEFAULT_MARKS[q.type];
-      return {
-        test_id: targetTestId,
-        position: startPos + i,
-        marks_correct: marks.c,
-        marks_wrong: marks.w,
-        marks_unanswered: marks.u,
-        partial_marking: marks.partial,
-        ...base,
-      };
-    });
-
-    const { error: insErr } = await supabase.from("test_questions").insert(rows as any);
     let okCount = 0;
     let failCount = 0;
-    if (insErr) {
-      failCount = rows.length;
+
+    try {
+      if (target === "test" && targetTestId) {
+        // Mark the test as common-method
+        await supabase.from("tests").update({ import_method: "common" } as any).eq("id", targetTestId);
+
+        // Compute starting position for ordering
+        const { data: existing } = await supabase
+          .from("test_questions")
+          .select("position")
+          .eq("test_id", targetTestId)
+          .order("position", { ascending: false })
+          .limit(1);
+        const startPos = (existing?.[0]?.position ?? -1) + 1;
+
+        const rows = questions.map((q, i) => {
+          const base = buildRow(q, batchId);
+          const marks = DEFAULT_MARKS[q.type];
+          return {
+            test_id: targetTestId,
+            position: startPos + i,
+            marks_correct: marks.c,
+            marks_wrong: marks.w,
+            marks_unanswered: marks.u,
+            partial_marking: marks.partial,
+            ...base,
+          };
+        });
+
+        const { error: insErr } = await supabase.from("test_questions").insert(rows as any);
+        if (insErr) throw insErr;
+
+        // Verify rows actually landed
+        const { count, error: cntErr } = await supabase
+          .from("test_questions")
+          .select("id", { count: "exact", head: true })
+          .eq("test_id", targetTestId)
+          .eq("import_batch_id", batchId);
+        if (cntErr) throw cntErr;
+        if ((count ?? 0) < rows.length) {
+          throw new Error(`Only ${count ?? 0}/${rows.length} questions were saved (RLS or permission issue).`);
+        }
+
+        okCount = rows.length;
+        await syncTestStats(targetTestId);
+      } else {
+        // target === "bank"
+        const rows = questions.map((q) => {
+          const base = buildRow(q, batchId);
+          const marks = DEFAULT_MARKS[q.type];
+          return {
+            created_by: user.id,
+            difficulty: "medium",
+            is_public: true,
+            tags: [],
+            marks_correct: marks.c,
+            marks_wrong: marks.w,
+            partial_marking: marks.partial,
+            ...base,
+          };
+        });
+
+        const { error: insErr } = await supabase.from("question_bank").insert(rows as any);
+        if (insErr) throw insErr;
+
+        const { count, error: cntErr } = await supabase
+          .from("question_bank")
+          .select("id", { count: "exact", head: true })
+          .eq("import_batch_id", batchId);
+        if (cntErr) throw cntErr;
+        if ((count ?? 0) < rows.length) {
+          throw new Error(`Only ${count ?? 0}/${rows.length} questions were saved (RLS or permission issue).`);
+        }
+
+        okCount = rows.length;
+      }
+    } catch (err: any) {
+      failCount = questions.length;
       await supabase
         .from("question_import_batches")
         .update({
           status: "failed",
           question_count: 0,
-          error_log: { errors: [insErr.message] },
+          error_log: { errors: [err?.message ?? String(err)] },
         })
         .eq("id", batchId);
-      toast.error(`Failed to import: ${insErr.message}`);
+      toast.error(`Failed to import: ${err?.message ?? "unknown error"}`);
       setImported({ ok: 0, failed: failCount });
-      setStep("done");
+      setStep("preview");
       return;
-    } else {
-      okCount = rows.length;
-      await syncTestStats(targetTestId);
     }
 
     await supabase
@@ -464,7 +514,7 @@ const DocxCommonImportDialog = ({
             <div className="space-y-4">
               {/* Test + subject */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {!testId && (
+                {target === "test" && !testId && (
                   <div>
                     <label className="text-xs font-bold text-foreground">Target test</label>
                     <select

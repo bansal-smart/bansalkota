@@ -317,42 +317,54 @@ const DocxBulkImportDialog = ({
 
     // 3b. Optionally also insert into a test (independent of bank result)
     if (wantPushToTest && selectedTestId) {
-      const { data: existing } = await supabase
-        .from("test_questions")
-        .select("position")
-        .eq("test_id", selectedTestId)
-        .order("position", { ascending: false })
-        .limit(1);
-      const startPos = (existing?.[0]?.position ?? -1) + 1;
-      const testRows = questions.map((q, i) => {
-        const base = buildBaseRow(q, batchId);
-        return {
-          test_id: selectedTestId,
-          position: startPos + i,
-          marks_correct: 4,
-          marks_wrong:
-            q.type === "mcq-single" || q.type === "mcq-multi" || q.type === "match-following"
-              ? -1
-              : 0,
-          marks_unanswered: 0,
-          partial_marking: q.type === "mcq-multi",
-          ...base,
-        };
-      });
-      const { error: testErr } = await supabase
-        .from("test_questions")
-        .insert(testRows as any);
-      if (testErr) {
-        failCount = testRows.length;
-        await supabase
-          .from("question_import_batches")
-          .update({ error_log: { errors: [testErr.message] } })
-          .eq("id", batchId);
-        toast.error(`Failed to push questions to test: ${testErr.message}`);
-      } else {
+      try {
+        const { data: existing } = await supabase
+          .from("test_questions")
+          .select("position")
+          .eq("test_id", selectedTestId)
+          .order("position", { ascending: false })
+          .limit(1);
+        const startPos = (existing?.[0]?.position ?? -1) + 1;
+        const testRows = questions.map((q, i) => {
+          const base = buildBaseRow(q, batchId);
+          return {
+            test_id: selectedTestId,
+            position: startPos + i,
+            marks_correct: 4,
+            marks_wrong:
+              q.type === "mcq-single" || q.type === "mcq-multi" || q.type === "match-following"
+                ? -1
+                : 0,
+            marks_unanswered: 0,
+            partial_marking: q.type === "mcq-multi",
+            ...base,
+          };
+        });
+        const { error: testErr } = await supabase
+          .from("test_questions")
+          .insert(testRows as any);
+        if (testErr) throw testErr;
+
+        // Verify the rows actually landed (RLS may silently filter)
+        const { count } = await supabase
+          .from("test_questions")
+          .select("id", { count: "exact", head: true })
+          .eq("test_id", selectedTestId)
+          .eq("import_batch_id", batchId);
+        if ((count ?? 0) < testRows.length) {
+          throw new Error(`Only ${count ?? 0}/${testRows.length} questions were saved (permission issue).`);
+        }
+
         okCount = Math.max(okCount, testRows.length);
         toast.success(`Pushed ${testRows.length} question${testRows.length === 1 ? "" : "s"} into the test.`);
         await syncTestStats(selectedTestId);
+      } catch (err: any) {
+        failCount = questions.length;
+        await supabase
+          .from("question_import_batches")
+          .update({ error_log: { errors: [err?.message ?? String(err)] } })
+          .eq("id", batchId);
+        toast.error(`Failed to push questions to test: ${err?.message ?? "unknown error"}`);
       }
     }
 

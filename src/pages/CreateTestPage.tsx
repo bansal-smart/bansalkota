@@ -314,6 +314,19 @@ const CreateTestPage = () => {
     toast.success("Question added");
   };
 
+  const addManyFromBank = (bankQs: BankQuestion[]) => {
+    const toAdd = bankQs.filter((q) => !addedBankIds.has(q.id));
+    if (toAdd.length === 0) {
+      toast.info("All selected questions are already in this test");
+      return;
+    }
+    setQuestions((prev) => [
+      ...prev,
+      ...toAdd.map((q) => fromBank(q, { correct: correctMarks, wrong: wrongMarks })),
+    ]);
+    toast.success(`Added ${toAdd.length} question${toAdd.length === 1 ? "" : "s"}`);
+  };
+
   const handleDragEnd = (e: DragEndEvent) => {
     if (e.over?.id !== "test-drop") return;
     const bankQ = e.active.data.current?.question as BankQuestion | undefined;
@@ -435,6 +448,10 @@ const CreateTestPage = () => {
       return false;
     };
     if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
+      return publishImportedDraft();
+    }
+    // If the editor is empty but the DB has imported rows, never wipe them — publish as-is.
+    if (isEditMode && resolvedTestId && questions.length === 0 && importedQuestionCount.current > 0) {
       return publishImportedDraft();
     }
 
@@ -737,7 +754,7 @@ const CreateTestPage = () => {
               </SheetTrigger>
               <SheetContent side="right" className="p-0 w-full sm:max-w-md">
                 <div className="h-full">
-                  <QuestionBankPanel draggable compact onAdd={addFromBank} addedBankIds={addedBankIds} />
+                  <QuestionBankPanel draggable compact onAdd={addFromBank} onAddMany={addManyFromBank} addedBankIds={addedBankIds} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -1029,7 +1046,7 @@ const CreateTestPage = () => {
 
         {/* Right pane (Question Bank) — desktop only, sticky with its own scroll */}
         <aside className="hidden lg:flex lg:w-1/2 border-l border-border bg-muted/30 flex-col sticky top-[57px] self-start h-[calc(100vh-57px)]">
-          <QuestionBankPanel draggable compact onAdd={addFromBank} addedBankIds={addedBankIds} />
+          <QuestionBankPanel draggable compact onAdd={addFromBank} onAddMany={addManyFromBank} addedBankIds={addedBankIds} />
         </aside>
       </div>
 

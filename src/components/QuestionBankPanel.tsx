@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X, Download, Check } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X, Download, Check, CheckSquare } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
 import BulkQuestionUploadDialog from "./BulkQuestionUploadDialog";
 import DocxBulkImportDialog from "./DocxBulkImportDialog";
+import DocxCommonImportDialog from "./DocxCommonImportDialog";
 import MathRenderer from "./MathRenderer";
 import TablePagination from "./TablePagination";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +107,8 @@ type Props = {
   className?: string;
   /** When provided, each card shows a click-to-add button. */
   onAdd?: (q: BankQuestion) => void;
+  /** When provided alongside onAdd, picker mode shows checkboxes + "Add N selected" / "Select all" toolbar. */
+  onAddMany?: (qs: BankQuestion[]) => void;
   /** Bank question IDs already in the current test (to render "Added" state). */
   addedBankIds?: Set<string>;
 };
@@ -119,7 +122,7 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
   </th>
 );
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, addedBankIds }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, onAddMany, addedBankIds }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
@@ -128,6 +131,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [editing, setEditing] = useState<BankQuestion | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [docxOpen, setDocxOpen] = useState(false);
+  const [commonDocxOpen, setCommonDocxOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("question_text");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -273,8 +277,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
               >
                 <Download className="h-3 w-3" /> .docx format guide
               </a>
-              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Import questions from a Word .docx file (with inline images)">
+              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Master method — Arke .docx with numbered questions + Answer line">
                 <FileText className="h-3 w-3" /> Word import
+              </button>
+              <button onClick={() => setCommonDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10" title="Common method — cropped 3-column .docx (question + options as one printed block)">
+                <FileText className="h-3 w-3" /> Common import
               </button>
               <button onClick={() => setBulkOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
                 <Upload className="h-3 w-3" /> Bulk CSV
@@ -315,7 +322,45 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
             </button>
           </div>
         )}
+        {onAddMany && onAdd && (
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-2.5 py-1.5">
+            <button
+              onClick={() => {
+                const next = new Set(selected);
+                const allPicked = pageIds.every((id) => selected.has(id));
+                if (allPicked) pageIds.forEach((id) => next.delete(id));
+                else pageIds.forEach((id) => next.add(id));
+                setSelected(next);
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+              title="Toggle selection of every question visible on this page"
+            >
+              <CheckSquare className="h-3 w-3" />
+              {pageIds.length > 0 && pageIds.every((id) => selected.has(id)) ? "Unselect page" : "Select page"}
+            </button>
+            {selected.size > 0 && (
+              <>
+                <span className="text-[11px] font-semibold text-foreground">{selected.size} selected</span>
+                <div className="flex-1" />
+                <button
+                  onClick={() => {
+                    const picks = processed.filter((q) => selected.has(q.id));
+                    onAddMany(picks);
+                    clearSelection();
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground hover:opacity-90"
+                >
+                  <Plus className="h-3 w-3" /> Add {selected.size} to test
+                </button>
+                <button onClick={clearSelection} className="rounded-md p-1 text-muted-foreground hover:bg-muted" title="Clear selection">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
+
 
       {/* Questions list */}
       <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -404,19 +449,36 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
               {onAdd ? " · click + Add or drag" : ""}
             </p>
             <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
-              {processed.map((q) => (
-                <QuestionCard
-                  key={q.id}
-                  q={q}
-                  draggable={draggable}
-                  compact={compact}
-                  onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
-                  onDelete={manage ? handleDelete : undefined}
-                  onAdd={onAdd}
-                  alreadyAdded={addedBankIds?.has(q.id)}
-                />
-              ))}
+              {processed.map((q) => {
+                const card = (
+                  <QuestionCard
+                    q={q}
+                    draggable={draggable}
+                    compact={compact}
+                    onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
+                    onDelete={manage ? handleDelete : undefined}
+                    onAdd={onAdd}
+                    alreadyAdded={addedBankIds?.has(q.id)}
+                  />
+                );
+                if (!onAddMany) return <div key={q.id}>{card}</div>;
+                const isSel = selected.has(q.id);
+                return (
+                  <div key={q.id} className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isSel}
+                      onChange={() => toggleRow(q.id)}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="mt-3 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0"
+                      aria-label="Select question"
+                    />
+                    <div className="flex-1 min-w-0">{card}</div>
+                  </div>
+                );
+              })}
             </div>
+
           </div>
         )}
       </div>
@@ -424,6 +486,8 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
       <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
       <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} />
       <DocxBulkImportDialog open={docxOpen} onClose={() => setDocxOpen(false)} onImported={reload} />
+      <DocxCommonImportDialog open={commonDocxOpen} onClose={() => setCommonDocxOpen(false)} onImported={reload} target="bank" />
+
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>
         <DialogContent>

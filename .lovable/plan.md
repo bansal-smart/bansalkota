@@ -1,56 +1,55 @@
-## What the sheet contains
+## Goals
 
-The uploaded file `st_data_1-2.xlsx` has **52 rows** (not 84 — the file shows 52). All rows are **BULLS EYE / JEE / Class XI**, spread across 5 batches:
+1. Fix the bug where Common .docx import "succeeds" in the UI but no questions appear in the test (e.g. "trial cbt lab" — batch row created, `status: in_progress`, but 0 rows in `test_questions`).
+2. Add the **Common import** option to the Question Bank toolbar (currently only Master "Word import" exists).
+3. In **Create Test**, add a **Select all on page** action alongside drag-and-drop so an admin can bulk-add many bank questions in one click.
 
-`XI-J1`, `XI-J2`, `XI-P1`, `XI-P2`, `XI-P*`
+## Findings
 
-Columns: `RegNo` (roll), `StudentName`, `CONTACTNO` (mobile), `Dob`, `COURSE`, `STREAM`, `BATCH`.
+- `question_import_batches` for the broken test shows `status='in_progress'`, `question_count=75`, empty `error_log`, and 0 rows in `test_questions`. So either the row insert threw after the await and the dialog was dismissed before the catch path updated the batch, or the rows were inserted and later wiped by `submit()` at line 475 of `CreateTestPage.tsx` (`delete().eq("test_id", resolvedTestId)`), which runs on every "Save"/"Publish" of a non-imported edit even when the local `questions` state is empty.
+- Reload of imported questions depends on `reloadKey` re-running the edit-mode `useEffect`, which already maps `import_batch_id || source_filename` → `imported: true`. That logic is correct; the rows just aren't there.
+- `DocxCommonImportDialog` and `DocxBulkImportDialog` set `import_batch_id` + `source_filename`, but the insert path doesn't refresh the batch row to `completed` until later, leaving stuck `in_progress` batches with no diagnostic when something fails.
 
-## What we already have
+## Plan
 
-The `cbt-bulk-setup` edge function already does exactly this work — given a row array it:
-1. Finds/creates the **Kota** center.
-2. Finds/creates **Bulls Eye JEE / Sterling JEE / Nucleus JEE** courses (matched by your `COURSE` column).
-3. Finds/creates the batch for each `(course, batch_code)` pair under that course.
-4. Creates an auth user per student: `email = {roll}@cbt.bansal.local`, `password = mobile number`.
-5. Upserts the profile (name, phone, roll, batch, center, stream, class, "Bansal offline" flag).
-6. Grants the `student` role + creates an enrollment in the matching course.
+### 1. Make import resilient and visible
 
-It's idempotent — re-running on the same roll numbers updates them instead of duplicating.
+`src/components/DocxCommonImportDialog.tsx` and `src/components/DocxBulkImportDialog.tsx`:
+- Wrap the `test_questions` insert in a try/catch. On any thrown error (not just `insErr`), update the batch row to `status='failed'` with the error message in `error_log`, surface it via `toast.error`, and keep the dialog on the preview step instead of silently closing.
+- After a successful insert, immediately update the batch row to `status='completed'` and re-run `syncTestStats(targetTestId)` (already imported) before calling `onImported()`.
+- Verify with a `select('id', { count: 'exact', head: true })` post-insert that the count matches `rows.length`; if not, mark failed.
 
-The only missing piece is a UI to feed an Excel file into it.
+`src/pages/CreateTestPage.tsx`:
+- Guard `submit()` so it never deletes existing `test_questions` when the local `questions` array is empty (currently it does, which can wipe an imported test if the user hits Save before the reload finishes). If `questions.length === 0` and `importedQuestionCount.current > 0`, route through `publishImportedDraft()` instead.
+- Backfill recovery: re-run the failed import (or surface a "Retry import" button on a batch with `status='in_progress'` older than a few minutes) — out of scope unless requested; for now the toast + failed status is enough so the user knows what happened.
 
-## What I'll build
+### 2. Common import in Question Bank
 
-### 1. XLSX uploader on Admin → Batches
-Add an "Import students from Excel" card next to the existing "Run Kota CBT bulk setup" button:
+`src/components/QuestionBankPanel.tsx`:
+- Add a second toolbar button next to the existing "Word import" labelled **"Common import"** that opens `DocxCommonImportDialog` in question-bank mode.
 
-- File input accepting `.xlsx` / `.xls`.
-- Client-side parse with **SheetJS** (`xlsx` package — already widely used pattern in the project).
-- Map columns: `RegNo → roll_number`, `StudentName → full_name`, `CONTACTNO → phone`, `Dob → dob`, `COURSE → course`, `STREAM → stream`, `BATCH → batch_code`. Derive `class_level` from batch prefix (`XI-` → `"XI"`, `XII-` → `"XII"`, `XIII-` → `"XIII"`).
-- Show a preview table (first 10 rows + total count + unique batches list) before submit.
-- Submit calls the existing `cbt-bulk-setup` function with the parsed `rows` array.
-- Show a result toast: `X created · Y updated · Z errors`, and (if errors) a small expandable list of failing roll numbers.
+`src/components/DocxCommonImportDialog.tsx`:
+- Add a new optional prop `target: "test" | "bank"` (default `"test"`).
+- When `target === "bank"`, skip the test picker, skip `tests` update, and insert into `public.question_bank` instead of `public.test_questions`. Map fields: `subject`, `topic`, `question_text`, `question_image_url`, `question_type`, `options`, `option_images`, `correct_answer`, `numerical_answer`, `marks_correct/wrong/unanswered`, `partial_marking`, `created_by = user.id`, `import_batch_id`, `source_filename`. Use `target_type: "bank"` on the batch row.
+- After success show the same toast and call `onImported()` so the bank list refreshes.
 
-### 2. Tiny tweak to course matching
-Right now the edge function only knows three course slugs (`bulls-eye-jee`, `sterling-jee`, `nucleus-jee`). For unknown course names it creates a new one — I'll leave that fallback but normalise the lookup so `"Bulls Eye"`, `"BULLS EYE"`, `"bulls-eye"` all resolve to the same existing `bulls-eye-jee` course (your earlier import already created it).
+### 3. Select-all in Create Test (bank → test)
 
-### 3. Special batch code handling
-`XI-P*` contains a `*` which is fine for our `code` column (free text). I'll keep it as-is so the batch shows exactly as in the sheet.
+`src/components/QuestionBankPanel.tsx`:
+- When `onAdd` is supplied (i.e. picker mode) and a new optional `onAddMany?: (qs: BankQuestion[]) => void` prop is provided, render a small toolbar above the list with:
+  - "Select all on page" / "Clear" toggle (reuse existing `pageIds` + `selected` state which currently only renders in `tableView`/`manage` mode).
+  - "Add N selected to test" button that calls `onAddMany(pageItems.filter(q => selected.has(q.id)))` then clears the selection.
+- Show row-level checkboxes in the picker variant (compact card layout) as well, not only in tableView.
 
-## Result for you
+`src/pages/CreateTestPage.tsx`:
+- Pass `onAddMany` to `<QuestionBankPanel>` (both the inline desktop instance and the Sheet on mobile). Implementation:
+  - Filter out IDs already in `addedBankIds`.
+  - Map remaining via `fromBank(q, { correct: correctMarks, wrong: wrongMarks })`.
+  - Append to `questions` in one `setQuestions` call.
+  - Toast `Added N questions`.
 
-After clicking Import:
-- 1 center (Kota — reused).
-- 1 course (Bulls Eye JEE — reused).
-- Up to 5 batches under Bulls Eye JEE (`XI-J1`, `XI-J2`, `XI-P1`, `XI-P2`, `XI-P*`) — created if missing.
-- 52 student accounts, each able to log in at `https://bansal.doctylia.com/cbt` with their **roll number + mobile**.
-- All 52 visible in **Admin → Students** with the `student` role and their batch.
+## Out of scope
 
-## Files I'll touch
-
-- `src/pages/AdminBatchesPage.tsx` — add uploader card, parse + preview + submit logic.
-- `package.json` — add `xlsx` dependency (if not already present).
-- `supabase/functions/cbt-bulk-setup/index.ts` — small course-name normalisation so re-imports don't create duplicate courses.
-
-No DB migration needed.
+- Auto-retry of stuck `in_progress` batches.
+- Changes to the actual .docx parser.
+- The unrelated "Rendered more hooks than during the previous render" warning — will look at it only if it surfaces from the touched files.
