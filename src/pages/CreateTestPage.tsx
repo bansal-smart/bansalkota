@@ -138,6 +138,9 @@ const CreateTestPage = () => {
   const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
+  const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
+  const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
