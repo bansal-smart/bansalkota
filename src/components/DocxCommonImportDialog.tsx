@@ -78,8 +78,17 @@ const DocxCommonImportDialog = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
 
+  // Subject-by-range tagging: e.g. [{from:1,to:30,subject:"Physics"}, ...]
+  type SubjectRange = { from: number; to: number; subject: string };
+  const [subjectRanges, setSubjectRanges] = useState<SubjectRange[]>([]);
+
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
+
+  const subjectForNumber = (n: number): string => {
+    const hit = subjectRanges.find((r) => n >= r.from && n <= r.to);
+    return hit?.subject || subject;
+  };
 
   useEffect(() => {
     if (!open) return;
