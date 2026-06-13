@@ -607,20 +607,29 @@ const DocxCommonImportDialog = ({
                       e.g. Q1–30 Physics, Q31–60 Chemistry, Q61–90 Maths. Required for subject-wise results.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const last = subjectRanges[subjectRanges.length - 1];
-                      const nextFrom = last ? last.to + 1 : 1;
-                      setSubjectRanges([
-                        ...subjectRanges,
-                        { from: nextFrom, to: nextFrom + 9, subject: SUBJECTS[0] },
-                      ]);
-                    }}
-                    className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
-                  >
-                    + Add range
-                  </button>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={autoSplitSubjects}
+                      className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary/10"
+                    >
+                      Auto-split equally
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const last = subjectRanges[subjectRanges.length - 1];
+                        const nextFrom = last ? last.to + 1 : 1;
+                        setSubjectRanges([
+                          ...subjectRanges,
+                          { from: nextFrom, to: nextFrom + 9, subject: allowedSubjects[0] },
+                        ]);
+                      }}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+                    >
+                      + Add range
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {subjectRanges.map((r, i) => (
