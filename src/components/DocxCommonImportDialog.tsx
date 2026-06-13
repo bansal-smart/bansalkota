@@ -247,7 +247,7 @@ const DocxCommonImportDialog = ({
       : ["", "", "", ""];
 
     return {
-      subject: q.subject || subject,
+      subject: q.subject || subjectForNumber(q.number),
       topic: q.topic || null,
       question_text: stemHtml || q.stemText,
       question_image_url: stemHasInlineImg ? null : stemImg,
