@@ -34,6 +34,11 @@ const COURSE_MAP: Record<string, { name: string; slug: string; subject: string; 
   "NUCLEUS":   { name: "Nucleus JEE",   slug: "nucleus-jee",   subject: "JEE", educator: "Bansal Faculty" },
 };
 
+// Normalise any variant of a course name to its canonical map key
+// e.g. "Bulls Eye", "bulls-eye", "BULLS  EYE" → "BULLS EYE"
+const normaliseCourseKey = (raw: string): string =>
+  raw.trim().toUpperCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ");
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
