@@ -85,6 +85,8 @@ import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
 import CbtLoginPage from "./pages/CbtLoginPage";
+import CbtLiveTestsPage from "./pages/CbtLiveTestsPage";
+import CbtSubmittedPage from "./pages/CbtSubmittedPage";
 import AdminBatchesPage from "./pages/AdminBatchesPage";
 import BoostPage from "./pages/BoostPage";
 import CentersPage from "./pages/CentersPage";
