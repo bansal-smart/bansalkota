@@ -266,12 +266,12 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                 <Download className="h-3 w-3" /> Sample CSV
               </a>
               <a
-                href="/templates/question-bank-template.docx"
+                href="/templates/question-bank-template.txt"
                 download
                 className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
-                title="Download a sample Word .docx using the Arke format"
+                title="Open the Arke .docx format guide (copy this layout into your Word file)"
               >
-                <Download className="h-3 w-3" /> Sample .docx
+                <Download className="h-3 w-3" /> .docx format guide
               </a>
               <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Import questions from a Word .docx file (with inline images)">
                 <FileText className="h-3 w-3" /> Word import
