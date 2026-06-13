@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Loader2, ArrowLeft, Pencil, Trash2, Check, X, Eye, Upload, BarChart3, Trophy } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Trash2, Check, X, Eye, Upload, BarChart3, Trophy, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
