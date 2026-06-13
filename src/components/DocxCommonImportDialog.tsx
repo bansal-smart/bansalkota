@@ -514,7 +514,7 @@ const DocxCommonImportDialog = ({
             <div className="space-y-4">
               {/* Test + subject */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {!testId && (
+                {target === "test" && !testId && (
                   <div>
                     <label className="text-xs font-bold text-foreground">Target test</label>
                     <select
