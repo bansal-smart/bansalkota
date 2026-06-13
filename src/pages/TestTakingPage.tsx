@@ -488,6 +488,7 @@ const TestTakingPage = () => {
     q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
     q.question_type === "integer" ? "Integer Type" :
     q.question_type === "numerical" ? "Numerical Answer" :
+    q.question_type === "match-following" ? "Match the Following" :
     "Assertion & Reason";
 
   return (
