@@ -214,6 +214,20 @@ const CreateTestPage = () => {
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
+      // Load schedule (starts_at / ends_at) into date + time inputs (local TZ).
+      const sAt = (test as any).starts_at ? new Date((test as any).starts_at) : null;
+      const eAt = (test as any).ends_at ? new Date((test as any).ends_at) : null;
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const dateStr = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const timeStr = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (sAt) {
+        setTestDate(dateStr(sAt));
+        setStartTime(timeStr(sAt));
+      } else if (eAt) {
+        setTestDate(dateStr(eAt));
+      }
+      if (eAt) setEndTime(timeStr(eAt));
+      setAutoRelease((test as any).auto_release !== false);
       setQuestions(
         (tqs ?? []).map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
