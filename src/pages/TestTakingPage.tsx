@@ -474,7 +474,13 @@ const TestTakingPage = () => {
               <li>Shortcuts: ← → navigate · 1-9 select option · M mark · C clear · Enter Save &amp; Next.</li>
             </ul>
           </div>
-          <button onClick={startAttempt} className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground">I'm ready · Start Test</button>
+          <button
+            onClick={startAttempt}
+            disabled={questions.length === 0}
+            className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {questions.length === 0 ? "No questions in this test yet" : "I'm ready · Start Test"}
+          </button>
           <Link to="/my-tests" className="block text-center text-xs text-muted-foreground hover:text-foreground">Back to test list</Link>
         </div>
       </div>
