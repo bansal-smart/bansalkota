@@ -443,7 +443,7 @@ const AdminDashboard = () => {
         <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
           <PlusCircle className="h-4 w-4 text-bansal-orange" /> Quick Actions
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-2">
           {quickActions.map((a) => (
             <Link
               key={a.label}
