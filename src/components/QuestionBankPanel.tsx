@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X, Download, Check } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
@@ -30,10 +30,12 @@ type CardProps = {
   draggable?: boolean;
   onEdit?: (q: BankQuestion) => void;
   onDelete?: (q: BankQuestion) => void;
+  onAdd?: (q: BankQuestion) => void;
+  alreadyAdded?: boolean;
   compact?: boolean;
 };
 
-const QuestionCard = ({ q, draggable, onEdit, onDelete, compact }: CardProps) => {
+const QuestionCard = ({ q, draggable, onEdit, onDelete, onAdd, alreadyAdded, compact }: CardProps) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `bank-${q.id}`,
     data: { question: q },
@@ -54,10 +56,28 @@ const QuestionCard = ({ q, draggable, onEdit, onDelete, compact }: CardProps) =>
             <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">{q.subject}</span>
             {q.topic && <span className="text-[10px] font-medium text-muted-foreground">{q.topic}</span>}
             <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
+            {(q as any).question_image_url && (
+              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground" title="Has image">img</span>
+            )}
           </div>
           <div className={`text-foreground ${compact ? "text-xs line-clamp-2" : "text-sm line-clamp-3"}`}>
             <MathRenderer content={q.question_text} />
           </div>
+          {onAdd && (
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!alreadyAdded) onAdd(q); }}
+              disabled={alreadyAdded}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition-colors ${
+                alreadyAdded
+                  ? "bg-secondary/15 text-secondary cursor-default"
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+              }`}
+              title={alreadyAdded ? "Already in this test" : "Add to test"}
+            >
+              {alreadyAdded ? <><Check className="h-3 w-3" /> Added</> : <><Plus className="h-3 w-3" /> Add</>}
+            </button>
+          )}
         </div>
         {(onEdit || onDelete) && (
           <div className="flex flex-col gap-1 shrink-0">
