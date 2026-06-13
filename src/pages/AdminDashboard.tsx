@@ -119,6 +119,8 @@ const AdminDashboard = () => {
   const kpis = [
     { label: "Students", value: profiles.length.toLocaleString(), sub: `+${newUsersToday} today`, Icon: Users, tone: "from-bansal-blue to-bansal-blue/70", to: "/admin/students" },
     { label: "Active Courses", value: courses.length.toString(), sub: `${courses.reduce((s, c) => s + (c.total_enrolled ?? 0), 0)} learners`, Icon: BookOpen, tone: "from-bansal-orange to-amber-500", to: "/admin/courses" },
+    { label: "Tests", value: testsTotal.toString(), sub: `${testAttemptsToday} attempts today · ${testsUpcoming} upcoming`, Icon: ClipboardCheck, tone: "from-indigo-600 to-purple-500", to: "/admin/tests-hub" },
+    { label: "Question Bank", value: questionBankCount.toLocaleString(), sub: "Total questions", Icon: Upload, tone: "from-cyan-600 to-sky-500", to: "/admin/tests-hub?tab=bank" },
     { label: "Centres Live", value: centres.length.toString(), sub: `${offlineStudents} offline students mapped`, Icon: Building2, tone: "from-emerald-600 to-teal-500", to: "/admin/centers" },
     { label: "Revenue (30d)", value: formatINR(monthlyRevenue), sub: `${enrollments.length} enrolments`, Icon: IndianRupee, tone: "from-rose-500 to-orange-500", to: "/admin/payments" },
     { label: "New Enquiries", value: pending.enquiries.toString(), sub: "Awaiting reply", Icon: Inbox, tone: "from-violet-600 to-fuchsia-500", to: "/admin/enquiries" },
