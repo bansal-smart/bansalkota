@@ -28,6 +28,7 @@ const fetchOverview = async () => {
     profilesRes, coursesRes, enrollmentsRes, liveRes, attemptsRes,
     eduRes, enqOpenRes, repRes, supportRes,
     centresRes, recentEnqRes, toppersRes,
+    testsLiveRes, testsTotalRes, qbankRes,
   ] = await Promise.all([
     supabase.from("profiles").select("user_id, full_name, plan, created_at, country, center_id").order("created_at", { ascending: false }).limit(500),
     supabase.from("courses").select("id, name, educator_name, total_enrolled, rating, price").eq("is_published", true),
@@ -41,6 +42,9 @@ const fetchOverview = async () => {
     supabase.from("centers").select("id, city, state, slug, region, is_hq").eq("is_published", true).order("sort_order", { ascending: true }),
     supabase.from("enquiries").select("id, name, email, source_type, status, priority, created_at, center_id").order("created_at", { ascending: false }).limit(8),
     supabase.from("toppers").select("id", { count: "exact", head: true }).eq("is_published", true),
+    supabase.from("tests").select("id", { count: "exact", head: true }).eq("is_published", true).gte("starts_at", todayStart),
+    supabase.from("tests").select("id", { count: "exact", head: true }),
+    supabase.from("question_bank").select("id", { count: "exact", head: true }),
   ]);
 
   return {
@@ -51,6 +55,9 @@ const fetchOverview = async () => {
     centres: (centresRes.data ?? []) as CentreRow[],
     recentEnq: (recentEnqRes.data ?? []) as EnquiryRow[],
     testAttemptsToday: attemptsRes.count ?? 0,
+    testsUpcoming: testsLiveRes.count ?? 0,
+    testsTotal: testsTotalRes.count ?? 0,
+    questionBankCount: qbankRes.count ?? 0,
     toppersCount: toppersRes.count ?? 0,
     pending: {
       educators: eduRes.count ?? 0,
