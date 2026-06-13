@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Copy, ShieldCheck, Monitor } from "lucide-react";
+import { Loader2, Copy, ShieldCheck, Monitor, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -70,16 +70,22 @@ const CbtSettingsPanel = ({ testId }: Props) => {
 
       {mode === "cbt" && (
         <>
-          <div className="rounded-xl border border-border bg-background p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1 inline-flex items-center gap-1"><Monitor className="h-3 w-3" /> Kiosk URL (single fixed link)</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate text-xs bg-muted/40 rounded px-2 py-1.5">{kioskUrl}</code>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Globe className="h-4 w-4 text-primary" />
+              <p className="text-xs font-bold uppercase tracking-wider text-primary">CBT Kiosk Link</p>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <p className="text-lg font-bold text-foreground truncate">{kioskUrl}</p>
+                <p className="text-[10px] text-muted-foreground">Single fixed link for all CBT tests</p>
+              </div>
               <button onClick={() => { navigator.clipboard.writeText(kioskUrl); toast.success("Link copied"); }}
-                className="rounded-lg border border-border px-2 py-1.5 text-xs hover:bg-muted inline-flex items-center gap-1">
-                <Copy className="h-3 w-3" /> Copy
+                className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
+                <Copy className="h-3.5 w-3.5" /> Copy Link
               </button>
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">Open this on lab computers (kiosk mode). Students sign in with Roll No + Mobile and will see this test if it's live and their batch is allowed.</p>
+            <p className="mt-3 text-[11px] text-muted-foreground">Open this on lab computers in kiosk mode. Students sign in with Roll No + Mobile and will see this test if it's live and their batch is allowed.</p>
           </div>
 
           <div>

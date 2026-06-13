@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Users, Database, Trash2 } from "lucide-react";
+import { Loader2, Plus, Users, Database, Trash2, Globe, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import roster from "@/data/cbtRoster.json";
@@ -110,15 +110,23 @@ const AdminBatchesPage = () => {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-primary">CBT Kiosk URL (single fixed link)</p>
-        <div className="mt-1 flex items-center gap-2 flex-wrap">
-          <code className="text-sm bg-background rounded px-2 py-1 border border-border">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>
+      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Globe className="h-4 w-4 text-primary" />
+          <p className="text-xs font-bold uppercase tracking-wider text-primary">CBT Kiosk Link</p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <p className="text-lg font-bold text-foreground truncate">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "https://bansal.doctylia.com/cbt"}</p>
+            <p className="text-[10px] text-muted-foreground">Single fixed link for all CBT tests</p>
+          </div>
           <button
             onClick={() => { const u = `${window.location.origin}/cbt`; navigator.clipboard.writeText(u); toast.success("Kiosk link copied"); }}
-            className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted">Copy</button>
+            className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
+            <Copy className="h-3.5 w-3.5" /> Copy Link
+          </button>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">Open this URL on lab computers in kiosk mode. Students log in with their roll number + mobile and see every live CBT test for their batch.</p>
+        <p className="mt-3 text-[11px] text-muted-foreground">Open this URL on lab computers in kiosk mode. Students log in with their roll number + mobile and see every live CBT test for their batch.</p>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4">
