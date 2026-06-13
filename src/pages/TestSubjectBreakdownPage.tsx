@@ -57,7 +57,7 @@ const TestSubjectBreakdownPage = () => {
         return;
       }
       setTestName(att.test_name ?? "");
-      setAnswers((att.answers ?? {}) as Record<string, { selected: number | null }>);
+      setAnswers((att.answers ?? {}) as Record<string, { selected: any }>);
 
       const [qsRes, ansRes] = await Promise.all([
         supabase
