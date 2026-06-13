@@ -743,23 +743,26 @@ const TestTakingPage = () => {
                   })}
                 </div>
               )}
-              <div>
+              <div className="flex flex-col min-h-0">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-0.5 flex-1 bg-neutral-200" />
                   <p className="text-[10px] font-black uppercase tracking-wider text-neutral-600">{activeSubject} — Section A</p>
                   <div className="h-0.5 flex-1 bg-neutral-200" />
                 </div>
-                <div className="grid grid-cols-5 gap-2">
-                  {subjectIndices.map(({ i }, posIdx) => {
-                    const qq = questions[i];
-                    return (
-                      <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} onClick={() => accrueTimeAndJump(i)} title={`Q${posIdx + 1}`}>
-                        {posIdx + 1}
-                      </PaletteShape>
-                    );
-                  })}
+                <div className="max-h-[320px] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {subjectIndices.map(({ i }, posIdx) => {
+                      const qq = questions[i];
+                      return (
+                        <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} size={30} onClick={() => accrueTimeAndJump(i)} title={`Q${posIdx + 1}`}>
+                          {posIdx + 1}
+                        </PaletteShape>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
+
             </div>
 
           </div>
