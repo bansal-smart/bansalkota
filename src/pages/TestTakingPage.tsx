@@ -632,7 +632,15 @@ const TestTakingPage = () => {
               )}
 
               {/* Input */}
-              {isNumeric(q.question_type) ? (
+              {isMatch(q.question_type) ? (
+                <MatchFollowing
+                  left={(q.match_left ?? []) as MatchItem[]}
+                  options={q.options}
+                  optionImages={q.option_images ?? undefined}
+                  value={((answers[q.id] as any)?.selected as Record<string, string>) || {}}
+                  onChange={handleMatchChange}
+                />
+              ) : isNumeric(q.question_type) ? (
                 <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
               ) : isMulti(q.question_type) ? (
                 <div className="space-y-2">
