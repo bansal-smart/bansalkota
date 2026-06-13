@@ -84,6 +84,8 @@ import AdminSchoolsPage from "./pages/AdminSchoolsPage";
 import { AuthProvider } from "./context/AuthContext";
 import NotFound from "./pages/NotFound";
 import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
+import CbtLoginPage from "./pages/CbtLoginPage";
+import AdminBatchesPage from "./pages/AdminBatchesPage";
 import BoostPage from "./pages/BoostPage";
 import CentersPage from "./pages/CentersPage";
 import CenterDetailPage from "./pages/CenterDetailPage";
