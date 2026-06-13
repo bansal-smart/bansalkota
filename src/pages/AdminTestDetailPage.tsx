@@ -193,7 +193,6 @@ const AdminTestDetailPage = () => {
   };
 
   // Analytics
-  const submitted = attempts.filter((a) => a.status !== "in_progress");
   const avgScore = submitted.length ? (submitted.reduce((s, a) => s + Number(a.score ?? 0), 0) / submitted.length).toFixed(1) : "—";
   const avgAcc = submitted.length
     ? (submitted.reduce((s, a) => s + (a.total_questions ? (a.correct_answers ?? 0) / a.total_questions * 100 : 0), 0) / submitted.length).toFixed(1)
@@ -201,33 +200,6 @@ const AdminTestDetailPage = () => {
   const avgTime = submitted.length
     ? Math.round(submitted.reduce((s, a) => s + Number(a.time_spent_seconds ?? 0), 0) / submitted.length / 60)
     : 0;
-
-  const perQuestion = useMemo(() => {
-    const stats: Record<string, { correct: number; attempted: number }> = {};
-    try {
-      submitted.forEach((a) => {
-        const ans = (a && typeof a.answers === "object" && a.answers !== null) ? a.answers : {};
-        questions.forEach((q) => {
-          const s = stats[q.id] ?? { correct: 0, attempted: 0 };
-          const u = ans[q.id];
-          const sel = u?.selected;
-          const hasSel = sel != null && (Array.isArray(sel) ? sel.length > 0 : String(sel).length > 0);
-          if (hasSel) {
-            s.attempted++;
-            if (u?.isCorrect) s.correct++;
-          }
-          stats[q.id] = s;
-        });
-      });
-    } catch (e) {
-      console.warn("[AdminTestDetail] perQuestion calc skipped", e);
-    }
-    return questions.map((q) => {
-      const s = stats[q.id] ?? { correct: 0, attempted: 0 };
-      const acc = s.attempted ? (s.correct / s.attempted) * 100 : 0;
-      return { ...q, attempted: s.attempted, correct: s.correct, accuracy: acc };
-    });
-  }, [questions, submitted]);
 
   const hardest = [...perQuestion].filter((p) => p.attempted > 0).sort((a, b) => a.accuracy - b.accuracy).slice(0, 5);
   const easiest = [...perQuestion].filter((p) => p.attempted > 0).sort((a, b) => b.accuracy - a.accuracy).slice(0, 5);
