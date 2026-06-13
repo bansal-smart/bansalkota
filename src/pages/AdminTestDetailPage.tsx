@@ -274,6 +274,9 @@ const AdminTestDetailPage = () => {
               <p className="text-sm text-foreground whitespace-pre-wrap">{test.description}</p>
             </div>
           )}
+          <div className="md:col-span-2 lg:col-span-4">
+            <CbtSettingsPanel testId={test.id} />
+          </div>
         </div>
       )}
 
