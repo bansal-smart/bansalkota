@@ -229,6 +229,9 @@ const AdminTestDetailPage = () => {
           <Link to={`/tests/${test.slug}/take`} target="_blank" className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" /> Preview
           </Link>
+          <Link to={`/admin/tests/${test.slug}/result`} className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground inline-flex items-center gap-1 hover:opacity-90">
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Result Sheet
+          </Link>
           {isSuperAdmin && (
             <button onClick={deleteTest} className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-xs font-semibold hover:bg-destructive/10 inline-flex items-center gap-1">
               <Trash2 className="h-3.5 w-3.5" /> Delete
