@@ -1,9 +1,21 @@
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Users, Database, Trash2, Globe, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Plus, Users, Database, Trash2, Globe, Copy, FileSpreadsheet, Upload } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import roster from "@/data/cbtRoster.json";
 import { CBT_KIOSK_URL, SECRET_ADMIN_URL } from "@/lib/brand";
+
+type ImportRow = {
+  roll_number: string;
+  full_name: string;
+  phone: string;
+  dob: string | null;
+  course: string;
+  stream: string;
+  batch_code: string;
+  class_level: string;
+};
 
 type CourseRow = { id: string; name: string; slug: string };
 type BatchRow = {
@@ -24,6 +36,13 @@ const AdminBatchesPage = () => {
   const [running, setRunning] = useState(false);
 
   const [form, setForm] = useState({ courseId: "", code: "", name: "", class_level: "XI" });
+
+  // XLSX import state
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [parsedRows, setParsedRows] = useState<ImportRow[]>([]);
+  const [parsedFileName, setParsedFileName] = useState<string>("");
+  const [importing, setImporting] = useState(false);
+  const [importErrors, setImportErrors] = useState<Array<{ roll_number: string; error?: string }>>([]);
 
   const load = async () => {
     setLoading(true);
@@ -94,6 +113,108 @@ const AdminBatchesPage = () => {
     }
   };
 
+  // ----- Excel import (RegNo / StudentName / CONTACTNO / Dob / COURSE / STREAM / BATCH) -----
+  const deriveClassLevel = (batch: string): string => {
+    const m = batch.trim().toUpperCase().match(/^(XIII|XII|XI|X|IX)\b/);
+    return m ? m[1] : "XI";
+  };
+
+  const excelDateToISO = (v: unknown): string | null => {
+    if (v == null || v === "") return null;
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === "number") {
+      // Excel serial date
+      const d = XLSX.SSF.parse_date_code(v);
+      if (!d) return null;
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.y}-${pad(d.m)}-${pad(d.d)}`;
+    }
+    const s = String(v).trim();
+    if (!s) return null;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toISOString().slice(0, 10);
+  };
+
+  const handleFile = async (file: File) => {
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+      const mapped: ImportRow[] = rows
+        .map((r) => {
+          const get = (...keys: string[]): string => {
+            for (const k of keys) {
+              const found = Object.keys(r).find((kk) => kk.trim().toLowerCase() === k.toLowerCase());
+              if (found && r[found] != null && String(r[found]).trim() !== "") return String(r[found]).trim();
+            }
+            return "";
+          };
+          const batch = get("BATCH", "batch_code");
+          return {
+            roll_number: get("RegNo", "roll_number", "Roll No", "ROLL NO").replace(/\.0$/, ""),
+            full_name: get("StudentName", "full_name", "Name"),
+            phone: get("CONTACTNO", "phone", "Mobile").replace(/\.0$/, "").replace(/\D/g, "").slice(-10),
+            dob: excelDateToISO(r[Object.keys(r).find((k) => k.trim().toLowerCase() === "dob") ?? ""] ?? null),
+            course: get("COURSE", "course"),
+            stream: get("STREAM", "stream") || "JEE",
+            batch_code: batch,
+            class_level: deriveClassLevel(batch),
+          };
+        })
+        .filter((r) => r.roll_number && r.full_name && r.phone && r.batch_code);
+      if (!mapped.length) {
+        toast.error("No valid rows found. Check column headers: RegNo, StudentName, CONTACTNO, COURSE, STREAM, BATCH.");
+        return;
+      }
+      setParsedRows(mapped);
+      setParsedFileName(file.name);
+      setImportErrors([]);
+      toast.success(`Parsed ${mapped.length} students from ${file.name}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not read Excel file");
+    }
+  };
+
+  const submitImport = async () => {
+    if (!parsedRows.length) return;
+    setImporting(true);
+    setImportErrors([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("cbt-bulk-setup", {
+        body: { rows: parsedRows },
+      });
+      if (error) throw error;
+      const payload = data as {
+        summary?: { total: number; created: number; updated: number; errors: number };
+        results?: Array<{ roll_number: string; status: string; error?: string }>;
+      };
+      const summary = payload?.summary;
+      if (summary) {
+        toast.success(`Import done · ${summary.created} created · ${summary.updated} updated · ${summary.errors} errors`);
+      } else {
+        toast.success("Import finished");
+      }
+      const errs = (payload?.results ?? []).filter((r) => r.status === "error");
+      setImportErrors(errs);
+      if (!errs.length) {
+        setParsedRows([]);
+        setParsedFileName("");
+        if (fileRef.current) fileRef.current.value = "";
+      }
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const uniqueBatchesInParse = Array.from(new Set(parsedRows.map((r) => r.batch_code)));
+  const uniqueCoursesInParse = Array.from(new Set(parsedRows.map((r) => r.course)));
+
+
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -146,6 +267,94 @@ const AdminBatchesPage = () => {
             <Copy className="h-3.5 w-3.5" /> Copy
           </button>
         </div>
+      </div>
+
+      {/* Excel Importer */}
+      <div className="rounded-2xl border-2 border-dashed border-primary/40 bg-card p-5">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="rounded-lg bg-primary/10 p-2"><FileSpreadsheet className="h-4 w-4 text-primary" /></div>
+            <div>
+              <p className="text-sm font-bold text-foreground">Import students from Excel</p>
+              <p className="text-[11px] text-muted-foreground">Columns expected: <code>RegNo · StudentName · CONTACTNO · Dob · COURSE · STREAM · BATCH</code></p>
+            </div>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted">
+            <Upload className="h-3.5 w-3.5" /> Choose .xlsx file
+          </button>
+        </div>
+
+        {parsedRows.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2 flex-wrap text-[11px]">
+              <span className="rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{parsedFileName}</span>
+              <span className="rounded-full bg-secondary/10 px-2 py-1 font-bold text-secondary">{parsedRows.length} students</span>
+              <span className="rounded-full bg-muted px-2 py-1 font-medium text-foreground">Courses: {uniqueCoursesInParse.join(", ")}</span>
+              <span className="rounded-full bg-muted px-2 py-1 font-medium text-foreground">Batches: {uniqueBatchesInParse.join(", ")}</span>
+            </div>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-[11px]">
+                <thead className="bg-muted text-muted-foreground">
+                  <tr>
+                    <th className="p-2 text-left">Roll</th><th className="p-2 text-left">Name</th>
+                    <th className="p-2 text-left">Phone</th><th className="p-2 text-left">Course</th>
+                    <th className="p-2 text-left">Batch</th><th className="p-2 text-left">Class</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedRows.slice(0, 10).map((r) => (
+                    <tr key={r.roll_number} className="border-t border-border">
+                      <td className="p-2 font-mono">{r.roll_number}</td>
+                      <td className="p-2">{r.full_name}</td>
+                      <td className="p-2 font-mono">{r.phone}</td>
+                      <td className="p-2">{r.course}</td>
+                      <td className="p-2 font-bold text-primary">{r.batch_code}</td>
+                      <td className="p-2">{r.class_level}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {parsedRows.length > 10 && (
+                <div className="bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground text-center">
+                  + {parsedRows.length - 10} more rows
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={submitImport}
+                disabled={importing}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-60">
+                {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
+                Import {parsedRows.length} students
+              </button>
+              <button
+                onClick={() => { setParsedRows([]); setParsedFileName(""); setImportErrors([]); if (fileRef.current) fileRef.current.value = ""; }}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-muted-foreground">
+                Clear
+              </button>
+            </div>
+            {importErrors.length > 0 && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-[11px]">
+                <p className="font-bold text-destructive mb-1">{importErrors.length} row(s) failed:</p>
+                <ul className="space-y-0.5 max-h-32 overflow-auto">
+                  {importErrors.map((e) => (
+                    <li key={e.roll_number} className="font-mono text-destructive/80">{e.roll_number} — {e.error ?? "unknown error"}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4">
