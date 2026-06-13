@@ -1,115 +1,89 @@
-## Goal
 
-One Word file format for bulk-importing every kind of question used at Bansal — Single Correct, Multiple Correct, Integer, and Match-the-Following — with LaTeX math, Word equations, and inline images supported in the stem **and** each option. Upload happens from **Admin → Question Bank → Bulk Upload**, with an optional "Also push to test…" picker.
+# Test Platform & Question Bank — Cleanup Plan
 
-## The canonical Arke format (single spec)
+## Problem today
 
-The parser will accept both inputs you sent, treated as the same format:
+The admin sidebar exposes **6 separate test-related entries** (Test Platform, All Tests, Test Series, Test Attempts, Question Bank, Import Batches). They overlap, the entry points are confusing, and the same actions (create / edit / publish / import) are repeated in different places. Question Bank lacks a visible bulk-upload sample format. In the test creator, the bank panel only supports drag (no one-click add on small screens). Math/image rendering needs a top-to-bottom audit.
 
-- **Preferred**: Word paragraph styles — `Q-Number`, `Q-Stem`, `Q-Option`, `Q-Answer`, `Q-Solution`, `Q-Topic`. (Recommended for authors; zero ambiguity.)
-- **Fallback**: plain text patterns used in the chemistry sample — `1.` for number, `(1)(2)(3)(4)` for options, `Answer: …`, `Topic: …`, `Solution:` (or italic paragraph after Answer).
+## 1. Restructure admin sidebar — one "Test Platform" entry
 
-Both produce the same internal record. The parser auto-detects which mode the doc is in.
-
-**Math**: `$…$` inline, `$$…$$` display, **and** native Word equations (OMML) — OMML is auto-converted to LaTeX via the `omml2latex` library so authors can use Alt+= freely.
-
-**Images**: any image bytes embedded inline are attached to the slot they appear in — stem, option 1/2/3/4, or solution — based on their position relative to the option markers. Each image is uploaded to the `question-images` bucket and stored as a public URL.
-
-**Question type detection** from the `Answer:` line:
-
-| Answer pattern | Type |
-|---|---|
-| `(3)` or `Answer: 3` | mcq-single |
-| `(1), (2), (4)` | mcq-multi |
-| Plain integer `9` (no parentheses) under SECTION III | integer |
-| `A-Q, B-S, C-P, D-R` | **match-following** (new) |
-
-**Match-the-following table** (after the stem) is parsed from any 2-column table whose header row reads "Column A" / "Column B". Rows of the form `(A) item` / `(P) item` populate the two columns.
-
-## New question type: `match-following`
-
-Stored alongside existing MCQ types. Schema additions (single migration):
-
-- `test_questions.question_type` and `question_bank.question_type` already exist as text — just start writing `'match-following'`.
-- Use existing `options` jsonb to store **Column B** items (label + optional `image_url`).
-- New jsonb column `match_left` on both tables = Column A items `[{key:'A', text, image_url?}, …]`.
-- `correct_answer` jsonb already nullable — store the mapping `{"A":"Q","B":"S","C":"P","D":"R"}`.
-
-Scoring (added to `submit_test_attempt` function): full marks if every pair matches; partial marking optional (1 mark per correct pair, capped). Wrong-mark applied only when at least one pair is filled and the set is not fully correct (matches NTA convention).
-
-Test UI: in `TestTakingPage`, render a two-column layout. Left column shows A/B/C/D anchors; right column is a dropdown per row listing P/Q/R/S labels (with thumbnails when an image is present). State saved into the same `answers` jsonb as `{ selected: { A: 'Q', ... } }`.
-
-Review UI: render the user's pairs with green/red ticks against the correct mapping.
-
-## Parser rewrite (`src/lib/docxImport/parseDocx.ts`)
-
-Replaces the current pragmatic parser. New pipeline:
+Collapse the 6 sidebar items into **one**: `Test Platform → /admin/tests-hub`. Everything else lives as **tabs inside the hub**, not separate sidebar pages.
 
 ```text
-.docx → mammoth (HTML + images as data URIs + style names preserved)
-      → DOM walk
-         ├─ detect style-based mode vs pattern-based mode
-         ├─ group blocks into questions on Q-Number / "^\d+\."
-         ├─ inside each question: slot = stem → options[1..4] → answer → solution
-         ├─ OMML → LaTeX (omml2latex) before stripping
-         ├─ images: assign to current slot, collect bytes
-         ├─ tables in stem → Match-the-Following columns
-         └─ Topic line → topic field
-      → ParsedQuestion[]
+Sidebar:        Test Platform  (/admin/tests-hub)
+                 │
+Hub tabs:        ├─ Overview      (current dashboard charts)
+                 ├─ All Tests     (table from AdminTestsPage)
+                 ├─ Upcoming      (tests with starts_at in future)
+                 ├─ Test Series   (AdminTestSeriesPage)
+                 ├─ Question Bank (AdminQuestionBankPage panel)
+                 ├─ Attempts      (AdminTestAttemptsPage)
+                 └─ Imports       (AdminImportBatchesPage)
 ```
 
-Mammoth needs a `styleMap` so it preserves our custom styles as data attributes:
+- `+ New Test` button stays pinned in the hub header (routes to `/admin/tests/new`).
+- Each row in **All Tests** keeps Manage / Edit / Preview / Publish-Unpublish / Delete (already built — just surfaced consistently).
+- **Upcoming** tab filters by `starts_at > now()` and surfaces "Edit", "Change schedule", "Replace questions" inline.
+- Old routes (`/admin/tests`, `/admin/test-attempts`, `/admin/test-imports`, `/admin/test-series`, `/admin/question-bank`) keep working but redirect to the relevant hub tab so existing links/bookmarks don't break.
 
-```
-p[style-name='Q-Number'] => p.q-number
-p[style-name='Q-Stem']   => p.q-stem
-...
-```
+## 2. Question Bank — visible sample format + better bulk flow
 
-`ParsedQuestion` extends the existing type with `topic`, `solution`, `matchLeft?`, plus `optionImages: (string|null)[]`.
+In `QuestionBankPanel` (the panel shown on `/admin/question-bank` and inside the hub tab):
 
-## Importer dialog (`DocxBulkImportDialog.tsx` + `BulkQuestionUploadDialog.tsx`)
+- Add a **"Download sample format"** split button next to **Word import** / **Bulk CSV** that downloads:
+  - `question-bank-template.csv` (CSV with example rows — already built in `BulkQuestionUploadDialog`).
+  - `question-bank-template.docx` (a tiny Arke-format sample doc with one MCQ, one numerical, one match-the-following). Built once with `docx-js`, committed under `public/templates/`.
+- Inline help card above the question list: "Need bulk upload? Download the sample, fill it in, then use Word import or Bulk CSV." (collapsible, remembers state).
+- In both **bulk dialogs**, show the same "Download sample" link at the top so users never get stuck.
 
-- Single dialog opened from **Admin → Question Bank** (button already exists) and from each test's detail page.
-- Step 1: file drop, parse, show summary chip per question — type, topic, # images.
-- Step 2: preview list using `MathRenderer` so LaTeX is visible exactly as students will see it; each question expandable to verify options and the answer key.
-- Step 3: **Target** — radio: `Question Bank only` / `Question Bank + add to test:` with a searchable test picker. (Always writes to bank for reuse; optionally inserts copies into `test_questions` with auto-incremented `position` after the test's current max.)
-- Step 4: commit — uploads all images first (parallel, 4 at a time), then inserts questions in one batched call, then creates a `question_import_batches` row with the file name, counts, and any per-question warnings.
-- Each option's image slot also exposes a small "Replace image" control in the preview, so authors can fix slots that landed on the wrong option without re-uploading the doc.
+## 3. Create / Edit Test — click-to-add + drag-and-drop
 
-## Renderers (read-only changes)
+In `CreateTestPage`'s Question Bank panel (right side / sheet):
 
-- `MathRenderer` already handles `$…$` and `$$…$$` — no change.
-- `TestTakingPage`, `TestSubjectBreakdownPage`, `QuestionEditorDialog`, `QuestionBankPanel`: add a `MatchFollowing` sub-component and route to it when `question_type === 'match-following'`. Existing per-option image rendering stays.
+- Keep the existing **drag-and-drop** flow (already wired through `@dnd-kit`).
+- Add a **+ Add** button on every bank card (`QuestionBankPanel` in `draggable` mode) that calls the same `fromBank()` insertion path. Disabled (with tooltip "Already added") if the question is already in the draft list.
+- Add a **bulk "Add selected"** action when filters are active: a checkbox on each card + a sticky footer "Add N selected questions" — uses the same insertion path.
+- Keep the bank sheet open after add (don't auto-close) so admins can stack picks quickly.
 
-## Files to add / edit
+## 4. Render math + images consistently everywhere
 
-**New**
-- `src/lib/docxImport/parseDocx.v2.ts` — the rewritten parser (kept side-by-side until verified, then `parseDocx.ts` re-exports from v2).
-- `src/lib/docxImport/ommlToLatex.ts` — wrapper around the `omml2latex` npm package.
-- `src/components/test/MatchFollowing.tsx` — taker + review renderer.
+Audit every place a question is shown and ensure `MathRenderer` (KaTeX with mhchem) is used, and `question_image_url` / `option_images[]` render with a uniform `<img>` + zoom wrapper:
 
-**Edited**
-- `src/components/DocxBulkImportDialog.tsx` — new preview UI, target picker, image-slot fix-up.
-- `src/components/BulkQuestionUploadDialog.tsx` — same parser, same UI shell.
-- `src/pages/TestTakingPage.tsx`, `src/pages/TestSubjectBreakdownPage.tsx` — branch on `match-following`.
-- `src/components/QuestionEditorDialog.tsx`, `src/components/QuestionBankPanel.tsx` — editor for Column A items + correct-pair map.
-- Supabase migration: add `match_left jsonb` to `test_questions` and `question_bank`; extend `submit_test_attempt` with the match-following scoring branch.
+- **Admin**
+  - `AdminTestDetailPage` Questions tab: already uses `MathRenderer`. Add option preview + image thumbnails.
+  - `QuestionBankPanel` (cards + table): already uses `MathRenderer`. Add a small image icon when the question has an attached image.
+  - `CreateTestPage` draft list: render LaTeX preview under each option (currently only the textarea is shown).
+- **Student**
+  - `TestTakingPage`: confirm option text uses `MathRenderer` and `option_images[oi]` renders with zoom (already wired; verify match-following options).
+  - `TestSubjectBreakdownPage`: already uses `MathRenderer`; verify option image and explanation paths.
+  - `TestResultPage` review: same audit.
 
-## What stays the same
+For private-bucket images we already mint signed URLs at upload time — keep that, and add a fallback `signed-url-on-read` helper for any legacy rows that stored `getPublicUrl` paths so old questions don't break.
 
-- Storage bucket (`question-images`), `question_import_batches` audit trail, undo-import flow, existing single-question editor, NTA marking for the other three types.
+## 5. Student-side test polish
+
+Quick pass on `TestTakingPage` / `TestInstructionsPage` / `TestResultPage`:
+
+- Make sure **match-the-following** renders the same on the take page, review page, and breakdown page (single `MatchFollowing` component already exists — confirm props match).
+- Verify **mcq-multi** correct-answer highlighting and **partial marking** badge.
+- On mobile, ensure the palette sheet, timer, and submit modal don't overflow the 761×435 viewport reported by the client.
+- Confirm `submit_test_attempt` RPC handles `match-following` scoring (already added in earlier migration — sanity-check the path).
+
+## Technical details
+
+- New files
+  - `src/pages/AdminTestPlatformHub.tsx` — wraps the 7 tabs; lazy-loads inner pages so the bundle stays small.
+  - `public/templates/question-bank-template.docx` (generated once via skill/docx and committed).
+- Edited files
+  - `src/components/AdminLayout.tsx` — collapse 6 entries → 1.
+  - `src/App.tsx` — point old `/admin/tests*` routes to the hub with a `?tab=` query string, keep `/admin/tests/new`, `/admin/tests/:slug`, `/admin/tests/:slug/edit` for editor flows.
+  - `src/components/QuestionBankPanel.tsx` — sample-format dropdown; `onAddToTest` click-handler prop; checkbox-based multi-add when in test-builder context.
+  - `src/pages/CreateTestPage.tsx` — wire the click-to-add + multi-add into the bank panel; render LaTeX preview under each draft option.
+  - `src/components/DocxBulkImportDialog.tsx` + `BulkQuestionUploadDialog.tsx` — add "Download sample" link in their headers.
+- No DB migrations needed; all changes are UI + routing.
 
 ## Out of scope
 
-- Drag-and-drop UI for Match (will use dropdowns — fast, mobile-friendly, equally fair).
-- AI-assisted topic tagging.
-- Excel / Google Doc import.
-
-## Open clarification logged
-
-For option images, you said the URL will be inside the Word file or uploaded individually per question. The importer will:
-
-1. Use the embedded image when one is present in that option's paragraph.
-2. If the option text contains a bare URL ending in `.png/.jpg/.jpeg/.webp/.gif`, treat that URL as the option's image and strip it from the visible text.
-3. Otherwise leave the slot empty — the author can attach an image inline in the preview step or later in the question editor.
+- Re-skinning the test-taking UI (it's already NTA-style).
+- Authoring a new question type.
+- Touching teacher / center portals (same panel renders there; changes carry over for free).

@@ -461,7 +461,16 @@ const DocxBulkImportDialog = ({
                 </div>
               )}
               <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-                <p className="font-semibold text-foreground">Arke format reference</p>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="font-semibold text-foreground">Arke format reference</p>
+                  <a
+                    href="/templates/question-bank-template.txt"
+                    download
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+                  >
+                    Download sample
+                  </a>
+                </div>
                 <p>
                   • <b>Number</b> on its own line: <code>1.</code>
                 </p>

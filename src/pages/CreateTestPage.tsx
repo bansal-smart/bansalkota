@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText, Image as ImageIcon, Upload } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -268,16 +268,25 @@ const CreateTestPage = () => {
     }
   };
 
-  const handleDragEnd = (e: DragEndEvent) => {
-    if (e.over?.id !== "test-drop") return;
-    const bankQ = e.active.data.current?.question as BankQuestion | undefined;
-    if (!bankQ) return;
-    if (questions.some((q) => q.bank_id === bankQ.id)) {
+  const addedBankIds = useMemo(
+    () => new Set(questions.map((q) => q.bank_id).filter(Boolean) as string[]),
+    [questions],
+  );
+
+  const addFromBank = (bankQ: BankQuestion) => {
+    if (addedBankIds.has(bankQ.id)) {
       toast.info("Already added to this test");
       return;
     }
     setQuestions((prev) => [...prev, fromBank(bankQ, { correct: correctMarks, wrong: wrongMarks })]);
     toast.success("Question added");
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    if (e.over?.id !== "test-drop") return;
+    const bankQ = e.active.data.current?.question as BankQuestion | undefined;
+    if (!bankQ) return;
+    addFromBank(bankQ);
   };
 
   const submit = async (publish: boolean) => {
@@ -537,7 +546,7 @@ const CreateTestPage = () => {
               </SheetTrigger>
               <SheetContent side="right" className="p-0 w-full sm:max-w-md">
                 <div className="h-full">
-                  <QuestionBankPanel draggable compact />
+                  <QuestionBankPanel draggable compact onAdd={addFromBank} addedBankIds={addedBankIds} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -811,7 +820,7 @@ const CreateTestPage = () => {
 
         {/* Right pane (Question Bank) — desktop only, sticky with its own scroll */}
         <aside className="hidden lg:flex lg:w-1/2 border-l border-border bg-muted/30 flex-col sticky top-[57px] self-start h-[calc(100vh-57px)]">
-          <QuestionBankPanel draggable compact />
+          <QuestionBankPanel draggable compact onAdd={addFromBank} addedBankIds={addedBankIds} />
         </aside>
       </div>
 

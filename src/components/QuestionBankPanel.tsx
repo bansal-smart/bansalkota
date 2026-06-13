@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, GripVertical, BookMarked, Upload, FileText, ArrowUp, ArrowDown, ArrowUpDown, X, Download, Check } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { useQuestionBank, type BankQuestion } from "@/hooks/useQuestionBank";
 import QuestionEditorDialog from "./QuestionEditorDialog";
@@ -30,10 +30,12 @@ type CardProps = {
   draggable?: boolean;
   onEdit?: (q: BankQuestion) => void;
   onDelete?: (q: BankQuestion) => void;
+  onAdd?: (q: BankQuestion) => void;
+  alreadyAdded?: boolean;
   compact?: boolean;
 };
 
-const QuestionCard = ({ q, draggable, onEdit, onDelete, compact }: CardProps) => {
+const QuestionCard = ({ q, draggable, onEdit, onDelete, onAdd, alreadyAdded, compact }: CardProps) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `bank-${q.id}`,
     data: { question: q },
@@ -54,10 +56,28 @@ const QuestionCard = ({ q, draggable, onEdit, onDelete, compact }: CardProps) =>
             <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">{q.subject}</span>
             {q.topic && <span className="text-[10px] font-medium text-muted-foreground">{q.topic}</span>}
             <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
+            {(q as any).question_image_url && (
+              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground" title="Has image">img</span>
+            )}
           </div>
           <div className={`text-foreground ${compact ? "text-xs line-clamp-2" : "text-sm line-clamp-3"}`}>
             <MathRenderer content={q.question_text} />
           </div>
+          {onAdd && (
+            <button
+              onClick={(e) => { e.stopPropagation(); if (!alreadyAdded) onAdd(q); }}
+              disabled={alreadyAdded}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition-colors ${
+                alreadyAdded
+                  ? "bg-secondary/15 text-secondary cursor-default"
+                  : "bg-primary text-primary-foreground hover:opacity-90"
+              }`}
+              title={alreadyAdded ? "Already in this test" : "Add to test"}
+            >
+              {alreadyAdded ? <><Check className="h-3 w-3" /> Added</> : <><Plus className="h-3 w-3" /> Add</>}
+            </button>
+          )}
         </div>
         {(onEdit || onDelete) && (
           <div className="flex flex-col gap-1 shrink-0">
@@ -84,6 +104,10 @@ type Props = {
   compact?: boolean;
   tableView?: boolean;
   className?: string;
+  /** When provided, each card shows a click-to-add button. */
+  onAdd?: (q: BankQuestion) => void;
+  /** Bank question IDs already in the current test (to render "Added" state). */
+  addedBankIds?: Set<string>;
 };
 
 const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: string; active: boolean; dir: SortDir; onClick: () => void; className?: string }) => (
@@ -95,7 +119,7 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
   </th>
 );
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "" }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, addedBankIds }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
@@ -233,6 +257,22 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           <h3 className="text-sm font-bold text-foreground flex-1">Question Bank</h3>
           {manage && (
             <>
+              <a
+                href="/templates/question-bank-template.csv"
+                download
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                title="Download a sample CSV showing the exact column format"
+              >
+                <Download className="h-3 w-3" /> Sample CSV
+              </a>
+              <a
+                href="/templates/question-bank-template.txt"
+                download
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                title="Open the Arke .docx format guide (copy this layout into your Word file)"
+              >
+                <Download className="h-3 w-3" /> .docx format guide
+              </a>
               <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Import questions from a Word .docx file (with inline images)">
                 <FileText className="h-3 w-3" /> Word import
               </button>
@@ -358,7 +398,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           </div>
         ) : (
           <div className="p-3 space-y-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{processed.length} questions{draggable ? " · drag to add" : ""}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {processed.length} questions
+              {draggable && !onAdd ? " · drag to add" : ""}
+              {onAdd ? " · click + Add or drag" : ""}
+            </p>
             <div className={compact ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"}>
               {processed.map((q) => (
                 <QuestionCard
@@ -368,6 +412,8 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                   compact={compact}
                   onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
                   onDelete={manage ? handleDelete : undefined}
+                  onAdd={onAdd}
+                  alreadyAdded={addedBankIds?.has(q.id)}
                 />
               ))}
             </div>
