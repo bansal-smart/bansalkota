@@ -591,7 +591,7 @@ const DocxCommonImportDialog = ({
                     onChange={(e) => setSubject(e.target.value)}
                     className="mt-1 w-full rounded-md border border-border bg-background p-2 text-xs"
                   >
-                    {SUBJECTS.map((s) => (
+                    {allowedSubjects.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -670,7 +670,7 @@ const DocxCommonImportDialog = ({
                         }
                         className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
                       >
-                        {SUBJECTS.map((s) => (
+                        {allowedSubjects.map((s) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
@@ -728,7 +728,7 @@ const DocxCommonImportDialog = ({
                           className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-semibold text-primary"
                           title="Subject for this question"
                         >
-                          {SUBJECTS.map((s) => (
+                          {allowedSubjects.map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>
