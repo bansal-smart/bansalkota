@@ -215,6 +215,10 @@ const TestTakingPage = () => {
 
   const startAttempt = async () => {
     if (!user || !test) return;
+    if (questions.length === 0) {
+      toast.error("No questions found for this test. Please contact your administrator.");
+      return;
+    }
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
