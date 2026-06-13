@@ -29,7 +29,7 @@ import { syncTestStats } from "@/lib/tests/syncTestStats";
 type Props = {
   open: boolean;
   onClose: () => void;
-  onImported: () => void;
+  onImported: (targetTestId?: string | null) => void;
   /** When provided, the test picker is hidden and questions are appended to this test. */
   testId?: string;
   /** Force a subject for all rows when importing from the bank entry-point. */
@@ -380,7 +380,7 @@ const DocxBulkImportDialog = ({
     setStep("done");
     if (okCount > 0) {
       toast.success(`Imported ${okCount} question${okCount === 1 ? "" : "s"}`);
-      onImported();
+      onImported(selectedTestId ?? null);
     }
   };
 

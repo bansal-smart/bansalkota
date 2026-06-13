@@ -27,7 +27,8 @@ import { syncTestStats } from "@/lib/tests/syncTestStats";
 type Props = {
   open: boolean;
   onClose: () => void;
-  onImported: () => void;
+  /** Receives the test id that was imported into (null for bank imports). */
+  onImported: (targetTestId?: string | null) => void;
   testId?: string;
   defaultSubject?: string;
   /** "test" (default) imports into test_questions; "bank" imports into question_bank. */
@@ -404,7 +405,7 @@ const DocxCommonImportDialog = ({
     setStep("done");
     if (okCount > 0) {
       toast.success(`Imported ${okCount} question${okCount === 1 ? "" : "s"} (Common method)`);
-      onImported();
+      onImported(targetTestId);
     }
   };
 
