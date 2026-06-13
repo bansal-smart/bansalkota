@@ -314,6 +314,19 @@ const CreateTestPage = () => {
     toast.success("Question added");
   };
 
+  const addManyFromBank = (bankQs: BankQuestion[]) => {
+    const toAdd = bankQs.filter((q) => !addedBankIds.has(q.id));
+    if (toAdd.length === 0) {
+      toast.info("All selected questions are already in this test");
+      return;
+    }
+    setQuestions((prev) => [
+      ...prev,
+      ...toAdd.map((q) => fromBank(q, { correct: correctMarks, wrong: wrongMarks })),
+    ]);
+    toast.success(`Added ${toAdd.length} question${toAdd.length === 1 ? "" : "s"}`);
+  };
+
   const handleDragEnd = (e: DragEndEvent) => {
     if (e.over?.id !== "test-drop") return;
     const bankQ = e.active.data.current?.question as BankQuestion | undefined;
