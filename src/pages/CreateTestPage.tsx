@@ -19,12 +19,15 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
+import MathRenderer from "@/components/MathRenderer";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer";
 
 type DraftQuestion = {
+  id?: string;
+  imported?: boolean;
   source: "manual" | "bank";
   bank_id?: string;
   type: QType;
@@ -213,6 +216,8 @@ const CreateTestPage = () => {
           const correctArr = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
           return {
             source: "manual" as const,
+            id: q.id,
+            imported: Boolean(q.import_batch_id || q.source_filename),
             type,
             subject: q.subject ?? "Physics",
             topic: q.topic ?? "",
@@ -429,6 +434,10 @@ const CreateTestPage = () => {
       if (q.type === "numerical" || q.type === "integer") return q.numericalAnswer.trim() !== "" && !Number.isNaN(Number(q.numericalAnswer));
       return false;
     };
+    if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
+      return publishImportedDraft();
+    }
+
     const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
 
