@@ -338,6 +338,9 @@ const CreateTestPage = () => {
         total_marks: 0,
         is_published: false,
         course_id: courseId || null,
+        test_mode: testMode,
+        cbt_enabled: testMode === "cbt",
+        cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
         slug,
         created_by: user.id,
       })
