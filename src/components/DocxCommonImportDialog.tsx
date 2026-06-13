@@ -227,6 +227,7 @@ const DocxCommonImportDialog = ({
   const buildRow = (q: ParsedDocxQuestion, batchId: string) => {
     const stemHtml = replaceMarkersWithUrls(q.stemHtml, q.images);
     const stemImg = firstImageForSlot(q.images, "stem");
+    const stemHasInlineImg = /<img\b/i.test(stemHtml);
     const optionImages = (q.type === "integer" || q.type === "numerical")
       ? []
       : ["", "", "", ""];
@@ -235,7 +236,7 @@ const DocxCommonImportDialog = ({
       subject: q.subject || subject,
       topic: q.topic || null,
       question_text: stemHtml || q.stemText,
-      question_image_url: stemImg,
+      question_image_url: stemHasInlineImg ? null : stemImg,
       question_type: q.type,
       options: q.options,
       option_images: optionImages,
