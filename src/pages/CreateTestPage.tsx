@@ -148,6 +148,11 @@ const CreateTestPage = () => {
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+  // Scheduling — controls when test opens, closes, and results auto-release
+  const [testDate, setTestDate] = useState<string>(""); // YYYY-MM-DD
+  const [startTime, setStartTime] = useState<string>(""); // HH:mm
+  const [endTime, setEndTime] = useState<string>(""); // HH:mm
+  const [autoRelease, setAutoRelease] = useState<boolean>(true);
   const importedQuestionCount = useRef(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
