@@ -2720,6 +2720,7 @@ export type Database = {
           question_type: string
           solution_image_url: string | null
           source_filename: string | null
+          stem_image_url: string | null
           sub_topic: string | null
           subject: string | null
           test_id: string
@@ -2748,6 +2749,7 @@ export type Database = {
           question_type?: string
           solution_image_url?: string | null
           source_filename?: string | null
+          stem_image_url?: string | null
           sub_topic?: string | null
           subject?: string | null
           test_id: string
@@ -2776,6 +2778,7 @@ export type Database = {
           question_type?: string
           solution_image_url?: string | null
           source_filename?: string | null
+          stem_image_url?: string | null
           sub_topic?: string | null
           subject?: string | null
           test_id?: string
@@ -2924,6 +2927,7 @@ export type Database = {
           ends_at: string | null
           exam_pattern: string
           id: string
+          import_method: string
           is_published: boolean
           results_released_at: string | null
           slug: string
@@ -2948,6 +2952,7 @@ export type Database = {
           ends_at?: string | null
           exam_pattern?: string
           id?: string
+          import_method?: string
           is_published?: boolean
           results_released_at?: string | null
           slug: string
@@ -2972,6 +2977,7 @@ export type Database = {
           ends_at?: string | null
           exam_pattern?: string
           id?: string
+          import_method?: string
           is_published?: boolean
           results_released_at?: string | null
           slug?: string
