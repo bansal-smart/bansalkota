@@ -107,6 +107,8 @@ type Props = {
   className?: string;
   /** When provided, each card shows a click-to-add button. */
   onAdd?: (q: BankQuestion) => void;
+  /** When provided alongside onAdd, picker mode shows checkboxes + "Add N selected" / "Select all" toolbar. */
+  onAddMany?: (qs: BankQuestion[]) => void;
   /** Bank question IDs already in the current test (to render "Added" state). */
   addedBankIds?: Set<string>;
 };
