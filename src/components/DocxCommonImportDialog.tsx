@@ -33,6 +33,8 @@ type Props = {
   defaultSubject?: string;
   /** "test" (default) imports into test_questions; "bank" imports into question_bank. */
   target?: "test" | "bank";
+  /** Exam pattern of the target test, used to restrict subject choices (e.g. jee-main → no Biology). */
+  examPattern?: string;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
