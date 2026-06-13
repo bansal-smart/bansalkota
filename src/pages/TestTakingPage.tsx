@@ -7,8 +7,15 @@ import { useAuth } from "@/context/AuthContext";
 import MathRenderer from "@/components/MathRenderer";
 import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape";
 import CandidateCard from "@/components/test/CandidateCard";
+import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 
-type QuestionType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
+type QuestionType =
+  | "mcq-single"
+  | "mcq-multi"
+  | "numerical"
+  | "integer"
+  | "assertion-reason"
+  | "match-following";
 
 type TestQuestion = {
   id: string;
@@ -21,6 +28,7 @@ type TestQuestion = {
   question_type: QuestionType;
   options: { id: number; text: string }[];
   option_images: string[] | null;
+  match_left: MatchItem[] | null;
   marks_correct: number;
   marks_wrong: number;
   marks_unanswered: number;
@@ -33,10 +41,12 @@ type QStatus = "not-visited" | "answered" | "not-answered" | "marked" | "answere
 type AnswerVal =
   | { selected: number | null; time_spent?: number }
   | { selected: number[]; time_spent?: number }
-  | { selected: string; time_spent?: number };
+  | { selected: string; time_spent?: number }
+  | { selected: Record<string, string>; time_spent?: number };
 
 const isMulti = (t: QuestionType) => t === "mcq-multi";
 const isNumeric = (t: QuestionType) => t === "numerical" || t === "integer";
+const isMatch = (t: QuestionType) => t === "match-following";
 
 const TestTakingPage = () => {
   const { slug } = useParams<{ slug: string }>();
