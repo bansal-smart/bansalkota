@@ -554,24 +554,20 @@ const CreateTestPage = () => {
                 </div>
               </SheetContent>
             </Sheet>
-            {resolvedTestId && (
-              <>
-                <button
-                  onClick={() => setDocxImportOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-                  title="Master method — parses numbered questions with (1)–(4) options and Answer: line"
-                >
-                  <FileText className="h-3.5 w-3.5" /> Master import
-                </button>
-                <button
-                  onClick={() => setCommonImportOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
-                  title="Common method — cropped 3-column .docx where the printed question + options are one block"
-                >
-                  <FileText className="h-3.5 w-3.5" /> Common import
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => setDocxImportOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+              title="Master method — parses numbered questions with (1)–(4) options and Answer: line"
+            >
+              <FileText className="h-3.5 w-3.5" /> Master import
+            </button>
+            <button
+              onClick={() => setCommonImportOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
+              title="Common method — cropped 3-column .docx where the printed question + options are one block"
+            >
+              <FileText className="h-3.5 w-3.5" /> Common import
+            </button>
             <button
               onClick={() => setQuestions([...questions, blankQuestion({ correct: correctMarks, wrong: wrongMarks })])}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
