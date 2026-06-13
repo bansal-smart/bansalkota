@@ -303,14 +303,19 @@ const DocxBulkImportDialog = ({
       .from("question_bank")
       .insert(bankRows as any);
     if (bankErr) {
-      failCount = bankRows.length;
-      toast.error(`Failed to save to question bank: ${bankErr.message}`);
+      // Don't abort — pushing into the selected test is the primary goal when one is set.
+      if (!wantPushToTest) {
+        failCount = bankRows.length;
+        toast.error(`Failed to save to question bank: ${bankErr.message}`);
+      } else {
+        toast.warning(`Question bank save failed (${bankErr.message}). Continuing to push into the test.`);
+      }
     } else {
       okCount = bankRows.length;
     }
 
-    // 3b. Optionally also insert into a test
-    if (wantPushToTest && selectedTestId && !bankErr) {
+    // 3b. Optionally also insert into a test (independent of bank result)
+    if (wantPushToTest && selectedTestId) {
       const { data: existing } = await supabase
         .from("test_questions")
         .select("position")
@@ -337,9 +342,19 @@ const DocxBulkImportDialog = ({
         .from("test_questions")
         .insert(testRows as any);
       if (testErr) {
-        toast.error(`Saved to bank, but failed to push to test: ${testErr.message}`);
+        failCount = testRows.length;
+        toast.error(`Failed to push questions to test: ${testErr.message}`);
       } else {
-        toast.success(`Also pushed ${testRows.length} questions into the selected test.`);
+        okCount = Math.max(okCount, testRows.length);
+        toast.success(`Pushed ${testRows.length} question${testRows.length === 1 ? "" : "s"} into the test.`);
+        // Keep tests.total_questions in sync so the test page shows the new count.
+        const { count } = await supabase
+          .from("test_questions")
+          .select("id", { count: "exact", head: true })
+          .eq("test_id", selectedTestId);
+        if (typeof count === "number") {
+          await supabase.from("tests").update({ total_questions: count }).eq("id", selectedTestId);
+        }
       }
     }
 
