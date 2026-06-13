@@ -277,8 +277,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
               >
                 <Download className="h-3 w-3" /> .docx format guide
               </a>
-              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Import questions from a Word .docx file (with inline images)">
+              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Master method — Arke .docx with numbered questions + Answer line">
                 <FileText className="h-3 w-3" /> Word import
+              </button>
+              <button onClick={() => setCommonDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10" title="Common method — cropped 3-column .docx (question + options as one printed block)">
+                <FileText className="h-3 w-3" /> Common import
               </button>
               <button onClick={() => setBulkOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
                 <Upload className="h-3 w-3" /> Bulk CSV
