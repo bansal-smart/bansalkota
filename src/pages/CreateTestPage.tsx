@@ -790,6 +790,63 @@ const CreateTestPage = () => {
             />
           </div>
         </div>
+
+        {/* Schedule */}
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-foreground">Schedule & result release</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Pick the test date and window. Results auto-release after the end time (admins can release earlier from the test detail page).
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-foreground">
+              <input
+                type="checkbox"
+                checked={autoRelease}
+                onChange={(e) => setAutoRelease(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              Auto-release results after end time
+            </label>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className={labelCls}>Test date</label>
+              <input
+                type="date"
+                value={testDate}
+                onChange={(e) => setTestDate(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Start time</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>End time (results release)</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          </div>
+          {testDate && (startTime || endTime) && (
+            <p className="text-[11px] text-muted-foreground">
+              Scheduled: <span className="font-semibold text-foreground">{testDate}</span>
+              {startTime && <> · opens <span className="font-semibold text-foreground">{startTime}</span></>}
+              {endTime && <> · closes & results at <span className="font-semibold text-foreground">{endTime}</span></>}
+            </p>
+          )}
+        </div>
       </section>
 
       {/* Selected Questions */}
