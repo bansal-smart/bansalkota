@@ -39,7 +39,7 @@ const TestSubjectBreakdownPage = () => {
   }>();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<string, { selected: number | null }>>({});
+  const [answers, setAnswers] = useState<Record<string, { selected: any }>>({});
   const [subjectName, setSubjectName] = useState<string>(subject ?? "");
   const [testName, setTestName] = useState<string>("");
 
