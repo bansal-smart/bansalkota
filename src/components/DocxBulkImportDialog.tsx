@@ -167,6 +167,7 @@ const DocxBulkImportDialog = ({
   const buildBaseRow = (q: ParsedDocxQuestion, batchId: string) => {
     const stemHtml = replaceMarkersWithUrls(q.stemHtml, q.images);
     const stemImg = firstImageForSlot(q.images, "stem");
+    const stemHasInlineImg = /<img\b/i.test(stemHtml);
     const optionImages: string[] =
       q.type === "match-following"
         ? // Column B image slots: matchP/Q/R/S
