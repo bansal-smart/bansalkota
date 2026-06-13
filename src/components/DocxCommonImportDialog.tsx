@@ -164,7 +164,7 @@ const DocxCommonImportDialog = ({
       const nums = result.questions.map((q) => q.number).filter((n) => Number.isFinite(n));
       const minN = nums.length ? Math.min(...nums) : 1;
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
-      setSubjectRanges([{ from: minN, to: maxN, subject: defaultSubject ?? "Physics" }]);
+      setSubjectRanges([{ from: minN, to: maxN, subject: allowedSubjects[0] }]);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
