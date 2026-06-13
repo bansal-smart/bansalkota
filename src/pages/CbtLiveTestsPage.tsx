@@ -56,32 +56,6 @@ const CbtLiveTestsPage = () => {
   }, [navigate]);
 
   const startTest = async (testId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    // Reuse existing attempt if present, otherwise create one
-    const { data: existing } = await supabase
-      .from("test_attempts")
-      .select("id, status")
-      .eq("test_id", testId)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    let attemptId = existing?.id;
-    if (!attemptId || (existing?.status !== "in_progress")) {
-      if (existing && existing.status !== "in_progress") {
-        toast.error("You have already submitted this test.");
-        return;
-      }
-      const { data: created, error } = await supabase
-        .from("test_attempts")
-        .insert({ test_id: testId, user_id: user.id, status: "in_progress", started_at: new Date().toISOString(), answers: {}, question_statuses: {} })
-        .select("id")
-        .single();
-      if (error || !created) { toast.error(error?.message ?? "Could not start test"); return; }
-      attemptId = created.id;
-    }
-    // Get slug
     const { data: t } = await supabase.from("tests").select("slug").eq("id", testId).maybeSingle();
     const slug = (t as { slug?: string } | null)?.slug;
     if (!slug) return toast.error("Test not available");
