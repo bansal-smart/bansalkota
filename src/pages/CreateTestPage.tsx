@@ -268,16 +268,25 @@ const CreateTestPage = () => {
     }
   };
 
-  const handleDragEnd = (e: DragEndEvent) => {
-    if (e.over?.id !== "test-drop") return;
-    const bankQ = e.active.data.current?.question as BankQuestion | undefined;
-    if (!bankQ) return;
-    if (questions.some((q) => q.bank_id === bankQ.id)) {
+  const addedBankIds = useMemo(
+    () => new Set(questions.map((q) => q.bank_id).filter(Boolean) as string[]),
+    [questions],
+  );
+
+  const addFromBank = (bankQ: BankQuestion) => {
+    if (addedBankIds.has(bankQ.id)) {
       toast.info("Already added to this test");
       return;
     }
     setQuestions((prev) => [...prev, fromBank(bankQ, { correct: correctMarks, wrong: wrongMarks })]);
     toast.success("Question added");
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    if (e.over?.id !== "test-drop") return;
+    const bankQ = e.active.data.current?.question as BankQuestion | undefined;
+    if (!bankQ) return;
+    addFromBank(bankQ);
   };
 
   const submit = async (publish: boolean) => {
