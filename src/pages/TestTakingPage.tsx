@@ -777,7 +777,7 @@ const TestTakingPage = () => {
       </div>
 
       {/* === Sticky action bar === */}
-      <div className="bg-white border-t border-neutral-200 px-3 py-2.5 flex flex-wrap items-center gap-2 shadow-[0_-2px_4px_rgba(0,0,0,0.04)]">
+      <div className="sticky bottom-0 z-30 bg-white border-t border-neutral-200 px-3 py-2.5 flex flex-wrap items-center gap-2 shadow-[0_-2px_4px_rgba(0,0,0,0.04)]">
         <button onClick={handleMarkAndNext}
           className="rounded-md border border-violet-400 bg-violet-50 px-3 py-2 text-[11px] font-bold text-violet-700 hover:bg-violet-100 flex items-center gap-1.5 uppercase">
           <Flag className="h-3 w-3" /> Mark for Review &amp; Next
