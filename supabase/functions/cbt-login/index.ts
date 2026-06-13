@@ -63,12 +63,15 @@ Deno.serve(async (req) => {
     });
     if (sErr || !sess.session) return json(401, { error: "Account password mismatch. Contact admin." });
 
+    const { data: tRow } = await admin.from("tests").select("slug").eq("id", test.id).maybeSingle();
+    const slug = (tRow as { slug?: string } | null)?.slug ?? test.id;
+
     return json(200, {
       success: true,
       test: {
         id: test.id,
         title: test.title,
-        slug_url: `/tests/${test.id}/take`,
+        slug_url: `/tests/${slug}/take`,
         duration_minutes: test.duration_minutes,
       },
       session: {
