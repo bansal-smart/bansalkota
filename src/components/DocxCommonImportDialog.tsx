@@ -67,9 +67,19 @@ const DocxCommonImportDialog = ({
   testId,
   defaultSubject,
   target = "test",
+  examPattern,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Pattern-aware subject pool
+  const patternSubjects = (() => {
+    const p = (examPattern ?? "").toLowerCase();
+    if (p.includes("neet")) return ["Physics", "Chemistry", "Biology"];
+    if (p.includes("jee")) return ["Physics", "Chemistry", "Mathematics"];
+    return [...SUBJECTS];
+  })();
+  const allowedSubjects = patternSubjects;
   const [step, setStep] = useState<Step>("upload");
   const [fileName, setFileName] = useState("");
   const [parsing, setParsing] = useState(false);
