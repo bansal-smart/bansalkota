@@ -135,6 +135,7 @@ const CreateTestPage = () => {
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
   const [docxImportOpen, setDocxImportOpen] = useState(false);
   const [commonImportOpen, setCommonImportOpen] = useState(false);
+  const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
