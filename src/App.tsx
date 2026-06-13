@@ -100,7 +100,7 @@ import OrdersPage from "./pages/OrdersPage";
 import TestSeriesCatalogPage from "./pages/TestSeriesCatalogPage";
 import TestSeriesDetailPage from "./pages/TestSeriesDetailPage";
 import AdminBooksPage from "./pages/AdminBooksPage";
-import AdminTestSeriesPage from "./pages/AdminTestSeriesPage";
+// AdminTestSeriesPage is now embedded inside AdminTestPlatformHub
 import AdminCentersPage from "./pages/AdminCentersPage";
 import AdminToppersPage from "./pages/AdminToppersPage";
 import AdminBannersPage from "./pages/AdminBannersPage";
