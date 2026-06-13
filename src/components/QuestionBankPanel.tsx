@@ -122,7 +122,7 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
   </th>
 );
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, addedBankIds }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, onAddMany, addedBankIds }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
