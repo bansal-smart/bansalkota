@@ -96,7 +96,7 @@ const renderContent = (raw: string): string => {
     i = k;
   }
   Object.entries(extracted.images).forEach(([key, img]) => {
-    out = out.replaceAll(key, img);
+    out = out.split(key).join(img);
   });
   return out;
 };
