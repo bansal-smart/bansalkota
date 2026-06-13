@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, FileSpreadsheet, FileText, Loader2, Lock, Unlock } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
+import bansalLogo from "@/assets/bansal-logo.png";
 
 type TestRow = {
   id: string;
@@ -15,10 +16,12 @@ type TestRow = {
   exam_pattern: string;
   subjects: string[] | null;
   total_marks: number;
+  duration_minutes: number;
   starts_at: string | null;
   ends_at: string | null;
   results_released_at: string | null;
   auto_release: boolean;
+  cbt_allowed_batch_ids: string[] | null;
 };
 
 type ResultRow = {
@@ -49,13 +52,36 @@ const safeFmt = (d: string | null | undefined, fmt = "dd/MM/yyyy") => {
 
 const num = (n: any) => (n === null || n === undefined ? 0 : Number(n));
 
+// Load the logo as a base64 data URL for embedding into jsPDF.
+const loadLogoDataUrl = async (): Promise<string | null> => {
+  try {
+    const res = await fetch(bansalLogo);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+};
+
 const AdminTestResultPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [test, setTest] = useState<TestRow | null>(null);
   const [rows, setRows] = useState<ResultRow[]>([]);
+  const [batchNames, setBatchNames] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [releasing, setReleasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeStudent, setActiveStudent] = useState<ResultRow | null>(null);
+  const [studentDetail, setStudentDetail] = useState<{
+    attempt: any | null;
+    questions: any[];
+  } | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   const load = async () => {
     if (!slug) return;
@@ -63,7 +89,7 @@ const AdminTestResultPage = () => {
     setError(null);
     const { data: t, error: tErr } = await supabase
       .from("tests")
-      .select("id, title, slug, exam_pattern, subjects, total_marks, starts_at, ends_at, results_released_at, auto_release")
+      .select("id, title, slug, exam_pattern, subjects, total_marks, duration_minutes, starts_at, ends_at, results_released_at, auto_release, cbt_allowed_batch_ids")
       .eq("slug", slug)
       .maybeSingle();
     if (tErr || !t) {
@@ -72,11 +98,19 @@ const AdminTestResultPage = () => {
       return;
     }
     setTest(t as TestRow);
-    const { data: r, error: rErr } = await (supabase.rpc as any)("admin_test_result_sheet", { _test_id: t.id });
+    const { data: r, error: rErr } = await (supabase.rpc as any)("admin_test_result_sheet", { _test_id: (t as any).id });
     if (rErr) {
       setError(rErr.message);
     } else {
       setRows((r ?? []) as ResultRow[]);
+    }
+    // Fetch batch names for header (from allowed batches if present)
+    const bIds = (t as any).cbt_allowed_batch_ids ?? [];
+    if (Array.isArray(bIds) && bIds.length) {
+      const { data: bs } = await supabase.from("course_batches").select("name, code").in("id", bIds);
+      setBatchNames(((bs ?? []) as any[]).map((b) => b.code || b.name).filter(Boolean).join(", "));
+    } else {
+      setBatchNames("");
     }
     setLoading(false);
   };
@@ -85,13 +119,11 @@ const AdminTestResultPage = () => {
     load();
   }, [slug]);
 
-  // Subjects = union of subjects in test + any seen in rows (fallback)
   const subjects = useMemo(() => {
     const set = new Set<string>(Array.isArray(test?.subjects) ? (test!.subjects as string[]) : []);
     for (const r of rows) {
       Object.keys(r.subjects ?? {}).forEach((s) => set.add(s));
     }
-    // Sort with canonical order Physics, Chemistry, Maths, Biology, rest
     const order = ["Physics", "Chemistry", "Mathematics", "Maths", "Biology"];
     return Array.from(set).sort((a, b) => {
       const ia = order.indexOf(a);
@@ -102,8 +134,9 @@ const AdminTestResultPage = () => {
   }, [test, rows]);
 
   const presentRows = rows.filter((r) => r.status === "present");
+  const totalStudents = rows.length;
+  const attemptedStudents = presentRows.length;
 
-  // Per-subject MAX / MIN / AVG (across present students only)
   const stats = useMemo(() => {
     const m: Record<string, { max: number; min: number; avg: number }> = {};
     const tot = { max: 0, min: 0, avg: 0 };
@@ -128,7 +161,7 @@ const AdminTestResultPage = () => {
 
   const released = useMemo(() => {
     if (!test) return false;
-    if (!test.ends_at) return true; // no schedule → always shown
+    if (!test.ends_at) return true;
     if (test.results_released_at && new Date(test.results_released_at) <= new Date()) return true;
     if (test.auto_release && new Date(test.ends_at) <= new Date()) return true;
     return false;
@@ -149,28 +182,30 @@ const AdminTestResultPage = () => {
 
   const examLabel = (test?.exam_pattern ?? "").replace(/-/g, " ").toUpperCase();
   const dateLabel = safeFmt(test?.starts_at ?? test?.ends_at, "dd/MM/yyyy");
+  const timeLabel = test?.starts_at
+    ? `${safeFmt(test.starts_at, "HH:mm")}${test.ends_at ? "–" + safeFmt(test.ends_at, "HH:mm") : ""}`
+    : "—";
 
   const buildSheetRows = () => {
-    // Returns header + body for export
-    const header = ["ROLL NO", "NAME", "BATCH", ...subjects.map((s) => s.toUpperCase().slice(0, 5)), "TOTAL", "%AGE", "RANK"];
+    const header = ["RANK", "ROLL NO", "NAME", "BATCH", ...subjects.map((s) => s.toUpperCase().slice(0, 5)), "TOTAL", "%AGE"];
     const body = rows.map((r) => {
       const subjMarks = subjects.map((s) =>
         r.status === "present" ? num(r.subjects?.[s]) : "",
       );
       return [
+        r.rank_label,
         r.roll_number ?? "",
         r.full_name ?? "",
         r.batch_code || r.batch_name || "",
         ...subjMarks,
         r.status === "present" ? num(r.total_score) : "",
-        r.status === "present" ? `${num(r.percentage).toFixed(2)}` : "0.00",
-        r.rank_label,
+        r.status === "present" ? `${num(r.percentage).toFixed(2)}` : "",
       ];
     });
     const footer = [
-      ["MAX", "", "", ...subjects.map((s) => stats.perSubject[s]?.max ?? 0), stats.total.max, "", ""],
-      ["MIN", "", "", ...subjects.map((s) => stats.perSubject[s]?.min ?? 0), stats.total.min, "", ""],
-      ["AVG", "", "", ...subjects.map((s) => stats.perSubject[s]?.avg ?? 0), stats.total.avg, "", ""],
+      ["MAX", "", "", "", ...subjects.map((s) => stats.perSubject[s]?.max ?? 0), stats.total.max, ""],
+      ["MIN", "", "", "", ...subjects.map((s) => stats.perSubject[s]?.min ?? 0), stats.total.min, ""],
+      ["AVG", "", "", "", ...subjects.map((s) => stats.perSubject[s]?.avg ?? 0), stats.total.avg, ""],
     ];
     return { header, body, footer };
   };
@@ -179,8 +214,10 @@ const AdminTestResultPage = () => {
     if (!test) return;
     const { header, body, footer } = buildSheetRows();
     const wsData: any[][] = [
-      [test.title, "", "", "", "", "", "", "", `DATE : ${dateLabel}`],
-      [examLabel, "", "", "", "", "", "", "", `M.M. ${test.total_marks}`],
+      ["THE BANSAL CLASSES PVT. LTD."],
+      [test.title],
+      [`DATE: ${dateLabel}   TIME: ${timeLabel}   PATTERN: ${examLabel}   M.M.: ${test.total_marks}`],
+      [`BATCHES: ${batchNames || "—"}   TOTAL STUDENTS: ${totalStudents}   ATTEMPTED: ${attemptedStudents}`],
       [],
       header,
       ...body,
@@ -193,35 +230,173 @@ const AdminTestResultPage = () => {
     XLSX.writeFile(wb, `RESULT_${test.title.replace(/\s+/g, "_")}_${dateLabel.replace(/\//g, "-")}.xlsx`);
   };
 
-  const downloadPDF = () => {
+  const downloadMasterPDF = async () => {
     if (!test) return;
+    if (!released) {
+      toast.error("Results are still locked. Release them first or wait until the scheduled time.");
+      return;
+    }
     const { header, body, footer } = buildSheetRows();
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(test.title, 40, 40);
-    doc.text(`DATE : ${dateLabel}`, doc.internal.pageSize.getWidth() - 40, 40, { align: "right" });
-    doc.setFontSize(11);
-    doc.text(examLabel, 40, 58);
-    doc.text(`M.M. ${test.total_marks}`, doc.internal.pageSize.getWidth() - 40, 58, { align: "right" });
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const logo = await loadLogoDataUrl();
+
+    const drawHeader = () => {
+      // Watermark logo (centered, low opacity)
+      if (logo) {
+        const w = 380;
+        const h = 380;
+        const anyDoc: any = doc;
+        try {
+          const gState = new (jsPDF as any).GState({ opacity: 0.07 });
+          anyDoc.setGState(gState);
+          doc.addImage(logo, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
+          anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
+        } catch {
+          // Older jsPDF: fall back to a faint image without GState
+          doc.addImage(logo, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
+        }
+      }
+      // Top header band
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(30, 41, 59);
+      doc.text("THE BANSAL CLASSES PVT. LTD.", pageW / 2, 30, { align: "center" });
+      doc.setFontSize(11);
+      doc.setTextColor(249, 115, 22);
+      doc.text(test.title, pageW / 2, 46, { align: "center" });
+      doc.setTextColor(60, 60, 60);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(`DATE: ${dateLabel}   TIME: ${timeLabel}   PATTERN: ${examLabel}   M.M.: ${test.total_marks}`, pageW / 2, 60, { align: "center" });
+      doc.text(`BATCHES: ${batchNames || "—"}    TOTAL: ${totalStudents}    ATTEMPTED: ${attemptedStudents}`, pageW / 2, 73, { align: "center" });
+    };
 
     autoTable(doc, {
-      startY: 80,
+      startY: 88,
+      margin: { top: 88, left: 24, right: 24, bottom: 30 },
       head: [header],
       body,
       foot: footer,
       theme: "grid",
-      styles: { fontSize: 8, cellPadding: 3, halign: "center" },
-      headStyles: { fillColor: [241, 245, 249], textColor: 20, fontStyle: "bold" },
+      styles: { fontSize: 8, cellPadding: 3, halign: "center", textColor: 20 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: "bold" },
       footStyles: { fillColor: [248, 250, 252], textColor: 20, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [253, 250, 245] },
       columnStyles: {
-        0: { halign: "center", cellWidth: 50 },
-        1: { halign: "left", cellWidth: 160 },
-        2: { halign: "center", cellWidth: 50 },
+        0: { halign: "center", cellWidth: 40, fontStyle: "bold" },
+        1: { halign: "center", cellWidth: 60 },
+        2: { halign: "left", cellWidth: 150 },
+        3: { halign: "center", cellWidth: 55 },
+      },
+      didDrawPage: () => {
+        drawHeader();
+        // Footer
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · Page ${current}/${pageCount}`,
+          pageW / 2,
+          pageH - 14,
+          { align: "center" },
+        );
       },
     });
 
-    doc.save(`RESULT_${test.title.replace(/\s+/g, "_")}_${dateLabel.replace(/\//g, "-")}.pdf`);
+    doc.save(`MASTER_RESULT_${test.title.replace(/\s+/g, "_")}_${dateLabel.replace(/\//g, "-")}.pdf`);
+  };
+
+  // ===== Individual student =====
+  const openStudent = async (r: ResultRow) => {
+    if (!test) return;
+    setActiveStudent(r);
+    setStudentDetail(null);
+    if (r.status === "absent") return;
+    setLoadingDetail(true);
+    try {
+      const [{ data: att }, { data: qs }] = await Promise.all([
+        supabase
+          .from("test_attempts")
+          .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata")
+          .eq("test_id", test.id)
+          .eq("user_id", r.user_id)
+          .in("status", ["submitted", "auto_submitted"])
+          .order("score", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("test_questions")
+          .select("id, position, subject, question_text, question_type, marks_correct, marks_wrong")
+          .eq("test_id", test.id)
+          .order("position"),
+      ]);
+      setStudentDetail({ attempt: att ?? null, questions: (qs ?? []) as any[] });
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const downloadStudentPDF = async (r: ResultRow) => {
+    if (!test) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const logo = await loadLogoDataUrl();
+    if (logo) {
+      try {
+        const anyDoc: any = doc;
+        anyDoc.setGState(new (jsPDF as any).GState({ opacity: 0.07 }));
+        doc.addImage(logo, "PNG", (pageW - 320) / 2, 280, 320, 320, undefined, "FAST");
+        anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
+      } catch { /* noop */ }
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59);
+    doc.text("THE BANSAL CLASSES PVT. LTD.", pageW / 2, 40, { align: "center" });
+    doc.setFontSize(12);
+    doc.setTextColor(249, 115, 22);
+    doc.text(`${test.title} — Student Report`, pageW / 2, 58, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(40);
+    const meta = [
+      ["Student", r.full_name ?? "—"],
+      ["Roll No", r.roll_number ?? "—"],
+      ["Batch", r.batch_code || r.batch_name || "—"],
+      ["Date", dateLabel],
+      ["Pattern", examLabel],
+      ["Max Marks", String(test.total_marks)],
+      ["Status", r.status === "present" ? "Present" : "Absent"],
+    ];
+    autoTable(doc, {
+      startY: 78,
+      body: meta,
+      theme: "plain",
+      styles: { fontSize: 10, cellPadding: 4 },
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 110 } },
+    });
+
+    const subjBody = subjects.map((s) => [s, r.status === "present" ? num(r.subjects?.[s]) : "—"]);
+    subjBody.push(["TOTAL", r.status === "present" ? num(r.total_score) : "—" as any]);
+    subjBody.push(["PERCENTAGE", r.status === "present" ? `${num(r.percentage).toFixed(2)}%` : "—"]);
+    subjBody.push(["RANK", r.rank_label]);
+    autoTable(doc, {
+      startY: ((doc as any).lastAutoTable?.finalY ?? 200) + 14,
+      head: [["Subject / Metric", "Marks"]],
+      body: subjBody,
+      theme: "grid",
+      styles: { fontSize: 10, cellPadding: 5 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+    });
+
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, pageW / 2, doc.internal.pageSize.getHeight() - 20, { align: "center" });
+    doc.save(`${(r.roll_number || r.full_name || "student").replace(/\s+/g, "_")}_${test.title.replace(/\s+/g, "_")}.pdf`);
   };
 
   if (loading) {
@@ -245,59 +420,45 @@ const AdminTestResultPage = () => {
     <div className="p-4 lg:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Link
-            to={`/admin/tests/${test.slug}`}
-            className="rounded-lg border border-border p-2 hover:bg-muted"
-          >
+          <Link to={`/admin/tests/${test.slug}`} className="rounded-lg border border-border p-2 hover:bg-muted">
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
             <h1 className="text-xl font-bold text-foreground">{test.title} · Result Sheet</h1>
             <p className="text-xs text-muted-foreground">
-              {examLabel} · DATE {dateLabel} · M.M. {test.total_marks}
+              {examLabel} · {dateLabel} {timeLabel !== "—" && `· ${timeLabel}`} · M.M. {test.total_marks}
+              {batchNames && ` · ${batchNames}`} · {attemptedStudents}/{totalStudents} attempted
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-              released
-                ? "bg-secondary/20 text-secondary"
-                : "bg-amber-500/20 text-amber-700"
-            }`}
-          >
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${released ? "bg-secondary/20 text-secondary" : "bg-amber-500/20 text-amber-700"}`}>
             {released ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
             {released ? "Released" : "Locked"}
           </span>
           {!released && (
-            <button
-              onClick={releaseNow}
-              disabled={releasing}
-              className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 inline-flex items-center gap-1"
-            >
+            <button onClick={releaseNow} disabled={releasing} className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 inline-flex items-center gap-1">
               {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlock className="h-3.5 w-3.5" />}
               Release now
             </button>
           )}
-          <button
-            onClick={downloadXLSX}
-            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1"
-          >
+          <button onClick={downloadXLSX} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
           <button
-            onClick={downloadPDF}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1"
+            onClick={downloadMasterPDF}
+            disabled={!released}
+            title={released ? "Download branded master result PDF" : "Available after results are released"}
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <FileText className="h-3.5 w-3.5" /> PDF
+            <Download className="h-3.5 w-3.5" /> Master Result PDF
           </button>
         </div>
       </div>
 
       {!released && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700">
-          Results are still locked for students. The release time is{" "}
-          <span className="font-bold">{safeFmt(test.ends_at, "dd MMM yyyy HH:mm")}</span>. Admins can still preview & download.
+          Results are locked for students until <span className="font-bold">{safeFmt(test.ends_at, "dd MMM yyyy HH:mm")}</span>. The master PDF unlocks at the same time (or when you click "Release now").
         </div>
       )}
 
@@ -310,25 +471,26 @@ const AdminTestResultPage = () => {
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr className="bg-muted/60 text-foreground">
+                <th className="border border-border px-2 py-2 text-center">RANK</th>
                 <th className="border border-border px-2 py-2 text-left">ROLL NO</th>
                 <th className="border border-border px-2 py-2 text-left">NAME</th>
                 <th className="border border-border px-2 py-2 text-left">BATCH</th>
                 {subjects.map((s) => (
-                  <th key={s} className="border border-border px-2 py-2 text-center">
-                    {s.toUpperCase().slice(0, 5)}
-                  </th>
+                  <th key={s} className="border border-border px-2 py-2 text-center">{s.toUpperCase().slice(0, 5)}</th>
                 ))}
                 <th className="border border-border px-2 py-2 text-center">TOTAL</th>
                 <th className="border border-border px-2 py-2 text-center">%AGE</th>
-                <th className="border border-border px-2 py-2 text-center">RANK</th>
+                <th className="border border-border px-2 py-2 text-center">VIEW</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
                 <tr
                   key={r.user_id}
-                  className={r.status === "absent" ? "text-muted-foreground" : "text-foreground"}
+                  className={`${r.status === "absent" ? "text-muted-foreground" : "text-foreground hover:bg-muted/30"} cursor-pointer`}
+                  onClick={() => openStudent(r)}
                 >
+                  <td className="border border-border px-2 py-1.5 text-center font-bold">{r.rank_label}</td>
                   <td className="border border-border px-2 py-1.5">{r.roll_number ?? "—"}</td>
                   <td className="border border-border px-2 py-1.5 font-medium">{r.full_name ?? "—"}</td>
                   <td className="border border-border px-2 py-1.5">{r.batch_code || r.batch_name || "—"}</td>
@@ -341,10 +503,10 @@ const AdminTestResultPage = () => {
                     {r.status === "present" ? num(r.total_score) : ""}
                   </td>
                   <td className="border border-border px-2 py-1.5 text-center">
-                    {r.status === "present" ? num(r.percentage).toFixed(2) : "0.00"}
+                    {r.status === "present" ? num(r.percentage).toFixed(2) : ""}
                   </td>
-                  <td className="border border-border px-2 py-1.5 text-center font-bold">
-                    {r.rank_label}
+                  <td className="border border-border px-2 py-1.5 text-center">
+                    <User2 className="h-3.5 w-3.5 inline text-primary" />
                   </td>
                 </tr>
               ))}
@@ -352,6 +514,7 @@ const AdminTestResultPage = () => {
             <tfoot className="bg-muted/40 font-bold text-foreground">
               {(["max", "min", "avg"] as const).map((k) => (
                 <tr key={k}>
+                  <td className="border border-border px-2 py-1.5"></td>
                   <td className="border border-border px-2 py-1.5 uppercase">{k}</td>
                   <td className="border border-border px-2 py-1.5"></td>
                   <td className="border border-border px-2 py-1.5"></td>
@@ -367,6 +530,105 @@ const AdminTestResultPage = () => {
               ))}
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* Student detail drawer */}
+      {activeStudent && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={() => setActiveStudent(null)}>
+          <div className="w-full sm:max-w-2xl max-h-[92vh] overflow-auto rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card">
+              <div>
+                <h3 className="text-base font-bold text-foreground">{activeStudent.full_name ?? "Student"}</h3>
+                <p className="text-xs text-muted-foreground">
+                  Roll {activeStudent.roll_number ?? "—"} · {activeStudent.batch_code || activeStudent.batch_name || "—"} · Rank {activeStudent.rank_label}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => downloadStudentPDF(activeStudent)} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1">
+                  <Download className="h-3.5 w-3.5" /> PDF
+                </button>
+                <button onClick={() => setActiveStudent(null)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 space-y-4">
+              {activeStudent.status === "absent" ? (
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-center text-sm text-amber-700">
+                  This student was absent for the test.
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {subjects.map((s) => (
+                      <div key={s} className="rounded-lg border border-border bg-muted/30 p-3">
+                        <p className="text-[10px] uppercase text-muted-foreground">{s}</p>
+                        <p className="text-lg font-bold text-foreground">{num(activeStudent.subjects?.[s])}</p>
+                      </div>
+                    ))}
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <p className="text-[10px] uppercase text-primary">Total</p>
+                      <p className="text-lg font-bold text-primary">{num(activeStudent.total_score)} / {test.total_marks}</p>
+                    </div>
+                    <div className="rounded-lg border border-secondary/30 bg-secondary/5 p-3">
+                      <p className="text-[10px] uppercase text-secondary">Percentage</p>
+                      <p className="text-lg font-bold text-secondary">{num(activeStudent.percentage).toFixed(2)}%</p>
+                    </div>
+                  </div>
+
+                  {loadingDetail && (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    </div>
+                  )}
+
+                  {studentDetail?.attempt && (
+                    <div className="rounded-lg border border-border bg-card p-3 text-xs space-y-1">
+                      <p><span className="font-bold">Correct:</span> {studentDetail.attempt.correct_answers ?? 0}/{studentDetail.attempt.total_questions ?? 0}</p>
+                      <p><span className="font-bold">Time spent:</span> {studentDetail.attempt.time_spent_seconds ? `${Math.round(studentDetail.attempt.time_spent_seconds / 60)} min` : "—"}</p>
+                      <p><span className="font-bold">Submitted:</span> {safeFmt(studentDetail.attempt.submitted_at, "dd MMM yyyy HH:mm")}</p>
+                      <p><span className="font-bold">Status:</span> {studentDetail.attempt.status}</p>
+                    </div>
+                  )}
+
+                  {studentDetail?.questions && studentDetail.questions.length > 0 && studentDetail.attempt && (
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead className="bg-muted/60">
+                          <tr>
+                            <th className="px-2 py-1.5 text-left">Q#</th>
+                            <th className="px-2 py-1.5 text-left">Subject</th>
+                            <th className="px-2 py-1.5 text-center">Status</th>
+                            <th className="px-2 py-1.5 text-center">Marks</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {studentDetail.questions.map((q: any) => {
+                            const a = studentDetail.attempt?.answers?.[q.id];
+                            const sel = a?.selected;
+                            const hasSel = sel != null && (Array.isArray(sel) ? sel.length > 0 : String(sel).length > 0);
+                            const isCorrect = !!a?.isCorrect;
+                            const label = !hasSel ? "Not attempted" : isCorrect ? "Correct" : "Wrong";
+                            const cls = !hasSel ? "text-muted-foreground" : isCorrect ? "text-secondary" : "text-destructive";
+                            const m = !hasSel ? 0 : isCorrect ? (q.marks_correct ?? 0) : (q.marks_wrong ?? 0);
+                            return (
+                              <tr key={q.id} className="border-t border-border">
+                                <td className="px-2 py-1.5">{q.position}</td>
+                                <td className="px-2 py-1.5">{q.subject ?? "—"}</td>
+                                <td className={`px-2 py-1.5 text-center font-semibold ${cls}`}>{label}</td>
+                                <td className="px-2 py-1.5 text-center">{m}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

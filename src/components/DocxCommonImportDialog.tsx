@@ -33,6 +33,8 @@ type Props = {
   defaultSubject?: string;
   /** "test" (default) imports into test_questions; "bank" imports into question_bank. */
   target?: "test" | "bank";
+  /** Exam pattern of the target test, used to restrict subject choices (e.g. jee-main → no Biology). */
+  examPattern?: string;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -65,16 +67,26 @@ const DocxCommonImportDialog = ({
   testId,
   defaultSubject,
   target = "test",
+  examPattern,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Pattern-aware subject pool
+  const patternSubjects = (() => {
+    const p = (examPattern ?? "").toLowerCase();
+    if (p.includes("neet")) return ["Physics", "Chemistry", "Biology"];
+    if (p.includes("jee")) return ["Physics", "Chemistry", "Mathematics"];
+    return [...SUBJECTS];
+  })();
+  const allowedSubjects = patternSubjects;
   const [step, setStep] = useState<Step>("upload");
   const [fileName, setFileName] = useState("");
   const [parsing, setParsing] = useState(false);
   const [questions, setQuestions] = useState<ParsedDocxQuestion[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [imgProgress, setImgProgress] = useState({ done: 0, total: 0 });
-  const [subject, setSubject] = useState<string>(defaultSubject ?? "Physics");
+  const [subject, setSubject] = useState<string>(defaultSubject && allowedSubjects.includes(defaultSubject) ? defaultSubject : allowedSubjects[0]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
 
@@ -152,7 +164,7 @@ const DocxCommonImportDialog = ({
       const nums = result.questions.map((q) => q.number).filter((n) => Number.isFinite(n));
       const minN = nums.length ? Math.min(...nums) : 1;
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
-      setSubjectRanges([{ from: minN, to: maxN, subject: defaultSubject ?? "Physics" }]);
+      setSubjectRanges([{ from: minN, to: maxN, subject: allowedSubjects[0] }]);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
@@ -226,6 +238,16 @@ const DocxCommonImportDialog = ({
   };
 
   const validate = (): string | null => {
+    // Require every parsed question to be covered by a subject range (or have explicit subject)
+    const uncovered: number[] = [];
+    for (const q of questions) {
+      if (q.subject && allowedSubjects.includes(q.subject)) continue;
+      const hit = subjectRanges.find((r) => q.number >= r.from && q.number <= r.to);
+      if (!hit) uncovered.push(q.number);
+    }
+    if (uncovered.length) {
+      return `Tag a subject for question${uncovered.length === 1 ? "" : "s"} ${uncovered.slice(0, 8).join(", ")}${uncovered.length > 8 ? "…" : ""}. Use "Add range" or "Auto-split equally".`;
+    }
     for (const q of questions) {
       if (!q.stemHtml && !q.stemText) return `Q${q.number} has no question content`;
       if (q.type === "mcq-single" && typeof q.correctAnswer !== "number")
@@ -236,6 +258,23 @@ const DocxCommonImportDialog = ({
         return `Q${q.number} needs a numeric answer`;
     }
     return null;
+  };
+
+  const autoSplitSubjects = () => {
+    const nums = questions.map((q) => q.number).filter((n) => Number.isFinite(n));
+    if (!nums.length) return;
+    const minN = Math.min(...nums);
+    const maxN = Math.max(...nums);
+    const total = maxN - minN + 1;
+    const k = allowedSubjects.length;
+    const per = Math.ceil(total / k);
+    const ranges = allowedSubjects.map((s, i) => ({
+      from: minN + i * per,
+      to: Math.min(maxN, minN + (i + 1) * per - 1),
+      subject: s,
+    })).filter((r) => r.from <= r.to);
+    setSubjectRanges(ranges);
+    toast.success(`Split into ${ranges.length} subjects equally`);
   };
 
   const buildRow = (q: ParsedDocxQuestion, batchId: string) => {
@@ -552,7 +591,7 @@ const DocxCommonImportDialog = ({
                     onChange={(e) => setSubject(e.target.value)}
                     className="mt-1 w-full rounded-md border border-border bg-background p-2 text-xs"
                   >
-                    {SUBJECTS.map((s) => (
+                    {allowedSubjects.map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -568,20 +607,29 @@ const DocxCommonImportDialog = ({
                       e.g. Q1–30 Physics, Q31–60 Chemistry, Q61–90 Maths. Required for subject-wise results.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const last = subjectRanges[subjectRanges.length - 1];
-                      const nextFrom = last ? last.to + 1 : 1;
-                      setSubjectRanges([
-                        ...subjectRanges,
-                        { from: nextFrom, to: nextFrom + 9, subject: SUBJECTS[0] },
-                      ]);
-                    }}
-                    className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
-                  >
-                    + Add range
-                  </button>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={autoSplitSubjects}
+                      className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary/10"
+                    >
+                      Auto-split equally
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const last = subjectRanges[subjectRanges.length - 1];
+                        const nextFrom = last ? last.to + 1 : 1;
+                        setSubjectRanges([
+                          ...subjectRanges,
+                          { from: nextFrom, to: nextFrom + 9, subject: allowedSubjects[0] },
+                        ]);
+                      }}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+                    >
+                      + Add range
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {subjectRanges.map((r, i) => (
@@ -622,7 +670,7 @@ const DocxCommonImportDialog = ({
                         }
                         className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
                       >
-                        {SUBJECTS.map((s) => (
+                        {allowedSubjects.map((s) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
@@ -680,7 +728,7 @@ const DocxCommonImportDialog = ({
                           className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-semibold text-primary"
                           title="Subject for this question"
                         >
-                          {SUBJECTS.map((s) => (
+                          {allowedSubjects.map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>

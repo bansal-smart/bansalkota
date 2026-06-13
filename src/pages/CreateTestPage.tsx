@@ -1198,6 +1198,7 @@ const CreateTestPage = () => {
         onClose={() => setCommonImportOpen(false)}
         onImported={afterImport}
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
+        examPattern={examPattern}
       />
     </DndContext>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -134,6 +134,9 @@ const AdminTestsPage = () => {
                         </a>
                         <Link to={`/admin/tests/${t.slug || t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
                           <Pencil className="h-3.5 w-3.5" />
+                        </Link>
+                        <Link to={`/admin/tests/${t.slug || t.id}/result`} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Result sheet">
+                          <FileSpreadsheet className="h-3.5 w-3.5" />
                         </Link>
                         {!t.is_published ? (
                           <button onClick={() => togglePublish(t, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10">

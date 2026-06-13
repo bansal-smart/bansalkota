@@ -294,6 +294,26 @@ const AdminTestDetailPage = () => {
               <Upload className="h-4 w-4" /> Common import
             </button>
             <Link to={`/admin/tests/${test.slug}/edit`} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted">Open editor</Link>
+            {questions.length > 0 && (
+              <button
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: `Delete all ${questions.length} questions in this test?`,
+                    description: "This permanently removes every question in this test. Student attempts are kept but will show no questions to grade against.",
+                    confirmLabel: "Delete all questions",
+                  });
+                  if (!ok) return;
+                  const { error } = await supabase.from("test_questions").delete().eq("test_id", test.id);
+                  if (error) return toast.error(error.message);
+                  await supabase.from("tests").update({ total_questions: 0, total_marks: 0 }).eq("id", test.id);
+                  toast.success("All questions deleted");
+                  load();
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" /> Delete all questions
+              </button>
+            )}
           </div>
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <table className="w-full text-sm">
@@ -404,7 +424,7 @@ const AdminTestDetailPage = () => {
       )}
 
       <DocxBulkImportDialog open={showImport} onClose={() => setShowImport(false)} onImported={() => { setShowImport(false); load(); }} testId={test.id} />
-      <DocxCommonImportDialog open={showCommonImport} onClose={() => setShowCommonImport(false)} onImported={() => { setShowCommonImport(false); load(); }} testId={test.id} />
+      <DocxCommonImportDialog open={showCommonImport} onClose={() => setShowCommonImport(false)} onImported={() => { setShowCommonImport(false); load(); }} testId={test.id} examPattern={test.exam_pattern} />
     </div>
   );
 };
