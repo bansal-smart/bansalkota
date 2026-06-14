@@ -135,6 +135,8 @@ const CreateTestPage = () => {
   const [correctMarks, setCorrectMarks] = useState(4);
   const [wrongMarks, setWrongMarks] = useState(-1);
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
+  const { confirm, ConfirmDialog } = useConfirm();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(isEditMode);
   const [bankSheetOpen, setBankSheetOpen] = useState(false);
