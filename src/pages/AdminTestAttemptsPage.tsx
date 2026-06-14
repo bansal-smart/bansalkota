@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock, Play } from "lucide-react";
+
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,7 +84,23 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
+  const quickResume = async (a: Attempt) => {
+    const { data: t } = await supabase.from("tests").select("duration_minutes").eq("id", a.test_id).maybeSingle();
+    const usedMins = (a.time_spent_seconds ?? 0) / 60;
+    const remaining = Math.max(5, Math.round((t?.duration_minutes ?? 60) - usedMins));
+    const { error } = await supabase.rpc("admin_reopen_attempt" as any, {
+      _attempt_id: a.id,
+      _extra_minutes: remaining,
+      _fresh: false,
+      _reason: "Quick resume by admin",
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Resumed with ${remaining} min — student keeps all answers`);
+    load();
+  };
+
   const load = async () => {
+
     setLoading(true);
     let q = supabase
       .from("test_attempts")
@@ -316,10 +333,16 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                             </Link>
                           )}
                           {a.status !== "in_progress" && (
-                            <button onClick={() => openReopen(a)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with extra time">
-                              <Clock className="h-3.5 w-3.5" />
-                            </button>
+                            <>
+                              <button onClick={() => quickResume(a)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-100" title="Quick resume (keep answers, give remaining time)">
+                                <Play className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => openReopen(a)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with custom time">
+                                <Clock className="h-3.5 w-3.5" />
+                              </button>
+                            </>
                           )}
+
                           {isSuperAdmin && (
                             <button onClick={() => resetAttempt(a)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
                               {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}

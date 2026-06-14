@@ -207,7 +207,7 @@ const TestTakingPage = () => {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [started]);
 
-  // Tab visibility / anti-cheat
+  // Tab visibility — warn only, never auto-submit (per admin request)
   useEffect(() => {
     if (!started) return;
     const handler = () => {
@@ -217,12 +217,7 @@ const TestTakingPage = () => {
         tabSwitchesRef.current = next;
         setTabSwitches(next);
       } else {
-        if (tabSwitchesRef.current >= 3) {
-          blockedRef.current = true;
-          setShowTabWarning(false);
-          toast.error("Test auto-submitted due to repeated tab switching.");
-          submitRef.current(true);
-        } else if (tabSwitchesRef.current > 0) {
+        if (tabSwitchesRef.current > 0) {
           setShowTabWarning(true);
         }
       }
@@ -235,6 +230,7 @@ const TestTakingPage = () => {
       document.removeEventListener("contextmenu", noContext);
     };
   }, [started]);
+
 
   // Sync refs so auto-save always reads latest state
   useEffect(() => { answersRef.current = answers; }, [answers]);
