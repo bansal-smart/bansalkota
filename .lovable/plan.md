@@ -1,40 +1,67 @@
-# Tab Switch / Window Close Warning During Test
+# Plan: Result Colors, Submit Flow & CBT Login Redesign
 
-Add anti-cheat tab-switch detection on the test taking screen (`src/pages/TestTakingPage.tsx`).
+## 1. Individual Student Result PDF — Correct = Green, Wrong = Red
+**File:** `src/pages/AdminTestResultPage.tsx`
 
-## Behavior
+In the per-question breakdown rendered in the student detail view (and downloaded PDF), the status badge / answer text currently uses red for both Correct and Wrong.
 
-- Detect when the student leaves the test window:
-  - Switches browser tab (page becomes hidden via `visibilitychange`)
-  - Minimizes window / switches app (window `blur`)
-  - Tries to close/refresh tab (`beforeunload` — counted as a violation when they come back)
-- On every return to the test, show a **closable warning dialog** (shadcn AlertDialog) with the current violation count.
+- For each question row, derive `isCorrect` from `metadata.questions[].is_correct`.
+- Status badge & "Correct"/"Wrong" label:
+  - Correct → `bg-green-100 text-green-700 border-green-300`
+  - Wrong → `bg-red-100 text-red-700 border-red-300`
+  - Unattempted → `bg-gray-100 text-gray-600 border-gray-300`
+- Marks number colour mirrors the same (green for +ve, red for -ve, gray for 0).
+- Same tokens used in the html-to-pdf renderer so the downloaded PDF matches the on-screen view.
 
-## Warning thresholds
+## 2. Submit Confirmation Dialog (Test Taking)
+**File:** `src/pages/TestTakingPage.tsx`
 
-| Violation # | Message                                                                                       | Action            |
-| ----------- | --------------------------------------------------------------------------------------------- | ----------------- |
-| 1           | "You switched or closed the tab 1 time. Do not do this — you have 1 more chance."             | Show dialog, allow Continue |
-| 2           | "Final warning! You switched tabs 2 times. One more violation will auto-submit your test."    | Show dialog, allow Continue |
-| 3           | "You have been blocked. Your test is being submitted automatically."                          | Auto-submit attempt and redirect to result page |
+- On clicking "Submit Test" (manual submit), do NOT immediately call `handleSubmit`. Open an `AlertDialog`:
+  - Title: "Submit your test?"
+  - Description: shows quick stats — Attempted X / Total Y, Unattempted Z, Marked for review M.
+  - Buttons: **"Go back to test"** (cancel) | **"Yes, submit now"** (confirm → runs existing `handleSubmit(false)`).
+- Auto-submits (timer expiry, 3rd tab-switch) BYPASS this dialog.
 
-## Implementation details
+## 3. Submission Success Popup
+**File:** `src/pages/TestTakingPage.tsx` (and/or `TestResultPage.tsx` entry)
 
-1. **State**: `tabSwitchCount` (number), `showWarning` (bool) in `TestTakingPage`.
-2. **Listeners** (registered only while attempt is in-progress):
-   - `document.addEventListener("visibilitychange", ...)` — increment when `document.hidden`.
-   - `window.addEventListener("blur", ...)` — increment (debounced 500ms to avoid double-counting with visibilitychange).
-   - Show dialog on next `focus` / `visibilitychange → visible`.
-3. **Persistence**: Store `tabSwitchCount` in `test_attempts.metadata.tab_switches` via a lightweight update on each violation so refresh-then-rejoin cannot reset the counter. Existing `submit_test_attempt` RPC already merges metadata — no schema change required, just an `update` on `test_attempts` from the client (RLS already allows the owner to update their own in-progress attempt).
-4. **Auto-submit on 3rd violation**: Call the same `handleSubmit` / `submit_test_attempt` flow already used by the "Submit Test" button, then navigate to the result page. Toast message: "Test auto-submitted due to repeated tab switching."
-5. **Dialog UI**: shadcn `AlertDialog` with an orange/red warning icon, the message above, and a single "I understand, continue" button (Continue hidden on 3rd violation since auto-submit happens).
-6. **Edge cases**:
-   - Don't count tab switches before the test actually starts or after submission.
-   - Don't count if dialog is already open (prevent re-increment while the user is dismissing).
-   - Cleanup listeners on unmount.
+- After successful submission, show a centered modal (cannot be dismissed by outside click):
+  - Large animated green circle with a white check (`lucide-react` `CheckCircle2` + `animate-in zoom-in`).
+  - Heading: "Your exam has been submitted successfully"
+  - Body: "Your result will be announced by the Bansal Team soon. Best of luck!"
+  - Single button: "Continue" → navigates to `/cbt/submitted` (or dashboard for non-CBT).
+- Replaces the current silent redirect-on-submit.
 
-## Files
+## 4. CBT Login Page Redesign — Bansal Branded
+**File:** `src/pages/CbtLoginPage.tsx`
 
-- **Edit**: `src/pages/TestTakingPage.tsx` — add hook, listeners, AlertDialog, auto-submit branch.
+Convert from the plain card into a warm, branded full-screen layout:
 
-No database migration required.
+```text
++--------------------------------------------------+
+|  [Left Panel — Navy gradient, grid texture]      |
+|    BansalLogo (white)                            |
+|    "Best of luck, Beta."                         |
+|    "The blessings of the entire Bansal           |
+|     family are with you today."                  |
+|    — Bansal Classes, Kota                        |
+|    [small decor: orange flame accent]            |
+|                                                  |
+|  [Right Panel — White card]                      |
+|    Chip: CBT Kiosk · Secure Sign-In              |
+|    Heading: Sign in to your test                 |
+|    Roll Number input                             |
+|    Mobile Number input                           |
+|    [Orange "Begin Test" button]                  |
+|    Tiny line: agree to test rules                |
++--------------------------------------------------+
+```
+
+- Use existing `BansalLogo`, `BansalButton` (`variant="cta"`), `bansal-orange`, `bansal-blue-dark` tokens — no hardcoded colours.
+- Mobile: stack left panel on top as a compact hero band (logo + blessing line).
+- Add subtle `Sparkles` / `Flame` icon accents; keep typography in `font-display`.
+- Inputs get focus ring in `bansal-blue` and a small lock icon prefix.
+- No logic changes — same `cbt-login` edge-function flow.
+
+## Out of scope
+- No DB migration. No scoring logic change. No changes to the tab-switch warning behaviour added previously.
