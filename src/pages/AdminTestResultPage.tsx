@@ -456,6 +456,12 @@ const AdminTestResultPage = () => {
               Release now
             </button>
           )}
+          {released && (
+            <button onClick={backRelease} disabled={releasing} className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 inline-flex items-center gap-1">
+              {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+              Back release
+            </button>
+          )}
           <button onClick={downloadXLSX} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
