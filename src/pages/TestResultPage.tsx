@@ -361,7 +361,7 @@ const TestResultPage = () => {
         </div>
 
         {/* Comparison strip */}
-        {released && rankInfo && (
+        {released && rankInfo && !rankInfo.excluded && (
           <div className="rounded-2xl border border-border bg-card p-5">
             <h2 className="mb-3 text-sm font-bold text-foreground">You vs Topper vs Average</h2>
             <div className="h-56">
