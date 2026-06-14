@@ -1,45 +1,47 @@
 ## Goal
 
-1. Only the **student themselves** can submit their own test attempt — no auto-submission, no admin/teacher submitting on their behalf.
-2. Result sheets, ranks and percentiles must always reflect the **most recent submitted attempt** per student, not the highest-score or first attempt.
+Give admins a per-test "Exclude from results" control. Excluded students' attempts are hidden from the result sheet, do not count toward rank/percentile/topper/average, and the remaining students' ranks are recomputed accordingly.
 
 ## Changes
 
-### 1. `submit_test_attempt` RPC (database function)
-- Remove the admin/teacher/super_admin bypass in the authorization check.
-- Only `attempt.user_id = auth.uid()` may submit.
-- Keep the existing scoring logic untouched.
+### 1. Database — store exclusions per test
+New table `public.test_result_exclusions`:
+- `test_id` (FK → `tests.id`)
+- `user_id` (FK → profile user)
+- `excluded_by`, `reason`, `created_at`
+- Primary key `(test_id, user_id)`
+- RLS: only admin / super_admin / teacher can read or write
+- GRANTs: `authenticated` (read/write gated by RLS), `service_role` all
 
-### 2. Frontend — kill remaining auto-submit paths
-- `src/pages/TestTakingPage.tsx`: confirm there is no timer-triggered or visibility-triggered auto-submit left; if any remains, replace with a "Time up — please click Submit" modal that requires the student to click Submit. (Tab-switch auto-submit is already disabled from earlier turn.)
-- Admin "reopen" / "quick resume" stays — admins can re-allow, but cannot submit for the student.
+### 2. Database — apply exclusions everywhere ranks are computed
 
-### 3. "Latest submission wins" everywhere results are computed
+Update three functions to filter out `(test_id, user_id)` pairs present in `test_result_exclusions`:
 
-- **`admin_test_result_sheet(_test_id)`** — change the `attempts` CTE from
-  `ORDER BY ta.user_id, ta.score DESC, ta.submitted_at DESC`
-  to
-  `ORDER BY ta.user_id, ta.submitted_at DESC NULLS LAST`
-  so the latest submitted attempt is picked per student.
+- **`admin_test_result_sheet(_test_id)`** — drop excluded users from both the `attempts` CTE and the `audience` CTE so they don't appear in the sheet at all. Rank window recomputes over the remaining students automatically.
+- **`get_test_rank(_attempt_id)`** — exclude them from the `latest` CTE used for rank/total/topper/average. If the requester themselves is excluded, return `{ excluded: true }` so the UI can show "Your result has been excluded by the admin."
+- **`submit_test_attempt`** percentile block — same filter on the comparison set.
 
-- **`get_test_rank(_attempt_id)`** — today it ranks across every submitted attempt, which double-counts students who attempted twice. Switch the rank/percentile/topper/average aggregates to use only the latest submitted attempt per `user_id` (CTE with `DISTINCT ON (user_id) ... ORDER BY user_id, submitted_at DESC`).
+### 3. Admin UI — exclusion controls
 
-- **`submit_test_attempt`** percentile block — same fix: compare against each student's latest submitted attempt, not every historical attempt.
+On `src/pages/AdminTestResultPage.tsx`:
+- Add an "Exclude" / "Include" toggle button on each student row.
+- Add a small "Excluded students" panel at the top showing currently excluded students with an "Include back" action.
+- Toggling calls a new RPC `admin_toggle_result_exclusion(_test_id, _user_id, _exclude, _reason)` that inserts/deletes from `test_result_exclusions` (admin/super_admin only).
+- After toggle, refetch `admin_test_result_sheet` so ranks update immediately.
 
-- **Student-side result page (`src/pages/TestResultPage.tsx`)** — when looking up an attempt by test slug without an attempt id, fetch the latest submitted attempt (`ORDER BY submitted_at DESC LIMIT 1`) instead of the first/best.
+### 4. Student side — graceful message when excluded
 
-### 4. Data hygiene (one-off, inside the same migration)
-- Recompute `percentile` for every already-submitted attempt using the new "latest per user" basis, so existing result pages are consistent immediately.
+`src/pages/TestResultPage.tsx`: when `get_test_rank` returns `excluded: true`, show a clear notice ("Your result for this test has been excluded by the admin. Please contact your center for details.") instead of rank/percentile cards. Score breakdown of their own attempt remains visible.
 
 ## Technical notes
 
-- All scoring changes are in Postgres functions; a single migration covers `submit_test_attempt`, `get_test_rank`, `admin_test_result_sheet`, plus a `DO` block that calls a small percentile recompute for existing rows.
-- No table schema changes, no new columns, no new RLS policies — existing `test_attempts` RLS already restricts UPDATE to the owning student, which combined with the RPC change enforces "only student submits".
-- Re-attempt flow is unaffected: admin reopen still creates/updates an `in_progress` row; the student must press Submit to finalize.
+- Single migration: new table + GRANTs + RLS + the three function replacements + the `admin_toggle_result_exclusion` RPC.
+- No change to `test_attempts` data — exclusion is non-destructive and reversible.
+- Re-attempt flow unaffected; the "latest submitted attempt per user" logic is preserved, just filtered.
 
 ## Out of scope
 
-- No change to test creation, question bank, or admin reopen UI.
-- No change to CBT login or auth.
+- Bulk exclude by CSV (can be added later).
+- Auto-exclusion rules (e.g., by batch). Manual per-student only.
 
 Shall I switch to build mode and apply this?
