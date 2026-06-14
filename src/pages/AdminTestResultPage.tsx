@@ -534,6 +534,34 @@ const AdminTestResultPage = () => {
         </div>
       )}
 
+      {Object.keys(exclusions).length > 0 && (
+        <div className="rounded-lg border border-red-500/40 bg-red-500/5 p-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-red-700 inline-flex items-center gap-1">
+              <UserX className="h-3.5 w-3.5" /> Excluded from result ({Object.keys(exclusions).length})
+            </p>
+            <p className="text-[10px] text-red-700/70">These students do not count toward rank, topper or average.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(exclusions).map(([uid, e]) => (
+              <div key={uid} className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-white px-2.5 py-1 text-[11px]">
+                <span className="font-semibold text-foreground">{e.full_name ?? "Student"}</span>
+                {e.roll_number && <span className="text-muted-foreground">· {e.roll_number}</span>}
+                {e.reason && <span className="text-muted-foreground italic">· {e.reason}</span>}
+                <button
+                  onClick={() => toggleExclusion(uid, false)}
+                  disabled={togglingId === uid}
+                  className="ml-1 inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-bold text-secondary hover:bg-secondary/25 disabled:opacity-50"
+                >
+                  {togglingId === uid ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3 w-3" />}
+                  Include back
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {rows.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">
           No students mapped to this test yet. Assign batches (for CBT) or link a course with enrolled students.
@@ -553,6 +581,7 @@ const AdminTestResultPage = () => {
                 <th className="border border-border px-2 py-2 text-center">TOTAL</th>
                 <th className="border border-border px-2 py-2 text-center">%AGE</th>
                 <th className="border border-border px-2 py-2 text-center">VIEW</th>
+                <th className="border border-border px-2 py-2 text-center">EXCLUDE</th>
               </tr>
             </thead>
             <tbody>
@@ -579,6 +608,16 @@ const AdminTestResultPage = () => {
                   </td>
                   <td className="border border-border px-2 py-1.5 text-center">
                     <User2 className="h-3.5 w-3.5 inline text-primary" />
+                  </td>
+                  <td className="border border-border px-2 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => toggleExclusion(r.user_id, true, r.full_name)}
+                      disabled={togglingId === r.user_id}
+                      className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/5 px-2 py-0.5 text-[10px] font-bold text-red-700 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      {togglingId === r.user_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
+                      Exclude
+                    </button>
                   </td>
                 </tr>
               ))}
