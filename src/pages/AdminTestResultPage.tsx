@@ -637,6 +637,7 @@ const AdminTestResultPage = () => {
                   <td className="border border-border px-2 py-1.5 text-center">{stats.total[k]}</td>
                   <td className="border border-border px-2 py-1.5"></td>
                   <td className="border border-border px-2 py-1.5"></td>
+                  <td className="border border-border px-2 py-1.5"></td>
                 </tr>
               ))}
             </tfoot>
