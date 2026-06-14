@@ -567,7 +567,7 @@ const TestTakingPage = () => {
   const numericValue = isNumeric(q.question_type) ? ((answers[q.id] as any)?.selected as string) || "" : "";
 
   const subjectIndex = subjectIndices.findIndex(({ i }) => i === currentQ);
-  const subjectPosLabel = subjectIndex >= 0 ? `${subjectIndex + 1} / ${subjectIndices.length}` : `${currentQ + 1} / ${questions.length}`;
+  const subjectPosLabel = `${currentQ + 1} / ${questions.length}`;
 
   const typeLabel =
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
