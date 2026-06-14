@@ -16,6 +16,8 @@ type LiveTest = {
   subjects: string[] | null;
 };
 
+const ACTIVATION_LEAD_MS = 60_000;
+
 const CbtLiveTestsPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,12 @@ const CbtLiveTestsPage = () => {
   const [studentName, setStudentName] = useState("");
   const [roll, setRoll] = useState("");
   const [batchCode, setBatchCode] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     (async () => {
