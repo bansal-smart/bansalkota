@@ -180,6 +180,20 @@ const AdminTestResultPage = () => {
     load();
   };
 
+  const backRelease = async () => {
+    if (!test) return;
+    if (!confirm("Back-release results? Students will no longer see ranks/scores until you release again.")) return;
+    setReleasing(true);
+    const { error } = await supabase
+      .from("tests")
+      .update({ results_released_at: null, auto_release: false })
+      .eq("id", test.id);
+    setReleasing(false);
+    if (error) return toast.error(error.message);
+    toast.success("Results back-released — now locked from students");
+    load();
+  };
+
   const examLabel = (test?.exam_pattern ?? "").replace(/-/g, " ").toUpperCase();
   const dateLabel = safeFmt(test?.starts_at ?? test?.ends_at, "dd/MM/yyyy");
   const timeLabel = test?.starts_at
@@ -187,7 +201,7 @@ const AdminTestResultPage = () => {
     : "—";
 
   const buildSheetRows = () => {
-    const header = ["RANK", "ROLL NO", "NAME", "BATCH", ...subjects.map((s) => s.toUpperCase().slice(0, 5)), "TOTAL", "%AGE"];
+    const header = ["RANK", "ROLL NO", "NAME", "BATCH", ...subjects.map((s) => s.toUpperCase()), "TOTAL", "%AGE"];
     const body = rows.map((r) => {
       const subjMarks = subjects.map((s) =>
         r.status === "present" ? num(r.subjects?.[s]) : "",
@@ -440,6 +454,12 @@ const AdminTestResultPage = () => {
             <button onClick={releaseNow} disabled={releasing} className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 inline-flex items-center gap-1">
               {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlock className="h-3.5 w-3.5" />}
               Release now
+            </button>
+          )}
+          {released && (
+            <button onClick={backRelease} disabled={releasing} className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 inline-flex items-center gap-1">
+              {releasing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+              Back release
             </button>
           )}
           <button onClick={downloadXLSX} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
