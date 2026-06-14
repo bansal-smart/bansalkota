@@ -98,8 +98,15 @@ const DocxCommonImportDialog = ({
   const [tests, setTests] = useState<TestRow[]>([]);
 
   const subjectForNumber = (n: number): string => {
-    const hit = subjectRanges.find((r) => n >= r.from && n <= r.to);
-    return hit?.subject || subject;
+    // Iterate in reverse so the most-recently-added (typically narrower / more
+    // specific) range wins over the initial auto-seeded "covers everything"
+    // range. Without this, an outer 1–N range always shadows a nested 31–60
+    // range and every question ends up tagged with the first subject.
+    for (let i = subjectRanges.length - 1; i >= 0; i--) {
+      const r = subjectRanges[i];
+      if (n >= r.from && n <= r.to) return r.subject;
+    }
+    return subject;
   };
 
   useEffect(() => {
