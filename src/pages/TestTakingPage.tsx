@@ -894,6 +894,39 @@ const TestTakingPage = () => {
           </div>
         </div>
       )}
+
+      {showTabWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl border-t-4 border-red-600">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-lg font-black text-neutral-900">
+                  {tabSwitches === 1 ? "Warning: Tab Switch Detected" : "Final Warning!"}
+                </h3>
+                <p className="mt-2 text-sm text-neutral-700 leading-relaxed">
+                  {tabSwitches === 1
+                    ? "You switched or closed the tab 1 time. Do not do this — you have 1 more chance before your test is auto-submitted."
+                    : "You switched or closed the tab 2 times. One more violation and your test will be auto-submitted and you will be blocked."}
+                </p>
+                <p className="mt-3 text-xs text-neutral-500">
+                  Violations: <b className="text-red-600">{tabSwitches}</b> / 3
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setShowTabWarning(false)}
+                className="rounded-md bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-black text-white uppercase"
+              >
+                I understand, continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
