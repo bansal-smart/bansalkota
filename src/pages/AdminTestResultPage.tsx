@@ -106,6 +106,32 @@ const AdminTestResultPage = () => {
     } else {
       setRows((r ?? []) as ResultRow[]);
     }
+    // Fetch current exclusions for this test
+    const { data: ex } = await supabase
+      .from("test_result_exclusions" as any)
+      .select("user_id, reason")
+      .eq("test_id", (t as any).id);
+    const exList = (ex ?? []) as any[];
+    if (exList.length) {
+      const ids = exList.map((e) => e.user_id);
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, roll_number")
+        .in("user_id", ids);
+      const pm: Record<string, any> = {};
+      (profs ?? []).forEach((p: any) => (pm[p.user_id] = p));
+      const map: Record<string, any> = {};
+      exList.forEach((e) => {
+        map[e.user_id] = {
+          reason: e.reason,
+          full_name: pm[e.user_id]?.full_name ?? null,
+          roll_number: pm[e.user_id]?.roll_number ?? null,
+        };
+      });
+      setExclusions(map);
+    } else {
+      setExclusions({});
+    }
     // Fetch batch names for header (from allowed batches if present)
     const bIds = (t as any).cbt_allowed_batch_ids ?? [];
     if (Array.isArray(bIds) && bIds.length) {
@@ -115,6 +141,30 @@ const AdminTestResultPage = () => {
       setBatchNames("");
     }
     setLoading(false);
+  };
+
+  const toggleExclusion = async (userId: string, exclude: boolean, name?: string | null) => {
+    if (!test) return;
+    if (exclude) {
+      const reason = window.prompt(`Exclude ${name ?? "this student"} from this test's result?\n\nOptional reason:`, "");
+      if (reason === null) return;
+      setTogglingId(userId);
+      const { error } = await (supabase.rpc as any)("admin_toggle_result_exclusion", {
+        _test_id: test.id, _user_id: userId, _exclude: true, _reason: reason || null,
+      });
+      setTogglingId(null);
+      if (error) return toast.error(error.message);
+      toast.success("Student excluded from result — ranks recomputed");
+    } else {
+      setTogglingId(userId);
+      const { error } = await (supabase.rpc as any)("admin_toggle_result_exclusion", {
+        _test_id: test.id, _user_id: userId, _exclude: false, _reason: null,
+      });
+      setTogglingId(null);
+      if (error) return toast.error(error.message);
+      toast.success("Student included back in result");
+    }
+    load();
   };
 
   useEffect(() => {
