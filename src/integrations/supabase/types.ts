@@ -2969,6 +2969,38 @@ export type Database = {
           },
         ]
       }
+      test_result_exclusions: {
+        Row: {
+          created_at: string
+          excluded_by: string | null
+          reason: string | null
+          test_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          excluded_by?: string | null
+          reason?: string | null
+          test_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          excluded_by?: string | null
+          reason?: string | null
+          test_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_result_exclusions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_series: {
         Row: {
           created_at: string
@@ -3252,6 +3284,15 @@ export type Database = {
           total_score: number
           user_id: string
         }[]
+      }
+      admin_toggle_result_exclusion: {
+        Args: {
+          _exclude: boolean
+          _reason?: string
+          _test_id: string
+          _user_id: string
+        }
+        Returns: Json
       }
       can_reattempt_test: {
         Args: { _test_id: string; _user_id: string }

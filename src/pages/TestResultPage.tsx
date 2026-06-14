@@ -39,6 +39,7 @@ type TestRow = {
 
 type RankInfo = {
   released: boolean;
+  excluded?: boolean;
   rank?: number;
   total?: number;
   percentile?: number;
@@ -261,7 +262,7 @@ const TestResultPage = () => {
             </div>
             <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
               <TrendingUp className="mx-auto mb-1 h-5 w-5 text-white" />
-              <p className="text-xl font-black text-white">{released && rankInfo?.percentile != null ? `${Number(rankInfo.percentile).toFixed(1)}%` : "—"}</p>
+              <p className="text-xl font-black text-white">{released && !rankInfo?.excluded && rankInfo?.percentile != null ? `${Number(rankInfo.percentile).toFixed(1)}%` : "—"}</p>
               <p className="text-[10px] text-white/80">Percentile</p>
             </div>
           </div>
@@ -273,7 +274,15 @@ const TestResultPage = () => {
 
       <div className="space-y-5 p-4 lg:p-6 max-w-6xl mx-auto">
         {/* Rank panel */}
-        {released ? (
+        {rankInfo?.excluded ? (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-5 text-center">
+            <Lock className="mx-auto h-6 w-6 text-amber-600" />
+            <p className="mt-2 font-display text-sm font-bold text-foreground">Your result for this test has been excluded by the admin</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              You will not appear in rank, percentile or topper statistics. Please contact your center for details.
+            </p>
+          </div>
+        ) : released ? (
           <div className="grid gap-3 sm:grid-cols-4 rounded-2xl border border-border bg-card p-5">
             <div className="text-center">
               <Medal className="mx-auto h-5 w-5 text-primary" />
@@ -352,7 +361,7 @@ const TestResultPage = () => {
         </div>
 
         {/* Comparison strip */}
-        {released && rankInfo && (
+        {released && rankInfo && !rankInfo.excluded && (
           <div className="rounded-2xl border border-border bg-card p-5">
             <h2 className="mb-3 text-sm font-bold text-foreground">You vs Topper vs Average</h2>
             <div className="h-56">
