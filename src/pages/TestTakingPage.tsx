@@ -75,6 +75,8 @@ const TestTakingPage = () => {
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const successTargetRef = useRef<string>("/dashboard");
   const [showInstructions, setShowInstructions] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [savedAgo, setSavedAgo] = useState<number | null>(null);
