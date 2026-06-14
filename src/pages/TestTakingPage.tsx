@@ -68,6 +68,10 @@ const TestTakingPage = () => {
   const [statuses, setStatuses] = useState<Record<string, QStatus>>({});
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
+  const [showTabWarning, setShowTabWarning] = useState(false);
+  const tabSwitchesRef = useRef(0);
+  const blockedRef = useRef(false);
+  const submitRef = useRef<(auto?: boolean) => void>(() => {});
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
