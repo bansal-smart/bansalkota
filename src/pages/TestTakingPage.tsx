@@ -159,11 +159,25 @@ const TestTakingPage = () => {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [started]);
 
-  // Tab visibility
+  // Tab visibility / anti-cheat
   useEffect(() => {
     if (!started) return;
     const handler = () => {
-      if (document.hidden) { setTabSwitches((s) => s + 1); toast.warning("Tab switching is logged"); }
+      if (blockedRef.current) return;
+      if (document.hidden) {
+        const next = tabSwitchesRef.current + 1;
+        tabSwitchesRef.current = next;
+        setTabSwitches(next);
+      } else {
+        if (tabSwitchesRef.current >= 3) {
+          blockedRef.current = true;
+          setShowTabWarning(false);
+          toast.error("Test auto-submitted due to repeated tab switching.");
+          submitRef.current(true);
+        } else if (tabSwitchesRef.current > 0) {
+          setShowTabWarning(true);
+        }
+      }
     };
     document.addEventListener("visibilitychange", handler);
     const noContext = (e: Event) => e.preventDefault();
