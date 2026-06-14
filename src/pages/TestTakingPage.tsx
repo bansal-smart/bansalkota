@@ -168,6 +168,37 @@ const TestTakingPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, startedAt, test, overrideMinutes, overrideStartedAt]);
 
+  // Preload all question + option images so navigation feels instant
+  useEffect(() => {
+    if (!questions.length) return;
+    const urls = new Set<string>();
+    questions.forEach((q) => {
+      if (q.question_image_url) urls.add(q.question_image_url);
+      (q.option_images ?? []).forEach((u) => { if (u) urls.add(u); });
+    });
+    const list = Array.from(urls);
+    setPreloadProgress({ loaded: 0, total: list.length });
+    if (list.length === 0) return;
+    let cancelled = false;
+    let done = 0;
+    list.forEach((url) => {
+      const img = new Image();
+      const finish = () => {
+        if (cancelled) return;
+        done += 1;
+        setLoadedImgs((prev) => {
+          if (prev.has(url)) return prev;
+          const next = new Set(prev); next.add(url); return next;
+        });
+        setPreloadProgress({ loaded: done, total: list.length });
+      };
+      img.onload = finish;
+      img.onerror = finish;
+      img.src = url;
+    });
+    return () => { cancelled = true; };
+  }, [questions]);
+
   // Warn on close
   useEffect(() => {
     if (!started) return;
