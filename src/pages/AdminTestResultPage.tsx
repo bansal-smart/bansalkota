@@ -7,7 +7,6 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
-import bansalLogo from "@/assets/bansal-logo.png";
 
 type TestRow = {
   id: string;
