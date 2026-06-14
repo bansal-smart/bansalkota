@@ -3165,6 +3165,7 @@ export type Database = {
         Args: { _attempt_id: string }
         Returns: undefined
       }
+      _recompute_attempt: { Args: { _attempt_id: string }; Returns: undefined }
       admin_set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

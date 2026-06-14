@@ -138,43 +138,51 @@ const TestResultPage = () => {
     (async () => {
       const { data } = await supabase
         .from("test_attempts")
-        .select("id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers")
+        .select("id, test_name, score, total_questions, correct_answers, percentile, time_spent_seconds, test_id, answers, metadata")
         .eq("id", id)
         .maybeSingle();
       if (cancelled) return;
       if (!data) { setLoading(false); return; }
-      setAttempt(data as Attempt);
+      setAttempt(data as unknown as Attempt);
 
       if (data.test_id) {
         const [{ data: t }, { data: qs }] = await Promise.all([
           supabase.from("tests").select("id, ends_at, auto_release, results_released_at, total_marks").eq("id", data.test_id).maybeSingle(),
-          supabase.from("test_questions").select("id, subject, correct_answer, marks_correct, marks_wrong").eq("test_id", data.test_id),
+          supabase.from("test_questions").select("id, subject, marks_correct").eq("test_id", data.test_id),
         ]);
         if (cancelled) return;
         setTest(t as TestRow);
-        const ans = (data.answers ?? {}) as Record<string, { selected: number | null }>;
-        const breakdown: Record<string, SubjectStat> = {};
-        (qs ?? []).forEach((q) => {
+
+        // Build maxScore per subject from questions
+        const maxBySubject: Record<string, number> = {};
+        const totalBySubject: Record<string, number> = {};
+        (qs ?? []).forEach((q: any) => {
           const subj = q.subject ?? "General";
-          if (!breakdown[subj]) breakdown[subj] = { total: 0, correct: 0, attempted: 0, score: 0, maxScore: 0 };
-          breakdown[subj].total += 1;
-          breakdown[subj].maxScore += Number(q.marks_correct ?? 4);
-          const sel = ans[q.id]?.selected;
-          if (sel != null) {
-            breakdown[subj].attempted += 1;
-            if (q.correct_answer === sel) {
-              breakdown[subj].correct += 1;
-              breakdown[subj].score += Number(q.marks_correct ?? 4);
-            } else {
-              breakdown[subj].score += Number(q.marks_wrong ?? -1);
-            }
-          }
+          maxBySubject[subj] = (maxBySubject[subj] ?? 0) + Number(q.marks_correct ?? 4);
+          totalBySubject[subj] = (totalBySubject[subj] ?? 0) + 1;
         });
+
+        const breakdown: Record<string, SubjectStat> = {};
+        const metaSubjects = (data as any)?.metadata?.subjects as
+          | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
+          | undefined;
+        if (metaSubjects && Object.keys(metaSubjects).length) {
+          Object.entries(metaSubjects).forEach(([subj, st]) => {
+            breakdown[subj] = {
+              total: Number(st?.total ?? totalBySubject[subj] ?? 0),
+              correct: Number(st?.correct ?? 0),
+              attempted: Number(st?.attempted ?? 0),
+              score: Number(st?.score ?? 0),
+              maxScore: maxBySubject[subj] ?? Number(st?.total ?? 0) * 4,
+            };
+          });
+        }
         setSubjects(breakdown);
         await fetchRank(id);
       }
       setLoading(false);
     })();
+
 
     const ch = supabase
       .channel(`result_${id}`)
