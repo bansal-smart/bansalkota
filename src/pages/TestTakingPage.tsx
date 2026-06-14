@@ -833,8 +833,8 @@ const TestTakingPage = () => {
                     {subjectIndices.map(({ i }, posIdx) => {
                       const qq = questions[i];
                       return (
-                        <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} size={30} onClick={() => accrueTimeAndJump(i)} title={`Q${posIdx + 1}`}>
-                          {posIdx + 1}
+                        <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} size={30} onClick={() => accrueTimeAndJump(i)} title={`Q${i + 1}`}>
+                          {i + 1}
                         </PaletteShape>
                       );
                     })}
