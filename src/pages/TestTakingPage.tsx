@@ -87,6 +87,14 @@ const TestTakingPage = () => {
   const answersRef = useRef<Record<string, AnswerVal>>({});
   const statusesRef = useRef<Record<string, QStatus>>({});
 
+  // Override window set by admin "reopen with extra time"
+  const [overrideMinutes, setOverrideMinutes] = useState<number | null>(null);
+  const [overrideStartedAt, setOverrideStartedAt] = useState<Date | null>(null);
+
+  // Image preloading
+  const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
+  const [preloadProgress, setPreloadProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
+
   // Load test + existing in-progress attempt
   useEffect(() => {
     if (authLoading || !slug) return;
