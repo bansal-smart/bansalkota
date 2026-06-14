@@ -19,11 +19,13 @@ type TestRow = {
 
 type Status = "live" | "upcoming" | "ended" | "anytime";
 
+const ACTIVATION_LEAD_MS = 60_000;
+
 const statusOf = (t: TestRow, now: number): Status => {
   const s = t.starts_at ? new Date(t.starts_at).getTime() : null;
   const e = t.ends_at ? new Date(t.ends_at).getTime() : null;
   if (s === null && e === null) return "anytime";
-  if (s !== null && now < s) return "upcoming";
+  if (s !== null && now < s - ACTIVATION_LEAD_MS) return "upcoming";
   if (e !== null && now > e) return "ended";
   return "live";
 };

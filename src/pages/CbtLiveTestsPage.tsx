@@ -16,6 +16,8 @@ type LiveTest = {
   subjects: string[] | null;
 };
 
+const ACTIVATION_LEAD_MS = 60_000;
+
 const CbtLiveTestsPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -23,6 +25,12 @@ const CbtLiveTestsPage = () => {
   const [studentName, setStudentName] = useState("");
   const [roll, setRoll] = useState("");
   const [batchCode, setBatchCode] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -94,30 +102,64 @@ const CbtLiveTestsPage = () => {
 
         {tests.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-            <p className="text-sm font-semibold text-foreground">No live tests right now</p>
+            <p className="text-sm font-semibold text-foreground">No tests scheduled for your batch</p>
             <p className="mt-1 text-xs text-muted-foreground">Wait for your invigilator's instructions.</p>
           </div>
         ) : (
           <div className="grid gap-3">
-            {tests.map((t) => (
-              <div key={t.id} className="rounded-2xl border border-border bg-card p-5">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-bold text-foreground">{t.title}</h3>
-                    {t.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{t.description}</p>}
-                    <div className="mt-2 flex items-center gap-4 text-[11px] text-muted-foreground flex-wrap">
-                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {t.duration_minutes} min</span>
-                      <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> {t.total_questions} questions · {t.total_marks} marks</span>
-                      {t.subjects && t.subjects.length > 0 && <span>{t.subjects.join(" · ")}</span>}
-                      {t.ends_at && <span>Closes {new Date(t.ends_at).toLocaleString()}</span>}
+            {tests.map((t) => {
+              const startMs = t.starts_at ? new Date(t.starts_at).getTime() : null;
+              const endMs = t.ends_at ? new Date(t.ends_at).getTime() : null;
+              const notYetOpen = startMs !== null && now < startMs - ACTIVATION_LEAD_MS;
+              const closed = endMs !== null && now > endMs;
+              const canStart = !notYetOpen && !closed;
+
+              let statusLabel = "Active now";
+              let statusClass = "bg-emerald-100 text-emerald-700";
+              let countdown: string | null = null;
+              if (closed) {
+                statusLabel = "Closed";
+                statusClass = "bg-muted text-muted-foreground";
+              } else if (notYetOpen && startMs) {
+                statusLabel = `Starts ${new Date(startMs).toLocaleString()}`;
+                statusClass = "bg-amber-100 text-amber-800";
+                const diff = Math.max(0, startMs - ACTIVATION_LEAD_MS - now);
+                const h = Math.floor(diff / 3_600_000);
+                const m = Math.floor((diff % 3_600_000) / 60_000);
+                const s = Math.floor((diff % 60_000) / 1000);
+                countdown = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+              }
+
+              return (
+                <div key={t.id} className="rounded-2xl border border-border bg-card p-5">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-bold text-foreground">{t.title}</h3>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${statusClass}`}>{statusLabel}</span>
+                      </div>
+                      {t.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{t.description}</p>}
+                      <div className="mt-2 flex items-center gap-4 text-[11px] text-muted-foreground flex-wrap">
+                        <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {t.duration_minutes} min</span>
+                        <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> {t.total_questions} questions · {t.total_marks} marks</span>
+                        {t.subjects && t.subjects.length > 0 && <span>{t.subjects.join(" · ")}</span>}
+                        {t.ends_at && <span>Closes {new Date(t.ends_at).toLocaleString()}</span>}
+                      </div>
+                      {countdown && (
+                        <p className="mt-2 text-xs font-semibold text-amber-700">Opens in <span className="font-display text-base font-black tabular-nums">{countdown}</span></p>
+                      )}
                     </div>
+                    <button
+                      onClick={() => canStart && startTest(t.id)}
+                      disabled={!canStart}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <PlayCircle className="h-4 w-4" /> Start Test
+                    </button>
                   </div>
-                  <button onClick={() => startTest(t.id)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
-                    <PlayCircle className="h-4 w-4" /> Start Test
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
