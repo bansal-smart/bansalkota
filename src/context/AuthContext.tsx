@@ -68,8 +68,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isStudent = role === "student";
 
   // Single-device login enforcement — claims the slot and signs out other devices.
-  // Admins & super_admins are exempt so they can manage from multiple devices/sessions.
-  const enforceSingleDevice = !(isAdmin || isSuperAdmin);
+  // Admins, super_admins, and CBT kiosk students (@cbt.bansal.local) are exempt so
+  // they can be active on multiple devices / kiosks without being kicked mid-test.
+  const isCbtKioskUser = (session?.user?.email ?? "").endsWith("@cbt.bansal.local");
+  const enforceSingleDevice = !(isAdmin || isSuperAdmin || isCbtKioskUser);
   useSingleDeviceLogin(enforceSingleDevice ? session?.user?.id ?? null : null);
 
 
