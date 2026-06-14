@@ -447,7 +447,9 @@ const TestTakingPage = () => {
       setAnswers((prev) => {
         const cur = prev[q.id];
         const prevTime = cur?.time_spent ?? 0;
-        return { ...prev, [q.id]: { ...(cur ?? { selected: null }), time_spent: prevTime + delta } as AnswerVal };
+        const next = { ...prev, [q.id]: { ...(cur ?? { selected: null }), time_spent: prevTime + delta } as AnswerVal };
+        answersRef.current = next;
+        return next;
       });
     }
     enteredAtRef.current = Date.now();
