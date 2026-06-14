@@ -160,7 +160,7 @@ const TestTakingPage = () => {
       const elapsed = Math.floor((Date.now() - base.getTime()) / 1000);
       const remaining = Math.max(0, durMins * 60 - elapsed);
       setSecondsLeft(remaining);
-      if (remaining === 0) handleSubmit(true);
+      if (remaining === 0) { setShowSubmit(true); /* Student must click Submit — no auto submission */ }
     };
     tick();
     const t = setInterval(tick, 1000);
