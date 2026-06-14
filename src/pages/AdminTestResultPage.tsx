@@ -605,13 +605,13 @@ const AdminTestResultPage = () => {
                         </thead>
                         <tbody>
                           {studentDetail.questions.map((q: any) => {
-                            const a = studentDetail.attempt?.answers?.[q.id];
-                            const sel = a?.selected;
-                            const hasSel = sel != null && (Array.isArray(sel) ? sel.length > 0 : String(sel).length > 0);
-                            const isCorrect = !!a?.isCorrect;
-                            const label = !hasSel ? "Not attempted" : isCorrect ? "Correct" : "Wrong";
-                            const cls = !hasSel ? "text-muted-foreground" : isCorrect ? "text-secondary" : "text-destructive";
-                            const m = !hasSel ? 0 : isCorrect ? (q.marks_correct ?? 0) : (q.marks_wrong ?? 0);
+                            const perQ: any[] = (studentDetail.attempt?.metadata?.questions as any[]) ?? [];
+                            const rec = perQ.find((x) => x?.question_id === q.id);
+                            const attempted = rec ? !!rec.attempted : false;
+                            const isCorrect = rec ? !!rec.is_correct : false;
+                            const label = !attempted ? "Not attempted" : isCorrect ? "Correct" : "Wrong";
+                            const cls = !attempted ? "text-muted-foreground" : isCorrect ? "text-secondary" : "text-destructive";
+                            const m = rec ? Number(rec.marks ?? 0) : 0;
                             return (
                               <tr key={q.id} className="border-t border-border">
                                 <td className="px-2 py-1.5">{q.position}</td>
