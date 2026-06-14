@@ -154,8 +154,11 @@ const TestTakingPage = () => {
   useEffect(() => {
     if (!started || !startedAt || !test) return;
     const tick = () => {
-      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000);
-      const remaining = Math.max(0, test.duration_minutes * 60 - elapsed);
+      // Use admin override window if present, else regular test duration from started_at
+      const base = overrideStartedAt ?? startedAt;
+      const durMins = overrideMinutes ?? test.duration_minutes;
+      const elapsed = Math.floor((Date.now() - base.getTime()) / 1000);
+      const remaining = Math.max(0, durMins * 60 - elapsed);
       setSecondsLeft(remaining);
       if (remaining === 0) handleSubmit(true);
     };
@@ -163,7 +166,7 @@ const TestTakingPage = () => {
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, startedAt, test]);
+  }, [started, startedAt, test, overrideMinutes, overrideStartedAt]);
 
   // Warn on close
   useEffect(() => {
