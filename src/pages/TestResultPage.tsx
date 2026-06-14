@@ -143,7 +143,7 @@ const TestResultPage = () => {
         .maybeSingle();
       if (cancelled) return;
       if (!data) { setLoading(false); return; }
-      setAttempt(data as Attempt);
+      setAttempt(data as unknown as Attempt);
 
       if (data.test_id) {
         const [{ data: t }, { data: qs }] = await Promise.all([
