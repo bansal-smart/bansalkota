@@ -368,6 +368,31 @@ const DocxCommonImportDialog = ({
         // Mark the test as common-method
         await supabase.from("tests").update({ import_method: "common" } as any).eq("id", targetTestId);
 
+        // Dedupe: skip questions whose stem already exists in this test from the same file
+        const { data: existingDup } = await supabase
+          .from("test_questions")
+          .select("question_text")
+          .eq("test_id", targetTestId)
+          .eq("source_filename", fileName);
+        const seen = new Set((existingDup ?? []).map((r: any) => String(r.question_text ?? "")));
+        const dedupQs = questions.filter((q) => {
+          const stemHtml = replaceMarkersWithUrls(q.stemHtml, q.images);
+          const txt = stemHtml || q.stemText;
+          return !seen.has(txt);
+        });
+        const skipped = questions.length - dedupQs.length;
+        if (dedupQs.length === 0) {
+          toast.info(`All ${questions.length} questions are already in this test (same file). Nothing added.`);
+          await supabase.from("question_import_batches").update({ status: "completed", question_count: 0 }).eq("id", batchId);
+          setImported({ ok: 0, failed: 0 });
+          setStep("done");
+          onImported(targetTestId);
+          return;
+        }
+        if (skipped > 0) {
+          toast.warning(`Skipped ${skipped} duplicate question${skipped === 1 ? "" : "s"} already in this test.`);
+        }
+
         // Compute starting position for ordering
         const { data: existing } = await supabase
           .from("test_questions")
@@ -377,7 +402,7 @@ const DocxCommonImportDialog = ({
           .limit(1);
         const startPos = (existing?.[0]?.position ?? -1) + 1;
 
-        const rows = questions.map((q, i) => {
+        const rows = dedupQs.map((q, i) => {
           const base = buildRow(q, batchId);
           const marks = DEFAULT_MARKS[q.type];
           return {
@@ -407,6 +432,7 @@ const DocxCommonImportDialog = ({
 
         okCount = rows.length;
         await syncTestStats(targetTestId);
+
       } else {
         // target === "bank"
         const rows = questions.map((q) => {
