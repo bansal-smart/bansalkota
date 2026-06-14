@@ -120,7 +120,7 @@ const TestTakingPage = () => {
 
       const { data: existing } = await supabase
         .from("test_attempts")
-        .select("id, started_at, answers, question_statuses, status")
+        .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at")
         .eq("user_id", user.id).eq("test_id", t.id).eq("status", "in_progress").maybeSingle();
 
       if (existing) {
@@ -128,6 +128,10 @@ const TestTakingPage = () => {
         setStartedAt(new Date(existing.started_at as string));
         setAnswers((existing.answers as Record<string, AnswerVal>) ?? {});
         setStatuses((existing.question_statuses as Record<string, QStatus>) ?? {});
+        if ((existing as any).time_override_minutes) {
+          setOverrideMinutes((existing as any).time_override_minutes);
+          setOverrideStartedAt(new Date((existing as any).time_override_started_at));
+        }
         setStarted(true);
       }
 
