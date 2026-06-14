@@ -2702,7 +2702,7 @@ export type Database = {
         Row: {
           answers: Json | null
           attempted_at: string
-          correct_answers: number
+          correct_answers: number | null
           created_at: string
           id: string
           metadata: Json | null
@@ -2710,7 +2710,7 @@ export type Database = {
           question_statuses: Json | null
           reopened_by: string | null
           reopened_reason: string | null
-          score: number
+          score: number | null
           started_at: string | null
           status: string
           subject: string | null
@@ -2720,13 +2720,13 @@ export type Database = {
           time_override_minutes: number | null
           time_override_started_at: string | null
           time_spent_seconds: number | null
-          total_questions: number
+          total_questions: number | null
           user_id: string
         }
         Insert: {
           answers?: Json | null
           attempted_at?: string
-          correct_answers?: number
+          correct_answers?: number | null
           created_at?: string
           id?: string
           metadata?: Json | null
@@ -2734,7 +2734,7 @@ export type Database = {
           question_statuses?: Json | null
           reopened_by?: string | null
           reopened_reason?: string | null
-          score?: number
+          score?: number | null
           started_at?: string | null
           status?: string
           subject?: string | null
@@ -2744,13 +2744,13 @@ export type Database = {
           time_override_minutes?: number | null
           time_override_started_at?: string | null
           time_spent_seconds?: number | null
-          total_questions?: number
+          total_questions?: number | null
           user_id: string
         }
         Update: {
           answers?: Json | null
           attempted_at?: string
-          correct_answers?: number
+          correct_answers?: number | null
           created_at?: string
           id?: string
           metadata?: Json | null
@@ -2758,7 +2758,7 @@ export type Database = {
           question_statuses?: Json | null
           reopened_by?: string | null
           reopened_reason?: string | null
-          score?: number
+          score?: number | null
           started_at?: string | null
           status?: string
           subject?: string | null
@@ -2768,7 +2768,7 @@ export type Database = {
           time_override_minutes?: number | null
           time_override_started_at?: string | null
           time_spent_seconds?: number | null
-          total_questions?: number
+          total_questions?: number | null
           user_id?: string
         }
         Relationships: []
