@@ -180,6 +180,20 @@ const AdminTestResultPage = () => {
     load();
   };
 
+  const backRelease = async () => {
+    if (!test) return;
+    if (!confirm("Back-release results? Students will no longer see ranks/scores until you release again.")) return;
+    setReleasing(true);
+    const { error } = await supabase
+      .from("tests")
+      .update({ results_released_at: null, auto_release: false })
+      .eq("id", test.id);
+    setReleasing(false);
+    if (error) return toast.error(error.message);
+    toast.success("Results back-released — now locked from students");
+    load();
+  };
+
   const examLabel = (test?.exam_pattern ?? "").replace(/-/g, " ").toUpperCase();
   const dateLabel = safeFmt(test?.starts_at ?? test?.ends_at, "dd/MM/yyyy");
   const timeLabel = test?.starts_at
