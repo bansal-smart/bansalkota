@@ -47,6 +47,41 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [testFilter, setTestFilter] = useState<string>(testId ?? "all");
   const [reattempts, setReattempts] = useState<ReattemptReq[]>([]);
+  const [reopenFor, setReopenFor] = useState<Attempt | null>(null);
+  const [reopenMinutes, setReopenMinutes] = useState<number>(60);
+  const [reopenFresh, setReopenFresh] = useState<boolean>(true);
+  const [reopenReason, setReopenReason] = useState<string>("");
+  const [reopening, setReopening] = useState(false);
+
+  const openReopen = (a: Attempt) => {
+    setReopenFor(a);
+    setReopenFresh(true);
+    setReopenReason("");
+    const t = tests.find((x) => x.id === a.test_id);
+    // default to test duration when known via attempt total -> fallback 60
+    setReopenMinutes(60);
+    // Fetch the test duration for a nicer default
+    supabase.from("tests").select("duration_minutes").eq("id", a.test_id).maybeSingle().then(({ data }) => {
+      if (data?.duration_minutes) setReopenMinutes(data.duration_minutes);
+    });
+  };
+
+  const confirmReopen = async () => {
+    if (!reopenFor) return;
+    if (reopenMinutes < 1 || reopenMinutes > 600) { toast.error("Minutes must be between 1 and 600"); return; }
+    setReopening(true);
+    const { error } = await supabase.rpc("admin_reopen_attempt" as any, {
+      _attempt_id: reopenFor.id,
+      _extra_minutes: reopenMinutes,
+      _fresh: reopenFresh,
+      _reason: reopenReason || null,
+    });
+    setReopening(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Attempt reopened with ${reopenMinutes} min`);
+    setReopenFor(null);
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
