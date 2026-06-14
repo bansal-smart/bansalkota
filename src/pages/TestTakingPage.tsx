@@ -496,6 +496,7 @@ const TestTakingPage = () => {
 
   const handleMultiToggle = (optIdx: number) => {
     if (!q) return;
+    explicitClearsRef.current.delete(q.id);
     setAnswers((prev) => {
       const cur = prev[q.id];
       const arr: number[] = Array.isArray((cur as any)?.selected) ? [...(cur as any).selected] : [];
@@ -504,7 +505,9 @@ const TestTakingPage = () => {
       arr.sort((a, b) => a - b);
       const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
       updateStatus(q.id, arr.length > 0 ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
-      return { ...prev, [q.id]: { ...(cur ?? {}), selected: arr } as AnswerVal };
+      const next = { ...prev, [q.id]: { ...(cur ?? {}), selected: arr } as AnswerVal };
+      answersRef.current = next;
+      return next;
     });
   };
 
@@ -522,7 +525,12 @@ const TestTakingPage = () => {
 
   const handleMatchChange = (next: Record<string, string>) => {
     if (!q) return;
-    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: next } as AnswerVal }));
+    explicitClearsRef.current.delete(q.id);
+    setAnswers((prev) => {
+      const merged = { ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: next } as AnswerVal };
+      answersRef.current = merged;
+      return merged;
+    });
     const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
     const filled = Object.keys(next).length > 0;
     updateStatus(q.id, filled ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
@@ -556,7 +564,11 @@ const TestTakingPage = () => {
           : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
     const clearIds = new Set([q.id]);
     explicitClearsRef.current.add(q.id);
-    setAnswers((prev) => ({ ...prev, [q.id]: cleared }));
+    setAnswers((prev) => {
+      const next = { ...prev, [q.id]: cleared };
+      answersRef.current = next;
+      return next;
+    });
     updateStatus(q.id, nextStatus);
     saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus }, clearIds);
   };
