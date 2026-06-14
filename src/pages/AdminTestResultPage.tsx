@@ -315,7 +315,7 @@ const AdminTestResultPage = () => {
         const h = 380;
         const anyDoc: any = doc;
         try {
-          const gState = new (jsPDF as any).GState({ opacity: 0.07 });
+          const gState = new (jsPDF as any).GState({ opacity: 0.05 });
           anyDoc.setGState(gState);
           doc.addImage(logo, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
           anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
