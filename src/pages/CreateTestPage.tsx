@@ -20,6 +20,7 @@ import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
 import MathRenderer from "@/components/MathRenderer";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
