@@ -541,9 +541,11 @@ const TestTakingPage = () => {
         : isMatch(q.question_type)
           ? { selected: {}, time_spent: (answers[q.id] as any)?.time_spent }
           : { selected: null, time_spent: (answers[q.id] as any)?.time_spent };
+    const clearIds = new Set([q.id]);
+    explicitClearsRef.current.add(q.id);
     setAnswers((prev) => ({ ...prev, [q.id]: cleared }));
     updateStatus(q.id, nextStatus);
-    saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus });
+    saveNow({ ...answersRef.current, [q.id]: cleared }, { ...statusesRef.current, [q.id]: nextStatus }, clearIds);
   };
 
   const handleSubmit = async (auto = false) => {
@@ -554,8 +556,10 @@ const TestTakingPage = () => {
       const delta = Math.floor((Date.now() - enteredAtRef.current) / 1000);
       answers[q.id] = { ...(answers[q.id] ?? { selected: null }), time_spent: ((answers[q.id]?.time_spent ?? 0) + delta) } as AnswerVal;
     }
+    const saved = await persistProgress(answers, statuses);
     await supabase.from("test_attempts").update({
-      answers, question_statuses: statuses,
+      answers: saved?.answers ?? answers,
+      question_statuses: saved?.statuses ?? statuses,
       status: auto ? "auto_submitted" : "submitted",
       submitted_at: new Date().toISOString(),
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
