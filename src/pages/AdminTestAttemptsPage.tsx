@@ -84,7 +84,23 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
+  const quickResume = async (a: Attempt) => {
+    const { data: t } = await supabase.from("tests").select("duration_minutes").eq("id", a.test_id).maybeSingle();
+    const usedMins = (a.time_spent_seconds ?? 0) / 60;
+    const remaining = Math.max(5, Math.round((t?.duration_minutes ?? 60) - usedMins));
+    const { error } = await supabase.rpc("admin_reopen_attempt" as any, {
+      _attempt_id: a.id,
+      _extra_minutes: remaining,
+      _fresh: false,
+      _reason: "Quick resume by admin",
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Resumed with ${remaining} min — student keeps all answers`);
+    load();
+  };
+
   const load = async () => {
+
     setLoading(true);
     let q = supabase
       .from("test_attempts")
