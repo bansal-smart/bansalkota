@@ -262,7 +262,7 @@ const TestResultPage = () => {
             </div>
             <div className="rounded-xl bg-white/15 p-3 backdrop-blur">
               <TrendingUp className="mx-auto mb-1 h-5 w-5 text-white" />
-              <p className="text-xl font-black text-white">{released && rankInfo?.percentile != null ? `${Number(rankInfo.percentile).toFixed(1)}%` : "—"}</p>
+              <p className="text-xl font-black text-white">{released && !rankInfo?.excluded && rankInfo?.percentile != null ? `${Number(rankInfo.percentile).toFixed(1)}%` : "—"}</p>
               <p className="text-[10px] text-white/80">Percentile</p>
             </div>
           </div>
