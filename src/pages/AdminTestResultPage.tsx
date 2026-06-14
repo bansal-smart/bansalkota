@@ -82,6 +82,8 @@ const AdminTestResultPage = () => {
     questions: any[];
   } | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [exclusions, setExclusions] = useState<Record<string, { reason: string | null; full_name: string | null; roll_number: string | null }>>({});
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!slug) return;
