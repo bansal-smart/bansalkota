@@ -912,10 +912,17 @@ const CreateTestPage = () => {
               <button
                 type="button"
                 disabled={selectedIdx.size === 0}
-                onClick={() => {
+                onClick={async () => {
+                  const sel = Array.from(selectedIdx);
+                  const dbIds = sel.map((i) => questions[i]?.id).filter(Boolean) as string[];
+                  if (dbIds.length && resolvedTestId) {
+                    const { error } = await supabase.from("test_questions").delete().in("id", dbIds);
+                    if (error) { toast.error(error.message); return; }
+                    try { await syncTestStats(resolvedTestId); } catch {}
+                  }
                   setQuestions(questions.filter((_, i) => !selectedIdx.has(i)));
                   setSelectedIdx(new Set());
-                  toast.success("Removed from test (save to persist)");
+                  toast.success(`Removed ${sel.length} from test`);
                 }}
                 className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 inline-flex items-center gap-1"
               >
@@ -927,6 +934,7 @@ const CreateTestPage = () => {
                 onClick={async () => {
                   const sel = Array.from(selectedIdx);
                   const bankIds = sel.map((i) => questions[i]?.bank_id).filter(Boolean) as string[];
+                  const dbIds = sel.map((i) => questions[i]?.id).filter(Boolean) as string[];
                   const ok = await confirm({
                     title: `Delete ${sel.length} question${sel.length === 1 ? "" : "s"} from test and Question Bank?`,
                     description: bankIds.length
@@ -935,10 +943,15 @@ const CreateTestPage = () => {
                     confirmLabel: "Delete permanently",
                   });
                   if (!ok) return;
+                  if (dbIds.length && resolvedTestId) {
+                    const { error } = await supabase.from("test_questions").delete().in("id", dbIds);
+                    if (error) { toast.error(error.message); return; }
+                  }
                   if (bankIds.length) {
                     const { error } = await supabase.from("question_bank").delete().in("id", bankIds);
                     if (error) { toast.error(error.message); return; }
                   }
+                  if (resolvedTestId) { try { await syncTestStats(resolvedTestId); } catch {} }
                   setQuestions(questions.filter((_, i) => !selectedIdx.has(i)));
                   setSelectedIdx(new Set());
                   toast.success(`Removed ${sel.length} · Deleted ${bankIds.length} from bank`);
@@ -948,6 +961,7 @@ const CreateTestPage = () => {
                 <Trash2 className="h-3.5 w-3.5" /> Delete from test + bank
               </button>
             </div>
+
           </div>
         )}
 
