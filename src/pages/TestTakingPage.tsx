@@ -323,7 +323,10 @@ const TestTakingPage = () => {
       answers: mergedAnswers,
       question_statuses: mergedStatuses,
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
-      metadata: { tab_switches: tabSwitches },
+      metadata: {
+        tab_switches: tabSwitches,
+        ...(clearIds.size ? { explicit_clear_ids: Array.from(clearIds) } : {}),
+      },
     }).eq("id", attemptId);
 
     if (error) {
@@ -481,7 +484,12 @@ const TestTakingPage = () => {
 
   const handleSingleSelect = (optIdx: number) => {
     if (!q) return;
-    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: optIdx } as AnswerVal }));
+    explicitClearsRef.current.delete(q.id);
+    setAnswers((prev) => {
+      const next = { ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: optIdx } as AnswerVal };
+      answersRef.current = next;
+      return next;
+    });
     const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
     updateStatus(q.id, wasMarked ? "answered-marked" : "answered");
   };
@@ -502,7 +510,12 @@ const TestTakingPage = () => {
 
   const handleNumericInput = (value: string) => {
     if (!q) return;
-    setAnswers((prev) => ({ ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: value } as AnswerVal }));
+    explicitClearsRef.current.delete(q.id);
+    setAnswers((prev) => {
+      const next = { ...prev, [q.id]: { ...(prev[q.id] ?? {}), selected: value } as AnswerVal };
+      answersRef.current = next;
+      return next;
+    });
     const wasMarked = statuses[q.id] === "marked" || statuses[q.id] === "answered-marked";
     updateStatus(q.id, value.trim() ? (wasMarked ? "answered-marked" : "answered") : (wasMarked ? "marked" : "not-answered"));
   };
