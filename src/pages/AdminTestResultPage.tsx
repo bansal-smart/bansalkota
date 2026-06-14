@@ -52,6 +52,20 @@ const safeFmt = (d: string | null | undefined, fmt = "dd/MM/yyyy") => {
 
 const num = (n: any) => (n === null || n === undefined ? 0 : Number(n));
 
+const loadLogoDataUrl = async (): Promise<string | null> => {
+  try {
+    const res = await fetch(bansalLogo);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+};
 
 const AdminTestResultPage = () => {
   const { slug } = useParams<{ slug: string }>();
