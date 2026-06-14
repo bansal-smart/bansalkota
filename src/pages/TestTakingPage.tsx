@@ -928,6 +928,30 @@ const TestTakingPage = () => {
           </div>
         </div>
       )}
+
+      {showSuccess && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border-t-4 border-green-600 text-center animate-in zoom-in-95 fade-in duration-200">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle2 className="h-12 w-12 text-green-600" />
+            </div>
+            <h3 className="mt-5 font-display text-xl font-black text-neutral-900">
+              Your exam has been submitted successfully
+            </h3>
+            <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+              Your result will be announced by the Bansal Team soon.
+              <br />
+              <span className="font-semibold text-neutral-800">Best of luck, Beta! 🌟</span>
+            </p>
+            <button
+              onClick={() => { setShowSuccess(false); navigate(successTargetRef.current, { replace: true }); }}
+              className="mt-6 w-full rounded-md bg-green-600 hover:bg-green-700 px-5 py-2.5 text-xs font-black text-white uppercase tracking-wider"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
