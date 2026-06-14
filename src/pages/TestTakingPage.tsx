@@ -709,8 +709,19 @@ const TestTakingPage = () => {
               <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
               {q.question_image_url && !/<img\b/i.test(q.question_text || "") && (
-                <div className="relative inline-block">
-                  <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72 select-none pointer-events-none" draggable="false" />
+                <div className="relative inline-block min-h-[80px]">
+                  {!loadedImgs.has(q.question_image_url) && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 rounded border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-xs text-neutral-500">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading question image…
+                    </div>
+                  )}
+                  <img
+                    src={q.question_image_url}
+                    alt=""
+                    onLoad={() => setLoadedImgs((prev) => { if (prev.has(q.question_image_url!)) return prev; const n = new Set(prev); n.add(q.question_image_url!); return n; })}
+                    className={`rounded border border-neutral-200 max-h-72 select-none pointer-events-none ${loadedImgs.has(q.question_image_url) ? "opacity-100" : "opacity-0"}`}
+                    draggable="false"
+                  />
                 </div>
               )}
 
