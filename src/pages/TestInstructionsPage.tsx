@@ -55,9 +55,10 @@ const TestInstructionsPage = () => {
     return () => clearInterval(t);
   }, []);
 
+  const ACTIVATION_LEAD_MS = 60_000;
   const startsAt = test?.starts_at ? new Date(test.starts_at).getTime() : null;
   const endsAt = test?.ends_at ? new Date(test.ends_at).getTime() : null;
-  const notYetOpen = startsAt !== null && now < startsAt;
+  const notYetOpen = startsAt !== null && now < startsAt - ACTIVATION_LEAD_MS;
   const closed = endsAt !== null && now > endsAt;
 
   const countdown = useMemo(() => {
