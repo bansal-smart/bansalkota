@@ -896,6 +896,61 @@ const CreateTestPage = () => {
           </div>
         </div>
 
+        {questions.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border bg-muted/30 px-3 py-2">
+            <label className="inline-flex items-center gap-2 text-xs font-semibold text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedIdx.size === questions.length && questions.length > 0}
+                ref={(el) => { if (el) el.indeterminate = selectedIdx.size > 0 && selectedIdx.size < questions.length; }}
+                onChange={(e) => setSelectedIdx(e.target.checked ? new Set(questions.map((_, i) => i)) : new Set())}
+              />
+              Select all
+            </label>
+            <span className="text-xs text-muted-foreground">{selectedIdx.size} selected</span>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                disabled={selectedIdx.size === 0}
+                onClick={() => {
+                  setQuestions(questions.filter((_, i) => !selectedIdx.has(i)));
+                  setSelectedIdx(new Set());
+                  toast.success("Removed from test (save to persist)");
+                }}
+                className="rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 inline-flex items-center gap-1"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Remove from test
+              </button>
+              <button
+                type="button"
+                disabled={selectedIdx.size === 0}
+                onClick={async () => {
+                  const sel = Array.from(selectedIdx);
+                  const bankIds = sel.map((i) => questions[i]?.bank_id).filter(Boolean) as string[];
+                  const ok = await confirm({
+                    title: `Delete ${sel.length} question${sel.length === 1 ? "" : "s"} from test and Question Bank?`,
+                    description: bankIds.length
+                      ? `This permanently deletes ${bankIds.length} question(s) from the Question Bank. They will disappear from every other test that references them. This cannot be undone.`
+                      : "None of the selected questions originated from the Question Bank — they will just be removed from this test.",
+                    confirmLabel: "Delete permanently",
+                  });
+                  if (!ok) return;
+                  if (bankIds.length) {
+                    const { error } = await supabase.from("question_bank").delete().in("id", bankIds);
+                    if (error) { toast.error(error.message); return; }
+                  }
+                  setQuestions(questions.filter((_, i) => !selectedIdx.has(i)));
+                  setSelectedIdx(new Set());
+                  toast.success(`Removed ${sel.length} · Deleted ${bankIds.length} from bank`);
+                }}
+                className="rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-40 inline-flex items-center gap-1"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete from test + bank
+              </button>
+            </div>
+          </div>
+        )}
+
         <DropZone empty={questions.length === 0}>
           {questions.map((q, i) => (
             <div
@@ -903,6 +958,16 @@ const CreateTestPage = () => {
               className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm hover:border-primary/40 transition-colors"
             >
               <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="checkbox"
+                  checked={selectedIdx.has(i)}
+                  onChange={(e) => {
+                    const next = new Set(selectedIdx);
+                    if (e.target.checked) next.add(i); else next.delete(i);
+                    setSelectedIdx(next);
+                  }}
+                  aria-label={`Select question ${i + 1}`}
+                />
                 <GripVertical className="h-4 w-4 text-muted-foreground" />
                 <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-foreground">
                   Q{i + 1}
