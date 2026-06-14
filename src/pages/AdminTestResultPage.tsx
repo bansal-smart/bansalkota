@@ -214,7 +214,7 @@ const AdminTestResultPage = () => {
     if (!test) return;
     const { header, body, footer } = buildSheetRows();
     const wsData: any[][] = [
-      ["THE BANSAL CLASSES PVT. LTD."],
+      ["BANSAL CLASSES PVT. LTD."],
       [test.title],
       [`DATE: ${dateLabel}   TIME: ${timeLabel}   PATTERN: ${examLabel}   M.M.: ${test.total_marks}`],
       [`BATCHES: ${batchNames || "—"}   TOTAL STUDENTS: ${totalStudents}   ATTEMPTED: ${attemptedStudents}`],
@@ -262,7 +262,7 @@ const AdminTestResultPage = () => {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(13);
       doc.setTextColor(30, 41, 59);
-      doc.text("THE BANSAL CLASSES PVT. LTD.", pageW / 2, 30, { align: "center" });
+      doc.text("BANSAL CLASSES PVT. LTD.", pageW / 2, 30, { align: "center" });
       doc.setFontSize(11);
       doc.setTextColor(249, 115, 22);
       doc.text(test.title, pageW / 2, 46, { align: "center" });
@@ -355,7 +355,7 @@ const AdminTestResultPage = () => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(30, 41, 59);
-    doc.text("THE BANSAL CLASSES PVT. LTD.", pageW / 2, 40, { align: "center" });
+    doc.text("BANSAL CLASSES PVT. LTD.", pageW / 2, 40, { align: "center" });
     doc.setFontSize(12);
     doc.setTextColor(249, 115, 22);
     doc.text(`${test.title} — Student Report`, pageW / 2, 58, { align: "center" });
