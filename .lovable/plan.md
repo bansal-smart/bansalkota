@@ -1,37 +1,33 @@
-## Goal
-Add bulk selection on the test editor (`/admin/tests/:slug/edit`) so admins can multi-select questions and either remove them from this test only, or remove them from this test AND permanently delete them from the Question Bank.
+## Plan
 
-## Changes (only `src/pages/CreateTestPage.tsx`)
+1. **Fix imported-question deletion in the test editor**
+   - Make **Remove from test** and **Delete from test + bank** delete selected imported rows from `test_questions` immediately when the test already exists.
+   - For imported rows, use their real `test_questions.id`, not only local state.
+   - After deletion, reload the test question list and refresh test stats so the count changes from 150 to the real number.
 
-### 1. Selection state
-- Add `selectedIdx: Set<number>` state for which question rows are checked.
-- Reset on import / save / question reorder length change.
+2. **Fix “delete from test + bank” behavior**
+   - If selected questions came from the bank (`bank_id` exists), delete those bank records too.
+   - If selected questions were common-imported directly into the test, explain via toast that no bank copy exists, and still delete them from the test.
+   - Remove the misleading “save to persist” behavior for imported rows because the current save path does not persist deletions for imported tests.
 
-### 2. Bulk toolbar (above the questions list, shown when `questions.length > 0`)
-- "Select all" / "Clear" toggle (checkbox in header).
-- Counter: `N selected`.
-- Two action buttons (disabled when none selected):
-  - **Remove from test** — drops them from local `questions` state (final save commits to DB as today via the existing replace-all logic in `submit()`).
-  - **Delete from test + Question Bank** — confirm dialog (`useConfirm`), then:
-    1. Collect `bank_id` values from the selected rows that originated from the bank (`q.bank_id` present).
-    2. If any: `supabase.from("question_bank").delete().in("id", bankIds)` — surface error toast on failure.
-    3. Remove the selected rows from local `questions` state regardless.
-    4. Toast: "Removed X questions · Y deleted from bank".
+3. **Prevent repeat import duplicates**
+   - Before common import inserts into a test, check existing questions in that same test for matching imported content from the same file.
+   - Skip duplicates and show a clear message like “75 skipped, already in this test” instead of appending again.
+   - Keep appending only genuinely new questions.
 
-### 3. Per-row checkbox
-- Add a small checkbox at the start of each question row (next to the `GripVertical` handle).
-- Bound to `selectedIdx.has(i)`.
+4. **Make subject range tagging reliable**
+   - Replace the initial full `1–N Physics` range with explicit, non-overlapping ranges when admins use **Auto-split equally** or add custom ranges.
+   - Ensure the subject preview and saved rows use the final range mapping consistently: Q1–25 Physics, Q26–50 Chemistry, Q51–75 Mathematics for JEE.
+   - Update validation to use the same final subject resolver as saving.
 
-### 4. Safety / UX
-- Confirm dialog for bank deletion clearly states it is permanent and affects other tests that reference the same bank question.
-- After bulk remove, re-key remaining rows (indexes auto-shift — fine because list is index-keyed today).
-- Existing single-row trash button stays.
+5. **One-time cleanup for the current test**
+   - Remove the older duplicate all-Physics import batch from `trial-13th-mqcqzjfd` and keep the newer correctly tagged 75-question batch.
+   - Recalculate the test total questions, marks, and subject list afterward.
 
-## Out of scope
-- No DB schema or migration changes (RLS on `question_bank` already allows admin deletes).
-- No changes to the question bank panel itself.
-- No changes to `AdminTestDetailPage`'s "Delete all questions" (already exists).
+## Files likely changed
+- `src/pages/CreateTestPage.tsx`
+- `src/components/DocxCommonImportDialog.tsx`
 
-## Technical notes
-- Imports to add: nothing new (`useConfirm`, `Trash2`, `supabase`, `toast` already imported).
-- The save flow (`submit()`) already does `DELETE ... WHERE test_id = ?` + reinsert, so bulk-remove from test needs no extra DB call — it persists on next Save. Bank deletion is the only direct DB call required.
+## Database data cleanup
+- Delete only duplicate `test_questions` rows for the affected test/import batch.
+- No schema migration needed.
