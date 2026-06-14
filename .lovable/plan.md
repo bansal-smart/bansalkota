@@ -1,45 +1,40 @@
-## What I found
+# Tab Switch / Window Close Warning During Test
 
-- The uploaded PDF summary totals are internally consistent: Physics 8 + Chemistry 3 + Mathematics 2 = Total 13.
-- The “wrong wrong only” issue is a display bug in the admin student detail table: it checks `answer.isCorrect`, but that field is never stored in the attempt answers, so every attempted question can appear as Wrong even when the backend counted it as Correct.
-- The score 13 is happening because some integer/numerical questions in this test have `marks_wrong = 0`. With your required rule, every attempted wrong answer should be `-1`, not `0`.
-- For roll no. 261057, the backend data currently shows 5 correct answers. Under your rule `+4 correct, -1 wrong, 0 unattempted`, that attempt should be recalculated using the real attempted/wrong count, not the old numeric-question `0` penalty.
+Add anti-cheat tab-switch detection on the test taking screen (`src/pages/TestTakingPage.tsx`).
 
-## Fix plan
+## Behavior
 
-1. **Apply the exact scoring rule everywhere**
-   - Correct attempted answer: `+4`
-   - Wrong attempted answer: `-1`
-   - Not attempted: `0`
-   - This will apply to MCQ, assertion-reason, integer, and numerical questions in the test result scoring.
+- Detect when the student leaves the test window:
+  - Switches browser tab (page becomes hidden via `visibilitychange`)
+  - Minimizes window / switches app (window `blur`)
+  - Tries to close/refresh tab (`beforeunload` — counted as a violation when they come back)
+- On every return to the test, show a **closable warning dialog** (shadcn AlertDialog) with the current violation count.
 
-2. **Normalize existing test question marks**
-   - Update existing questions where wrong marks are currently `0` so they use `-1` for wrong attempted answers.
-   - Keep `marks_correct = 4` and `marks_unanswered = 0`.
+## Warning thresholds
 
-3. **Fix backend result calculation**
-   - Update the attempt submission calculation so subject marks and total marks are generated from the same `+4 / -1 / 0` rule.
-   - Store a per-question result breakdown in attempt metadata, including:
-     - correct / wrong / not attempted
-     - marks awarded for that question
-     - subject and position
+| Violation # | Message                                                                                       | Action            |
+| ----------- | --------------------------------------------------------------------------------------------- | ----------------- |
+| 1           | "You switched or closed the tab 1 time. Do not do this — you have 1 more chance."             | Show dialog, allow Continue |
+| 2           | "Final warning! You switched tabs 2 times. One more violation will auto-submit your test."    | Show dialog, allow Continue |
+| 3           | "You have been blocked. Your test is being submitted automatically."                          | Auto-submit attempt and redirect to result page |
 
-4. **Backfill old submitted attempts**
-   - Recalculate already-submitted attempts for this corrected rule.
-   - Regenerate total score, correct count, subject scores, and per-question status metadata.
-   - This will correct existing PDFs and result sheets after reload/download.
+## Implementation details
 
-5. **Fix admin student detail display**
-   - Replace the current `answer.isCorrect` display logic with the backend-calculated per-question result.
-   - Correct answers will show Correct, wrong answers will show Wrong, and marks will match the recalculated score.
+1. **State**: `tabSwitchCount` (number), `showWarning` (bool) in `TestTakingPage`.
+2. **Listeners** (registered only while attempt is in-progress):
+   - `document.addEventListener("visibilitychange", ...)` — increment when `document.hidden`.
+   - `window.addEventListener("blur", ...)` — increment (debounced 500ms to avoid double-counting with visibilitychange).
+   - Show dialog on next `focus` / `visibilitychange → visible`.
+3. **Persistence**: Store `tabSwitchCount` in `test_attempts.metadata.tab_switches` via a lightweight update on each violation so refresh-then-rejoin cannot reset the counter. Existing `submit_test_attempt` RPC already merges metadata — no schema change required, just an `update` on `test_attempts` from the client (RLS already allows the owner to update their own in-progress attempt).
+4. **Auto-submit on 3rd violation**: Call the same `handleSubmit` / `submit_test_attempt` flow already used by the "Submit Test" button, then navigate to the result page. Toast message: "Test auto-submitted due to repeated tab switching."
+5. **Dialog UI**: shadcn `AlertDialog` with an orange/red warning icon, the message above, and a single "I understand, continue" button (Continue hidden on 3rd violation since auto-submit happens).
+6. **Edge cases**:
+   - Don't count tab switches before the test actually starts or after submission.
+   - Don't count if dialog is already open (prevent re-increment while the user is dismissing).
+   - Cleanup listeners on unmount.
 
-6. **Fix student result page consistency**
-   - Use the backend-stored subject breakdown instead of recalculating incompletely on the frontend.
-   - This prevents mismatch for integer/numerical questions and future question types.
+## Files
 
-## Expected result
+- **Edit**: `src/pages/TestTakingPage.tsx` — add hook, listeners, AlertDialog, auto-submit branch.
 
-- A student with all attempted answers wrong will show negative marks, e.g. 13 wrong = `-13`.
-- A student with 1 correct and 1 wrong will show `+3`.
-- A student with 1 correct and 5 wrong will show `-1`.
-- The result PDF, admin result sheet, student detail table, and subject marks will all match the same calculation.
+No database migration required.
