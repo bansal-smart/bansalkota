@@ -405,64 +405,342 @@ const AdminTestResultPage = () => {
     }
   };
 
+  // ---- helpers for charts inside jsPDF ----
+  const drawBarChart = (
+    doc: jsPDF,
+    x: number, y: number, w: number, h: number,
+    labels: string[], series: { name: string; values: number[]; color: [number, number, number] }[],
+    title: string,
+  ) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, x, y - 6);
+
+    const padL = 32, padB = 22, padT = 8, padR = 8;
+    const plotX = x + padL, plotY = y + padT;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+    const allVals = series.flatMap((s) => s.values);
+    const maxV = Math.max(1, ...allVals);
+    // grid + axes
+    doc.setDrawColor(220); doc.setLineWidth(0.4);
+    for (let i = 0; i <= 4; i++) {
+      const gy = plotY + (plotH * i) / 4;
+      doc.line(plotX, gy, plotX + plotW, gy);
+      doc.setFontSize(7); doc.setTextColor(120);
+      doc.text(String(Math.round((maxV * (4 - i)) / 4)), x + padL - 4, gy + 2, { align: "right" });
+    }
+    doc.setDrawColor(80); doc.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
+
+    const groupW = plotW / labels.length;
+    const barW = Math.min(18, (groupW - 6) / series.length);
+    labels.forEach((lab, i) => {
+      const gx = plotX + groupW * i + (groupW - barW * series.length) / 2;
+      series.forEach((s, si) => {
+        const v = s.values[i] ?? 0;
+        const bh = (v / maxV) * plotH;
+        doc.setFillColor(...s.color);
+        doc.rect(gx + si * barW, plotY + plotH - bh, barW - 1, bh, "F");
+      });
+      doc.setFontSize(7); doc.setTextColor(60);
+      doc.text(lab, plotX + groupW * i + groupW / 2, plotY + plotH + 10, { align: "center" });
+    });
+    // legend
+    let lx = plotX;
+    const ly = y + h + 6;
+    series.forEach((s) => {
+      doc.setFillColor(...s.color);
+      doc.rect(lx, ly - 5, 6, 6, "F");
+      doc.setFontSize(8); doc.setTextColor(60);
+      doc.text(s.name, lx + 9, ly);
+      lx += 9 + doc.getTextWidth(s.name) + 14;
+    });
+    return ly + 6;
+  };
+
+  const drawHistogram = (
+    doc: jsPDF, x: number, y: number, w: number, h: number,
+    bins: { label: string; count: number; highlight: boolean }[], title: string,
+  ) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, x, y - 6);
+    const padL = 28, padB = 22, padT = 8, padR = 8;
+    const plotX = x + padL, plotY = y + padT;
+    const plotW = w - padL - padR, plotH = h - padT - padB;
+    const maxC = Math.max(1, ...bins.map((b) => b.count));
+    doc.setDrawColor(220); doc.setLineWidth(0.4);
+    for (let i = 0; i <= 4; i++) {
+      const gy = plotY + (plotH * i) / 4;
+      doc.line(plotX, gy, plotX + plotW, gy);
+      doc.setFontSize(7); doc.setTextColor(120);
+      doc.text(String(Math.round((maxC * (4 - i)) / 4)), x + padL - 4, gy + 2, { align: "right" });
+    }
+    const bw = plotW / bins.length;
+    bins.forEach((b, i) => {
+      const bh = (b.count / maxC) * plotH;
+      if (b.highlight) doc.setFillColor(249, 115, 22);
+      else doc.setFillColor(30, 41, 59);
+      doc.rect(plotX + i * bw + 2, plotY + plotH - bh, bw - 4, bh, "F");
+      doc.setFontSize(7); doc.setTextColor(60);
+      doc.text(b.label, plotX + i * bw + bw / 2, plotY + plotH + 10, { align: "center" });
+    });
+    // legend
+    const ly = y + h + 6;
+    doc.setFillColor(249, 115, 22); doc.rect(plotX, ly - 5, 6, 6, "F");
+    doc.setFontSize(8); doc.setTextColor(60);
+    doc.text("Your band", plotX + 9, ly);
+    doc.setFillColor(30, 41, 59); doc.rect(plotX + 70, ly - 5, 6, 6, "F");
+    doc.text("Other students (anonymous)", plotX + 79, ly);
+    return ly + 6;
+  };
+
   const downloadStudentPDF = async (r: ResultRow) => {
     if (!test) return;
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
-    const pageW = doc.internal.pageSize.getWidth();
-    const logo = await loadLogoDataUrl();
-    if (logo) {
-      try {
-        const anyDoc: any = doc;
-        anyDoc.setGState(new (jsPDF as any).GState({ opacity: 0.07 }));
-        doc.addImage(logo, "PNG", (pageW - 320) / 2, 280, 320, 320, undefined, "FAST");
-        anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
-      } catch { /* noop */ }
+    const tId = toast.loading("Building report…");
+    try {
+      // 1) Fetch this student's attempt with answers
+      const { data: att } = await supabase
+        .from("test_attempts")
+        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers")
+        .eq("test_id", test.id)
+        .eq("user_id", r.user_id)
+        .in("status", ["submitted", "auto_submitted"])
+        .order("score", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // 2) Fetch questions
+      const { data: qs } = await supabase
+        .from("test_questions")
+        .select("id, position, subject, question_text, question_type, options, correct_answer, marks_correct, marks_wrong")
+        .eq("test_id", test.id)
+        .order("position");
+
+      // 3) Fetch all submitted attempts for anonymous comparison
+      const { data: allAtt } = await supabase
+        .from("test_attempts")
+        .select("user_id, score, metadata")
+        .eq("test_id", test.id)
+        .in("status", ["submitted", "auto_submitted"]);
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const logo = await loadLogoDataUrl();
+
+      const drawWatermark = () => {
+        if (!logo) return;
+        try {
+          const anyDoc: any = doc;
+          anyDoc.setGState(new (jsPDF as any).GState({ opacity: 0.05 }));
+          doc.addImage(logo, "PNG", (pageW - 320) / 2, (pageH - 320) / 2, 320, 320, undefined, "FAST");
+          anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
+        } catch { /* noop */ }
+      };
+      const drawHeader = () => {
+        drawWatermark();
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14); doc.setTextColor(30, 41, 59);
+        doc.text("BANSAL CLASSES PVT. LTD.", pageW / 2, 32, { align: "center" });
+        doc.setFontSize(11); doc.setTextColor(249, 115, 22);
+        doc.text(`${test.title} — Student Report`, pageW / 2, 50, { align: "center" });
+      };
+      const drawFooter = () => {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
+        doc.setFontSize(8); doc.setTextColor(120);
+        doc.text(
+          `Generated ${format(new Date(), "dd MMM yyyy HH:mm")} · Page ${current}/${pageCount}`,
+          pageW / 2, pageH - 14, { align: "center" },
+        );
+      };
+
+      drawHeader();
+
+      // Meta block
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10); doc.setTextColor(40);
+      const meta = [
+        ["Student", r.full_name ?? "—"],
+        ["Roll No", r.roll_number ?? "—"],
+        ["Batch", r.batch_code || r.batch_name || "—"],
+        ["Date", dateLabel],
+        ["Pattern", examLabel],
+        ["Max Marks", String(test.total_marks)],
+        ["Status", r.status === "present" ? "Present" : "Absent"],
+      ];
+      autoTable(doc, {
+        startY: 68,
+        body: meta,
+        theme: "plain",
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: "bold", cellWidth: 110 } },
+        didDrawPage: () => { drawHeader(); drawFooter(); },
+      });
+
+      // Subject-wise score table
+      const subjBody = subjects.map((s) => [s, r.status === "present" ? num(r.subjects?.[s]) : "—"]);
+      subjBody.push(["TOTAL", r.status === "present" ? num(r.total_score) : "—" as any]);
+      subjBody.push(["PERCENTAGE", r.status === "present" ? `${num(r.percentage).toFixed(2)}%` : "—"]);
+      subjBody.push(["RANK", r.rank_label]);
+      autoTable(doc, {
+        startY: ((doc as any).lastAutoTable?.finalY ?? 200) + 10,
+        head: [["Subject / Metric", "Marks"]],
+        body: subjBody,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 5 },
+        headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+        didDrawPage: () => { drawHeader(); drawFooter(); },
+      });
+
+      // ===== Subject-wise chart: You vs Class Average =====
+      if (r.status === "present" && subjects.length && (allAtt?.length ?? 0) > 0) {
+        // Class avg per subject
+        const subjAvg: Record<string, { sum: number; n: number }> = {};
+        subjects.forEach((s) => (subjAvg[s] = { sum: 0, n: 0 }));
+        (allAtt ?? []).forEach((a: any) => {
+          const sm = a?.metadata?.subjects ?? {};
+          subjects.forEach((s) => {
+            const v = Number(sm?.[s]?.score ?? sm?.[s] ?? NaN);
+            if (Number.isFinite(v)) { subjAvg[s].sum += v; subjAvg[s].n += 1; }
+          });
+        });
+        const youVals = subjects.map((s) => num(r.subjects?.[s]));
+        const avgVals = subjects.map((s) => (subjAvg[s].n ? subjAvg[s].sum / subjAvg[s].n : 0));
+        const topVals = subjects.map((s) => {
+          let mx = 0;
+          (allAtt ?? []).forEach((a: any) => {
+            const sm = a?.metadata?.subjects ?? {};
+            const v = Number(sm?.[s]?.score ?? sm?.[s] ?? NaN);
+            if (Number.isFinite(v) && v > mx) mx = v;
+          });
+          return mx;
+        });
+
+        let y = ((doc as any).lastAutoTable?.finalY ?? 300) + 26;
+        if (y + 170 > pageH - 40) { doc.addPage(); drawHeader(); drawFooter(); y = 90; }
+        drawBarChart(doc, 40, y, pageW - 80, 150, subjects, [
+          { name: "You", values: youVals, color: [249, 115, 22] },
+          { name: "Class Avg", values: avgVals.map((v) => +v.toFixed(2)), color: [30, 41, 59] },
+          { name: "Topper", values: topVals, color: [16, 185, 129] },
+        ], "Subject-wise: You vs Class (anonymous)");
+      }
+
+      // ===== Score distribution histogram =====
+      if (r.status === "present" && (allAtt?.length ?? 0) > 1 && test.total_marks > 0) {
+        const scores = (allAtt ?? []).map((a: any) => Number(a.score ?? 0));
+        const max = test.total_marks;
+        const min = Math.min(0, ...scores);
+        const binCount = 10;
+        const step = Math.max(1, Math.ceil((max - min) / binCount));
+        const bins = Array.from({ length: binCount }, (_, i) => ({
+          lo: min + i * step,
+          hi: min + (i + 1) * step,
+          count: 0,
+          highlight: false,
+        }));
+        scores.forEach((s) => {
+          const idx = Math.min(binCount - 1, Math.max(0, Math.floor((s - min) / step)));
+          bins[idx].count += 1;
+        });
+        const youScore = num(r.total_score);
+        const yIdx = Math.min(binCount - 1, Math.max(0, Math.floor((youScore - min) / step)));
+        bins[yIdx].highlight = true;
+        const histBins = bins.map((b) => ({
+          label: `${b.lo}-${b.hi}`,
+          count: b.count,
+          highlight: b.highlight,
+        }));
+        let y = ((doc as any).lastAutoTable?.finalY ?? 0);
+        y = Math.max(y, 90) + 200;
+        if (y + 170 > pageH - 40) { doc.addPage(); drawHeader(); drawFooter(); y = 90; }
+        drawHistogram(doc, 40, y, pageW - 80, 150, histBins, "Score Distribution (all students, anonymous)");
+
+        // summary line
+        const total = scores.length;
+        const avg = scores.reduce((a, b) => a + b, 0) / total;
+        const sorted = [...scores].sort((a, b) => a - b);
+        const median = sorted[Math.floor(total / 2)];
+        const top = sorted[sorted.length - 1];
+        const percAtOrBelow = sorted.filter((s) => s <= youScore).length;
+        const percentile = ((percAtOrBelow / total) * 100).toFixed(1);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(40);
+        const sumY = y + 170;
+        doc.text(
+          `Your score: ${youScore}   ·   Class Avg: ${avg.toFixed(1)}   ·   Median: ${median}   ·   Topper: ${top}   ·   You beat: ${percentile}% of students`,
+          pageW / 2, sumY, { align: "center" },
+        );
+      }
+
+      // ===== Question-wise answer review =====
+      if (att && qs && qs.length) {
+        doc.addPage();
+        drawHeader();
+        drawFooter();
+        const answers = (att.answers ?? {}) as Record<string, { selected: any }>;
+        const fmtAns = (val: any, opts: any): string => {
+          if (val === null || val === undefined || val === "") return "—";
+          if (Array.isArray(val)) return val.map((v) => fmtAns(v, opts)).join(", ");
+          if (typeof val === "object") return JSON.stringify(val);
+          if (Array.isArray(opts) && typeof val === "number" && opts[val] != null) {
+            const o = opts[val];
+            const txt = typeof o === "string" ? o : (o?.text ?? JSON.stringify(o));
+            return `${String.fromCharCode(65 + val)}. ${String(txt).slice(0, 60)}`;
+          }
+          return String(val);
+        };
+        const rows = (qs as any[]).map((q) => {
+          const ans = answers[q.id]?.selected;
+          const correct = q.correct_answer;
+          const yourTxt = fmtAns(ans, q.options);
+          const corrTxt = fmtAns(correct, q.options);
+          let result = "Not Attempted";
+          if (ans !== null && ans !== undefined && ans !== "") {
+            const isCorrect = JSON.stringify(ans) === JSON.stringify(correct) ||
+              (Array.isArray(correct) && correct.includes(ans));
+            result = isCorrect ? "Correct" : "Wrong";
+          }
+          return [
+            String(q.position),
+            String(q.subject ?? "—"),
+            yourTxt,
+            corrTxt,
+            result,
+          ];
+        });
+        autoTable(doc, {
+          startY: 70,
+          head: [["Q#", "Subject", "Your Answer", "Correct Answer", "Result"]],
+          body: rows,
+          theme: "grid",
+          styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
+          headStyles: { fillColor: [30, 41, 59], textColor: 255 },
+          columnStyles: {
+            0: { cellWidth: 28, halign: "center" },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 170 },
+            3: { cellWidth: 170 },
+            4: { cellWidth: 60, halign: "center", fontStyle: "bold" },
+          },
+          didParseCell: (data) => {
+            if (data.section === "body" && data.column.index === 4) {
+              const v = String(data.cell.raw);
+              if (v === "Correct") data.cell.styles.textColor = [16, 185, 129];
+              else if (v === "Wrong") data.cell.styles.textColor = [220, 38, 38];
+              else data.cell.styles.textColor = [120, 120, 120];
+            }
+          },
+          didDrawPage: () => { drawHeader(); drawFooter(); },
+        });
+      }
+
+      doc.save(`${(r.roll_number || r.full_name || "student").replace(/\s+/g, "_")}_${test.title.replace(/\s+/g, "_")}.pdf`);
+      toast.success("Report ready", { id: tId });
+    } catch (e: any) {
+      toast.error("Failed to build report", { id: tId, description: e?.message });
     }
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(30, 41, 59);
-    doc.text("BANSAL CLASSES PVT. LTD.", pageW / 2, 40, { align: "center" });
-    doc.setFontSize(12);
-    doc.setTextColor(249, 115, 22);
-    doc.text(`${test.title} — Student Report`, pageW / 2, 58, { align: "center" });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(40);
-    const meta = [
-      ["Student", r.full_name ?? "—"],
-      ["Roll No", r.roll_number ?? "—"],
-      ["Batch", r.batch_code || r.batch_name || "—"],
-      ["Date", dateLabel],
-      ["Pattern", examLabel],
-      ["Max Marks", String(test.total_marks)],
-      ["Status", r.status === "present" ? "Present" : "Absent"],
-    ];
-    autoTable(doc, {
-      startY: 78,
-      body: meta,
-      theme: "plain",
-      styles: { fontSize: 10, cellPadding: 4 },
-      columnStyles: { 0: { fontStyle: "bold", cellWidth: 110 } },
-    });
-
-    const subjBody = subjects.map((s) => [s, r.status === "present" ? num(r.subjects?.[s]) : "—"]);
-    subjBody.push(["TOTAL", r.status === "present" ? num(r.total_score) : "—" as any]);
-    subjBody.push(["PERCENTAGE", r.status === "present" ? `${num(r.percentage).toFixed(2)}%` : "—"]);
-    subjBody.push(["RANK", r.rank_label]);
-    autoTable(doc, {
-      startY: ((doc as any).lastAutoTable?.finalY ?? 200) + 14,
-      head: [["Subject / Metric", "Marks"]],
-      body: subjBody,
-      theme: "grid",
-      styles: { fontSize: 10, cellPadding: 5 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255 },
-    });
-
-    doc.setFontSize(8);
-    doc.setTextColor(120);
-    doc.text(`Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`, pageW / 2, doc.internal.pageSize.getHeight() - 20, { align: "center" });
-    doc.save(`${(r.roll_number || r.full_name || "student").replace(/\s+/g, "_")}_${test.title.replace(/\s+/g, "_")}.pdf`);
   };
 
   if (loading) {
