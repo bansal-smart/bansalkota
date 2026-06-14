@@ -290,24 +290,8 @@ const AdminTestResultPage = () => {
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const logo = await loadLogoDataUrl();
 
     const drawHeader = () => {
-      // Watermark logo (centered, low opacity)
-      if (logo) {
-        const w = 380;
-        const h = 380;
-        const anyDoc: any = doc;
-        try {
-          const gState = new (jsPDF as any).GState({ opacity: 0.05 });
-          anyDoc.setGState(gState);
-          doc.addImage(logo, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
-          anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
-        } catch {
-          // Older jsPDF: fall back to a faint image without GState
-          doc.addImage(logo, "PNG", (pageW - w) / 2, (pageH - h) / 2, w, h, undefined, "FAST");
-        }
-      }
       // Top header band
       doc.setFont("helvetica", "bold");
       doc.setFontSize(13);
