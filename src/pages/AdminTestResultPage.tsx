@@ -187,7 +187,7 @@ const AdminTestResultPage = () => {
     : "—";
 
   const buildSheetRows = () => {
-    const header = ["RANK", "ROLL NO", "NAME", "BATCH", ...subjects.map((s) => s.toUpperCase().slice(0, 5)), "TOTAL", "%AGE"];
+    const header = ["RANK", "ROLL NO", "NAME", "BATCH", ...subjects.map((s) => s.toUpperCase()), "TOTAL", "%AGE"];
     const body = rows.map((r) => {
       const subjMarks = subjects.map((s) =>
         r.status === "present" ? num(r.subjects?.[s]) : "",
