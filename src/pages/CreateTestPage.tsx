@@ -1151,6 +1151,7 @@ const CreateTestPage = () => {
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      {ConfirmDialog}
       <div className="flex">
         {/* Left pane (form) */}
         <div className="flex-1 lg:w-1/2 lg:flex-none px-4 md:px-8 py-6 pb-28">
