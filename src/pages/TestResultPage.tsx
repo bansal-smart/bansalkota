@@ -39,6 +39,7 @@ type TestRow = {
 
 type RankInfo = {
   released: boolean;
+  excluded?: boolean;
   rank?: number;
   total?: number;
   percentile?: number;
