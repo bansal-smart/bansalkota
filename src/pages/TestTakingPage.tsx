@@ -95,10 +95,19 @@ const TestTakingPage = () => {
   const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
   const [preloadProgress, setPreloadProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
 
+  // Guard so the loader runs only ONCE per (slug, user.id).
+  // Without this, an auth-session refresh changes `user`'s identity, the effect
+  // re-fires, and setAnswers(existing.answers) wipes any local answers the
+  // student has typed but not yet auto-saved (up to 15s of work).
+  const loadedKeyRef = useRef<string | null>(null);
+
   // Load test + existing in-progress attempt
   useEffect(() => {
     if (authLoading || !slug) return;
     if (!user) { navigate("/login"); return; }
+    const key = `${slug}::${user.id}`;
+    if (loadedKeyRef.current === key) return;
+    loadedKeyRef.current = key;
     (async () => {
       setLoading(true);
       const { data: t } = await supabase
@@ -126,8 +135,11 @@ const TestTakingPage = () => {
       if (existing) {
         setAttemptId(existing.id);
         setStartedAt(new Date(existing.started_at as string));
-        setAnswers((existing.answers as Record<string, AnswerVal>) ?? {});
-        setStatuses((existing.question_statuses as Record<string, QStatus>) ?? {});
+        // Merge — never overwrite local answers that may already be in memory.
+        const dbAnswers = (existing.answers as Record<string, AnswerVal>) ?? {};
+        const dbStatuses = (existing.question_statuses as Record<string, QStatus>) ?? {};
+        setAnswers((local) => ({ ...dbAnswers, ...local }));
+        setStatuses((local) => ({ ...dbStatuses, ...local }));
         if ((existing as any).time_override_minutes) {
           setOverrideMinutes((existing as any).time_override_minutes);
           setOverrideStartedAt(new Date((existing as any).time_override_started_at));
@@ -148,7 +160,7 @@ const TestTakingPage = () => {
 
       setLoading(false);
     })();
-  }, [slug, user, authLoading, navigate]);
+  }, [slug, user?.id, authLoading, navigate]);
 
   // Timer
   useEffect(() => {
