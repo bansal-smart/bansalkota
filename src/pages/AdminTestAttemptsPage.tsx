@@ -315,6 +315,11 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                               <Eye className="h-3.5 w-3.5" />
                             </Link>
                           )}
+                          {a.status !== "in_progress" && (
+                            <button onClick={() => openReopen(a)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with extra time">
+                              <Clock className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           {isSuperAdmin && (
                             <button onClick={() => resetAttempt(a)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
                               {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
