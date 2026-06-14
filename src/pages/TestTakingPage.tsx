@@ -86,6 +86,7 @@ const TestTakingPage = () => {
   const enteredAtRef = useRef<number>(Date.now());
   const answersRef = useRef<Record<string, AnswerVal>>({});
   const statusesRef = useRef<Record<string, QStatus>>({});
+  const explicitClearsRef = useRef<Set<string>>(new Set());
 
   // Override window set by admin "reopen with extra time"
   const [overrideMinutes, setOverrideMinutes] = useState<number | null>(null);
@@ -248,30 +249,111 @@ const TestTakingPage = () => {
   useEffect(() => { answersRef.current = answers; }, [answers]);
   useEffect(() => { statusesRef.current = statuses; }, [statuses]);
 
+  const selectedIsEmpty = (selected: unknown) => {
+    if (selected === null || selected === undefined) return true;
+    if (Array.isArray(selected)) return selected.length === 0;
+    if (typeof selected === "string") return selected.trim().length === 0;
+    if (typeof selected === "object") return Object.keys(selected as Record<string, unknown>).length === 0;
+    return false;
+  };
+
+  const answerHasSelection = (answer?: AnswerVal) => !selectedIsEmpty((answer as any)?.selected);
+
+  const mergeSafeAnswers = (
+    serverAnswers: Record<string, AnswerVal>,
+    localAnswers: Record<string, AnswerVal>,
+    explicitClears: Set<string>,
+  ) => {
+    const merged: Record<string, AnswerVal> = { ...serverAnswers };
+    Object.entries(localAnswers).forEach(([qid, localAnswer]) => {
+      const serverAnswer = serverAnswers[qid];
+      if (!explicitClears.has(qid) && answerHasSelection(serverAnswer) && !answerHasSelection(localAnswer)) {
+        merged[qid] = { ...localAnswer, selected: (serverAnswer as any).selected } as AnswerVal;
+        return;
+      }
+      merged[qid] = localAnswer;
+    });
+    return merged;
+  };
+
+  const mergeSafeStatuses = (
+    serverStatuses: Record<string, QStatus>,
+    localStatuses: Record<string, QStatus>,
+    mergedAnswers: Record<string, AnswerVal>,
+    explicitClears: Set<string>,
+  ) => {
+    const merged: Record<string, QStatus> = { ...serverStatuses, ...localStatuses };
+    Object.keys(mergedAnswers).forEach((qid) => {
+      if (!explicitClears.has(qid) && answerHasSelection(mergedAnswers[qid])) {
+        const current = merged[qid];
+        merged[qid] = current === "marked" || current === "answered-marked" ? "answered-marked" : "answered";
+      }
+    });
+    return merged;
+  };
+
+  const persistProgress = useCallback(async (
+    nextAnswers?: Record<string, AnswerVal>,
+    nextStatuses?: Record<string, QStatus>,
+    clearIds: Set<string> = explicitClearsRef.current,
+  ) => {
+    if (!attemptId) return null;
+
+    const localAnswers = nextAnswers ?? answersRef.current;
+    const localStatuses = nextStatuses ?? statusesRef.current;
+    const { data: serverAttempt } = await supabase
+      .from("test_attempts")
+      .select("answers, question_statuses")
+      .eq("id", attemptId)
+      .maybeSingle();
+
+    const mergedAnswers = mergeSafeAnswers(
+      ((serverAttempt?.answers as Record<string, AnswerVal>) ?? {}),
+      localAnswers,
+      clearIds,
+    );
+    const mergedStatuses = mergeSafeStatuses(
+      ((serverAttempt?.question_statuses as Record<string, QStatus>) ?? {}),
+      localStatuses,
+      mergedAnswers,
+      clearIds,
+    );
+
+    const { error } = await supabase.from("test_attempts").update({
+      answers: mergedAnswers,
+      question_statuses: mergedStatuses,
+      time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
+      metadata: { tab_switches: tabSwitches },
+    }).eq("id", attemptId);
+
+    if (error) {
+      console.error("[TestTakingPage] progress save failed", error);
+      return null;
+    }
+
+    answersRef.current = mergedAnswers;
+    statusesRef.current = mergedStatuses;
+    setAnswers(mergedAnswers);
+    setStatuses(mergedStatuses);
+    clearIds.forEach((id) => explicitClearsRef.current.delete(id));
+    lastSavedRef.current = Date.now();
+    setSavedAgo(0);
+    return { answers: mergedAnswers, statuses: mergedStatuses };
+  }, [attemptId, startedAt, tabSwitches]);
+
   const autoSave = useCallback(async () => {
     if (!attemptId) return;
     if (Date.now() - lastSavedRef.current < 3000) return;
-    lastSavedRef.current = Date.now();
-    await supabase.from("test_attempts").update({
-      answers: answersRef.current,
-      question_statuses: statusesRef.current,
-      time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
-      metadata: { tab_switches: tabSwitches },
-    }).eq("id", attemptId);
-    setSavedAgo(0);
-  }, [attemptId, startedAt, tabSwitches]);
+    await persistProgress();
+  }, [attemptId, persistProgress]);
 
-  const saveNow = useCallback(async (nextAnswers?: Record<string, AnswerVal>, nextStatuses?: Record<string, QStatus>) => {
-    if (!attemptId) return;
-    await supabase.from("test_attempts").update({
-      answers: nextAnswers ?? answersRef.current,
-      question_statuses: nextStatuses ?? statusesRef.current,
-      time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
-      metadata: { tab_switches: tabSwitches },
-    }).eq("id", attemptId);
-    lastSavedRef.current = Date.now();
-    setSavedAgo(0);
-  }, [attemptId, startedAt, tabSwitches]);
+  const saveNow = useCallback(async (
+    nextAnswers?: Record<string, AnswerVal>,
+    nextStatuses?: Record<string, QStatus>,
+    clearIds?: Set<string>,
+  ) => {
+    await persistProgress(nextAnswers, nextStatuses, clearIds);
+  }, [persistProgress]);
 
   // Auto-save every 15s
   useEffect(() => {
