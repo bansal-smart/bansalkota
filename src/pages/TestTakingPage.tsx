@@ -542,6 +542,15 @@ const TestTakingPage = () => {
               <li>Shortcuts: ← → navigate · 1-9 select option · M mark · C clear · Enter Save &amp; Next.</li>
             </ul>
           </div>
+          {preloadProgress.total > 0 && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 flex items-center gap-2 text-xs text-muted-foreground">
+              {preloadProgress.loaded < preloadProgress.total ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Pre-loading question images… {preloadProgress.loaded} / {preloadProgress.total}</>
+              ) : (
+                <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> All {preloadProgress.total} images ready</>
+              )}
+            </div>
+          )}
           <button
             onClick={startAttempt}
             disabled={questions.length === 0}
