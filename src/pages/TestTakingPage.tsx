@@ -432,6 +432,9 @@ const TestTakingPage = () => {
     navigate(`/tests/${slug}/result/${attemptId}`);
   };
 
+  // Keep latest handleSubmit accessible from tab-visibility listener
+  submitRef.current = handleSubmit;
+
   const counts = useMemo(() => {
     return questions.reduce((acc, qq) => {
       const s = statuses[qq.id];
