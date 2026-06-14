@@ -37,7 +37,8 @@ const CbtLiveTestsPage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/cbt", { replace: true }); return; }
       // Enforce kiosk users only
-      if (!user.email?.endsWith("@cbt.bansal.local")) {
+      const isKiosk = user.email?.endsWith("@cbt.bansal.local") || user.email === "it-testing@bansal.internal";
+      if (!isKiosk) {
         toast.error("This area is for CBT kiosk users only.");
         await supabase.auth.signOut();
         navigate("/cbt", { replace: true });
