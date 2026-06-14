@@ -2698,6 +2698,47 @@ export type Database = {
         }
         Relationships: []
       }
+      test_attempt_answer_snapshots: {
+        Row: {
+          answer_count: number
+          answers: Json
+          attempt_id: string
+          id: string
+          question_statuses: Json
+          saved_at: string
+          test_id: string
+          user_id: string
+        }
+        Insert: {
+          answer_count?: number
+          answers?: Json
+          attempt_id: string
+          id?: string
+          question_statuses?: Json
+          saved_at?: string
+          test_id: string
+          user_id: string
+        }
+        Update: {
+          answer_count?: number
+          answers?: Json
+          attempt_id?: string
+          id?: string
+          question_statuses?: Json
+          saved_at?: string
+          test_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_attempt_answer_snapshots_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_attempts: {
         Row: {
           answers: Json | null
@@ -3177,6 +3218,7 @@ export type Database = {
         Args: { _attempt_id: string }
         Returns: undefined
       }
+      _jsonb_answer_has_selection: { Args: { _answer: Json }; Returns: boolean }
       _recompute_attempt: { Args: { _attempt_id: string }; Returns: undefined }
       admin_reopen_attempt: {
         Args: {
