@@ -1,0 +1,1 @@
+UPDATE public.profiles SET phone = '9928150241' WHERE roll_number = '261046';
