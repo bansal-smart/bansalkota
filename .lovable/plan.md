@@ -1,38 +1,33 @@
-## Goal
+## Issues
 
-For any scheduled test (e.g. 9:00 AM), it should be **visible** in the CBT/test list at all times (even hours before), but the **Start** action should activate only **1 minute before** the scheduled time. Before that, show a live countdown; after `ends_at`, show closed.
+1. **Per-subject marks always show 0** while total is correct (e.g. 13 marks but Physics/Chem/Maths all 0). Root cause: `submit_test_attempt` computes `subject_data` correctly and returns it, but never writes it into `test_attempts.metadata`. The admin RPC `admin_test_result_sheet` reads `metadata->'subjects'->key->'score'`, which is NULL for every existing attempt, so per-subject columns collapse to 0.
 
-## Scope of Changes
+2. **Header reads "THE BANSAL CLASSES PVT. LTD."** in the master result XLSX, master PDF, and individual student PDF. User wants "THE" removed.
 
-### 1. CBT kiosk RPC — `public.cbt_live_tests_for_batch`
-Currently filters out tests where `now() < starts_at`, so future tests are hidden. Update to:
-- Drop the `now() >= starts_at` condition (keep `ends_at` check).
-- Return everything published + batch-eligible, including upcoming ones.
-- Order by `starts_at` ascending (upcoming first).
+## Fix Plan
 
-New migration to `CREATE OR REPLACE FUNCTION` with the relaxed WHERE clause.
+### A. Database — persist + backfill subject breakdown
+New migration:
 
-### 2. CBT kiosk list — `src/pages/CbtLiveTestsPage.tsx`
-- Show every test returned by the RPC.
-- Add a per-card live status using `starts_at`:
-  - `now < starts_at − 60s` → "Starts at HH:MM · opens in mm:ss", Start button **disabled**.
-  - `starts_at − 60s ≤ now ≤ ends_at` → Start button **enabled** ("Active now").
-  - `now > ends_at` → "Closed", disabled.
-- Lightweight 1-second ticker (single `setInterval`) to update countdowns/state.
+1. `CREATE OR REPLACE FUNCTION public.submit_test_attempt(...)` — same body as today, with the final `UPDATE test_attempts` extended to merge `subject_data` into `metadata`:
 
-### 3. Test instructions gate — `src/pages/TestInstructionsPage.tsx`
-- Change `notYetOpen` from `now < startsAt` to `now < startsAt − 60_000` so the page also opens the Start button 1 minute early.
-- Countdown label updates to "Starts in" and disappears at T-1 min.
+   ```sql
+   metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('subjects', subject_data)
+   ```
 
-### 4. Live tests widget — `src/components/LiveTestsWidget.tsx`
-- Apply the same T-1 min rule: a test counts as "live/active" once `now ≥ starts_at − 60_000` (instead of `≥ starts_at`). Upcoming-bucket logic stays for tests further than 1 min away.
+2. `CREATE OR REPLACE FUNCTION public.backfill_attempt_subject_metadata()` (security definer, admin-only) — for every submitted/auto_submitted attempt where `metadata->'subjects'` is NULL, recompute subject_data by replaying scoring against `test_questions` and `answers`, then update metadata. Run it once inline at the end of the migration with `PERFORM public.backfill_attempt_subject_metadata();`.
+
+   Scoring rules reused: per question_type same as `submit_test_attempt`, accumulator `{total, correct, attempted, score}` keyed by `COALESCE(q.subject,'General')`.
+
+### B. Frontend — remove "THE" from headers
+File: `src/pages/AdminTestResultPage.tsx`
+- Line 217 (XLSX): `"THE BANSAL CLASSES PVT. LTD."` → `"BANSAL CLASSES PVT. LTD."`
+- Line 265 (Master PDF header): same
+- Line 358 (Student PDF header): same
+
+## Verification
+- After migration, query `SELECT metadata->'subjects' FROM test_attempts WHERE id='cef05b83-...'` — expect a populated object whose `score` sums to 13.
+- Re-open the Admin Test Result page → student row shows non-zero subject splits, individual student PDF "Subject / Metric" table shows correct subject marks summing to the total.
 
 ## Out of Scope
-- No changes to scheduling UI in `CreateTestPage` (creation flow already supports `starts_at`/`ends_at`).
-- No changes to attempt/submission logic — only the gate to enter.
-- Auto-submit on `ends_at` continues to be handled by existing test runner.
-
-## Technical Notes
-- Activation window constant: `const ACTIVATION_LEAD_MS = 60_000;` defined once per file.
-- RPC change is backward compatible (same return signature).
-- All countdowns computed client-side from `Date.now()` vs `starts_at`.
+No changes to the test-taking flow, the marking values, or the UI of admin pages beyond the header string.

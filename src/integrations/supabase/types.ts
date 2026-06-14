@@ -3161,6 +3161,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _backfill_subject_metadata_for_attempt: {
+        Args: { _attempt_id: string }
+        Returns: undefined
+      }
       admin_set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
