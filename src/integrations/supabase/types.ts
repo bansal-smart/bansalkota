@@ -2708,6 +2708,8 @@ export type Database = {
           metadata: Json | null
           percentile: number | null
           question_statuses: Json | null
+          reopened_by: string | null
+          reopened_reason: string | null
           score: number
           started_at: string | null
           status: string
@@ -2715,6 +2717,8 @@ export type Database = {
           submitted_at: string | null
           test_id: string | null
           test_name: string
+          time_override_minutes: number | null
+          time_override_started_at: string | null
           time_spent_seconds: number | null
           total_questions: number
           user_id: string
@@ -2728,6 +2732,8 @@ export type Database = {
           metadata?: Json | null
           percentile?: number | null
           question_statuses?: Json | null
+          reopened_by?: string | null
+          reopened_reason?: string | null
           score?: number
           started_at?: string | null
           status?: string
@@ -2735,6 +2741,8 @@ export type Database = {
           submitted_at?: string | null
           test_id?: string | null
           test_name: string
+          time_override_minutes?: number | null
+          time_override_started_at?: string | null
           time_spent_seconds?: number | null
           total_questions?: number
           user_id: string
@@ -2748,6 +2756,8 @@ export type Database = {
           metadata?: Json | null
           percentile?: number | null
           question_statuses?: Json | null
+          reopened_by?: string | null
+          reopened_reason?: string | null
           score?: number
           started_at?: string | null
           status?: string
@@ -2755,6 +2765,8 @@ export type Database = {
           submitted_at?: string | null
           test_id?: string | null
           test_name?: string
+          time_override_minutes?: number | null
+          time_override_started_at?: string | null
           time_spent_seconds?: number | null
           total_questions?: number
           user_id?: string
@@ -3166,6 +3178,15 @@ export type Database = {
         Returns: undefined
       }
       _recompute_attempt: { Args: { _attempt_id: string }; Returns: undefined }
+      admin_reopen_attempt: {
+        Args: {
+          _attempt_id: string
+          _extra_minutes: number
+          _fresh: boolean
+          _reason: string
+        }
+        Returns: Json
+      }
       admin_set_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

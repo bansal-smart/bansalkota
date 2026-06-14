@@ -87,6 +87,14 @@ const TestTakingPage = () => {
   const answersRef = useRef<Record<string, AnswerVal>>({});
   const statusesRef = useRef<Record<string, QStatus>>({});
 
+  // Override window set by admin "reopen with extra time"
+  const [overrideMinutes, setOverrideMinutes] = useState<number | null>(null);
+  const [overrideStartedAt, setOverrideStartedAt] = useState<Date | null>(null);
+
+  // Image preloading
+  const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
+  const [preloadProgress, setPreloadProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
+
   // Load test + existing in-progress attempt
   useEffect(() => {
     if (authLoading || !slug) return;
@@ -112,7 +120,7 @@ const TestTakingPage = () => {
 
       const { data: existing } = await supabase
         .from("test_attempts")
-        .select("id, started_at, answers, question_statuses, status")
+        .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at")
         .eq("user_id", user.id).eq("test_id", t.id).eq("status", "in_progress").maybeSingle();
 
       if (existing) {
@@ -120,6 +128,10 @@ const TestTakingPage = () => {
         setStartedAt(new Date(existing.started_at as string));
         setAnswers((existing.answers as Record<string, AnswerVal>) ?? {});
         setStatuses((existing.question_statuses as Record<string, QStatus>) ?? {});
+        if ((existing as any).time_override_minutes) {
+          setOverrideMinutes((existing as any).time_override_minutes);
+          setOverrideStartedAt(new Date((existing as any).time_override_started_at));
+        }
         setStarted(true);
       }
 
@@ -142,8 +154,11 @@ const TestTakingPage = () => {
   useEffect(() => {
     if (!started || !startedAt || !test) return;
     const tick = () => {
-      const elapsed = Math.floor((Date.now() - startedAt.getTime()) / 1000);
-      const remaining = Math.max(0, test.duration_minutes * 60 - elapsed);
+      // Use admin override window if present, else regular test duration from started_at
+      const base = overrideStartedAt ?? startedAt;
+      const durMins = overrideMinutes ?? test.duration_minutes;
+      const elapsed = Math.floor((Date.now() - base.getTime()) / 1000);
+      const remaining = Math.max(0, durMins * 60 - elapsed);
       setSecondsLeft(remaining);
       if (remaining === 0) handleSubmit(true);
     };
@@ -151,7 +166,38 @@ const TestTakingPage = () => {
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, startedAt, test]);
+  }, [started, startedAt, test, overrideMinutes, overrideStartedAt]);
+
+  // Preload all question + option images so navigation feels instant
+  useEffect(() => {
+    if (!questions.length) return;
+    const urls = new Set<string>();
+    questions.forEach((q) => {
+      if (q.question_image_url) urls.add(q.question_image_url);
+      (q.option_images ?? []).forEach((u) => { if (u) urls.add(u); });
+    });
+    const list = Array.from(urls);
+    setPreloadProgress({ loaded: 0, total: list.length });
+    if (list.length === 0) return;
+    let cancelled = false;
+    let done = 0;
+    list.forEach((url) => {
+      const img = new Image();
+      const finish = () => {
+        if (cancelled) return;
+        done += 1;
+        setLoadedImgs((prev) => {
+          if (prev.has(url)) return prev;
+          const next = new Set(prev); next.add(url); return next;
+        });
+        setPreloadProgress({ loaded: done, total: list.length });
+      };
+      img.onload = finish;
+      img.onerror = finish;
+      img.src = url;
+    });
+    return () => { cancelled = true; };
+  }, [questions]);
 
   // Warn on close
   useEffect(() => {
@@ -496,6 +542,15 @@ const TestTakingPage = () => {
               <li>Shortcuts: ← → navigate · 1-9 select option · M mark · C clear · Enter Save &amp; Next.</li>
             </ul>
           </div>
+          {preloadProgress.total > 0 && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 flex items-center gap-2 text-xs text-muted-foreground">
+              {preloadProgress.loaded < preloadProgress.total ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Pre-loading question images… {preloadProgress.loaded} / {preloadProgress.total}</>
+              ) : (
+                <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> All {preloadProgress.total} images ready</>
+              )}
+            </div>
+          )}
           <button
             onClick={startAttempt}
             disabled={questions.length === 0}
@@ -521,7 +576,7 @@ const TestTakingPage = () => {
   const numericValue = isNumeric(q.question_type) ? ((answers[q.id] as any)?.selected as string) || "" : "";
 
   const subjectIndex = subjectIndices.findIndex(({ i }) => i === currentQ);
-  const subjectPosLabel = subjectIndex >= 0 ? `${subjectIndex + 1} / ${subjectIndices.length}` : `${currentQ + 1} / ${questions.length}`;
+  const subjectPosLabel = `${currentQ + 1} / ${questions.length}`;
 
   const typeLabel =
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
@@ -638,7 +693,7 @@ const TestTakingPage = () => {
             {/* Question meta */}
             <div className="flex items-center justify-between border-b border-neutral-200 pb-2">
               <div>
-                <p className="text-base font-black text-neutral-900">Question No. {subjectIndex >= 0 ? subjectIndex + 1 : currentQ + 1}</p>
+                <p className="text-base font-black text-neutral-900">Question No. {currentQ + 1}</p>
                 <p className="text-[11px] text-neutral-500">{activeSubject} · {subjectPosLabel}</p>
                 {(statuses[q.id] === "marked" || statuses[q.id] === "answered-marked") && (
                   <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
@@ -663,8 +718,19 @@ const TestTakingPage = () => {
               <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
               {q.question_image_url && !/<img\b/i.test(q.question_text || "") && (
-                <div className="relative inline-block">
-                  <img src={q.question_image_url} alt="" className="rounded border border-neutral-200 max-h-72 select-none pointer-events-none" draggable="false" />
+                <div className="relative inline-block min-h-[80px]">
+                  {!loadedImgs.has(q.question_image_url) && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 rounded border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-xs text-neutral-500">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading question image…
+                    </div>
+                  )}
+                  <img
+                    src={q.question_image_url}
+                    alt=""
+                    onLoad={() => setLoadedImgs((prev) => { if (prev.has(q.question_image_url!)) return prev; const n = new Set(prev); n.add(q.question_image_url!); return n; })}
+                    className={`rounded border border-neutral-200 max-h-72 select-none pointer-events-none ${loadedImgs.has(q.question_image_url) ? "opacity-100" : "opacity-0"}`}
+                    draggable="false"
+                  />
                 </div>
               )}
 
@@ -776,8 +842,8 @@ const TestTakingPage = () => {
                     {subjectIndices.map(({ i }, posIdx) => {
                       const qq = questions[i];
                       return (
-                        <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} size={30} onClick={() => accrueTimeAndJump(i)} title={`Q${posIdx + 1}`}>
-                          {posIdx + 1}
+                        <PaletteShape key={qq.id} status={toShape(statuses[qq.id])} active={i === currentQ} size={30} onClick={() => accrueTimeAndJump(i)} title={`Q${i + 1}`}>
+                          {i + 1}
                         </PaletteShape>
                       );
                     })}

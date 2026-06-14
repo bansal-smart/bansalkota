@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +47,41 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [testFilter, setTestFilter] = useState<string>(testId ?? "all");
   const [reattempts, setReattempts] = useState<ReattemptReq[]>([]);
+  const [reopenFor, setReopenFor] = useState<Attempt | null>(null);
+  const [reopenMinutes, setReopenMinutes] = useState<number>(60);
+  const [reopenFresh, setReopenFresh] = useState<boolean>(true);
+  const [reopenReason, setReopenReason] = useState<string>("");
+  const [reopening, setReopening] = useState(false);
+
+  const openReopen = (a: Attempt) => {
+    setReopenFor(a);
+    setReopenFresh(true);
+    setReopenReason("");
+    const t = tests.find((x) => x.id === a.test_id);
+    // default to test duration when known via attempt total -> fallback 60
+    setReopenMinutes(60);
+    // Fetch the test duration for a nicer default
+    supabase.from("tests").select("duration_minutes").eq("id", a.test_id).maybeSingle().then(({ data }) => {
+      if (data?.duration_minutes) setReopenMinutes(data.duration_minutes);
+    });
+  };
+
+  const confirmReopen = async () => {
+    if (!reopenFor) return;
+    if (reopenMinutes < 1 || reopenMinutes > 600) { toast.error("Minutes must be between 1 and 600"); return; }
+    setReopening(true);
+    const { error } = await supabase.rpc("admin_reopen_attempt" as any, {
+      _attempt_id: reopenFor.id,
+      _extra_minutes: reopenMinutes,
+      _fresh: reopenFresh,
+      _reason: reopenReason || null,
+    });
+    setReopening(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Attempt reopened with ${reopenMinutes} min`);
+    setReopenFor(null);
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
@@ -280,6 +315,11 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                               <Eye className="h-3.5 w-3.5" />
                             </Link>
                           )}
+                          {a.status !== "in_progress" && (
+                            <button onClick={() => openReopen(a)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with extra time">
+                              <Clock className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                           {isSuperAdmin && (
                             <button onClick={() => resetAttempt(a)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
                               {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -296,6 +336,63 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           </div>
         )}
       </div>
+
+      {reopenFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !reopening && setReopenFor(null)}>
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div>
+              <h3 className="text-lg font-black font-display">Re-allow attempt</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {profiles.get(reopenFor.user_id) ?? "Student"} · {tests.find((x) => x.id === reopenFor.test_id)?.title ?? "Test"}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Mode</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => setReopenFresh(true)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${reopenFresh ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground"}`}>
+                  Fresh attempt<br/><span className="font-normal text-[10px] opacity-70">Clears all answers</span>
+                </button>
+                <button onClick={() => setReopenFresh(false)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${!reopenFresh ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground"}`}>
+                  Resume<br/><span className="font-normal text-[10px] opacity-70">Keeps previous answers</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Allowed duration (minutes)</label>
+              <input
+                type="number"
+                min={1}
+                max={600}
+                value={reopenMinutes}
+                onChange={(e) => setReopenMinutes(parseInt(e.target.value) || 0)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+              <p className="text-[10px] text-muted-foreground">From now, the student gets this many minutes regardless of the test's global window.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Reason (optional)</label>
+              <textarea
+                value={reopenReason}
+                onChange={(e) => setReopenReason(e.target.value)}
+                rows={2}
+                placeholder="e.g. Technical glitch at 9:10"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setReopenFor(null)} disabled={reopening} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">Cancel</button>
+              <button onClick={confirmReopen} disabled={reopening} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50 inline-flex items-center gap-1.5">
+                {reopening && <Loader2 className="h-3 w-3 animate-spin" />}
+                Re-allow with {reopenMinutes} min
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
