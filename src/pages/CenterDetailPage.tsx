@@ -23,6 +23,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centers";
 import { useCenters } from "@/hooks/useCenters";
 import CenterOfflineSections from "@/components/CenterOfflineSections";
+import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
 
 const PROGRAMS = [
   {
@@ -149,8 +150,95 @@ export default function CenterDetailPage() {
 
       <section className="py-12">
         <div className="container mx-auto px-4 max-w-5xl">
+          {/* Programs */}
+          <div>
+            <h2 className="font-display text-2xl font-bold text-bansal-black mb-2">
+              Programs offered at {displayName}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-5">
+              Choose the program that matches your goal. All include Bansal study material,
+              tests and mentor support.
+            </p>
+            <div className="grid md:grid-cols-3 gap-5">
+              {PROGRAMS.map((p) => (
+                <BansalCard key={p.title} className="relative">
+                  <span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider text-bansal-orange bg-bansal-orange-light/60 rounded-full px-2 py-0.5">
+                    {p.tag}
+                  </span>
+                  <div className="h-11 w-11 rounded-xl bg-bansal-blue-light flex items-center justify-center mb-3">
+                    <p.icon className="h-6 w-6 text-bansal-blue" />
+                  </div>
+                  <h3 className="font-display text-lg font-bold text-bansal-black mb-1.5">
+                    {p.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{p.desc}</p>
+                  <Link
+                    to="/courses"
+                    className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-bansal-blue hover:text-bansal-orange"
+                  >
+                    Explore courses <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </BansalCard>
+              ))}
+            </div>
+          </div>
+
+          {/* Nearby centres */}
+          {nearby.length > 0 && (
+            <div className="mt-12">
+              <div className="flex items-end justify-between mb-4">
+                <div>
+                  <h2 className="font-display text-2xl font-bold text-bansal-black">
+                    Other Bansal centres nearby
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Explore more centres in {center.state} & {center.region} India.
+                  </p>
+                </div>
+                <Link to="/centers" className="text-sm font-semibold text-bansal-blue hover:underline whitespace-nowrap">
+                  View all
+                </Link>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nearby.map((c) => (
+                  <Link
+                    key={c.slug}
+                    to={`/centers/${c.slug}`}
+                    className="group block rounded-xl overflow-hidden bg-white border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                  >
+                    <div className="relative h-28 overflow-hidden bg-bansal-blue">
+                      <img
+                        src={THEME_IMAGE[c.theme]}
+                        alt={c.city}
+                        loading="lazy"
+                        className="h-full w-full object-contain p-1.5 group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-bansal-black/80 to-transparent pointer-events-none" />
+                      <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
+                        <div>
+                          <p className="font-display font-bold text-white text-sm drop-shadow">
+                            {c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city}
+                          </p>
+                          <p className="text-[10px] text-white/85">{c.state}</p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {dbCenter?.id && <CenterGalleryAndUpdates centerId={dbCenter.id} />}
+      {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
+
+      {/* Centre details — moved to the bottom per editorial guideline */}
+      <section className="py-12 bg-bansal-cream/40 border-y border-border">
+        <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Contact / address */}
             <BansalCard className="md:col-span-2">
               <h2 className="font-display text-xl font-bold text-bansal-black mb-4 flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-bansal-orange" />
@@ -203,7 +291,6 @@ export default function CenterDetailPage() {
                 </li>
               </ul>
 
-              {/* Facilities */}
               <div className="mt-6 pt-6 border-t border-border">
                 <p className="font-semibold text-bansal-black mb-3 text-sm">Centre facilities</p>
                 <div className="flex flex-wrap gap-2">
@@ -219,7 +306,6 @@ export default function CenterDetailPage() {
               </div>
             </BansalCard>
 
-            {/* Quick stats */}
             <div className="space-y-4">
               <BansalCard>
                 <div className="flex items-center gap-3 mb-2">
@@ -274,90 +360,9 @@ export default function CenterDetailPage() {
               />
             </div>
           </div>
-
-          {/* Programs */}
-          <div className="mt-12">
-            <h2 className="font-display text-2xl font-bold text-bansal-black mb-2">
-              Programs offered at {displayName}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-5">
-              Choose the program that matches your goal. All include Bansal study material,
-              tests and mentor support.
-            </p>
-            <div className="grid md:grid-cols-3 gap-5">
-              {PROGRAMS.map((p) => (
-                <BansalCard key={p.title} className="relative">
-                  <span className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider text-bansal-orange bg-bansal-orange-light/60 rounded-full px-2 py-0.5">
-                    {p.tag}
-                  </span>
-                  <div className="h-11 w-11 rounded-xl bg-bansal-blue-light flex items-center justify-center mb-3">
-                    <p.icon className="h-6 w-6 text-bansal-blue" />
-                  </div>
-                  <h3 className="font-display text-lg font-bold text-bansal-black mb-1.5">
-                    {p.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{p.desc}</p>
-                  <Link
-                    to="/courses"
-                    className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-bansal-blue hover:text-bansal-orange"
-                  >
-                    Explore courses <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </BansalCard>
-              ))}
-            </div>
-          </div>
-
-          {/* Nearby centres — with thumbnails */}
-          {nearby.length > 0 && (
-            <div className="mt-12">
-              <div className="flex items-end justify-between mb-4">
-                <div>
-                  <h2 className="font-display text-2xl font-bold text-bansal-black">
-                    Other Bansal centres nearby
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Explore more centres in {center.state} & {center.region} India.
-                  </p>
-                </div>
-                <Link to="/centers" className="text-sm font-semibold text-bansal-blue hover:underline whitespace-nowrap">
-                  View all
-                </Link>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nearby.map((c) => (
-                  <Link
-                    key={c.slug}
-                    to={`/centers/${c.slug}`}
-                    className="group block rounded-xl overflow-hidden bg-white border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                  >
-                    <div className="relative h-28 overflow-hidden bg-bansal-blue">
-                      <img
-                        src={THEME_IMAGE[c.theme]}
-                        alt={c.city}
-                        loading="lazy"
-                        className="h-full w-full object-contain p-1.5 group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-bansal-black/80 to-transparent pointer-events-none" />
-                      <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                        <div>
-                          <p className="font-display font-bold text-white text-sm drop-shadow">
-                            {c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city}
-                          </p>
-                          <p className="text-[10px] text-white/85">{c.state}</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
-      {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
 
       {/* CTA */}
       <section className="py-14 bg-bansal-cream">

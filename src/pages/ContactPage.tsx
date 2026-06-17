@@ -8,6 +8,7 @@ import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import contactHero from "@/assets/contact-hero.png";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import SubmissionSuccess from "@/components/SubmissionSuccess";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -63,9 +64,8 @@ export default function ContactPage() {
       });
       if (error) throw error;
       setSubmitted(true);
-      toast({ title: "Message sent!", description: "Our admissions team will call you within 24 hours." });
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });
-      setTimeout(() => setSubmitted(false), 5000);
+
     } catch (err) {
       toast({
         title: "Something went wrong",
@@ -101,92 +101,102 @@ export default function ContactPage() {
           <div className="grid lg:grid-cols-5 gap-8">
             {/* Form */}
             <BansalCard className="lg:col-span-3 p-8">
-              <h2 className="font-display text-2xl font-bold text-bansal-black mb-1">Send us a message</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Fill the form and our admissions team will reach out.
-              </p>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Full Name *</label>
-                    <input
-                      type="text"
-                      value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="Your name"
-                      maxLength={100}
-                      required
-                      className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Phone *</label>
-                    <input
-                      type="tel"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      placeholder="+91 98765 43210"
-                      maxLength={20}
-                      required
-                      className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Email *</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="you@example.com"
-                    maxLength={255}
-                    required
-                    className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Subject</label>
-                  <select
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
-                  >
-                    <option value="">Select a topic</option>
-                    <option value="JEE Admission">JEE Admission</option>
-                    <option value="NEET Admission">NEET Admission</option>
-                    <option value="Foundation (Class 5-10)">Foundation (Class 5-10)</option>
-                    <option value="BOOST Scholarship">BOOST Scholarship</option>
-                    <option value="Center Visit">Center Visit</option>
-                    <option value="Careers">Careers</option>
-                    <option value="General Enquiry">General Enquiry</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Message *</label>
-                  <textarea
-                    rows={5}
-                    value={form.message}
-                    onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    placeholder="Tell us about your goals, current class, target exam…"
-                    maxLength={2000}
-                    required
-                    className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange resize-none"
-                  />
-                </div>
-                <BansalButton type="submit" variant="cta" disabled={submitting || submitted} className="w-full">
-                  {submitting ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
-                  ) : submitted ? (
-                    <><CheckCircle2 className="h-4 w-4" /> Message Sent</>
-                  ) : (
-                    <><Send className="h-4 w-4" /> Send Message</>
-                  )}
-                </BansalButton>
-                <p className="text-xs text-muted-foreground text-center">
-                  By submitting, you agree to be contacted by Bansal Classes admissions team.
-                </p>
-              </form>
+              {submitted ? (
+                <SubmissionSuccess
+                  title="Thank you! Your message is on its way."
+                  message="Our admissions team will call you within the next 24 hours. Please keep your phone handy."
+                  onReset={() => setSubmitted(false)}
+                  ctaLabel="Back to Home"
+                />
+              ) : (
+                <>
+                  <h2 className="font-display text-2xl font-bold text-bansal-black mb-1">Send us a message</h2>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Fill the form and our admissions team will reach out.
+                  </p>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Full Name *</label>
+                        <input
+                          type="text"
+                          value={form.name}
+                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+                          placeholder="Your name"
+                          maxLength={100}
+                          required
+                          className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Phone *</label>
+                        <input
+                          type="tel"
+                          value={form.phone}
+                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                          placeholder="+91 98765 43210"
+                          maxLength={20}
+                          required
+                          className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Email *</label>
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        placeholder="you@example.com"
+                        maxLength={255}
+                        required
+                        className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Subject</label>
+                      <select
+                        value={form.subject}
+                        onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                        className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
+                      >
+                        <option value="">Select a topic</option>
+                        <option value="JEE Admission">JEE Admission</option>
+                        <option value="NEET Admission">NEET Admission</option>
+                        <option value="Foundation (Class 5-10)">Foundation (Class 5-10)</option>
+                        <option value="BOOST Scholarship">BOOST Scholarship</option>
+                        <option value="Centre Visit">Centre Visit</option>
+                        <option value="Careers">Careers</option>
+                        <option value="General Enquiry">General Enquiry</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Message *</label>
+                      <textarea
+                        rows={5}
+                        value={form.message}
+                        onChange={(e) => setForm({ ...form, message: e.target.value })}
+                        placeholder="Tell us about your goals, current class, target exam…"
+                        maxLength={2000}
+                        required
+                        className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange resize-none"
+                      />
+                    </div>
+                    <BansalButton type="submit" variant="cta" disabled={submitting} className="w-full">
+                      {submitting ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
+                      ) : (
+                        <><Send className="h-4 w-4" /> Send Message</>
+                      )}
+                    </BansalButton>
+                    <p className="text-xs text-muted-foreground text-center">
+                      By submitting, you agree to be contacted by Bansal Classes admissions team.
+                    </p>
+                  </form>
+                </>
+              )}
             </BansalCard>
+
 
             {/* Right column: channels + HQ */}
             <div className="lg:col-span-2 space-y-5">

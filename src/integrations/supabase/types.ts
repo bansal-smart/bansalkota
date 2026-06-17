@@ -377,6 +377,53 @@ export type Database = {
           },
         ]
       }
+      center_gallery: {
+        Row: {
+          caption: string | null
+          center_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          is_published: boolean
+          kind: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          center_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          is_published?: boolean
+          kind?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          center_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          is_published?: boolean
+          kind?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_gallery_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       center_staff: {
         Row: {
           center_id: string
@@ -405,6 +452,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_staff_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "centers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      center_updates: {
+        Row: {
+          body: string
+          center_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string | null
+          is_published: boolean
+          posted_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          center_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          posted_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          center_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          posted_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "center_updates_center_id_fkey"
             columns: ["center_id"]
             isOneToOne: false
             referencedRelation: "centers"
