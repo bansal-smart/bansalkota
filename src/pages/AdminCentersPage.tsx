@@ -172,16 +172,43 @@ const AdminCentersPage = () => {
     else load();
   };
 
+  const parseBool = (v: string) => /^(true|yes|y|1)$/i.test(v.trim());
+  const csvFields: CsvField[] = [
+    { key: "city", label: "City", required: true, example: "Kota" },
+    { key: "area", label: "Area", example: "Rajeev Gandhi Nagar" },
+    { key: "state", label: "State", required: true, example: "Rajasthan" },
+    { key: "region", label: "Region", example: "North" },
+    { key: "address", label: "Address", example: "Gaurav Tower, Kota" },
+    { key: "phone", label: "Phone", example: "+91 7442436001" },
+    { key: "email", label: "Email", example: "kota@bansal.com" },
+    { key: "established", label: "Established", parse: (v) => Number(v), example: "1991" },
+    { key: "theme", label: "Theme", example: "metro" },
+    { key: "image_url", label: "Image URL", example: "" },
+    { key: "is_hq", label: "Is HQ", parse: parseBool, example: "false" },
+    { key: "verified", label: "Verified", parse: parseBool, example: "true" },
+    { key: "is_published", label: "Published", parse: parseBool, example: "true" },
+    { key: "sort_order", label: "Sort Order", parse: (v) => Number(v), example: "10" },
+    { key: "slug", label: "Slug", example: "kota-rajeev-gandhi-nagar" },
+  ];
+
   return (
     <div className="space-y-6 p-4 lg:p-6">
-      <div className="flex items-center gap-3">
-        <Building2 className="h-7 w-7 text-primary" />
-        <div>
-          <h1 className="text-2xl font-black">Centres</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage Bansal Classes centres shown on the public Centres page.
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Building2 className="h-7 w-7 text-primary" />
+          <div>
+            <h1 className="text-2xl font-black">Centres</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage Bansal Classes centres shown on the public Centres page.
+            </p>
+          </div>
         </div>
+        <button
+          onClick={() => setBulkOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold hover:bg-muted"
+        >
+          <FileSpreadsheet className="h-4 w-4" /> Bulk import / export
+        </button>
       </div>
 
       {/* Form */}
