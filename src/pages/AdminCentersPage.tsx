@@ -350,6 +350,40 @@ const AdminCentersPage = () => {
           onClose={() => setStaffCenter(null)}
         />
       )}
+
+      <BulkCsvDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import / export Centres"
+        description="Upload a CSV to upsert centres by slug. Existing slugs are updated; new slugs are created."
+        fields={csvFields}
+        fileBase="centres"
+        exportRows={items as any}
+        importRow={async (row) => {
+          if (!row.city || !row.state) return "City and State required";
+          const slug = (row.slug && String(row.slug).trim()) || slugify(`${row.city}${row.area ? "-" + row.area : ""}`);
+          const payload: any = {
+            slug,
+            city: row.city,
+            area: row.area || null,
+            state: row.state,
+            region: row.region || "North",
+            address: row.address || "",
+            phone: row.phone || "",
+            email: row.email || null,
+            established: row.established ?? null,
+            theme: row.theme || "metro",
+            image_url: row.image_url || null,
+            is_hq: !!row.is_hq,
+            verified: !!row.verified,
+            is_published: row.is_published == null ? true : !!row.is_published,
+            sort_order: row.sort_order ?? 0,
+          };
+          const { error } = await supabase.from("centers").upsert(payload, { onConflict: "slug" });
+          if (error) return error.message;
+        }}
+        onDone={load}
+      />
     </div>
   );
 };
