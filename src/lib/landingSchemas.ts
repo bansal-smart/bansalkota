@@ -76,5 +76,6 @@ export type LandingConfig = {
   faqs: Faq[];
   contact: ContactBlock;
   form_config: FormConfig;
+  banners: BannerItem[];
   is_published: boolean;
 };
