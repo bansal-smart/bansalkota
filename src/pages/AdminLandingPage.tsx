@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone } from "lucide-react";
+import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone, ArrowUp, ArrowDown, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { LandingConfig, Highlight, Faq } from "@/lib/landingSchemas";
+import type { LandingConfig, BannerItem } from "@/lib/landingSchemas";
+import { DEFAULT_BANNERS } from "@/lib/landingBannerDefaults";
 
 const EMPTY: LandingConfig = {
   id: "default",
@@ -20,6 +21,7 @@ const EMPTY: LandingConfig = {
   faqs: [],
   contact: {},
   form_config: {},
+  banners: [],
   is_published: true,
 };
 
