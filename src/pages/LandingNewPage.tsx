@@ -92,6 +92,9 @@ export default function LandingNewPage() {
 
       <HeroSection hero={config.hero || {}} formConfig={config.form_config || {}} />
 
+      <BannerGallery items={config.banners?.length ? config.banners : DEFAULT_BANNERS} />
+
+
       {config.overview && (
         <section className="container mx-auto max-w-3xl px-4 py-12 lg:py-16">
           <h2 className="text-center font-display text-3xl font-black lg:text-4xl">Program overview</h2>
