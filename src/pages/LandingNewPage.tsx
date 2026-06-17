@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Flame, Phone } from "lucide-react";
 import { useLandingConfig } from "@/hooks/useLandingConfig";
@@ -37,16 +37,36 @@ export default function LandingNewPage() {
   const title = `${config.hero?.title || "Bansal Campaign"} | Bansal Classes`;
   const desc = config.hero?.subtitle || "Enrol in the latest Bansal Classes program.";
 
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = title.slice(0, 60);
+    const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
+      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute(attr, name);
+        document.head.appendChild(el);
+      }
+      el.content = content;
+    };
+    setMeta("description", desc.slice(0, 160));
+    setMeta("og:title", title, "property");
+    setMeta("og:description", desc, "property");
+    if (config.hero?.banner_url) setMeta("og:image", config.hero.banner_url, "property");
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "canonical";
+      document.head.appendChild(link);
+    }
+    link.href = `${window.location.origin}/new`;
+    return () => {
+      document.title = prevTitle;
+    };
+  }, [title, desc, config.hero?.banner_url]);
+
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
-      <Helmet>
-        <title>{title.slice(0, 60)}</title>
-        <meta name="description" content={desc.slice(0, 160)} />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={desc} />
-        {config.hero?.banner_url && <meta property="og:image" content={config.hero.banner_url} />}
-        <link rel="canonical" href={`${window.location.origin}/new`} />
-      </Helmet>
 
       {/* Minimal top bar */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
