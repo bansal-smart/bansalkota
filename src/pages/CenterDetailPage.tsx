@@ -232,6 +232,7 @@ export default function CenterDetailPage() {
         </div>
       </section>
 
+      {dbCenter?.id && <CenterGalleryAndUpdates centerId={dbCenter.id} />}
       {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
 
       {/* Centre details — moved to the bottom per editorial guideline */}
