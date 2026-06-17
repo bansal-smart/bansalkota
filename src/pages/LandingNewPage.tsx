@@ -10,6 +10,8 @@ import FAQAccordion from "@/components/landing/FAQAccordion";
 import ContactBlock from "@/components/landing/ContactBlock";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import LeadForm from "@/components/landing/LeadForm";
+import BannerGallery from "@/components/landing/BannerGallery";
+import { DEFAULT_BANNERS } from "@/lib/landingBannerDefaults";
 
 export default function LandingNewPage() {
   const { data: config, isLoading } = useLandingConfig();
