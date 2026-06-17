@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Inbox, ClipboardList, Users, LifeBuoy, Image as ImageIcon, ArrowRight, Building2 } from "lucide-react";
+import { BookOpen, Inbox, ClipboardList, Users, LifeBuoy, Image as ImageIcon, ArrowRight, Building2, Megaphone } from "lucide-react";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,6 +66,8 @@ const CenterDashboardPage = () => {
   const tiles = [
     { label: "Centre Content", value: "Page", icon: Building2, to: "/center/content" },
     { label: "Page Banners", value: counts.banners, icon: ImageIcon, to: "/center/banners" },
+    { label: "Gallery", value: "Photos", icon: ImageIcon, to: "/center/gallery" },
+    { label: "Updates & Feed", value: "Posts", icon: Megaphone, to: "/center/updates" },
     { label: "Offline Courses", value: counts.courses, icon: BookOpen, to: "/center/courses" },
     { label: "Website Enquiries", value: counts.websiteEnquiries, icon: Inbox, to: "/center/enquiries" },
     { label: "New Course Enquiries", value: counts.courseEnquiries, icon: ClipboardList, to: "/center/course-enquiries" },
