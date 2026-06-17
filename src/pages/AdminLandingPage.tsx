@@ -61,6 +61,7 @@ export default function AdminLandingPage() {
           faqs: cfg.faqs,
           contact: cfg.contact,
           form_config: cfg.form_config,
+          banners: cfg.banners,
           is_published: cfg.is_published,
         },
         { onConflict: "id" },
