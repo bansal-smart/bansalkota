@@ -23,6 +23,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centers";
 import { useCenters } from "@/hooks/useCenters";
 import CenterOfflineSections from "@/components/CenterOfflineSections";
+import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
 
 const PROGRAMS = [
   {
