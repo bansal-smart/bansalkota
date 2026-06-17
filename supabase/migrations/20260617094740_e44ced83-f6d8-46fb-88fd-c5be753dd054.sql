@@ -1,0 +1,1 @@
+ALTER TABLE public.landing_page_config ADD COLUMN IF NOT EXISTS banners jsonb NOT NULL DEFAULT '[]'::jsonb;
