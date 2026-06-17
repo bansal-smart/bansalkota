@@ -36,6 +36,12 @@ export type HeroConfig = {
 
 export type Highlight = { icon: string; title: string; text: string };
 export type Faq = { q: string; a: string };
+export type BannerItem = {
+  image_url: string;
+  caption?: string;
+  link?: string;
+  alt?: string;
+};
 
 export type DetailsBlock = {
   eligibility?: string;
@@ -70,5 +76,6 @@ export type LandingConfig = {
   faqs: Faq[];
   contact: ContactBlock;
   form_config: FormConfig;
+  banners: BannerItem[];
   is_published: boolean;
 };

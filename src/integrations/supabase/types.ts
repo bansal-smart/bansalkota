@@ -1328,6 +1328,7 @@ export type Database = {
       }
       landing_page_config: {
         Row: {
+          banners: Json
           contact: Json
           details: Json
           faqs: Json
@@ -1342,6 +1343,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          banners?: Json
           contact?: Json
           details?: Json
           faqs?: Json
@@ -1356,6 +1358,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          banners?: Json
           contact?: Json
           details?: Json
           faqs?: Json

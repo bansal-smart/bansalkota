@@ -10,6 +10,8 @@ import FAQAccordion from "@/components/landing/FAQAccordion";
 import ContactBlock from "@/components/landing/ContactBlock";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import LeadForm from "@/components/landing/LeadForm";
+import BannerGallery from "@/components/landing/BannerGallery";
+import { DEFAULT_BANNERS } from "@/lib/landingBannerDefaults";
 
 export default function LandingNewPage() {
   const { data: config, isLoading } = useLandingConfig();
@@ -89,6 +91,9 @@ export default function LandingNewPage() {
       </header>
 
       <HeroSection hero={config.hero || {}} formConfig={config.form_config || {}} />
+
+      <BannerGallery items={config.banners?.length ? config.banners : DEFAULT_BANNERS} />
+
 
       {config.overview && (
         <section className="container mx-auto max-w-3xl px-4 py-12 lg:py-16">

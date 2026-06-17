@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone } from "lucide-react";
+import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone, ArrowUp, ArrowDown, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { LandingConfig, Highlight, Faq } from "@/lib/landingSchemas";
+import type { LandingConfig, BannerItem } from "@/lib/landingSchemas";
+import { DEFAULT_BANNERS } from "@/lib/landingBannerDefaults";
 
 const EMPTY: LandingConfig = {
   id: "default",
@@ -20,6 +21,7 @@ const EMPTY: LandingConfig = {
   faqs: [],
   contact: {},
   form_config: {},
+  banners: [],
   is_published: true,
 };
 
@@ -59,6 +61,7 @@ export default function AdminLandingPage() {
           faqs: cfg.faqs,
           contact: cfg.contact,
           form_config: cfg.form_config,
+          banners: cfg.banners,
           is_published: cfg.is_published,
         },
         { onConflict: "id" },
@@ -91,6 +94,42 @@ export default function AdminLandingPage() {
     setCfg((c) => ({ ...c, contact: { ...c.contact, ...patch } }));
   const setForm = (patch: Partial<LandingConfig["form_config"]>) =>
     setCfg((c) => ({ ...c, form_config: { ...c.form_config, ...patch } }));
+
+  const uploadGalleryBanner = async (index: number, file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `landing-new/banners/banner-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("site-content").upload(path, file, { upsert: true });
+    if (error) return toast.error(error.message);
+    const { data } = supabase.storage.from("site-content").getPublicUrl(path);
+    setCfg((c) => {
+      const next = [...c.banners];
+      next[index] = { ...next[index], image_url: data.publicUrl };
+      return { ...c, banners: next };
+    });
+    toast.success("Banner uploaded");
+  };
+  const updateBanner = (i: number, patch: Partial<BannerItem>) =>
+    setCfg((c) => {
+      const next = [...c.banners];
+      next[i] = { ...next[i], ...patch };
+      return { ...c, banners: next };
+    });
+  const moveBanner = (i: number, dir: -1 | 1) =>
+    setCfg((c) => {
+      const next = [...c.banners];
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return c;
+      [next[i], next[j]] = [next[j], next[i]];
+      return { ...c, banners: next };
+    });
+  const removeBanner = (i: number) =>
+    setCfg((c) => ({ ...c, banners: c.banners.filter((_, x) => x !== i) }));
+  const addBanner = () =>
+    setCfg((c) => ({ ...c, banners: [...c.banners, { image_url: "", caption: "", link: "", alt: "" }] }));
+  const resetDefaults = () => {
+    setCfg((c) => ({ ...c, banners: DEFAULT_BANNERS.map((b) => ({ ...b })) }));
+    toast.success("Reset to 4 starter banners — remember to Save");
+  };
 
   if (loading) {
     return (
@@ -133,6 +172,7 @@ export default function AdminLandingPage() {
       <Tabs defaultValue="hero" className="w-full">
         <TabsList className="flex flex-wrap">
           <TabsTrigger value="hero">Hero</TabsTrigger>
+          <TabsTrigger value="banners">Banners</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="highlights">Highlights</TabsTrigger>
           <TabsTrigger value="outcomes">Outcomes</TabsTrigger>
@@ -217,6 +257,91 @@ export default function AdminLandingPage() {
               </div>
             </div>
           </div>
+        </TabsContent>
+
+        {/* OVERVIEW */}
+        {/* BANNERS */}
+        <TabsContent value="banners" className="space-y-4 rounded-lg border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display text-lg font-black">Promotional banners</h3>
+              <p className="text-sm text-muted-foreground">
+                Shown as a grid (desktop) / carousel (mobile) just under the hero. Recommended size 1600×900.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={resetDefaults}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Reset to defaults
+              </Button>
+              <Button size="sm" onClick={addBanner}>
+                <Plus className="mr-2 h-4 w-4" /> Add banner
+              </Button>
+            </div>
+          </div>
+
+          {cfg.banners.length === 0 && (
+            <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              No banners yet. Click <strong>Reset to defaults</strong> to load 4 starter banners, or <strong>Add banner</strong> to start fresh.
+            </div>
+          )}
+
+          {cfg.banners.map((b, i) => (
+            <div key={i} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[140px_1fr_auto]">
+              <div className="space-y-2">
+                {b.image_url ? (
+                  <img src={b.image_url} alt={b.alt || "banner"} className="aspect-video w-full rounded-md object-cover" />
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
+                    No image
+                  </div>
+                )}
+                <label className="inline-flex h-8 w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background text-xs font-semibold hover:bg-muted">
+                  <Upload className="h-3 w-3" /> Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && uploadGalleryBanner(i, e.target.files[0])}
+                  />
+                </label>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Caption</Label>
+                  <Input value={b.caption || ""} onChange={(e) => updateBanner(i, { caption: e.target.value })} />
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div>
+                    <Label className="text-xs">Link (optional)</Label>
+                    <Input
+                      placeholder="#register or https://..."
+                      value={b.link || ""}
+                      onChange={(e) => updateBanner(i, { link: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Alt text</Label>
+                    <Input value={b.alt || ""} onChange={(e) => updateBanner(i, { alt: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Image URL</Label>
+                  <Input value={b.image_url || ""} onChange={(e) => updateBanner(i, { image_url: e.target.value })} />
+                </div>
+              </div>
+              <div className="flex flex-row gap-1 md:flex-col">
+                <Button variant="ghost" size="icon" onClick={() => moveBanner(i, -1)} disabled={i === 0}>
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => moveBanner(i, 1)} disabled={i === cfg.banners.length - 1}>
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => removeBanner(i)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
         </TabsContent>
 
         {/* OVERVIEW */}
