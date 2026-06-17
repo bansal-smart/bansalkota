@@ -62,6 +62,7 @@ const AdminCentersPage = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [staffCenter, setStaffCenter] = useState<Center | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
