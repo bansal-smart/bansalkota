@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Flame, Phone } from "lucide-react";
+import { Phone } from "lucide-react";
 import { useLandingConfig } from "@/hooks/useLandingConfig";
+import BansalLogo from "@/components/bansal/BansalLogo";
 import HeroSection from "@/components/landing/HeroSection";
 import HighlightsGrid from "@/components/landing/HighlightsGrid";
 import OutcomesList from "@/components/landing/OutcomesList";
