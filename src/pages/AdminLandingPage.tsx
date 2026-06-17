@@ -172,6 +172,7 @@ export default function AdminLandingPage() {
       <Tabs defaultValue="hero" className="w-full">
         <TabsList className="flex flex-wrap">
           <TabsTrigger value="hero">Hero</TabsTrigger>
+          <TabsTrigger value="banners">Banners</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="highlights">Highlights</TabsTrigger>
           <TabsTrigger value="outcomes">Outcomes</TabsTrigger>
