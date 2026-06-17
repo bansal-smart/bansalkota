@@ -13,31 +13,12 @@ import LeadForm from "@/components/landing/LeadForm";
 
 export default function LandingNewPage() {
   const { data: config, isLoading } = useLandingConfig();
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!config || !config.is_published) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-center">
-        <div>
-          <Flame className="mx-auto h-12 w-12 text-primary" />
-          <h1 className="mt-4 text-2xl font-black">Coming soon</h1>
-          <p className="mt-2 text-muted-foreground">This campaign page is not live yet.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const title = `${config.hero?.title || "Bansal Campaign"} | Bansal Classes`;
-  const desc = config.hero?.subtitle || "Enrol in the latest Bansal Classes program.";
+  const title = `${config?.hero?.title || "Bansal Campaign"} | Bansal Classes`;
+  const desc = config?.hero?.subtitle || "Enrol in the latest Bansal Classes program.";
 
   useEffect(() => {
+    if (!config?.is_published) return;
+
     const prevTitle = document.title;
     document.title = title.slice(0, 60);
     const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
@@ -63,7 +44,27 @@ export default function LandingNewPage() {
     return () => {
       document.title = prevTitle;
     };
-  }, [title, desc, config.hero?.banner_url]);
+  }, [title, desc, config?.hero?.banner_url, config?.is_published]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!config || !config.is_published) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-center">
+        <div>
+          <Flame className="mx-auto h-12 w-12 text-primary" />
+          <h1 className="mt-4 text-2xl font-black">Coming soon</h1>
+          <p className="mt-2 text-muted-foreground">This campaign page is not live yet.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20 lg:pb-0">
