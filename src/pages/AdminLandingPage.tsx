@@ -260,6 +260,91 @@ export default function AdminLandingPage() {
         </TabsContent>
 
         {/* OVERVIEW */}
+        {/* BANNERS */}
+        <TabsContent value="banners" className="space-y-4 rounded-lg border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display text-lg font-black">Promotional banners</h3>
+              <p className="text-sm text-muted-foreground">
+                Shown as a grid (desktop) / carousel (mobile) just under the hero. Recommended size 1600×900.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={resetDefaults}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Reset to defaults
+              </Button>
+              <Button size="sm" onClick={addBanner}>
+                <Plus className="mr-2 h-4 w-4" /> Add banner
+              </Button>
+            </div>
+          </div>
+
+          {cfg.banners.length === 0 && (
+            <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              No banners yet. Click <strong>Reset to defaults</strong> to load 4 starter banners, or <strong>Add banner</strong> to start fresh.
+            </div>
+          )}
+
+          {cfg.banners.map((b, i) => (
+            <div key={i} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[140px_1fr_auto]">
+              <div className="space-y-2">
+                {b.image_url ? (
+                  <img src={b.image_url} alt={b.alt || "banner"} className="aspect-video w-full rounded-md object-cover" />
+                ) : (
+                  <div className="flex aspect-video w-full items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">
+                    No image
+                  </div>
+                )}
+                <label className="inline-flex h-8 w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-border bg-background text-xs font-semibold hover:bg-muted">
+                  <Upload className="h-3 w-3" /> Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && uploadGalleryBanner(i, e.target.files[0])}
+                  />
+                </label>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-xs">Caption</Label>
+                  <Input value={b.caption || ""} onChange={(e) => updateBanner(i, { caption: e.target.value })} />
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div>
+                    <Label className="text-xs">Link (optional)</Label>
+                    <Input
+                      placeholder="#register or https://..."
+                      value={b.link || ""}
+                      onChange={(e) => updateBanner(i, { link: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Alt text</Label>
+                    <Input value={b.alt || ""} onChange={(e) => updateBanner(i, { alt: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Image URL</Label>
+                  <Input value={b.image_url || ""} onChange={(e) => updateBanner(i, { image_url: e.target.value })} />
+                </div>
+              </div>
+              <div className="flex flex-row gap-1 md:flex-col">
+                <Button variant="ghost" size="icon" onClick={() => moveBanner(i, -1)} disabled={i === 0}>
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => moveBanner(i, 1)} disabled={i === cfg.banners.length - 1}>
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => removeBanner(i)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </TabsContent>
+
+        {/* OVERVIEW */}
         <TabsContent value="overview" className="rounded-lg border border-border bg-card p-5">
           <Label>Program overview</Label>
           <Textarea rows={8} value={cfg.overview || ""} onChange={(e) => setCfg((c) => ({ ...c, overview: e.target.value }))} />
