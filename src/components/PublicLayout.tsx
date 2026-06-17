@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   { label: "About", path: "/about", children: aboutChildren },
   { label: "Courses", path: "/courses" },
   { label: "Test Series", path: "/test-series" },
-  { label: "Centers", path: "/centers" },
+  { label: "Centres", path: "/centers" },
   { label: "BOOST", path: "/boost", logo: boostLogo },
   { label: "E-Store", path: "/e-store" },
   { label: "Career", path: "/career" },
@@ -45,7 +45,7 @@ const PublicLayout = () => {
             <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3 text-bansal-orange" /> Admission: +91 9773343246 · +91 8003045222</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/centers" className="hover:text-bansal-orange">Find a Center</Link>
+            <Link to="/centers" className="hover:text-bansal-orange">Find a Centre</Link>
             <Link to="/login" className="hover:text-bansal-orange font-semibold">Student Login</Link>
           </div>
         </div>
@@ -228,7 +228,7 @@ const PublicLayout = () => {
               <div className="space-y-2 text-sm">
                 <Link to="/boost" className="block text-white/75 hover:text-bansal-orange">BOOST Scholarship</Link>
                 <Link to="/courses" className="block text-white/75 hover:text-bansal-orange">Courses</Link>
-                <Link to="/centers" className="block text-white/75 hover:text-bansal-orange">Offline Centers</Link>
+                <Link to="/centers" className="block text-white/75 hover:text-bansal-orange">Offline Centres</Link>
                 <Link to="/privacy" className="block text-white/75 hover:text-bansal-orange">Privacy Policy</Link>
                 <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">Terms &amp; Conditions</Link>
               </div>

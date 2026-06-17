@@ -68,7 +68,8 @@ export const leadership = [
     slug: "sameer-bansal",
     name: "Sameer Bansal",
     role: "MD & CEO",
-    tagline: "Mathematics Expert · IITian Mentor · Visionary Leader",
+    tagline:
+      "Mentor of All India Rank 1 & single-digit JEE rankers · Author of 4 best-selling JEE preparation books · Visionary Leader",
     photo: sameerBansalPhoto,
   },
   {

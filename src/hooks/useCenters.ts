@@ -28,10 +28,21 @@ const mapRow = (r: any): DBCenter => ({
   sort_order: r.sort_order ?? 0,
 });
 
-/** Loads centers from DB; falls back to bundled static list on first paint/error. */
+/** Alphabetical by city, with Kota (HQ) pinned to the top. */
+const sortCentres = (list: DBCenter[]): DBCenter[] => {
+  const pinned = list.filter((c) => c.isHQ || c.city.toLowerCase() === "kota");
+  const rest = list
+    .filter((c) => !(c.isHQ || c.city.toLowerCase() === "kota"))
+    .sort((a, b) => a.city.localeCompare(b.city, "en", { sensitivity: "base" }));
+  return [...pinned, ...rest];
+};
+
+/** Loads centres from DB; falls back to bundled static list on first paint/error. */
 export const useCenters = () => {
   const [centers, setCenters] = useState<DBCenter[]>(() =>
-    STATIC_CENTERS.map((c, i) => ({ ...c, id: c.slug, image_url: null, is_published: true, sort_order: i })),
+    sortCentres(
+      STATIC_CENTERS.map((c, i) => ({ ...c, id: c.slug, image_url: null, is_published: true, sort_order: i })),
+    ),
   );
   const [loading, setLoading] = useState(true);
 
@@ -42,10 +53,9 @@ export const useCenters = () => {
         .from("centers")
         .select("*")
         .eq("is_published", true)
-        .order("sort_order", { ascending: true })
         .limit(500);
       if (!ignore) {
-        if (!error && data && data.length) setCenters(data.map(mapRow));
+        if (!error && data && data.length) setCenters(sortCentres(data.map(mapRow)));
         setLoading(false);
       }
     })();
@@ -58,3 +68,4 @@ export const useCenters = () => {
 };
 
 export const getCenterImage = (c: DBCenter): string => c.image_url || THEME_IMAGE[c.theme];
+
