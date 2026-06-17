@@ -120,6 +120,8 @@ import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
 import CenterDashboardPage from "./pages/CenterDashboardPage";
 import CenterBannersPage from "./pages/CenterBannersPage";
 import CenterContentPage from "./pages/CenterContentPage";
+import CenterGalleryPage from "./pages/CenterGalleryPage";
+import CenterUpdatesPage from "./pages/CenterUpdatesPage";
 import CenterCoursesPage from "./pages/CenterCoursesPage";
 import CenterWebsiteEnquiriesPage from "./pages/CenterWebsiteEnquiriesPage";
 import CenterCourseEnquiriesPage from "./pages/CenterCourseEnquiriesPage";
@@ -348,6 +350,8 @@ const App = () => (
               <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
               <Route path="/center/students" element={<CenterStudentsPage />} />
               <Route path="/center/support" element={<CenterSupportPage />} />
+              <Route path="/center/gallery" element={<CenterGalleryPage />} />
+              <Route path="/center/updates" element={<CenterUpdatesPage />} />
             </Route>
 
 
