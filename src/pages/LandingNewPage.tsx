@@ -76,10 +76,7 @@ export default function LandingNewPage() {
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Flame className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-sm font-black font-display">Bansal Classes</span>
+            <BansalLogo className="h-8 w-auto" variant="full" />
           </Link>
           {config.contact?.phone && (
             <a href={`tel:${config.contact.phone}`} className="flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
