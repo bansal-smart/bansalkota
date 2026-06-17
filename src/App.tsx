@@ -125,6 +125,9 @@ import CenterWebsiteEnquiriesPage from "./pages/CenterWebsiteEnquiriesPage";
 import CenterCourseEnquiriesPage from "./pages/CenterCourseEnquiriesPage";
 import CenterStudentsPage from "./pages/CenterStudentsPage";
 import CenterSupportPage from "./pages/CenterSupportPage";
+import LandingNewPage from "./pages/LandingNewPage";
+import AdminLandingPage from "./pages/AdminLandingPage";
+import AdminLandingLeadsPage from "./pages/AdminLandingLeadsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -157,6 +160,7 @@ const App = () => (
             <Route path="/cbt" element={<CbtLoginPage />} />
             <Route path="/cbt/tests" element={<CbtLiveTestsPage />} />
             <Route path="/cbt/submitted" element={<CbtSubmittedPage />} />
+            <Route path="/new" element={<LandingNewPage />} />
 
 
             {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
@@ -324,6 +328,8 @@ const App = () => (
               <Route path="/admin/admins" element={<AdminAdminsPage />} />
               <Route path="/admin/profile" element={<AdminProfilePage />} />
               <Route path="/admin/overview" element={<AdminDashboard />} />
+              <Route path="/admin/landing-page" element={<AdminLandingPage />} />
+              <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
             </Route>
 
             {/* Centre admin portal */}

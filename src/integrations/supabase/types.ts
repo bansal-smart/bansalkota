@@ -1326,6 +1326,108 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_page_config: {
+        Row: {
+          contact: Json
+          details: Json
+          faqs: Json
+          form_config: Json
+          hero: Json
+          highlights: Json
+          id: string
+          is_published: boolean
+          outcomes: Json
+          overview: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contact?: Json
+          details?: Json
+          faqs?: Json
+          form_config?: Json
+          hero?: Json
+          highlights?: Json
+          id?: string
+          is_published?: boolean
+          outcomes?: Json
+          overview?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contact?: Json
+          details?: Json
+          faqs?: Json
+          form_config?: Json
+          hero?: Json
+          highlights?: Json
+          id?: string
+          is_published?: boolean
+          outcomes?: Json
+          overview?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      landing_page_leads: {
+        Row: {
+          city: string | null
+          class_level: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          message: string | null
+          notes: string | null
+          phone: string
+          source: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          city?: string | null
+          class_level?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          phone: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          city?: string | null
+          class_level?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          message?: string | null
+          notes?: string | null
+          phone?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       leadership_profiles: {
         Row: {
           created_at: string
