@@ -95,6 +95,42 @@ export default function AdminLandingPage() {
   const setForm = (patch: Partial<LandingConfig["form_config"]>) =>
     setCfg((c) => ({ ...c, form_config: { ...c.form_config, ...patch } }));
 
+  const uploadGalleryBanner = async (index: number, file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `landing-new/banners/banner-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("site-content").upload(path, file, { upsert: true });
+    if (error) return toast.error(error.message);
+    const { data } = supabase.storage.from("site-content").getPublicUrl(path);
+    setCfg((c) => {
+      const next = [...c.banners];
+      next[index] = { ...next[index], image_url: data.publicUrl };
+      return { ...c, banners: next };
+    });
+    toast.success("Banner uploaded");
+  };
+  const updateBanner = (i: number, patch: Partial<BannerItem>) =>
+    setCfg((c) => {
+      const next = [...c.banners];
+      next[i] = { ...next[i], ...patch };
+      return { ...c, banners: next };
+    });
+  const moveBanner = (i: number, dir: -1 | 1) =>
+    setCfg((c) => {
+      const next = [...c.banners];
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return c;
+      [next[i], next[j]] = [next[j], next[i]];
+      return { ...c, banners: next };
+    });
+  const removeBanner = (i: number) =>
+    setCfg((c) => ({ ...c, banners: c.banners.filter((_, x) => x !== i) }));
+  const addBanner = () =>
+    setCfg((c) => ({ ...c, banners: [...c.banners, { image_url: "", caption: "", link: "", alt: "" }] }));
+  const resetDefaults = () => {
+    setCfg((c) => ({ ...c, banners: DEFAULT_BANNERS.map((b) => ({ ...b })) }));
+    toast.success("Reset to 4 starter banners — remember to Save");
+  };
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
