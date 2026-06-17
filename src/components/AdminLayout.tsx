@@ -27,6 +27,7 @@ import {
   Quote,
   BarChart3,
   LifeBuoy,
+  Megaphone,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -60,6 +61,8 @@ const baseNav: NavItem[] = [
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
   { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
+  { label: "Campaign Landing", icon: Megaphone, path: "/admin/landing-page" },
+  { label: "Campaign Leads", icon: Inbox, path: "/admin/landing-leads" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },
   { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
   { label: "Reports", icon: Flag, path: "/admin/reports" },
