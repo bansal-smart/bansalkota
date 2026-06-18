@@ -3451,6 +3451,10 @@ export type Database = {
       }
       _jsonb_answer_has_selection: { Args: { _answer: Json }; Returns: boolean }
       _recompute_attempt: { Args: { _attempt_id: string }; Returns: undefined }
+      admin_recompute_test_attempt: {
+        Args: { _attempt_id: string }
+        Returns: Json
+      }
       admin_reopen_attempt: {
         Args: {
           _attempt_id: string
@@ -3550,6 +3554,10 @@ export type Database = {
         Args: { _email: string; _phone: string }
         Returns: boolean
       }
+      get_attempt_response_sheet: {
+        Args: { _attempt_id: string }
+        Returns: Json
+      }
       get_chapter_quiz_answers: {
         Args: { _quiz_id: string }
         Returns: {
@@ -3614,6 +3622,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      restore_attempt_from_snapshot: {
+        Args: { _attempt_id: string }
+        Returns: Json
       }
       slugify_text: { Args: { input: string }; Returns: string }
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
