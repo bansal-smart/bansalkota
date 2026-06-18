@@ -638,6 +638,7 @@ const TestTakingPage = () => {
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
+    try { localStorage.removeItem(`attempt:${attemptId}:answers`); } catch { /* ignore */ }
     successTargetRef.current = user?.email?.endsWith("@cbt.bansal.local")
       ? "/cbt/submitted"
       : `/tests/${slug}/result/${attemptId}`;
