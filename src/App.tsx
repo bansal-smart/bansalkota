@@ -19,6 +19,7 @@ import TestListPage from "./pages/TestListPage";
 import TestInstructionsPage from "./pages/TestInstructionsPage";
 import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
+import TestResponseSheetPage from "./pages/TestResponseSheetPage";
 import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
@@ -228,6 +229,7 @@ const App = () => (
                 <Route path="/my-tests" element={<TestListPage />} />
                 <Route path="/tests/:slug/instructions" element={<TestInstructionsPage />} />
                 <Route path="/tests/:slug/result/:attemptId" element={<TestResultPage />} />
+                <Route path="/tests/:slug/result/:attemptId/responses" element={<TestResponseSheetPage />} />
                 <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
                 <Route path="/my-live-classes" element={<LiveClassesListPage />} />
                 <Route path="/live-classes/:slug" element={<LiveClassRoomPage />} />

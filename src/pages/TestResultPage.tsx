@@ -384,7 +384,15 @@ const TestResultPage = () => {
 
         {/* Subject breakdown table */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-4 text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
+            <Link
+              to={`/tests/${slug}/result/${id}/responses`}
+              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90"
+            >
+              View detailed response sheet <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           {Object.keys(subjects).length === 0 ? (
             <p className="text-xs text-muted-foreground">No subject data available.</p>
           ) : (

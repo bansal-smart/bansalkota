@@ -136,10 +136,25 @@ const TestTakingPage = () => {
       if (existing) {
         setAttemptId(existing.id);
         setStartedAt(new Date(existing.started_at as string));
-        // Merge — never overwrite local answers that may already be in memory.
-        const dbAnswers = (existing.answers as Record<string, AnswerVal>) ?? {};
-        const dbStatuses = (existing.question_statuses as Record<string, QStatus>) ?? {};
-        setAnswers((local) => ({ ...dbAnswers, ...local }));
+        // Recover any answers lost in a crash by merging the latest snapshot.
+        try {
+          const { data: restored } = await supabase.rpc("restore_attempt_from_snapshot", { _attempt_id: existing.id });
+          const count = (restored as any)?.restored ?? 0;
+          if (count > 0) toast.success(`Restored ${count} answers from auto-backup`);
+        } catch (e) { /* non-fatal */ }
+        // Re-fetch in case snapshot restore widened the row
+        const { data: fresh } = await supabase
+          .from("test_attempts").select("answers, question_statuses")
+          .eq("id", existing.id).maybeSingle();
+        const dbAnswers = ((fresh?.answers ?? existing.answers) as Record<string, AnswerVal>) ?? {};
+        const dbStatuses = ((fresh?.question_statuses ?? existing.question_statuses) as Record<string, QStatus>) ?? {};
+        // Merge browser-local backup (last-resort offline copy)
+        let localBackup: Record<string, AnswerVal> = {};
+        try {
+          const raw = localStorage.getItem(`attempt:${existing.id}:answers`);
+          if (raw) localBackup = JSON.parse(raw);
+        } catch { /* ignore */ }
+        setAnswers((local) => ({ ...dbAnswers, ...localBackup, ...local }));
         setStatuses((local) => ({ ...dbStatuses, ...local }));
         if ((existing as any).time_override_minutes) {
           setOverrideMinutes((existing as any).time_override_minutes);
@@ -364,6 +379,35 @@ const TestTakingPage = () => {
     const t = setInterval(autoSave, 15000);
     return () => clearInterval(t);
   }, [attemptId, autoSave]);
+
+  // Debounced save on every answer change (1.5s) — prevents 15s data loss windows
+  useEffect(() => {
+    if (!attemptId) return;
+    const t = setTimeout(() => { void persistProgress(); }, 1500);
+    return () => clearTimeout(t);
+  }, [answers, statuses, attemptId, persistProgress]);
+
+  // localStorage write-through (browser-side backup for total network loss)
+  useEffect(() => {
+    if (!attemptId) return;
+    try { localStorage.setItem(`attempt:${attemptId}:answers`, JSON.stringify(answers)); }
+    catch { /* quota — non-fatal */ }
+  }, [answers, attemptId]);
+
+  // Save on tab hide / page unload using fetch keepalive
+  useEffect(() => {
+    if (!attemptId) return;
+    const flush = () => { void persistProgress(); };
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, [attemptId, persistProgress]);
 
   // "Saved Xs ago" ticker
   useEffect(() => {
@@ -594,6 +638,7 @@ const TestTakingPage = () => {
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
+    try { localStorage.removeItem(`attempt:${attemptId}:answers`); } catch { /* ignore */ }
     successTargetRef.current = user?.email?.endsWith("@cbt.bansal.local")
       ? "/cbt/submitted"
       : `/tests/${slug}/result/${attemptId}`;
