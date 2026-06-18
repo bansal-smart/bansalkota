@@ -380,6 +380,35 @@ const TestTakingPage = () => {
     return () => clearInterval(t);
   }, [attemptId, autoSave]);
 
+  // Debounced save on every answer change (1.5s) — prevents 15s data loss windows
+  useEffect(() => {
+    if (!attemptId) return;
+    const t = setTimeout(() => { void persistProgress(); }, 1500);
+    return () => clearTimeout(t);
+  }, [answers, statuses, attemptId, persistProgress]);
+
+  // localStorage write-through (browser-side backup for total network loss)
+  useEffect(() => {
+    if (!attemptId) return;
+    try { localStorage.setItem(`attempt:${attemptId}:answers`, JSON.stringify(answers)); }
+    catch { /* quota — non-fatal */ }
+  }, [answers, attemptId]);
+
+  // Save on tab hide / page unload using fetch keepalive
+  useEffect(() => {
+    if (!attemptId) return;
+    const flush = () => { void persistProgress(); };
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    return () => {
+      window.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+    };
+  }, [attemptId, persistProgress]);
+
   // "Saved Xs ago" ticker
   useEffect(() => {
     if (savedAgo === null) return;
