@@ -19,6 +19,7 @@ import TestListPage from "./pages/TestListPage";
 import TestInstructionsPage from "./pages/TestInstructionsPage";
 import TestTakingPage from "./pages/TestTakingPage";
 import TestResultPage from "./pages/TestResultPage";
+import TestResponseSheetPage from "./pages/TestResponseSheetPage";
 import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
 import LiveClassRoomPage from "./pages/LiveClassRoomPage";
 import LiveClassesListPage from "./pages/LiveClassesListPage";
