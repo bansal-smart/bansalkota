@@ -136,10 +136,25 @@ const TestTakingPage = () => {
       if (existing) {
         setAttemptId(existing.id);
         setStartedAt(new Date(existing.started_at as string));
-        // Merge — never overwrite local answers that may already be in memory.
-        const dbAnswers = (existing.answers as Record<string, AnswerVal>) ?? {};
-        const dbStatuses = (existing.question_statuses as Record<string, QStatus>) ?? {};
-        setAnswers((local) => ({ ...dbAnswers, ...local }));
+        // Recover any answers lost in a crash by merging the latest snapshot.
+        try {
+          const { data: restored } = await supabase.rpc("restore_attempt_from_snapshot", { _attempt_id: existing.id });
+          const count = (restored as any)?.restored ?? 0;
+          if (count > 0) toast.success(`Restored ${count} answers from auto-backup`);
+        } catch (e) { /* non-fatal */ }
+        // Re-fetch in case snapshot restore widened the row
+        const { data: fresh } = await supabase
+          .from("test_attempts").select("answers, question_statuses")
+          .eq("id", existing.id).maybeSingle();
+        const dbAnswers = ((fresh?.answers ?? existing.answers) as Record<string, AnswerVal>) ?? {};
+        const dbStatuses = ((fresh?.question_statuses ?? existing.question_statuses) as Record<string, QStatus>) ?? {};
+        // Merge browser-local backup (last-resort offline copy)
+        let localBackup: Record<string, AnswerVal> = {};
+        try {
+          const raw = localStorage.getItem(`attempt:${existing.id}:answers`);
+          if (raw) localBackup = JSON.parse(raw);
+        } catch { /* ignore */ }
+        setAnswers((local) => ({ ...dbAnswers, ...localBackup, ...local }));
         setStatuses((local) => ({ ...dbStatuses, ...local }));
         if ((existing as any).time_override_minutes) {
           setOverrideMinutes((existing as any).time_override_minutes);
