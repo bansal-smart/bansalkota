@@ -179,6 +179,7 @@ const AdminCentersPage = () => {
       sort_order: Number(form.sort_order ?? 0),
       is_featured: !!form.is_featured,
       featured_rank: form.featured_rank == null || (form.featured_rank as any) === "" ? null : Number(form.featured_rank),
+      is_pinned: !!form.is_pinned,
     };
     const { error } = editingId
       ? await supabase.from("centres").update(payload).eq("id", editingId)
