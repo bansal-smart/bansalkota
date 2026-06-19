@@ -239,6 +239,12 @@ const AdminStudentsPage = () => {
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
           <button
+            onClick={() => setBulkOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground"
+          >
+            <Upload className="h-3.5 w-3.5" /> Bulk enrollments
+          </button>
+          <button
             onClick={exportSelected}
             className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-2 text-xs font-semibold text-primary-foreground"
           >
@@ -247,6 +253,31 @@ const AdminStudentsPage = () => {
           </button>
         </div>
       </div>
+
+      <BulkCsvDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import enrollments"
+        description="Match each student to a course by email/phone/roll number and course slug. Existing enrollments are upserted."
+        fileBase="enrollments"
+        fields={[
+          { key: "course_slug", label: "Course Slug", required: true, example: "jee-main-2026" },
+          { key: "email", label: "Email", example: "student@example.com" },
+          { key: "phone", label: "Phone", example: "9876543210" },
+          { key: "roll_number", label: "Roll Number", example: "BC-2024-001" },
+          { key: "progress_percent", label: "Progress %", example: "0" },
+          { key: "completed_lessons", label: "Completed Lessons", example: "0" },
+          { key: "is_active", label: "Active", example: "true" },
+        ]}
+        bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
+          const { data, error } = await supabase.functions.invoke("bulk-import", {
+            body: { kind: "enrollments", rows, dry_run: dryRun },
+          });
+          if (error) throw new Error(error.message);
+          return data as BulkServerResult;
+        }}
+        onDone={() => load()}
+      />
 
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
