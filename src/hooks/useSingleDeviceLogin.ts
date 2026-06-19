@@ -1,19 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 /**
  * Enforces single-device login per user.
  *
- * On mount (whenever a `userId` is present), this hook:
- *  1. Generates a unique session_id for this browser (stored in localStorage).
- *  2. UPSERTs `active_sessions` row { user_id, session_id, device_label }
- *     — this *kicks* any other device because the row's session_id no longer
- *     matches theirs.
- *  3. Subscribes to realtime UPDATEs on this user's row. If another device
- *     takes over (session_id changes), this device is signed out immediately.
+ * Returns `{ kicked, deviceLabel }`. When `kicked` becomes true, the consumer
+ * should present a blocking modal explaining that another device signed in.
+ * The caller is responsible for signing the user out when they dismiss it.
  *
- * Pass `null` (no user) to tear everything down.
+ * Pass `null` to disable enforcement (e.g. for admins/kiosks).
  */
 const sessionKey = (uid: string) => `bansal_device_session:${uid}`;
 
@@ -31,21 +26,29 @@ const detectDevice = () => {
     : /Linux/.test(ua)
     ? "Linux"
     : "Web";
-  const browser = /Chrome/.test(ua)
+  const browser = /Edg/.test(ua)
+    ? "Edge"
+    : /Chrome/.test(ua)
     ? "Chrome"
     : /Safari/.test(ua)
     ? "Safari"
     : /Firefox/.test(ua)
     ? "Firefox"
-    : /Edge/.test(ua)
-    ? "Edge"
     : "Browser";
   return `${platform} · ${browser}`;
 };
 
-export function useSingleDeviceLogin(userId: string | null) {
+export interface SingleDeviceState {
+  kicked: boolean;
+  newDeviceLabel: string | null;
+  clear: () => void;
+}
+
+export function useSingleDeviceLogin(userId: string | null): SingleDeviceState {
   const lastSessionId = useRef<string | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const [kicked, setKicked] = useState(false);
+  const [newDeviceLabel, setNewDeviceLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) {
@@ -54,13 +57,14 @@ export function useSingleDeviceLogin(userId: string | null) {
         channelRef.current = null;
       }
       lastSessionId.current = null;
+      setKicked(false);
+      setNewDeviceLabel(null);
       return;
     }
 
     let cancelled = false;
 
     const run = async () => {
-      // 1. Generate (or reuse) a per-user session token for this device
       let sessionId = localStorage.getItem(sessionKey(userId));
       if (!sessionId) {
         sessionId = (typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -70,7 +74,6 @@ export function useSingleDeviceLogin(userId: string | null) {
       }
       lastSessionId.current = sessionId;
 
-      // 2. Claim the slot for this user (kicks any other device).
       try {
         await supabase
           .from("active_sessions")
@@ -84,12 +87,11 @@ export function useSingleDeviceLogin(userId: string | null) {
             { onConflict: "user_id" },
           );
       } catch {
-        /* network errors — non-fatal */
+        /* non-fatal */
       }
 
       if (cancelled) return;
 
-      // 3. Watch for any later UPDATE that swaps the session_id (= a newer login).
       const ch = supabase
         .channel(`single-device:${userId}`)
         .on(
@@ -101,19 +103,12 @@ export function useSingleDeviceLogin(userId: string | null) {
             filter: `user_id=eq.${userId}`,
           },
           (payload) => {
-            const next = (payload.new as { session_id?: string })?.session_id;
+            const next = (payload.new as { session_id?: string; device_label?: string })?.session_id;
+            const label = (payload.new as { device_label?: string })?.device_label ?? null;
             if (next && next !== lastSessionId.current) {
-              toast.error("Signed in on another device. You've been logged out here.", {
-                duration: 7000,
-              });
-              // Local cleanup + force sign out
               localStorage.removeItem(sessionKey(userId));
-              supabase.auth.signOut().finally(() => {
-                // Soft redirect after a moment so the toast is visible
-                setTimeout(() => {
-                  window.location.href = "/login";
-                }, 1200);
-              });
+              setNewDeviceLabel(label);
+              setKicked(true);
             }
           },
         )
@@ -132,4 +127,13 @@ export function useSingleDeviceLogin(userId: string | null) {
       }
     };
   }, [userId]);
+
+  return {
+    kicked,
+    newDeviceLabel,
+    clear: () => {
+      setKicked(false);
+      setNewDeviceLabel(null);
+    },
+  };
 }
