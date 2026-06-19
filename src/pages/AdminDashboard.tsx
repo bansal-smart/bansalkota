@@ -99,6 +99,7 @@ const AdminDashboard = () => {
   const liveClasses = data?.liveClasses ?? [];
   const centres = data?.centres ?? [];
   const recentEnq = data?.recentEnq ?? [];
+  const recentBoost = data?.recentBoost ?? [];
   const pending = data?.pending ?? { educators: 0, enquiries: 0, reports: 0, centreSupport: 0 };
   const toppersCount = data?.toppersCount ?? 0;
   const testAttemptsToday = data?.testAttemptsToday ?? 0;
