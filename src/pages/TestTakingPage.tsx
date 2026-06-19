@@ -823,6 +823,13 @@ const TestTakingPage = () => {
           {savedAgo === null ? "Auto-save on" : savedAgo < 5 ? "Saved just now" : `Saved ${savedAgo}s ago`}
         </div>
         <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={() => { setSupportSent(false); setSupportMessage(""); setShowSupport(true); }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100"
+            title="Need help during the test?"
+          >
+            <LifeBuoy className="h-3.5 w-3.5" /> Need help?
+          </button>
           <div className="text-right hidden sm:block">
             <p className="text-[10px] uppercase tracking-wide text-neutral-500">Time Left</p>
           </div>
@@ -945,7 +952,7 @@ const TestTakingPage = () => {
                   onChange={handleMatchChange}
                 />
               ) : isNumeric(q.question_type) ? (
-                <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
+                <NumericInput value={numericValue} onChange={handleNumericInput} questionType={q.question_type} />
               ) : isMulti(q.question_type) ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {q.options.map((opt) => {
