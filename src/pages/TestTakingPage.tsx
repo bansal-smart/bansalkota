@@ -1328,14 +1328,6 @@ const NumericInput = ({
 };
 
 export default TestTakingPage;
-          </button>
-        ))}
-      </div>
-      <p className="text-[10px] text-muted-foreground">
-        Enter a number (decimals allowed). Use the keypad above.
-      </p>
-    </div>
-  );
-};
+
 
 export default TestTakingPage;
