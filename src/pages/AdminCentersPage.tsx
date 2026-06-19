@@ -24,6 +24,7 @@ type Center = {
   sort_order: number;
   is_featured: boolean;
   featured_rank: number | null;
+  is_pinned: boolean;
 };
 
 const REGIONS = ["North", "South", "East", "West", "Central"];
@@ -47,6 +48,7 @@ const blank: Partial<Center> = {
   sort_order: 0,
   is_featured: false,
   featured_rank: null,
+  is_pinned: false,
 };
 
 const slugify = (s: string) =>
@@ -73,10 +75,10 @@ const AdminCentersPage = () => {
       .limit(500);
     if (error) toast.error(error.message);
     const list = (data ?? []) as Center[];
-    // Alphabetical by city with HQ / Kota pinned first
+    // Alphabetical by city with pinned (incl. HQ / Kota) first
     list.sort((a, b) => {
-      const aPin = a.is_hq || a.city.toLowerCase() === "kota" ? 0 : 1;
-      const bPin = b.is_hq || b.city.toLowerCase() === "kota" ? 0 : 1;
+      const aPin = (a as any).is_pinned || a.is_hq || a.city.toLowerCase() === "kota" ? 0 : 1;
+      const bPin = (b as any).is_pinned || b.is_hq || b.city.toLowerCase() === "kota" ? 0 : 1;
       if (aPin !== bPin) return aPin - bPin;
       return a.city.localeCompare(b.city, "en", { sensitivity: "base" });
     });
@@ -177,6 +179,7 @@ const AdminCentersPage = () => {
       sort_order: Number(form.sort_order ?? 0),
       is_featured: !!form.is_featured,
       featured_rank: form.featured_rank == null || (form.featured_rank as any) === "" ? null : Number(form.featured_rank),
+      is_pinned: !!form.is_pinned,
     };
     const { error } = editingId
       ? await supabase.from("centres").update(payload).eq("id", editingId)
@@ -207,6 +210,18 @@ const AdminCentersPage = () => {
     else load();
   };
 
+  const togglePin = async (c: Center) => {
+    const { error } = await supabase
+      .from("centres")
+      .update({ is_pinned: !c.is_pinned })
+      .eq("id", c.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(c.is_pinned ? "Unpinned" : "Pinned to top");
+      load();
+    }
+  };
+
   const parseBool = (v: string) => /^(true|yes|y|1)$/i.test(v.trim());
   const csvFields: CsvField[] = [
     { key: "city", label: "City", required: true, example: "Kota" },
@@ -220,6 +235,7 @@ const AdminCentersPage = () => {
     { key: "theme", label: "Theme", example: "metro" },
     { key: "image_url", label: "Image URL", example: "" },
     { key: "is_hq", label: "Is HQ", parse: parseBool, example: "false" },
+    { key: "is_pinned", label: "Pin to Top", parse: parseBool, example: "false" },
     { key: "verified", label: "Verified", parse: parseBool, example: "true" },
     { key: "is_published", label: "Published", parse: parseBool, example: "true" },
     { key: "sort_order", label: "Sort Order", parse: (v) => Number(v), example: "10" },
@@ -275,6 +291,7 @@ const AdminCentersPage = () => {
           <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Established Year" value={form.established ?? ("" as any)} onChange={(e) => setForm({ ...form, established: e.target.value ? Number(e.target.value) : (undefined as any) })} />
           <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Sort order" value={form.sort_order ?? 0} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} />
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.is_hq} onChange={(e) => setForm({ ...form, is_hq: e.target.checked })} /> Headquarters</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.is_pinned} onChange={(e) => setForm({ ...form, is_pinned: e.target.checked })} /> Pin to top</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.verified} onChange={(e) => setForm({ ...form, verified: e.target.checked })} /> Verified</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_published ?? true} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /> Published</label>
           <label className="flex items-center gap-2 text-sm md:col-span-1"><input type="checkbox" checked={!!form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} /> Flagship (homepage highlight)</label>
@@ -349,7 +366,8 @@ const AdminCentersPage = () => {
                       <div className="font-semibold">{c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}</div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
                         <span>{c.slug}</span>
-                        {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ · PINNED</span>}
+                        {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ</span>}
+                        {c.is_pinned && !c.is_hq && <span className="rounded bg-accent/20 text-accent-foreground px-1 font-bold">PINNED</span>}
                         {c.verified && <span className="rounded bg-green-100 text-green-700 px-1 font-bold">Verified</span>}
                       </div>
                     </td>
@@ -390,6 +408,9 @@ const AdminCentersPage = () => {
                     <td className="px-4 py-3">
                       <button onClick={() => togglePublish(c)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                         {c.is_published ? "Published" : "Hidden"}
+                      </button>
+                      <button onClick={() => togglePin(c)} title={c.is_pinned ? "Unpin" : "Pin to top"} className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_pinned ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"}`}>
+                        {c.is_pinned ? "★ Pinned" : "☆ Pin"}
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
@@ -445,6 +466,7 @@ const AdminCentersPage = () => {
             theme: row.theme || "metro",
             image_url: row.image_url || null,
             is_hq: !!row.is_hq,
+            is_pinned: !!row.is_pinned,
             verified: !!row.verified,
             is_published: row.is_published == null ? true : !!row.is_published,
             sort_order: row.sort_order ?? 0,

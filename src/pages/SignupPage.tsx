@@ -39,14 +39,15 @@ const SignupPage = () => {
     centre_id: "",
   });
 
-  const [centers, setCenters] = useState<Array<{ id: string; city: string; area: string | null; state: string }>>([]);
+  const [centers, setCenters] = useState<Array<{ id: string; city: string; area: string | null; state: string; is_pinned?: boolean }>>([]);
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("centres")
-        .select("id, city, area, state")
+        .select("id, city, area, state, is_pinned")
         .eq("is_published", true)
-        .order("city");
+        .order("is_pinned", { ascending: false })
+        .order("city", { ascending: true });
       setCenters(data ?? []);
     })();
   }, []);

@@ -7,6 +7,7 @@ export type DBCenter = Center & {
   image_url: string | null;
   is_published: boolean;
   sort_order: number;
+  is_pinned?: boolean;
 };
 
 const mapRow = (r: any): DBCenter => ({
@@ -26,13 +27,18 @@ const mapRow = (r: any): DBCenter => ({
   verified: !!r.verified,
   is_published: r.is_published,
   sort_order: r.sort_order ?? 0,
+  is_pinned: !!r.is_pinned,
 });
 
-/** Alphabetical by city, with Kota (HQ) pinned to the top. */
+/** Alphabetical by city, with pinned centres (incl. Kota/HQ) at the top. */
 const sortCentres = (list: DBCenter[]): DBCenter[] => {
-  const pinned = list.filter((c) => c.isHQ || c.city.toLowerCase() === "kota");
+  const isPinned = (c: DBCenter) =>
+    !!c.is_pinned || c.isHQ || c.city.toLowerCase() === "kota";
+  const pinned = list
+    .filter(isPinned)
+    .sort((a, b) => a.city.localeCompare(b.city, "en", { sensitivity: "base" }));
   const rest = list
-    .filter((c) => !(c.isHQ || c.city.toLowerCase() === "kota"))
+    .filter((c) => !isPinned(c))
     .sort((a, b) => a.city.localeCompare(b.city, "en", { sensitivity: "base" }));
   return [...pinned, ...rest];
 };
