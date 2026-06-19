@@ -162,12 +162,15 @@ const TestTakingPage = () => {
         const dbStatuses = ((fresh?.question_statuses ?? existing.question_statuses) as Record<string, QStatus>) ?? {};
         // Merge browser-local backup (last-resort offline copy)
         let localBackup: Record<string, AnswerVal> = {};
+        let localStatusBackup: Record<string, QStatus> = {};
         try {
           const raw = localStorage.getItem(`attempt:${existing.id}:answers`);
           if (raw) localBackup = JSON.parse(raw);
+          const rawS = localStorage.getItem(`attempt:${existing.id}:statuses`);
+          if (rawS) localStatusBackup = JSON.parse(rawS);
         } catch { /* ignore */ }
         setAnswers((local) => ({ ...dbAnswers, ...localBackup, ...local }));
-        setStatuses((local) => ({ ...dbStatuses, ...local }));
+        setStatuses((local) => ({ ...dbStatuses, ...localStatusBackup, ...local }));
         if ((existing as any).time_override_minutes) {
           setOverrideMinutes((existing as any).time_override_minutes);
           setOverrideStartedAt(new Date((existing as any).time_override_started_at));
@@ -436,9 +439,11 @@ const TestTakingPage = () => {
   // localStorage write-through (browser-side backup for total network loss)
   useEffect(() => {
     if (!attemptId) return;
-    try { localStorage.setItem(`attempt:${attemptId}:answers`, JSON.stringify(answers)); }
-    catch { /* quota — non-fatal */ }
-  }, [answers, attemptId]);
+    try {
+      localStorage.setItem(`attempt:${attemptId}:answers`, JSON.stringify(answers));
+      localStorage.setItem(`attempt:${attemptId}:statuses`, JSON.stringify(statuses));
+    } catch { /* quota — non-fatal */ }
+  }, [answers, statuses, attemptId]);
 
   // Save on tab hide / page unload using fetch keepalive
   useEffect(() => {
@@ -687,7 +692,10 @@ const TestTakingPage = () => {
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
-    try { localStorage.removeItem(`attempt:${attemptId}:answers`); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(`attempt:${attemptId}:answers`);
+      localStorage.removeItem(`attempt:${attemptId}:statuses`);
+    } catch { /* ignore */ }
     successTargetRef.current = user?.email?.endsWith("@cbt.bansal.local")
       ? "/cbt/submitted"
       : `/tests/${slug}/result/${attemptId}`;

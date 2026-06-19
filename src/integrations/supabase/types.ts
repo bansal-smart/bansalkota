@@ -3096,6 +3096,41 @@ export type Database = {
         }
         Relationships: []
       }
+      test_leaderboard_cache: {
+        Row: {
+          average_score: number | null
+          computed_at: string
+          ranks: Json
+          test_id: string
+          topper_score: number | null
+          total_attempts: number
+        }
+        Insert: {
+          average_score?: number | null
+          computed_at?: string
+          ranks?: Json
+          test_id: string
+          topper_score?: number | null
+          total_attempts?: number
+        }
+        Update: {
+          average_score?: number | null
+          computed_at?: string
+          ranks?: Json
+          test_id?: string
+          topper_score?: number | null
+          total_attempts?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_leaderboard_cache_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: true
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_question_reports: {
         Row: {
           attempt_id: string | null
@@ -3882,6 +3917,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      refresh_test_leaderboard: {
+        Args: { _test_id: string }
+        Returns: undefined
       }
       restore_attempt_from_snapshot: {
         Args: { _attempt_id: string }
