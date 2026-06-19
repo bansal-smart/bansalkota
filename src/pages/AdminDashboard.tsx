@@ -19,6 +19,7 @@ type EnrollmentRow = { id: string; course_id: string; created_at: string };
 type LiveClassRow = { id: string; title: string; educator_name: string; status: string; starts_at: string };
 type CentreRow = { id: string; city: string; state: string; slug: string; region: string; is_hq: boolean };
 type EnquiryRow = { id: string; name: string; email: string; source_type: string; status: string; priority: string; created_at: string; centre_id: string | null };
+type BoostRow = { id: string; full_name: string; class_level: string | null; target_exam: string | null; city: string | null; admit_card_number: string | null; payment_status: string | null; created_at: string };
 
 const fetchOverview = async () => {
   const todayStart = startOfDay(new Date()).toISOString();
