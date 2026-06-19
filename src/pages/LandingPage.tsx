@@ -212,7 +212,7 @@ const LandingPage = () => {
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/75">
               <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-bansal-orange" /> 40+ Yrs Legacy</span>
               <span className="flex items-center gap-1.5"><Trophy className="h-4 w-4 text-bansal-orange" /> 2,500+ IIT Selections</span>
-              <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-bansal-orange" /> 100+ Centers</span>
+              <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-bansal-orange" /> 100+ Centres</span>
             </div>
           </div>
 
