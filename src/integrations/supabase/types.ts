@@ -41,6 +41,83 @@ export type Database = {
         }
         Relationships: []
       }
+      alumni_submissions: {
+        Row: {
+          admin_notes: string | null
+          batch_year: number | null
+          city: string | null
+          company: string | null
+          created_at: string
+          current_position: string | null
+          email: string
+          exam: string | null
+          full_name: string
+          id: string
+          linkedin_url: string | null
+          phone: string | null
+          photo_url: string | null
+          published_topper_id: string | null
+          rank_label: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          story: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          batch_year?: number | null
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          current_position?: string | null
+          email: string
+          exam?: string | null
+          full_name: string
+          id?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          published_topper_id?: string | null
+          rank_label?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          story: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          batch_year?: number | null
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          current_position?: string | null
+          email?: string
+          exam?: string | null
+          full_name?: string
+          id?: string
+          linkedin_url?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          published_topper_id?: string | null
+          rank_label?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          story?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alumni_submissions_published_topper_id_fkey"
+            columns: ["published_topper_id"]
+            isOneToOne: false
+            referencedRelation: "toppers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author: string | null
@@ -3447,6 +3524,7 @@ export type Database = {
           exam: string
           id: string
           is_alumni: boolean
+          is_featured: boolean
           is_published: boolean
           name: string
           photo_url: string | null
@@ -3454,6 +3532,7 @@ export type Database = {
           rank_label: string | null
           score: string | null
           sort_order: number
+          story: string | null
           updated_at: string
           year: number | null
         }
@@ -3468,6 +3547,7 @@ export type Database = {
           exam: string
           id?: string
           is_alumni?: boolean
+          is_featured?: boolean
           is_published?: boolean
           name: string
           photo_url?: string | null
@@ -3475,6 +3555,7 @@ export type Database = {
           rank_label?: string | null
           score?: string | null
           sort_order?: number
+          story?: string | null
           updated_at?: string
           year?: number | null
         }
@@ -3489,6 +3570,7 @@ export type Database = {
           exam?: string
           id?: string
           is_alumni?: boolean
+          is_featured?: boolean
           is_published?: boolean
           name?: string
           photo_url?: string | null
@@ -3496,6 +3578,7 @@ export type Database = {
           rank_label?: string | null
           score?: string | null
           sort_order?: number
+          story?: string | null
           updated_at?: string
           year?: number | null
         }
