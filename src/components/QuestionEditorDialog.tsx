@@ -189,6 +189,10 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
     if (isMcq && cleanOptions.some((o) => !o)) return toast.error("All 4 options required for MCQ");
     if (isMulti && correctMulti.length === 0) return toast.error("Select at least one correct option");
     if (isNumeric && !numericalAnswer.trim()) return toast.error("Numerical answer required");
+    if (isNumeric && questionType === "integer" && !/^-?\d+$/.test(numericalAnswer.trim()))
+      return toast.error("Integer questions cannot have a decimal answer");
+    if (isNumeric && Number.isNaN(Number(numericalAnswer)))
+      return toast.error("Answer must be a valid number");
 
     let correctAnswer: any;
     if (isMulti) correctAnswer = correctMulti.sort();
