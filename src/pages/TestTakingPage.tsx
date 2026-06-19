@@ -93,6 +93,8 @@ const TestTakingPage = () => {
   const lastSavedRef = useRef<number>(0);
   const lastPayloadHashRef = useRef<string>("");
   const lastTabSwitchesSavedRef = useRef<number>(0);
+  const lastSavedAnswersRef = useRef<Record<string, AnswerVal>>({});
+  const lastSavedStatusesRef = useRef<Record<string, QStatus>>({});
   const enteredAtRef = useRef<number>(Date.now());
   const answersRef = useRef<Record<string, AnswerVal>>({});
   const statusesRef = useRef<Record<string, QStatus>>({});
