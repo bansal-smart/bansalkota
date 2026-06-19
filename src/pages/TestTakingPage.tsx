@@ -680,15 +680,22 @@ const TestTakingPage = () => {
   const handleSubmit = async (auto = false) => {
     if (!attemptId) return;
     setSubmitting(true);
+    // Always read from refs so auto-submit (triggered from event handlers) sees
+    // the latest answers/statuses, not a stale React-closure snapshot.
+    const latestAnswers: Record<string, AnswerVal> = { ...answersRef.current };
+    const latestStatuses: Record<string, QStatus> = { ...statusesRef.current };
     // Accrue final time for current question
     if (q) {
       const delta = Math.floor((Date.now() - enteredAtRef.current) / 1000);
-      answers[q.id] = { ...(answers[q.id] ?? { selected: null }), time_spent: ((answers[q.id]?.time_spent ?? 0) + delta) } as AnswerVal;
+      const cur = latestAnswers[q.id] ?? ({ selected: null } as AnswerVal);
+      latestAnswers[q.id] = { ...cur, time_spent: ((cur.time_spent ?? 0) + delta) } as AnswerVal;
     }
-    const saved = await persistProgress(answers, statuses);
+    answersRef.current = latestAnswers;
+    statusesRef.current = latestStatuses;
+    const saved = await persistProgress(latestAnswers, latestStatuses);
     await supabase.from("test_attempts").update({
-      answers: saved?.answers ?? answers,
-      question_statuses: saved?.statuses ?? statuses,
+      answers: saved?.answers ?? latestAnswers,
+      question_statuses: saved?.statuses ?? latestStatuses,
       status: auto ? "auto_submitted" : "submitted",
       submitted_at: new Date().toISOString(),
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
