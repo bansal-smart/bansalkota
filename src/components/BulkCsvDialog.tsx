@@ -219,7 +219,7 @@ const BulkCsvDialog = ({
             </button>
           </div>
 
-          <div className="rounded-xl border border-dashed border-border p-5 text-center">
+          <div className="rounded-xl border border-dashed border-border p-5 text-center space-y-3">
             <input
               ref={fileRef}
               type="file"
@@ -227,13 +227,28 @@ const BulkCsvDialog = ({
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
+            {bulkImport && (
+              <label className="flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={dryRun}
+                  onChange={(e) => setDryRun(e.target.checked)}
+                  className="h-3.5 w-3.5"
+                />
+                Dry run (validate only — no changes written)
+              </label>
+            )}
             <button
               onClick={() => fileRef.current?.click()}
               disabled={busy}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {busy ? `Importing ${progress.done}/${progress.total}…` : "Choose CSV to import"}
+              {busy
+                ? `${dryRun ? "Validating" : "Importing"} ${progress.done}/${progress.total}…`
+                : dryRun
+                ? "Choose CSV to validate"
+                : "Choose CSV to import"}
             </button>
             <p className="mt-2 text-xs text-muted-foreground">
               First row must match the column labels exactly.
