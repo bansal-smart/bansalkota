@@ -57,6 +57,7 @@ const fetchOverview = async () => {
     liveClasses: (liveRes.data ?? []) as LiveClassRow[],
     centres: (centresRes.data ?? []) as CentreRow[],
     recentEnq: (recentEnqRes.data ?? []) as EnquiryRow[],
+    recentBoost: (recentBoostRes.data ?? []) as BoostRow[],
     testAttemptsToday: attemptsRes.count ?? 0,
     testsUpcoming: testsLiveRes.count ?? 0,
     testsTotal: testsTotalRes.count ?? 0,
