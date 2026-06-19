@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
 
+type GalleryKind = "achievement" | "event" | "activity" | "other";
+
 type GalleryRow = {
   id: string;
   centre_id: string;
   image_url: string;
   caption: string | null;
-  kind: "achievement" | "event";
+  kind: GalleryKind;
   sort_order: number;
   is_published: boolean;
 };
@@ -141,9 +143,11 @@ const CenterGalleryPage = () => {
             </div>
             <input value={editing.caption ?? ""} onChange={(e) => setEditing({ ...editing, caption: e.target.value })} placeholder="Caption (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             <div className="grid grid-cols-2 gap-2">
-              <select value={editing.kind ?? "achievement"} onChange={(e) => setEditing({ ...editing, kind: e.target.value as any })} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <select value={editing.kind ?? "achievement"} onChange={(e) => setEditing({ ...editing, kind: e.target.value as GalleryKind })} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
                 <option value="achievement">Achievement</option>
                 <option value="event">Event</option>
+                <option value="activity">Activity</option>
+                <option value="other">Other</option>
               </select>
               <input type="number" value={editing.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: Number(e.target.value) })} placeholder="Sort order" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
             </div>
