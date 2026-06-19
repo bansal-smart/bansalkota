@@ -470,6 +470,23 @@ const CreateTestPage = () => {
     if (!resolvedTestId) return toast.error("Create or import into a test first");
     setSubmitting(true);
     try {
+      // Persist per-question overrides (marks etc.) that the user edited in the UI.
+      const perQuestionUpdates = questions
+        .filter((q) => !!q.id)
+        .map((q) =>
+          supabase
+            .from("test_questions")
+            .update({
+              marks_correct: Number(q.marksCorrect),
+              marks_wrong: Number(q.marksWrong),
+            })
+            .eq("id", q.id as string)
+            .eq("test_id", resolvedTestId),
+        );
+      const results = await Promise.all(perQuestionUpdates);
+      const firstErr = results.find((r) => r.error)?.error;
+      if (firstErr) throw firstErr;
+
       await syncTestStats(resolvedTestId);
       const { error } = await supabase
         .from("tests")
@@ -498,6 +515,7 @@ const CreateTestPage = () => {
       setSubmitting(false);
     }
   };
+
 
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
