@@ -10,7 +10,6 @@ export type LessonRow = {
   title: string;
   position: number;
   duration_seconds: number;
-  video_url: string | null;
   is_free_preview: boolean;
   type: string;
 };
@@ -69,7 +68,7 @@ export const useCourseDetail = (slug: string | undefined) => {
       const { data: lessons } = chapterIds.length
         ? await supabase
             .from("lessons")
-            .select("id, chapter_id, course_id, slug, title, position, duration_seconds, video_url, is_free_preview, type")
+            .select("id, chapter_id, course_id, slug, title, position, duration_seconds, is_free_preview, type")
             .in("chapter_id", chapterIds)
             .eq("is_published", true)
             .order("position")

@@ -55,6 +55,7 @@ const LecturePlayerPage = () => {
   const [playing, setPlaying] = useState(false);
   const [notes, setNotes] = useState("");
   const [accessChecked, setAccessChecked] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastSavedRef = useRef<number>(0);
@@ -191,8 +192,20 @@ const LecturePlayerPage = () => {
     }
   };
 
+  // Fetch the video URL through the gated RPC whenever the active lesson changes
+  useEffect(() => {
+    if (!activeLesson?.id) { setVideoUrl(null); return; }
+    let cancelled = false;
+    supabase
+      .rpc("get_lesson_video_url", { _lesson_id: activeLesson.id })
+      .then(({ data }) => {
+        if (!cancelled) setVideoUrl((data as string | null) ?? null);
+      });
+    return () => { cancelled = true; };
+  }, [activeLesson?.id]);
+
   // YouTube IFrame API integration for auto-completion tracking
-  const youtubeId = activeLesson?.video_url ? extractYouTubeId(activeLesson.video_url) : null;
+  const youtubeId = videoUrl ? extractYouTubeId(videoUrl) : null;
   useEffect(() => {
     if (!youtubeId || !accessChecked || !activeLesson) return;
     let cancelled = false;
@@ -290,7 +303,7 @@ const LecturePlayerPage = () => {
         <div className="flex-1 flex flex-col">
           <div className="w-full bg-black flex justify-center">
             <div className="relative aspect-video w-full max-w-[min(100%,calc((100vh-180px)*16/9))] bg-black">
-              {activeLesson.video_url ? (
+              {videoUrl ? (
                 isYouTube ? (
                   <div key={activeLesson.id} className="absolute inset-0">
                     <div ref={ytContainerRef} className="h-full w-full" />
@@ -299,7 +312,7 @@ const LecturePlayerPage = () => {
                   <video
                     ref={videoRef}
                     key={activeLesson.id}
-                    src={activeLesson.video_url}
+                    src={videoUrl}
                     controls
                     onPlay={() => setPlaying(true)}
                     onPause={() => setPlaying(false)}

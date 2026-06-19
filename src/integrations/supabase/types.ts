@@ -3626,6 +3626,24 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_get_question_bank_full: {
+        Args: { _ids: string[] }
+        Returns: {
+          correct_answer: Json
+          explanation: string
+          id: string
+          numerical_answer: number
+        }[]
+      }
+      admin_get_test_questions_full: {
+        Args: { _test_id: string }
+        Returns: {
+          correct_answer: Json
+          explanation: string
+          id: string
+          numerical_answer: number
+        }[]
+      }
       admin_recompute_test_attempt: {
         Args: { _attempt_id: string }
         Returns: Json
@@ -3741,6 +3759,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_lesson_video_url: { Args: { _lesson_id: string }; Returns: string }
       get_live_class_join_url: {
         Args: { _class_id: string }
         Returns: {
