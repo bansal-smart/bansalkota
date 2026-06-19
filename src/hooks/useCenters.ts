@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CENTERS as STATIC_CENTERS, THEME_IMAGE, type Center, type CenterTheme } from "@/data/centres";
 
@@ -30,7 +30,6 @@ const mapRow = (r: any): DBCenter => ({
   is_pinned: !!r.is_pinned,
 });
 
-/** Alphabetical by city, with pinned centres (incl. Kota/HQ) at the top. */
 const sortCentres = (list: DBCenter[]): DBCenter[] => {
   const isPinned = (c: DBCenter) =>
     !!c.is_pinned || c.isHQ || c.city.toLowerCase() === "kota";
@@ -43,35 +42,28 @@ const sortCentres = (list: DBCenter[]): DBCenter[] => {
   return [...pinned, ...rest];
 };
 
-/** Loads centres from DB; falls back to bundled static list on first paint/error. */
-export const useCenters = () => {
-  const [centers, setCenters] = useState<DBCenter[]>(() =>
-    sortCentres(
-      STATIC_CENTERS.map((c, i) => ({ ...c, id: c.slug, image_url: null, is_published: true, sort_order: i })),
-    ),
-  );
-  const [loading, setLoading] = useState(true);
+const FALLBACK = sortCentres(
+  STATIC_CENTERS.map((c, i) => ({ ...c, id: c.slug, image_url: null, is_published: true, sort_order: i })),
+);
 
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
+export const useCenters = () => {
+  const query = useQuery({
+    queryKey: ["centres", "published"],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("centres")
         .select("*")
         .eq("is_published", true)
         .limit(500);
-      if (!ignore) {
-        if (!error && data && data.length) setCenters(sortCentres(data.map(mapRow)));
-        setLoading(false);
-      }
-    })();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+      if (error) throw error;
+      if (!data || !data.length) return FALLBACK;
+      return sortCentres(data.map(mapRow));
+    },
+    staleTime: 10 * 60 * 1000,
+    placeholderData: FALLBACK,
+  });
 
-  return { centers, loading };
+  return { centers: query.data ?? FALLBACK, loading: query.isPending };
 };
 
 export const getCenterImage = (c: DBCenter): string => c.image_url || THEME_IMAGE[c.theme];
-

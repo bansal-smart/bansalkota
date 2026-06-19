@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CourseRow } from "./useCourses";
 
@@ -31,31 +31,21 @@ export type CoursePdfRow = {
   position: number;
 };
 
+type Result = { course: CourseRow | null; chapters: ChapterRow[]; pdfs: CoursePdfRow[] };
+
+const EMPTY: Result = { course: null, chapters: [], pdfs: [] };
+
 export const useCourseDetail = (slug: string | undefined) => {
-  const [course, setCourse] = useState<CourseRow | null>(null);
-  const [chapters, setChapters] = useState<ChapterRow[]>([]);
-  const [pdfs, setPdfs] = useState<CoursePdfRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!slug) return;
-    const load = async () => {
-      setLoading(true);
-
+  const query = useQuery({
+    queryKey: ["course_detail", slug],
+    enabled: !!slug,
+    queryFn: async (): Promise<Result> => {
       const { data: courseData } = await supabase
         .from("courses")
         .select("*")
-        .eq("slug", slug)
+        .eq("slug", slug!)
         .maybeSingle();
-
-      if (!courseData) {
-        setCourse(null);
-        setChapters([]);
-        setPdfs([]);
-        setLoading(false);
-        return;
-      }
-      setCourse(courseData as CourseRow);
+      if (!courseData) return EMPTY;
 
       const { data: chs } = await supabase
         .from("chapters")
@@ -78,19 +68,22 @@ export const useCourseDetail = (slug: string | undefined) => {
         ...c,
         lessons: ((lessons ?? []) as LessonRow[]).filter((l) => l.chapter_id === c.id),
       }));
-      setChapters(grouped);
 
       const { data: pdfData } = await supabase
         .from("course_pdfs")
         .select("id, course_id, title, file_url, size_bytes, position")
         .eq("course_id", courseData.id)
         .order("position");
-      setPdfs((pdfData ?? []) as CoursePdfRow[]);
 
-      setLoading(false);
-    };
-    load();
-  }, [slug]);
+      return {
+        course: courseData as CourseRow,
+        chapters: grouped,
+        pdfs: (pdfData ?? []) as CoursePdfRow[],
+      };
+    },
+    staleTime: 2 * 60 * 1000,
+  });
 
-  return { course, chapters, pdfs, loading };
+  const data = query.data ?? EMPTY;
+  return { course: data.course, chapters: data.chapters, pdfs: data.pdfs, loading: query.isPending };
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Exam = {
@@ -14,31 +14,27 @@ export type Exam = {
 
 const FALLBACK_EXAMS = ["JEE Main", "JEE Advanced", "NEET", "Boards", "Foundation"];
 
-/** Fetch active exams. If the table is missing or RLS blocks, returns fallback list. */
 export const useExams = (opts: { includeInactive?: boolean } = {}) => {
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const key = ["exams", { includeInactive: !!opts.includeInactive }];
+  const query = useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      let q = (supabase as any).from("exams").select("*").order("sort_order").order("name");
+      if (!opts.includeInactive) q = q.eq("is_active", true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as Exam[];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    let query = (supabase as any).from("exams").select("*").order("sort_order").order("name");
-    if (!opts.includeInactive) query = query.eq("is_active", true);
-    const { data, error } = await query;
-    if (error) {
-      setError(error.message);
-      setExams([]);
-    } else {
-      setExams((data ?? []) as Exam[]);
-    }
-    setLoading(false);
-  }, [opts.includeInactive]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const examNames = exams.length
-    ? exams.map((e) => e.name)
-    : FALLBACK_EXAMS;
-
-  return { exams, examNames, loading, error, reload: load };
+  const exams = query.data ?? [];
+  return {
+    exams,
+    examNames: exams.length ? exams.map((e) => e.name) : FALLBACK_EXAMS,
+    loading: query.isPending,
+    error: query.error ? (query.error as Error).message : null,
+    reload: () => qc.invalidateQueries({ queryKey: key }),
+  };
 };
