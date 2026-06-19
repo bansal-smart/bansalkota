@@ -1250,14 +1250,35 @@ const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string
 );
 
 
-const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: string }) => {
-  const allowDecimal = true;
-  const allowNeg = true;
+const NumericInput = ({
+  value,
+  onChange,
+  questionType,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  questionType: "integer" | "numerical";
+}) => {
+  const allowDecimal = questionType === "numerical";
+  const allowNeg = questionType === "numerical";
+
+  // Defensive: strip any disallowed characters that may have come from a stored answer
+  useEffect(() => {
+    if (!value) return;
+    let cleaned = value;
+    if (!allowDecimal) cleaned = cleaned.replace(/\./g, "");
+    if (!allowNeg) cleaned = cleaned.replace(/-/g, "");
+    if (cleaned !== value) onChange(cleaned);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionType]);
 
   const press = (k: string) => {
     if (k === "back") return onChange(value.slice(0, -1));
     if (k === "clear") return onChange("");
-    if (k === "." && (!allowDecimal || value.includes("."))) return;
+    if (k === ".") {
+      if (!allowDecimal || value.includes(".")) return;
+      return onChange(value + ".");
+    }
     if (k === "-") {
       if (!allowNeg) return;
       if (value.startsWith("-")) return onChange(value.slice(1));
@@ -1266,18 +1287,47 @@ const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v
     onChange(value + k);
   };
 
+  const placeholder = allowDecimal ? "e.g. -3.14" : "Integer only (digits)";
+
   return (
     <div className="space-y-3">
       <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
         <p className="text-[10px] font-bold uppercase text-muted-foreground">Your Answer</p>
-        <input value={value} readOnly placeholder={allowDecimal ? "e.g. 3.14" : "Integer"}
+        <input value={value} readOnly placeholder={placeholder}
           className="mt-1 w-full bg-transparent text-2xl font-bold tabular-nums text-foreground outline-none" />
       </div>
       <div className="grid grid-cols-5 gap-1.5 max-w-sm">
-        {["7","8","9","back","clear","4","5","6",".","-","1","2","3","0"].map((k) => (
-          <button key={k} onClick={() => press(k)}
-            className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors hover:bg-muted ${k === "back" || k === "clear" ? "bg-muted/50 text-foreground/70" : "bg-card text-foreground"}`}>
-            {k === "back" ? <Delete className="mx-auto h-4 w-4" /> : k === "clear" ? "C" : k}
+        {["7","8","9","back","clear","4","5","6",".","-","1","2","3","0"].map((k) => {
+          const disabled =
+            (k === "." && !allowDecimal) ||
+            (k === "-" && !allowNeg);
+          return (
+            <button
+              key={k}
+              onClick={() => { if (!disabled) press(k); }}
+              disabled={disabled}
+              className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors ${
+                disabled
+                  ? "bg-muted/30 text-muted-foreground/40 cursor-not-allowed"
+                  : k === "back" || k === "clear"
+                    ? "bg-muted/50 text-foreground/70 hover:bg-muted"
+                    : "bg-card text-foreground hover:bg-muted"
+              }`}>
+              {k === "back" ? <Delete className="mx-auto h-4 w-4" /> : k === "clear" ? "C" : k}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        {allowDecimal
+          ? "Decimals and negative numbers are allowed."
+          : "Digits 0-9 only. Decimal point and minus sign are disabled for integer questions."}
+      </p>
+    </div>
+  );
+};
+
+export default TestTakingPage;
           </button>
         ))}
       </div>
