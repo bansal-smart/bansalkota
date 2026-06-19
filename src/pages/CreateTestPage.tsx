@@ -528,7 +528,12 @@ const CreateTestPage = () => {
         /<img\b/i.test(q.text);
       if (q.type === "mcq-single") return q.options.length >= 2 && hasOptionContent && Number.isInteger(q.correct);
       if (q.type === "mcq-multi") return q.options.length >= 2 && hasOptionContent && q.correctMulti.length > 0;
-      if (q.type === "numerical" || q.type === "integer") return q.numericalAnswer.trim() !== "" && !Number.isNaN(Number(q.numericalAnswer));
+      if (q.type === "numerical" || q.type === "integer") {
+        const s = q.numericalAnswer.trim();
+        if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
+        if (q.type === "integer" && !/^-?\d+$/.test(s)) return false;
+        return true;
+      }
       return false;
     };
     if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
