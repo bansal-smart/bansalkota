@@ -91,6 +91,8 @@ const TestTakingPage = () => {
   const [candidate, setCandidate] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
 
   const lastSavedRef = useRef<number>(0);
+  const lastPayloadHashRef = useRef<string>("");
+  const lastTabSwitchesSavedRef = useRef<number>(0);
   const enteredAtRef = useRef<number>(Date.now());
   const answersRef = useRef<Record<string, AnswerVal>>({});
   const statusesRef = useRef<Record<string, QStatus>>({});
