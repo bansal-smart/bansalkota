@@ -172,6 +172,17 @@ const CenterStudentsPage = () => {
             <option key={s} value={s}>{STATUS_LABEL[s]}</option>
           ))}
         </select>
+        <select
+          value={batchFilter}
+          onChange={(e) => setBatchFilter(e.target.value)}
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">All batches</option>
+          <option value="">— Unassigned —</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+          ))}
+        </select>
         <span className="text-xs text-muted-foreground">{filtered.length} of {items.length}</span>
       </div>
 
@@ -189,6 +200,7 @@ const CenterStudentsPage = () => {
                 <th className="px-4 py-2 font-bold">Phone</th>
                 <th className="px-4 py-2 font-bold">Class</th>
                 <th className="px-4 py-2 font-bold">Target</th>
+                <th className="px-4 py-2 font-bold">Batch</th>
                 <th className="px-4 py-2 font-bold">Status</th>
                 <th className="px-4 py-2 font-bold">Joined</th>
               </tr>
@@ -201,6 +213,19 @@ const CenterStudentsPage = () => {
                   <td className="px-4 py-2 text-muted-foreground">{s.phone || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.class_level || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.target_exam || "—"}</td>
+                  <td className="px-4 py-2">
+                    <select
+                      disabled={savingId === s.id}
+                      value={s.batch_id ?? ""}
+                      onChange={(e) => updateBatch(s, e.target.value)}
+                      className="rounded border border-border bg-background px-1.5 py-0.5 text-[11px] max-w-[160px]"
+                    >
+                      <option value="">— None —</option>
+                      {batches.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.student_status]}`}>
@@ -222,7 +247,7 @@ const CenterStudentsPage = () => {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No students match.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">No students match.</td></tr>
               )}
             </tbody>
           </table>
