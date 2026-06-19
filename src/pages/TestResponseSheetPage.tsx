@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Printer, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TestImage } from "@/components/test/TestImage";
 
 type ResponseQuestion = {
   id: string;
@@ -214,7 +215,7 @@ const TestResponseSheetPage = () => {
                   <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: q.question_text }} />
                 )}
                 {q.question_image_url && (
-                  <img src={q.question_image_url} alt={`Question ${q.position}`} className="mt-3 max-h-[400px] rounded-lg border border-border" loading="lazy" />
+                  <TestImage src={q.question_image_url} alt={`Question ${q.position}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
                 )}
 
                 {isNumerical ? (
@@ -255,7 +256,7 @@ const TestResponseSheetPage = () => {
                           <div className="min-w-0 flex-1">
                             <div className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: typeof opt === "string" ? opt : opt?.text ?? optionLetter(idx) }} />
                             {q.option_images?.[idx] && (
-                              <img src={q.option_images[idx]} alt={`Option ${optionLetter(idx)}`} className="mt-2 max-h-40 rounded border border-border" loading="lazy" />
+                              <TestImage src={q.option_images[idx]!} alt={`Option ${optionLetter(idx)}`} className="mt-2 max-h-40 rounded border border-border" />
                             )}
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1 text-[10px] uppercase tracking-wider">
@@ -284,7 +285,7 @@ const TestResponseSheetPage = () => {
                     <summary className="cursor-pointer text-xs font-bold text-foreground">Solution / Explanation</summary>
                     <div className="prose prose-sm mt-2 max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: q.explanation }} />
                     {q.solution_image_url && (
-                      <img src={q.solution_image_url} alt="Solution" className="mt-2 max-h-[400px] rounded border border-border" loading="lazy" />
+                      <TestImage src={q.solution_image_url} alt="Solution" className="mt-2 max-h-[400px] rounded border border-border" />
                     )}
                   </details>
                 )}

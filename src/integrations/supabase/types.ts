@@ -3013,6 +3013,73 @@ export type Database = {
         }
         Relationships: []
       }
+      test_question_reports: {
+        Row: {
+          attempt_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          question_id: string
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          test_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          question_id: string
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          test_id: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          attempt_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          question_id?: string
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          test_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_question_reports_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_question_reports_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_question_reports_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_questions: {
         Row: {
           answer_format: string | null
@@ -3280,7 +3347,11 @@ export type Database = {
           id: string
           import_method: string
           is_published: boolean
+          paper_group_id: string | null
+          paper_label: string | null
+          partial_marking_scheme: string | null
           results_released_at: string | null
+          section_instructions: Json | null
           slug: string
           starts_at: string | null
           subjects: string[] | null
@@ -3309,7 +3380,11 @@ export type Database = {
           id?: string
           import_method?: string
           is_published?: boolean
+          paper_group_id?: string | null
+          paper_label?: string | null
+          partial_marking_scheme?: string | null
           results_released_at?: string | null
+          section_instructions?: Json | null
           slug: string
           starts_at?: string | null
           subjects?: string[] | null
@@ -3338,7 +3413,11 @@ export type Database = {
           id?: string
           import_method?: string
           is_published?: boolean
+          paper_group_id?: string | null
+          paper_label?: string | null
+          partial_marking_scheme?: string | null
           results_released_at?: string | null
+          section_instructions?: Json | null
           slug?: string
           starts_at?: string | null
           subjects?: string[] | null
