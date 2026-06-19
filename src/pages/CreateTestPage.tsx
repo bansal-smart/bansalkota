@@ -243,7 +243,7 @@ const CreateTestPage = () => {
       if (eAt) setEndTime(timeStr(eAt));
       setAutoRelease((test as any).auto_release !== false);
       setQuestions(
-        (tqs ?? []).map((q: any) => {
+        tqs.map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
           const correctIdx = typeof q.correct_answer === "number" ? q.correct_answer : 0;
           const correctArr = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
