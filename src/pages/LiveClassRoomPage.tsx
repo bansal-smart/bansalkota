@@ -52,14 +52,8 @@ const LiveClassRoomPage = () => {
       }
       const id = row.id;
 
-      const { data: msgs } = await supabase
-        .from("live_class_messages")
-        .select("*")
-        .eq("class_id", id)
-        .order("created_at", { ascending: true });
-      setMessages((msgs ?? []) as Message[]);
-
-      // Auto-attendance: upsert
+      // Auto-attendance must be recorded BEFORE loading messages, because the
+      // chat-message SELECT policy requires an attendance row for the class.
       if (user) {
         await supabase.from("live_class_attendance").upsert(
           {
@@ -71,6 +65,13 @@ const LiveClassRoomPage = () => {
           { onConflict: "class_id,user_id" } as never,
         );
       }
+
+      const { data: msgs } = await supabase
+        .from("live_class_messages")
+        .select("*")
+        .eq("class_id", id)
+        .order("created_at", { ascending: true });
+      setMessages((msgs ?? []) as Message[]);
 
       const { count } = await supabase
         .from("live_class_attendance")
