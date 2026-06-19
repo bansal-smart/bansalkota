@@ -1,5 +1,5 @@
 // Generic bulk-import edge function.
-// Kinds: 'centres' | 'students' | 'centre_courses'
+// Kinds: 'centres' | 'students' | 'centre_courses' | 'enrollments'
 // Supports dry_run (validates without writing). Returns per-row results.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
