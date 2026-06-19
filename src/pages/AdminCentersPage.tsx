@@ -73,10 +73,10 @@ const AdminCentersPage = () => {
       .limit(500);
     if (error) toast.error(error.message);
     const list = (data ?? []) as Center[];
-    // Alphabetical by city with HQ / Kota pinned first
+    // Alphabetical by city with pinned (incl. HQ / Kota) first
     list.sort((a, b) => {
-      const aPin = a.is_hq || a.city.toLowerCase() === "kota" ? 0 : 1;
-      const bPin = b.is_hq || b.city.toLowerCase() === "kota" ? 0 : 1;
+      const aPin = (a as any).is_pinned || a.is_hq || a.city.toLowerCase() === "kota" ? 0 : 1;
+      const bPin = (b as any).is_pinned || b.is_hq || b.city.toLowerCase() === "kota" ? 0 : 1;
       if (aPin !== bPin) return aPin - bPin;
       return a.city.localeCompare(b.city, "en", { sensitivity: "base" });
     });
