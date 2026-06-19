@@ -183,7 +183,7 @@ const AdminCentersPage = () => {
       : await supabase.from("centers").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(editingId ? "Center updated" : "Center added");
+    toast.success(editingId ? "Centre updated" : "Centre added");
     reset();
     load();
   };
