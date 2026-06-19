@@ -94,6 +94,8 @@ import BoostPage from "./pages/BoostPage";
 import CentersPage from "./pages/CentersPage";
 import CenterDetailPage from "./pages/CenterDetailPage";
 import CentreGalleryPublicPage from "./pages/CentreGalleryPublicPage";
+import CentreUpdatesPublicPage from "./pages/CentreUpdatesPublicPage";
+import CentreUpdateDetailPage from "./pages/CentreUpdateDetailPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import AlumniPage from "./pages/AlumniPage";
 import LeadershipDetailPage from "./pages/LeadershipDetailPage";
@@ -200,6 +202,8 @@ const App = () => (
               <Route path="/centres" element={<CentersPage />} />
               <Route path="/centres/:slug" element={<CenterDetailPage />} />
               <Route path="/centres/:slug/gallery" element={<CentreGalleryPublicPage />} />
+              <Route path="/centres/:slug/updates" element={<CentreUpdatesPublicPage />} />
+              <Route path="/centres/:slug/updates/:id" element={<CentreUpdateDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/alumni" element={<AlumniPage />} />
               <Route path="/e-store" element={<EStorePage />} />
