@@ -71,6 +71,7 @@ const AdminStudentsPage = () => {
   const [confirmDelete, setConfirmDelete] = useState<StudentRow | null>(null);
   const [schools, setSchools] = useState<SchoolLite[]>([]);
   const [schoolFilter, setSchoolFilter] = useState<string>(""); // "", "none", or school id
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
