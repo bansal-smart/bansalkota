@@ -64,6 +64,12 @@ export default function ContactPage() {
       });
       if (error) throw error;
       setSubmitted(true);
+      void sendConfirmation({
+        templateName: "enquiry-confirmation",
+        recipientEmail: parsed.data.email,
+        idempotencyKey: `enquiry-contact-${parsed.data.email}-${Date.now()}`,
+        templateData: { name: parsed.data.name, source: "contact", message: parsed.data.message },
+      });
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });
 
     } catch (err) {
