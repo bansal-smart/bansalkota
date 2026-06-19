@@ -1036,7 +1036,7 @@ const AdminTestResultPage = () => {
                             const marksCls = m > 0 ? "text-green-700" : m < 0 ? "text-red-600" : "text-gray-500";
                             return (
                               <tr key={q.id} className="border-t border-border">
-                                <td className="px-2 py-1.5">{q.position}</td>
+                                <td className="px-2 py-1.5">{(q.position ?? 0) + 1}</td>
                                 <td className="px-2 py-1.5">{q.subject ?? "—"}</td>
                                 <td className={`px-2 py-1.5 text-center font-semibold ${cls}`}>{label}</td>
                                 <td className={`px-2 py-1.5 text-center font-semibold ${marksCls}`}>{m > 0 ? `+${m}` : m}</td>
