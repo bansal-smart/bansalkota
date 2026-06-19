@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Save, Loader2, Upload, BookOpen } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, Upload, BookOpen, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 
 type CenterCourse = {
   id: string;
@@ -51,6 +52,7 @@ const CenterCoursesPage = () => {
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const load = async () => {
     if (!primaryCenterId) return;
@@ -110,14 +112,22 @@ const CenterCoursesPage = () => {
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black font-display text-foreground">Offline Courses</h1>
           <p className="text-sm text-muted-foreground">Courses you offer at this centre — shown on your public page with a "Enquire" form.</p>
         </div>
-        <button onClick={() => setEditing(blank(primaryCenterId, user.id))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
-          <Plus className="h-4 w-4" /> New Course
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setBulkOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold hover:bg-muted"
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Bulk import / export
+          </button>
+          <button onClick={() => setEditing(blank(primaryCenterId, user.id))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
+            <Plus className="h-4 w-4" /> New Course
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -193,6 +203,59 @@ const CenterCoursesPage = () => {
           </div>
         </div>
       )}
+
+      <BulkCsvDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import / export Offline Courses"
+        description="Export your current courses, or upload a CSV to upsert by title. Existing titles are updated; new ones are created."
+        fileBase="centre-courses"
+        exportRows={items as any}
+        fields={[
+          { key: "title", label: "Title", required: true, example: "JEE Adv 2-Year Classroom" },
+          { key: "target_exam", label: "Target Exam", example: "IIT JEE" },
+          { key: "class_level", label: "Class", example: "Class 11" },
+          { key: "start_date", label: "Start Date", example: "2026-04-01" },
+          { key: "duration", label: "Duration", example: "2 years" },
+          { key: "fees", label: "Fees", parse: (v) => (v ? Number(v) : null), example: "180000" },
+          { key: "currency", label: "Currency", example: "INR" },
+          { key: "schedule", label: "Schedule", example: "Mon–Sat 7–11 AM" },
+          { key: "description", label: "Description", example: "Comprehensive JEE Advanced program" },
+          { key: "brochure_url", label: "Brochure URL", example: "" },
+          {
+            key: "is_published",
+            label: "Published",
+            parse: (v) => /^(true|yes|y|1)$/i.test(v),
+            example: "true",
+          },
+        ] satisfies CsvField[]}
+        importRow={async (row) => {
+          if (!row.title) return "Title required";
+          const payload: any = {
+            ...row,
+            center_id: primaryCenterId,
+            created_by: user.id,
+          };
+          // upsert by (center_id, title)
+          const { data: existing } = await (supabase as any)
+            .from("center_courses")
+            .select("id")
+            .eq("center_id", primaryCenterId)
+            .eq("title", row.title)
+            .maybeSingle();
+          if (existing?.id) {
+            const { error } = await (supabase as any)
+              .from("center_courses")
+              .update(payload)
+              .eq("id", existing.id);
+            if (error) return error.message;
+          } else {
+            const { error } = await (supabase as any).from("center_courses").insert(payload);
+            if (error) return error.message;
+          }
+        }}
+        onDone={load}
+      />
     </div>
   );
 };
