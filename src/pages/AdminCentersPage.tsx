@@ -222,6 +222,22 @@ const AdminCentersPage = () => {
     }
   };
 
+  const resetLogin = async (email: string) => {
+    const tempPw = `Bansal@${Math.random().toString(36).slice(2, 8)}${Math.floor(Math.random() * 90 + 10)}`;
+    const { data, error } = await supabase.functions.invoke("admin-create-center-user", {
+      body: { action: "reset_password", email, password: tempPw },
+    });
+    if (error || (data as any)?.error) {
+      return toast.error(((data as any)?.error ?? error?.message) || "Could not reset password");
+    }
+    try {
+      await navigator.clipboard.writeText(`${email} / ${tempPw}`);
+      toast.success(`Password reset · credentials copied to clipboard`);
+    } catch {
+      toast.success(`Password reset to: ${tempPw}`);
+    }
+  };
+
   const parseBool = (v: string) => /^(true|yes|y|1)$/i.test(v.trim());
   const csvFields: CsvField[] = [
     { key: "city", label: "City", required: true, example: "Kota" },
