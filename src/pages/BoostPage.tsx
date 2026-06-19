@@ -24,7 +24,7 @@ const eligibility = [
 
 const pattern = [
   { mode: "Online", duration: "60 min", questions: "40 MCQs", subjects: "Physics, Chemistry, Maths / Biology, Mental Ability" },
-  { mode: "Offline (Center)", duration: "90 min", questions: "60 MCQs", subjects: "Physics, Chemistry, Maths / Biology, Mental Ability" },
+  { mode: "Offline (Centre)", duration: "90 min", questions: "60 MCQs", subjects: "Physics, Chemistry, Maths / Biology, Mental Ability" },
 ];
 
 const timeline = [

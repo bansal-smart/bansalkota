@@ -3530,6 +3530,13 @@ export type Database = {
       }
       _jsonb_answer_has_selection: { Args: { _answer: Json }; Returns: boolean }
       _recompute_attempt: { Args: { _attempt_id: string }; Returns: undefined }
+      admin_emails_for_user_ids: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       admin_recompute_test_attempt: {
         Args: { _attempt_id: string }
         Returns: Json

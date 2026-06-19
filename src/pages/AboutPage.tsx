@@ -248,7 +248,7 @@ const AboutPage = () => {
           <p className="text-white/85 mb-6">Talk to our admissions team or visit your nearest center.</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link to="/contact"><BansalButton variant="cta">Enquire Now</BansalButton></Link>
-            <Link to="/centers"><BansalButton variant="ghost-white">Find a Center</BansalButton></Link>
+            <Link to="/centers"><BansalButton variant="ghost-white">Find a Centre</BansalButton></Link>
           </div>
         </div>
       </section>
