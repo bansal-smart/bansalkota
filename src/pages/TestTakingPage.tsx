@@ -91,6 +91,8 @@ const TestTakingPage = () => {
   const [candidate, setCandidate] = useState<{ name: string | null; avatar: string | null }>({ name: null, avatar: null });
 
   const lastSavedRef = useRef<number>(0);
+  const lastPayloadHashRef = useRef<string>("");
+  const lastTabSwitchesSavedRef = useRef<number>(0);
   const enteredAtRef = useRef<number>(Date.now());
   const answersRef = useRef<Record<string, AnswerVal>>({});
   const statusesRef = useRef<Record<string, QStatus>>({});
@@ -342,6 +344,15 @@ const TestTakingPage = () => {
 
     const localAnswers = nextAnswers ?? answersRef.current;
     const localStatuses = nextStatuses ?? statusesRef.current;
+
+    // Skip the round-trip entirely when nothing has changed since last save.
+    // metadata is only re-sent when tab switches change.
+    const metadataChanged = tabSwitches !== lastTabSwitchesSavedRef.current || (clearIds && clearIds.size > 0);
+    const hashSource = JSON.stringify({ a: localAnswers, s: localStatuses, c: clearIds ? Array.from(clearIds) : [] });
+    if (!metadataChanged && hashSource === lastPayloadHashRef.current) {
+      return { answers: localAnswers, statuses: localStatuses };
+    }
+
     const { data: serverAttempt } = await supabase
       .from("test_attempts")
       .select("answers, question_statuses")
@@ -360,18 +371,25 @@ const TestTakingPage = () => {
       clearIds,
     );
 
-    const { error } = await supabase.from("test_attempts").update({
-      answers: mergedAnswers,
-      question_statuses: mergedStatuses,
+    const baseUpdate = {
+      answers: mergedAnswers as unknown as never,
+      question_statuses: mergedStatuses as unknown as never,
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
-      metadata: {
-        tab_switches: tabSwitches,
-        ...(clearIds.size ? { explicit_clear_ids: Array.from(clearIds) } : {}),
-      },
-    }).eq("id", attemptId);
+    };
+    const updateQuery = metadataChanged
+      ? supabase.from("test_attempts").update({
+          ...baseUpdate,
+          metadata: {
+            tab_switches: tabSwitches,
+            ...(clearIds && clearIds.size ? { explicit_clear_ids: Array.from(clearIds) } : {}),
+          } as unknown as never,
+        })
+      : supabase.from("test_attempts").update(baseUpdate);
+
+    const { error } = await updateQuery.eq("id", attemptId);
 
     if (error) {
-      console.error("[TestTakingPage] progress save failed", error);
+      if (import.meta.env.DEV) console.error("[TestTakingPage] progress save failed", error);
       return null;
     }
 
@@ -379,8 +397,10 @@ const TestTakingPage = () => {
     statusesRef.current = mergedStatuses;
     setAnswers(mergedAnswers);
     setStatuses(mergedStatuses);
-    clearIds.forEach((id) => explicitClearsRef.current.delete(id));
+    clearIds?.forEach((id) => explicitClearsRef.current.delete(id));
     lastSavedRef.current = Date.now();
+    lastPayloadHashRef.current = JSON.stringify({ a: mergedAnswers, s: mergedStatuses, c: [] });
+    lastTabSwitchesSavedRef.current = tabSwitches;
     setSavedAgo(0);
     return { answers: mergedAnswers, statuses: mergedStatuses };
   }, [attemptId, startedAt, tabSwitches]);
@@ -399,19 +419,21 @@ const TestTakingPage = () => {
     await persistProgress(nextAnswers, nextStatuses, clearIds);
   }, [persistProgress]);
 
-  // Auto-save every 15s
+  // Periodic safety-net autosave (every 20s) — debounced effect below handles the common path.
   useEffect(() => {
     if (!attemptId) return;
-    const t = setInterval(autoSave, 15000);
+    const t = setInterval(autoSave, 20000);
     return () => clearInterval(t);
   }, [attemptId, autoSave]);
 
-  // Debounced save on every answer change (1.5s) — prevents 15s data loss windows
+  // Debounced save on answer/status change (3s). The hash guard skips no-op writes.
   useEffect(() => {
     if (!attemptId) return;
-    const t = setTimeout(() => { void persistProgress(); }, 1500);
+    const t = setTimeout(() => { void persistProgress(); }, 3000);
     return () => clearTimeout(t);
   }, [answers, statuses, attemptId, persistProgress]);
+
+
 
   // localStorage write-through (browser-side backup for total network loss)
   useEffect(() => {

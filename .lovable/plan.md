@@ -1,76 +1,119 @@
-## Test Platform Hardening Plan
+## Audit Summary
 
-### 1. Partial Marking (MCQ-Multi) — fix + standardize
+I scanned the codebase (37.5K LOC), the Supabase schema (70 tables, 295 RLS policies, 93 indexes), the linter, and the live `pg_stat_statements`. Here's what I found and the prioritized fixes.
 
-Apply the JEE Advanced partial-marking scheme by default for every Multiple-Correct question, regardless of the per-question `partial_marking` toggle. The toggle still surfaces in the editor but is no longer the gate for partial credit.
+### Headline findings
+- **App.tsx ships every page in the initial bundle** — 153 routes, 136 top-level imports, zero `React.lazy`. First paint is dragging the entire admin/teacher/center surface to every visitor, including logged-out homepage users.
+- **Test autosave hammers the DB** — `UPDATE public.test_attempts` ran **31,046 times** for ~90s of total DB time (top slow query). Saves the entire `answers` + `metadata` + `question_statuses` JSONB blob on a short interval.
+- **31 MB of unoptimized PNGs in `src/assets`** — single PNGs at 2 MB+ (`bansal-legacy-banner.png`, `stream-neet.png`, `boost-logo.png`, etc.). Only 15 files use the CDN asset pipeline; 96 raw images still live in the repo.
+- **RLS policies use bare `auth.uid()`** in 549 places. Supabase officially recommends `(select auth.uid())` so the planner evaluates it once per query instead of per row — significant on big tables (test_attempts, lesson_progress, notifications).
+- **109 linter warnings**, dominated by `SECURITY DEFINER` functions still executable by `anon`/`authenticated`, two public buckets that allow listing, and a few `USING (true)` write policies.
+- **387 `any`/`as any` casts** and **17 stray `console.log/warn/error`** in production code.
 
-Update `public.submit_test_attempt` (new migration) so the `mcq-multi` branch becomes:
+---
 
-- All correct selected, none wrong → `+marks_correct` (e.g. +4)
-- Any wrong option selected → `marks_wrong` (e.g. −2)
-- Subset of correct, no wrong picks → `+1` per correctly picked option, capped at `marks_correct`
-- Nothing selected → `marks_unanswered`
+## Prioritized Fix Plan
 
-This removes the silent failure where admins forgot to tick `partial_marking` on imported questions. The legacy `partial_marking_scheme = 'standard'` path is dropped — Advanced rules apply uniformly. Match-following keeps its existing per-pair partial logic (already working).
+### P0 — UX-critical perf (do first)
 
-### 2. Question-wise Numeric Input Validation
+**1. Route-level code splitting in `src/App.tsx`**
+Convert every page import to `React.lazy(() => import("./pages/X"))` and wrap `<Routes>` in a single `<Suspense fallback={<Spinner/>}>`. Keep `LandingPage`, `LoginPage`, `SignupPage`, and the public layout eager so the marketing path stays instant. Expected impact: initial JS payload down by an estimated 60–75% for first-time visitors.
 
-In `src/pages/TestTakingPage.tsx` `NumericInput`:
+**2. Throttle/debounce test autosave (top slow query)**
+In `TestTakingPage.tsx`, the autosave currently fires on nearly every interaction.
+- Debounce to 5s and skip the write when nothing changed since last save (deep-equal answers+statuses).
+- Stop sending `metadata` on every save — only when its content actually changes (warnings, tab switches).
+- Add a single composite index `CREATE INDEX IF NOT EXISTS idx_test_attempts_user_test_status ON public.test_attempts(user_id, test_id, status);` to back the dashboard queries.
 
-- Derive `allowDecimal` and `allowNeg` from the question: `integer` → no decimal, no minus (digits only); `numerical` → decimals + minus allowed.
-- Hide/disable the `.` and `-` keypad buttons when not allowed (greyed out, no-op on click).
-- Update placeholder accordingly ("Integer only" vs "e.g. -3.14").
-- Strip any pre-existing invalid characters when the question type changes (defensive, in case answer was stored from a different type).
-- Show a small caption under the keypad reflecting the constraint.
+**3. Image optimization pass**
+- Migrate the 96 raw PNGs/JPEGs in `src/assets` and `public/` to the Lovable asset CDN via `lovable-assets create`. Convert source PNGs >300 KB to optimized WebP/AVIF (squoosh) before upload.
+- Add `loading="lazy"` and `decoding="async"` to the ~32 `<img>` tags that don't have it (27/59 currently do).
+- Add `fetchpriority="high"` + `<link rel="preload">` to the single hero image on `LandingPage.tsx`.
+- Replace inline `<img>` for icons with `lucide-react` where already imported (audit `LandingPage.tsx`, `AboutPage.tsx`).
 
-`NumericInput` will receive the actual `question_type` instead of a generic `format` string.
+### P1 — Database perf & accuracy
 
-### 3. Window/Tab-Switch Auto-Submit After 3 Warnings
+**4. Rewrite RLS to wrap `auth.uid()`**
+Generate one migration that re-creates the hot-table policies using `(select auth.uid())` and `(select public.has_role(...))`. Target tables (highest read volume): `test_attempts`, `lesson_progress`, `notifications`, `enrollments`, `doubts`, `live_class_attendance`, `test_questions`, `course_resources`. Other tables can follow in a second pass.
 
-Rewrite the visibility handler in `TestTakingPage.tsx`:
+**5. Resolve linter findings**
+- Revoke `EXECUTE … FROM anon, authenticated` on every `SECURITY DEFINER` function not meant for direct client calls (the linter lists ~100 of these; most are internal helpers).
+- Tighten the 2 public storage buckets so `SELECT` on `storage.objects` requires `auth.role() = 'authenticated'` (or scope the path).
+- Replace remaining `USING (true)` write policies with role-scoped checks.
 
-- Count a violation each time `document.hidden` becomes true (debounced 500 ms so the warning modal re-show doesn't double-count).
-- After violation 1 and 2, show the existing warning modal with updated copy: "Warning 1 of 3" / "Final warning — next switch auto-submits".
-- On violation 3, set `blockedRef = true`, persist `metadata.auto_submitted_reason = 'window_switch'` and `metadata.tab_switches = 3`, then call `handleSubmit(true)` immediately. Show a non-dismissible "Test auto-submitted due to repeated window switches" modal that routes back to `/my-tests`.
-- Also wire `window.blur` as a secondary trigger for desktop alt-tab scenarios where `visibilitychange` doesn't fire reliably.
-- Keep the existing "warn but never auto-submit" comment removed.
+**6. Reduce SELECT * usage**
+14 hot reads in `src/hooks` and `src/pages` use `.select("*")`. Switch to explicit column lists for `useSiteContent`, `useTestSeries`, `useBooks`, `AdminBooksPage`, `AdminLeadershipPage`, `LiveClassRoomPage`, `TeacherLiveClassRoomPage` — cuts payload and avoids accidentally shipping new sensitive columns later.
 
-No DB schema change required — we already store `tab_switches` and `metadata` on `test_attempts`. Re-entry remains allowed (per "Auto-submit only" choice); admin can still grant a reattempt via the existing reattempt request flow.
+### P2 — Code quality & "clumsy code" cleanup
 
-### 4. In-Test Support Query Form
+**7. Centralize data fetching with React Query**
+Only 6 files use `useQuery`/`useMutation`; the rest do `useEffect` + raw `supabase.from(...)` (~143 files). Wrap the top 20 reads (Admin dashboards, course pages, test list, notifications) in `useQuery` so we get caching, dedup, and request cancellation for free. This also kills the "flicker on every navigation" UX issue.
 
-Add a small "Need help?" button in the top bar of `TestTakingPage` (next to the timer). Clicking opens a modal with:
+**8. Strip `any` types from public surfaces**
+387 `any`/`as any` occurrences. Focus on shared modules first: `src/hooks/*`, `src/lib/docxImport/*`, `src/store/*`, and the test-platform pages. Generate proper types from `supabase/types.ts` (already auto-generated).
 
-- Read-only context (auto-filled): student name, test title, attempt id, current question number
-- Single textarea: "Describe your issue" (10–1000 chars, zod-validated client side)
-- Submit posts into a new `public.test_support_queries` table
+**9. Remove production `console.*` calls**
+17 stray logs. Either gate behind `import.meta.env.DEV` or remove. Add an ESLint rule `no-console: ["warn", { allow: ["error"] }]` to prevent regressions.
 
-New migration:
+**10. Split mega-pages**
+Files marked for refactor (single-file > 700 LOC, hard to maintain):
+- `TestTakingPage.tsx` (1440) → extract `<QuestionPalette>`, `<NumericKeypad>`, `<SupportQueryModal>`, `<AntiCheatBanner>`.
+- `CreateTestPage.tsx` (1301) → extract `<TestMetaForm>`, `<QuestionPicker>`, `<SectionEditor>`.
+- `AdminCourseContentPage.tsx` (1134), `AdminTestResultPage.tsx` (1016), `AdminLiveClassesPage.tsx` (957), `LandingPage.tsx` (748), `CourseDetailPage.tsx` (687).
+
+### P3 — Polish
+
+**11. SEO & metadata**
+Verify every public route sets `<title>`, meta description (<160 chars), one `h1`, canonical, OG/Twitter tags. Add JSON-LD `Course` / `Organization` schema on `CoursesPage` and the landing.
+
+**12. Build-time image format pipeline**
+Add `vite-imagetools` so source images become AVIF/WebP at build time with a JPEG fallback via `<picture>`. Apply to the four landing hero images.
+
+**13. Edge cases & observability**
+- Add an error boundary around `<Suspense>` so a chunk-load failure (after deploys) shows "Refresh to update" instead of a white screen.
+- Enable a lightweight web-vitals reporter (LCP/INP/CLS) to `console` in dev and the existing analytics in prod, so we can verify each P0/P1 fix improves the right number.
+
+---
+
+## Suggested rollout
 
 ```text
-test_support_queries (
-  id, user_id (default auth.uid()), attempt_id, test_id,
-  question_position int, message text, status text default 'open',
-  created_at, updated_at
-)
+PR 1  P0 #1, #3 (lazy routes + image CDN/lazy attrs)         -> biggest UX win
+PR 2  P0 #2 + P1 #4 (autosave throttle + RLS rewrite hot 8)  -> biggest DB win
+PR 3  P1 #5, #6 (linter cleanup + select * → columns)        -> security/perf
+PR 4  P2 #7, #8, #9, #10 incrementally per area              -> maintainability
+PR 5  P3 #11, #12, #13                                       -> polish
 ```
 
-- GRANTs: `SELECT, INSERT` to authenticated; `ALL` to service_role.
-- RLS: students INSERT/SELECT their own rows; staff (admin / super_admin / teacher) SELECT and UPDATE all.
-- Trigger calls existing `public.notify_admins(...)` so the support team gets a notification with deep-link `/admin/support-queries`.
+## Technical notes (for engineers)
 
-Admin surface (lightweight): add `src/pages/AdminTestSupportPage.tsx` listing open queries with student, test, message, timestamp, and a "Mark resolved" button. Linked from the Admin Test Platform Hub.
+- React 18 + Vite 5 + Tailwind v3, React Query 5 already installed.
+- Bundle inspection: after splitting, run `vite build && du -sh dist/assets/*.js | sort -h` to confirm landing-route chunk < 250 KB gzip.
+- RLS rewrite pattern:
+  ```sql
+  DROP POLICY "students manage own attempts" ON public.test_attempts;
+  CREATE POLICY "students manage own attempts" ON public.test_attempts
+    FOR ALL TO authenticated
+    USING (user_id = (select auth.uid()))
+    WITH CHECK (user_id = (select auth.uid()));
+  ```
+- Autosave guard:
+  ```ts
+  const lastSavedRef = useRef<string>("");
+  const payload = JSON.stringify({ answers, statuses, time });
+  if (payload === lastSavedRef.current) return;
+  lastSavedRef.current = payload;
+  ```
+- Asset CDN command (per image):
+  ```bash
+  lovable-assets create --file src/assets/bansal-legacy-banner.png \
+    --filename bansal-legacy-banner.webp \
+    > src/assets/bansal-legacy-banner.webp.asset.json
+  ```
 
-### Files touched
+## Out of scope (won't touch unless asked)
+- Visual redesign — purely performance/correctness/cleanup.
+- Business logic of scoring / partial marking — already verified correct in the previous turn.
+- Adding new features.
 
-- `supabase/migrations/<new>_partial_marking_and_support.sql` — rewrite `submit_test_attempt` mcq-multi branch + create `test_support_queries` table/policies/trigger
-- `src/pages/TestTakingPage.tsx` — numeric validation, 3-strike auto-submit, support modal, top-bar button
-- `src/pages/AdminTestSupportPage.tsx` — new admin page
-- `src/App.tsx` — route for the new admin page
-- `src/pages/AdminTestPlatformHub.tsx` — tile linking to the support page
-
-### Out of scope
-
-- No changes to scoring for single-correct, numerical, integer, match-following beyond the existing behavior.
-- No reattempt-blocking on the 3rd violation (per your "Auto-submit only" choice).
-- No SMS/WhatsApp escalation for support queries — handled via existing in-app notifications.
+Tell me which PR to start with (or "all in order") and I'll switch to build mode.

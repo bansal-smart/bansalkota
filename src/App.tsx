@@ -1,141 +1,145 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import LandingPage from "./pages/LandingPage";
-import CareerPage from "./pages/CareerPage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import VerifyEmailPage from "./pages/VerifyEmailPage";
-import AuthCallbackPage from "./pages/AuthCallbackPage";
-import ForceChangePasswordPage from "./pages/ForceChangePasswordPage";
-import UnsubscribePage from "./pages/UnsubscribePage";
+
+// Eager: layouts, guards, marketing entry — required on first paint.
 import StudentLayout from "./components/StudentLayout";
 import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
-import StudentDashboard from "./pages/StudentDashboard";
-import TestListPage from "./pages/TestListPage";
-import TestInstructionsPage from "./pages/TestInstructionsPage";
-import TestTakingPage from "./pages/TestTakingPage";
-import TestResultPage from "./pages/TestResultPage";
-import TestResponseSheetPage from "./pages/TestResponseSheetPage";
-import TestSubjectBreakdownPage from "./pages/TestSubjectBreakdownPage";
-import LiveClassRoomPage from "./pages/LiveClassRoomPage";
-import LiveClassesListPage from "./pages/LiveClassesListPage";
-
-import DoubtPage from "./pages/DoubtPage";
-import LeaderboardPage from "./pages/LeaderboardPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import CoursesPage from "./pages/CoursesPage";
-import MyCoursesPage from "./pages/MyCoursesPage";
-import CourseStudyMaterialPage from "./pages/CourseStudyMaterialPage";
-import ChapterQuizPage from "./pages/ChapterQuizPage";
-import CourseDetailPage from "./pages/CourseDetailPage";
-import LecturePlayerPage from "./pages/LecturePlayerPage";
-import ProfilePage from "./pages/ProfilePage";
-import NotificationsPage from "./pages/NotificationsPage";
-import EducatorsPage from "./pages/EducatorsPage";
-import SettingsPage from "./pages/SettingsPage";
-import StorePage from "./pages/StorePage";
-import TeacherDashboard from "./pages/TeacherDashboard";
-import TeacherDoubtQueuePage from "./pages/TeacherDoubtQueuePage";
-import TeacherLiveClassesPage from "./pages/TeacherLiveClassesPage";
-import TeacherLiveClassRoomPage from "./pages/TeacherLiveClassRoomPage";
-import TeacherSettingsPage from "./pages/TeacherSettingsPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminUsersPage from "./pages/AdminUsersPage";
-import AdminStudentsPage from "./pages/AdminStudentsPage";
-import AdminStudentReportsPage from "./pages/AdminStudentReportsPage";
-import AdminPaymentsPage from "./pages/AdminPaymentsPage";
-import AdminNotificationsPage from "./pages/AdminNotificationsPage";
-import AdminCoursesPage from "./pages/AdminCoursesPage";
-import CreateCoursePage from "./pages/CreateCoursePage";
-import CreateTestPage from "./pages/CreateTestPage";
-import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
-import AdminTestPlatformHub from "./pages/AdminTestPlatformHub";
-import AdminTestSupportPage from "./pages/AdminTestSupportPage";
-import AdminTestDetailPage from "./pages/AdminTestDetailPage";
-import AdminTestResultPage from "./pages/AdminTestResultPage";
-import AdminLectureBucketPage from "./pages/AdminLectureBucketPage";
-import AdminExamsPage from "./pages/AdminExamsPage";
-import AdminAdminsPage from "./pages/AdminAdminsPage";
-import AdminModerationPage from "./pages/AdminModerationPage";
-import AdminSettingsPage from "./pages/AdminSettingsPage";
-import AdminEducatorApplicationsPage from "./pages/AdminEducatorApplicationsPage";
-import AdminLoginPage from "./pages/AdminLoginPage";
-import StaffDashboardPage from "./pages/StaffDashboardPage";
-import AdminEnquiriesPage from "./pages/AdminEnquiriesPage";
-import AdminCourseContentPage from "./pages/AdminCourseContentPage";
-import AdminReportsPage from "./pages/AdminReportsPage";
-import AdminProfilePage from "./pages/AdminProfilePage";
+import CenterLayout from "./components/CenterLayout";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import PublicLayout from "./components/PublicLayout";
-import TestsLandingPage from "./pages/TestsLandingPage";
-import LiveClassesLandingPage from "./pages/LiveClassesLandingPage";
-import PricingPage from "./pages/PricingPage";
-import AdmissionsPage from "./pages/AdmissionsPage";
-import AssociationPage from "./pages/AssociationPage";
-import AboutPage from "./pages/AboutPage";
-import ContactPage from "./pages/ContactPage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import TermsOfServicePage from "./pages/TermsOfServicePage";
-import AccessDeniedPage from "./pages/AccessDeniedPage";
-import AdminSchoolsPage from "./pages/AdminSchoolsPage";
+import Spinner from "./components/Spinner";
 import { AuthProvider } from "./context/AuthContext";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import NotFound from "./pages/NotFound";
-import BansalPlaceholderPage from "./pages/BansalPlaceholderPage";
-import CbtLoginPage from "./pages/CbtLoginPage";
-import CbtLiveTestsPage from "./pages/CbtLiveTestsPage";
-import CbtSubmittedPage from "./pages/CbtSubmittedPage";
-import AdminBatchesPage from "./pages/AdminBatchesPage";
-import BoostPage from "./pages/BoostPage";
-import CentersPage from "./pages/CentersPage";
-import CenterDetailPage from "./pages/CenterDetailPage";
-import CentreGalleryPublicPage from "./pages/CentreGalleryPublicPage";
-import CentreUpdatesPublicPage from "./pages/CentreUpdatesPublicPage";
-import CentreUpdateDetailPage from "./pages/CentreUpdateDetailPage";
-import AchievementsPage from "./pages/AchievementsPage";
-import AlumniPage from "./pages/AlumniPage";
-import LeadershipDetailPage from "./pages/LeadershipDetailPage";
-import RefundPolicyPage from "./pages/RefundPolicyPage";
-import DisclaimerPage from "./pages/DisclaimerPage";
-import EStorePage from "./pages/EStorePage";
-import BookDetailPage from "./pages/BookDetailPage";
-import PackDetailPage from "./pages/PackDetailPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import OrdersPage from "./pages/OrdersPage";
-import TestSeriesCatalogPage from "./pages/TestSeriesCatalogPage";
-import TestSeriesDetailPage from "./pages/TestSeriesDetailPage";
-import AdminBooksPage from "./pages/AdminBooksPage";
-// AdminTestSeriesPage is now embedded inside AdminTestPlatformHub
-import AdminCentersPage from "./pages/AdminCentersPage";
-import AdminToppersPage from "./pages/AdminToppersPage";
-import AdminAlumniSubmissionsPage from "./pages/AdminAlumniSubmissionsPage";
-import AdminBannersPage from "./pages/AdminBannersPage";
-import AdminBoostPage from "./pages/AdminBoostPage";
-import AdminOrdersPage from "./pages/AdminOrdersPage";
-import AdminTestimonialsPage from "./pages/AdminTestimonialsPage";
-import AdminStatsPage from "./pages/AdminStatsPage";
-import AdminLeadershipPage from "./pages/AdminLeadershipPage";
-import AdminCenterSupportPage from "./pages/AdminCenterSupportPage";
-import CenterLayout from "./components/CenterLayout";
-import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
-import CenterDashboardPage from "./pages/CenterDashboardPage";
-import CenterBannersPage from "./pages/CenterBannersPage";
-import CenterContentPage from "./pages/CenterContentPage";
-import CenterGalleryPage from "./pages/CenterGalleryPage";
-import CenterUpdatesPage from "./pages/CenterUpdatesPage";
-import CenterCoursesPage from "./pages/CenterCoursesPage";
-import CenterWebsiteEnquiriesPage from "./pages/CenterWebsiteEnquiriesPage";
-import CenterCourseEnquiriesPage from "./pages/CenterCourseEnquiriesPage";
-import CenterStudentsPage from "./pages/CenterStudentsPage";
-import CenterSupportPage from "./pages/CenterSupportPage";
-import LandingNewPage from "./pages/LandingNewPage";
-import AdminLandingPage from "./pages/AdminLandingPage";
-import AdminLandingLeadsPage from "./pages/AdminLandingLeadsPage";
+
+// Lazy: every other page. Each becomes its own JS chunk.
+const CareerPage = lazy(() => import("./pages/CareerPage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const AuthCallbackPage = lazy(() => import("./pages/AuthCallbackPage"));
+const ForceChangePasswordPage = lazy(() => import("./pages/ForceChangePasswordPage"));
+const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const TestListPage = lazy(() => import("./pages/TestListPage"));
+const TestInstructionsPage = lazy(() => import("./pages/TestInstructionsPage"));
+const TestTakingPage = lazy(() => import("./pages/TestTakingPage"));
+const TestResultPage = lazy(() => import("./pages/TestResultPage"));
+const TestResponseSheetPage = lazy(() => import("./pages/TestResponseSheetPage"));
+const TestSubjectBreakdownPage = lazy(() => import("./pages/TestSubjectBreakdownPage"));
+const LiveClassRoomPage = lazy(() => import("./pages/LiveClassRoomPage"));
+const LiveClassesListPage = lazy(() => import("./pages/LiveClassesListPage"));
+const DoubtPage = lazy(() => import("./pages/DoubtPage"));
+const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
+const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const MyCoursesPage = lazy(() => import("./pages/MyCoursesPage"));
+const CourseStudyMaterialPage = lazy(() => import("./pages/CourseStudyMaterialPage"));
+const ChapterQuizPage = lazy(() => import("./pages/ChapterQuizPage"));
+const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
+const LecturePlayerPage = lazy(() => import("./pages/LecturePlayerPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const EducatorsPage = lazy(() => import("./pages/EducatorsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const StorePage = lazy(() => import("./pages/StorePage"));
+const TeacherDashboard = lazy(() => import("./pages/TeacherDashboard"));
+const TeacherDoubtQueuePage = lazy(() => import("./pages/TeacherDoubtQueuePage"));
+const TeacherLiveClassesPage = lazy(() => import("./pages/TeacherLiveClassesPage"));
+const TeacherLiveClassRoomPage = lazy(() => import("./pages/TeacherLiveClassRoomPage"));
+const TeacherSettingsPage = lazy(() => import("./pages/TeacherSettingsPage"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
+const AdminStudentsPage = lazy(() => import("./pages/AdminStudentsPage"));
+const AdminStudentReportsPage = lazy(() => import("./pages/AdminStudentReportsPage"));
+const AdminPaymentsPage = lazy(() => import("./pages/AdminPaymentsPage"));
+const AdminNotificationsPage = lazy(() => import("./pages/AdminNotificationsPage"));
+const AdminCoursesPage = lazy(() => import("./pages/AdminCoursesPage"));
+const CreateCoursePage = lazy(() => import("./pages/CreateCoursePage"));
+const CreateTestPage = lazy(() => import("./pages/CreateTestPage"));
+const AdminLiveClassesPage = lazy(() => import("./pages/AdminLiveClassesPage"));
+const AdminTestPlatformHub = lazy(() => import("./pages/AdminTestPlatformHub"));
+const AdminTestSupportPage = lazy(() => import("./pages/AdminTestSupportPage"));
+const AdminTestDetailPage = lazy(() => import("./pages/AdminTestDetailPage"));
+const AdminTestResultPage = lazy(() => import("./pages/AdminTestResultPage"));
+const AdminLectureBucketPage = lazy(() => import("./pages/AdminLectureBucketPage"));
+const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
+const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
+const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
+const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
+const AdminEducatorApplicationsPage = lazy(() => import("./pages/AdminEducatorApplicationsPage"));
+const AdminLoginPage = lazy(() => import("./pages/AdminLoginPage"));
+const StaffDashboardPage = lazy(() => import("./pages/StaffDashboardPage"));
+const AdminEnquiriesPage = lazy(() => import("./pages/AdminEnquiriesPage"));
+const AdminCourseContentPage = lazy(() => import("./pages/AdminCourseContentPage"));
+const AdminReportsPage = lazy(() => import("./pages/AdminReportsPage"));
+const AdminProfilePage = lazy(() => import("./pages/AdminProfilePage"));
+const TestsLandingPage = lazy(() => import("./pages/TestsLandingPage"));
+const LiveClassesLandingPage = lazy(() => import("./pages/LiveClassesLandingPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
+const AdmissionsPage = lazy(() => import("./pages/AdmissionsPage"));
+const AssociationPage = lazy(() => import("./pages/AssociationPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage"));
+const AccessDeniedPage = lazy(() => import("./pages/AccessDeniedPage"));
+const AdminSchoolsPage = lazy(() => import("./pages/AdminSchoolsPage"));
+const BansalPlaceholderPage = lazy(() => import("./pages/BansalPlaceholderPage"));
+const CbtLoginPage = lazy(() => import("./pages/CbtLoginPage"));
+const CbtLiveTestsPage = lazy(() => import("./pages/CbtLiveTestsPage"));
+const CbtSubmittedPage = lazy(() => import("./pages/CbtSubmittedPage"));
+const AdminBatchesPage = lazy(() => import("./pages/AdminBatchesPage"));
+const BoostPage = lazy(() => import("./pages/BoostPage"));
+const CentersPage = lazy(() => import("./pages/CentersPage"));
+const CenterDetailPage = lazy(() => import("./pages/CenterDetailPage"));
+const CentreGalleryPublicPage = lazy(() => import("./pages/CentreGalleryPublicPage"));
+const CentreUpdatesPublicPage = lazy(() => import("./pages/CentreUpdatesPublicPage"));
+const CentreUpdateDetailPage = lazy(() => import("./pages/CentreUpdateDetailPage"));
+const AchievementsPage = lazy(() => import("./pages/AchievementsPage"));
+const AlumniPage = lazy(() => import("./pages/AlumniPage"));
+const LeadershipDetailPage = lazy(() => import("./pages/LeadershipDetailPage"));
+const RefundPolicyPage = lazy(() => import("./pages/RefundPolicyPage"));
+const DisclaimerPage = lazy(() => import("./pages/DisclaimerPage"));
+const EStorePage = lazy(() => import("./pages/EStorePage"));
+const BookDetailPage = lazy(() => import("./pages/BookDetailPage"));
+const PackDetailPage = lazy(() => import("./pages/PackDetailPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const TestSeriesCatalogPage = lazy(() => import("./pages/TestSeriesCatalogPage"));
+const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
+const AdminBooksPage = lazy(() => import("./pages/AdminBooksPage"));
+const AdminCentersPage = lazy(() => import("./pages/AdminCentersPage"));
+const AdminToppersPage = lazy(() => import("./pages/AdminToppersPage"));
+const AdminAlumniSubmissionsPage = lazy(() => import("./pages/AdminAlumniSubmissionsPage"));
+const AdminBannersPage = lazy(() => import("./pages/AdminBannersPage"));
+const AdminBoostPage = lazy(() => import("./pages/AdminBoostPage"));
+const AdminOrdersPage = lazy(() => import("./pages/AdminOrdersPage"));
+const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage"));
+const AdminStatsPage = lazy(() => import("./pages/AdminStatsPage"));
+const AdminLeadershipPage = lazy(() => import("./pages/AdminLeadershipPage"));
+const AdminCenterSupportPage = lazy(() => import("./pages/AdminCenterSupportPage"));
+const CenterDashboardPage = lazy(() => import("./pages/CenterDashboardPage"));
+const CenterBannersPage = lazy(() => import("./pages/CenterBannersPage"));
+const CenterContentPage = lazy(() => import("./pages/CenterContentPage"));
+const CenterGalleryPage = lazy(() => import("./pages/CenterGalleryPage"));
+const CenterUpdatesPage = lazy(() => import("./pages/CenterUpdatesPage"));
+const CenterCoursesPage = lazy(() => import("./pages/CenterCoursesPage"));
+const CenterWebsiteEnquiriesPage = lazy(() => import("./pages/CenterWebsiteEnquiriesPage"));
+const CenterCourseEnquiriesPage = lazy(() => import("./pages/CenterCourseEnquiriesPage"));
+const CenterStudentsPage = lazy(() => import("./pages/CenterStudentsPage"));
+const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
+const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
+const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
+const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +153,12 @@ const queryClient = new QueryClient({
   },
 });
 
+const RouteFallback = () => (
+  <div className="flex h-[60vh] items-center justify-center">
+    <Spinner />
+  </div>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -157,7 +167,8 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
-          <Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -370,7 +381,8 @@ const App = () => (
 
 
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
