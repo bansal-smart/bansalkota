@@ -15,8 +15,6 @@ import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
 import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
 import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
 import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg.asset.json";
-import mahimaPortrait from "@/assets/mahima-portrait.jpg.asset.json";
-import neelamPortrait from "@/assets/neelam-portrait.jpg.asset.json";
 import bookCalculus from "@/assets/book-calculus.jpg.asset.json";
 import bookAlgebra from "@/assets/book-algebra.jpg.asset.json";
 import bookCoordinate from "@/assets/book-coordinate.jpg.asset.json";
