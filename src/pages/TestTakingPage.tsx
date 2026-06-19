@@ -1470,9 +1470,7 @@ const NumericInput = ({
         })}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        {allowDecimal
-          ? "Decimals and negative numbers are allowed."
-          : "Digits 0-9 only. Decimal point and minus sign are disabled for integer questions."}
+        Decimals and negative numbers are allowed.
       </p>
     </div>
   );
