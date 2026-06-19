@@ -6,7 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import LiveBadge from "@/components/LiveBadge";
-import bansalLogo from "@/assets/bansal-logo.png";
+import bansalLogoAsset from "@/assets/bansal-logo.webp.asset.json";
+const bansalLogo = bansalLogoAsset.url;
 
 type ClassRow = {
   id: string;

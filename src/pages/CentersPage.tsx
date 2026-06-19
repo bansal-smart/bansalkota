@@ -4,7 +4,8 @@ import { MapPin, Phone, Search, Star, ArrowRight, ShieldCheck, Building2 } from 
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { STATE_COUNT } from "@/data/centres";
-import centersHero from "@/assets/centers-hero.png";
+import centersHeroAsset from "@/assets/centers-hero.webp.asset.json";
+const centersHero = centersHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useCenters, getCenterImage, type DBCenter } from "@/hooks/useCenters";
 import { useSiteBanner } from "@/hooks/useSiteBanner";

@@ -1,5 +1,7 @@
-import vkBansalPhoto from "@/assets/leadership/vk-bansal.jpg";
-import sameerBansalPhoto from "@/assets/leadership/sameer-bansal.jpg";
+import vkBansalPhotoAsset from "@/assets/leadership/vk-bansal.webp.asset.json";
+const vkBansalPhoto = vkBansalPhotoAsset.url;
+import sameerBansalPhotoAsset from "@/assets/leadership/sameer-bansal.webp.asset.json";
+const sameerBansalPhoto = sameerBansalPhotoAsset.url;
 import mahimaBansalPhoto from "@/assets/leadership/mahima-bansal.jpg";
 import neelamBansalPhoto from "@/assets/leadership/neelam-bansal.jpg";
 

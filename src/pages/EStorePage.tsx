@@ -6,7 +6,8 @@ import { useModulePacks } from "@/hooks/useModulePacks";
 import { useAppStore } from "@/store/useAppStore";
 import CartDrawer from "@/components/CartDrawer";
 import { toast } from "sonner";
-import estoreHero from "@/assets/estore-hero.png";
+import estoreHeroAsset from "@/assets/estore-hero.webp.asset.json";
+const estoreHero = estoreHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const examFilters = ["All", "JEE Advanced", "JEE Main", "NEET", "Foundation"];
