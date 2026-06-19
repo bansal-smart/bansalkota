@@ -660,7 +660,10 @@ const TestTakingPage = () => {
       status: auto ? "auto_submitted" : "submitted",
       submitted_at: new Date().toISOString(),
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
-      metadata: { tab_switches: tabSwitches },
+      metadata: {
+        tab_switches: tabSwitchesRef.current,
+        ...(blockedRef.current ? { auto_submitted_reason: "window_switch" } : {}),
+      },
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
@@ -668,7 +671,8 @@ const TestTakingPage = () => {
     successTargetRef.current = user?.email?.endsWith("@cbt.bansal.local")
       ? "/cbt/submitted"
       : `/tests/${slug}/result/${attemptId}`;
-    setShowSuccess(true);
+    // When blocked by window-switch we show a dedicated modal instead of success
+    if (!blockedRef.current) setShowSuccess(true);
   };
 
   // Keep latest handleSubmit accessible from tab-visibility listener
