@@ -221,7 +221,7 @@ const CenterStudentsPage = () => {
         fields={csvFields}
         fileBase="centre-students"
         exportRows={filtered as any}
-        importRow={importRow}
+        bulkImport={bulkImport}
         onDone={load}
       />
     </div>
