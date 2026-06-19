@@ -3413,6 +3413,66 @@ export type Database = {
         }
         Relationships: []
       }
+      test_support_queries: {
+        Row: {
+          attempt_id: string | null
+          created_at: string
+          id: string
+          message: string
+          question_position: number | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          test_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          question_position?: number | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          test_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          attempt_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          question_position?: number | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          test_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_support_queries_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_support_queries_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tests: {
         Row: {
           auto_release: boolean

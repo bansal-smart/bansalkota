@@ -11,6 +11,7 @@ import {
   FileBarChart,
   Upload,
   AlertTriangle,
+  LifeBuoy,
 } from "lucide-react";
 import AdminTestsHubPage from "./AdminTestsHubPage";
 import AdminTestsPage from "./AdminTestsPage";
@@ -81,12 +82,20 @@ const AdminTestPlatformHub = () => {
               </p>
             </div>
           </div>
-          <Link
-            to="/admin/tests/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-primary hover:bg-white/90"
-          >
-            <Plus className="h-4 w-4" /> New test
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin/test-support"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 ring-1 ring-white/30 px-3 py-2 text-xs font-bold text-white hover:bg-white/25"
+            >
+              <LifeBuoy className="h-4 w-4" /> Support Queries
+            </Link>
+            <Link
+              to="/admin/tests/new"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-primary hover:bg-white/90"
+            >
+              <Plus className="h-4 w-4" /> New test
+            </Link>
+          </div>
         </div>
       </div>
 

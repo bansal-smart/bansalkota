@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2, LifeBuoy, Send, ShieldAlert } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,8 +70,15 @@ const TestTakingPage = () => {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
   const [showTabWarning, setShowTabWarning] = useState(false);
+  const [showAutoBlocked, setShowAutoBlocked] = useState(false);
   const tabSwitchesRef = useRef(0);
   const blockedRef = useRef(false);
+  const lastViolationAtRef = useRef<number>(0);
+  // Support query modal
+  const [showSupport, setShowSupport] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportSent, setSupportSent] = useState(false);
   const submitRef = useRef<(auto?: boolean) => void>(() => {});
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -236,26 +243,44 @@ const TestTakingPage = () => {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [started]);
 
-  // Tab visibility — warn only, never auto-submit (per admin request)
+  // Tab/window switch — 3 strikes and the test auto-submits.
   useEffect(() => {
     if (!started) return;
-    const handler = () => {
+
+    const registerViolation = () => {
       if (blockedRef.current) return;
-      if (document.hidden) {
-        const next = tabSwitchesRef.current + 1;
-        tabSwitchesRef.current = next;
-        setTabSwitches(next);
-      } else {
-        if (tabSwitchesRef.current > 0) {
-          setShowTabWarning(true);
-        }
+      // Debounce: ignore duplicate fires within 500ms (visibilitychange + blur may both fire)
+      const now = Date.now();
+      if (now - lastViolationAtRef.current < 500) return;
+      lastViolationAtRef.current = now;
+
+      const next = tabSwitchesRef.current + 1;
+      tabSwitchesRef.current = next;
+      setTabSwitches(next);
+
+      if (next >= 3) {
+        blockedRef.current = true;
+        setShowTabWarning(false);
+        setShowAutoBlocked(true);
+        // Auto-submit immediately
+        try { void submitRef.current?.(true); } catch { /* ignore */ }
       }
     };
-    document.addEventListener("visibilitychange", handler);
+
+    const onVisibility = () => {
+      if (document.hidden) registerViolation();
+      else if (tabSwitchesRef.current > 0 && tabSwitchesRef.current < 3) {
+        setShowTabWarning(true);
+      }
+    };
+    const onBlur = () => { registerViolation(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
     const noContext = (e: Event) => e.preventDefault();
     document.addEventListener("contextmenu", noContext);
     return () => {
-      document.removeEventListener("visibilitychange", handler);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
       document.removeEventListener("contextmenu", noContext);
     };
   }, [started]);
@@ -635,7 +660,10 @@ const TestTakingPage = () => {
       status: auto ? "auto_submitted" : "submitted",
       submitted_at: new Date().toISOString(),
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
-      metadata: { tab_switches: tabSwitches },
+      metadata: {
+        tab_switches: tabSwitchesRef.current,
+        ...(blockedRef.current ? { auto_submitted_reason: "window_switch" } : {}),
+      },
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
@@ -643,7 +671,8 @@ const TestTakingPage = () => {
     successTargetRef.current = user?.email?.endsWith("@cbt.bansal.local")
       ? "/cbt/submitted"
       : `/tests/${slug}/result/${attemptId}`;
-    setShowSuccess(true);
+    // When blocked by window-switch we show a dedicated modal instead of success
+    if (!blockedRef.current) setShowSuccess(true);
   };
 
   // Keep latest handleSubmit accessible from tab-visibility listener
@@ -794,6 +823,13 @@ const TestTakingPage = () => {
           {savedAgo === null ? "Auto-save on" : savedAgo < 5 ? "Saved just now" : `Saved ${savedAgo}s ago`}
         </div>
         <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={() => { setSupportSent(false); setSupportMessage(""); setShowSupport(true); }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100"
+            title="Need help during the test?"
+          >
+            <LifeBuoy className="h-3.5 w-3.5" /> Need help?
+          </button>
           <div className="text-right hidden sm:block">
             <p className="text-[10px] uppercase tracking-wide text-neutral-500">Time Left</p>
           </div>
@@ -916,7 +952,7 @@ const TestTakingPage = () => {
                   onChange={handleMatchChange}
                 />
               ) : isNumeric(q.question_type) ? (
-                <NumericInput value={numericValue} onChange={handleNumericInput} format={q.answer_format ?? (q.question_type === "integer" ? "integer" : "decimal")} />
+                <NumericInput value={numericValue} onChange={handleNumericInput} questionType={q.question_type} />
               ) : isMulti(q.question_type) ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {q.options.map((opt) => {
@@ -1134,7 +1170,7 @@ const TestTakingPage = () => {
         </div>
       )}
 
-      {showTabWarning && (
+      {showTabWarning && !showAutoBlocked && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl border-t-4 border-red-600">
             <div className="flex items-start gap-3">
@@ -1143,12 +1179,12 @@ const TestTakingPage = () => {
               </div>
               <div className="flex-1">
                 <h3 className="font-display text-lg font-black text-neutral-900">
-                  {tabSwitches === 1 ? "Warning: Tab Switch Detected" : "Final Warning!"}
+                  {tabSwitches === 1 ? "Warning 1 of 3 — Window Switch Detected" : "Final Warning — 1 chance left"}
                 </h3>
                 <p className="mt-2 text-sm text-neutral-700 leading-relaxed">
                   {tabSwitches === 1
-                    ? "You switched or closed the tab 1 time. Do not do this — you have 1 more chance before your test is auto-submitted."
-                    : "You switched or closed the tab 2 times. One more violation and your test will be auto-submitted and you will be blocked."}
+                    ? "You switched away from the test window. You have 2 more chances before your test is auto-submitted."
+                    : "You have switched windows twice. The next switch will auto-submit your test immediately."}
                 </p>
                 <p className="mt-3 text-xs text-neutral-500">
                   Violations: <b className="text-red-600">{tabSwitches}</b> / 3
@@ -1163,6 +1199,115 @@ const TestTakingPage = () => {
                 I understand, continue
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showAutoBlocked && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border-t-4 border-red-600 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+              <ShieldAlert className="h-12 w-12 text-red-600" />
+            </div>
+            <h3 className="mt-5 font-display text-xl font-black text-neutral-900">
+              Test auto-submitted
+            </h3>
+            <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+              You switched the test window 3 times. As per the exam policy, your test has been
+              submitted automatically. The Bansal team will review your attempt.
+            </p>
+            <button
+              onClick={() => navigate(successTargetRef.current, { replace: true })}
+              className="mt-6 w-full rounded-md bg-red-600 hover:bg-red-700 px-5 py-2.5 text-xs font-black text-white uppercase tracking-wider"
+            >
+              Exit Test
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showSupport && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl border-t-4 border-amber-500">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <LifeBuoy className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-display text-lg font-black text-neutral-900">Need help?</h3>
+                <p className="mt-1 text-xs text-neutral-600">
+                  Send a message to the Bansal support team. We'll get back to you as soon as possible.
+                </p>
+              </div>
+              <button onClick={() => setShowSupport(false)} className="text-neutral-400 hover:text-neutral-700">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {supportSent ? (
+              <div className="mt-5 rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-center">
+                <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" />
+                <p className="mt-2 text-sm font-bold text-emerald-800">Your request has been received.</p>
+                <p className="mt-1 text-xs text-emerald-700">Continue your test — support will contact you shortly.</p>
+                <button
+                  onClick={() => setShowSupport(false)}
+                  className="mt-4 rounded-md bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-black text-white uppercase"
+                >
+                  Back to test
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 rounded-md bg-neutral-50 border border-neutral-200 p-3 text-[11px] text-neutral-600 space-y-0.5">
+                  <p><b>Student:</b> {candidate.name || "—"}</p>
+                  <p><b>Test:</b> {test.title}</p>
+                  <p><b>Question:</b> #{currentQ + 1} of {questions.length}</p>
+                </div>
+                <textarea
+                  value={supportMessage}
+                  onChange={(e) => setSupportMessage(e.target.value.slice(0, 1000))}
+                  placeholder="Describe the issue you're facing (10–1000 characters)…"
+                  rows={4}
+                  className="mt-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+                />
+                <div className="mt-1 text-right text-[10px] text-neutral-500">{supportMessage.length}/1000</div>
+                <div className="mt-2 flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowSupport(false)}
+                    className="rounded-md border border-neutral-300 px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={supportMessage.trim().length < 10 || supportSubmitting}
+                    onClick={async () => {
+                      if (supportMessage.trim().length < 10) {
+                        toast.error("Please describe the issue (at least 10 characters).");
+                        return;
+                      }
+                      setSupportSubmitting(true);
+                      const { error } = await supabase.from("test_support_queries").insert({
+                        attempt_id: attemptId,
+                        test_id: test.id,
+                        question_position: currentQ + 1,
+                        message: supportMessage.trim(),
+                      });
+                      setSupportSubmitting(false);
+                      if (error) {
+                        toast.error(error.message);
+                        return;
+                      }
+                      setSupportSent(true);
+                      setSupportMessage("");
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-xs font-black text-white uppercase"
+                  >
+                    {supportSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Send Request
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1214,14 +1359,35 @@ const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string
 );
 
 
-const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v: string) => void; format: string }) => {
-  const allowDecimal = true;
-  const allowNeg = true;
+const NumericInput = ({
+  value,
+  onChange,
+  questionType,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  questionType: "integer" | "numerical";
+}) => {
+  const allowDecimal = questionType === "numerical";
+  const allowNeg = questionType === "numerical";
+
+  // Defensive: strip any disallowed characters that may have come from a stored answer
+  useEffect(() => {
+    if (!value) return;
+    let cleaned = value;
+    if (!allowDecimal) cleaned = cleaned.replace(/\./g, "");
+    if (!allowNeg) cleaned = cleaned.replace(/-/g, "");
+    if (cleaned !== value) onChange(cleaned);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionType]);
 
   const press = (k: string) => {
     if (k === "back") return onChange(value.slice(0, -1));
     if (k === "clear") return onChange("");
-    if (k === "." && (!allowDecimal || value.includes("."))) return;
+    if (k === ".") {
+      if (!allowDecimal || value.includes(".")) return;
+      return onChange(value + ".");
+    }
     if (k === "-") {
       if (!allowNeg) return;
       if (value.startsWith("-")) return onChange(value.slice(1));
@@ -1230,26 +1396,45 @@ const NumericInput = ({ value, onChange, format }: { value: string; onChange: (v
     onChange(value + k);
   };
 
+  const placeholder = allowDecimal ? "e.g. -3.14" : "Integer only (digits)";
+
   return (
     <div className="space-y-3">
       <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
         <p className="text-[10px] font-bold uppercase text-muted-foreground">Your Answer</p>
-        <input value={value} readOnly placeholder={allowDecimal ? "e.g. 3.14" : "Integer"}
+        <input value={value} readOnly placeholder={placeholder}
           className="mt-1 w-full bg-transparent text-2xl font-bold tabular-nums text-foreground outline-none" />
       </div>
       <div className="grid grid-cols-5 gap-1.5 max-w-sm">
-        {["7","8","9","back","clear","4","5","6",".","-","1","2","3","0"].map((k) => (
-          <button key={k} onClick={() => press(k)}
-            className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors hover:bg-muted ${k === "back" || k === "clear" ? "bg-muted/50 text-foreground/70" : "bg-card text-foreground"}`}>
-            {k === "back" ? <Delete className="mx-auto h-4 w-4" /> : k === "clear" ? "C" : k}
-          </button>
-        ))}
+        {["7","8","9","back","clear","4","5","6",".","-","1","2","3","0"].map((k) => {
+          const disabled =
+            (k === "." && !allowDecimal) ||
+            (k === "-" && !allowNeg);
+          return (
+            <button
+              key={k}
+              onClick={() => { if (!disabled) press(k); }}
+              disabled={disabled}
+              className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors ${
+                disabled
+                  ? "bg-muted/30 text-muted-foreground/40 cursor-not-allowed"
+                  : k === "back" || k === "clear"
+                    ? "bg-muted/50 text-foreground/70 hover:bg-muted"
+                    : "bg-card text-foreground hover:bg-muted"
+              }`}>
+              {k === "back" ? <Delete className="mx-auto h-4 w-4" /> : k === "clear" ? "C" : k}
+            </button>
+          );
+        })}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        Enter a number (decimals allowed). Use the keypad above.
+        {allowDecimal
+          ? "Decimals and negative numbers are allowed."
+          : "Digits 0-9 only. Decimal point and minus sign are disabled for integer questions."}
       </p>
     </div>
   );
 };
 
 export default TestTakingPage;
+
