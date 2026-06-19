@@ -51,7 +51,7 @@ const baseNav: NavItem[] = [
   { label: "E-Store Orders", icon: BookOpen, path: "/admin/orders" },
   { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
   { label: "Centres", icon: MapPin, path: "/admin/centres" },
-  { label: "Centre Support", icon: LifeBuoy, path: "/admin/center-support" },
+  { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
   { label: "Toppers", icon: Award, path: "/admin/toppers" },
   { label: "Alumni Submissions", icon: GraduationCap, path: "/admin/alumni-submissions" },
   { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
