@@ -234,6 +234,89 @@ Deno.serve(async (req) => {
           results.push({ row: i + 1, ok: false, error: e.message ?? String(e) });
         }
       }
+    } else if (kind === "enrollments") {
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        try {
+          const courseSlug = trimOrNull(r.course_slug);
+          const courseId = trimOrNull(r.course_id);
+          if (!courseSlug && !courseId) throw new Error("course_slug or course_id is required");
+          const email = trimOrNull(r.email);
+          const phone = trimOrNull(r.phone);
+          const roll = trimOrNull(r.roll_number);
+          if (!email && !phone && !roll)
+            throw new Error("email, phone or roll_number is required");
+
+          // Resolve course
+          let resolvedCourseId = courseId;
+          if (!resolvedCourseId && courseSlug) {
+            const { data: c } = await admin
+              .from("courses")
+              .select("id")
+              .eq("slug", courseSlug)
+              .maybeSingle();
+            if (!c) throw new Error(`Course not found: ${courseSlug}`);
+            resolvedCourseId = (c as any).id;
+          }
+
+          // Resolve user via profile
+          let userId: string | null = null;
+          if (roll) {
+            const { data: p } = await admin
+              .from("profiles")
+              .select("id")
+              .eq("roll_number", roll)
+              .maybeSingle();
+            userId = (p as any)?.id ?? null;
+          }
+          if (!userId && phone) {
+            const { data: p } = await admin
+              .from("profiles")
+              .select("id")
+              .eq("phone", phone)
+              .maybeSingle();
+            userId = (p as any)?.id ?? null;
+          }
+          if (!userId && email) {
+            const { data: u } = await admin
+              .from("auth_users_view" as any)
+              .select("id")
+              .eq("email", email)
+              .maybeSingle()
+              .then((res: any) => res, () => ({ data: null }));
+            if (u) userId = (u as any).id;
+            if (!userId) {
+              // Fallback: query auth.admin
+              const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+              const match = list?.users?.find((x: any) => x.email?.toLowerCase() === email.toLowerCase());
+              if (match) userId = match.id;
+            }
+          }
+          if (!userId)
+            throw new Error("No user matches that email/phone/roll — student must sign up first");
+
+          const payload: Record<string, any> = {
+            user_id: userId,
+            course_id: resolvedCourseId,
+            progress_percent: toNum(r.progress_percent) ?? 0,
+            completed_lessons: toNum(r.completed_lessons) ?? 0,
+            is_active: r.is_active == null ? true : toBool(r.is_active),
+          };
+          if (dryRun) {
+            results.push({ row: i + 1, ok: true });
+            continue;
+          }
+          const { data, error } = await admin
+            .from("enrollments")
+            .upsert(payload, { onConflict: "user_id,course_id" })
+            .select("id")
+            .single();
+          if (error) throw error;
+          results.push({ row: i + 1, ok: true, id: (data as any).id });
+        } catch (e: any) {
+          results.push({ row: i + 1, ok: false, error: e.message ?? String(e) });
+        }
+      }
     } else {
       return json(400, { error: `Unknown kind: ${kind}` });
     }
