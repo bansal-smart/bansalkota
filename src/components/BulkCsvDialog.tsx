@@ -271,7 +271,7 @@ const BulkCsvDialog = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span><b>{results.ok}</b> imported successfully</span>
+                <span><b>{results.ok}</b> rows {results.dryRun ? "validated (dry run, nothing saved)" : "imported successfully"}</span>
               </div>
               {results.errors.length > 0 && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs">
