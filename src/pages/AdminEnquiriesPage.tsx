@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Inbox, Search, Loader2, Clock, CheckCircle2, AlertCircle, Archive, Trash2 } from "lucide-react";
+import { Inbox, Search, Loader2, Clock, CheckCircle2, AlertCircle, Archive, Trash2, Download } from "lucide-react";
+import { exportCsv } from "@/lib/exportCsv";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,11 +127,32 @@ const AdminEnquiriesPage = () => {
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {ConfirmDialog}
-      <div>
-        <h1 className="text-2xl font-black font-display text-foreground">Enquiry Management</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Live feed from the Landing CTA, Contact, Admission, Mentorship and Career forms — all in one inbox.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black font-display text-foreground">Enquiry Management</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Live feed from the Landing CTA, Contact, Admission, Mentorship and Career forms — all in one inbox.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            exportCsv("enquiries", filtered, [
+              { key: "created_at", label: "Submitted", value: (r) => format(new Date(r.created_at), "yyyy-MM-dd HH:mm") },
+              { key: "name", label: "Name" },
+              { key: "email", label: "Email" },
+              { key: "phone", label: "Phone" },
+              { key: "source", label: "Source" },
+              { key: "region", label: "Region" },
+              { key: "status", label: "Status" },
+              { key: "message", label: "Message" },
+              { key: "staff_notes", label: "Staff Notes" },
+            ])
+          }
+        >
+          <Download className="mr-2 h-4 w-4" /> Export CSV ({filtered.length})
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
