@@ -39,7 +39,7 @@ const fetchOverview = async () => {
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("source_type", "center_support").neq("status", "closed"),
-    supabase.from("centres").select("id, city, state, slug, region, is_hq").eq("is_published", true).order("sort_order", { ascending: true }),
+    supabase.from("centres").select("id, city, state, slug, region, is_hq, is_pinned").eq("is_published", true).order("is_pinned", { ascending: false }).order("city", { ascending: true }),
     supabase.from("enquiries").select("id, name, email, source_type, status, priority, created_at, centre_id").order("created_at", { ascending: false }).limit(8),
     supabase.from("toppers").select("id", { count: "exact", head: true }).eq("is_published", true),
     supabase.from("tests").select("id", { count: "exact", head: true }).eq("is_published", true).gte("starts_at", todayStart),
