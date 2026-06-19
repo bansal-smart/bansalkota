@@ -371,19 +371,22 @@ const TestTakingPage = () => {
       clearIds,
     );
 
-    const updatePayload: Record<string, unknown> = {
-      answers: mergedAnswers,
-      question_statuses: mergedStatuses,
+    const baseUpdate = {
+      answers: mergedAnswers as unknown as never,
+      question_statuses: mergedStatuses as unknown as never,
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
     };
-    if (metadataChanged) {
-      updatePayload.metadata = {
-        tab_switches: tabSwitches,
-        ...(clearIds && clearIds.size ? { explicit_clear_ids: Array.from(clearIds) } : {}),
-      };
-    }
+    const updateQuery = metadataChanged
+      ? supabase.from("test_attempts").update({
+          ...baseUpdate,
+          metadata: {
+            tab_switches: tabSwitches,
+            ...(clearIds && clearIds.size ? { explicit_clear_ids: Array.from(clearIds) } : {}),
+          } as unknown as never,
+        })
+      : supabase.from("test_attempts").update(baseUpdate);
 
-    const { error } = await supabase.from("test_attempts").update(updatePayload).eq("id", attemptId);
+    const { error } = await updateQuery.eq("id", attemptId);
 
     if (error) {
       if (import.meta.env.DEV) console.error("[TestTakingPage] progress save failed", error);
