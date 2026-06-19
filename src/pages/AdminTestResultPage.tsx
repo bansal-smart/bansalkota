@@ -487,7 +487,7 @@ const AdminTestResultPage = () => {
       // 1) Fetch this student's attempt with answers
       const { data: att } = await supabase
         .from("test_attempts")
-        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers")
+        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata")
         .eq("test_id", test.id)
         .eq("user_id", r.user_id)
         .in("status", ["submitted", "auto_submitted"])
