@@ -531,7 +531,7 @@ const CreateTestPage = () => {
       if (q.type === "numerical" || q.type === "integer") {
         const s = q.numericalAnswer.trim();
         if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
-        if (q.type === "integer" && !/^-?\d+$/.test(s)) return false;
+        // Integer-type questions also allow decimal answers (per Bansal exam pattern).
         return true;
       }
       return false;
