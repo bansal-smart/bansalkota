@@ -1,75 +1,90 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
-import { Briefcase, ArrowRight, Clock, Check, X, Eye, Loader2, TrendingUp } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+  Award, ArrowRight, Clock, Check, X, Loader2, TrendingUp,
+  IndianRupee, AlertCircle,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-type Row = {
+type BoostRow = {
   id: string;
-  candidate_name: string;
+  admit_card_number: string | null;
+  full_name: string;
   email: string;
-  subject: string;
-  total_experience: number;
-  expected_ctc: number;
-  status: string;
-  photo_url: string | null;
+  class_level: string;
+  target_exam: string;
+  city: string | null;
+  state: string | null;
+  payment_status: "pending" | "paid" | "failed";
+  status: "registered" | "confirmed" | "attended" | "cancelled";
+  amount: number;
   created_at: string;
 };
 
-const statusVariants: Record<string, { label: string; className: string }> = {
-  pending: { label: "Pending", className: "bg-warning/15 text-warning border-warning/30" },
-  reviewed: { label: "Reviewed", className: "bg-primary/15 text-primary border-primary/30" },
-  approved: { label: "Approved", className: "bg-secondary/15 text-secondary border-secondary/30" },
-  rejected: { label: "Rejected", className: "bg-destructive/15 text-destructive border-destructive/30" },
+const payTone: Record<string, string> = {
+  paid: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  failed: "bg-rose-100 text-rose-700 border-rose-200",
+  pending: "bg-amber-100 text-amber-700 border-amber-200",
+};
+
+const statusTone: Record<string, string> = {
+  registered: "bg-bansal-blue/10 text-bansal-blue border-bansal-blue/20",
+  confirmed: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  attended: "bg-bansal-orange/10 text-bansal-orange border-bansal-orange/20",
+  cancelled: "bg-muted text-muted-foreground border-border",
 };
 
 const StaffDashboardPage = () => {
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<BoostRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("educator_applications")
-        .select("id,candidate_name,email,subject,total_experience,expected_ctc,status,photo_url,created_at")
-        .order("created_at", { ascending: false });
-      setRows((data ?? []) as Row[]);
+      const { data, error } = await supabase
+        .from("boost_registrations")
+        .select("id,admit_card_number,full_name,email,class_level,target_exam,city,state,payment_status,status,amount,created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) console.error(error);
+      setRows((data ?? []) as BoostRow[]);
       setLoading(false);
     })();
   }, []);
 
   const stats = {
     total: rows.length,
-    pending: rows.filter((r) => r.status === "pending").length,
-    reviewed: rows.filter((r) => r.status === "reviewed").length,
-    approved: rows.filter((r) => r.status === "approved").length,
-    rejected: rows.filter((r) => r.status === "rejected").length,
     last7: rows.filter((r) => Date.now() - new Date(r.created_at).getTime() < 7 * 24 * 60 * 60 * 1000).length,
+    pendingPay: rows.filter((r) => r.payment_status === "pending").length,
+    paid: rows.filter((r) => r.payment_status === "paid").length,
+    failed: rows.filter((r) => r.payment_status === "failed").length,
+    revenue: rows.filter((r) => r.payment_status === "paid").reduce((s, r) => s + Number(r.amount), 0),
   };
 
-  const recent = rows.slice(0, 5);
+  const recent = rows.slice(0, 6);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-black font-display text-foreground">Enquiries Dashboard</h1>
+        <h1 className="text-2xl font-black font-display text-foreground flex items-center gap-2">
+          <Award className="h-6 w-6 text-bansal-orange" /> BOOST Registrations Dashboard
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Overview of educator enquiries received via the Bansal Classes landing page.
+          Overview of BOOST exam registrations across centres and cities.
         </p>
       </div>
 
       {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         {[
-          { label: "Total Enquiries", value: stats.total, color: "text-foreground", icon: Briefcase },
-          { label: "Last 7 days", value: stats.last7, color: "text-primary", icon: TrendingUp },
-          { label: "Pending", value: stats.pending, color: "text-warning", icon: Clock },
-          { label: "Reviewed", value: stats.reviewed, color: "text-primary", icon: Eye },
-          { label: "Approved", value: stats.approved, color: "text-secondary", icon: Check },
-          { label: "Rejected", value: stats.rejected, color: "text-destructive", icon: X },
+          { label: "Total Registrations", value: stats.total, color: "text-foreground", icon: Award },
+          { label: "Last 7 days", value: stats.last7, color: "text-bansal-orange", icon: TrendingUp },
+          { label: "Pending Payment", value: stats.pendingPay, color: "text-amber-600", icon: Clock },
+          { label: "Paid", value: stats.paid, color: "text-emerald-600", icon: Check },
+          { label: "Failed", value: stats.failed, color: "text-rose-600", icon: X },
+          { label: "Revenue (Paid)", value: `₹${stats.revenue.toLocaleString()}`, color: "text-bansal-blue", icon: IndianRupee },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between">
@@ -81,12 +96,12 @@ const StaffDashboardPage = () => {
         ))}
       </div>
 
-      {/* Recent enquiries */}
+      {/* Recent BOOST registrations */}
       <div className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-4">
-          <h2 className="text-base font-bold text-foreground">Recent Enquiries</h2>
+          <h2 className="text-base font-bold text-foreground">Recent BOOST Registrations</h2>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/admin/educator-applications">
+            <Link to="/admin/boost">
               View all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
@@ -98,41 +113,60 @@ const StaffDashboardPage = () => {
           </div>
         ) : recent.length === 0 ? (
           <div className="p-12 text-center">
-            <Briefcase className="mx-auto h-10 w-10 text-muted-foreground/40" />
-            <p className="mt-3 font-semibold text-foreground">No enquiries yet</p>
+            <Award className="mx-auto h-10 w-10 text-muted-foreground/40" />
+            <p className="mt-3 font-semibold text-foreground">No BOOST registrations yet</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Enquiries from the "Join as an Educator" form will appear here.
+              Registrations from the BOOST landing page will appear here.
             </p>
           </div>
         ) : (
           <ul className="divide-y divide-border">
             {recent.map((r) => {
-              const status = statusVariants[r.status] ?? statusVariants.pending;
+              const payClass = payTone[r.payment_status] ?? payTone.pending;
+              const meta = [r.class_level, r.target_exam, r.city].filter(Boolean).join(" · ");
               return (
                 <li key={r.id} className="flex items-center gap-4 p-4 hover:bg-muted/40 transition-colors">
-                  <Avatar className="h-11 w-11 border border-border">
-                    <AvatarImage src={r.photo_url ?? undefined} alt={r.candidate_name} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold text-sm">
-                      {r.candidate_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-bansal-orange to-amber-500 text-white font-display font-extrabold text-sm grid place-items-center shrink-0">
+                    {r.full_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground truncate">{r.candidate_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                    <p className="font-bold text-foreground truncate">{r.full_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {r.admit_card_number ?? "—"}{meta ? ` · ${meta}` : ""}
+                    </p>
                   </div>
-                  <div className="hidden sm:block text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">{r.subject}</span> · {r.total_experience} yrs
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Badge variant="outline" className={payClass}>
+                      {r.payment_status}
+                    </Badge>
+                    {r.status !== "registered" && (
+                      <Badge variant="outline" className={statusTone[r.status] ?? ""}>
+                        {r.status}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="hidden md:block text-xs text-muted-foreground">
+                  <div className="hidden md:block text-xs text-muted-foreground w-28 text-right shrink-0">
                     {format(new Date(r.created_at), "dd MMM, HH:mm")}
                   </div>
-                  <Badge variant="outline" className={status.className}>{status.label}</Badge>
                 </li>
               );
             })}
           </ul>
         )}
       </div>
+
+      {/* Quick alert card */}
+      {stats.failed > 0 && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-rose-800">{stats.failed} payment(s) failed</p>
+            <p className="text-xs text-rose-700 mt-0.5">
+              Review failed BOOST payments in the <Link to="/admin/boost" className="underline font-semibold">BOOST Registrations</Link> tab.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
