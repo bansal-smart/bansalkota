@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Save, Trash2, Trophy, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { FileSpreadsheet, Loader2, Plus, Save, Trash2, Trophy, Upload, X, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 
 type Topper = {
   id: string;
@@ -16,6 +17,10 @@ type Topper = {
   category: string | null;
   sort_order: number;
   is_published: boolean;
+  is_alumni: boolean;
+  current_position: string | null;
+  company: string | null;
+  batch_year: number | null;
 };
 
 const blank: Partial<Topper> = {
@@ -30,6 +35,10 @@ const blank: Partial<Topper> = {
   category: "",
   sort_order: 0,
   is_published: true,
+  is_alumni: false,
+  current_position: "",
+  company: "",
+  batch_year: null,
 };
 
 const AdminToppersPage = () => {
@@ -39,6 +48,8 @@ const AdminToppersPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [view, setView] = useState<"all" | "toppers" | "alumni">("all");
 
   const load = async () => {
     setLoading(true);
@@ -46,6 +57,15 @@ const AdminToppersPage = () => {
     setItems((data ?? []) as Topper[]);
     setLoading(false);
   };
+  useEffect(() => {
+    load();
+  }, []);
+
+  const visible = useMemo(() => {
+    if (view === "toppers") return items.filter((t) => !t.is_alumni);
+    if (view === "alumni") return items.filter((t) => t.is_alumni);
+    return items;
+  }, [items, view]);
   useEffect(() => {
     load();
   }, []);
@@ -92,6 +112,10 @@ const AdminToppersPage = () => {
       category: form.category || null,
       sort_order: Number(form.sort_order ?? 0),
       is_published: form.is_published ?? true,
+      is_alumni: form.is_alumni ?? false,
+      current_position: form.current_position || null,
+      company: form.company || null,
+      batch_year: form.batch_year ? Number(form.batch_year) : null,
     };
     const { error } = editingId
       ? await supabase.from("toppers").update(payload).eq("id", editingId)
@@ -119,14 +143,76 @@ const AdminToppersPage = () => {
     else load();
   };
 
+  const bulkFields: CsvField[] = [
+    { key: "name", label: "name", required: true, example: "Aarav Sharma" },
+    { key: "exam", label: "exam", required: true, example: "JEE" },
+    { key: "rank_label", label: "rank_label", example: "AIR 12" },
+    { key: "year", label: "year", parse: (v) => (v ? Number(v) : null), example: "2024" },
+    { key: "score", label: "score", example: "295/300" },
+    { key: "photo_url", label: "photo_url", example: "https://..." },
+    { key: "quote", label: "quote", example: "Bansal shaped my journey." },
+    { key: "city", label: "city", example: "Kota" },
+    { key: "category", label: "category", example: "Engineering" },
+    { key: "sort_order", label: "sort_order", parse: (v) => (v ? Number(v) : 0), example: "0" },
+    {
+      key: "is_published",
+      label: "is_published",
+      parse: (v) => !["false", "0", "no", ""].includes(String(v).toLowerCase().trim()),
+      example: "true",
+    },
+    {
+      key: "is_alumni",
+      label: "is_alumni",
+      parse: (v) => ["true", "1", "yes"].includes(String(v).toLowerCase().trim()),
+      example: "false",
+    },
+    { key: "current_position", label: "current_position", example: "Software Engineer" },
+    { key: "company", label: "company", example: "Google" },
+    { key: "batch_year", label: "batch_year", parse: (v) => (v ? Number(v) : null), example: "2018" },
+  ];
+
+  const importRow = async (row: Record<string, any>) => {
+    if (!row.name || !row.exam) return "Missing name or exam";
+    const { error } = await supabase
+      .from("toppers")
+      .upsert([row as any], { onConflict: "name,exam,year", ignoreDuplicates: false });
+    if (error) return error.message;
+  };
+
   return (
     <div className="space-y-6 p-4 lg:p-6">
-      <div className="flex items-center gap-3">
-        <Trophy className="h-7 w-7 text-primary" />
-        <div>
-          <h1 className="text-2xl font-black">Toppers / Achievements</h1>
-          <p className="text-sm text-muted-foreground">Featured student achievers shown on the public Achievements page.</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Trophy className="h-7 w-7 text-primary" />
+          <div>
+            <h1 className="text-2xl font-black">Toppers &amp; Alumni</h1>
+            <p className="text-sm text-muted-foreground">
+              Featured achievers shown on the Achievements page, and alumni shown on the Alumni page.
+            </p>
+          </div>
         </div>
+        <button
+          onClick={() => setBulkOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold hover:bg-muted"
+        >
+          <FileSpreadsheet className="h-4 w-4" /> Bulk CSV import / export
+        </button>
+      </div>
+
+      <div className="flex gap-2 text-xs font-bold">
+        {(["all", "toppers", "alumni"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setView(k)}
+            className={`rounded-full px-3 py-1.5 border transition ${
+              view === k
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background border-border hover:bg-muted"
+            }`}
+          >
+            {k === "all" ? "All" : k === "toppers" ? "Toppers only" : "Alumni only"}
+          </button>
+        ))}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
@@ -151,6 +237,21 @@ const AdminToppersPage = () => {
           <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Sort order" value={form.sort_order ?? 0} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} />
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_published ?? true} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /> Published</label>
           <textarea className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-3" rows={2} placeholder="Quote / story (optional)" value={form.quote ?? ""} onChange={(e) => setForm({ ...form, quote: e.target.value })} />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
+          <label className="flex items-center gap-2 text-sm font-bold text-bansal-blue">
+            <GraduationCap className="h-4 w-4" />
+            <input type="checkbox" checked={form.is_alumni ?? false} onChange={(e) => setForm({ ...form, is_alumni: e.target.checked })} />
+            Show on Alumni page (Bansalian)
+          </label>
+          {form.is_alumni && (
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Current position (e.g. Software Engineer)" value={form.current_position ?? ""} onChange={(e) => setForm({ ...form, current_position: e.target.value })} />
+              <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Company / institution" value={form.company ?? ""} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+              <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Batch year (e.g. 2015)" value={form.batch_year ?? ("" as any)} onChange={(e) => setForm({ ...form, batch_year: e.target.value ? Number(e.target.value) : (null as any) })} />
+            </div>
+          )}
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
@@ -196,7 +297,7 @@ const AdminToppersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((t) => (
+                {visible.map((t) => (
                   <tr key={t.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -206,14 +307,25 @@ const AdminToppersPage = () => {
                           <div className="h-9 w-9 rounded-full bg-muted" />
                         )}
                         <div>
-                          <div className="font-semibold">{t.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{t.city ?? ""}</div>
+                          <div className="font-semibold flex items-center gap-1.5">
+                            {t.name}
+                            {t.is_alumni && (
+                              <span title="Alumni" className="rounded-full bg-bansal-orange/10 px-1.5 py-0.5 text-[9px] font-bold text-bansal-orange uppercase tracking-wide">
+                                Alumni
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {t.is_alumni
+                              ? [t.current_position, t.company].filter(Boolean).join(" · ") || t.city || ""
+                              : t.city ?? ""}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">{t.exam}</td>
                     <td className="px-4 py-3">{t.rank_label ?? "-"}</td>
-                    <td className="px-4 py-3">{t.year ?? "-"}</td>
+                    <td className="px-4 py-3">{t.batch_year ?? t.year ?? "-"}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => togglePublish(t)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${t.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                         {t.is_published ? "Published" : "Hidden"}
@@ -227,14 +339,26 @@ const AdminToppersPage = () => {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No toppers yet.</td></tr>
+                {visible.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No entries yet.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      <BulkCsvDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import / export — Toppers & Alumni"
+        description="CSV columns: name, exam, rank_label, year, score, photo_url, quote, city, category, sort_order, is_published, is_alumni (true/false), current_position, company, batch_year. Upserts by (name, exam, year)."
+        fields={bulkFields}
+        exportRows={items}
+        importRow={importRow}
+        onDone={load}
+        fileBase="toppers-alumni"
+      />
     </div>
   );
 };
