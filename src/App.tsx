@@ -109,6 +109,7 @@ import AdminBooksPage from "./pages/AdminBooksPage";
 // AdminTestSeriesPage is now embedded inside AdminTestPlatformHub
 import AdminCentersPage from "./pages/AdminCentersPage";
 import AdminToppersPage from "./pages/AdminToppersPage";
+import AdminAlumniSubmissionsPage from "./pages/AdminAlumniSubmissionsPage";
 import AdminBannersPage from "./pages/AdminBannersPage";
 import AdminBoostPage from "./pages/AdminBoostPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
@@ -315,6 +316,7 @@ const App = () => (
               <Route path="/admin/centers" element={<AdminCentersPage />} />
               <Route path="/admin/center-support" element={<AdminCenterSupportPage />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
+              <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
