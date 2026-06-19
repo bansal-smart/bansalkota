@@ -265,14 +265,14 @@ export type Database = {
             foreignKeyName: "boost_registrations_preferred_centre_id_fkey"
             columns: ["preferred_centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
       }
-      center_banners: {
+      centre_banners: {
         Row: {
-          center_id: string
+          centre_id: string
           created_at: string
           cta_label: string | null
           cta_url: string | null
@@ -285,7 +285,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          center_id: string
+          centre_id: string
           created_at?: string
           cta_label?: string | null
           cta_url?: string | null
@@ -298,7 +298,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          center_id?: string
+          centre_id?: string
           created_at?: string
           cta_label?: string | null
           cta_url?: string | null
@@ -313,16 +313,16 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_banners_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
       }
-      center_course_enquiries: {
+      centre_course_enquiries: {
         Row: {
-          center_id: string
+          centre_id: string
           class_level: string | null
           course_id: string | null
           created_at: string
@@ -335,7 +335,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          center_id: string
+          centre_id: string
           class_level?: string | null
           course_id?: string | null
           created_at?: string
@@ -348,7 +348,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          center_id?: string
+          centre_id?: string
           class_level?: string | null
           course_id?: string | null
           created_at?: string
@@ -363,25 +363,25 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_course_enquiries_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "center_course_enquiries_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
-            referencedRelation: "center_courses"
+            referencedRelation: "centre_courses"
             referencedColumns: ["id"]
           },
         ]
       }
-      center_courses: {
+      centre_courses: {
         Row: {
           banner_url: string | null
           brochure_url: string | null
-          center_id: string
+          centre_id: string
           class_level: string | null
           created_at: string
           created_by: string | null
@@ -403,7 +403,7 @@ export type Database = {
         Insert: {
           banner_url?: string | null
           brochure_url?: string | null
-          center_id: string
+          centre_id: string
           class_level?: string | null
           created_at?: string
           created_by?: string | null
@@ -425,7 +425,7 @@ export type Database = {
         Update: {
           banner_url?: string | null
           brochure_url?: string | null
-          center_id?: string
+          centre_id?: string
           class_level?: string | null
           created_at?: string
           created_by?: string | null
@@ -447,17 +447,17 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_courses_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
       }
-      center_gallery: {
+      centre_gallery: {
         Row: {
           caption: string | null
-          center_id: string
+          centre_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -469,7 +469,7 @@ export type Database = {
         }
         Insert: {
           caption?: string | null
-          center_id: string
+          centre_id: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -481,7 +481,7 @@ export type Database = {
         }
         Update: {
           caption?: string | null
-          center_id?: string
+          centre_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -494,16 +494,16 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_gallery_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
       }
-      center_staff: {
+      centre_staff: {
         Row: {
-          center_id: string
+          centre_id: string
           created_at: string
           id: string
           role: string
@@ -511,7 +511,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          center_id: string
+          centre_id: string
           created_at?: string
           id?: string
           role?: string
@@ -519,7 +519,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          center_id?: string
+          centre_id?: string
           created_at?: string
           id?: string
           role?: string
@@ -529,17 +529,17 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_staff_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
       }
-      center_updates: {
+      centre_updates: {
         Row: {
           body: string
-          center_id: string
+          centre_id: string
           created_at: string
           created_by: string | null
           id: string
@@ -551,7 +551,7 @@ export type Database = {
         }
         Insert: {
           body: string
-          center_id: string
+          centre_id: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -563,7 +563,7 @@ export type Database = {
         }
         Update: {
           body?: string
-          center_id?: string
+          centre_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
@@ -576,14 +576,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "center_updates_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
       }
-      centers: {
+      centres: {
         Row: {
           address: string
           area: string | null
@@ -597,6 +597,7 @@ export type Database = {
           image_url: string | null
           is_featured: boolean
           is_hq: boolean
+          is_pinned: boolean
           is_published: boolean
           phone: string
           region: string
@@ -620,6 +621,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean
           is_hq?: boolean
+          is_pinned?: boolean
           is_published?: boolean
           phone?: string
           region?: string
@@ -643,6 +645,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean
           is_hq?: boolean
+          is_pinned?: boolean
           is_published?: boolean
           phone?: string
           region?: string
@@ -813,7 +816,7 @@ export type Database = {
       }
       course_batches: {
         Row: {
-          center_id: string | null
+          centre_id: string | null
           class_level: string | null
           code: string
           course_id: string
@@ -824,7 +827,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          center_id?: string | null
+          centre_id?: string | null
           class_level?: string | null
           code: string
           course_id: string
@@ -835,7 +838,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          center_id?: string | null
+          centre_id?: string | null
           class_level?: string | null
           code?: string
           course_id?: string
@@ -848,9 +851,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "course_batches_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
           {
@@ -1353,7 +1356,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           category: string | null
-          center_id: string | null
+          centre_id: string | null
           created_at: string
           email: string
           id: string
@@ -1371,7 +1374,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           category?: string | null
-          center_id?: string | null
+          centre_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -1389,7 +1392,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           category?: string | null
-          center_id?: string | null
+          centre_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -1407,9 +1410,9 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "enquiries_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
@@ -2470,7 +2473,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           batch_id: string | null
-          center_id: string | null
+          centre_id: string | null
           city: string | null
           class_level: string | null
           country: string | null
@@ -2497,7 +2500,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           batch_id?: string | null
-          center_id?: string | null
+          centre_id?: string | null
           city?: string | null
           class_level?: string | null
           country?: string | null
@@ -2524,7 +2527,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           batch_id?: string | null
-          center_id?: string | null
+          centre_id?: string | null
           city?: string | null
           class_level?: string | null
           country?: string | null
@@ -2558,9 +2561,9 @@ export type Database = {
           },
           {
             foreignKeyName: "profiles_center_id_fkey"
-            columns: ["center_id"]
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "centers"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
           {
@@ -3767,8 +3770,13 @@ export type Database = {
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
       is_any_center_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_any_centre_staff: { Args: { _user_id: string }; Returns: boolean }
       is_center_staff: {
         Args: { _center_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_centre_staff: {
+        Args: { _centre_id: string; _user_id: string }
         Returns: boolean
       }
       lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
