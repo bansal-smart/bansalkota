@@ -210,6 +210,18 @@ const AdminCentersPage = () => {
     else load();
   };
 
+  const togglePin = async (c: Center) => {
+    const { error } = await supabase
+      .from("centres")
+      .update({ is_pinned: !c.is_pinned })
+      .eq("id", c.id);
+    if (error) toast.error(error.message);
+    else {
+      toast.success(c.is_pinned ? "Unpinned" : "Pinned to top");
+      load();
+    }
+  };
+
   const parseBool = (v: string) => /^(true|yes|y|1)$/i.test(v.trim());
   const csvFields: CsvField[] = [
     { key: "city", label: "City", required: true, example: "Kota" },
