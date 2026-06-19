@@ -450,29 +450,12 @@ const AdminCentersPage = () => {
         fields={csvFields}
         fileBase="centres"
         exportRows={items as any}
-        importRow={async (row) => {
-          if (!row.city || !row.state) return "City and State required";
-          const slug = (row.slug && String(row.slug).trim()) || slugify(`${row.city}${row.area ? "-" + row.area : ""}`);
-          const payload: any = {
-            slug,
-            city: row.city,
-            area: row.area || null,
-            state: row.state,
-            region: row.region || "North",
-            address: row.address || "",
-            phone: row.phone || "",
-            email: row.email || null,
-            established: row.established ?? null,
-            theme: row.theme || "metro",
-            image_url: row.image_url || null,
-            is_hq: !!row.is_hq,
-            is_pinned: !!row.is_pinned,
-            verified: !!row.verified,
-            is_published: row.is_published == null ? true : !!row.is_published,
-            sort_order: row.sort_order ?? 0,
-          };
-          const { error } = await supabase.from("centres").upsert(payload, { onConflict: "slug" });
-          if (error) return error.message;
+        bulkImport={async (rows, dry_run) => {
+          const { data, error } = await (supabase as any).functions.invoke("bulk-import", {
+            body: { kind: "centres", rows, dry_run },
+          });
+          if (error) throw new Error(error.message || "Bulk import failed");
+          return data;
         }}
         onDone={load}
       />
