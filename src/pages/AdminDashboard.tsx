@@ -358,38 +358,54 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Enquiries + Live + Moderation */}
+      {/* BOOST Registrations + Live + Moderation */}
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-border bg-card p-4 lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-              <Inbox className="h-4 w-4 text-violet-600" /> Recent Enquiries
+              <Inbox className="h-4 w-4 text-violet-600" /> Recent BOOST Registrations
             </h2>
-            <Link to="/admin/enquiries" className="text-[11px] text-bansal-blue font-semibold inline-flex items-center gap-0.5">
-              Inbox <ArrowRight className="h-3 w-3" />
+            <Link to="/admin/boost" className="text-[11px] text-bansal-blue font-semibold inline-flex items-center gap-0.5">
+              View all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          {recentEnq.length === 0 ? (
-            <p className="py-6 text-center text-xs text-muted-foreground">No enquiries yet.</p>
+          {recentBoost.length === 0 ? (
+            <p className="py-6 text-center text-xs text-muted-foreground">No BOOST registrations yet.</p>
           ) : (
             <div className="space-y-2">
-              {recentEnq.map((e) => (
-                <div key={e.id} className="flex items-center gap-3 rounded-lg border border-border p-2.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-foreground truncate">{e.name}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{e.email}</div>
-                  </div>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${enquiryTone[e.source_type] ?? enquiryTone.contact}`}>
-                    {e.source_type.replace(/_/g, " ")}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground w-20 text-right shrink-0">
-                    {formatDistanceToNow(new Date(e.created_at), { addSuffix: true })}
-                  </span>
-                </div>
-              ))}
+              {recentBoost.map((b) => {
+                const payTone =
+                  b.payment_status === "paid"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : b.payment_status === "failed"
+                      ? "bg-rose-100 text-rose-700"
+                      : "bg-amber-100 text-amber-700";
+                const meta = [b.class_level, b.target_exam, b.city].filter(Boolean).join(" · ");
+                return (
+                  <Link
+                    key={b.id}
+                    to="/admin/boost"
+                    className="flex items-center gap-3 rounded-lg border border-border p-2.5 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-foreground truncate">{b.full_name}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">
+                        {b.admit_card_number ?? "—"}{meta ? ` · ${meta}` : ""}
+                      </div>
+                    </div>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${payTone}`}>
+                      {b.payment_status ?? "pending"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground w-20 text-right shrink-0">
+                      {formatDistanceToNow(new Date(b.created_at), { addSuffix: true })}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
+
 
         <div className="space-y-4">
           <div className="rounded-2xl border border-border bg-card p-4">
