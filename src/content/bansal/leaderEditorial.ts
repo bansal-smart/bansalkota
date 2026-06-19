@@ -6,7 +6,11 @@ import sameerPortraitDark from "@/assets/sameer-portrait-dark.png.asset.json";
 import sameerBranded from "@/assets/sameer-branded.png.asset.json";
 import sameerHeadshot from "@/assets/sameer-headshot.jpg.asset.json";
 import sameerSpeaking from "@/assets/sameer-speaking.jpg.asset.json";
-import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
+// Refreshed primary portraits (v2)
+import sameerPortraitV2 from "@/assets/sameer-portrait-v2.jpg";
+import vkPortraitV2 from "@/assets/vk-bansal-portrait-v2.jpg";
+import mahimaPortraitV2 from "@/assets/mahima-portrait-v2.jpg";
+import neelamPortraitV2 from "@/assets/neelam-portrait-v2.jpg";
 import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
 import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
 import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
