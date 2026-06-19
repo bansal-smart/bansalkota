@@ -1396,8 +1396,9 @@ const NumericInput = ({
   onChange: (v: string) => void;
   questionType: "integer" | "numerical";
 }) => {
-  const allowDecimal = questionType === "numerical";
-  const allowNeg = questionType === "numerical";
+  // Both numerical and integer questions accept decimals and negatives.
+  const allowDecimal = true;
+  const allowNeg = true;
 
   // Defensive: strip any disallowed characters that may have come from a stored answer
   useEffect(() => {
