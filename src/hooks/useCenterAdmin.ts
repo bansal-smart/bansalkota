@@ -36,7 +36,7 @@ export const useCenterAdmin = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("centre_staff" as any)
-        .select("id, centre_id, role, center:centers(id, slug, city, area, state)")
+        .select("id, centre_id, role, center:centres(id, slug, city, area, state)")
         .eq("user_id", user.id);
       if (cancelled) return;
       if (error) {

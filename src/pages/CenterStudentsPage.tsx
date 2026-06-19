@@ -35,25 +35,37 @@ const STATUS_COLOR: Record<Status, string> = {
   dropped: "bg-rose-100 text-rose-700",
 };
 
+type Batch = { id: string; name: string; code: string | null };
+
 const CenterStudentsPage = () => {
   const { primaryCenterId } = useCenterAdmin();
   const [items, setItems] = useState<Student[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
+  const [batchFilter, setBatchFilter] = useState<string>("all");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!primaryCenterId) return;
     setLoading(true);
-    const { data, error } = await (supabase as any)
-      .from("profiles")
-      .select("id, user_id, full_name, phone, roll_number, target_exam, class_level, city, batch_id, student_status, created_at")
-      .eq("centre_id", primaryCenterId)
-      .order("full_name", { ascending: true });
+    const [{ data, error }, { data: bs }] = await Promise.all([
+      (supabase as any)
+        .from("profiles")
+        .select("id, user_id, full_name, phone, roll_number, target_exam, class_level, city, batch_id, student_status, created_at")
+        .eq("centre_id", primaryCenterId)
+        .order("full_name", { ascending: true }),
+      (supabase as any)
+        .from("course_batches")
+        .select("id, name, code")
+        .eq("is_active", true)
+        .order("name"),
+    ]);
     if (error) toast.error(error.message);
     setItems((data ?? []) as Student[]);
+    setBatches((bs ?? []) as Batch[]);
     setLoading(false);
   };
 
@@ -68,6 +80,7 @@ const CenterStudentsPage = () => {
     const lq = q.trim().toLowerCase();
     return items.filter((s) => {
       if (statusFilter !== "all" && s.student_status !== statusFilter) return false;
+      if (batchFilter !== "all" && (s.batch_id ?? "") !== batchFilter) return false;
       if (!lq) return true;
       return (
         (s.full_name || "").toLowerCase().includes(lq) ||
@@ -75,19 +88,22 @@ const CenterStudentsPage = () => {
         (s.roll_number || "").toLowerCase().includes(lq)
       );
     });
-  }, [items, q, statusFilter]);
+  }, [items, q, statusFilter, batchFilter]);
 
-  const updateStatus = async (s: Student, next: Status) => {
+  const updateStudent = async (s: Student, patch: Partial<Student>) => {
     setSavingId(s.id);
     const { error } = await (supabase as any)
       .from("profiles")
-      .update({ student_status: next })
+      .update(patch)
       .eq("id", s.id);
     setSavingId(null);
     if (error) return toast.error(error.message);
-    setItems((arr) => arr.map((x) => (x.id === s.id ? { ...x, student_status: next } : x)));
-    toast.success("Status updated");
+    setItems((arr) => arr.map((x) => (x.id === s.id ? { ...x, ...patch } : x)));
+    toast.success("Updated");
   };
+  const updateStatus = (s: Student, next: Status) => updateStudent(s, { student_status: next });
+  const updateBatch = (s: Student, batchId: string) =>
+    updateStudent(s, { batch_id: batchId || null });
 
   // Bulk CSV fields — import looks students up by phone or roll_number and updates centre/status
   const csvFields: CsvField[] = [
@@ -156,6 +172,17 @@ const CenterStudentsPage = () => {
             <option key={s} value={s}>{STATUS_LABEL[s]}</option>
           ))}
         </select>
+        <select
+          value={batchFilter}
+          onChange={(e) => setBatchFilter(e.target.value)}
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">All batches</option>
+          <option value="">— Unassigned —</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+          ))}
+        </select>
         <span className="text-xs text-muted-foreground">{filtered.length} of {items.length}</span>
       </div>
 
@@ -173,6 +200,7 @@ const CenterStudentsPage = () => {
                 <th className="px-4 py-2 font-bold">Phone</th>
                 <th className="px-4 py-2 font-bold">Class</th>
                 <th className="px-4 py-2 font-bold">Target</th>
+                <th className="px-4 py-2 font-bold">Batch</th>
                 <th className="px-4 py-2 font-bold">Status</th>
                 <th className="px-4 py-2 font-bold">Joined</th>
               </tr>
@@ -185,6 +213,19 @@ const CenterStudentsPage = () => {
                   <td className="px-4 py-2 text-muted-foreground">{s.phone || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.class_level || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.target_exam || "—"}</td>
+                  <td className="px-4 py-2">
+                    <select
+                      disabled={savingId === s.id}
+                      value={s.batch_id ?? ""}
+                      onChange={(e) => updateBatch(s, e.target.value)}
+                      className="rounded border border-border bg-background px-1.5 py-0.5 text-[11px] max-w-[160px]"
+                    >
+                      <option value="">— None —</option>
+                      {batches.map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_COLOR[s.student_status]}`}>
@@ -206,7 +247,7 @@ const CenterStudentsPage = () => {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No students match.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">No students match.</td></tr>
               )}
             </tbody>
           </table>
