@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Save, Loader2, Upload, BookOpen } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, Upload, BookOpen, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 
 type CenterCourse = {
   id: string;
