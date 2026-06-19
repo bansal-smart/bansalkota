@@ -1405,9 +1405,22 @@ const NumericInput = ({
     let cleaned = value;
     if (!allowDecimal) cleaned = cleaned.replace(/\./g, "");
     if (!allowNeg) cleaned = cleaned.replace(/-/g, "");
+    else {
+      // keep only a single leading minus
+      const neg = cleaned.startsWith("-");
+      cleaned = (neg ? "-" : "") + cleaned.replace(/-/g, "");
+    }
+    if (allowDecimal) {
+      const firstDot = cleaned.indexOf(".");
+      if (firstDot !== -1) {
+        cleaned =
+          cleaned.slice(0, firstDot + 1) +
+          cleaned.slice(firstDot + 1).replace(/\./g, "");
+      }
+    }
     if (cleaned !== value) onChange(cleaned);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionType]);
+  }, [value, questionType]);
 
   const press = (k: string) => {
     if (k === "back") return onChange(value.slice(0, -1));
