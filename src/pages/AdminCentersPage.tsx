@@ -466,6 +466,7 @@ const AdminCentersPage = () => {
             theme: row.theme || "metro",
             image_url: row.image_url || null,
             is_hq: !!row.is_hq,
+            is_pinned: !!row.is_pinned,
             verified: !!row.verified,
             is_published: row.is_published == null ? true : !!row.is_published,
             sort_order: row.sort_order ?? 0,
