@@ -2412,6 +2412,7 @@ export type Database = {
           roll_number: string | null
           school_id: string | null
           state: string | null
+          student_status: Database["public"]["Enums"]["student_status"]
           target_exam: string | null
           updated_at: string
           user_id: string
@@ -2438,6 +2439,7 @@ export type Database = {
           roll_number?: string | null
           school_id?: string | null
           state?: string | null
+          student_status?: Database["public"]["Enums"]["student_status"]
           target_exam?: string | null
           updated_at?: string
           user_id: string
@@ -2464,6 +2466,7 @@ export type Database = {
           roll_number?: string | null
           school_id?: string | null
           state?: string | null
+          student_status?: Database["public"]["Enums"]["student_status"]
           target_exam?: string | null
           updated_at?: string
           user_id?: string
@@ -3738,6 +3741,7 @@ export type Database = {
         | "teacher"
         | "mentor"
         | "center_admin"
+      student_status: "active" | "inactive" | "passed_out" | "dropped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3873,6 +3877,7 @@ export const Constants = {
         "mentor",
         "center_admin",
       ],
+      student_status: ["active", "inactive", "passed_out", "dropped"],
     },
   },
 } as const
