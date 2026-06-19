@@ -175,7 +175,7 @@ const AdminToppersPage = () => {
     if (!row.name || !row.exam) return "Missing name or exam";
     const { error } = await supabase
       .from("toppers")
-      .upsert(row, { onConflict: "name,exam,year", ignoreDuplicates: false });
+      .upsert([row as any], { onConflict: "name,exam,year", ignoreDuplicates: false });
     if (error) return error.message;
   };
 
