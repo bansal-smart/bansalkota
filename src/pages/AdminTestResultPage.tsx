@@ -671,7 +671,7 @@ const AdminTestResultPage = () => {
         drawHeader();
         drawFooter();
         const answers = (att.answers ?? {}) as Record<string, { selected: any }>;
-        const perQ: any[] = (att?.metadata?.questions as any[]) ?? [];
+        const perQ: any[] = ((att as any)?.metadata?.questions as any[]) ?? [];
         const fmtOptionLabel = (val: any, opts: any): string => {
           if (Array.isArray(opts) && typeof val === "number" && opts[val] != null) {
             const o = opts[val];
