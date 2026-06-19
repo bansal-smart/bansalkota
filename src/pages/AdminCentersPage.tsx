@@ -365,7 +365,8 @@ const AdminCentersPage = () => {
                       <div className="font-semibold">{c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}</div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
                         <span>{c.slug}</span>
-                        {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ · PINNED</span>}
+                        {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ</span>}
+                        {c.is_pinned && !c.is_hq && <span className="rounded bg-accent/20 text-accent-foreground px-1 font-bold">PINNED</span>}
                         {c.verified && <span className="rounded bg-green-100 text-green-700 px-1 font-bold">Verified</span>}
                       </div>
                     </td>
