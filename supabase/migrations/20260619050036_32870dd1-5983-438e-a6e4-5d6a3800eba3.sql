@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS centre_courses_centre_slug_uidx ON public.centre_courses (centre_id, slug);
