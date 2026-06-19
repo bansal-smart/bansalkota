@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type PublicEducator = {
@@ -10,53 +10,32 @@ export type PublicEducator = {
   city: string | null;
 };
 
-/**
- * Public list of users with role=teacher. Reads from profiles + user_roles.
- * Falls back to empty list — pages should render a curated fallback if needed.
- */
 export const useEducators = () => {
-  const [educators, setEducators] = useState<PublicEducator[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
-      setLoading(true);
+  const query = useQuery({
+    queryKey: ["educators", "public"],
+    queryFn: async () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "teacher");
       const ids = (roles ?? []).map((r: any) => r.user_id);
-      if (!ids.length) {
-        if (!ignore) {
-          setEducators([]);
-          setLoading(false);
-        }
-        return;
-      }
+      if (!ids.length) return [] as PublicEducator[];
       const { data: profs } = await supabase
         .from("profiles")
-        .select("user_id, full_name, avatar_url, target_exam, city")
+        .select("user_id, full_name, avatar_url, city")
         .in("user_id", ids);
-      const list = (profs ?? [])
+      return (profs ?? [])
         .filter((p: any) => p.full_name)
         .map((p: any) => ({
           user_id: p.user_id,
           full_name: p.full_name,
           avatar_url: p.avatar_url ?? null,
-          subject: null, // profiles has no subject column; fall back to N/A
+          subject: null,
           bio: null,
           city: p.city ?? null,
         })) as PublicEducator[];
-      if (!ignore) {
-        setEducators(list);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  return { educators, loading };
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+  return { educators: query.data ?? [], loading: query.isPending };
 };

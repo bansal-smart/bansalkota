@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type LiveClassRow = {
@@ -18,32 +19,39 @@ export type LiveClassRow = {
   created_by: string | null;
 };
 
-export const useLiveClasses = (filter: "all" | "live" | "upcoming" | "past" = "all") => {
-  const [classes, setClasses] = useState<LiveClassRow[]>([]);
-  const [loading, setLoading] = useState(true);
+const LIVE_COLUMNS =
+  "id, slug, title, subject, educator_name, educator_avatar, target_exam, status, starts_at, ends_at, meeting_url, recording_url, description, created_by";
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+export const useLiveClasses = (filter: "all" | "live" | "upcoming" | "past" = "all") => {
+  const qc = useQueryClient();
+  const key = ["live_classes", filter];
+  const query = useQuery({
+    queryKey: key,
+    queryFn: async () => {
       const now = new Date().toISOString();
-      let q = supabase.from("live_classes").select("*").order("starts_at", { ascending: true });
+      let q = supabase.from("live_classes").select(LIVE_COLUMNS).order("starts_at", { ascending: true });
       if (filter === "live") q = q.eq("status", "live");
       else if (filter === "upcoming") q = q.gte("starts_at", now).neq("status", "completed");
       else if (filter === "past") q = q.eq("status", "completed");
-      const { data } = await q;
-      setClasses((data ?? []) as LiveClassRow[]);
-      setLoading(false);
-    };
-    load();
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as LiveClassRow[];
+    },
+    staleTime: 60 * 1000,
+  });
 
+  useEffect(() => {
     const channel = supabase
-      .channel("live-classes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_classes" }, () => load())
+      .channel(`live-classes-${filter}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "live_classes" }, () => {
+        qc.invalidateQueries({ queryKey: key });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
-  return { classes, loading };
+  return { classes: query.data ?? [], loading: query.isPending };
 };

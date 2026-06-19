@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Topper = {
@@ -17,27 +17,21 @@ export type Topper = {
 };
 
 export const useToppers = () => {
-  const [toppers, setToppers] = useState<Topper[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
-      const { data } = await supabase
+  const query = useQuery({
+    queryKey: ["toppers", "published"],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("toppers")
-        .select("*")
+        .select(
+          "id, name, exam, rank_label, year, score, photo_url, quote, city, category, sort_order, is_published"
+        )
         .eq("is_published", true)
         .order("sort_order")
         .limit(200);
-      if (!ignore) {
-        setToppers((data ?? []) as Topper[]);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  return { toppers, loading };
+      if (error) throw error;
+      return (data ?? []) as Topper[];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+  return { toppers: query.data ?? [], loading: query.isPending };
 };

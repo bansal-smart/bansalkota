@@ -1,32 +1,43 @@
 import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore, AppNotification } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 
 export const useNotifications = () => {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { setNotifications, addNotification } = useAppStore();
+  const key = ["notifications", user?.id ?? null];
+
+  const query = useQuery({
+    queryKey: key,
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("id, title, body, type, link, read_at, created_at, archived_at")
+        .eq("user_id", user!.id)
+        .is("archived_at", null)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data ?? []) as AppNotification[];
+    },
+    staleTime: 60 * 1000,
+  });
 
   useEffect(() => {
     if (!user) {
       setNotifications([]);
       return;
     }
+    if (query.data) setNotifications(query.data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, query.data]);
 
-    let active = true;
-
-    (async () => {
-      const { data, error } = await supabase
-        .from("notifications")
-        .select("id, title, body, type, link, read_at, created_at, archived_at")
-        .eq("user_id", user.id)
-        .is("archived_at", null)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (!active || error) return;
-      setNotifications((data ?? []) as AppNotification[]);
-    })();
-
+  useEffect(() => {
+    if (!user) return;
     const channel = supabase
       .channel(`notifications:${user.id}`)
       .on(
@@ -39,12 +50,11 @@ export const useNotifications = () => {
         },
         (payload) => {
           addNotification(payload.new as AppNotification);
+          qc.invalidateQueries({ queryKey: key });
         }
       )
       .subscribe();
-
     return () => {
-      active = false;
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
