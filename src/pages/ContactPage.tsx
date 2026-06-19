@@ -9,6 +9,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import contactHero from "@/assets/contact-hero.png";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 import SubmissionSuccess from "@/components/SubmissionSuccess";
+import { sendConfirmation } from "@/lib/sendConfirmation";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -64,6 +65,12 @@ export default function ContactPage() {
       });
       if (error) throw error;
       setSubmitted(true);
+      void sendConfirmation({
+        templateName: "enquiry-confirmation",
+        recipientEmail: parsed.data.email,
+        idempotencyKey: `enquiry-contact-${parsed.data.email}-${Date.now()}`,
+        templateData: { name: parsed.data.name, source: "contact", message: parsed.data.message },
+      });
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });
 
     } catch (err) {

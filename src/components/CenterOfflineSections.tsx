@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BookOpen, X, Loader2, Send, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { sendConfirmation } from "@/lib/sendConfirmation";
 
 type Course = {
   id: string;
@@ -163,6 +164,16 @@ const CourseEnquiryModal = ({ course, centerId, onClose }: { course: Course; cen
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Enquiry sent! The centre will contact you soon.");
+    void sendConfirmation({
+      templateName: "centre-course-enquiry-confirmation",
+      recipientEmail: form.email,
+      idempotencyKey: `centre-course-${centerId}-${course.id}-${form.email}-${Date.now()}`,
+      templateData: {
+        name: form.name,
+        courseTitle: course.title,
+        classLevel: form.class_level,
+      },
+    });
     onClose();
   };
 
@@ -208,6 +219,12 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Enquiry sent! The centre will reach out within 24 hours.");
+    void sendConfirmation({
+      templateName: "enquiry-confirmation",
+      recipientEmail: form.email,
+      idempotencyKey: `enquiry-admission-${centerId}-${form.email}-${Date.now()}`,
+      templateData: { name: form.name, source: `${centerCity} admissions`, message: form.message },
+    });
     onClose();
   };
 

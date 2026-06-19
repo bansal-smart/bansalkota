@@ -5,6 +5,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import { toast } from "sonner";
 import { postSubmission } from "@/content/postSubmissionMessages";
+import { sendConfirmation } from "@/lib/sendConfirmation";
 
 const exams = ["JEE", "NEET", "Foundation", "Olympiad", "Not sure yet"];
 const classes = ["Class 6-8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
@@ -40,6 +41,12 @@ const LandingCTAForm = () => {
     }
     setDone(true);
     toast.success(postSubmission.enquiry.toast);
+    void sendConfirmation({
+      templateName: "enquiry-confirmation",
+      recipientEmail: form.email,
+      idempotencyKey: `enquiry-cta-${form.email}-${Date.now()}`,
+      templateData: { name: form.name, source: "landing", message: form.message },
+    });
   };
 
   return (
