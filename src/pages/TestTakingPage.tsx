@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2, LifeBuoy, Send, ShieldAlert } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,8 +70,15 @@ const TestTakingPage = () => {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [tabSwitches, setTabSwitches] = useState(0);
   const [showTabWarning, setShowTabWarning] = useState(false);
+  const [showAutoBlocked, setShowAutoBlocked] = useState(false);
   const tabSwitchesRef = useRef(0);
   const blockedRef = useRef(false);
+  const lastViolationAtRef = useRef<number>(0);
+  // Support query modal
+  const [showSupport, setShowSupport] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  const [supportSent, setSupportSent] = useState(false);
   const submitRef = useRef<(auto?: boolean) => void>(() => {});
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -236,26 +243,44 @@ const TestTakingPage = () => {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [started]);
 
-  // Tab visibility — warn only, never auto-submit (per admin request)
+  // Tab/window switch — 3 strikes and the test auto-submits.
   useEffect(() => {
     if (!started) return;
-    const handler = () => {
+
+    const registerViolation = () => {
       if (blockedRef.current) return;
-      if (document.hidden) {
-        const next = tabSwitchesRef.current + 1;
-        tabSwitchesRef.current = next;
-        setTabSwitches(next);
-      } else {
-        if (tabSwitchesRef.current > 0) {
-          setShowTabWarning(true);
-        }
+      // Debounce: ignore duplicate fires within 500ms (visibilitychange + blur may both fire)
+      const now = Date.now();
+      if (now - lastViolationAtRef.current < 500) return;
+      lastViolationAtRef.current = now;
+
+      const next = tabSwitchesRef.current + 1;
+      tabSwitchesRef.current = next;
+      setTabSwitches(next);
+
+      if (next >= 3) {
+        blockedRef.current = true;
+        setShowTabWarning(false);
+        setShowAutoBlocked(true);
+        // Auto-submit immediately
+        try { void submitRef.current?.(true); } catch { /* ignore */ }
       }
     };
-    document.addEventListener("visibilitychange", handler);
+
+    const onVisibility = () => {
+      if (document.hidden) registerViolation();
+      else if (tabSwitchesRef.current > 0 && tabSwitchesRef.current < 3) {
+        setShowTabWarning(true);
+      }
+    };
+    const onBlur = () => { registerViolation(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", onBlur);
     const noContext = (e: Event) => e.preventDefault();
     document.addEventListener("contextmenu", noContext);
     return () => {
-      document.removeEventListener("visibilitychange", handler);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", onBlur);
       document.removeEventListener("contextmenu", noContext);
     };
   }, [started]);
