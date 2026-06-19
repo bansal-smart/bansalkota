@@ -48,6 +48,7 @@ const blank: Partial<Center> = {
   sort_order: 0,
   is_featured: false,
   featured_rank: null,
+  is_pinned: false,
 };
 
 const slugify = (s: string) =>
