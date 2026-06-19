@@ -30,6 +30,7 @@ const fetchOverview = async () => {
     eduRes, enqOpenRes, repRes, supportRes,
     centresRes, recentEnqRes, toppersRes,
     testsLiveRes, testsTotalRes, qbankRes,
+    recentBoostRes,
   ] = await Promise.all([
     supabase.from("profiles").select("user_id, full_name, plan, created_at, country, centre_id").order("created_at", { ascending: false }).limit(500),
     supabase.from("courses").select("id, name, educator_name, total_enrolled, rating, price").eq("is_published", true),
@@ -46,6 +47,7 @@ const fetchOverview = async () => {
     supabase.from("tests").select("id", { count: "exact", head: true }).eq("is_published", true).gte("starts_at", todayStart),
     supabase.from("tests").select("id", { count: "exact", head: true }),
     supabase.from("question_bank").select("id", { count: "exact", head: true }),
+    supabase.from("boost_registrations").select("id, full_name, class_level, target_exam, city, admit_card_number, payment_status, created_at").order("created_at", { ascending: false }).limit(8),
   ]);
 
   return {
