@@ -80,6 +80,7 @@ const TestTakingPage = () => {
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
   const submitRef = useRef<(auto?: boolean) => void>(() => {});
+  const persistProgressRef = useRef<((a?: Record<string, AnswerVal>, s?: Record<string, QStatus>, c?: Set<string>) => Promise<unknown>) | null>(null);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
@@ -265,20 +266,26 @@ const TestTakingPage = () => {
       tabSwitchesRef.current = next;
       setTabSwitches(next);
 
+      // Always flush current progress to the server immediately on every violation
+      // so that even if the next action auto-submits, the most-recent answers are persisted.
+      void persistProgressRef.current?.(answersRef.current, statusesRef.current);
+
       if (next >= 3) {
         blockedRef.current = true;
         setShowTabWarning(false);
         setShowAutoBlocked(true);
-        // Auto-submit immediately
-        try { void submitRef.current?.(true); } catch { /* ignore */ }
+        // Persist once more, THEN auto-submit, so submit_test_attempt scores the latest answers.
+        (async () => {
+          try { await persistProgressRef.current?.(answersRef.current, statusesRef.current); } catch { /* ignore */ }
+          try { await submitRef.current?.(true); } catch { /* ignore */ }
+        })();
+      } else {
+        setShowTabWarning(true);
       }
     };
 
     const onVisibility = () => {
       if (document.hidden) registerViolation();
-      else if (tabSwitchesRef.current > 0 && tabSwitchesRef.current < 3) {
-        setShowTabWarning(true);
-      }
     };
     const onBlur = () => { registerViolation(); };
     document.addEventListener("visibilitychange", onVisibility);
@@ -673,15 +680,22 @@ const TestTakingPage = () => {
   const handleSubmit = async (auto = false) => {
     if (!attemptId) return;
     setSubmitting(true);
+    // Always read from refs so auto-submit (triggered from event handlers) sees
+    // the latest answers/statuses, not a stale React-closure snapshot.
+    const latestAnswers: Record<string, AnswerVal> = { ...answersRef.current };
+    const latestStatuses: Record<string, QStatus> = { ...statusesRef.current };
     // Accrue final time for current question
     if (q) {
       const delta = Math.floor((Date.now() - enteredAtRef.current) / 1000);
-      answers[q.id] = { ...(answers[q.id] ?? { selected: null }), time_spent: ((answers[q.id]?.time_spent ?? 0) + delta) } as AnswerVal;
+      const cur = latestAnswers[q.id] ?? ({ selected: null } as AnswerVal);
+      latestAnswers[q.id] = { ...cur, time_spent: ((cur.time_spent ?? 0) + delta) } as AnswerVal;
     }
-    const saved = await persistProgress(answers, statuses);
+    answersRef.current = latestAnswers;
+    statusesRef.current = latestStatuses;
+    const saved = await persistProgress(latestAnswers, latestStatuses);
     await supabase.from("test_attempts").update({
-      answers: saved?.answers ?? answers,
-      question_statuses: saved?.statuses ?? statuses,
+      answers: saved?.answers ?? latestAnswers,
+      question_statuses: saved?.statuses ?? latestStatuses,
       status: auto ? "auto_submitted" : "submitted",
       submitted_at: new Date().toISOString(),
       time_spent_seconds: startedAt ? Math.floor((Date.now() - startedAt.getTime()) / 1000) : 0,
@@ -705,6 +719,7 @@ const TestTakingPage = () => {
 
   // Keep latest handleSubmit accessible from tab-visibility listener
   submitRef.current = handleSubmit;
+  persistProgressRef.current = persistProgress;
 
   const counts = useMemo(() => {
     return questions.reduce((acc, qq) => {
