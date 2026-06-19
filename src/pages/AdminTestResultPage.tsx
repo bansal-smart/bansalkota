@@ -487,7 +487,7 @@ const AdminTestResultPage = () => {
       // 1) Fetch this student's attempt with answers
       const { data: att } = await supabase
         .from("test_attempts")
-        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers")
+        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata")
         .eq("test_id", test.id)
         .eq("user_id", r.user_id)
         .in("status", ["submitted", "auto_submitted"])
@@ -671,60 +671,96 @@ const AdminTestResultPage = () => {
         drawHeader();
         drawFooter();
         const answers = (att.answers ?? {}) as Record<string, { selected: any }>;
-        const fmtAns = (val: any, opts: any): string => {
-          if (val === null || val === undefined || val === "") return "—";
-          if (Array.isArray(val)) return val.map((v) => fmtAns(v, opts)).join(", ");
-          if (typeof val === "object") return JSON.stringify(val);
+        const perQ: any[] = ((att as any)?.metadata?.questions as any[]) ?? [];
+        const fmtOptionLabel = (val: any, opts: any): string => {
           if (Array.isArray(opts) && typeof val === "number" && opts[val] != null) {
             const o = opts[val];
-            const txt = typeof o === "string" ? o : (o?.text ?? JSON.stringify(o));
-            return `${String.fromCharCode(65 + val)}. ${String(txt).slice(0, 60)}`;
+            const txt = typeof o === "string" ? o : (o?.text ?? "");
+            return `${String.fromCharCode(65 + val)}${txt ? ". " + String(txt).slice(0, 60) : ""}`;
           }
+          return `${String.fromCharCode(65 + Number(val))}`;
+        };
+        const fmtAns = (val: any, opts: any, qType: string): string => {
+          if (val === null || val === undefined || val === "") return "—";
+          // integer/numerical
+          if (qType === "integer" || qType === "numerical") {
+            if (val && typeof val === "object" && "value" in val) return String((val as any).value);
+            return String(val);
+          }
+          // mcq-multi (array of indices)
+          if (Array.isArray(val)) {
+            return [...val]
+              .map((v) => (typeof v === "number" ? String.fromCharCode(65 + v) : String(v)))
+              .sort()
+              .join(", ");
+          }
+          if (typeof val === "object") {
+            if ("value" in val) return String((val as any).value);
+            return JSON.stringify(val);
+          }
+          if (typeof val === "number") return fmtOptionLabel(val, opts);
           return String(val);
         };
         const rows = (qs as any[]).map((q) => {
-          const ans = answers[q.id]?.selected;
-          const correct = q.correct_answer;
-          const yourTxt = fmtAns(ans, q.options);
-          const corrTxt = fmtAns(correct, q.options);
+          const rec = perQ.find((x) => x?.question_id === q.id);
+          const qType = String(q.question_type ?? rec?.question_type ?? "mcq-single");
+          const ans = answers[q.id]?.selected ?? rec?.selected;
+          const correct = q.correct_answer ?? rec?.correct;
+          const yourTxt = fmtAns(ans, q.options, qType);
+          const corrTxt = fmtAns(correct, q.options, qType);
+          const attempted = rec ? !!rec.attempted : (ans !== null && ans !== undefined && ans !== "");
+          const isCorrect = rec ? !!rec.is_correct : false;
+          const marks = rec ? Number(rec.marks ?? 0) : 0;
           let result = "Not Attempted";
-          if (ans !== null && ans !== undefined && ans !== "") {
-            const isCorrect = JSON.stringify(ans) === JSON.stringify(correct) ||
-              (Array.isArray(correct) && correct.includes(ans));
-            result = isCorrect ? "Correct" : "Wrong";
+          if (attempted) {
+            if (isCorrect) result = "Correct";
+            else if (marks > 0) result = "Partial";
+            else result = "Wrong";
           }
+          const marksStr = marks > 0 ? `+${marks}` : String(marks);
           return [
-            String(q.position),
+            String((q.position ?? 0) + 1),
             String(q.subject ?? "—"),
             yourTxt,
             corrTxt,
             result,
+            marksStr,
           ];
         });
         autoTable(doc, {
           startY: 70,
-          head: [["Q#", "Subject", "Your Answer", "Correct Answer", "Result"]],
+          head: [["Q#", "Subject", "Your Answer", "Correct Answer", "Result", "Marks"]],
           body: rows,
           theme: "grid",
           styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
           headStyles: { fillColor: [30, 41, 59], textColor: 255 },
           columnStyles: {
-            0: { cellWidth: 28, halign: "center" },
-            1: { cellWidth: 60 },
-            2: { cellWidth: 170 },
-            3: { cellWidth: 170 },
+            0: { cellWidth: 26, halign: "center" },
+            1: { cellWidth: 56 },
+            2: { cellWidth: 150 },
+            3: { cellWidth: 150 },
             4: { cellWidth: 60, halign: "center", fontStyle: "bold" },
+            5: { cellWidth: 40, halign: "center", fontStyle: "bold" },
           },
           didParseCell: (data) => {
             if (data.section === "body" && data.column.index === 4) {
               const v = String(data.cell.raw);
               if (v === "Correct") data.cell.styles.textColor = [16, 185, 129];
               else if (v === "Wrong") data.cell.styles.textColor = [220, 38, 38];
+              else if (v === "Partial") data.cell.styles.textColor = [217, 119, 6];
+              else data.cell.styles.textColor = [120, 120, 120];
+            }
+            if (data.section === "body" && data.column.index === 5) {
+              const raw = String(data.cell.raw);
+              const n = Number(raw);
+              if (n > 0) data.cell.styles.textColor = [16, 185, 129];
+              else if (n < 0) data.cell.styles.textColor = [220, 38, 38];
               else data.cell.styles.textColor = [120, 120, 120];
             }
           },
           didDrawPage: () => { drawHeader(); drawFooter(); },
         });
+
       }
 
       doc.save(`${(r.roll_number || r.full_name || "student").replace(/\s+/g, "_")}_${test.title.replace(/\s+/g, "_")}.pdf`);
@@ -1000,7 +1036,7 @@ const AdminTestResultPage = () => {
                             const marksCls = m > 0 ? "text-green-700" : m < 0 ? "text-red-600" : "text-gray-500";
                             return (
                               <tr key={q.id} className="border-t border-border">
-                                <td className="px-2 py-1.5">{q.position}</td>
+                                <td className="px-2 py-1.5">{(q.position ?? 0) + 1}</td>
                                 <td className="px-2 py-1.5">{q.subject ?? "—"}</td>
                                 <td className={`px-2 py-1.5 text-center font-semibold ${cls}`}>{label}</td>
                                 <td className={`px-2 py-1.5 text-center font-semibold ${marksCls}`}>{m > 0 ? `+${m}` : m}</td>

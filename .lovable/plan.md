@@ -1,58 +1,49 @@
-## Goal
+## Problem
 
-Make per-question partial marking honor the admin toggle, and tighten input validation for Numerical vs. Integer questions on both the admin editor and the student test runner.
+In `src/pages/AdminTestResultPage.tsx`, the student detail PDF (`downloadStudentPDF`) re-evaluates each question on the client with broken logic:
 
----
+- Integer questions: compares user string `"0004"` against stored `{value: 4}` via `JSON.stringify` → always "Wrong" even when student answered correctly. This explains positions 8, 9, 10, 11, 24, 25, 26, 27 being shown wrong.
+- mcq-multi: only checks exact equality / `.includes`, never awards partial marks. This explains positions 5, 21, 36, 37, 38, 39 missing their partial marks.
+- Q# in the PDF and drawer table shows the raw 0-indexed `position`, so every question is off by one.
 
-## 1. Partial Marking actually applied
+The database `submit_test_attempt` RPC already scores everything correctly — `test_attempts.metadata.questions` contains the authoritative per-question `marks`, `is_correct`, `attempted`, `selected`, `correct`. I verified Saanvi's metadata: positions 8/9/10/11/24/25/26/27 are all `is_correct=true, marks=4`, position 5 has `marks=2`, position 36 has `marks=1`, etc. All matches the user's expectation.
 
-**Root cause:** The server scoring function `submit_test_attempt` (Lovable Cloud RPC) currently *always* applies the JEE-Advanced partial rule for `mcq-multi`, regardless of the per-question `partial_marking` flag set in the Question Editor. So toggling the "Enable partial marking" checkbox has no effect — students always get +1 per correctly-picked option on a partial subset.
+This is a pure presentation bug. No scoring/RPC change needed.
 
-**Fix (migration on `public.submit_test_attempt`):**
+## Fix
 
-For `question_type = 'mcq-multi'`:
-- Exact match (all correct picked, no wrong): `+q.marks_correct` (unchanged).
-- Any wrong picked: `q.marks_wrong` (unchanged).
-- Subset of correct, no wrong:
-  - If `q.partial_marking = true` → `LEAST(correct_picked, q.marks_correct)` (current behavior, JEE-Adv rule).
-  - If `q.partial_marking = false` → `0` (no credit unless fully correct; no negative since no wrong option picked).
+Edit only `src/pages/AdminTestResultPage.tsx` (no backend changes).
 
-For `match-following` / `matching-list`: already respects `q.partial_marking` — no change.
+### 1. Use authoritative metadata in the PDF
 
-For `numerical` / `integer` / `mcq-single` / others: no partial concept — no change.
+Rewrite the row builder in `downloadStudentPDF` so that, for each question, it reads from `att.metadata.questions` (matched by `question_id`) instead of recomputing:
 
-The migration replaces only the `WHEN 'mcq-multi'` branch inside the existing function; everything else (per-question scoring loop, subject rollup, percentile, metadata write) stays identical.
+- `Status`: `Not Attempted` (gray) when `!attempted`; `Correct` (green) when `is_correct`; `Partially Correct` (amber) when `attempted && !is_correct && marks > 0`; `Wrong` (red) otherwise.
+- New `Marks` column showing the per-question `marks` (`+N`, `-N`, or `0`) with green/red/gray colour, mirroring the on-screen drawer.
+- `Your Answer` / `Correct Answer` formatting upgraded to handle:
+  - integer/numerical answers stored as `{value: N}` or strings like `"0004"` → render the numeric value.
+  - mcq-multi arrays → render as `A, C` letter labels (sorted).
+  - mcq-single number → `A. <option text>`.
 
-## 2. Per-question input validation
+### 2. 1-indexed question numbers
 
-### Student runner — `src/pages/TestTakingPage.tsx`
-The on-screen `NumericInput` keypad already disables `.` and `-` for `integer`. No change needed there.
+- In the PDF rows: render `String(q.position + 1)` instead of `String(q.position)`.
+- In the on-screen drawer table (the `Q#` cell at line 1003): render `q.position + 1`.
 
-Tighten the defensive cleanup so a stored answer that contains a stray `.` or `-` for an integer question is sanitized **and** trimmed of leading zeros only when safe (keep `0`). Also re-run the cleanup whenever `value` or `questionType` changes (currently only `questionType`), so a bad value injected from elsewhere is corrected immediately.
+### 3. PDF header tweak
 
-### Admin editor — `src/pages/CreateTestPage.tsx` (per-question "Correct Answer" field, ~line 1231)
-- For `integer`: change `inputMode` to `"numeric"`, add `pattern="-?[0-9]*"`, and filter `onChange` to strip any character that isn't a digit or a single leading `-`. Reject paste of decimals with a toast.
-- For `numerical`: keep `inputMode="decimal"`, but filter `onChange` to allow only digits, one leading `-`, and at most one `.`.
-- Update placeholder copy: integer → `"Whole number, e.g. -7"`, numerical → `"Decimal allowed, e.g. -3.14"`.
-- `isValid` check (~line 531) already rejects non-numeric; add an extra guard that for `integer` the parsed value must equal `Math.trunc(value)`.
+Update the per-student PDF page heading/labels to use 1-indexed numbering everywhere it appears (column header label stays `Q#`, but values are 1-indexed).
 
-### Admin editor — `src/components/QuestionEditorDialog.tsx` (Correct Answer field, ~line 422)
-Same two-mode treatment: when `question_type === 'integer'`, switch the input from `type="number" step="any"` to a text input with the integer filter described above (HTML `type=number` still permits `.` in many browsers). Numerical stays `type="number" step="any"`.
+### Out of scope
 
-Save path (`numerical_answer: Number(...)`) is unchanged but will now always receive a clean string.
-
----
+- No changes to `submit_test_attempt` or any other SQL.
+- No changes to the partial-marking rule — the client has confirmed JEE Advanced "+1 per correctly chosen option, capped" is the desired rule, which already matches the implementation.
+- No changes to other pages (`TestResultPage`, `TestResponseSheetPage`) unless they re-surface the same bug; out of scope for this task.
 
 ## Verification
 
-1. **Partial OFF, mcq-multi (4 options, 2 correct):** pick 1 of 2 correct → score `0`; pick both correct → `+marks_correct`; pick 1 correct + 1 wrong → `marks_wrong`.
-2. **Partial ON, same question:** pick 1 of 2 correct → `+1`; pick both → `+marks_correct`; pick 1 correct + 1 wrong → `marks_wrong`.
-3. **Integer question (admin):** typing `3.14` is blocked / stripped to `314`; typing `-7` works; saving persists `-7`.
-4. **Numerical question (admin):** `-3.14` saves as `-3.14`; `--3` is reduced to `-3`; `3.1.4` is reduced to `3.14`.
-5. **Student keypad:** integer question — `.` and `-` keys disabled (already true); numerical — both enabled.
-
-## Out of scope
-
-- No schema changes to `test_questions` or `tests`.
-- No changes to scoring for `mcq-single`, `numerical`, `integer`, `match-following`, `matching-list`.
-- No changes to bulk-import parsers (`DocxBulkImportDialog`, `DocxCommonImportDialog`) — they already set `partial_marking` correctly when the user/template requests it.
+After the edit, regenerate Saanvi's PDF and confirm:
+- Q# column reads 1..48.
+- Positions 9, 10, 11, 12 (paper) and 25, 26, 27, 28 (paper) show `Correct` with `+4`.
+- Positions 6 (paper Q.6), 22 (Q.22), 37 (Q.37), 38, 39, 40 show `Partially Correct` with `+2`, `+1`, `+1`, `+2`, `+3`, `+1` respectively — matching the DB metadata and the user's table.
+- Total stays 75 / 180 (unchanged, since DB scoring was already right).
