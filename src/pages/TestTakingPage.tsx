@@ -1329,5 +1329,3 @@ const NumericInput = ({
 
 export default TestTakingPage;
 
-
-export default TestTakingPage;
