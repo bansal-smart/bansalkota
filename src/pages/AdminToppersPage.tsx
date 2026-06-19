@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Save, Trash2, Trophy, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { FileSpreadsheet, Loader2, Plus, Save, Trash2, Trophy, Upload, X, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 
 type Topper = {
   id: string;
@@ -16,6 +17,10 @@ type Topper = {
   category: string | null;
   sort_order: number;
   is_published: boolean;
+  is_alumni: boolean;
+  current_position: string | null;
+  company: string | null;
+  batch_year: number | null;
 };
 
 const blank: Partial<Topper> = {
@@ -30,6 +35,10 @@ const blank: Partial<Topper> = {
   category: "",
   sort_order: 0,
   is_published: true,
+  is_alumni: false,
+  current_position: "",
+  company: "",
+  batch_year: null,
 };
 
 const AdminToppersPage = () => {
