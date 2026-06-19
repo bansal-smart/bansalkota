@@ -335,24 +335,58 @@ const AdminCentersPage = () => {
                   <th className="px-4 py-3">State</th>
                   <th className="px-4 py-3">Region</th>
                   <th className="px-4 py-3">Phone</th>
+                  <th className="px-4 py-3">Login</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => (
+                {filtered.map((c) => {
+                  const logins = loginByCenter[c.id] ?? [];
+                  return (
                   <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="font-semibold">{c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}</div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
                         <span>{c.slug}</span>
-                        {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ</span>}
+                        {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ · PINNED</span>}
                         {c.verified && <span className="rounded bg-green-100 text-green-700 px-1 font-bold">Verified</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">{c.state}</td>
                     <td className="px-4 py-3">{c.region}</td>
                     <td className="px-4 py-3 text-xs">{c.phone}</td>
+                    <td className="px-4 py-3 text-xs">
+                      {logins.length === 0 ? (
+                        <button
+                          onClick={() => setStaffCenter(c)}
+                          className="text-xs text-muted-foreground italic hover:text-primary hover:underline"
+                        >
+                          + Create login
+                        </button>
+                      ) : (
+                        <div className="space-y-0.5">
+                          {logins.slice(0, 2).map((em) => (
+                            <div key={em} className="flex items-center gap-1.5">
+                              <code className="text-[11px] font-mono">{em}</code>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(em);
+                                  toast.success("Email copied");
+                                }}
+                                className="text-[10px] text-primary hover:underline"
+                                title="Copy email"
+                              >copy</button>
+                            </div>
+                          ))}
+                          {logins.length > 2 && (
+                            <button onClick={() => setStaffCenter(c)} className="text-[10px] text-muted-foreground hover:underline">
+                              +{logins.length - 2} more
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <button onClick={() => togglePublish(c)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                         {c.is_published ? "Published" : "Hidden"}
@@ -360,7 +394,7 @@ const AdminCentersPage = () => {
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                       <button onClick={() => setStaffCenter(c)} className="text-primary hover:underline text-xs font-semibold inline-flex items-center gap-1">
-                        <Users className="h-3 w-3" /> Staff
+                        <Users className="h-3 w-3" /> Login & Staff
                       </button>
                       <button onClick={() => startEdit(c)} className="text-primary hover:underline text-xs font-semibold">Edit</button>
                       <button onClick={() => remove(c.id)} className="text-destructive hover:text-destructive/70">
@@ -368,9 +402,10 @@ const AdminCentersPage = () => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No centres match.</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No centres match.</td></tr>
                 )}
               </tbody>
             </table>
