@@ -418,12 +418,36 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
           {isNumeric && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-foreground">Correct Answer</label>
+                <label className="text-xs font-semibold text-foreground">
+                  Correct Answer {questionType === "integer" ? "(whole number)" : "(decimal allowed)"}
+                </label>
                 <input
-                  type="number"
-                  step="any"
+                  type="text"
+                  inputMode={questionType === "integer" ? "numeric" : "decimal"}
+                  pattern={questionType === "integer" ? "-?[0-9]*" : undefined}
+                  placeholder={questionType === "integer" ? "e.g. -7" : "e.g. -3.14"}
                   value={numericalAnswer}
-                  onChange={(e) => setNumericalAnswer(e.target.value)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    let cleaned: string;
+                    if (questionType === "integer") {
+                      cleaned = raw.replace(/[^0-9-]/g, "");
+                      const neg = cleaned.startsWith("-");
+                      cleaned = (neg ? "-" : "") + cleaned.replace(/-/g, "");
+                    } else {
+                      cleaned = raw.replace(/[^0-9.\-]/g, "");
+                      const neg = cleaned.startsWith("-");
+                      cleaned = cleaned.replace(/-/g, "");
+                      const firstDot = cleaned.indexOf(".");
+                      if (firstDot !== -1) {
+                        cleaned =
+                          cleaned.slice(0, firstDot + 1) +
+                          cleaned.slice(firstDot + 1).replace(/\./g, "");
+                      }
+                      cleaned = (neg ? "-" : "") + cleaned;
+                    }
+                    setNumericalAnswer(cleaned);
+                  }}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
                 />
               </div>
