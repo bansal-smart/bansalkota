@@ -495,12 +495,19 @@ const AdminTestResultPage = () => {
         .limit(1)
         .maybeSingle();
 
-      // 2) Fetch questions
-      const { data: qs } = await supabase
-        .from("test_questions")
-        .select("id, position, subject, question_text, question_type, options, correct_answer, marks_correct, marks_wrong")
-        .eq("test_id", test.id)
-        .order("position");
+      // 2) Fetch questions (answer keys come from secured RPC)
+      const [{ data: qsRaw }, { data: qAns }] = await Promise.all([
+        supabase
+          .from("test_questions")
+          .select("id, position, subject, question_text, question_type, options, marks_correct, marks_wrong")
+          .eq("test_id", test.id)
+          .order("position"),
+        supabase.rpc("admin_get_test_questions_full", { _test_id: test.id }),
+      ]);
+      const ansMap = new Map<string, { correct_answer: unknown }>(
+        ((qAns ?? []) as Array<{ id: string; correct_answer: unknown }>).map((a) => [a.id, { correct_answer: a.correct_answer }]),
+      );
+      const qs = (qsRaw ?? []).map((q: any) => ({ ...q, correct_answer: ansMap.get(q.id)?.correct_answer ?? null }));
 
       // 3) Fetch all submitted attempts for anonymous comparison
       const { data: allAtt } = await supabase

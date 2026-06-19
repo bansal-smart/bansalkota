@@ -3721,6 +3721,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_get_lessons_full: {
+        Args: { _course_id: string }
+        Returns: {
+          id: string
+          video_url: string
+        }[]
+      }
       admin_get_question_bank_full: {
         Args: { _ids: string[] }
         Returns: {

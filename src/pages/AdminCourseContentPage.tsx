@@ -242,13 +242,18 @@ const AdminCourseContentPage = () => {
   // Load chapters + lessons + resources when a course is selected
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
-    const [{ data: ch }, { data: ls }, { data: rs }] = await Promise.all([
+    const [{ data: ch }, { data: ls }, { data: rs }, { data: vids }] = await Promise.all([
       supabase.from("chapters").select("id,title,position,is_published").eq("course_id", courseId).order("position"),
-      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,video_url,is_free_preview,is_published,type").eq("course_id", courseId).order("position"),
+      supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,is_free_preview,is_published,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
+      supabase.rpc("admin_get_lessons_full", { _course_id: courseId }),
     ]);
+    const videoMap = new Map<string, string | null>(
+      ((vids ?? []) as Array<{ id: string; video_url: string | null }>).map((v) => [v.id, v.video_url]),
+    );
+    const lessonsWithVideos = ((ls as any[]) ?? []).map((l) => ({ ...l, video_url: videoMap.get(l.id) ?? null }));
     setChapters((ch as Chapter[]) ?? []);
-    setLessons((ls as Lesson[]) ?? []);
+    setLessons(lessonsWithVideos as Lesson[]);
     setResources((rs as Resource[]) ?? []);
     setResLoading(false);
   };
