@@ -54,6 +54,7 @@ import CreateCoursePage from "./pages/CreateCoursePage";
 import CreateTestPage from "./pages/CreateTestPage";
 import AdminLiveClassesPage from "./pages/AdminLiveClassesPage";
 import AdminTestPlatformHub from "./pages/AdminTestPlatformHub";
+import AdminTestSupportPage from "./pages/AdminTestSupportPage";
 import AdminTestDetailPage from "./pages/AdminTestDetailPage";
 import AdminTestResultPage from "./pages/AdminTestResultPage";
 import AdminLectureBucketPage from "./pages/AdminLectureBucketPage";
@@ -306,6 +307,7 @@ const App = () => (
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               {/* Unified Test Platform hub (tabs: overview, all, upcoming, series, bank, attempts, imports) */}
               <Route path="/admin/tests-hub" element={<AdminTestPlatformHub />} />
+              <Route path="/admin/test-support" element={<AdminTestSupportPage />} />
               <Route path="/admin/tests" element={<Navigate to="/admin/tests-hub?tab=all" replace />} />
               <Route path="/admin/test-attempts" element={<Navigate to="/admin/tests-hub?tab=attempts" replace />} />
               <Route path="/admin/test-imports" element={<Navigate to="/admin/tests-hub?tab=imports" replace />} />
