@@ -439,9 +439,11 @@ const TestTakingPage = () => {
   // localStorage write-through (browser-side backup for total network loss)
   useEffect(() => {
     if (!attemptId) return;
-    try { localStorage.setItem(`attempt:${attemptId}:answers`, JSON.stringify(answers)); }
-    catch { /* quota — non-fatal */ }
-  }, [answers, attemptId]);
+    try {
+      localStorage.setItem(`attempt:${attemptId}:answers`, JSON.stringify(answers));
+      localStorage.setItem(`attempt:${attemptId}:statuses`, JSON.stringify(statuses));
+    } catch { /* quota — non-fatal */ }
+  }, [answers, statuses, attemptId]);
 
   // Save on tab hide / page unload using fetch keepalive
   useEffect(() => {
