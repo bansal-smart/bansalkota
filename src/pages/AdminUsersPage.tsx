@@ -296,28 +296,13 @@ const AdminUsersPage = () => {
         onRowClick={setDrawerUser}
       />
 
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          Page {page + 1} of {totalPages} · {rows.length} of {total}
-        </span>
-        <div className="flex gap-1">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-40"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">{page + 1}</span>
-          <button
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-40"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
+      <TablePagination
+        page={page + 1}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={(p) => setPage(p - 1)}
+      />
 
       {drawerUser && (
         <div className="fixed inset-0 z-50 flex justify-end">
