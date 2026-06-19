@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
-import { Search, UserPlus, Download, X, ChevronLeft, ChevronRight, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
+import { Search, UserPlus, Download, X, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
+import TablePagination from "@/components/TablePagination";
 import { toast } from "sonner";
 import { List, type RowComponentProps } from "react-window";
 import { supabase } from "@/integrations/supabase/client";
