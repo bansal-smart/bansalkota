@@ -20,7 +20,7 @@ const CenterSupportPage = () => {
     const { data } = await (supabase as any)
       .from("enquiries")
       .select("*")
-      .eq("center_id", primaryCenterId)
+      .eq("centre_id", primaryCenterId)
       .eq("source", "center_support")
       .order("created_at", { ascending: false });
     setItems(data ?? []);
@@ -37,7 +37,7 @@ const CenterSupportPage = () => {
       message: `[${subject}]\n${message}`,
       source: "center_support",
       source_type: "center_support" as any,
-      center_id: primaryCenterId as any,
+      centre_id: primaryCenterId as any,
       priority: priority as any,
       category: category as any,
     });

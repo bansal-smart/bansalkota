@@ -46,7 +46,7 @@ const CenterContentPage = () => {
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("centers")
+        .from("centres")
         .select("city, area, state, region, address, phone, email, image_url, established, verified, is_published")
         .eq("id", primaryCenterId)
         .maybeSingle();
@@ -105,7 +105,7 @@ const CenterContentPage = () => {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("centers").update({
+    const { error } = await supabase.from("centres").update({
       city: form.city.trim(),
       area: form.area.trim() || null,
       state: form.state.trim(),

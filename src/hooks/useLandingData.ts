@@ -79,7 +79,7 @@ export function useCentresShowcase() {
     queryKey: ["landing-centres"],
     queryFn: async () => {
       const { data } = await supabase
-        .from("centers")
+        .from("centres")
         .select("id,city,state,slug,region,is_hq,is_featured,featured_rank,is_published,sort_order")
         .eq("is_published", true)
         .order("is_featured", { ascending: false })

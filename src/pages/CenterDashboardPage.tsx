@@ -29,12 +29,12 @@ const CenterDashboardPage = () => {
     (async () => {
       const cId = primaryCenterId;
       const [banners, courses, web, courseE, students, support] = await Promise.all([
-        (supabase as any).from("center_banners" as any).select("id", { count: "exact", head: true }).eq("center_id", cId),
-        (supabase as any).from("center_courses" as any).select("id", { count: "exact", head: true }).eq("center_id", cId),
-        (supabase as any).from("enquiries" as any).select("id", { count: "exact", head: true }).eq("center_id" as any, cId),
-        (supabase as any).from("center_course_enquiries" as any).select("id", { count: "exact", head: true }).eq("center_id", cId).eq("status", "new"),
-        (supabase as any).from("profiles" as any).select("id", { count: "exact", head: true }).eq("center_id" as any, cId),
-        (supabase as any).from("enquiries" as any).select("id", { count: "exact", head: true }).eq("center_id" as any, cId).eq("source", "center_support").neq("status", "resolved"),
+        (supabase as any).from("centre_banners" as any).select("id", { count: "exact", head: true }).eq("centre_id", cId),
+        (supabase as any).from("centre_courses" as any).select("id", { count: "exact", head: true }).eq("centre_id", cId),
+        (supabase as any).from("enquiries" as any).select("id", { count: "exact", head: true }).eq("centre_id" as any, cId),
+        (supabase as any).from("centre_course_enquiries" as any).select("id", { count: "exact", head: true }).eq("centre_id", cId).eq("status", "new"),
+        (supabase as any).from("profiles" as any).select("id", { count: "exact", head: true }).eq("centre_id" as any, cId),
+        (supabase as any).from("enquiries" as any).select("id", { count: "exact", head: true }).eq("centre_id" as any, cId).eq("source", "center_support").neq("status", "resolved"),
       ]);
       setCounts({
         banners: banners.count ?? 0,

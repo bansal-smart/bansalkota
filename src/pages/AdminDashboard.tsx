@@ -13,12 +13,12 @@ import {
 import { formatDistanceToNow, format, subDays, startOfDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 
-type ProfileRow = { user_id: string; full_name: string | null; plan: string; created_at: string; country: string | null; center_id: string | null };
+type ProfileRow = { user_id: string; full_name: string | null; plan: string; created_at: string; country: string | null; centre_id: string | null };
 type CourseRow = { id: string; name: string; educator_name: string; total_enrolled: number | null; rating: number | null; price: number };
 type EnrollmentRow = { id: string; course_id: string; created_at: string };
 type LiveClassRow = { id: string; title: string; educator_name: string; status: string; starts_at: string };
 type CentreRow = { id: string; city: string; state: string; slug: string; region: string; is_hq: boolean };
-type EnquiryRow = { id: string; name: string; email: string; source_type: string; status: string; priority: string; created_at: string; center_id: string | null };
+type EnquiryRow = { id: string; name: string; email: string; source_type: string; status: string; priority: string; created_at: string; centre_id: string | null };
 
 const fetchOverview = async () => {
   const todayStart = startOfDay(new Date()).toISOString();
@@ -30,7 +30,7 @@ const fetchOverview = async () => {
     centresRes, recentEnqRes, toppersRes,
     testsLiveRes, testsTotalRes, qbankRes,
   ] = await Promise.all([
-    supabase.from("profiles").select("user_id, full_name, plan, created_at, country, center_id").order("created_at", { ascending: false }).limit(500),
+    supabase.from("profiles").select("user_id, full_name, plan, created_at, country, centre_id").order("created_at", { ascending: false }).limit(500),
     supabase.from("courses").select("id, name, educator_name, total_enrolled, rating, price").eq("is_published", true),
     supabase.from("enrollments").select("id, course_id, created_at").gte("created_at", thirtyDaysAgo),
     supabase.from("live_classes").select("id, title, educator_name, status, starts_at").in("status", ["live", "scheduled"]).order("starts_at", { ascending: true }).limit(8),
@@ -39,8 +39,8 @@ const fetchOverview = async () => {
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("source_type", "center_support").neq("status", "closed"),
-    supabase.from("centers").select("id, city, state, slug, region, is_hq").eq("is_published", true).order("sort_order", { ascending: true }),
-    supabase.from("enquiries").select("id, name, email, source_type, status, priority, created_at, center_id").order("created_at", { ascending: false }).limit(8),
+    supabase.from("centres").select("id, city, state, slug, region, is_hq").eq("is_published", true).order("sort_order", { ascending: true }),
+    supabase.from("enquiries").select("id, name, email, source_type, status, priority, created_at, centre_id").order("created_at", { ascending: false }).limit(8),
     supabase.from("toppers").select("id", { count: "exact", head: true }).eq("is_published", true),
     supabase.from("tests").select("id", { count: "exact", head: true }).eq("is_published", true).gte("starts_at", todayStart),
     supabase.from("tests").select("id", { count: "exact", head: true }),
@@ -114,14 +114,14 @@ const AdminDashboard = () => {
     return profiles.filter((p) => new Date(p.created_at).getTime() >= t).length;
   }, [profiles]);
 
-  const offlineStudents = profiles.filter((p) => p.center_id).length;
+  const offlineStudents = profiles.filter((p) => p.centre_id).length;
 
   const kpis = [
     { label: "Students", value: profiles.length.toLocaleString(), sub: `+${newUsersToday} today`, Icon: Users, tone: "from-bansal-blue to-bansal-blue/70", to: "/admin/students" },
     { label: "Active Courses", value: courses.length.toString(), sub: `${courses.reduce((s, c) => s + (c.total_enrolled ?? 0), 0)} learners`, Icon: BookOpen, tone: "from-bansal-orange to-amber-500", to: "/admin/courses" },
     { label: "Tests", value: testsTotal.toString(), sub: `${testAttemptsToday} attempts today · ${testsUpcoming} upcoming`, Icon: ClipboardCheck, tone: "from-indigo-600 to-purple-500", to: "/admin/tests-hub" },
     { label: "Question Bank", value: questionBankCount.toLocaleString(), sub: "Total questions", Icon: Upload, tone: "from-cyan-600 to-sky-500", to: "/admin/tests-hub?tab=bank" },
-    { label: "Centres Live", value: centres.length.toString(), sub: `${offlineStudents} offline students mapped`, Icon: Building2, tone: "from-emerald-600 to-teal-500", to: "/admin/centers" },
+    { label: "Centres Live", value: centres.length.toString(), sub: `${offlineStudents} offline students mapped`, Icon: Building2, tone: "from-emerald-600 to-teal-500", to: "/admin/centres" },
     { label: "Revenue (30d)", value: formatINR(monthlyRevenue), sub: `${enrollments.length} enrolments`, Icon: IndianRupee, tone: "from-rose-500 to-orange-500", to: "/admin/payments" },
     { label: "New Enquiries", value: pending.enquiries.toString(), sub: "Awaiting reply", Icon: Inbox, tone: "from-violet-600 to-fuchsia-500", to: "/admin/enquiries" },
     { label: "Centre Tickets", value: pending.centreSupport.toString(), sub: "Open complaints", Icon: MessageSquareWarning, tone: "from-sky-600 to-indigo-500", to: "/admin/center-support" },
@@ -146,12 +146,12 @@ const AdminDashboard = () => {
   const centresGlance = useMemo(() => {
     const studentsByCentre = new Map<string, number>();
     profiles.forEach((p) => {
-      if (p.center_id) studentsByCentre.set(p.center_id, (studentsByCentre.get(p.center_id) ?? 0) + 1);
+      if (p.centre_id) studentsByCentre.set(p.centre_id, (studentsByCentre.get(p.centre_id) ?? 0) + 1);
     });
     const ticketsByCentre = new Map<string, number>();
     recentEnq.forEach((e) => {
-      if (e.source_type === "center_support" && e.center_id && e.status !== "closed") {
-        ticketsByCentre.set(e.center_id, (ticketsByCentre.get(e.center_id) ?? 0) + 1);
+      if (e.source_type === "center_support" && e.centre_id && e.status !== "closed") {
+        ticketsByCentre.set(e.centre_id, (ticketsByCentre.get(e.centre_id) ?? 0) + 1);
       }
     });
     return [...centres]
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
     { label: "Bulk Q Import", to: "/admin/tests-hub?tab=imports", Icon: Upload, tone: "bg-cyan-600 text-white" },
     { label: "New Course", to: "/admin/courses", Icon: BookOpen, tone: "bg-bansal-blue text-white" },
     { label: "Lecture Bucket", to: "/admin/lecture-bucket", Icon: Youtube, tone: "bg-rose-500 text-white" },
-    { label: "Add Centre", to: "/admin/centers", Icon: Building2, tone: "bg-emerald-600 text-white" },
+    { label: "Add Centre", to: "/admin/centres", Icon: Building2, tone: "bg-emerald-600 text-white" },
     { label: "New Banner", to: "/admin/banners", Icon: ImageIcon, tone: "bg-bansal-orange text-white" },
     { label: "Add Topper", to: "/admin/toppers", Icon: Trophy, tone: "bg-amber-500 text-white" },
     { label: "Testimonial", to: "/admin/testimonials", Icon: Star, tone: "bg-violet-600 text-white" },
@@ -280,7 +280,7 @@ const AdminDashboard = () => {
             <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Building2 className="h-4 w-4 text-emerald-600" /> Centres at a Glance
             </h2>
-            <Link to="/admin/centers" className="text-[11px] text-bansal-blue font-semibold inline-flex items-center gap-0.5">
+            <Link to="/admin/centres" className="text-[11px] text-bansal-blue font-semibold inline-flex items-center gap-0.5">
               Manage <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
@@ -300,7 +300,7 @@ const AdminDashboard = () => {
                 {centresGlance.map((c) => (
                   <tr key={c.id} className="border-b border-border last:border-0">
                     <td className="py-2.5">
-                      <Link to={`/centers/${c.slug}`} className="font-medium text-foreground hover:text-bansal-orange">
+                      <Link to={`/centres/${c.slug}`} className="font-medium text-foreground hover:text-bansal-orange">
                         {c.city} {c.is_hq && <span className="text-[9px] text-bansal-orange ml-1">HQ</span>}
                       </Link>
                       <div className="text-[10px] text-muted-foreground">{c.state}</div>

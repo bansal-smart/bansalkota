@@ -41,18 +41,18 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
 
     if (action === "create") {
-      const center_id = String(body?.center_id ?? "").trim();
+      const centre_id = String(body?.centre_id ?? "").trim();
       const email = String(body?.email ?? "").toLowerCase().trim();
       const password = String(body?.password ?? "");
       const full_name = String(body?.full_name ?? "").trim();
       const phone = body?.phone ? String(body.phone).trim() : null;
       const staff_role = body?.staff_role === "owner" ? "owner" : "manager";
 
-      if (!center_id || !email || !full_name || password.length < 8) {
-        return json(400, { error: "center_id, email, full_name and password (min 8 chars) are required" });
+      if (!centre_id || !email || !full_name || password.length < 8) {
+        return json(400, { error: "centre_id, email, full_name and password (min 8 chars) are required" });
       }
 
-      const { data: center } = await admin.from("centers").select("id, city, area").eq("id", center_id).maybeSingle();
+      const { data: center } = await admin.from("centres").select("id, city, area").eq("id", centre_id).maybeSingle();
       if (!center) return json(404, { error: "Centre not found" });
 
       const { data: userList } = await admin.auth.admin.listUsers({ perPage: 1000 });
@@ -94,15 +94,15 @@ Deno.serve(async (req) => {
         user_id: target.id,
         full_name,
         phone,
-        center_id,
+        centre_id,
       }, { onConflict: "user_id" });
       if (profErr) throw profErr;
 
-      const { error: staffErr } = await admin.from("center_staff").upsert({
-        center_id,
+      const { error: staffErr } = await admin.from("centre_staff").upsert({
+        centre_id,
         user_id: target.id,
         role: staff_role,
-      }, { onConflict: "center_id,user_id" });
+      }, { onConflict: "centre_id,user_id" });
       if (staffErr) throw staffErr;
 
       return json(200, {

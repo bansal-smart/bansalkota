@@ -3769,9 +3769,9 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
-      is_any_center_staff: { Args: { _user_id: string }; Returns: boolean }
       is_any_centre_staff: { Args: { _user_id: string }; Returns: boolean }
-      is_center_staff: {
+      is_any_centre_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_centre_staff: {
         Args: { _center_id: string; _user_id: string }
         Returns: boolean
       }

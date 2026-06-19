@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 type UpdateRow = {
   id: string;
-  center_id: string;
+  centre_id: string;
   title: string;
   body: string;
   image_url: string | null;
@@ -15,7 +15,7 @@ type UpdateRow = {
 };
 
 const blank = (centerId: string): Partial<UpdateRow> => ({
-  center_id: centerId,
+  centre_id: centerId,
   title: "",
   body: "",
   image_url: null,
@@ -33,9 +33,9 @@ const CenterUpdatesPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     const { data } = await (supabase as any)
-      .from("center_updates")
+      .from("centre_updates")
       .select("*")
-      .eq("center_id", primaryCenterId)
+      .eq("centre_id", primaryCenterId)
       .order("posted_at", { ascending: false });
     setItems((data ?? []) as UpdateRow[]);
   };
@@ -66,10 +66,10 @@ const CenterUpdatesPage = () => {
       return toast.error("Title and body are required");
     }
     setSaving(true);
-    const payload = { ...editing, center_id: primaryCenterId };
+    const payload = { ...editing, centre_id: primaryCenterId };
     const { error } = editing.id
-      ? await (supabase as any).from("center_updates").update(payload).eq("id", editing.id)
-      : await (supabase as any).from("center_updates").insert(payload);
+      ? await (supabase as any).from("centre_updates").update(payload).eq("id", editing.id)
+      : await (supabase as any).from("centre_updates").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Update posted");
@@ -79,7 +79,7 @@ const CenterUpdatesPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this update?")) return;
-    await (supabase as any).from("center_updates").delete().eq("id", id);
+    await (supabase as any).from("centre_updates").delete().eq("id", id);
     toast.success("Deleted");
     load();
   };

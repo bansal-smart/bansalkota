@@ -8,7 +8,7 @@ import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 
 type CenterCourse = {
   id: string;
-  center_id: string;
+  centre_id: string;
   title: string;
   slug: string | null;
   banner_url: string | null;
@@ -27,7 +27,7 @@ type CenterCourse = {
 };
 
 const blank = (centerId: string, userId: string): Partial<CenterCourse & { created_by: string }> => ({
-  center_id: centerId,
+  centre_id: centerId,
   created_by: userId,
   title: "",
   banner_url: "",
@@ -57,9 +57,9 @@ const CenterCoursesPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     const { data } = await supabase
-      .from("center_courses" as any)
+      .from("centre_courses" as any)
       .select("*")
-      .eq("center_id", primaryCenterId)
+      .eq("centre_id", primaryCenterId)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
     setItems((data ?? []) as any);
@@ -89,13 +89,13 @@ const CenterCoursesPage = () => {
   const handleSave = async () => {
     if (!editing?.title) return toast.error("Title is required");
     setSaving(true);
-    const payload: any = { ...editing, center_id: primaryCenterId };
+    const payload: any = { ...editing, centre_id: primaryCenterId };
     if (!payload.id) payload.created_by = user.id;
     if (payload.fees === "") payload.fees = null;
     if (payload.start_date === "") payload.start_date = null;
     const { error } = payload.id
-      ? await (supabase as any).from("center_courses" as any).update(payload).eq("id", payload.id)
-      : await (supabase as any).from("center_courses" as any).insert(payload);
+      ? await (supabase as any).from("centre_courses" as any).update(payload).eq("id", payload.id)
+      : await (supabase as any).from("centre_courses" as any).insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Saved");
@@ -105,7 +105,7 @@ const CenterCoursesPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this course?")) return;
-    await (supabase as any).from("center_courses" as any).delete().eq("id", id);
+    await (supabase as any).from("centre_courses" as any).delete().eq("id", id);
     toast.success("Deleted");
     load();
   };
@@ -233,24 +233,24 @@ const CenterCoursesPage = () => {
           if (!row.title) return "Title required";
           const payload: any = {
             ...row,
-            center_id: primaryCenterId,
+            centre_id: primaryCenterId,
             created_by: user.id,
           };
-          // upsert by (center_id, title)
+          // upsert by (centre_id, title)
           const { data: existing } = await (supabase as any)
-            .from("center_courses")
+            .from("centre_courses")
             .select("id")
-            .eq("center_id", primaryCenterId)
+            .eq("centre_id", primaryCenterId)
             .eq("title", row.title)
             .maybeSingle();
           if (existing?.id) {
             const { error } = await (supabase as any)
-              .from("center_courses")
+              .from("centre_courses")
               .update(payload)
               .eq("id", existing.id);
             if (error) return error.message;
           } else {
-            const { error } = await (supabase as any).from("center_courses").insert(payload);
+            const { error } = await (supabase as any).from("centre_courses").insert(payload);
             if (error) return error.message;
           }
         }}

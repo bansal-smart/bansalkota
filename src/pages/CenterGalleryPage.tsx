@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 type GalleryRow = {
   id: string;
-  center_id: string;
+  centre_id: string;
   image_url: string;
   caption: string | null;
   kind: "achievement" | "event";
@@ -15,7 +15,7 @@ type GalleryRow = {
 };
 
 const blank = (centerId: string): Partial<GalleryRow> => ({
-  center_id: centerId,
+  centre_id: centerId,
   image_url: "",
   caption: "",
   kind: "achievement",
@@ -33,9 +33,9 @@ const CenterGalleryPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     const { data } = await (supabase as any)
-      .from("center_gallery")
+      .from("centre_gallery")
       .select("*")
-      .eq("center_id", primaryCenterId)
+      .eq("centre_id", primaryCenterId)
       .order("sort_order");
     setItems((data ?? []) as GalleryRow[]);
   };
@@ -64,10 +64,10 @@ const CenterGalleryPage = () => {
   const handleSave = async () => {
     if (!editing?.image_url) return toast.error("Image is required");
     setSaving(true);
-    const payload = { ...editing, center_id: primaryCenterId };
+    const payload = { ...editing, centre_id: primaryCenterId };
     const { error } = editing.id
-      ? await (supabase as any).from("center_gallery").update(payload).eq("id", editing.id)
-      : await (supabase as any).from("center_gallery").insert(payload);
+      ? await (supabase as any).from("centre_gallery").update(payload).eq("id", editing.id)
+      : await (supabase as any).from("centre_gallery").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Saved");
@@ -77,7 +77,7 @@ const CenterGalleryPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this photo?")) return;
-    await (supabase as any).from("center_gallery").delete().eq("id", id);
+    await (supabase as any).from("centre_gallery").delete().eq("id", id);
     toast.success("Deleted");
     load();
   };

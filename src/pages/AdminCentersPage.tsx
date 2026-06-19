@@ -68,7 +68,7 @@ const AdminCentersPage = () => {
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("centers")
+      .from("centres")
       .select("*")
       .limit(500);
     if (error) toast.error(error.message);
@@ -87,9 +87,9 @@ const AdminCentersPage = () => {
     if (list.length) {
       const ids = list.map((c) => c.id);
       const { data: staff } = await (supabase as any)
-        .from("center_staff")
-        .select("center_id, user_id")
-        .in("center_id", ids);
+        .from("centre_staff")
+        .select("centre_id, user_id")
+        .in("centre_id", ids);
       const userIds = Array.from(new Set((staff ?? []).map((s: any) => s.user_id)));
       if (userIds.length) {
         const { data: emails } = await (supabase as any).rpc("admin_emails_for_user_ids", {
@@ -102,7 +102,7 @@ const AdminCentersPage = () => {
         for (const s of staff ?? []) {
           const em = emailMap.get((s as any).user_id);
           if (!em) continue;
-          (map[(s as any).center_id] ||= []).push(em);
+          (map[(s as any).centre_id] ||= []).push(em);
         }
         setLoginByCenter(map);
       } else {
@@ -179,8 +179,8 @@ const AdminCentersPage = () => {
       featured_rank: form.featured_rank == null || (form.featured_rank as any) === "" ? null : Number(form.featured_rank),
     };
     const { error } = editingId
-      ? await supabase.from("centers").update(payload).eq("id", editingId)
-      : await supabase.from("centers").insert(payload);
+      ? await supabase.from("centres").update(payload).eq("id", editingId)
+      : await supabase.from("centres").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(editingId ? "Centre updated" : "Centre added");
@@ -190,7 +190,7 @@ const AdminCentersPage = () => {
 
   const remove = async (id: string) => {
     if (!confirm("Delete this center?")) return;
-    const { error } = await supabase.from("centers").delete().eq("id", id);
+    const { error } = await supabase.from("centres").delete().eq("id", id);
     if (error) toast.error(error.message);
     else {
       toast.success("Deleted");
@@ -200,7 +200,7 @@ const AdminCentersPage = () => {
 
   const togglePublish = async (c: Center) => {
     const { error } = await supabase
-      .from("centers")
+      .from("centres")
       .update({ is_published: !c.is_published })
       .eq("id", c.id);
     if (error) toast.error(error.message);
@@ -449,7 +449,7 @@ const AdminCentersPage = () => {
             is_published: row.is_published == null ? true : !!row.is_published,
             sort_order: row.sort_order ?? 0,
           };
-          const { error } = await supabase.from("centers").upsert(payload, { onConflict: "slug" });
+          const { error } = await supabase.from("centres").upsert(payload, { onConflict: "slug" });
           if (error) return error.message;
         }}
         onDone={load}

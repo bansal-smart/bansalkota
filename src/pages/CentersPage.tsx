@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone, Search, Star, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import { STATE_COUNT } from "@/data/centers";
+import { STATE_COUNT } from "@/data/centres";
 import centersHero from "@/assets/centers-hero.png";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useCenters, getCenterImage, type DBCenter } from "@/hooks/useCenters";
@@ -15,7 +15,7 @@ export default function CentersPage() {
   const [query, setQuery] = useState("");
   const [region, setRegion] = useState<(typeof REGIONS)[number]>("All");
   const { centers: CENTERS } = useCenters();
-  const { banner } = useSiteBanner("centers");
+  const { banner } = useSiteBanner("centres");
   const CENTER_COUNT = CENTERS.length;
 
   const filtered = useMemo(() => {
@@ -121,7 +121,7 @@ export default function CentersPage() {
               {filtered.map((c) => (
                 <Link
                   key={c.slug}
-                  to={`/centers/${c.slug}`}
+                  to={`/centres/${c.slug}`}
                   className="group block rounded-2xl overflow-hidden bg-white border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   {/* Thumbnail */}

@@ -15,7 +15,7 @@ const CenterWebsiteEnquiriesPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     setLoading(true);
-    let q = (supabase as any).from("enquiries" as any).select("*").eq("center_id" as any, primaryCenterId).order("created_at", { ascending: false });
+    let q = (supabase as any).from("enquiries" as any).select("*").eq("centre_id" as any, primaryCenterId).order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("status", filter);
     const { data } = await q;
     setItems(data ?? []);

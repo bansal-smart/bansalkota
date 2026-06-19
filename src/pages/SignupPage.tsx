@@ -36,14 +36,14 @@ const SignupPage = () => {
     city: "",
     country: "India",
     is_bansal_offline_student: "no" as "yes" | "no",
-    center_id: "",
+    centre_id: "",
   });
 
   const [centers, setCenters] = useState<Array<{ id: string; city: string; area: string | null; state: string }>>([]);
   useEffect(() => {
     (async () => {
       const { data } = await supabase
-        .from("centers")
+        .from("centres")
         .select("id, city, area, state")
         .eq("is_published", true)
         .order("city");
@@ -62,7 +62,7 @@ const SignupPage = () => {
       toast.error("Password must be at least 8 characters");
       return;
     }
-    if (form.is_bansal_offline_student === "yes" && !form.center_id) {
+    if (form.is_bansal_offline_student === "yes" && !form.centre_id) {
       toast.error("Please select your Bansal centre");
       return;
     }
@@ -83,7 +83,7 @@ const SignupPage = () => {
           city: form.city,
           country: form.country,
           is_bansal_offline_student: form.is_bansal_offline_student === "yes",
-          center_id: form.is_bansal_offline_student === "yes" ? form.center_id : "",
+          centre_id: form.is_bansal_offline_student === "yes" ? form.centre_id : "",
         },
       },
     });
@@ -249,8 +249,8 @@ const SignupPage = () => {
               </div>
               {form.is_bansal_offline_student === "yes" && (
                 <select
-                  value={form.center_id}
-                  onChange={(e) => update("center_id", e.target.value)}
+                  value={form.centre_id}
+                  onChange={(e) => update("centre_id", e.target.value)}
                   className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
                 >
                   <option value="">Choose your centre…</option>

@@ -50,7 +50,7 @@ const CenterStudentsPage = () => {
     const { data, error } = await (supabase as any)
       .from("profiles")
       .select("id, user_id, full_name, phone, roll_number, target_exam, class_level, city, batch_id, student_status, created_at")
-      .eq("center_id", primaryCenterId)
+      .eq("centre_id", primaryCenterId)
       .order("full_name", { ascending: true });
     if (error) toast.error(error.message);
     setItems((data ?? []) as Student[]);
@@ -134,7 +134,7 @@ const CenterStudentsPage = () => {
     if (!target) return "No profile matches that roll number or phone — student must sign up first";
 
     const update: Record<string, any> = {
-      center_id: primaryCenterId,
+      centre_id: primaryCenterId,
     };
     if (row.full_name) update.full_name = row.full_name;
     if (row.class_level) update.class_level = row.class_level;
