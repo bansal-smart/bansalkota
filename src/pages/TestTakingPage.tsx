@@ -1438,7 +1438,7 @@ const NumericInput = ({
     onChange(value + k);
   };
 
-  const placeholder = allowDecimal ? "e.g. -3.14" : "Integer only (digits)";
+  const placeholder = "e.g. -3.14";
 
   return (
     <div className="space-y-3">
