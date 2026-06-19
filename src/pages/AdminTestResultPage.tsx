@@ -7,7 +7,8 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
-import bansalLogo from "@/assets/bansal-logo.png";
+import bansalLogoAsset from "@/assets/bansal-logo.webp.asset.json";
+const bansalLogo = bansalLogoAsset.url;
 
 type TestRow = {
   id: string;

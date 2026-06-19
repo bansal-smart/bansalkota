@@ -1,4 +1,5 @@
-import bansalLogo from "@/assets/bansal-logo.png";
+import bansalLogoAsset from "@/assets/bansal-logo.webp.asset.json";
+const bansalLogo = bansalLogoAsset.url;
 
 type LogoProps = {
   className?: string;

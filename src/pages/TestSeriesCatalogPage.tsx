@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ClipboardCheck, Loader2, Tag, Trophy } from "lucide-react";
 import { useTestSeriesList } from "@/hooks/useTestSeries";
-import testSeriesHero from "@/assets/test-series-hero.png";
+import testSeriesHeroAsset from "@/assets/test-series-hero.webp.asset.json";
+const testSeriesHero = testSeriesHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const exams = ["All", "JEE Advanced", "JEE Main", "NEET", "Foundation"];

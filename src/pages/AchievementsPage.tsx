@@ -3,7 +3,8 @@ import { Trophy, Medal, Star, Award, TrendingUp } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
-import achievementsHero from "@/assets/achievements-hero.png";
+import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
+const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 type Topper = {
