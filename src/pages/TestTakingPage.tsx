@@ -80,6 +80,7 @@ const TestTakingPage = () => {
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
   const submitRef = useRef<(auto?: boolean) => void>(() => {});
+  const persistProgressRef = useRef<((a?: Record<string, AnswerVal>, s?: Record<string, QStatus>, c?: Set<string>) => Promise<unknown>) | null>(null);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
@@ -711,6 +712,7 @@ const TestTakingPage = () => {
 
   // Keep latest handleSubmit accessible from tab-visibility listener
   submitRef.current = handleSubmit;
+  persistProgressRef.current = persistProgress;
 
   const counts = useMemo(() => {
     return questions.reduce((acc, qq) => {
