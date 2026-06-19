@@ -48,6 +48,8 @@ const AdminToppersPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [view, setView] = useState<"all" | "toppers" | "alumni">("all");
 
   const load = async () => {
     setLoading(true);
@@ -55,6 +57,15 @@ const AdminToppersPage = () => {
     setItems((data ?? []) as Topper[]);
     setLoading(false);
   };
+  useEffect(() => {
+    load();
+  }, []);
+
+  const visible = useMemo(() => {
+    if (view === "toppers") return items.filter((t) => !t.is_alumni);
+    if (view === "alumni") return items.filter((t) => t.is_alumni);
+    return items;
+  }, [items, view]);
   useEffect(() => {
     load();
   }, []);
