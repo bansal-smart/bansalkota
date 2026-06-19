@@ -232,7 +232,19 @@ export default function CenterDetailPage() {
         </div>
       </section>
 
-      {dbCenter?.id && <CenterGalleryAndUpdates centerId={dbCenter.id} />}
+      {dbCenter?.id && (
+        <>
+          <CenterGalleryAndUpdates centerId={dbCenter.id} />
+          <div className="container mx-auto max-w-5xl px-4 -mt-6 mb-8 text-center">
+            <Link
+              to={`/centres/${slug}/gallery`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-bansal-orange/40 bg-white px-4 py-2 text-sm font-bold text-bansal-orange hover:bg-bansal-orange hover:text-white transition-colors"
+            >
+              View full gallery <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </>
+      )}
       {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
 
       {/* Centre details — moved to the bottom per editorial guideline */}
