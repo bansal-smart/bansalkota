@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 type Banner = {
   id: string;
-  center_id: string;
+  centre_id: string;
   title: string | null;
   subtitle: string | null;
   image_url: string;
@@ -17,7 +17,7 @@ type Banner = {
 };
 
 const blank = (centerId: string): Partial<Banner> => ({
-  center_id: centerId,
+  centre_id: centerId,
   title: "",
   subtitle: "",
   image_url: "",
@@ -37,9 +37,9 @@ const CenterBannersPage = () => {
   const load = async () => {
     if (!primaryCenterId) return;
     const { data } = await supabase
-      .from("center_banners" as any)
+      .from("centre_banners" as any)
       .select("*")
-      .eq("center_id", primaryCenterId)
+      .eq("centre_id", primaryCenterId)
       .order("sort_order");
     setItems((data ?? []) as any);
   };
@@ -71,10 +71,10 @@ const CenterBannersPage = () => {
       return;
     }
     setSaving(true);
-    const payload = { ...editing, center_id: primaryCenterId };
+    const payload = { ...editing, centre_id: primaryCenterId };
     const { error } = editing.id
-      ? await (supabase as any).from("center_banners" as any).update(payload).eq("id", editing.id)
-      : await (supabase as any).from("center_banners" as any).insert(payload);
+      ? await (supabase as any).from("centre_banners" as any).update(payload).eq("id", editing.id)
+      : await (supabase as any).from("centre_banners" as any).insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Banner saved");
@@ -84,7 +84,7 @@ const CenterBannersPage = () => {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this banner?")) return;
-    await (supabase as any).from("center_banners" as any).delete().eq("id", id);
+    await (supabase as any).from("centre_banners" as any).delete().eq("id", id);
     toast.success("Deleted");
     load();
   };

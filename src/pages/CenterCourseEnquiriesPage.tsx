@@ -17,9 +17,9 @@ const CenterCourseEnquiriesPage = () => {
     if (!primaryCenterId) return;
     setLoading(true);
     let q = supabase
-      .from("center_course_enquiries" as any)
-      .select("*, course:center_courses(title)")
-      .eq("center_id", primaryCenterId)
+      .from("centre_course_enquiries" as any)
+      .select("*, course:centre_courses(title)")
+      .eq("centre_id", primaryCenterId)
       .order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("status", filter);
     const { data } = await q;
@@ -30,7 +30,7 @@ const CenterCourseEnquiriesPage = () => {
   useEffect(() => { load(); }, [primaryCenterId, filter]);
 
   const updateStatus = async (id: string, status: string) => {
-    const { error } = await (supabase as any).from("center_course_enquiries" as any).update({ status }).eq("id", id);
+    const { error } = await (supabase as any).from("centre_course_enquiries" as any).update({ status }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
     load();

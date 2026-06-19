@@ -38,8 +38,8 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
     if (!centerId) return;
     (async () => {
       const [cRes, bRes] = await Promise.all([
-        (supabase as any).from("center_courses").select("*").eq("center_id", centerId).eq("is_published", true).order("sort_order"),
-        (supabase as any).from("center_banners").select("*").eq("center_id", centerId).eq("is_active", true).order("sort_order"),
+        (supabase as any).from("centre_courses").select("*").eq("centre_id", centerId).eq("is_published", true).order("sort_order"),
+        (supabase as any).from("centre_banners").select("*").eq("centre_id", centerId).eq("is_active", true).order("sort_order"),
       ]);
       setCourses(cRes.data ?? []);
       setBanners(bRes.data ?? []);
@@ -152,8 +152,8 @@ const CourseEnquiryModal = ({ course, centerId, onClose }: { course: Course; cen
   const submit = async () => {
     if (!form.name.trim() || !form.phone.trim()) return toast.error("Name and phone are required");
     setSubmitting(true);
-    const { error } = await (supabase as any).from("center_course_enquiries").insert({
-      center_id: centerId,
+    const { error } = await (supabase as any).from("centre_course_enquiries").insert({
+      centre_id: centerId,
       course_id: course.id,
       name: form.name,
       phone: form.phone,
@@ -214,7 +214,7 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
       message: form.message,
       source: "admission",
       source_type: "admission",
-      center_id: centerId,
+      centre_id: centerId,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);

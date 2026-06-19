@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export type CenterStaffRow = {
   id: string;
-  center_id: string;
+  centre_id: string;
   role: string;
   center?: {
     id: string;
@@ -35,8 +35,8 @@ export const useCenterAdmin = () => {
     (async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("center_staff" as any)
-        .select("id, center_id, role, center:centers(id, slug, city, area, state)")
+        .from("centre_staff" as any)
+        .select("id, centre_id, role, center:centers(id, slug, city, area, state)")
         .eq("user_id", user.id);
       if (cancelled) return;
       if (error) {
@@ -55,7 +55,7 @@ export const useCenterAdmin = () => {
   const primary = memberships[0] ?? null;
   return {
     memberships,
-    primaryCenterId: primary?.center_id ?? null,
+    primaryCenterId: primary?.centre_id ?? null,
     primaryCenter: primary?.center ?? null,
     loading,
   };

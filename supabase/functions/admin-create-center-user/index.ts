@@ -1,6 +1,6 @@
 // Edge function: admin-create-center-user
 // Creates an auth user (email + password), or resets an existing user's password,
-// and attaches them to a centre via center_staff (which auto-grants center_admin role).
+// and attaches them to a centre via centre_staff (which auto-grants center_admin role).
 // Only callable by admin or super_admin.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -52,13 +52,13 @@ Deno.serve(async (req) => {
   const action = body.action as "create" | "reset_password";
   const email = (body.email ?? "").toString().trim().toLowerCase();
   const password = (body.password ?? "").toString();
-  const centerId = (body.center_id ?? "").toString();
+  const centerId = (body.centre_id ?? "").toString();
   const fullName = (body.full_name ?? "").toString().trim();
   const role = (body.role ?? "manager").toString();
 
   if (!email || !password) return json(400, { error: "email and password are required" });
   if (password.length < 8) return json(400, { error: "Password must be at least 8 characters" });
-  if (action === "create" && !centerId) return json(400, { error: "center_id is required when creating" });
+  if (action === "create" && !centerId) return json(400, { error: "centre_id is required when creating" });
 
   // Look up existing user
   let userId: string | null = null;
@@ -83,10 +83,10 @@ Deno.serve(async (req) => {
 
     // Attach to centre (idempotent)
     const { error: linkErr } = await admin
-      .from("center_staff")
+      .from("centre_staff")
       .upsert(
-        { user_id: userId, center_id: centerId, role },
-        { onConflict: "user_id,center_id" },
+        { user_id: userId, centre_id: centerId, role },
+        { onConflict: "user_id,centre_id" },
       );
     if (linkErr) return json(400, { error: linkErr.message });
 

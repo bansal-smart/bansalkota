@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.centres IS 'Bansal Classes centres (renamed from "centers" in Phase 1).';

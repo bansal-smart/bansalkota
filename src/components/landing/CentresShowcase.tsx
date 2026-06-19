@@ -65,7 +65,7 @@ const CentresShowcase = () => {
                   {featured.map((c) => (
                     <Link
                       key={c.id}
-                      to={`/centers/${c.slug}`}
+                      to={`/centres/${c.slug}`}
                       className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white p-5 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
                     >
                       <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-bansal-orange/20 blur-3xl pointer-events-none" />
@@ -106,7 +106,7 @@ const CentresShowcase = () => {
                   {list.map((c) => (
                     <Link
                       key={c.id}
-                      to={`/centers/${c.slug}`}
+                      to={`/centres/${c.slug}`}
                       className="group rounded-xl bg-white border border-border p-3 hover-lift shadow-sm hover:shadow-md hover:border-bansal-orange/40 transition-all"
                     >
                       <div className="flex items-start gap-2">
@@ -133,7 +133,7 @@ const CentresShowcase = () => {
 
 
         <div className="mt-8 text-center">
-          <Link to="/centers" className="inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
+          <Link to="/centres" className="inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
             Explore all centres <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

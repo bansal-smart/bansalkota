@@ -1,5 +1,9 @@
 ## Phase 1 — Centre & Admin Panel Enhancements
 
+**Status:** Step 1 (DB rename `center*` → `centre*`, code sweep, `is_pinned` + Kota pin, route redirects) — **DONE** ✅.
+
+Remaining: bulk import/export framework, centre login credentials column, centre-scoped student/course management, gallery + updates UIs, centre page reorder, file/component renames (cosmetic, deferred).
+
 Scope is the Centre/Admin batch only. Website items (Sameer Sir, Alumni, single-device login, leadership photos, auto-confirmation messages) come in Phase 2.
 
 ### 1. Bulk Import / Export (CSV)

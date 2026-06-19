@@ -196,8 +196,8 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
               <Route path="/boost" element={<BoostPage />} />
-              <Route path="/centers" element={<CentersPage />} />
-              <Route path="/centers/:slug" element={<CenterDetailPage />} />
+              <Route path="/centres" element={<CentersPage />} />
+              <Route path="/centres/:slug" element={<CenterDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
               <Route path="/alumni" element={<AlumniPage />} />
               <Route path="/e-store" element={<EStorePage />} />
@@ -313,8 +313,10 @@ const App = () => (
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
               <Route path="/admin/boost" element={<AdminBoostPage />} />
-              <Route path="/admin/centers" element={<AdminCentersPage />} />
-              <Route path="/admin/center-support" element={<AdminCenterSupportPage />} />
+              <Route path="/admin/centres" element={<AdminCentersPage />} />
+              <Route path="/admin/centers" element={<Navigate to="/admin/centres" replace />} />
+              <Route path="/admin/centre-support" element={<AdminCenterSupportPage />} />
+              <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
               <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />

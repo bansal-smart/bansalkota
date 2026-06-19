@@ -42,9 +42,9 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
   const load = async () => {
     setLoading(true);
     const { data: staff } = await (supabase as any)
-      .from("center_staff")
+      .from("centre_staff")
       .select("id, user_id, role, created_at")
-      .eq("center_id", centerId);
+      .eq("centre_id", centerId);
     const userIds = (staff ?? []).map((s: any) => s.user_id);
     let enriched: StaffRow[] = staff ?? [];
     if (userIds.length) {
@@ -70,8 +70,8 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
       setAdding(false);
       return toast.error("No user with that email. Use 'Create new login' instead.");
     }
-    const { error } = await (supabase as any).from("center_staff").insert({
-      center_id: centerId,
+    const { error } = await (supabase as any).from("centre_staff").insert({
+      centre_id: centerId,
       user_id: userId,
       role,
     });
@@ -92,7 +92,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
         email: newEmail.trim(),
         password: newPassword,
         full_name: newName.trim(),
-        center_id: centerId,
+        centre_id: centerId,
         role,
       },
     });
@@ -122,7 +122,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
 
   const remove = async (id: string) => {
     if (!confirm("Remove this staff member?")) return;
-    const { error } = await (supabase as any).from("center_staff").delete().eq("id", id);
+    const { error } = await (supabase as any).from("centre_staff").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removed");
     load();

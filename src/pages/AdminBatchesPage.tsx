@@ -25,7 +25,7 @@ type BatchRow = {
   class_level: string | null;
   is_active: boolean;
   course_id: string;
-  center_id: string | null;
+  centre_id: string | null;
 };
 
 const AdminBatchesPage = () => {

@@ -26,16 +26,16 @@ export default function CenterGalleryAndUpdates({ centerId }: { centerId: string
     (async () => {
       const [g, u] = await Promise.all([
         supabase
-          .from("center_gallery")
+          .from("centre_gallery")
           .select("id, image_url, caption, kind")
-          .eq("center_id", centerId)
+          .eq("centre_id", centerId)
           .eq("is_published", true)
           .order("sort_order", { ascending: true })
           .limit(24),
         supabase
-          .from("center_updates")
+          .from("centre_updates")
           .select("id, title, body, image_url, posted_at")
-          .eq("center_id", centerId)
+          .eq("centre_id", centerId)
           .eq("is_published", true)
           .order("posted_at", { ascending: false })
           .limit(6),

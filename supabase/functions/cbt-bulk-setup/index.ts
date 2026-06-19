@@ -65,11 +65,11 @@ Deno.serve(async (req) => {
     if (!rows.length) return json(400, { error: "rows are required" });
 
     // 1. Kota center
-    const { data: centerRow } = await admin.from("centers").select("id").eq("slug", "kota").maybeSingle();
+    const { data: centerRow } = await admin.from("centres").select("id").eq("slug", "kota").maybeSingle();
     let centerId = (centerRow as { id?: string } | null)?.id;
     if (!centerId) {
       const { data: created, error: cErr } = await admin
-        .from("centers")
+        .from("centres")
         .insert({ slug: "kota", city: "Kota", state: "Rajasthan", region: "North", is_published: true, verified: true })
         .select("id").single();
       if (cErr) return json(500, { error: "Center create failed: " + cErr.message });
@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
           .from("course_batches")
           .insert({
             course_id: courseId,
-            center_id: centerId,
+            centre_id: centerId,
             code: b.code,
             name: b.code,
             class_level: b.class_level,
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
           phone: r.phone,
           roll_number: r.roll_number,
           batch_id: batchId,
-          center_id: centerId,
+          centre_id: centerId,
           target_exam: r.stream,
           class_level: r.class_level,
           city: "Kota",

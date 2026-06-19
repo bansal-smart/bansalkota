@@ -20,7 +20,7 @@ import {
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centers";
+import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centres";
 import { useCenters } from "@/hooks/useCenters";
 import CenterOfflineSections from "@/components/CenterOfflineSections";
 import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
@@ -69,7 +69,7 @@ export default function CenterDetailPage() {
     ).slice(0, 6);
   }, [center, DB_CENTERS]);
 
-  if (!center) return <Navigate to="/centers" replace />;
+  if (!center) return <Navigate to="/centres" replace />;
 
   const displayName =
     center.area && center.area !== center.city ? `${center.city} — ${center.area}` : center.city;
@@ -90,7 +90,7 @@ export default function CenterDetailPage() {
 
         <div className="container mx-auto px-4 max-w-5xl relative h-full flex flex-col justify-end pb-10 md:pb-12">
           <Link
-            to="/centers"
+            to="/centres"
             className="inline-flex items-center gap-1.5 text-sm text-white/80 hover:text-white mb-5 self-start"
           >
             <ArrowLeft className="h-4 w-4" /> All centres
@@ -195,7 +195,7 @@ export default function CenterDetailPage() {
                     Explore more centres in {center.state} & {center.region} India.
                   </p>
                 </div>
-                <Link to="/centers" className="text-sm font-semibold text-bansal-blue hover:underline whitespace-nowrap">
+                <Link to="/centres" className="text-sm font-semibold text-bansal-blue hover:underline whitespace-nowrap">
                   View all
                 </Link>
               </div>
@@ -203,7 +203,7 @@ export default function CenterDetailPage() {
                 {nearby.map((c) => (
                   <Link
                     key={c.slug}
-                    to={`/centers/${c.slug}`}
+                    to={`/centres/${c.slug}`}
                     className="group block rounded-xl overflow-hidden bg-white border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all"
                   >
                     <div className="relative h-28 overflow-hidden bg-bansal-blue">

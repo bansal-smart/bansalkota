@@ -26,7 +26,7 @@ const PAGES: { key: string; label: string; route: string }[] = [
   { key: "admissions", label: "Admissions", route: "/admissions" },
   { key: "association", label: "Association", route: "/association" },
   { key: "boost", label: "BOOST 2026", route: "/boost" },
-  { key: "centers", label: "Centres", route: "/centers" },
+  { key: "centres", label: "Centres", route: "/centres" },
   { key: "achievements", label: "Achievements", route: "/achievements" },
   { key: "e-store", label: "E-Store", route: "/e-store" },
   { key: "career", label: "Careers", route: "/career" },

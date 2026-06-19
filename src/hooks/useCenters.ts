@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CENTERS as STATIC_CENTERS, THEME_IMAGE, type Center, type CenterTheme } from "@/data/centers";
+import { CENTERS as STATIC_CENTERS, THEME_IMAGE, type Center, type CenterTheme } from "@/data/centres";
 
 export type DBCenter = Center & {
   id: string;
@@ -50,7 +50,7 @@ export const useCenters = () => {
     let ignore = false;
     (async () => {
       const { data, error } = await supabase
-        .from("centers")
+        .from("centres")
         .select("*")
         .eq("is_published", true)
         .limit(500);
