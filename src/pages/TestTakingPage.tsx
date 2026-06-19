@@ -8,6 +8,7 @@ import MathRenderer from "@/components/MathRenderer";
 import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape";
 import CandidateCard from "@/components/test/CandidateCard";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
+import ReportQuestionButton from "@/components/test/ReportQuestionButton";
 
 type QuestionType =
   | "mcq-single"
@@ -867,9 +868,14 @@ const TestTakingPage = () => {
                   </div>
                 )}
               </div>
-              <div className="text-right text-[11px]">
-                <p className="text-neutral-500">Marks</p>
-                <p className="font-bold tabular-nums"><span className="text-emerald-600">+{q.marks_correct}</span> <span className="text-neutral-400">/</span> <span className="text-red-600">{q.marks_wrong}</span></p>
+              <div className="flex items-start gap-3">
+                <div className="text-right text-[11px]">
+                  <p className="text-neutral-500">Marks</p>
+                  <p className="font-bold tabular-nums"><span className="text-emerald-600">+{q.marks_correct}</span> <span className="text-neutral-400">/</span> <span className="text-red-600">{q.marks_wrong}</span></p>
+                </div>
+                {test && attemptId && (
+                  <ReportQuestionButton testId={test.id} questionId={q.id} attemptId={attemptId} questionNumber={currentQ + 1} />
+                )}
               </div>
             </div>
 
