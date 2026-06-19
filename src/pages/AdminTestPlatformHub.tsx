@@ -10,6 +10,7 @@ import {
   Library,
   FileBarChart,
   Upload,
+  AlertTriangle,
 } from "lucide-react";
 import AdminTestsHubPage from "./AdminTestsHubPage";
 import AdminTestsPage from "./AdminTestsPage";
@@ -17,6 +18,7 @@ import AdminTestSeriesPage from "./AdminTestSeriesPage";
 import AdminQuestionBankPage from "./AdminQuestionBankPage";
 import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import AdminImportBatchesPage from "./AdminImportBatchesPage";
+import AdminQuestionReportsPage from "./AdminQuestionReportsPage";
 import UpcomingTestsTab from "@/components/admin/UpcomingTestsTab";
 
 type TabKey =
@@ -26,7 +28,8 @@ type TabKey =
   | "series"
   | "bank"
   | "attempts"
-  | "imports";
+  | "imports"
+  | "reports";
 
 const TABS: { key: TabKey; label: string; icon: typeof ClipboardCheck }[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
@@ -36,7 +39,9 @@ const TABS: { key: TabKey; label: string; icon: typeof ClipboardCheck }[] = [
   { key: "bank", label: "Question Bank", icon: Library },
   { key: "attempts", label: "Attempts", icon: FileBarChart },
   { key: "imports", label: "Imports", icon: Upload },
+  { key: "reports", label: "Question Reports", icon: AlertTriangle },
 ];
+
 
 const isTabKey = (s: string | null): s is TabKey =>
   !!s && TABS.some((t) => t.key === s);
@@ -121,6 +126,7 @@ const AdminTestPlatformHub = () => {
         )}
         {tab === "attempts" && <AdminTestAttemptsPage />}
         {tab === "imports" && <AdminImportBatchesPage />}
+        {tab === "reports" && <AdminQuestionReportsPage />}
       </div>
     </div>
   );
