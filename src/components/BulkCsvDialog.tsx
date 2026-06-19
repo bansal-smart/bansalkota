@@ -13,6 +13,13 @@ export type CsvField = {
   example?: string;
 };
 
+export type BulkServerResult = {
+  ok: number;
+  errors: number;
+  dry_run: boolean;
+  results: { row: number; ok: boolean; error?: string; id?: string }[];
+};
+
 export type BulkCsvDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -21,8 +28,10 @@ export type BulkCsvDialogProps = {
   fields: CsvField[];
   /** Existing rows used for "Export current data" */
   exportRows?: Record<string, any>[];
-  /** Called for each parsed row in sequence. Throw or return error string to mark failure. */
-  importRow: (row: Record<string, any>, index: number) => Promise<string | void>;
+  /** Legacy per-row callback. Throw or return error string to mark failure. */
+  importRow?: (row: Record<string, any>, index: number) => Promise<string | void>;
+  /** Server-side batched callback. If provided, the dialog sends ALL rows at once and respects dryRun. */
+  bulkImport?: (rows: Record<string, any>[], dryRun: boolean) => Promise<BulkServerResult>;
   /** Called once after a successful (or partial) import */
   onDone?: () => void;
   fileBase?: string;
@@ -51,13 +60,15 @@ const BulkCsvDialog = ({
   fields,
   exportRows,
   importRow,
+  bulkImport,
   onDone,
   fileBase = "data",
 }: BulkCsvDialogProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [dryRun, setDryRun] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
-  const [results, setResults] = useState<{ ok: number; errors: { row: number; error: string }[] } | null>(null);
+  const [results, setResults] = useState<{ ok: number; errors: { row: number; error: string }[]; dryRun?: boolean } | null>(null);
 
   if (!open) return null;
 
@@ -89,6 +100,8 @@ const BulkCsvDialog = ({
         const errors: { row: number; error: string }[] = [];
         let ok = 0;
 
+        // First pass: parse + validate
+        const mappedRows: ({ ok: true; row: Record<string, any> } | { ok: false; error: string })[] = [];
         for (let i = 0; i < rows.length; i++) {
           const raw = rows[i];
           const mapped: Record<string, any> = {};
@@ -111,28 +124,60 @@ const BulkCsvDialog = ({
               break;
             }
           }
-
           if (rowErr) {
+            mappedRows.push({ ok: false, error: rowErr });
             errors.push({ row: i + 2, error: rowErr });
           } else {
-            try {
-              const r = await importRow(mapped, i);
-              if (typeof r === "string") errors.push({ row: i + 2, error: r });
-              else ok++;
-            } catch (e: any) {
-              errors.push({ row: i + 2, error: e.message || String(e) });
-            }
+            mappedRows.push({ ok: true, row: mapped });
           }
-          setProgress({ done: i + 1, total: rows.length });
         }
 
-        setResults({ ok, errors });
+        if (bulkImport) {
+          // Server-side batched import
+          const validRows = mappedRows
+            .map((m, i) => (m.ok ? { idx: i, row: m.row } : null))
+            .filter(Boolean) as { idx: number; row: Record<string, any> }[];
+          setProgress({ done: 0, total: validRows.length });
+          try {
+            const res = await bulkImport(validRows.map((v) => v.row), dryRun);
+            ok = res.ok;
+            res.results.forEach((r) => {
+              if (!r.ok) {
+                const orig = validRows[r.row - 1];
+                errors.push({ row: (orig?.idx ?? r.row - 1) + 2, error: r.error || "Unknown error" });
+              }
+            });
+            setProgress({ done: validRows.length, total: validRows.length });
+          } catch (e: any) {
+            toast.error(e.message || "Bulk import failed");
+            setBusy(false);
+            return;
+          }
+        } else if (importRow) {
+          setProgress({ done: 0, total: rows.length });
+          for (let i = 0; i < mappedRows.length; i++) {
+            const m = mappedRows[i];
+            if (m.ok) {
+              try {
+                const r = await importRow(m.row, i);
+                if (typeof r === "string") errors.push({ row: i + 2, error: r });
+                else ok++;
+              } catch (e: any) {
+                errors.push({ row: i + 2, error: e.message || String(e) });
+              }
+            }
+            setProgress({ done: i + 1, total: mappedRows.length });
+          }
+        }
+
+        setResults({ ok, errors, dryRun });
         setBusy(false);
+        const label = dryRun ? "validated" : "imported";
         if (ok > 0) {
-          toast.success(`Imported ${ok} row${ok === 1 ? "" : "s"}${errors.length ? ` (${errors.length} failed)` : ""}`);
-          onDone?.();
+          toast.success(`${ok} row${ok === 1 ? "" : "s"} ${label}${errors.length ? ` (${errors.length} failed)` : ""}`);
+          if (!dryRun) onDone?.();
         } else if (errors.length) {
-          toast.error(`Import failed: ${errors.length} row${errors.length === 1 ? "" : "s"} had errors`);
+          toast.error(`${dryRun ? "Validation" : "Import"} failed: ${errors.length} row${errors.length === 1 ? "" : "s"} had errors`);
         }
       },
       error: (err) => {
@@ -174,7 +219,7 @@ const BulkCsvDialog = ({
             </button>
           </div>
 
-          <div className="rounded-xl border border-dashed border-border p-5 text-center">
+          <div className="rounded-xl border border-dashed border-border p-5 text-center space-y-3">
             <input
               ref={fileRef}
               type="file"
@@ -182,13 +227,28 @@ const BulkCsvDialog = ({
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
+            {bulkImport && (
+              <label className="flex items-center justify-center gap-2 text-xs font-bold text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={dryRun}
+                  onChange={(e) => setDryRun(e.target.checked)}
+                  className="h-3.5 w-3.5"
+                />
+                Dry run (validate only — no changes written)
+              </label>
+            )}
             <button
               onClick={() => fileRef.current?.click()}
               disabled={busy}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              {busy ? `Importing ${progress.done}/${progress.total}…` : "Choose CSV to import"}
+              {busy
+                ? `${dryRun ? "Validating" : "Importing"} ${progress.done}/${progress.total}…`
+                : dryRun
+                ? "Choose CSV to validate"
+                : "Choose CSV to import"}
             </button>
             <p className="mt-2 text-xs text-muted-foreground">
               First row must match the column labels exactly.
@@ -211,7 +271,7 @@ const BulkCsvDialog = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span><b>{results.ok}</b> imported successfully</span>
+                <span><b>{results.ok}</b> rows {results.dryRun ? "validated (dry run, nothing saved)" : "imported successfully"}</span>
               </div>
               {results.errors.length > 0 && (
                 <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs">

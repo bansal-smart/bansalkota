@@ -1,8 +1,11 @@
 ## Phase 1 — Centre & Admin Panel Enhancements
 
-**Status:** Step 1 (DB rename `center*` → `centre*`, code sweep, `is_pinned` + Kota pin, route redirects) — **DONE** ✅.
+**Status:**
+- Step 1 (DB rename `center*` → `centre*`, code sweep, route redirects) — **DONE** ✅
+- Step 2 (`is_pinned` + alphabetical ordering, Kota pinned) — **DONE** ✅
+- Step 3 (Bulk Import/Export framework: `BulkCsvDialog` extended with server-side `bulkImport` + dry-run; `bulk-import` edge function with `centres` / `students` / `centre_courses` kinds; wired into Centre Students) — **DONE** ✅
 
-Remaining: bulk import/export framework, centre login credentials column, centre-scoped student/course management, gallery + updates UIs, centre page reorder, file/component renames (cosmetic, deferred).
+Remaining: wire bulk-import into Centres + Centre Courses pages, centre login credentials column, centre-scoped student/course management polish, gallery + updates UIs, centre page reorder, file/component renames (cosmetic, deferred).
 
 Scope is the Centre/Admin batch only. Website items (Sameer Sir, Alumni, single-device login, leadership photos, auto-confirmation messages) come in Phase 2.
 
