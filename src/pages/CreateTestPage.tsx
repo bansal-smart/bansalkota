@@ -531,7 +531,7 @@ const CreateTestPage = () => {
       if (q.type === "numerical" || q.type === "integer") {
         const s = q.numericalAnswer.trim();
         if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
-        if (q.type === "integer" && !/^-?\d+$/.test(s)) return false;
+        // Integer-type questions also allow decimal answers (per Bansal exam pattern).
         return true;
       }
       return false;
@@ -1237,30 +1237,22 @@ const CreateTestPage = () => {
                       value={q.numericalAnswer}
                       onChange={(e) => {
                         const raw = e.target.value;
-                        let cleaned: string;
-                        if (q.type === "integer") {
-                          // digits + single optional leading minus
-                          cleaned = raw.replace(/[^0-9-]/g, "");
-                          const neg = cleaned.startsWith("-");
-                          cleaned = (neg ? "-" : "") + cleaned.replace(/-/g, "");
-                        } else {
-                          // digits, one leading minus, at most one decimal point
-                          cleaned = raw.replace(/[^0-9.\-]/g, "");
-                          const neg = cleaned.startsWith("-");
-                          cleaned = cleaned.replace(/-/g, "");
-                          const firstDot = cleaned.indexOf(".");
-                          if (firstDot !== -1) {
-                            cleaned =
-                              cleaned.slice(0, firstDot + 1) +
-                              cleaned.slice(firstDot + 1).replace(/\./g, "");
-                          }
-                          cleaned = (neg ? "-" : "") + cleaned;
+                        // digits, one leading minus, at most one decimal point.
+                        // Integer-type questions also accept decimal answers (Bansal pattern).
+                        let cleaned = raw.replace(/[^0-9.\-]/g, "");
+                        const neg = cleaned.startsWith("-");
+                        cleaned = cleaned.replace(/-/g, "");
+                        const firstDot = cleaned.indexOf(".");
+                        if (firstDot !== -1) {
+                          cleaned =
+                            cleaned.slice(0, firstDot + 1) +
+                            cleaned.slice(firstDot + 1).replace(/\./g, "");
                         }
+                        cleaned = (neg ? "-" : "") + cleaned;
                         updateQ(i, { numericalAnswer: cleaned });
                       }}
-                      placeholder={q.type === "integer" ? "Whole number, e.g. -7" : "Decimal allowed, e.g. -3.14"}
-                      inputMode={q.type === "integer" ? "numeric" : "decimal"}
-                      pattern={q.type === "integer" ? "-?[0-9]*" : undefined}
+                      placeholder="e.g. -3.14"
+                      inputMode="decimal"
                       className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
                     />
                   </div>

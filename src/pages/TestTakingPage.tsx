@@ -1396,8 +1396,9 @@ const NumericInput = ({
   onChange: (v: string) => void;
   questionType: "integer" | "numerical";
 }) => {
-  const allowDecimal = questionType === "numerical";
-  const allowNeg = questionType === "numerical";
+  // Both numerical and integer questions accept decimals and negatives.
+  const allowDecimal = true;
+  const allowNeg = true;
 
   // Defensive: strip any disallowed characters that may have come from a stored answer
   useEffect(() => {
@@ -1437,7 +1438,7 @@ const NumericInput = ({
     onChange(value + k);
   };
 
-  const placeholder = allowDecimal ? "e.g. -3.14" : "Integer only (digits)";
+  const placeholder = "e.g. -3.14";
 
   return (
     <div className="space-y-3">
@@ -1469,9 +1470,7 @@ const NumericInput = ({
         })}
       </div>
       <p className="text-[10px] text-muted-foreground">
-        {allowDecimal
-          ? "Decimals and negative numbers are allowed."
-          : "Digits 0-9 only. Decimal point and minus sign are disabled for integer questions."}
+        Decimals and negative numbers are allowed.
       </p>
     </div>
   );
