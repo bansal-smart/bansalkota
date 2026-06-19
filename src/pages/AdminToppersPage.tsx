@@ -112,6 +112,10 @@ const AdminToppersPage = () => {
       category: form.category || null,
       sort_order: Number(form.sort_order ?? 0),
       is_published: form.is_published ?? true,
+      is_alumni: form.is_alumni ?? false,
+      current_position: form.current_position || null,
+      company: form.company || null,
+      batch_year: form.batch_year ? Number(form.batch_year) : null,
     };
     const { error } = editingId
       ? await supabase.from("toppers").update(payload).eq("id", editingId)
