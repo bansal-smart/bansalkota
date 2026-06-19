@@ -134,6 +134,71 @@ const TestInstructionsPage = () => {
           <li>Do not refresh, close, or navigate away during the test. Progress is saved automatically every few seconds.</li>
         </ol>
 
+        {/^jee[-_ ]?adv/i.test(test.exam_pattern) && (
+          <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <h3 className="font-display text-sm font-black uppercase tracking-wider text-primary">
+              JEE (Advanced) — Marking Scheme by Question Type
+            </h3>
+
+            <div className="mt-4 space-y-4 text-sm text-foreground/85">
+              <div>
+                <p className="font-bold text-foreground">Single Correct (MCQ)</p>
+                <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                  <li>Full Marks: <b>+3</b> if only the correct option is chosen.</li>
+                  <li>Zero Marks: <b>0</b> if unanswered.</li>
+                  <li>Negative Marks: <b>−1</b> in all other cases.</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-bold text-foreground">More Than One Correct (MSQ)</p>
+                <p className="mt-1">
+                  Each question has FOUR options. <b>One or more</b> of these options is/are correct.
+                  Choose <b>all</b> the correct option(s). Evaluated as:
+                </p>
+                <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                  <li><b>Full Marks: +4</b> — only (and all) the correct option(s) are chosen.</li>
+                  <li><b>Partial Marks: +3</b> — all four options are correct but only three are chosen, and all three are correct.</li>
+                  <li><b>Partial Marks: +2</b> — three or more options are correct but only two are chosen, and both are correct.</li>
+                  <li><b>Partial Marks: +1</b> — two or more options are correct but only one is chosen, and it is correct.</li>
+                  <li><b>Zero Marks: 0</b> — if the question is unanswered.</li>
+                  <li><b>Negative Marks: −2</b> — in all other cases (any incorrect option selected).</li>
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Example: if A, B and D are the only correct options — choosing A, B and D → +4; any two of A,B,D → +2;
+                  any single one of A,B,D → +1; choosing C (or any combination including C) → −2; not answering → 0.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-foreground">Numerical Value</p>
+                <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                  <li>Full Marks: <b>+4</b> if the entered value matches the correct answer (within tolerance).</li>
+                  <li>Zero Marks: <b>0</b> in all other cases. <b>No negative marking.</b></li>
+                  <li>Decimal values and the minus sign are allowed in the input field.</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-bold text-foreground">Matching List (4 × 5)</p>
+                <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                  <li>Full Marks: <b>+4</b> if only the correct option is chosen.</li>
+                  <li>Zero Marks: <b>0</b> if unanswered.</li>
+                  <li>Negative Marks: <b>−1</b> in all other cases.</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-bold text-foreground">Paragraph / Question-Stem (Numerical)</p>
+                <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                  <li>Full Marks: <b>+2</b> for the correct numerical answer.</li>
+                  <li>Zero Marks: <b>0</b> in all other cases. <b>No negative marking.</b></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         <h3 className="mt-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">Question palette legend</h3>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {paletteLegend.map((p) => (
