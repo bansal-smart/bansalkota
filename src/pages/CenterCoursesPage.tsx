@@ -203,6 +203,59 @@ const CenterCoursesPage = () => {
           </div>
         </div>
       )}
+
+      <BulkCsvDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import / export Offline Courses"
+        description="Export your current courses, or upload a CSV to upsert by title. Existing titles are updated; new ones are created."
+        fileBase="centre-courses"
+        exportRows={items as any}
+        fields={[
+          { key: "title", label: "Title", required: true, example: "JEE Adv 2-Year Classroom" },
+          { key: "target_exam", label: "Target Exam", example: "IIT JEE" },
+          { key: "class_level", label: "Class", example: "Class 11" },
+          { key: "start_date", label: "Start Date", example: "2026-04-01" },
+          { key: "duration", label: "Duration", example: "2 years" },
+          { key: "fees", label: "Fees", parse: (v) => (v ? Number(v) : null), example: "180000" },
+          { key: "currency", label: "Currency", example: "INR" },
+          { key: "schedule", label: "Schedule", example: "Mon–Sat 7–11 AM" },
+          { key: "description", label: "Description", example: "Comprehensive JEE Advanced program" },
+          { key: "brochure_url", label: "Brochure URL", example: "" },
+          {
+            key: "is_published",
+            label: "Published",
+            parse: (v) => /^(true|yes|y|1)$/i.test(v),
+            example: "true",
+          },
+        ] satisfies CsvField[]}
+        importRow={async (row) => {
+          if (!row.title) return "Title required";
+          const payload: any = {
+            ...row,
+            center_id: primaryCenterId,
+            created_by: user.id,
+          };
+          // upsert by (center_id, title)
+          const { data: existing } = await (supabase as any)
+            .from("center_courses")
+            .select("id")
+            .eq("center_id", primaryCenterId)
+            .eq("title", row.title)
+            .maybeSingle();
+          if (existing?.id) {
+            const { error } = await (supabase as any)
+              .from("center_courses")
+              .update(payload)
+              .eq("id", existing.id);
+            if (error) return error.message;
+          } else {
+            const { error } = await (supabase as any).from("center_courses").insert(payload);
+            if (error) return error.message;
+          }
+        }}
+        onDone={load}
+      />
     </div>
   );
 };
