@@ -63,17 +63,52 @@ const AdminCentersPage = () => {
   const [uploading, setUploading] = useState(false);
   const [staffCenter, setStaffCenter] = useState<Center | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [loginByCenter, setLoginByCenter] = useState<Record<string, string[]>>({});
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("centers")
       .select("*")
-      .order("sort_order")
       .limit(500);
     if (error) toast.error(error.message);
-    setItems((data ?? []) as Center[]);
+    const list = (data ?? []) as Center[];
+    // Alphabetical by city with HQ / Kota pinned first
+    list.sort((a, b) => {
+      const aPin = a.is_hq || a.city.toLowerCase() === "kota" ? 0 : 1;
+      const bPin = b.is_hq || b.city.toLowerCase() === "kota" ? 0 : 1;
+      if (aPin !== bPin) return aPin - bPin;
+      return a.city.localeCompare(b.city, "en", { sensitivity: "base" });
+    });
+    setItems(list);
     setLoading(false);
+
+    // Fetch login emails for each centre (centre_admin staff)
+    if (list.length) {
+      const ids = list.map((c) => c.id);
+      const { data: staff } = await (supabase as any)
+        .from("center_staff")
+        .select("center_id, user_id")
+        .in("center_id", ids);
+      const userIds = Array.from(new Set((staff ?? []).map((s: any) => s.user_id)));
+      if (userIds.length) {
+        const { data: emails } = await (supabase as any).rpc("admin_emails_for_user_ids", {
+          _user_ids: userIds,
+        });
+        const emailMap = new Map<string, string>(
+          (emails ?? []).map((e: any) => [e.user_id, e.email]),
+        );
+        const map: Record<string, string[]> = {};
+        for (const s of staff ?? []) {
+          const em = emailMap.get((s as any).user_id);
+          if (!em) continue;
+          (map[(s as any).center_id] ||= []).push(em);
+        }
+        setLoginByCenter(map);
+      } else {
+        setLoginByCenter({});
+      }
+    }
   };
   useEffect(() => {
     load();
