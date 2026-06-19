@@ -100,6 +100,8 @@ const BulkCsvDialog = ({
         const errors: { row: number; error: string }[] = [];
         let ok = 0;
 
+        // First pass: parse + validate
+        const mappedRows: ({ ok: true; row: Record<string, any> } | { ok: false; error: string })[] = [];
         for (let i = 0; i < rows.length; i++) {
           const raw = rows[i];
           const mapped: Record<string, any> = {};
@@ -122,28 +124,60 @@ const BulkCsvDialog = ({
               break;
             }
           }
-
           if (rowErr) {
+            mappedRows.push({ ok: false, error: rowErr });
             errors.push({ row: i + 2, error: rowErr });
           } else {
-            try {
-              const r = await importRow(mapped, i);
-              if (typeof r === "string") errors.push({ row: i + 2, error: r });
-              else ok++;
-            } catch (e: any) {
-              errors.push({ row: i + 2, error: e.message || String(e) });
-            }
+            mappedRows.push({ ok: true, row: mapped });
           }
-          setProgress({ done: i + 1, total: rows.length });
         }
 
-        setResults({ ok, errors });
+        if (bulkImport) {
+          // Server-side batched import
+          const validRows = mappedRows
+            .map((m, i) => (m.ok ? { idx: i, row: m.row } : null))
+            .filter(Boolean) as { idx: number; row: Record<string, any> }[];
+          setProgress({ done: 0, total: validRows.length });
+          try {
+            const res = await bulkImport(validRows.map((v) => v.row), dryRun);
+            ok = res.ok;
+            res.results.forEach((r) => {
+              if (!r.ok) {
+                const orig = validRows[r.row - 1];
+                errors.push({ row: (orig?.idx ?? r.row - 1) + 2, error: r.error || "Unknown error" });
+              }
+            });
+            setProgress({ done: validRows.length, total: validRows.length });
+          } catch (e: any) {
+            toast.error(e.message || "Bulk import failed");
+            setBusy(false);
+            return;
+          }
+        } else if (importRow) {
+          setProgress({ done: 0, total: rows.length });
+          for (let i = 0; i < mappedRows.length; i++) {
+            const m = mappedRows[i];
+            if (m.ok) {
+              try {
+                const r = await importRow(m.row, i);
+                if (typeof r === "string") errors.push({ row: i + 2, error: r });
+                else ok++;
+              } catch (e: any) {
+                errors.push({ row: i + 2, error: e.message || String(e) });
+              }
+            }
+            setProgress({ done: i + 1, total: mappedRows.length });
+          }
+        }
+
+        setResults({ ok, errors, dryRun });
         setBusy(false);
+        const label = dryRun ? "validated" : "imported";
         if (ok > 0) {
-          toast.success(`Imported ${ok} row${ok === 1 ? "" : "s"}${errors.length ? ` (${errors.length} failed)` : ""}`);
-          onDone?.();
+          toast.success(`${ok} row${ok === 1 ? "" : "s"} ${label}${errors.length ? ` (${errors.length} failed)` : ""}`);
+          if (!dryRun) onDone?.();
         } else if (errors.length) {
-          toast.error(`Import failed: ${errors.length} row${errors.length === 1 ? "" : "s"} had errors`);
+          toast.error(`${dryRun ? "Validation" : "Import"} failed: ${errors.length} row${errors.length === 1 ? "" : "s"} had errors`);
         }
       },
       error: (err) => {
