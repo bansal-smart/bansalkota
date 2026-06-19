@@ -234,13 +234,19 @@ export default function CenterDetailPage() {
 
       {dbCenter?.id && (
         <>
-          <CenterGalleryAndUpdates centerId={dbCenter.id} />
-          <div className="container mx-auto max-w-5xl px-4 -mt-6 mb-8 text-center">
+          <CenterGalleryAndUpdates centerId={dbCenter.id} slug={slug} />
+          <div className="container mx-auto max-w-5xl px-4 -mt-6 mb-8 flex flex-wrap justify-center gap-3">
             <Link
               to={`/centres/${slug}/gallery`}
               className="inline-flex items-center gap-1.5 rounded-full border border-bansal-orange/40 bg-white px-4 py-2 text-sm font-bold text-bansal-orange hover:bg-bansal-orange hover:text-white transition-colors"
             >
               View full gallery <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              to={`/centres/${slug}/updates`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-bansal-orange/40 bg-white px-4 py-2 text-sm font-bold text-bansal-orange hover:bg-bansal-orange hover:text-white transition-colors"
+            >
+              All updates & feed <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </>
