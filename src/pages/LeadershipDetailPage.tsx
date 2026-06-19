@@ -233,7 +233,7 @@ export default function LeadershipDetailPage() {
                       src={g.src}
                       alt={g.alt}
                       loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="absolute inset-0 w-full h-full object-cover object-bottom transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -359,12 +359,12 @@ export default function LeadershipDetailPage() {
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {sameerBooks.map((b) => (
                   <div key={b.title} className="group rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl">
-                    <div className="aspect-[2/3] overflow-hidden rounded-xl bg-bansal-blue/5 mb-4">
+                    <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gradient-to-br from-bansal-cream to-bansal-blue/5 mb-4 flex items-center justify-center p-3">
                       <img
                         src={b.cover}
                         alt={`${b.title} cover`}
                         loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="max-h-full max-w-full object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
                     <div className="font-display text-lg font-extrabold text-bansal-blue leading-tight">{b.title}</div>

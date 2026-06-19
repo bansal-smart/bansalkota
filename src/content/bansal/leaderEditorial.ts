@@ -15,17 +15,17 @@ import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
 import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
 import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
 import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg.asset.json";
-import bookCalculus from "@/assets/book-calculus.jpg.asset.json";
-import bookAlgebra from "@/assets/book-algebra.jpg.asset.json";
-import bookCoordinate from "@/assets/book-coordinate.jpg.asset.json";
-import bookTrigonometry from "@/assets/book-trigonometry.jpg.asset.json";
+import bookCalculus from "@/assets/book-calculus.png.asset.json";
+import bookAlgebra from "@/assets/book-algebra.png.asset.json";
+import bookCoordinate from "@/assets/book-coordinate.png.asset.json";
+import bookMathematics from "@/assets/book-mathematics.png.asset.json";
 
 // Sameer Sir's authored books — shown on his About page
 export const sameerBooks = [
-  { title: "Problems in Calculus", subtitle: "JEE Main + Advanced", cover: bookCalculus.url, edition: "Bansal Classes" },
-  { title: "Problems in Algebra", subtitle: "JEE Main + Advanced", cover: bookAlgebra.url, edition: "Bansal Classes" },
-  { title: "Problems in Coordinate Geometry", subtitle: "JEE Main + Advanced", cover: bookCoordinate.url, edition: "Bansal Classes" },
-  { title: "Problems in Trigonometry & Vectors", subtitle: "JEE Main + Advanced", cover: bookTrigonometry.url, edition: "Bansal Classes" },
+  { title: "Problems in Calculus", subtitle: "JEE Main + Advanced", cover: bookCalculus.url, edition: "G.R. Bathla & Sons" },
+  { title: "Problems in Algebra", subtitle: "JEE Main + Advanced", cover: bookAlgebra.url, edition: "G.R. Bathla & Sons" },
+  { title: "Coordinate Geometry, Trigonometry, Vectors & 3D Geometry", subtitle: "JEE Main + Advanced", cover: bookCoordinate.url, edition: "G.R. Bathla & Sons" },
+  { title: "1000 Challenging Problems in Mathematics", subtitle: "JEE Main + Advanced", cover: bookMathematics.url, edition: "G.R. Bathla & Sons" },
 ];
 
 export type LeaderTimelineItem = { year: string; title: string; body: string };
