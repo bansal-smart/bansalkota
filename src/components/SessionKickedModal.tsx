@@ -38,10 +38,9 @@ export function SessionKickedModal({ open, deviceLabel }: Props) {
   return (
     <Dialog open={open} onOpenChange={() => { /* blocking — no dismiss */ }}>
       <DialogContent
-        className="max-w-md"
+        className="max-w-md [&>button.absolute]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        showCloseButton={false}
       >
         <DialogHeader>
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-bansal-orange ring-1 ring-bansal-orange/20">
