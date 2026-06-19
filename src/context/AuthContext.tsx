@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import { useSingleDeviceLogin } from "@/hooks/useSingleDeviceLogin";
+import { SessionKickedModal } from "@/components/SessionKickedModal";
 
 export type UserRole = "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
 
@@ -72,7 +73,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // they can be active on multiple devices / kiosks without being kicked mid-test.
   const isCbtKioskUser = (session?.user?.email ?? "").endsWith("@cbt.bansal.local");
   const enforceSingleDevice = !(isAdmin || isSuperAdmin || isCbtKioskUser);
-  useSingleDeviceLogin(enforceSingleDevice ? session?.user?.id ?? null : null);
+  const singleDevice = useSingleDeviceLogin(enforceSingleDevice ? session?.user?.id ?? null : null);
+
 
 
   /**
@@ -254,6 +256,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
+      <SessionKickedModal open={singleDevice.kicked} deviceLabel={singleDevice.newDeviceLabel} />
     </AuthContext.Provider>
   );
 };
