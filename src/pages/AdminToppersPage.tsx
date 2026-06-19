@@ -297,7 +297,7 @@ const AdminToppersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((t) => (
+                {visible.map((t) => (
                   <tr key={t.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -307,14 +307,25 @@ const AdminToppersPage = () => {
                           <div className="h-9 w-9 rounded-full bg-muted" />
                         )}
                         <div>
-                          <div className="font-semibold">{t.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{t.city ?? ""}</div>
+                          <div className="font-semibold flex items-center gap-1.5">
+                            {t.name}
+                            {t.is_alumni && (
+                              <span title="Alumni" className="rounded-full bg-bansal-orange/10 px-1.5 py-0.5 text-[9px] font-bold text-bansal-orange uppercase tracking-wide">
+                                Alumni
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {t.is_alumni
+                              ? [t.current_position, t.company].filter(Boolean).join(" · ") || t.city || ""
+                              : t.city ?? ""}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">{t.exam}</td>
                     <td className="px-4 py-3">{t.rank_label ?? "-"}</td>
-                    <td className="px-4 py-3">{t.year ?? "-"}</td>
+                    <td className="px-4 py-3">{t.batch_year ?? t.year ?? "-"}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => togglePublish(t)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${t.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                         {t.is_published ? "Published" : "Hidden"}
@@ -328,14 +339,26 @@ const AdminToppersPage = () => {
                     </td>
                   </tr>
                 ))}
-                {items.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No toppers yet.</td></tr>
+                {visible.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">No entries yet.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      <BulkCsvDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        title="Bulk import / export — Toppers & Alumni"
+        description="CSV columns: name, exam, rank_label, year, score, photo_url, quote, city, category, sort_order, is_published, is_alumni (true/false), current_position, company, batch_year. Upserts by (name, exam, year)."
+        fields={bulkFields}
+        exportRows={items}
+        importRow={importRow}
+        onDone={load}
+        fileBase="toppers-alumni"
+      />
     </div>
   );
 };
