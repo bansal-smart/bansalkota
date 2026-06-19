@@ -111,40 +111,12 @@ const CenterStudentsPage = () => {
     },
   ];
 
-  const importRow = async (row: Record<string, any>) => {
-    if (!row.phone && !row.roll_number) return "Need phone or roll number to match";
-    // Find profile by roll_number first, else by phone
-    let target: { id: string } | null = null;
-    if (row.roll_number) {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("id")
-        .eq("roll_number", row.roll_number)
-        .maybeSingle();
-      target = data ?? null;
-    }
-    if (!target && row.phone) {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("id")
-        .eq("phone", row.phone)
-        .maybeSingle();
-      target = data ?? null;
-    }
-    if (!target) return "No profile matches that roll number or phone — student must sign up first";
-
-    const update: Record<string, any> = {
-      centre_id: primaryCenterId,
-    };
-    if (row.full_name) update.full_name = row.full_name;
-    if (row.class_level) update.class_level = row.class_level;
-    if (row.target_exam) update.target_exam = row.target_exam;
-    if (row.city) update.city = row.city;
-    if (row.student_status) update.student_status = row.student_status;
-    if (row.roll_number) update.roll_number = row.roll_number;
-
-    const { error } = await (supabase as any).from("profiles").update(update).eq("id", target.id);
-    if (error) return error.message;
+  const bulkImport = async (rows: Record<string, any>[], dry_run: boolean) => {
+    const { data, error } = await (supabase as any).functions.invoke("bulk-import", {
+      body: { kind: "students", rows, dry_run, centre_id: primaryCenterId },
+    });
+    if (error) throw new Error(error.message || "Bulk import failed");
+    return data;
   };
 
   return (
