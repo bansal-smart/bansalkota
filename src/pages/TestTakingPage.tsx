@@ -1120,13 +1120,9 @@ const TestTakingPage = () => {
             className="rounded-md border border-neutral-300 px-3 py-2 text-[11px] font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 flex items-center gap-1 uppercase">
             <ArrowLeft className="h-3 w-3" /> Back
           </button>
-          <button onClick={handleNext} disabled={currentQ === questions.length - 1}
-            className="rounded-md bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-[11px] font-black text-white disabled:opacity-40 flex items-center gap-1 uppercase">
+          <button onClick={handleNext} disabled={currentQ === questions.length - 1} autoFocus
+            className="rounded-md bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-[12px] font-black text-white disabled:opacity-40 flex items-center gap-1 uppercase shadow-md ring-2 ring-emerald-200 focus:outline-none focus:ring-emerald-400">
             Save &amp; Next <ArrowRight className="h-3 w-3" />
-          </button>
-          <button onClick={() => setShowSubmit(true)} disabled={submitting}
-            className="rounded-md bg-red-600 hover:bg-red-700 px-4 py-2 text-[11px] font-black text-white disabled:opacity-50 uppercase">
-            Submit
           </button>
         </div>
       </div>
@@ -1438,7 +1434,7 @@ const NumericInput = ({
     onChange(value + k);
   };
 
-  const placeholder = "e.g. -3.14";
+  const placeholder = "";
 
   return (
     <div className="space-y-3">
