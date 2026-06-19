@@ -3839,6 +3839,7 @@ export type Database = {
         }[]
       }
       get_test_rank: { Args: { _attempt_id: string }; Returns: Json }
+      get_test_result_bundle: { Args: { _attempt_id: string }; Returns: Json }
       get_user_streak: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
@@ -3884,6 +3885,17 @@ export type Database = {
       }
       restore_attempt_from_snapshot: {
         Args: { _attempt_id: string }
+        Returns: Json
+      }
+      save_test_attempt_delta: {
+        Args: {
+          _answer_changes?: Json
+          _attempt_id: string
+          _clear_ids?: string[]
+          _status_changes?: Json
+          _tab_switches?: number
+          _time_spent?: number
+        }
         Returns: Json
       }
       slugify_text: { Args: { input: string }; Returns: string }
