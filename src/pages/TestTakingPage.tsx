@@ -162,12 +162,15 @@ const TestTakingPage = () => {
         const dbStatuses = ((fresh?.question_statuses ?? existing.question_statuses) as Record<string, QStatus>) ?? {};
         // Merge browser-local backup (last-resort offline copy)
         let localBackup: Record<string, AnswerVal> = {};
+        let localStatusBackup: Record<string, QStatus> = {};
         try {
           const raw = localStorage.getItem(`attempt:${existing.id}:answers`);
           if (raw) localBackup = JSON.parse(raw);
+          const rawS = localStorage.getItem(`attempt:${existing.id}:statuses`);
+          if (rawS) localStatusBackup = JSON.parse(rawS);
         } catch { /* ignore */ }
         setAnswers((local) => ({ ...dbAnswers, ...localBackup, ...local }));
-        setStatuses((local) => ({ ...dbStatuses, ...local }));
+        setStatuses((local) => ({ ...dbStatuses, ...localStatusBackup, ...local }));
         if ((existing as any).time_override_minutes) {
           setOverrideMinutes((existing as any).time_override_minutes);
           setOverrideStartedAt(new Date((existing as any).time_override_started_at));
