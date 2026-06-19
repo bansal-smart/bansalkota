@@ -222,6 +222,22 @@ const AdminCentersPage = () => {
     }
   };
 
+  const resetLogin = async (email: string) => {
+    const tempPw = `Bansal@${Math.random().toString(36).slice(2, 8)}${Math.floor(Math.random() * 90 + 10)}`;
+    const { data, error } = await supabase.functions.invoke("admin-create-center-user", {
+      body: { action: "reset_password", email, password: tempPw },
+    });
+    if (error || (data as any)?.error) {
+      return toast.error(((data as any)?.error ?? error?.message) || "Could not reset password");
+    }
+    try {
+      await navigator.clipboard.writeText(`${email} / ${tempPw}`);
+      toast.success(`Password reset · credentials copied to clipboard`);
+    } catch {
+      toast.success(`Password reset to: ${tempPw}`);
+    }
+  };
+
   const parseBool = (v: string) => /^(true|yes|y|1)$/i.test(v.trim());
   const csvFields: CsvField[] = [
     { key: "city", label: "City", required: true, example: "Kota" },
@@ -395,6 +411,11 @@ const AdminCentersPage = () => {
                                 className="text-[10px] text-primary hover:underline"
                                 title="Copy email"
                               >copy</button>
+                              <button
+                                onClick={() => resetLogin(em)}
+                                className="text-[10px] text-amber-600 hover:underline"
+                                title="Generate temp password & copy credentials"
+                              >reset</button>
                             </div>
                           ))}
                           {logins.length > 2 && (
@@ -450,29 +471,12 @@ const AdminCentersPage = () => {
         fields={csvFields}
         fileBase="centres"
         exportRows={items as any}
-        importRow={async (row) => {
-          if (!row.city || !row.state) return "City and State required";
-          const slug = (row.slug && String(row.slug).trim()) || slugify(`${row.city}${row.area ? "-" + row.area : ""}`);
-          const payload: any = {
-            slug,
-            city: row.city,
-            area: row.area || null,
-            state: row.state,
-            region: row.region || "North",
-            address: row.address || "",
-            phone: row.phone || "",
-            email: row.email || null,
-            established: row.established ?? null,
-            theme: row.theme || "metro",
-            image_url: row.image_url || null,
-            is_hq: !!row.is_hq,
-            is_pinned: !!row.is_pinned,
-            verified: !!row.verified,
-            is_published: row.is_published == null ? true : !!row.is_published,
-            sort_order: row.sort_order ?? 0,
-          };
-          const { error } = await supabase.from("centres").upsert(payload, { onConflict: "slug" });
-          if (error) return error.message;
+        bulkImport={async (rows, dry_run) => {
+          const { data, error } = await (supabase as any).functions.invoke("bulk-import", {
+            body: { kind: "centres", rows, dry_run },
+          });
+          if (error) throw new Error(error.message || "Bulk import failed");
+          return data;
         }}
         onDone={load}
       />

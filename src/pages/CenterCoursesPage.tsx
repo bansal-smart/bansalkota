@@ -229,30 +229,12 @@ const CenterCoursesPage = () => {
             example: "true",
           },
         ] satisfies CsvField[]}
-        importRow={async (row) => {
-          if (!row.title) return "Title required";
-          const payload: any = {
-            ...row,
-            centre_id: primaryCenterId,
-            created_by: user.id,
-          };
-          // upsert by (centre_id, title)
-          const { data: existing } = await (supabase as any)
-            .from("centre_courses")
-            .select("id")
-            .eq("centre_id", primaryCenterId)
-            .eq("title", row.title)
-            .maybeSingle();
-          if (existing?.id) {
-            const { error } = await (supabase as any)
-              .from("centre_courses")
-              .update(payload)
-              .eq("id", existing.id);
-            if (error) return error.message;
-          } else {
-            const { error } = await (supabase as any).from("centre_courses").insert(payload);
-            if (error) return error.message;
-          }
+        bulkImport={async (rows, dry_run) => {
+          const { data, error } = await (supabase as any).functions.invoke("bulk-import", {
+            body: { kind: "centre_courses", rows, dry_run, centre_id: primaryCenterId },
+          });
+          if (error) throw new Error(error.message || "Bulk import failed");
+          return data;
         }}
         onDone={load}
       />
