@@ -265,20 +265,26 @@ const TestTakingPage = () => {
       tabSwitchesRef.current = next;
       setTabSwitches(next);
 
+      // Always flush current progress to the server immediately on every violation
+      // so that even if the next action auto-submits, the most-recent answers are persisted.
+      void persistProgressRef.current?.(answersRef.current, statusesRef.current);
+
       if (next >= 3) {
         blockedRef.current = true;
         setShowTabWarning(false);
         setShowAutoBlocked(true);
-        // Auto-submit immediately
-        try { void submitRef.current?.(true); } catch { /* ignore */ }
+        // Persist once more, THEN auto-submit, so submit_test_attempt scores the latest answers.
+        (async () => {
+          try { await persistProgressRef.current?.(answersRef.current, statusesRef.current); } catch { /* ignore */ }
+          try { await submitRef.current?.(true); } catch { /* ignore */ }
+        })();
+      } else {
+        setShowTabWarning(true);
       }
     };
 
     const onVisibility = () => {
       if (document.hidden) registerViolation();
-      else if (tabSwitchesRef.current > 0 && tabSwitchesRef.current < 3) {
-        setShowTabWarning(true);
-      }
     };
     const onBlur = () => { registerViolation(); };
     document.addEventListener("visibilitychange", onVisibility);
