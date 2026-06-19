@@ -3737,6 +3737,15 @@ export type Database = {
           numerical_answer: number
         }[]
       }
+      admin_get_school_contacts: {
+        Args: { _school_ids?: string[] }
+        Returns: {
+          contact_email: string
+          contact_person: string
+          contact_phone: string
+          id: string
+        }[]
+      }
       admin_get_test_questions_full: {
         Args: { _test_id: string }
         Returns: {
