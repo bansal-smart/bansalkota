@@ -235,6 +235,7 @@ const AdminCentersPage = () => {
     { key: "theme", label: "Theme", example: "metro" },
     { key: "image_url", label: "Image URL", example: "" },
     { key: "is_hq", label: "Is HQ", parse: parseBool, example: "false" },
+    { key: "is_pinned", label: "Pin to Top", parse: parseBool, example: "false" },
     { key: "verified", label: "Verified", parse: parseBool, example: "true" },
     { key: "is_published", label: "Published", parse: parseBool, example: "true" },
     { key: "sort_order", label: "Sort Order", parse: (v) => Number(v), example: "10" },
