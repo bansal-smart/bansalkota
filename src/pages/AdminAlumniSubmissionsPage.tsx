@@ -346,7 +346,7 @@ export default function AdminAlumniSubmissionsPage() {
           )}
         </SheetContent>
       </Sheet>
-      <ConfirmDialog />
+      {ConfirmDialog}
     </div>
   );
 }
