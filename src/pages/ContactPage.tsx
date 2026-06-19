@@ -9,6 +9,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import contactHero from "@/assets/contact-hero.png";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 import SubmissionSuccess from "@/components/SubmissionSuccess";
+import { sendConfirmation } from "@/lib/sendConfirmation";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
