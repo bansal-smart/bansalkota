@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
 
     // Authorization per kind
     if (kind === "centres" && !isAnyAdmin) return json(403, { error: "Admins only" });
+    if (kind === "enrollments" && !isAnyAdmin) return json(403, { error: "Admins only" });
     if ((kind === "students" || kind === "centre_courses") && !isAnyAdmin && !isCentreStaff) {
       return json(403, { error: "Not authorised" });
     }
