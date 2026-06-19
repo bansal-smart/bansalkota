@@ -238,6 +238,21 @@ const AdminToppersPage = () => {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_published ?? true} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} /> Published</label>
           <textarea className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-3" rows={2} placeholder="Quote / story (optional)" value={form.quote ?? ""} onChange={(e) => setForm({ ...form, quote: e.target.value })} />
         </div>
+
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/20 p-4">
+          <label className="flex items-center gap-2 text-sm font-bold text-bansal-blue">
+            <GraduationCap className="h-4 w-4" />
+            <input type="checkbox" checked={form.is_alumni ?? false} onChange={(e) => setForm({ ...form, is_alumni: e.target.checked })} />
+            Show on Alumni page (Bansalian)
+          </label>
+          {form.is_alumni && (
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Current position (e.g. Software Engineer)" value={form.current_position ?? ""} onChange={(e) => setForm({ ...form, current_position: e.target.value })} />
+              <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Company / institution" value={form.company ?? ""} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+              <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Batch year (e.g. 2015)" value={form.batch_year ?? ("" as any)} onChange={(e) => setForm({ ...form, batch_year: e.target.value ? Number(e.target.value) : (null as any) })} />
+            </div>
+          )}
+        </div>
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
             <label className="text-xs font-bold text-muted-foreground">Photo</label>
