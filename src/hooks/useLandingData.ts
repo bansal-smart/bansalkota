@@ -80,11 +80,12 @@ export function useCentresShowcase() {
     queryFn: async () => {
       const { data } = await supabase
         .from("centres")
-        .select("id,city,state,slug,region,is_hq,is_featured,featured_rank,is_published,sort_order")
+        .select("id,city,state,slug,region,is_hq,is_pinned,is_featured,featured_rank,is_published,sort_order")
         .eq("is_published", true)
+        .order("is_pinned", { ascending: false })
         .order("is_featured", { ascending: false })
         .order("featured_rank", { ascending: true, nullsFirst: false })
-        .order("sort_order", { ascending: true })
+        .order("city", { ascending: true })
         .limit(60);
       return (data ?? []) as CentreShowcase[];
     },
