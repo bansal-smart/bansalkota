@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useCenters } from "@/hooks/useCenters";
+import { sendConfirmation } from "@/lib/sendConfirmation";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
@@ -67,7 +68,20 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       .single();
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    setSuccess({ admit_card_number: (data as any).admit_card_number });
+    const admit = (data as any).admit_card_number as string;
+    setSuccess({ admit_card_number: admit });
+    void sendConfirmation({
+      templateName: "boost-confirmation",
+      recipientEmail: parsed.data.email,
+      idempotencyKey: `boost-${admit}`,
+      templateData: {
+        name: parsed.data.full_name,
+        admitCardNumber: admit,
+        classLevel: parsed.data.class_level,
+        targetExam: parsed.data.target_exam,
+        preferredCentre: payload.preferred_centre_label,
+      },
+    });
   };
 
   return (
