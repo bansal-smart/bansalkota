@@ -143,14 +143,76 @@ const AdminToppersPage = () => {
     else load();
   };
 
+  const bulkFields: CsvField[] = [
+    { key: "name", label: "name", required: true, example: "Aarav Sharma" },
+    { key: "exam", label: "exam", required: true, example: "JEE" },
+    { key: "rank_label", label: "rank_label", example: "AIR 12" },
+    { key: "year", label: "year", parse: (v) => (v ? Number(v) : null), example: "2024" },
+    { key: "score", label: "score", example: "295/300" },
+    { key: "photo_url", label: "photo_url", example: "https://..." },
+    { key: "quote", label: "quote", example: "Bansal shaped my journey." },
+    { key: "city", label: "city", example: "Kota" },
+    { key: "category", label: "category", example: "Engineering" },
+    { key: "sort_order", label: "sort_order", parse: (v) => (v ? Number(v) : 0), example: "0" },
+    {
+      key: "is_published",
+      label: "is_published",
+      parse: (v) => !["false", "0", "no", ""].includes(String(v).toLowerCase().trim()),
+      example: "true",
+    },
+    {
+      key: "is_alumni",
+      label: "is_alumni",
+      parse: (v) => ["true", "1", "yes"].includes(String(v).toLowerCase().trim()),
+      example: "false",
+    },
+    { key: "current_position", label: "current_position", example: "Software Engineer" },
+    { key: "company", label: "company", example: "Google" },
+    { key: "batch_year", label: "batch_year", parse: (v) => (v ? Number(v) : null), example: "2018" },
+  ];
+
+  const importRow = async (row: Record<string, any>) => {
+    if (!row.name || !row.exam) return "Missing name or exam";
+    const { error } = await supabase
+      .from("toppers")
+      .upsert(row, { onConflict: "name,exam,year", ignoreDuplicates: false });
+    if (error) return error.message;
+  };
+
   return (
     <div className="space-y-6 p-4 lg:p-6">
-      <div className="flex items-center gap-3">
-        <Trophy className="h-7 w-7 text-primary" />
-        <div>
-          <h1 className="text-2xl font-black">Toppers / Achievements</h1>
-          <p className="text-sm text-muted-foreground">Featured student achievers shown on the public Achievements page.</p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Trophy className="h-7 w-7 text-primary" />
+          <div>
+            <h1 className="text-2xl font-black">Toppers &amp; Alumni</h1>
+            <p className="text-sm text-muted-foreground">
+              Featured achievers shown on the Achievements page, and alumni shown on the Alumni page.
+            </p>
+          </div>
         </div>
+        <button
+          onClick={() => setBulkOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold hover:bg-muted"
+        >
+          <FileSpreadsheet className="h-4 w-4" /> Bulk CSV import / export
+        </button>
+      </div>
+
+      <div className="flex gap-2 text-xs font-bold">
+        {(["all", "toppers", "alumni"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setView(k)}
+            className={`rounded-full px-3 py-1.5 border transition ${
+              view === k
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background border-border hover:bg-muted"
+            }`}
+          >
+            {k === "all" ? "All" : k === "toppers" ? "Toppers only" : "Alumni only"}
+          </button>
+        ))}
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
