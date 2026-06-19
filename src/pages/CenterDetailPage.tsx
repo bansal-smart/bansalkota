@@ -234,7 +234,7 @@ export default function CenterDetailPage() {
 
       {dbCenter?.id && (
         <>
-          <CenterGalleryAndUpdates centerId={dbCenter.id} />
+          <CenterGalleryAndUpdates centerId={dbCenter.id} slug={slug} />
           <div className="container mx-auto max-w-5xl px-4 -mt-6 mb-8 flex flex-wrap justify-center gap-3">
             <Link
               to={`/centres/${slug}/gallery`}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Image as ImageIcon, Megaphone, Calendar } from "lucide-react";
 
@@ -17,7 +18,7 @@ type UpdateItem = {
   posted_at: string;
 };
 
-export default function CenterGalleryAndUpdates({ centerId }: { centerId: string }) {
+export default function CenterGalleryAndUpdates({ centerId, slug }: { centerId: string; slug?: string }) {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [updates, setUpdates] = useState<UpdateItem[]>([]);
 
@@ -108,7 +109,16 @@ export default function CenterGalleryAndUpdates({ centerId }: { centerId: string
                       year: "numeric",
                     })}
                   </div>
-                  <h3 className="font-display text-lg font-bold text-bansal-black mb-1">{u.title}</h3>
+                  {slug ? (
+                    <Link
+                      to={`/centres/${slug}/updates/${u.id}`}
+                      className="font-display text-lg font-bold text-bansal-black mb-1 hover:text-bansal-orange transition-colors block"
+                    >
+                      {u.title}
+                    </Link>
+                  ) : (
+                    <h3 className="font-display text-lg font-bold text-bansal-black mb-1">{u.title}</h3>
+                  )}
                   <p className="text-sm text-muted-foreground whitespace-pre-line">{u.body}</p>
                   {u.image_url && (
                     <img
