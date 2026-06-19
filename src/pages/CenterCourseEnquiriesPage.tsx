@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, Download } from "lucide-react";
+import { exportCsv } from "@/lib/exportCsv";
 
 const STATUSES = ["new", "contacted", "admitted", "closed"] as const;
 
@@ -39,9 +40,28 @@ const CenterCourseEnquiriesPage = () => {
 
   return (
     <div className="p-6 lg:p-8 space-y-4">
-      <div>
-        <h1 className="text-2xl font-black font-display text-foreground">Course Enquiries</h1>
-        <p className="text-sm text-muted-foreground">Leads submitted via your offline-course cards.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black font-display text-foreground">Course Enquiries</h1>
+          <p className="text-sm text-muted-foreground">Leads submitted via your offline-course cards.</p>
+        </div>
+        <button
+          onClick={() =>
+            exportCsv("centre-course-enquiries", items, [
+              { key: "created_at", label: "Submitted", value: (r) => new Date(r.created_at).toLocaleString() },
+              { key: "name", label: "Name" },
+              { key: "phone", label: "Phone" },
+              { key: "email", label: "Email" },
+              { key: "class_level", label: "Class" },
+              { key: "course", label: "Course", value: (r) => r.course?.title ?? "" },
+              { key: "status", label: "Status" },
+              { key: "message", label: "Message" },
+            ])
+          }
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold hover:bg-muted"
+        >
+          <Download className="h-3 w-3" /> Export CSV ({items.length})
+        </button>
       </div>
 
       <div className="flex gap-2 flex-wrap">
