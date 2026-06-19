@@ -3626,6 +3626,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_get_question_bank_full: {
+        Args: { _ids: string[] }
+        Returns: {
+          correct_answer: Json
+          explanation: string
+          id: string
+          numerical_answer: number
+        }[]
+      }
       admin_get_test_questions_full: {
         Args: { _test_id: string }
         Returns: {
