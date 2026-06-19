@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, Mail, GraduationCap, RefreshCw } from "lucide-react";
+import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, Mail, GraduationCap, RefreshCw, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 
 type StudentRow = {
   user_id: string;
