@@ -408,6 +408,9 @@ const AdminCentersPage = () => {
                       <button onClick={() => togglePublish(c)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                         {c.is_published ? "Published" : "Hidden"}
                       </button>
+                      <button onClick={() => togglePin(c)} title={c.is_pinned ? "Unpin" : "Pin to top"} className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_pinned ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"}`}>
+                        {c.is_pinned ? "★ Pinned" : "☆ Pin"}
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
                       <button onClick={() => setStaffCenter(c)} className="text-primary hover:underline text-xs font-semibold inline-flex items-center gap-1">
