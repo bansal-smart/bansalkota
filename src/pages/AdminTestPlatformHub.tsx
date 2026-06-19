@@ -126,6 +126,7 @@ const AdminTestPlatformHub = () => {
         )}
         {tab === "attempts" && <AdminTestAttemptsPage />}
         {tab === "imports" && <AdminImportBatchesPage />}
+        {tab === "reports" && <AdminQuestionReportsPage />}
       </div>
     </div>
   );
