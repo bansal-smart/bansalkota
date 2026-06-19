@@ -60,13 +60,15 @@ const BulkCsvDialog = ({
   fields,
   exportRows,
   importRow,
+  bulkImport,
   onDone,
   fileBase = "data",
 }: BulkCsvDialogProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [dryRun, setDryRun] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number }>({ done: 0, total: 0 });
-  const [results, setResults] = useState<{ ok: number; errors: { row: number; error: string }[] } | null>(null);
+  const [results, setResults] = useState<{ ok: number; errors: { row: number; error: string }[]; dryRun?: boolean } | null>(null);
 
   if (!open) return null;
 
