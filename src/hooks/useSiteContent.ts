@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery, useQueryClient, QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type SiteTestimonial = {
@@ -47,118 +48,133 @@ export type LeadershipSection = {
   sort_order: number;
 };
 
-export function useSiteTestimonials() {
-  const [rows, setRows] = useState<SiteTestimonial[]>([]);
-  const [loading, setLoading] = useState(true);
+// One shared realtime channel for all site-content tables.
+// Subscribers ref-count: the channel opens on first mount and closes when the
+// last hook unmounts, so multiple components don't each open their own socket.
+let sharedChannel: ReturnType<typeof supabase.channel> | null = null;
+let subscriberCount = 0;
+let attachedClient: QueryClient | null = null;
+
+const TABLES = ["site_testimonials", "site_stats", "leadership_profiles", "leadership_sections"] as const;
+
+const invalidateAll = (qc: QueryClient) => {
+  qc.invalidateQueries({ queryKey: ["site_testimonials"] });
+  qc.invalidateQueries({ queryKey: ["site_stats"] });
+  qc.invalidateQueries({ queryKey: ["leadership"] });
+};
+
+const useSharedSiteContentChannel = () => {
+  const qc = useQueryClient();
   useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      const { data } = await supabase
-        .from("site_testimonials")
-        .select("*")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (alive) {
-        setRows((data ?? []) as SiteTestimonial[]);
-        setLoading(false);
+    subscriberCount += 1;
+    if (!sharedChannel) {
+      attachedClient = qc;
+      let ch = supabase.channel("site_content_shared");
+      for (const table of TABLES) {
+        ch = ch.on("postgres_changes", { event: "*", schema: "public", table }, () => {
+          if (attachedClient) invalidateAll(attachedClient);
+        });
+      }
+      sharedChannel = ch.subscribe();
+    }
+    return () => {
+      subscriberCount -= 1;
+      if (subscriberCount <= 0 && sharedChannel) {
+        supabase.removeChannel(sharedChannel);
+        sharedChannel = null;
+        attachedClient = null;
+        subscriberCount = 0;
       }
     };
-    load();
-    const ch = supabase
-      .channel("site_testimonials_pub")
-      .on("postgres_changes", { event: "*", schema: "public", table: "site_testimonials" }, load)
-      .subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
-  }, []);
-  return { rows, loading };
+  }, [qc]);
+};
+
+export function useSiteTestimonials() {
+  useSharedSiteContentChannel();
+  const query = useQuery({
+    queryKey: ["site_testimonials", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_testimonials")
+        .select("id, name, rank_label, quote, avatar_url, rating, region, sort_order, is_active")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as SiteTestimonial[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return { rows: query.data ?? [], loading: query.isPending };
 }
 
 export function useSiteStats() {
-  const [rows, setRows] = useState<SiteStat[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      const { data } = await supabase
+  useSharedSiteContentChannel();
+  const query = useQuery({
+    queryKey: ["site_stats", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("site_stats")
-        .select("*")
+        .select("id, key, label, value, suffix, icon, sort_order, is_active")
         .eq("is_active", true)
         .order("sort_order");
-      if (alive) {
-        setRows((data ?? []) as SiteStat[]);
-        setLoading(false);
-      }
-    };
-    load();
-    const ch = supabase
-      .channel("site_stats_pub")
-      .on("postgres_changes", { event: "*", schema: "public", table: "site_stats" }, load)
-      .subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
-  }, []);
-  return { rows, loading };
+      if (error) throw error;
+      return (data ?? []) as SiteStat[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return { rows: query.data ?? [], loading: query.isPending };
 }
 
 export function useLeadership() {
-  const [profiles, setProfiles] = useState<LeadershipProfile[]>([]);
-  const [sections, setSections] = useState<LeadershipSection[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
+  useSharedSiteContentChannel();
+  const query = useQuery({
+    queryKey: ["leadership", "list"],
+    queryFn: async () => {
       const [p, s] = await Promise.all([
         supabase.from("leadership_profiles").select("*").order("sort_order"),
         supabase.from("leadership_sections").select("*").order("sort_order"),
       ]);
-      if (alive) {
-        setProfiles((p.data ?? []) as LeadershipProfile[]);
-        setSections((s.data ?? []) as LeadershipSection[]);
-        setLoading(false);
-      }
-    };
-    load();
-    const ch = supabase
-      .channel("leadership_pub")
-      .on("postgres_changes", { event: "*", schema: "public", table: "leadership_profiles" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "leadership_sections" }, load)
-      .subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
-  }, []);
-  return { profiles, sections, loading };
+      return {
+        profiles: (p.data ?? []) as LeadershipProfile[],
+        sections: (s.data ?? []) as LeadershipSection[],
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return {
+    profiles: query.data?.profiles ?? [],
+    sections: query.data?.sections ?? [],
+    loading: query.isPending,
+  };
 }
 
 export function useLeader(slug: string) {
-  const [profile, setProfile] = useState<LeadershipProfile | null>(null);
-  const [sections, setSections] = useState<LeadershipSection[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let alive = true;
-    if (!slug) { setLoading(false); return; }
-    const load = async () => {
+  useSharedSiteContentChannel();
+  const query = useQuery({
+    queryKey: ["leadership", "detail", slug],
+    enabled: !!slug,
+    queryFn: async () => {
       const { data: p } = await supabase
         .from("leadership_profiles")
         .select("*")
         .eq("slug", slug)
         .maybeSingle();
-      if (!alive) return;
-      setProfile((p as LeadershipProfile) ?? null);
-      if (p) {
-        const { data: s } = await supabase
-          .from("leadership_sections")
-          .select("*")
-          .eq("leadership_id", (p as LeadershipProfile).id)
-          .order("sort_order");
-        if (alive) setSections((s ?? []) as LeadershipSection[]);
-      }
-      if (alive) setLoading(false);
-    };
-    load();
-    const ch = supabase
-      .channel(`leader_${slug}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "leadership_profiles" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "leadership_sections" }, load)
-      .subscribe();
-    return () => { alive = false; supabase.removeChannel(ch); };
-  }, [slug]);
-  return { profile, sections, loading };
+      if (!p) return { profile: null as LeadershipProfile | null, sections: [] as LeadershipSection[] };
+      const { data: s } = await supabase
+        .from("leadership_sections")
+        .select("*")
+        .eq("leadership_id", (p as LeadershipProfile).id)
+        .order("sort_order");
+      return {
+        profile: (p as LeadershipProfile) ?? null,
+        sections: (s ?? []) as LeadershipSection[],
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return {
+    profile: query.data?.profile ?? null,
+    sections: query.data?.sections ?? [],
+    loading: query.isPending,
+  };
 }
