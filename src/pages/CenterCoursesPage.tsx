@@ -52,6 +52,7 @@ const CenterCoursesPage = () => {
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const load = async () => {
     if (!primaryCenterId) return;
