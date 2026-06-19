@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type SiteBanner = {
@@ -12,33 +12,20 @@ export type SiteBanner = {
   is_active: boolean;
 };
 
-/**
- * Returns the active admin-managed hero banner for the given page key.
- * Pages should pass a fallback image; if the admin hasn't set a banner the
- * fallback (the imported PNG) is used.
- */
 export const useSiteBanner = (pageKey: string) => {
-  const [banner, setBanner] = useState<SiteBanner | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
-      const { data } = await supabase
+  const query = useQuery({
+    queryKey: ["site_banner", pageKey],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("site_banners")
-        .select("*")
+        .select("id, page_key, image_url, headline, subheading, cta_label, cta_link, is_active")
         .eq("page_key", pageKey)
         .eq("is_active", true)
         .maybeSingle();
-      if (!ignore) {
-        setBanner((data ?? null) as SiteBanner | null);
-        setLoading(false);
-      }
-    })();
-    return () => {
-      ignore = true;
-    };
-  }, [pageKey]);
-
-  return { banner, loading };
+      if (error) throw error;
+      return (data ?? null) as SiteBanner | null;
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+  return { banner: query.data ?? null, loading: query.isPending };
 };
