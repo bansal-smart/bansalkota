@@ -13,6 +13,13 @@ export type CsvField = {
   example?: string;
 };
 
+export type BulkServerResult = {
+  ok: number;
+  errors: number;
+  dry_run: boolean;
+  results: { row: number; ok: boolean; error?: string; id?: string }[];
+};
+
 export type BulkCsvDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -21,8 +28,10 @@ export type BulkCsvDialogProps = {
   fields: CsvField[];
   /** Existing rows used for "Export current data" */
   exportRows?: Record<string, any>[];
-  /** Called for each parsed row in sequence. Throw or return error string to mark failure. */
-  importRow: (row: Record<string, any>, index: number) => Promise<string | void>;
+  /** Legacy per-row callback. Throw or return error string to mark failure. */
+  importRow?: (row: Record<string, any>, index: number) => Promise<string | void>;
+  /** Server-side batched callback. If provided, the dialog sends ALL rows at once and respects dryRun. */
+  bulkImport?: (rows: Record<string, any>[], dryRun: boolean) => Promise<BulkServerResult>;
   /** Called once after a successful (or partial) import */
   onDone?: () => void;
   fileBase?: string;
