@@ -60,7 +60,7 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "A single chalkboard in 1981 — and a teaching tradition that reshaped Indian engineering education.",
     galleryCaption: "Four decades, one classroom philosophy",
-    heroPhotoOverride: vkPortrait.url,
+    heroPhotoOverride: vkPortraitV2,
     gallery: [
       { src: vkStatesman.url, alt: "Mr. V.K. Bansal — formal statesman portrait", tall: true },
       { src: vkDesk.url, alt: "V.K. Bansal at his founder's desk" },
@@ -90,7 +90,7 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "An IITian son who turned his father's classroom into a national learning system — without losing its soul.",
     galleryCaption: "Inside the chair of the CEO",
-    heroPhotoOverride: sameerPortraitDark.url,
+    heroPhotoOverride: sameerPortraitV2,
     gallery: [
       { src: sameerBranded.url, alt: "Sameer Bansal — MD & CEO, Bansal Classes", tall: true },
       { src: sameerHeadshot.url, alt: "Sameer Bansal portrait" },
@@ -121,9 +121,9 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "A modern educator shaping the next generation of women aspirants — with empathy, structure and uncompromising standards.",
     galleryCaption: "Mentorship in motion",
-    heroPhotoOverride: mahimaPortrait.url,
+    heroPhotoOverride: mahimaPortraitV2,
     gallery: [
-      { src: mahimaPortrait.url, alt: "Mahima Bansal — Academic Mentor & Director", tall: true },
+      { src: mahimaPortraitV2, alt: "Mahima Bansal — Academic Mentor & Director", tall: true },
       { src: u("photo-1577896851231-70ef18881754"), alt: "Library study session" },
       { src: u("photo-1543269865-cbf427effbad"), alt: "Group discussion" },
       { src: u("photo-1580582932707-520aed937b7b"), alt: "Counselling session" },
@@ -149,9 +149,9 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     signatureLine:
       "Behind every great institute is a household that believed in it first. Hers did.",
     galleryCaption: "The home that built an institution",
-    heroPhotoOverride: neelamPortrait.url,
+    heroPhotoOverride: neelamPortraitV2,
     gallery: [
-      { src: neelamPortrait.url, alt: "Neelam Bansal — Co-founder & Matriarch", tall: true },
+      { src: neelamPortraitV2, alt: "Neelam Bansal — Co-founder & Matriarch", tall: true },
       { src: u("photo-1545239351-1141bd82e8a6"), alt: "Warm lamp-lit study" },
       { src: u("photo-1499063078284-f78f7d89616a"), alt: "Old family photograph" },
       { src: u("photo-1532012197267-da84d127e765"), alt: "Books on a table" },
