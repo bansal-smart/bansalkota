@@ -395,6 +395,11 @@ const AdminCentersPage = () => {
                                 className="text-[10px] text-primary hover:underline"
                                 title="Copy email"
                               >copy</button>
+                              <button
+                                onClick={() => resetLogin(em)}
+                                className="text-[10px] text-amber-600 hover:underline"
+                                title="Generate temp password & copy credentials"
+                              >reset</button>
                             </div>
                           ))}
                           {logins.length > 2 && (
