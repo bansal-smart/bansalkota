@@ -419,14 +419,15 @@ const DocxCommonImportDialog = ({
 
         const rows = dedupQs.map((q, i) => {
           const base = buildRow(q, batchId);
-          const marks = DEFAULT_MARKS[q.type];
+          const baseMarks = DEFAULT_MARKS[q.type];
+          const ranged = marksForNumber(q.number, q.type);
           return {
             test_id: targetTestId,
             position: startPos + i,
-            marks_correct: marks.c,
-            marks_wrong: marks.w,
-            marks_unanswered: marks.u,
-            partial_marking: marks.partial,
+            marks_correct: ranged.c,
+            marks_wrong: ranged.w,
+            marks_unanswered: baseMarks.u,
+            partial_marking: baseMarks.partial,
             ...base,
           };
         });
