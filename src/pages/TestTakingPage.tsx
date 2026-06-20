@@ -1492,6 +1492,12 @@ const NumericInput = ({
 
   return (
     <div className="space-y-3">
+      {isRange && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
+          <span className="font-bold uppercase tracking-wide text-[10px] mr-2">Range Answer</span>
+          Any value between <b className="tabular-nums">{lo}</b> and <b className="tabular-nums">{hi}</b> (inclusive) will be marked correct.
+        </div>
+      )}
       <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
         <p className="text-[10px] font-bold uppercase text-muted-foreground">Your Answer</p>
         <input value={value} readOnly placeholder={placeholder}
@@ -1524,6 +1530,7 @@ const NumericInput = ({
       </p>
     </div>
   );
+
 };
 
 export default TestTakingPage;
