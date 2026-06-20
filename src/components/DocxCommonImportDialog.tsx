@@ -453,15 +453,16 @@ const DocxCommonImportDialog = ({
         // target === "bank"
         const rows = questions.map((q) => {
           const base = buildRow(q, batchId);
-          const marks = DEFAULT_MARKS[q.type];
+          const baseMarks = DEFAULT_MARKS[q.type];
+          const ranged = marksForNumber(q.number, q.type);
           return {
             created_by: user.id,
             difficulty: "medium",
             is_public: true,
             tags: [],
-            marks_correct: marks.c,
-            marks_wrong: marks.w,
-            partial_marking: marks.partial,
+            marks_correct: ranged.c,
+            marks_wrong: ranged.w,
+            partial_marking: baseMarks.partial,
             ...base,
           };
         });
