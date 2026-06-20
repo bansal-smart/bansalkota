@@ -581,6 +581,12 @@ const CreateTestPage = () => {
       if (q.type === "mcq-single") return q.options.length >= 2 && hasOptionContent && Number.isInteger(q.correct);
       if (q.type === "mcq-multi") return q.options.length >= 2 && hasOptionContent && q.correctMulti.length > 0;
       if (q.type === "numerical" || q.type === "integer") {
+        if (q.rangeEnabled) {
+          const a = Number(q.rangeMin);
+          const b = Number(q.rangeMax);
+          if (q.rangeMin.trim() === "" || q.rangeMax.trim() === "" || Number.isNaN(a) || Number.isNaN(b)) return false;
+          return true;
+        }
         const s = q.numericalAnswer.trim();
         if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
         // Integer-type questions also allow decimal answers (per Bansal exam pattern).
