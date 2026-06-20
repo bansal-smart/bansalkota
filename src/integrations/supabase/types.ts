@@ -3039,6 +3039,7 @@ export type Database = {
           question_statuses: Json | null
           reopened_by: string | null
           reopened_reason: string | null
+          result: Json | null
           score: number | null
           started_at: string | null
           status: string
@@ -3063,6 +3064,7 @@ export type Database = {
           question_statuses?: Json | null
           reopened_by?: string | null
           reopened_reason?: string | null
+          result?: Json | null
           score?: number | null
           started_at?: string | null
           status?: string
@@ -3087,6 +3089,7 @@ export type Database = {
           question_statuses?: Json | null
           reopened_by?: string | null
           reopened_reason?: string | null
+          result?: Json | null
           score?: number | null
           started_at?: string | null
           status?: string
@@ -3968,6 +3971,7 @@ export type Database = {
         }
         Returns: Json
       }
+      score_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
       slugify_text: { Args: { input: string }; Returns: string }
       submit_test_attempt: { Args: { _attempt_id: string }; Returns: Json }
       test_results_released: { Args: { _test_id: string }; Returns: boolean }
