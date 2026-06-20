@@ -220,6 +220,7 @@ const CreateTestPage = () => {
       importedQuestionCount.current = tqs.length;
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
+      setInstructionsImageUrl(((test as any).instructions_image_url as string) ?? "");
       setTestType(test.test_type ?? "mock");
       setExamPattern(test.exam_pattern ?? "jee-main");
       setDuration(test.duration_minutes ?? 180);
