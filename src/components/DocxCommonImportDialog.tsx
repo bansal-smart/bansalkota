@@ -94,6 +94,11 @@ const DocxCommonImportDialog = ({
   type SubjectRange = { from: number; to: number; subject: string };
   const [subjectRanges, setSubjectRanges] = useState<SubjectRange[]>([]);
 
+  // Marks-by-range tagging: e.g. [{from:1,to:14,marksCorrect:4,marksWrong:-1}, ...]
+  // Optional — uncovered questions fall back to DEFAULT_MARKS[q.type].
+  type MarksRange = { from: number; to: number; marksCorrect: number; marksWrong: number };
+  const [marksRanges, setMarksRanges] = useState<MarksRange[]>([]);
+
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
 
@@ -107,6 +112,16 @@ const DocxCommonImportDialog = ({
       if (n >= r.from && n <= r.to) return r.subject;
     }
     return subject;
+  };
+
+  // Resolve marks for a given question number + type. Range wins over type defaults.
+  const marksForNumber = (n: number, type: ParsedQuestionType): { c: number; w: number } => {
+    for (let i = marksRanges.length - 1; i >= 0; i--) {
+      const r = marksRanges[i];
+      if (n >= r.from && n <= r.to) return { c: r.marksCorrect, w: r.marksWrong };
+    }
+    const d = DEFAULT_MARKS[type];
+    return { c: d.c, w: d.w };
   };
 
   useEffect(() => {
@@ -172,6 +187,7 @@ const DocxCommonImportDialog = ({
       const minN = nums.length ? Math.min(...nums) : 1;
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
       setSubjectRanges([{ from: minN, to: maxN, subject: allowedSubjects[0] }]);
+      setMarksRanges([]);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
@@ -404,14 +420,15 @@ const DocxCommonImportDialog = ({
 
         const rows = dedupQs.map((q, i) => {
           const base = buildRow(q, batchId);
-          const marks = DEFAULT_MARKS[q.type];
+          const baseMarks = DEFAULT_MARKS[q.type];
+          const ranged = marksForNumber(q.number, q.type);
           return {
             test_id: targetTestId,
             position: startPos + i,
-            marks_correct: marks.c,
-            marks_wrong: marks.w,
-            marks_unanswered: marks.u,
-            partial_marking: marks.partial,
+            marks_correct: ranged.c,
+            marks_wrong: ranged.w,
+            marks_unanswered: baseMarks.u,
+            partial_marking: baseMarks.partial,
             ...base,
           };
         });
@@ -437,15 +454,16 @@ const DocxCommonImportDialog = ({
         // target === "bank"
         const rows = questions.map((q) => {
           const base = buildRow(q, batchId);
-          const marks = DEFAULT_MARKS[q.type];
+          const baseMarks = DEFAULT_MARKS[q.type];
+          const ranged = marksForNumber(q.number, q.type);
           return {
             created_by: user.id,
             difficulty: "medium",
             is_public: true,
             tags: [],
-            marks_correct: marks.c,
-            marks_wrong: marks.w,
-            partial_marking: marks.partial,
+            marks_correct: ranged.c,
+            marks_wrong: ranged.w,
+            partial_marking: baseMarks.partial,
             ...base,
           };
         });
@@ -727,6 +745,118 @@ const DocxCommonImportDialog = ({
                 </div>
               </div>
 
+              {/* Marks-by-range tagger (optional) */}
+              <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Marks tagging by question range</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      e.g. Q1–20 +4/−1, Q21–40 +3/−1. Optional — falls back to type defaults.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nums = questions.map((q) => q.number).filter((n) => Number.isFinite(n));
+                        const minN = nums.length ? Math.min(...nums) : 1;
+                        const maxN = nums.length ? Math.max(...nums) : questions.length;
+                        const d = DEFAULT_MARKS["mcq-single"];
+                        setMarksRanges([{ from: minN, to: maxN, marksCorrect: d.c, marksWrong: d.w }]);
+                      }}
+                      className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary/10"
+                    >
+                      Seed full range
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const last = marksRanges[marksRanges.length - 1];
+                        const nextFrom = last ? last.to + 1 : 1;
+                        const c = last ? last.marksCorrect : DEFAULT_MARKS["mcq-single"].c;
+                        const w = last ? last.marksWrong : DEFAULT_MARKS["mcq-single"].w;
+                        setMarksRanges([
+                          ...marksRanges,
+                          { from: nextFrom, to: nextFrom + 9, marksCorrect: c, marksWrong: w },
+                        ]);
+                      }}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+                    >
+                      + Add range
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {marksRanges.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] text-muted-foreground">Q</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={r.from}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, from: v } : x)));
+                        }}
+                        className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                      />
+                      <span className="text-[11px] text-muted-foreground">to Q</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={r.to}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, to: v } : x)));
+                        }}
+                        className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                      />
+                      <span className="text-[11px] text-muted-foreground">→ +</span>
+                      <input
+                        type="number"
+                        step={1}
+                        value={r.marksCorrect}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, marksCorrect: v } : x)));
+                        }}
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
+                        title="Marks for correct answer"
+                      />
+                      <span className="text-[11px] text-muted-foreground">/</span>
+                      <input
+                        type="number"
+                        step={1}
+                        value={r.marksWrong}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, marksWrong: v } : x)));
+                        }}
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
+                        title="Marks for wrong answer (use negative, e.g. -1)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setMarksRanges((prev) => prev.filter((_, j) => j !== i))}
+                        className="rounded p-1 text-destructive hover:bg-destructive/10"
+                        title="Remove range"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {marksRanges.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      No marks ranges — each question uses the default for its type (e.g. Single correct +4/−1).
+                    </p>
+                  )}
+                </div>
+              </div>
+
+
+
               {warnings.length > 0 && (
                 <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 space-y-1">
                   <p className="font-bold">Parser warnings ({warnings.length})</p>
@@ -753,7 +883,7 @@ const DocxCommonImportDialog = ({
                           <option value="numerical">Numerical</option>
                         </select>
                         <span className="text-[10px] text-muted-foreground">
-                          marks {DEFAULT_MARKS[q.type].c}/{DEFAULT_MARKS[q.type].w}
+                          marks {marksForNumber(q.number, q.type).c}/{marksForNumber(q.number, q.type).w}
                         </span>
                         <select
                           value={q.subject || subjectForNumber(q.number)}
