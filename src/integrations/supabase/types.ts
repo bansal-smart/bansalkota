@@ -2577,6 +2577,8 @@ export type Database = {
       }
       question_bank: {
         Row: {
+          answer_range_max: number | null
+          answer_range_min: number | null
           correct_answer: Json
           created_at: string
           created_by: string | null
@@ -2604,6 +2606,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          answer_range_max?: number | null
+          answer_range_min?: number | null
           correct_answer: Json
           created_at?: string
           created_by?: string | null
@@ -2631,6 +2635,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          answer_range_max?: number | null
+          answer_range_min?: number | null
           correct_answer?: Json
           created_at?: string
           created_by?: string | null
@@ -3201,6 +3207,8 @@ export type Database = {
       test_questions: {
         Row: {
           answer_format: string | null
+          answer_range_max: number | null
+          answer_range_min: number | null
           correct_answer: Json
           created_at: string
           difficulty: string | null
@@ -3230,6 +3238,8 @@ export type Database = {
         }
         Insert: {
           answer_format?: string | null
+          answer_range_max?: number | null
+          answer_range_min?: number | null
           correct_answer: Json
           created_at?: string
           difficulty?: string | null
@@ -3259,6 +3269,8 @@ export type Database = {
         }
         Update: {
           answer_format?: string | null
+          answer_range_max?: number | null
+          answer_range_min?: number | null
           correct_answer?: Json
           created_at?: string
           difficulty?: string | null
