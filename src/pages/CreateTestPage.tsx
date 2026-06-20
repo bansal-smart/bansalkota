@@ -1335,48 +1335,92 @@ const CreateTestPage = () => {
               )}
 
               {(q.type === "numerical" || q.type === "integer") && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
                     <label className="text-[11px] font-semibold text-foreground">
                       Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
                     </label>
-                    <input
-                      value={q.numericalAnswer}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        // digits, one leading minus, at most one decimal point.
-                        // Integer-type questions also accept decimal answers (Bansal pattern).
-                        let cleaned = raw.replace(/[^0-9.\-]/g, "");
-                        const neg = cleaned.startsWith("-");
-                        cleaned = cleaned.replace(/-/g, "");
-                        const firstDot = cleaned.indexOf(".");
-                        if (firstDot !== -1) {
-                          cleaned =
-                            cleaned.slice(0, firstDot + 1) +
-                            cleaned.slice(firstDot + 1).replace(/\./g, "");
-                        }
-                        cleaned = (neg ? "-" : "") + cleaned;
-                        updateQ(i, { numericalAnswer: cleaned });
-                      }}
-                      placeholder="e.g. -3.14"
-                      inputMode="decimal"
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => updateQ(i, { rangeEnabled: !q.rangeEnabled })}
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                        q.rangeEnabled
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted"
+                      }`}
+                      title="Accept any answer within a numeric range (e.g. 2 to 9)"
+                    >
+                      {q.rangeEnabled ? "Range enabled" : "Enable Range"}
+                    </button>
                   </div>
-                  {q.type === "numerical" && (
-                    <div>
-                      <label className="text-[11px] font-semibold text-foreground">Tolerance (±)</label>
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={q.tolerance}
-                        onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
-                        className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                      />
+
+                  {q.rangeEnabled ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-semibold text-muted-foreground">From</label>
+                        <input
+                          value={q.rangeMin}
+                          onChange={(e) => updateQ(i, { rangeMin: e.target.value.replace(/[^0-9.\-]/g, "") })}
+                          placeholder="e.g. 2"
+                          inputMode="decimal"
+                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-muted-foreground">To</label>
+                        <input
+                          value={q.rangeMax}
+                          onChange={(e) => updateQ(i, { rangeMax: e.target.value.replace(/[^0-9.\-]/g, "") })}
+                          placeholder="e.g. 9"
+                          inputMode="decimal"
+                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                        />
+                      </div>
+                      <p className="col-span-2 text-[10px] text-muted-foreground">
+                        Any student answer in the range [{q.rangeMin || "min"} – {q.rangeMax || "max"}] (inclusive) is marked correct.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="sm:col-span-2">
+                        <input
+                          value={q.numericalAnswer}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            let cleaned = raw.replace(/[^0-9.\-]/g, "");
+                            const neg = cleaned.startsWith("-");
+                            cleaned = cleaned.replace(/-/g, "");
+                            const firstDot = cleaned.indexOf(".");
+                            if (firstDot !== -1) {
+                              cleaned =
+                                cleaned.slice(0, firstDot + 1) +
+                                cleaned.slice(firstDot + 1).replace(/\./g, "");
+                            }
+                            cleaned = (neg ? "-" : "") + cleaned;
+                            updateQ(i, { numericalAnswer: cleaned });
+                          }}
+                          placeholder="e.g. -3.14"
+                          inputMode="decimal"
+                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                        />
+                      </div>
+                      {q.type === "numerical" && (
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted-foreground">Tolerance (±)</label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={q.tolerance}
+                            onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                            className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               )}
+
             </div>
           ))}
         </DropZone>
