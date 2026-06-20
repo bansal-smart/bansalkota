@@ -94,6 +94,11 @@ const DocxCommonImportDialog = ({
   type SubjectRange = { from: number; to: number; subject: string };
   const [subjectRanges, setSubjectRanges] = useState<SubjectRange[]>([]);
 
+  // Marks-by-range tagging: e.g. [{from:1,to:14,marksCorrect:4,marksWrong:-1}, ...]
+  // Optional — uncovered questions fall back to DEFAULT_MARKS[q.type].
+  type MarksRange = { from: number; to: number; marksCorrect: number; marksWrong: number };
+  const [marksRanges, setMarksRanges] = useState<MarksRange[]>([]);
+
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
 
@@ -107,6 +112,16 @@ const DocxCommonImportDialog = ({
       if (n >= r.from && n <= r.to) return r.subject;
     }
     return subject;
+  };
+
+  // Resolve marks for a given question number + type. Range wins over type defaults.
+  const marksForNumber = (n: number, type: ParsedQuestionType): { c: number; w: number } => {
+    for (let i = marksRanges.length - 1; i >= 0; i--) {
+      const r = marksRanges[i];
+      if (n >= r.from && n <= r.to) return { c: r.marksCorrect, w: r.marksWrong };
+    }
+    const d = DEFAULT_MARKS[type];
+    return { c: d.c, w: d.w };
   };
 
   useEffect(() => {
