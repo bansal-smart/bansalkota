@@ -45,11 +45,23 @@ const TestInstructionsPage = () => {
       setLoading(true);
       const { data } = await supabase.from("tests").select("*").eq("slug", slug).maybeSingle();
       if (!active) return;
-      setTest((data ?? null) as TestRow | null);
+      const row = (data ?? null) as TestRow | null;
+      // Re-sign legacy public-bucket instruction URLs (bucket is private now).
+      if (row?.instructions_image_url && /\/storage\/v1\/object\/public\/question-images\//.test(row.instructions_image_url)) {
+        const path = row.instructions_image_url.split("/object/public/question-images/")[1];
+        if (path) {
+          const { data: signed } = await supabase.storage
+            .from("question-images")
+            .createSignedUrl(decodeURIComponent(path), 60 * 60 * 24 * 365);
+          if (signed?.signedUrl) row.instructions_image_url = signed.signedUrl;
+        }
+      }
+      setTest(row);
       setLoading(false);
     })();
     return () => { active = false; };
   }, [slug]);
+
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
