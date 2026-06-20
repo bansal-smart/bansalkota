@@ -129,6 +129,8 @@ const CreateTestPage = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instructionsImageUrl, setInstructionsImageUrl] = useState<string>("");
+  const [uploadingInstructions, setUploadingInstructions] = useState(false);
   const [testType, setTestType] = useState("mock");
   const [examPattern, setExamPattern] = useState("jee-main");
   const [duration, setDuration] = useState(180);
@@ -218,6 +220,7 @@ const CreateTestPage = () => {
       importedQuestionCount.current = tqs.length;
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
+      setInstructionsImageUrl(((test as any).instructions_image_url as string) ?? "");
       setTestType(test.test_type ?? "mock");
       setExamPattern(test.exam_pattern ?? "jee-main");
       setDuration(test.duration_minutes ?? 180);
@@ -333,6 +336,29 @@ const CreateTestPage = () => {
     }
   };
 
+  const uploadInstructionsImage = async (file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    setUploadingInstructions(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/test-instructions/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      setInstructionsImageUrl(data.publicUrl);
+      toast.success("Instructions image uploaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingInstructions(false);
+    }
+  };
+
+
   const addedBankIds = useMemo(
     () => new Set(questions.map((q) => q.bank_id).filter(Boolean) as string[]),
     [questions],
@@ -399,6 +425,7 @@ const CreateTestPage = () => {
       .insert({
         title,
         description,
+        instructions_image_url: instructionsImageUrl || null,
         test_type: testType,
         exam_pattern: examPattern,
         subjects: [],
@@ -493,6 +520,7 @@ const CreateTestPage = () => {
         .update({
           title,
           description,
+          instructions_image_url: instructionsImageUrl || null,
           test_type: testType,
           exam_pattern: examPattern,
           duration_minutes: duration,
@@ -554,6 +582,7 @@ const CreateTestPage = () => {
     const basePayload = {
       title,
       description,
+      instructions_image_url: instructionsImageUrl || null,
       test_type: testType,
       exam_pattern: examPattern,
       subjects,
@@ -752,6 +781,40 @@ const CreateTestPage = () => {
             className={`${inputCls} resize-none`}
           />
         </div>
+
+        <div>
+          <label className={labelCls}>Instructions Image (optional)</label>
+          <p className="text-xs text-muted-foreground mb-2">
+            Shown to students on the pre-test instructions page and inside the in-test "View Instructions" popup. Recommended: a scanned/printed exam instructions sheet. Max 5MB.
+          </p>
+          {instructionsImageUrl ? (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <img
+                src={instructionsImageUrl}
+                alt="Test instructions"
+                className="max-h-72 w-auto mx-auto rounded-md border border-border bg-white object-contain"
+              />
+              <div className="flex justify-end gap-2">
+                <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-bold hover:bg-muted">
+                  Replace
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructionsImage(f); e.currentTarget.value = ""; }} />
+                </label>
+                <button type="button" onClick={() => setInstructionsImageUrl("")}
+                  className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10">
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground hover:bg-muted/40">
+              {uploadingInstructions ? "Uploading…" : "Click to upload instructions image (PNG/JPG)"}
+              <input type="file" accept="image/*" className="hidden" disabled={uploadingInstructions}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructionsImage(f); e.currentTarget.value = ""; }} />
+            </label>
+          )}
+        </div>
+
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
