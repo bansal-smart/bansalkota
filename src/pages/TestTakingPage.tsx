@@ -1433,11 +1433,19 @@ const NumericInput = ({
   value,
   onChange,
   questionType,
+  rangeMin,
+  rangeMax,
 }: {
   value: string;
   onChange: (v: string) => void;
   questionType: "integer" | "numerical";
+  rangeMin?: number | null;
+  rangeMax?: number | null;
 }) => {
+  const isRange = rangeMin != null && rangeMax != null;
+  const lo = isRange ? Math.min(Number(rangeMin), Number(rangeMax)) : null;
+  const hi = isRange ? Math.max(Number(rangeMin), Number(rangeMax)) : null;
+
   // Both numerical and integer questions accept decimals and negatives.
   const allowDecimal = true;
   const allowNeg = true;
