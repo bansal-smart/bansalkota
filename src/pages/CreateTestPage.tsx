@@ -685,9 +685,23 @@ const CreateTestPage = () => {
         base.partial_marking = q.partial;
       } else if (q.type === "numerical" || q.type === "integer") {
         base.options = [];
-        base.correct_answer = { value: Number(q.numericalAnswer) };
-        base.numerical_answer = Number(q.numericalAnswer);
-        base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+        if (q.rangeEnabled) {
+          const lo = Math.min(Number(q.rangeMin), Number(q.rangeMax));
+          const hi = Math.max(Number(q.rangeMin), Number(q.rangeMax));
+          base.answer_range_min = lo;
+          base.answer_range_max = hi;
+          // Store midpoint for legacy single-value reads; range governs scoring.
+          const mid = (lo + hi) / 2;
+          base.correct_answer = { value: mid, range: { min: lo, max: hi } };
+          base.numerical_answer = mid;
+          base.tolerance = 0;
+        } else {
+          base.correct_answer = { value: Number(q.numericalAnswer) };
+          base.numerical_answer = Number(q.numericalAnswer);
+          base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+          base.answer_range_min = null;
+          base.answer_range_max = null;
+        }
         base.answer_format = q.type === "integer" ? "integer" : "decimal";
       }
       return base;
