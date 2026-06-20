@@ -341,10 +341,13 @@ const CreateTestPage = () => {
         .from("question-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
       const next = [...(questions[i].optionImages ?? ["", "", "", ""])];
       while (next.length <= oi) next.push("");
-      next[oi] = data.publicUrl;
+      next[oi] = signed.signedUrl;
       updateQ(i, { optionImages: next });
       toast.success("Option image uploaded");
     } catch (e: any) {
