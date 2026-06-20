@@ -336,6 +336,29 @@ const CreateTestPage = () => {
     }
   };
 
+  const uploadInstructionsImage = async (file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    setUploadingInstructions(true);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/test-instructions/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      setInstructionsImageUrl(data.publicUrl);
+      toast.success("Instructions image uploaded");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setUploadingInstructions(false);
+    }
+  };
+
+
   const addedBankIds = useMemo(
     () => new Set(questions.map((q) => q.bank_id).filter(Boolean) as string[]),
     [questions],
