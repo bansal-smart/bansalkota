@@ -35,7 +35,10 @@ type TestQuestion = {
   marks_unanswered: number;
   partial_marking: boolean;
   answer_format: string | null;
+  answer_range_min: number | null;
+  answer_range_max: number | null;
 };
+
 
 type QStatus = "not-visited" | "answered" | "not-answered" | "marked" | "answered-marked";
 
@@ -129,11 +132,24 @@ const TestTakingPage = () => {
         .select("id, title, duration_minutes, total_questions, instructions_image_url")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
+      // Legacy instruction images were saved as `/object/public/question-images/...`
+      // but the bucket is private — re-sign so the <img> can load.
+      const legacyPublic = (t as any).instructions_image_url as string | null;
+      if (legacyPublic && /\/storage\/v1\/object\/public\/question-images\//.test(legacyPublic)) {
+        const path = legacyPublic.split("/object/public/question-images/")[1];
+        if (path) {
+          const { data: signed } = await supabase.storage
+            .from("question-images")
+            .createSignedUrl(decodeURIComponent(path), 60 * 60 * 24 * 365);
+          if (signed?.signedUrl) (t as any).instructions_image_url = signed.signedUrl;
+        }
+      }
       setTest(t);
+
 
       const { data: qs, error: qErr } = await supabase
         .from("test_questions")
-        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
+        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_range_min, answer_range_max")
         .eq("test_id", t.id).order("position");
       if (qErr) {
         console.error("[TestTakingPage] questions load failed", qErr);
@@ -995,7 +1011,13 @@ const TestTakingPage = () => {
                   onChange={handleMatchChange}
                 />
               ) : isNumeric(q.question_type) ? (
-                <NumericInput value={numericValue} onChange={handleNumericInput} questionType={q.question_type} />
+                <NumericInput
+                  value={numericValue}
+                  onChange={handleNumericInput}
+                  questionType={q.question_type}
+                  rangeMin={q.answer_range_min}
+                  rangeMax={q.answer_range_max}
+                />
               ) : isMulti(q.question_type) ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   {q.options.map((opt) => {
@@ -1411,11 +1433,19 @@ const NumericInput = ({
   value,
   onChange,
   questionType,
+  rangeMin,
+  rangeMax,
 }: {
   value: string;
   onChange: (v: string) => void;
   questionType: "integer" | "numerical";
+  rangeMin?: number | null;
+  rangeMax?: number | null;
 }) => {
+  const isRange = rangeMin != null && rangeMax != null;
+  const lo = isRange ? Math.min(Number(rangeMin), Number(rangeMax)) : null;
+  const hi = isRange ? Math.max(Number(rangeMin), Number(rangeMax)) : null;
+
   // Both numerical and integer questions accept decimals and negatives.
   const allowDecimal = true;
   const allowNeg = true;
@@ -1462,6 +1492,12 @@ const NumericInput = ({
 
   return (
     <div className="space-y-3">
+      {isRange && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
+          <span className="font-bold uppercase tracking-wide text-[10px] mr-2">Range Answer</span>
+          Any value between <b className="tabular-nums">{lo}</b> and <b className="tabular-nums">{hi}</b> (inclusive) will be marked correct.
+        </div>
+      )}
       <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
         <p className="text-[10px] font-bold uppercase text-muted-foreground">Your Answer</p>
         <input value={value} readOnly placeholder={placeholder}
@@ -1494,6 +1530,7 @@ const NumericInput = ({
       </p>
     </div>
   );
+
 };
 
 export default TestTakingPage;

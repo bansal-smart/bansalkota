@@ -43,6 +43,9 @@ type DraftQuestion = {
   partial: boolean;            // used by mcq-multi
   numericalAnswer: string;     // used by numerical / integer
   tolerance: number;           // used by numerical
+  rangeEnabled: boolean;       // integer/numerical: accept any value in [min, max]
+  rangeMin: string;
+  rangeMax: string;
   marksCorrect: number;        // per-question positive marks
   marksWrong: number;          // per-question negative marks
 };
@@ -61,9 +64,13 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   partial: false,
   numericalAnswer: "",
   tolerance: 0,
+  rangeEnabled: false,
+  rangeMin: "",
+  rangeMax: "",
   marksCorrect: defaults.correct,
   marksWrong: defaults.wrong,
 });
+
 
 const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number }): DraftQuestion => {
   const bankType = ((q as any).question_type ?? "mcq-single") as QType;
@@ -90,11 +97,15 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     partial: !!(q as any).partial_marking,
     numericalAnswer: numericalVal,
     tolerance: Number((q as any).tolerance ?? 0),
+    rangeEnabled: (q as any).answer_range_min != null && (q as any).answer_range_max != null,
+    rangeMin: (q as any).answer_range_min != null ? String((q as any).answer_range_min) : "",
+    rangeMax: (q as any).answer_range_max != null ? String((q as any).answer_range_max) : "",
     // Auto-set marks from the bank question; fall back to test defaults
     marksCorrect: Number(q.marks_correct ?? defaults.correct),
     marksWrong: Number(q.marks_wrong ?? defaults.wrong),
   };
 };
+
 
 const hasRenderableContent = (value: string) =>
   value.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\b/i.test(value);
@@ -202,7 +213,7 @@ const CreateTestPage = () => {
       const [tqsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, tolerance, difficulty, solution_image_url, import_batch_id, source_filename, stem_image_url, created_at")
+          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, tolerance, answer_range_min, answer_range_max, difficulty, solution_image_url, import_batch_id, source_filename, stem_image_url, created_at")
           .eq("test_id", test.id)
           .order("position"),
         supabase.rpc("admin_get_test_questions_full", { _test_id: test.id }),
@@ -270,9 +281,13 @@ const CreateTestPage = () => {
             partial: !!q.partial_marking,
             numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
             tolerance: Number(q.tolerance ?? 0),
+            rangeEnabled: q.answer_range_min != null && q.answer_range_max != null,
+            rangeMin: q.answer_range_min != null ? String(q.answer_range_min) : "",
+            rangeMax: q.answer_range_max != null ? String(q.answer_range_max) : "",
             marksCorrect: Number(q.marks_correct ?? 4),
             marksWrong: Number(q.marks_wrong ?? -1),
           };
+
         }),
       );
       setLoading(false);
@@ -299,8 +314,11 @@ const CreateTestPage = () => {
         .from("question-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
-      updateQ(i, { imageUrl: data.publicUrl });
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      updateQ(i, { imageUrl: signed.signedUrl });
       toast.success("Image uploaded");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");
@@ -323,10 +341,13 @@ const CreateTestPage = () => {
         .from("question-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
       const next = [...(questions[i].optionImages ?? ["", "", "", ""])];
       while (next.length <= oi) next.push("");
-      next[oi] = data.publicUrl;
+      next[oi] = signed.signedUrl;
       updateQ(i, { optionImages: next });
       toast.success("Option image uploaded");
     } catch (e: any) {
@@ -348,8 +369,11 @@ const CreateTestPage = () => {
         .from("question-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
-      setInstructionsImageUrl(data.publicUrl);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      setInstructionsImageUrl(signed.signedUrl);
       toast.success("Instructions image uploaded");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");
@@ -557,6 +581,12 @@ const CreateTestPage = () => {
       if (q.type === "mcq-single") return q.options.length >= 2 && hasOptionContent && Number.isInteger(q.correct);
       if (q.type === "mcq-multi") return q.options.length >= 2 && hasOptionContent && q.correctMulti.length > 0;
       if (q.type === "numerical" || q.type === "integer") {
+        if (q.rangeEnabled) {
+          const a = Number(q.rangeMin);
+          const b = Number(q.rangeMax);
+          if (q.rangeMin.trim() === "" || q.rangeMax.trim() === "" || Number.isNaN(a) || Number.isNaN(b)) return false;
+          return true;
+        }
         const s = q.numericalAnswer.trim();
         if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
         // Integer-type questions also allow decimal answers (per Bansal exam pattern).
@@ -655,9 +685,23 @@ const CreateTestPage = () => {
         base.partial_marking = q.partial;
       } else if (q.type === "numerical" || q.type === "integer") {
         base.options = [];
-        base.correct_answer = { value: Number(q.numericalAnswer) };
-        base.numerical_answer = Number(q.numericalAnswer);
-        base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+        if (q.rangeEnabled) {
+          const lo = Math.min(Number(q.rangeMin), Number(q.rangeMax));
+          const hi = Math.max(Number(q.rangeMin), Number(q.rangeMax));
+          base.answer_range_min = lo;
+          base.answer_range_max = hi;
+          // Store midpoint for legacy single-value reads; range governs scoring.
+          const mid = (lo + hi) / 2;
+          base.correct_answer = { value: mid, range: { min: lo, max: hi } };
+          base.numerical_answer = mid;
+          base.tolerance = 0;
+        } else {
+          base.correct_answer = { value: Number(q.numericalAnswer) };
+          base.numerical_answer = Number(q.numericalAnswer);
+          base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+          base.answer_range_min = null;
+          base.answer_range_max = null;
+        }
         base.answer_format = q.type === "integer" ? "integer" : "decimal";
       }
       return base;
@@ -1291,48 +1335,92 @@ const CreateTestPage = () => {
               )}
 
               {(q.type === "numerical" || q.type === "integer") && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
                     <label className="text-[11px] font-semibold text-foreground">
                       Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
                     </label>
-                    <input
-                      value={q.numericalAnswer}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        // digits, one leading minus, at most one decimal point.
-                        // Integer-type questions also accept decimal answers (Bansal pattern).
-                        let cleaned = raw.replace(/[^0-9.\-]/g, "");
-                        const neg = cleaned.startsWith("-");
-                        cleaned = cleaned.replace(/-/g, "");
-                        const firstDot = cleaned.indexOf(".");
-                        if (firstDot !== -1) {
-                          cleaned =
-                            cleaned.slice(0, firstDot + 1) +
-                            cleaned.slice(firstDot + 1).replace(/\./g, "");
-                        }
-                        cleaned = (neg ? "-" : "") + cleaned;
-                        updateQ(i, { numericalAnswer: cleaned });
-                      }}
-                      placeholder="e.g. -3.14"
-                      inputMode="decimal"
-                      className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => updateQ(i, { rangeEnabled: !q.rangeEnabled })}
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                        q.rangeEnabled
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted"
+                      }`}
+                      title="Accept any answer within a numeric range (e.g. 2 to 9)"
+                    >
+                      {q.rangeEnabled ? "Range enabled" : "Enable Range"}
+                    </button>
                   </div>
-                  {q.type === "numerical" && (
-                    <div>
-                      <label className="text-[11px] font-semibold text-foreground">Tolerance (±)</label>
-                      <input
-                        type="number"
-                        step="0.0001"
-                        value={q.tolerance}
-                        onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
-                        className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                      />
+
+                  {q.rangeEnabled ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-semibold text-muted-foreground">From</label>
+                        <input
+                          value={q.rangeMin}
+                          onChange={(e) => updateQ(i, { rangeMin: e.target.value.replace(/[^0-9.\-]/g, "") })}
+                          placeholder="e.g. 2"
+                          inputMode="decimal"
+                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-muted-foreground">To</label>
+                        <input
+                          value={q.rangeMax}
+                          onChange={(e) => updateQ(i, { rangeMax: e.target.value.replace(/[^0-9.\-]/g, "") })}
+                          placeholder="e.g. 9"
+                          inputMode="decimal"
+                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                        />
+                      </div>
+                      <p className="col-span-2 text-[10px] text-muted-foreground">
+                        Any student answer in the range [{q.rangeMin || "min"} – {q.rangeMax || "max"}] (inclusive) is marked correct.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="sm:col-span-2">
+                        <input
+                          value={q.numericalAnswer}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            let cleaned = raw.replace(/[^0-9.\-]/g, "");
+                            const neg = cleaned.startsWith("-");
+                            cleaned = cleaned.replace(/-/g, "");
+                            const firstDot = cleaned.indexOf(".");
+                            if (firstDot !== -1) {
+                              cleaned =
+                                cleaned.slice(0, firstDot + 1) +
+                                cleaned.slice(firstDot + 1).replace(/\./g, "");
+                            }
+                            cleaned = (neg ? "-" : "") + cleaned;
+                            updateQ(i, { numericalAnswer: cleaned });
+                          }}
+                          placeholder="e.g. -3.14"
+                          inputMode="decimal"
+                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                        />
+                      </div>
+                      {q.type === "numerical" && (
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted-foreground">Tolerance (±)</label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={q.tolerance}
+                            onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                            className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               )}
+
             </div>
           ))}
         </DropZone>
