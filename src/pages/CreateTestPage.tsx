@@ -213,7 +213,7 @@ const CreateTestPage = () => {
       const [tqsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, tolerance, difficulty, solution_image_url, import_batch_id, source_filename, stem_image_url, created_at")
+          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, tolerance, answer_range_min, answer_range_max, difficulty, solution_image_url, import_batch_id, source_filename, stem_image_url, created_at")
           .eq("test_id", test.id)
           .order("position"),
         supabase.rpc("admin_get_test_questions_full", { _test_id: test.id }),
