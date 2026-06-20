@@ -217,6 +217,21 @@ const TestInstructionsPage = () => {
         )}
       </section>
 
+      {test.instructions_image_url && (
+        <section className="mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6">
+          <h2 className="font-display text-lg font-black text-foreground">Important instructions (exam paper)</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Read the printed instructions below carefully before starting the test.</p>
+          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-white">
+            <img
+              src={test.instructions_image_url}
+              alt="Exam instructions"
+              className="block h-auto w-full object-contain"
+            />
+          </div>
+        </section>
+      )}
+
+
       <section className="mt-6 rounded-2xl border border-border bg-card p-6">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
