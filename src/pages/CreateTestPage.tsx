@@ -402,6 +402,7 @@ const CreateTestPage = () => {
       .insert({
         title,
         description,
+        instructions_image_url: instructionsImageUrl || null,
         test_type: testType,
         exam_pattern: examPattern,
         subjects: [],
