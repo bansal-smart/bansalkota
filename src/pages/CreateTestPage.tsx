@@ -97,11 +97,15 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     partial: !!(q as any).partial_marking,
     numericalAnswer: numericalVal,
     tolerance: Number((q as any).tolerance ?? 0),
+    rangeEnabled: (q as any).answer_range_min != null && (q as any).answer_range_max != null,
+    rangeMin: (q as any).answer_range_min != null ? String((q as any).answer_range_min) : "",
+    rangeMax: (q as any).answer_range_max != null ? String((q as any).answer_range_max) : "",
     // Auto-set marks from the bank question; fall back to test defaults
     marksCorrect: Number(q.marks_correct ?? defaults.correct),
     marksWrong: Number(q.marks_wrong ?? defaults.wrong),
   };
 };
+
 
 const hasRenderableContent = (value: string) =>
   value.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\b/i.test(value);
