@@ -782,6 +782,40 @@ const CreateTestPage = () => {
           />
         </div>
 
+        <div>
+          <label className={labelCls}>Instructions Image (optional)</label>
+          <p className="text-xs text-muted-foreground mb-2">
+            Shown to students on the pre-test instructions page and inside the in-test "View Instructions" popup. Recommended: a scanned/printed exam instructions sheet. Max 5MB.
+          </p>
+          {instructionsImageUrl ? (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <img
+                src={instructionsImageUrl}
+                alt="Test instructions"
+                className="max-h-72 w-auto mx-auto rounded-md border border-border bg-white object-contain"
+              />
+              <div className="flex justify-end gap-2">
+                <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-bold hover:bg-muted">
+                  Replace
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructionsImage(f); e.currentTarget.value = ""; }} />
+                </label>
+                <button type="button" onClick={() => setInstructionsImageUrl("")}
+                  className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10">
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-6 text-sm text-muted-foreground hover:bg-muted/40">
+              {uploadingInstructions ? "Uploading…" : "Click to upload instructions image (PNG/JPG)"}
+              <input type="file" accept="image/*" className="hidden" disabled={uploadingInstructions}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadInstructionsImage(f); e.currentTarget.value = ""; }} />
+            </label>
+          )}
+        </div>
+
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Test Type</label>
