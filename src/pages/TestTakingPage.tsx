@@ -126,7 +126,7 @@ const TestTakingPage = () => {
       setLoading(true);
       const { data: t } = await supabase
         .from("tests")
-        .select("id, title, duration_minutes, total_questions")
+        .select("id, title, duration_minutes, total_questions, instructions_image_url")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       setTest(t);
