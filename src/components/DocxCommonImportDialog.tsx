@@ -770,7 +770,7 @@ const DocxCommonImportDialog = ({
                           <option value="numerical">Numerical</option>
                         </select>
                         <span className="text-[10px] text-muted-foreground">
-                          marks {DEFAULT_MARKS[q.type].c}/{DEFAULT_MARKS[q.type].w}
+                          marks {marksForNumber(q.number, q.type).c}/{marksForNumber(q.number, q.type).w}
                         </span>
                         <select
                           value={q.subject || subjectForNumber(q.number)}
