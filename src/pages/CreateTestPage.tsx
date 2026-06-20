@@ -369,8 +369,11 @@ const CreateTestPage = () => {
         .from("question-images")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
-      setInstructionsImageUrl(data.publicUrl);
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      setInstructionsImageUrl(signed.signedUrl);
       toast.success("Instructions image uploaded");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");
