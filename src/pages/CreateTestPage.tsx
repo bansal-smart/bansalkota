@@ -129,6 +129,8 @@ const CreateTestPage = () => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [instructionsImageUrl, setInstructionsImageUrl] = useState<string>("");
+  const [uploadingInstructions, setUploadingInstructions] = useState(false);
   const [testType, setTestType] = useState("mock");
   const [examPattern, setExamPattern] = useState("jee-main");
   const [duration, setDuration] = useState(180);
