@@ -745,6 +745,118 @@ const DocxCommonImportDialog = ({
                 </div>
               </div>
 
+              {/* Marks-by-range tagger (optional) */}
+              <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Marks tagging by question range</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      e.g. Q1–20 +4/−1, Q21–40 +3/−1. Optional — falls back to type defaults.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nums = questions.map((q) => q.number).filter((n) => Number.isFinite(n));
+                        const minN = nums.length ? Math.min(...nums) : 1;
+                        const maxN = nums.length ? Math.max(...nums) : questions.length;
+                        const d = DEFAULT_MARKS["mcq-single"];
+                        setMarksRanges([{ from: minN, to: maxN, marksCorrect: d.c, marksWrong: d.w }]);
+                      }}
+                      className="rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary/10"
+                    >
+                      Seed full range
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const last = marksRanges[marksRanges.length - 1];
+                        const nextFrom = last ? last.to + 1 : 1;
+                        const c = last ? last.marksCorrect : DEFAULT_MARKS["mcq-single"].c;
+                        const w = last ? last.marksWrong : DEFAULT_MARKS["mcq-single"].w;
+                        setMarksRanges([
+                          ...marksRanges,
+                          { from: nextFrom, to: nextFrom + 9, marksCorrect: c, marksWrong: w },
+                        ]);
+                      }}
+                      className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold hover:bg-muted"
+                    >
+                      + Add range
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {marksRanges.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[11px] text-muted-foreground">Q</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={r.from}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, from: v } : x)));
+                        }}
+                        className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                      />
+                      <span className="text-[11px] text-muted-foreground">to Q</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={r.to}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, to: v } : x)));
+                        }}
+                        className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[11px]"
+                      />
+                      <span className="text-[11px] text-muted-foreground">→ +</span>
+                      <input
+                        type="number"
+                        step={1}
+                        value={r.marksCorrect}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, marksCorrect: v } : x)));
+                        }}
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
+                        title="Marks for correct answer"
+                      />
+                      <span className="text-[11px] text-muted-foreground">/</span>
+                      <input
+                        type="number"
+                        step={1}
+                        value={r.marksWrong}
+                        onChange={(e) => {
+                          const v = parseInt(e.target.value || "0", 10);
+                          setMarksRanges((prev) => prev.map((x, j) => (j === i ? { ...x, marksWrong: v } : x)));
+                        }}
+                        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold"
+                        title="Marks for wrong answer (use negative, e.g. -1)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setMarksRanges((prev) => prev.filter((_, j) => j !== i))}
+                        className="rounded p-1 text-destructive hover:bg-destructive/10"
+                        title="Remove range"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  {marksRanges.length === 0 && (
+                    <p className="text-[11px] text-muted-foreground italic">
+                      No marks ranges — each question uses the default for its type (e.g. Single correct +4/−1).
+                    </p>
+                  )}
+                </div>
+              </div>
+
+
+
               {warnings.length > 0 && (
                 <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700 space-y-1">
                   <p className="font-bold">Parser warnings ({warnings.length})</p>
