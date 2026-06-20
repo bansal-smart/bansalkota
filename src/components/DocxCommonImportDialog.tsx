@@ -187,6 +187,7 @@ const DocxCommonImportDialog = ({
       const minN = nums.length ? Math.min(...nums) : 1;
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
       setSubjectRanges([{ from: minN, to: maxN, subject: allowedSubjects[0] }]);
+      setMarksRanges([]);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
