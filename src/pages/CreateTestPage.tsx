@@ -1061,7 +1061,7 @@ const CreateTestPage = () => {
                   <span>+</span>
                   <input
                     type="number"
-                    step="0.25"
+                    step="1"
                     value={q.marksCorrect}
                     onChange={(e) => updateQ(i, { marksCorrect: Number(e.target.value) })}
                     className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
@@ -1070,7 +1070,7 @@ const CreateTestPage = () => {
                   <span>/</span>
                   <input
                     type="number"
-                    step="0.25"
+                    step="1"
                     value={q.marksWrong}
                     onChange={(e) => updateQ(i, { marksWrong: Number(e.target.value) })}
                     className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
