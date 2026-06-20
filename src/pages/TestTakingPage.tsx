@@ -1162,11 +1162,20 @@ const TestTakingPage = () => {
       {/* === Instructions modal === */}
       {showInstructions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowInstructions(false)}>
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 -mt-2 pt-2 border-b border-neutral-100">
               <h3 className="font-display text-lg font-black text-neutral-900">Test Instructions</h3>
               <button onClick={() => setShowInstructions(false)} className="rounded-full p-1 hover:bg-neutral-100"><X className="h-4 w-4" /></button>
             </div>
+            {(test as any)?.instructions_image_url && (
+              <div className="mb-4 overflow-hidden rounded-lg border border-neutral-200 bg-white">
+                <img
+                  src={(test as any).instructions_image_url}
+                  alt="Exam instructions"
+                  className="block h-auto w-full object-contain"
+                />
+              </div>
+            )}
             <ul className="text-xs text-neutral-700 space-y-2 list-disc pl-4">
               <li>The test is timed. Auto-submits when time is up.</li>
               <li>Use the right palette to jump to any question.</li>
