@@ -132,7 +132,20 @@ const TestTakingPage = () => {
         .select("id, title, duration_minutes, total_questions, instructions_image_url")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
+      // Legacy instruction images were saved as `/object/public/question-images/...`
+      // but the bucket is private — re-sign so the <img> can load.
+      const legacyPublic = (t as any).instructions_image_url as string | null;
+      if (legacyPublic && /\/storage\/v1\/object\/public\/question-images\//.test(legacyPublic)) {
+        const path = legacyPublic.split("/object/public/question-images/")[1];
+        if (path) {
+          const { data: signed } = await supabase.storage
+            .from("question-images")
+            .createSignedUrl(decodeURIComponent(path), 60 * 60 * 24 * 365);
+          if (signed?.signedUrl) (t as any).instructions_image_url = signed.signedUrl;
+        }
+      }
       setTest(t);
+
 
       const { data: qs, error: qErr } = await supabase
         .from("test_questions")
