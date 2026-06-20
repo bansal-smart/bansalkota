@@ -3524,6 +3524,7 @@ export type Database = {
           exam_pattern: string
           id: string
           import_method: string
+          instructions_image_url: string | null
           is_published: boolean
           paper_group_id: string | null
           paper_label: string | null
@@ -3557,6 +3558,7 @@ export type Database = {
           exam_pattern?: string
           id?: string
           import_method?: string
+          instructions_image_url?: string | null
           is_published?: boolean
           paper_group_id?: string | null
           paper_label?: string | null
@@ -3590,6 +3592,7 @@ export type Database = {
           exam_pattern?: string
           id?: string
           import_method?: string
+          instructions_image_url?: string | null
           is_published?: boolean
           paper_group_id?: string | null
           paper_label?: string | null
