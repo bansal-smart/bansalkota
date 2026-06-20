@@ -19,6 +19,7 @@ type TestRow = {
   starts_at: string | null;
   ends_at: string | null;
   is_published: boolean;
+  instructions_image_url: string | null;
 };
 
 const paletteLegend = [
