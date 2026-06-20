@@ -35,7 +35,10 @@ type TestQuestion = {
   marks_unanswered: number;
   partial_marking: boolean;
   answer_format: string | null;
+  answer_range_min: number | null;
+  answer_range_max: number | null;
 };
+
 
 type QStatus = "not-visited" | "answered" | "not-answered" | "marked" | "answered-marked";
 
