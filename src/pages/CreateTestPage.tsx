@@ -43,6 +43,9 @@ type DraftQuestion = {
   partial: boolean;            // used by mcq-multi
   numericalAnswer: string;     // used by numerical / integer
   tolerance: number;           // used by numerical
+  rangeEnabled: boolean;       // integer/numerical: accept any value in [min, max]
+  rangeMin: string;
+  rangeMax: string;
   marksCorrect: number;        // per-question positive marks
   marksWrong: number;          // per-question negative marks
 };
@@ -61,9 +64,13 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   partial: false,
   numericalAnswer: "",
   tolerance: 0,
+  rangeEnabled: false,
+  rangeMin: "",
+  rangeMax: "",
   marksCorrect: defaults.correct,
   marksWrong: defaults.wrong,
 });
+
 
 const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number }): DraftQuestion => {
   const bankType = ((q as any).question_type ?? "mcq-single") as QType;
