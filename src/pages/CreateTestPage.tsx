@@ -281,9 +281,13 @@ const CreateTestPage = () => {
             partial: !!q.partial_marking,
             numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
             tolerance: Number(q.tolerance ?? 0),
+            rangeEnabled: q.answer_range_min != null && q.answer_range_max != null,
+            rangeMin: q.answer_range_min != null ? String(q.answer_range_min) : "",
+            rangeMax: q.answer_range_max != null ? String(q.answer_range_max) : "",
             marksCorrect: Number(q.marks_correct ?? 4),
             marksWrong: Number(q.marks_wrong ?? -1),
           };
+
         }),
       );
       setLoading(false);
