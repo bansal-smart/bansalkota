@@ -52,8 +52,8 @@ export default function LeadershipDetailPage() {
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-10">
-          <div className="container mx-auto px-4 sm:px-6 pb-12 md:pb-20">
+        <div className={`absolute z-10 ${slug === "sameer-bansal" ? "inset-0 flex items-center" : "inset-x-0 bottom-0"}`}>
+          <div className={`container mx-auto px-4 sm:px-6 ${slug === "sameer-bansal" ? "" : "pb-12 md:pb-20"}`}>
             <div className="max-w-4xl animate-fade-in">
               <div className="flex items-center gap-3 mb-5">
                 <span className="h-px w-12 bg-bansal-orange" />
