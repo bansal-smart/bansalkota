@@ -23,6 +23,7 @@ const nav = [
   { label: "Overview", icon: LayoutDashboard, path: "/center" },
   { label: "Centre Content", icon: Building2, path: "/center/content" },
   { label: "Page Banners", icon: ImageIcon, path: "/center/banners" },
+  { label: "Gallery", icon: ImageIcon, path: "/center/gallery" },
   { label: "Offline Courses", icon: BookOpen, path: "/center/courses" },
   { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries" },
   { label: "Course Enquiries", icon: ClipboardList, path: "/center/course-enquiries" },
