@@ -141,6 +141,9 @@ const CreateTestPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [instructionsImageUrl, setInstructionsImageUrl] = useState<string>("");
+  // Persist a stable (token-free) public-format URL — display layer re-signs at runtime.
+  const stableInstructionsUrl = (u: string) =>
+    (u || "").replace(/\/storage\/v1\/object\/sign\/question-images\/([^?]+)(\?.*)?$/, "/storage/v1/object/public/question-images/$1") || null;
   const [uploadingInstructions, setUploadingInstructions] = useState(false);
   const [testType, setTestType] = useState("mock");
   const [examPattern, setExamPattern] = useState("jee-main");
