@@ -104,9 +104,14 @@ export type ParsedDocxQuestion = {
   // Generic correct answer:
   //   mcq-single        → number (0-based index)
   //   mcq-multi         → number[] (0-based indices)
-  //   integer/numerical → { value: number }
+  //   integer/numerical → { value: number } | { min: number; max: number }
   //   match-following   → undefined (use correctMap)
-  correctAnswer: number | number[] | { value: number } | null;
+  correctAnswer:
+    | number
+    | number[]
+    | { value: number }
+    | { min: number; max: number }
+    | null;
   correctRaw: string | null;
 };
 
@@ -206,12 +211,12 @@ const extractAnswerLine = (text: string): string | null => {
 // Determine question type + parsed answer from a raw answer string.
 const parseAnswer = (raw: string): {
   type: ParsedQuestionType;
-  correctAnswer: number | number[] | { value: number } | null;
+  correctAnswer: number | number[] | { value: number } | { min: number; max: number } | null;
   correctMap?: Record<string, string>;
 } => {
-  const cleaned = raw.replace(/[()\s]/g, "");
+  const trimmed = raw.trim();
   // Match-the-following: A-Q,B-S,C-P,D-R  (also A→Q, A:Q allowed)
-  const mfPairs = raw.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
+  const mfPairs = trimmed.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
   if (mfPairs && mfPairs.length >= 2) {
     const map: Record<string, string> = {};
     for (const pair of mfPairs) {
@@ -220,6 +225,22 @@ const parseAnswer = (raw: string): {
     }
     return { type: "match-following", correctAnswer: null, correctMap: map };
   }
+  // Numeric range: "5 - 9", "5-9", "5 to 9", "5.5 – 6.5"
+  const range = trimmed.match(
+    /^\s*(-?\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*(-?\d+(?:\.\d+)?)\s*$/i,
+  );
+  if (range) {
+    const min = Number(range[1]);
+    const max = Number(range[2]);
+    if (!Number.isNaN(min) && !Number.isNaN(max) && min <= max) {
+      const isIntPair = Number.isInteger(min) && Number.isInteger(max);
+      return {
+        type: isIntPair ? "integer" : "numerical",
+        correctAnswer: { min, max },
+      };
+    }
+  }
+  const cleaned = trimmed.replace(/[()\s]/g, "");
   // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"
   if (/[,;|]/.test(cleaned) || /^[A-D]{2,4}$/i.test(cleaned)) {
     const tokens = cleaned.split(/[,;|]/).filter(Boolean);
@@ -243,7 +264,7 @@ const parseAnswer = (raw: string): {
     const idx = /^[1-4]$/.test(ch) ? parseInt(ch, 10) - 1 : ch.toUpperCase().charCodeAt(0) - 65;
     return { type: "mcq-single", correctAnswer: idx };
   }
-  // Integer / numerical
+  // Integer / numerical single value
   const num = cleaned.match(/^-?\d+(?:\.\d+)?$/);
   if (num) {
     const v = Number(num[0]);
@@ -251,6 +272,19 @@ const parseAnswer = (raw: string): {
   }
   return { type: "mcq-single", correctAnswer: null };
 };
+
+// Map a "SECTION I (Single Correct Choice)" style heading to a question type.
+const sectionType = (text: string): ParsedQuestionType | null => {
+  if (!/section\b/i.test(text)) return null;
+  const t = text.toLowerCase();
+  if (/match.*following/.test(t)) return "match-following";
+  if (/multiple\s+correct/.test(t)) return "mcq-multi";
+  if (/single\s+correct/.test(t)) return "mcq-single";
+  if (/numerical/.test(t)) return "numerical";
+  if (/integer/.test(t)) return "integer";
+  return null;
+};
+
 
 type Block =
   | { kind: "p"; html: string; text: string; style: string }
@@ -340,20 +374,23 @@ type Buffer = {
   solution: string[];
   topic: string | null;
   matchTable: HTMLTableElement | null;
+  sectionType: ParsedQuestionType | null;
   // raw blocks captured so we can extract images per slot later
   optionBlocks: { key: string; html: string }[];
 };
 
-const newBuffer = (): Buffer => ({
+const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType | null): Buffer => ({
   number: null,
   stem: [],
   options: [],
   answer: null,
   solution: [],
-  topic: null,
+  topic: carryTopic ?? null,
   matchTable: null,
+  sectionType: carrySection ?? null,
   optionBlocks: [],
 });
+
 
 const KEY_TO_SLOT: Record<string, DocxImageSlot> = {
   A: "optionA",
@@ -432,10 +469,23 @@ const flushBuffer = (
   }
   if (isMatch) type = "match-following";
 
+  // Section header wins (e.g. "SECTION I (Single Correct Choice)")
+  if (buf.sectionType && !isMatch) {
+    // Don't downgrade a correctly parsed multi-answer into single just because
+    // section says single; only adopt section type if it doesn't drop info.
+    if (buf.sectionType === "mcq-multi" && type === "mcq-single" && typeof correctAnswer === "number") {
+      type = "mcq-multi";
+      correctAnswer = [correctAnswer];
+    } else if (buf.sectionType === "mcq-single" || buf.sectionType === "integer" || buf.sectionType === "numerical" || buf.sectionType === "mcq-multi") {
+      type = buf.sectionType;
+    }
+  }
+
   // Sanity: integer/numerical question dropped its bogus options
   if ((type === "integer" || type === "numerical") && options.length > 0) {
     options = [];
   }
+
 
   // For MCQ types we need real options
   if ((type === "mcq-single" || type === "mcq-multi") && options.length < 2) {
@@ -517,35 +567,44 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const out: ParsedDocxQuestion[] = [];
   let buf = newBuffer();
   let ordinal = 0;
-
-  // Helper: detect if a text starts a new question ("1." / "12.")
-  const startsNewQuestion = (text: string) =>
-    /^\s*\d{1,3}\s*[.)]\s*/.test(text) && text.length < 12;
+  let seenFirstNumber = false;
+  let pendingTopic: string | null = null;
+  let currentSection: ParsedQuestionType | null = null;
 
   const startsNewQuestionAtAny = (text: string) =>
     /^\s*\d{1,3}\s*[.)]\s*/.test(text);
 
-  // Section headers like "SECTION I (Single Correct Choice)" → skip
-  const isSectionHeader = (text: string) =>
-    /^\s*section\s+[ivx0-9]+\b/i.test(text);
+  const isSectionHeader = (text: string) => /^\s*section\b/i.test(text);
 
-  // "Topic:" marker
   const tryTopic = (text: string) => extractTopic(text);
-
-  // "Answer:" marker
   const tryAnswer = (text: string) => extractAnswerLine(text);
+  const trySolution = (text: string) => {
+    const m = text.match(/^\s*solution\s*[:\-–]\s*(.*)$/i);
+    return m ? m[1] : null;
+  };
 
   const isOptionLine = (text: string) =>
-    /^\s*\(?\s*[A-D1-4]\s*\)\s+/.test(text) || /^\s*\(?\s*[A-D1-4]\s*\)\s*[.)]?\s*$/.test(text);
+    /^\s*\(\s*[A-D1-4]\s*\)\s+\S/.test(text);
 
   const looksLikeNumberOnly = (text: string) =>
     /^\s*\d{1,3}\s*[.)]\s*$/.test(text);
+
+  const flushAndReset = () => {
+    ordinal += 1;
+    flushBuffer(buf, out, warnings, ordinal);
+    buf = newBuffer(null, currentSection);
+    if (pendingTopic) {
+      buf.topic = pendingTopic;
+      pendingTopic = null;
+    }
+  };
 
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
 
     if (b.kind === "table") {
-      // First Column A / Column B table inside a question is the match table.
+      // Match-the-following table — only meaningful inside a question.
+      if (!seenFirstNumber) continue;
       const headerCells = Array.from(b.el.querySelectorAll("tr")[0]?.children ?? []).map(
         (c) => (c.textContent || "").trim().toLowerCase(),
       );
@@ -554,96 +613,63 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
         headerCells[0].includes("column a") &&
         headerCells[1].includes("column b")
       ) {
-        // Flush stem/options that came before if this finalises a new question
         buf.matchTable = b.el;
       }
       continue;
     }
 
     const { html, text, style } = b;
+    if (!text && !/<img\b/i.test(html)) continue;
 
-    // Section header → skip
-    if (isSectionHeader(text)) continue;
+    // SECTION heading → set current section type (header wins over auto-detect)
+    if (isSectionHeader(text)) {
+      const st = sectionType(text);
+      if (st) {
+        currentSection = st;
+        if (!buf.answer && buf.number == null) buf.sectionType = st;
+      }
+      continue;
+    }
 
     // Topic
     if (style === "q-topic" || tryTopic(text)) {
       const t = tryTopic(text) ?? text.replace(/^q-?topic\s*[:\-–]?\s*/i, "");
-      buf.topic = t.trim() || buf.topic;
-      continue;
-    }
-
-    // Answer
-    if (style === "q-answer" || tryAnswer(text)) {
-      const ans = tryAnswer(text) ?? text.replace(/^q-?answer\s*[:\-–]?\s*/i, "");
-      buf.answer = ans.trim();
-      continue;
-    }
-
-    // Solution paragraphs
-    if (style === "q-solution") {
-      buf.solution.push(html);
-      continue;
-    }
-    // If we've already seen an answer, treat following paragraphs as solution
-    if (buf.answer && !looksLikeNumberOnly(text) && !isOptionLine(text)) {
-      if (startsNewQuestion(text)) {
-        ordinal += 1;
-        flushBuffer(buf, out, warnings, ordinal);
-        buf = newBuffer();
-        const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
-        if (m) {
-          buf.number = parseInt(m[1], 10);
-          const rest = m[2].trim();
-          if (rest) buf.stem.push(rest);
-        }
-        continue;
+      const topic = t.trim();
+      if (!topic) continue;
+      // Topic always belongs to the NEXT question (or current one if it has no
+      // number yet). Once a question has answer/options, a new Topic line marks
+      // the start of the next question's metadata.
+      if (buf.number == null) {
+        buf.topic = topic;
+      } else {
+        pendingTopic = topic;
       }
-      buf.solution.push(html);
       continue;
     }
 
-    // Question number marker (styled or pattern)
-    if (style === "q-number" || looksLikeNumberOnly(text)) {
-      // Flush prior question
-      if (
-        buf.number != null ||
-        buf.stem.length > 0 ||
-        buf.options.length > 0 ||
-        buf.answer != null
-      ) {
-        ordinal += 1;
-        flushBuffer(buf, out, warnings, ordinal);
-        buf = newBuffer();
-      }
-      const m = text.match(/^\s*(\d{1,3})/);
-      if (m) buf.number = parseInt(m[1], 10);
-      continue;
-    }
 
-    // Number + question on same line
-    if (startsNewQuestionAtAny(text) && !isOptionLine(text)) {
-      // Flush prior
-      if (
-        buf.number != null ||
-        buf.stem.length > 0 ||
-        buf.options.length > 0 ||
-        buf.answer != null
-      ) {
-        ordinal += 1;
-        flushBuffer(buf, out, warnings, ordinal);
-        buf = newBuffer();
+    // Question number marker (styled "q-number" paragraph OR "N." line OR "N. rest...")
+    const isNumberLine = style === "q-number" || looksLikeNumberOnly(text) ||
+      (startsNewQuestionAtAny(text) && !isOptionLine(text));
+    if (isNumberLine) {
+      // Flush prior if it had content
+      if (seenFirstNumber) flushAndReset();
+      seenFirstNumber = true;
+      buf.sectionType = currentSection;
+      if (pendingTopic) {
+        buf.topic = pendingTopic;
+        pendingTopic = null;
       }
       const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
       if (m) {
         buf.number = parseInt(m[1], 10);
         const rest = m[2].trim();
         if (rest) {
-          // keep HTML structure: strip the "n." prefix from the html node
+          // Strip prefix from html
           const tmp = document.createElement("div");
           tmp.innerHTML = html;
-          // walk text nodes to remove the prefix
           const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT);
-          let toRemove = (text.length - rest.length);
+          let toRemove = text.length - rest.length;
           while (toRemove > 0) {
             const node = walker.nextNode() as Text | null;
             if (!node) break;
@@ -658,9 +684,53 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
           }
           buf.stem.push(tmp.innerHTML);
         }
+      } else {
+        const numOnly = text.match(/^\s*(\d{1,3})/);
+        if (numOnly) buf.number = parseInt(numOnly[1], 10);
       }
       continue;
     }
+
+    // Anything before the very first question number is decorative — skip.
+    if (!seenFirstNumber) continue;
+
+    // Answer line
+    if (style === "q-answer" || tryAnswer(text)) {
+      const ans = tryAnswer(text) ?? text.replace(/^q-?answer\s*[:\-–]?\s*/i, "");
+      buf.answer = ans.trim();
+      continue;
+    }
+
+    // Solution paragraph — requires explicit "Solution:" prefix (or Q-Solution style)
+    const solBody = trySolution(text);
+    if (style === "q-solution" || solBody != null) {
+      // Strip "Solution:" prefix from the html so the body keeps formatting/math
+      if (solBody != null) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT);
+        let toRemove = text.length - solBody.length;
+        while (toRemove > 0) {
+          const node = walker.nextNode() as Text | null;
+          if (!node) break;
+          const len = node.data.length;
+          if (len <= toRemove) {
+            toRemove -= len;
+            node.data = "";
+          } else {
+            node.data = node.data.slice(toRemove);
+            toRemove = 0;
+          }
+        }
+        buf.solution.push(tmp.innerHTML.trim());
+      } else {
+        buf.solution.push(html);
+      }
+      continue;
+    }
+
+    // After the answer line, ignore non-Solution paragraphs (decorative footer text).
+    if (buf.answer) continue;
 
     // Option line
     if (style === "q-option" || isOptionLine(text)) {
@@ -673,25 +743,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // Default: stem content
-    if (style === "q-stem" || buf.number != null || buf.options.length === 0) {
-      buf.stem.push(html);
-      continue;
-    }
-
-    // Anything else: ignore
+    // Default: stem content (only before answer / between number and options)
+    buf.stem.push(html);
   }
 
   // Flush final question
-  if (
-    buf.number != null ||
-    buf.stem.length > 0 ||
-    buf.options.length > 0 ||
-    buf.answer != null
-  ) {
+  if (seenFirstNumber) {
     ordinal += 1;
     flushBuffer(buf, out, warnings, ordinal);
   }
+
+
 
   const totalImages = out.reduce((s, q) => s + q.images.length, 0);
   return { questions: out, warnings, totalImages };

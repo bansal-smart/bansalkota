@@ -200,6 +200,13 @@ const DocxBulkImportDialog = ({
       correctAnswer = q.correctMap ?? {};
     }
 
+    const numericAns = q.correctAnswer as
+      | { value: number }
+      | { min: number; max: number }
+      | null;
+    const isRange = !!numericAns && "min" in (numericAns as object);
+    const isValue = !!numericAns && "value" in (numericAns as object);
+
     return {
       subject: q.subject || subject,
       topic: q.topic || topic || null,
@@ -211,14 +218,23 @@ const DocxBulkImportDialog = ({
       match_left: matchLeft,
       correct_answer: correctAnswer,
       numerical_answer:
-        q.type === "numerical" || q.type === "integer"
-          ? (q.correctAnswer as { value: number })?.value ?? null
+        (q.type === "numerical" || q.type === "integer") && isValue
+          ? (numericAns as { value: number }).value
+          : null,
+      answer_range_min:
+        (q.type === "numerical" || q.type === "integer") && isRange
+          ? (numericAns as { min: number; max: number }).min
+          : null,
+      answer_range_max:
+        (q.type === "numerical" || q.type === "integer") && isRange
+          ? (numericAns as { min: number; max: number }).max
           : null,
       explanation: q.solutionText ?? solutionHtml ?? null,
       import_batch_id: batchId,
       source_filename: fileName,
     };
   };
+
 
   const handleConfirm = async () => {
     if (!user) {
@@ -328,6 +344,11 @@ const DocxBulkImportDialog = ({
         const startPos = (existing?.[0]?.position ?? -1) + 1;
         const testRows = questions.map((q, i) => {
           const base = buildBaseRow(q, batchId);
+          const numericAns = q.correctAnswer as
+            | { value: number }
+            | { min: number; max: number }
+            | null;
+          const isRange = !!numericAns && "min" in (numericAns as object);
           return {
             test_id: selectedTestId,
             position: startPos + i,
@@ -338,9 +359,14 @@ const DocxBulkImportDialog = ({
                 : 0,
             marks_unanswered: 0,
             partial_marking: q.type === "mcq-multi",
+            answer_format:
+              (q.type === "numerical" || q.type === "integer") && isRange
+                ? "range"
+                : null,
             ...base,
           };
         });
+
         const { error: testErr } = await supabase
           .from("test_questions")
           .insert(testRows as any);
