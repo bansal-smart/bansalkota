@@ -23,13 +23,18 @@ const AdminLoginPage = () => {
     if (isStaff) {
       navigate(from, { replace: true });
     } else {
-      // Signed in but not staff — show the friendly access-denied page.
-      navigate("/access-denied", {
-        replace: true,
-        state: { reason: "student-tried-admin", from: location.pathname },
-      });
+      // Non-staff: bounce to their correct portal home.
+      const home =
+        role === "teacher"
+          ? "/teacher/dashboard"
+          : role === "mentor"
+            ? "/mentor/dashboard"
+            : role === "center_admin"
+              ? "/center"
+              : "/dashboard";
+      navigate(home, { replace: true });
     }
-  }, [loading, session, roleReady, isStaff, navigate, from, location.pathname]);
+  }, [loading, session, roleReady, isStaff, role, navigate, from, location.pathname]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
