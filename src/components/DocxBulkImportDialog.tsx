@@ -670,11 +670,9 @@ const DocxBulkImportDialog = ({
                       </button>
                     </div>
 
-                    <div
+                    <MathRenderer
                       className="text-xs text-foreground prose prose-sm max-w-none [&_img]:inline-block [&_img]:max-h-32 [&_img]:rounded"
-                      dangerouslySetInnerHTML={{
-                        __html: previewHtml(q.stemHtml, q.images),
-                      }}
+                      content={previewHtml(q.stemHtml, q.images)}
                     />
 
                     {q.type === "match-following" && q.matchLeft && (
