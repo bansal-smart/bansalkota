@@ -358,7 +358,7 @@ export default function LeadershipDetailPage() {
               </p>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {sameerBooks.map((b) => (
-                  <div key={b.title} className="group rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl">
+                  <Link key={b.title} to="/e-store" className="group rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl block">
                     <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gradient-to-br from-bansal-cream to-bansal-blue/5 mb-4 flex items-center justify-center p-3">
                       <img
                         src={b.cover}
@@ -370,7 +370,7 @@ export default function LeadershipDetailPage() {
                     <div className="font-display text-lg font-extrabold text-bansal-blue leading-tight">{b.title}</div>
                     <div className="mt-1 text-xs font-semibold text-bansal-orange uppercase tracking-wide">{b.subtitle}</div>
                     <div className="mt-2 text-[11px] text-bansal-gray">{b.edition}</div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
