@@ -206,12 +206,12 @@ const extractAnswerLine = (text: string): string | null => {
 // Determine question type + parsed answer from a raw answer string.
 const parseAnswer = (raw: string): {
   type: ParsedQuestionType;
-  correctAnswer: number | number[] | { value: number } | null;
+  correctAnswer: number | number[] | { value: number } | { min: number; max: number } | null;
   correctMap?: Record<string, string>;
 } => {
-  const cleaned = raw.replace(/[()\s]/g, "");
+  const trimmed = raw.trim();
   // Match-the-following: A-Q,B-S,C-P,D-R  (also A→Q, A:Q allowed)
-  const mfPairs = raw.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
+  const mfPairs = trimmed.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
   if (mfPairs && mfPairs.length >= 2) {
     const map: Record<string, string> = {};
     for (const pair of mfPairs) {
@@ -220,6 +220,22 @@ const parseAnswer = (raw: string): {
     }
     return { type: "match-following", correctAnswer: null, correctMap: map };
   }
+  // Numeric range: "5 - 9", "5-9", "5 to 9", "5.5 – 6.5"
+  const range = trimmed.match(
+    /^\s*(-?\d+(?:\.\d+)?)\s*(?:-|–|—|to)\s*(-?\d+(?:\.\d+)?)\s*$/i,
+  );
+  if (range) {
+    const min = Number(range[1]);
+    const max = Number(range[2]);
+    if (!Number.isNaN(min) && !Number.isNaN(max) && min <= max) {
+      const isIntPair = Number.isInteger(min) && Number.isInteger(max);
+      return {
+        type: isIntPair ? "integer" : "numerical",
+        correctAnswer: { min, max },
+      };
+    }
+  }
+  const cleaned = trimmed.replace(/[()\s]/g, "");
   // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"
   if (/[,;|]/.test(cleaned) || /^[A-D]{2,4}$/i.test(cleaned)) {
     const tokens = cleaned.split(/[,;|]/).filter(Boolean);
@@ -243,7 +259,7 @@ const parseAnswer = (raw: string): {
     const idx = /^[1-4]$/.test(ch) ? parseInt(ch, 10) - 1 : ch.toUpperCase().charCodeAt(0) - 65;
     return { type: "mcq-single", correctAnswer: idx };
   }
-  // Integer / numerical
+  // Integer / numerical single value
   const num = cleaned.match(/^-?\d+(?:\.\d+)?$/);
   if (num) {
     const v = Number(num[0]);
@@ -251,6 +267,19 @@ const parseAnswer = (raw: string): {
   }
   return { type: "mcq-single", correctAnswer: null };
 };
+
+// Map a "SECTION I (Single Correct Choice)" style heading to a question type.
+const sectionType = (text: string): ParsedQuestionType | null => {
+  if (!/section\b/i.test(text)) return null;
+  const t = text.toLowerCase();
+  if (/match.*following/.test(t)) return "match-following";
+  if (/multiple\s+correct/.test(t)) return "mcq-multi";
+  if (/single\s+correct/.test(t)) return "mcq-single";
+  if (/numerical/.test(t)) return "numerical";
+  if (/integer/.test(t)) return "integer";
+  return null;
+};
+
 
 type Block =
   | { kind: "p"; html: string; text: string; style: string }
