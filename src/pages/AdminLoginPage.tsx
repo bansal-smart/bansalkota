@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 
 const AdminLoginPage = () => {
-  const { signIn, session, isStaff, roleReady, loading } = useAuth();
+  const { signIn, session, role, isStaff, roleReady, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/admin/dashboard";
@@ -23,13 +23,18 @@ const AdminLoginPage = () => {
     if (isStaff) {
       navigate(from, { replace: true });
     } else {
-      // Signed in but not staff — show the friendly access-denied page.
-      navigate("/access-denied", {
-        replace: true,
-        state: { reason: "student-tried-admin", from: location.pathname },
-      });
+      // Non-staff: bounce to their correct portal home.
+      const home =
+        role === "teacher"
+          ? "/teacher/dashboard"
+          : role === "mentor"
+            ? "/mentor/dashboard"
+            : role === "center_admin"
+              ? "/center"
+              : "/dashboard";
+      navigate(home, { replace: true });
     }
-  }, [loading, session, roleReady, isStaff, navigate, from, location.pathname]);
+  }, [loading, session, roleReady, isStaff, role, navigate, from, location.pathname]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
