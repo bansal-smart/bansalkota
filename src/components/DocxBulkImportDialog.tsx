@@ -344,6 +344,11 @@ const DocxBulkImportDialog = ({
         const startPos = (existing?.[0]?.position ?? -1) + 1;
         const testRows = questions.map((q, i) => {
           const base = buildBaseRow(q, batchId);
+          const numericAns = q.correctAnswer as
+            | { value: number }
+            | { min: number; max: number }
+            | null;
+          const isRange = !!numericAns && "min" in (numericAns as object);
           return {
             test_id: selectedTestId,
             position: startPos + i,
@@ -354,9 +359,14 @@ const DocxBulkImportDialog = ({
                 : 0,
             marks_unanswered: 0,
             partial_marking: q.type === "mcq-multi",
+            answer_format:
+              (q.type === "numerical" || q.type === "integer") && isRange
+                ? "range"
+                : null,
             ...base,
           };
         });
+
         const { error: testErr } = await supabase
           .from("test_questions")
           .insert(testRows as any);
