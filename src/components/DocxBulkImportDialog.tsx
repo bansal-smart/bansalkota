@@ -704,11 +704,10 @@ const DocxBulkImportDialog = ({
                                 <span className="font-semibold">
                                   ({String.fromCharCode(80 + i)})
                                 </span>{" "}
-                                <span
+                                <MathRenderer
+                                  inline
                                   className="[&_img]:max-h-16 [&_img]:inline-block"
-                                  dangerouslySetInnerHTML={{
-                                    __html: previewHtml(opt.text, q.images),
-                                  }}
+                                  content={previewHtml(opt.text, q.images)}
                                 />
                               </li>
                             ))}
