@@ -3,7 +3,8 @@ import { Trophy, Award, GraduationCap, Calendar, IndianRupee, Clock, CheckCircle
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import boostHero from "@/assets/boost-hero.png";
+import boostHeroAsset from "@/assets/boost-hero-banner.png.asset.json";
+const boostHero = boostHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 
