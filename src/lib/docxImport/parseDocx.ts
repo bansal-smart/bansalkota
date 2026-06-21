@@ -374,20 +374,23 @@ type Buffer = {
   solution: string[];
   topic: string | null;
   matchTable: HTMLTableElement | null;
+  sectionType: ParsedQuestionType | null;
   // raw blocks captured so we can extract images per slot later
   optionBlocks: { key: string; html: string }[];
 };
 
-const newBuffer = (): Buffer => ({
+const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType | null): Buffer => ({
   number: null,
   stem: [],
   options: [],
   answer: null,
   solution: [],
-  topic: null,
+  topic: carryTopic ?? null,
   matchTable: null,
+  sectionType: carrySection ?? null,
   optionBlocks: [],
 });
+
 
 const KEY_TO_SLOT: Record<string, DocxImageSlot> = {
   A: "optionA",
