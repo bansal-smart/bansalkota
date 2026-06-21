@@ -6,6 +6,7 @@ import { leadershipPhotos } from "@/content/bansal/about";
 import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
 import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
+import sameerHero from "@/assets/sameer-hero.jpg.asset.json";
 
 export default function LeadershipDetailPage() {
   const { slug = "" } = useParams();
