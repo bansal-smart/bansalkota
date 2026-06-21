@@ -141,6 +141,9 @@ const CreateTestPage = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [instructionsImageUrl, setInstructionsImageUrl] = useState<string>("");
+  // Persist a stable (token-free) public-format URL — display layer re-signs at runtime.
+  const stableInstructionsUrl = (u: string) =>
+    (u || "").replace(/\/storage\/v1\/object\/sign\/question-images\/([^?]+)(\?.*)?$/, "/storage/v1/object/public/question-images/$1") || null;
   const [uploadingInstructions, setUploadingInstructions] = useState(false);
   const [testType, setTestType] = useState("mock");
   const [examPattern, setExamPattern] = useState("jee-main");
@@ -231,7 +234,20 @@ const CreateTestPage = () => {
       importedQuestionCount.current = tqs.length;
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
-      setInstructionsImageUrl(((test as any).instructions_image_url as string) ?? "");
+      {
+        let instrUrl = ((test as any).instructions_image_url as string) ?? "";
+        // Re-sign legacy public-bucket URLs (bucket is private now).
+        if (instrUrl && /\/storage\/v1\/object\/public\/question-images\//.test(instrUrl)) {
+          const path = instrUrl.split("/object/public/question-images/")[1];
+          if (path) {
+            const { data: signed } = await supabase.storage
+              .from("question-images")
+              .createSignedUrl(decodeURIComponent(path), 60 * 60 * 24 * 365);
+            if (signed?.signedUrl) instrUrl = signed.signedUrl;
+          }
+        }
+        setInstructionsImageUrl(instrUrl);
+      }
       setTestType(test.test_type ?? "mock");
       setExamPattern(test.exam_pattern ?? "jee-main");
       setDuration(test.duration_minutes ?? 180);
@@ -449,7 +465,7 @@ const CreateTestPage = () => {
       .insert({
         title,
         description,
-        instructions_image_url: instructionsImageUrl || null,
+        instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
         test_type: testType,
         exam_pattern: examPattern,
         subjects: [],
@@ -544,7 +560,7 @@ const CreateTestPage = () => {
         .update({
           title,
           description,
-          instructions_image_url: instructionsImageUrl || null,
+          instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
           test_type: testType,
           exam_pattern: examPattern,
           duration_minutes: duration,
@@ -612,7 +628,7 @@ const CreateTestPage = () => {
     const basePayload = {
       title,
       description,
-      instructions_image_url: instructionsImageUrl || null,
+      instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
       test_type: testType,
       exam_pattern: examPattern,
       subjects,
