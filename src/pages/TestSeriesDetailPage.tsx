@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingCart, Tag, Trophy } from "lucide-react";
 import { useTestSeriesDetail } from "@/hooks/useTestSeries";
 import { useAppStore } from "@/store/useAppStore";
@@ -10,14 +10,19 @@ const TestSeriesDetailPage = () => {
   const { slug } = useParams();
   const { item, loading } = useTestSeriesDetail(slug);
   const { user } = useAppStore();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [placing, setPlacing] = useState(false);
 
   const handleEnroll = async () => {
     if (!user) {
-      toast.error("Please sign in to enroll");
+      toast.info("Please sign in to continue with enrollment");
+      const redirect = encodeURIComponent(location.pathname + location.search);
+      navigate(`/login?redirect=${redirect}`);
       return;
     }
     if (!item) return;
+
     setPlacing(true);
     const { data: order, error } = await supabase
       .from("orders")
