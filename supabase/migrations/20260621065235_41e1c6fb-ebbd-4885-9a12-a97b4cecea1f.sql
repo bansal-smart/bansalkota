@@ -1,0 +1,1 @@
+UPDATE public.test_attempts SET status='submitted', submitted_at = COALESCE(submitted_at, now()) WHERE id='24c19e62-99b3-4ad7-a245-fbd05adadea7'; SELECT public.score_test_attempt('24c19e62-99b3-4ad7-a245-fbd05adadea7');
