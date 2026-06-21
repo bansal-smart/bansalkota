@@ -636,11 +636,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       const t = tryTopic(text) ?? text.replace(/^q-?topic\s*[:\-–]?\s*/i, "");
       const topic = t.trim();
       if (!topic) continue;
-      // If we're between questions, hold it until the next number
-      if (buf.number == null) pendingTopic = topic;
-      else buf.topic = topic;
+      // Topic always belongs to the NEXT question (or current one if it has no
+      // number yet). Once a question has answer/options, a new Topic line marks
+      // the start of the next question's metadata.
+      if (buf.number == null) {
+        buf.topic = topic;
+      } else {
+        pendingTopic = topic;
+      }
       continue;
     }
+
 
     // Question number marker (styled "q-number" paragraph OR "N." line OR "N. rest...")
     const isNumberLine = style === "q-number" || looksLikeNumberOnly(text) ||
