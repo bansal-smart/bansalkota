@@ -670,11 +670,9 @@ const DocxBulkImportDialog = ({
                       </button>
                     </div>
 
-                    <div
+                    <MathRenderer
                       className="text-xs text-foreground prose prose-sm max-w-none [&_img]:inline-block [&_img]:max-h-32 [&_img]:rounded"
-                      dangerouslySetInnerHTML={{
-                        __html: previewHtml(q.stemHtml, q.images),
-                      }}
+                      content={previewHtml(q.stemHtml, q.images)}
                     />
 
                     {q.type === "match-following" && q.matchLeft && (
@@ -687,11 +685,10 @@ const DocxBulkImportDialog = ({
                             {q.matchLeft.map((m) => (
                               <li key={m.key}>
                                 <span className="font-semibold">({m.key})</span>{" "}
-                                <span
+                                <MathRenderer
+                                  inline
                                   className="[&_img]:max-h-16 [&_img]:inline-block"
-                                  dangerouslySetInnerHTML={{
-                                    __html: previewHtml(m.text, q.images),
-                                  }}
+                                  content={previewHtml(m.text, q.images)}
                                 />
                               </li>
                             ))}
@@ -707,11 +704,10 @@ const DocxBulkImportDialog = ({
                                 <span className="font-semibold">
                                   ({String.fromCharCode(80 + i)})
                                 </span>{" "}
-                                <span
+                                <MathRenderer
+                                  inline
                                   className="[&_img]:max-h-16 [&_img]:inline-block"
-                                  dangerouslySetInnerHTML={{
-                                    __html: previewHtml(opt.text, q.images),
-                                  }}
+                                  content={previewHtml(opt.text, q.images)}
                                 />
                               </li>
                             ))}
@@ -737,11 +733,10 @@ const DocxBulkImportDialog = ({
                             <span className="font-semibold text-foreground shrink-0">
                               ({String.fromCharCode(65 + opt.id)})
                             </span>
-                            <span
+                            <MathRenderer
+                              inline
                               className="flex-1 [&_img]:inline-block [&_img]:max-h-20 [&_img]:rounded"
-                              dangerouslySetInnerHTML={{
-                                __html: previewHtml(opt.text, q.images),
-                              }}
+                              content={previewHtml(opt.text, q.images)}
                             />
                           </li>
                         ))}
@@ -753,11 +748,9 @@ const DocxBulkImportDialog = ({
                         <summary className="cursor-pointer font-semibold">
                           Solution
                         </summary>
-                        <div
+                        <MathRenderer
                           className="mt-1 rounded bg-muted/40 p-2 [&_img]:max-h-24 [&_img]:inline-block"
-                          dangerouslySetInnerHTML={{
-                            __html: previewHtml(q.solutionHtml, q.images),
-                          }}
+                          content={previewHtml(q.solutionHtml, q.images)}
                         />
                       </details>
                     )}

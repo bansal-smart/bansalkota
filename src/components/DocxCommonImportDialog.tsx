@@ -905,9 +905,9 @@ const DocxCommonImportDialog = ({
                       </button>
                     </div>
 
-                    <div
+                    <MathRenderer
                       className="prose prose-sm max-w-none text-[13px] leading-relaxed rounded-md bg-muted/30 p-3 border border-border"
-                      dangerouslySetInnerHTML={{ __html: previewHtml(q.stemHtml, q.images) }}
+                      content={previewHtml(q.stemHtml, q.images)}
                     />
 
                     {/* Answer picker */}
