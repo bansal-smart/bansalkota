@@ -231,7 +231,20 @@ const CreateTestPage = () => {
       importedQuestionCount.current = tqs.length;
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
-      setInstructionsImageUrl(((test as any).instructions_image_url as string) ?? "");
+      {
+        let instrUrl = ((test as any).instructions_image_url as string) ?? "";
+        // Re-sign legacy public-bucket URLs (bucket is private now).
+        if (instrUrl && /\/storage\/v1\/object\/public\/question-images\//.test(instrUrl)) {
+          const path = instrUrl.split("/object/public/question-images/")[1];
+          if (path) {
+            const { data: signed } = await supabase.storage
+              .from("question-images")
+              .createSignedUrl(decodeURIComponent(path), 60 * 60 * 24 * 365);
+            if (signed?.signedUrl) instrUrl = signed.signedUrl;
+          }
+        }
+        setInstructionsImageUrl(instrUrl);
+      }
       setTestType(test.test_type ?? "mock");
       setExamPattern(test.exam_pattern ?? "jee-main");
       setDuration(test.duration_minutes ?? 180);
