@@ -747,18 +747,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     flushBuffer(buf, out, warnings, ordinal);
   }
 
-  }
 
-  // Flush final question
-  if (
-    buf.number != null ||
-    buf.stem.length > 0 ||
-    buf.options.length > 0 ||
-    buf.answer != null
-  ) {
-    ordinal += 1;
-    flushBuffer(buf, out, warnings, ordinal);
-  }
 
   const totalImages = out.reduce((s, q) => s + q.images.length, 0);
   return { questions: out, warnings, totalImages };
