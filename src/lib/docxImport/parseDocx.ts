@@ -469,10 +469,23 @@ const flushBuffer = (
   }
   if (isMatch) type = "match-following";
 
+  // Section header wins (e.g. "SECTION I (Single Correct Choice)")
+  if (buf.sectionType && !isMatch) {
+    // Don't downgrade a correctly parsed multi-answer into single just because
+    // section says single; only adopt section type if it doesn't drop info.
+    if (buf.sectionType === "mcq-multi" && type === "mcq-single" && typeof correctAnswer === "number") {
+      type = "mcq-multi";
+      correctAnswer = [correctAnswer];
+    } else if (buf.sectionType === "mcq-single" || buf.sectionType === "integer" || buf.sectionType === "numerical" || buf.sectionType === "mcq-multi") {
+      type = buf.sectionType;
+    }
+  }
+
   // Sanity: integer/numerical question dropped its bogus options
   if ((type === "integer" || type === "numerical") && options.length > 0) {
     options = [];
   }
+
 
   // For MCQ types we need real options
   if ((type === "mcq-single" || type === "mcq-multi") && options.length < 2) {
