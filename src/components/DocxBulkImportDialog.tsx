@@ -748,11 +748,9 @@ const DocxBulkImportDialog = ({
                         <summary className="cursor-pointer font-semibold">
                           Solution
                         </summary>
-                        <div
+                        <MathRenderer
                           className="mt-1 rounded bg-muted/40 p-2 [&_img]:max-h-24 [&_img]:inline-block"
-                          dangerouslySetInnerHTML={{
-                            __html: previewHtml(q.solutionHtml, q.images),
-                          }}
+                          content={previewHtml(q.solutionHtml, q.images)}
                         />
                       </details>
                     )}
