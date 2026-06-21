@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 
 const AdminLoginPage = () => {
-  const { signIn, session, isStaff, roleReady, loading } = useAuth();
+  const { signIn, session, role, isStaff, roleReady, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/admin/dashboard";
