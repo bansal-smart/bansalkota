@@ -3,7 +3,8 @@ import { Trophy, Award, GraduationCap, Calendar, IndianRupee, Clock, CheckCircle
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import boostHero from "@/assets/boost-hero.png";
+import boostHeroAsset from "@/assets/boost-hero-banner.png.asset.json";
+const boostHero = boostHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 
@@ -48,11 +49,11 @@ export default function BoostPage() {
       <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-16 md:py-24 relative overflow-hidden">
-        <img src={boostHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
-        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
-        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue via-bansal-blue-dark to-bansal-blue opacity-95" />
-        <FloatingIcons defaultTone="white" />
-        <DotTexture tone="white" className="opacity-25 decor-fade" />
+        <img src={boostHero} alt="BOOST scholarship test — confident student surrounded by glowing science and math symbols" className="absolute inset-0 h-full w-full object-cover object-right" />
+        <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue via-bansal-blue/85 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bansal-blue/40 via-transparent to-bansal-blue/60 md:hidden" />
+        <FloatingIcons defaultTone="white" className="opacity-30" />
+        <DotTexture tone="white" className="opacity-15 decor-fade" />
         <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl">
             <BansalBadge variant="orange" className="mb-5">Bansal Flagship Scholarship Test</BansalBadge>
