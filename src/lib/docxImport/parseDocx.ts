@@ -104,9 +104,14 @@ export type ParsedDocxQuestion = {
   // Generic correct answer:
   //   mcq-single        → number (0-based index)
   //   mcq-multi         → number[] (0-based indices)
-  //   integer/numerical → { value: number }
+  //   integer/numerical → { value: number } | { min: number; max: number }
   //   match-following   → undefined (use correctMap)
-  correctAnswer: number | number[] | { value: number } | null;
+  correctAnswer:
+    | number
+    | number[]
+    | { value: number }
+    | { min: number; max: number }
+    | null;
   correctRaw: string | null;
 };
 
