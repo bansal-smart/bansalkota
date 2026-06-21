@@ -16,7 +16,7 @@ const AdminCenterSupportPage = () => {
     setLoading(true);
     let q = supabase
       .from("enquiries" as any)
-      .select("*, center:centers(id, slug, city, area, state)")
+      .select("*, center:centres(id, slug, city, area, state)")
       .eq("source", "center_support")
       .order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("status", filter);
