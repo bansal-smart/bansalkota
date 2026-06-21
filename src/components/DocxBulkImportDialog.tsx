@@ -685,11 +685,10 @@ const DocxBulkImportDialog = ({
                             {q.matchLeft.map((m) => (
                               <li key={m.key}>
                                 <span className="font-semibold">({m.key})</span>{" "}
-                                <span
+                                <MathRenderer
+                                  inline
                                   className="[&_img]:max-h-16 [&_img]:inline-block"
-                                  dangerouslySetInnerHTML={{
-                                    __html: previewHtml(m.text, q.images),
-                                  }}
+                                  content={previewHtml(m.text, q.images)}
                                 />
                               </li>
                             ))}
