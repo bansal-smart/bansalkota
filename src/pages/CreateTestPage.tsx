@@ -465,7 +465,7 @@ const CreateTestPage = () => {
       .insert({
         title,
         description,
-        instructions_image_url: instructionsImageUrl || null,
+        instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
         test_type: testType,
         exam_pattern: examPattern,
         subjects: [],
@@ -560,7 +560,7 @@ const CreateTestPage = () => {
         .update({
           title,
           description,
-          instructions_image_url: instructionsImageUrl || null,
+          instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
           test_type: testType,
           exam_pattern: examPattern,
           duration_minutes: duration,
@@ -628,7 +628,7 @@ const CreateTestPage = () => {
     const basePayload = {
       title,
       description,
-      instructions_image_url: instructionsImageUrl || null,
+      instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
       test_type: testType,
       exam_pattern: examPattern,
       subjects,
