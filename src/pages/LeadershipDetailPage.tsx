@@ -53,43 +53,85 @@ export default function LeadershipDetailPage() {
           </div>
         </div>
 
-        <div className={`absolute z-10 ${slug === "sameer-bansal" ? "inset-0 flex items-center" : "inset-x-0 bottom-0"}`}>
-          <div className={`container mx-auto px-4 sm:px-6 ${slug === "sameer-bansal" ? "" : "pb-12 md:pb-20"}`}>
-            <div className="max-w-4xl animate-fade-in">
-              <div className="flex items-center gap-3 mb-5">
-                <span className="h-px w-12 bg-bansal-orange" />
-                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
-                  {profile.title}
-                </span>
-              </div>
-              <h1
-                className="font-display font-extrabold text-white leading-[0.9] tracking-tight whitespace-nowrap"
-                style={{ fontSize: slug === "vk-bansal" ? "clamp(2rem, 7vw, 5.5rem)" : "clamp(2.75rem, 9vw, 7.5rem)" }}
-              >
-                {slug === "vk-bansal" ? (
-                  <>
-                    V.K <span className="text-bansal-orange">Bansal Sir</span>
-                  </>
-                ) : (
-                  <>
+        {slug === "sameer-bansal" ? (
+          <div className="absolute inset-0 z-10 flex items-center">
+            <div className="container mx-auto px-4 sm:px-6 w-full">
+              <div className="flex items-center justify-between gap-6 lg:gap-10">
+                <div className="max-w-xl lg:max-w-2xl animate-fade-in">
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="h-px w-12 bg-bansal-orange" />
+                    <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                      {profile.title}
+                    </span>
+                  </div>
+                  <h1
+                    className="font-display font-extrabold text-white leading-[0.9] tracking-tight whitespace-nowrap"
+                    style={{ fontSize: "clamp(2.75rem, 9vw, 7.5rem)" }}
+                  >
                     {firstName && <span className="block">{firstName}</span>}
                     <span className="block text-bansal-orange">{lastName}</span>
-                  </>
-                )}
-              </h1>
-              {profile.headline && (
-                <p className="mt-5 max-w-2xl text-base md:text-lg text-white/85 font-medium">
-                  {profile.headline}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-2 mt-6">
-                {(profile.tags ?? []).map((t) => (
-                  <BansalBadge key={t} tone="orange">{t}</BansalBadge>
-                ))}
+                  </h1>
+                  {profile.headline && (
+                    <p className="mt-5 max-w-xl text-base md:text-lg text-white/85 font-medium">
+                      {profile.headline}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2 mt-6">
+                    {(profile.tags ?? []).map((t) => (
+                      <BansalBadge key={t} tone="orange">{t}</BansalBadge>
+                    ))}
+                  </div>
+                </div>
+                <div className="hidden md:block relative h-[55vh] lg:h-[65vh] shrink-0 -mr-6 lg:-mr-10">
+                  <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-bansal-blue-dark to-transparent z-10" />
+                  <img
+                    src={sameerHero.url}
+                    alt="Sameer Bansal"
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="absolute z-10 inset-x-0 bottom-0">
+            <div className="container mx-auto px-4 sm:px-6 pb-12 md:pb-20">
+              <div className="max-w-4xl animate-fade-in">
+                <div className="flex items-center gap-3 mb-5">
+                  <span className="h-px w-12 bg-bansal-orange" />
+                  <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                    {profile.title}
+                  </span>
+                </div>
+                <h1
+                  className="font-display font-extrabold text-white leading-[0.9] tracking-tight whitespace-nowrap"
+                  style={{ fontSize: slug === "vk-bansal" ? "clamp(2rem, 7vw, 5.5rem)" : "clamp(2.75rem, 9vw, 7.5rem)" }}
+                >
+                  {slug === "vk-bansal" ? (
+                    <>
+                      V.K <span className="text-bansal-orange">Bansal Sir</span>
+                    </>
+                  ) : (
+                    <>
+                      {firstName && <span className="block">{firstName}</span>}
+                      <span className="block text-bansal-orange">{lastName}</span>
+                    </>
+                  )}
+                </h1>
+                {profile.headline && (
+                  <p className="mt-5 max-w-2xl text-base md:text-lg text-white/85 font-medium">
+                    {profile.headline}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2 mt-6">
+                  {(profile.tags ?? []).map((t) => (
+                    <BansalBadge key={t} tone="orange">{t}</BansalBadge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="absolute bottom-4 right-6 z-10 hidden md:flex items-center gap-2 text-white/60 text-xs uppercase tracking-widest animate-pulse">
           Scroll <ChevronDown className="h-4 w-4" />
