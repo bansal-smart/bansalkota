@@ -1,4 +1,4 @@
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, GraduationCap, BookOpen, FileText } from "lucide-react";
 import type { FeaturedConfig } from "@/lib/landingSchemas";
 import { useFeaturedProducts } from "@/hooks/useFeaturedProducts";
 
