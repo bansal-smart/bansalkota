@@ -306,11 +306,6 @@ const AdminEnquiriesPage = () => {
                     <p className="text-xs text-muted-foreground">Submitted</p>
                     <p className="font-medium text-foreground">{format(new Date(active.created_at), "dd MMM yyyy, HH:mm")}</p>
                   </div>
-
-                  <div className="col-span-2">
-                    <p className="text-xs text-muted-foreground">Submitted</p>
-                    <p className="font-medium text-foreground">{format(new Date(active.created_at), "dd MMM yyyy, HH:mm")}</p>
-                  </div>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Message</p>
