@@ -183,52 +183,6 @@ export default function CenterDetailPage() {
             </div>
           </div>
 
-          {/* Nearby centres */}
-          {nearby.length > 0 && (
-            <div className="mt-12">
-              <div className="flex items-end justify-between mb-4">
-                <div>
-                  <h2 className="font-display text-2xl font-bold text-bansal-black">
-                    Other Bansal centres nearby
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Explore more centres in {center.state} & {center.region} India.
-                  </p>
-                </div>
-                <Link to="/centres" className="text-sm font-semibold text-bansal-blue hover:underline whitespace-nowrap">
-                  View all
-                </Link>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nearby.map((c) => (
-                  <Link
-                    key={c.slug}
-                    to={`/centres/${c.slug}`}
-                    className="group block rounded-xl overflow-hidden bg-white border border-border hover:shadow-lg hover:-translate-y-0.5 transition-all"
-                  >
-                    <div className="relative h-28 overflow-hidden bg-bansal-blue">
-                      <img
-                        src={THEME_IMAGE[c.theme]}
-                        alt={c.city}
-                        loading="lazy"
-                        className="h-full w-full object-contain p-1.5 group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-bansal-black/80 to-transparent pointer-events-none" />
-                      <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                        <div>
-                          <p className="font-display font-bold text-white text-sm drop-shadow">
-                            {c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city}
-                          </p>
-                          <p className="text-[10px] text-white/85">{c.state}</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
