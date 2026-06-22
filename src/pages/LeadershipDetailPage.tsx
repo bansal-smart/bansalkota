@@ -66,16 +66,17 @@ export default function LeadershipDetailPage() {
     <div className="bg-background">
       {/* ============= HERO (uniform across all leaders) ============= */}
       <section className="relative w-full min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden bg-bansal-blue-dark">
-        {/* Background image + overlays */}
+        {/* Background image — face anchored to the right so it stays visible */}
         <img
           src={heroBg}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
+          className="absolute inset-0 w-full h-full object-cover object-right md:object-[75%_center]"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue-dark/95 via-bansal-blue-dark/80 to-bansal-blue-dark/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark via-transparent to-transparent" />
-        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-bansal-orange/20 blur-3xl pointer-events-none" />
+        {/* Brand-tint overlays: heavy on the left (legible text), faded on the right (face stays visible) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue-dark via-bansal-blue-dark/80 via-40% to-bansal-blue-dark/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark/70 via-transparent to-bansal-blue-dark/30" />
+        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-bansal-orange/15 blur-3xl pointer-events-none" />
 
         {/* Back link */}
         <div className="absolute top-0 inset-x-0 z-10">
