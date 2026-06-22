@@ -208,9 +208,12 @@ export async function prpsmsSend(opts: {
   try {
     const res = await fetch(url, { method: "GET" });
     const raw = (await res.text()).trim();
-    // Successful response: 19-character message ID
-    if (/^[A-Za-z0-9]{19}$/.test(raw)) {
-      return { ok: true, msg_id: raw, raw };
+    // Success responses observed: bare 19-char msg id, OR "<dest>-<msgid>",
+    // OR multi-line "<dest>-<msgid>" per recipient. Errors begin with a numeric
+    // code + "|ERROR|" (e.g. "003|ERROR|...").
+    if (!/\|ERROR\|/i.test(raw) && /\d{10,}/.test(raw)) {
+      const firstId = raw.split(/\r?\n/)[0].split("-").pop() || raw;
+      return { ok: true, msg_id: firstId, raw };
     }
     return { ok: false, raw, error: raw || `HTTP ${res.status}` };
   } catch (e) {
