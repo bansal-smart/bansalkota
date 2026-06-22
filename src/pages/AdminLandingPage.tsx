@@ -39,37 +39,45 @@ async function uploadToStorage(file: File, folder: string): Promise<string | nul
   return data.publicUrl;
 }
 
-function ProductPicker({
-  kind, value, onChange,
-}: { kind: FeaturedKind; value?: string; onChange: (id: string) => void }) {
+function MultiProductPicker({
+  kind, selectedIds, onToggle,
+}: { kind: FeaturedKind; selectedIds: Set<string>; onToggle: (id: string) => void }) {
   const [search, setSearch] = useState("");
   const { data: options = [], isLoading } = useProductOptions(kind, search);
-  const selected = options.find((o) => o.id === value);
   return (
     <div className="space-y-2">
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input className="pl-8" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
-      <div className="max-h-44 overflow-y-auto rounded-md border border-border bg-background">
+      <div className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto rounded-md border border-border bg-background p-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading && <div className="p-2 text-xs text-muted-foreground">Loading…</div>}
         {!isLoading && options.length === 0 && <div className="p-2 text-xs text-muted-foreground">No results</div>}
-        {options.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => onChange(o.id)}
-            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted ${value === o.id ? "bg-primary/10 text-primary" : ""}`}
-          >
-            {o.image ? <img src={o.image} className="h-7 w-10 rounded object-cover" /> : <div className="h-7 w-10 rounded bg-muted" />}
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold">{o.label}</div>
-              {o.subtitle && <div className="truncate text-[10px] text-muted-foreground">{o.subtitle}</div>}
-            </div>
-          </button>
-        ))}
+        {options.map((o) => {
+          const isSel = selectedIds.has(o.id);
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => onToggle(o.id)}
+              className={`relative flex items-center gap-2 rounded-md border p-2 text-left text-xs transition hover:bg-muted ${
+                isSel ? "border-primary bg-primary/10 ring-2 ring-primary/40" : "border-border"
+              }`}
+            >
+              {o.image ? <img src={o.image} className="h-10 w-14 shrink-0 rounded object-cover" /> : <div className="h-10 w-14 shrink-0 rounded bg-muted" />}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold">{o.label}</div>
+                {o.subtitle && <div className="truncate text-[10px] text-muted-foreground">{o.subtitle}</div>}
+              </div>
+              {isSel && (
+                <span className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Check className="h-3 w-3" />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
-      {selected && <div className="text-[11px] text-muted-foreground">Selected: <strong>{selected.label}</strong></div>}
     </div>
   );
 }
