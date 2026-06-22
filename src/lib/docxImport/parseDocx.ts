@@ -393,6 +393,8 @@ type Buffer = {
   topic: string | null;
   matchTable: HTMLTableElement | null;
   sectionType: ParsedQuestionType | null;
+  /** Per-question Type: tag override, beats section + auto-detect. */
+  forcedType: ParsedQuestionType | null;
   // raw blocks captured so we can extract images per slot later
   optionBlocks: { key: string; html: string }[];
 };
@@ -406,6 +408,7 @@ const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType
   topic: carryTopic ?? null,
   matchTable: null,
   sectionType: carrySection ?? null,
+  forcedType: null,
   optionBlocks: [],
 });
 
