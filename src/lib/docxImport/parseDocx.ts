@@ -600,6 +600,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   let ordinal = 0;
   let seenFirstNumber = false;
   let pendingTopic: string | null = null;
+  let pendingType: ParsedQuestionType | null = null;
   let currentSection: ParsedQuestionType | null = null;
 
   const startsNewQuestionAtAny = (text: string) =>
@@ -608,6 +609,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const isSectionHeader = (text: string) => /^\s*section\b/i.test(text);
 
   const tryTopic = (text: string) => extractTopic(text);
+  const tryType = (text: string) => extractTypeTag(text);
   const tryAnswer = (text: string) => extractAnswerLine(text);
   const trySolution = (text: string) => {
     const m = text.match(/^\s*solution\s*[:\-–]\s*(.*)$/i);
@@ -627,6 +629,10 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     if (pendingTopic) {
       buf.topic = pendingTopic;
       pendingTopic = null;
+    }
+    if (pendingType) {
+      buf.forcedType = pendingType;
+      pendingType = null;
     }
   };
 
