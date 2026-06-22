@@ -13,18 +13,27 @@ import BansalButton from "@/components/bansal/BansalButton";
 import { leadershipPhotos } from "@/content/bansal/about";
 import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
-import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
 import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png.asset.json";
 import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.json";
 import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
 import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
+import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-profile.png.asset.json";
+import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-profile.png.asset.json";
+import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-profile.png.asset.json";
+import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-profile.png.asset.json";
 
-/** Per-leader hero background image (face on the right side of the frame). */
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg.url,
   "sameer-bansal": sameerHeroBg.url,
   "neelam-bansal": neelamHeroBg.url,
   "mahima-bansal": mahimaHeroBg.url,
+};
+
+const LEADER_PROFILE_PHOTO: Record<string, string> = {
+  "vk-bansal": vkProfilePhoto.url,
+  "sameer-bansal": sameerProfilePhoto.url,
+  "neelam-bansal": neelamProfilePhoto.url,
+  "mahima-bansal": mahimaProfilePhoto.url,
 };
 
 const SECTION = "py-16 md:py-24";
