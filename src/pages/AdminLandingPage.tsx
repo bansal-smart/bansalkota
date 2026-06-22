@@ -160,6 +160,10 @@ export default function AdminLandingPage() {
     if (j < 0 || j >= next.length) return; [next[i], next[j]] = [next[j], next[i]]; setFeat({ items: next });
   };
 
+  const { data: resolvedFeatured = [] } = useFeaturedProducts(cfg.featured.items || []);
+  const featuredNameFor = (kind: FeaturedKind, id: string) =>
+    resolvedFeatured.find((r) => r.kind === kind && r.ref_id === id)?.title;
+
   if (loading) {
     return <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
@@ -318,10 +322,7 @@ export default function AdminLandingPage() {
 
           {(() => {
             const items = cfg.featured.items || [];
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const { data: resolved = [] } = useFeaturedProducts(items);
-            const nameFor = (kind: FeaturedKind, id: string) =>
-              resolved.find((r) => r.kind === kind && r.ref_id === id)?.title;
+            const nameFor = featuredNameFor;
             const toggle = (kind: FeaturedKind, id: string) => {
               const idx = items.findIndex((it) => it.kind === kind && it.ref_id === id);
               if (idx >= 0) removeFeat(idx);
