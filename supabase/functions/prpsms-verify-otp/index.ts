@@ -78,7 +78,17 @@ Deno.serve(async (req) => {
       let userId = existingProfile?.user_id as string | undefined;
       let userEmail: string | undefined;
 
-      if (userId) {
+      // Fallback: search auth users for this phone (handles half-created accounts).
+      if (!userId) {
+        const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
+        const match = list?.users?.find((u) => u.phone === e164.replace(/^\+/, "") || u.phone === e164);
+        if (match) {
+          userId = match.id;
+          userEmail = match.email ?? undefined;
+        }
+      }
+
+      if (userId && !userEmail) {
         const { data: u } = await supabase.auth.admin.getUserById(userId);
         userEmail = u?.user?.email ?? undefined;
       }
@@ -88,7 +98,6 @@ Deno.serve(async (req) => {
         const { data: created, error: cErr } = await supabase.auth.admin.createUser({
           email: placeholderEmail,
           email_confirm: true,
-          phone: e164,
           user_metadata: { phone: e164, signup_method: "phone_otp" },
         });
         if (cErr) throw cErr;
@@ -96,8 +105,9 @@ Deno.serve(async (req) => {
         userEmail = placeholderEmail;
         await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true, phone: e164 }).eq("user_id", userId);
       } else {
-        await supabase.from("profiles").update({ phone_verified: true }).eq("user_id", userId);
+        await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true, phone: e164 }).eq("user_id", userId);
       }
+
 
       // Mint a magic link the client will exchange.
       const { data: link, error: linkErr } = await supabase.auth.admin.generateLink({
