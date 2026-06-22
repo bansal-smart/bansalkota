@@ -1,10 +1,10 @@
-import vkBansalPhotoAsset from "@/assets/leadership/vk-bansal.webp.asset.json";
+import vkBansalPhotoAsset from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
 const vkBansalPhoto = vkBansalPhotoAsset.url;
-import sameerBansalPhotoAsset from "@/assets/leader-portraits/sameer-bansal-latest.jpg.asset.json";
+import sameerBansalPhotoAsset from "@/assets/leader-portraits/sameer-bansal-latest-v2.png.asset.json";
 const sameerBansalPhoto = sameerBansalPhotoAsset.url;
-import mahimaBansalPhotoAsset from "@/assets/leader-portraits/mahima-bansal-latest.jpg.asset.json";
+import mahimaBansalPhotoAsset from "@/assets/leader-portraits/mahima-bansal-latest-v2.png.asset.json";
 const mahimaBansalPhoto = mahimaBansalPhotoAsset.url;
-import neelamBansalPhotoAsset from "@/assets/leader-portraits/neelam-bansal-latest.jpg.asset.json";
+import neelamBansalPhotoAsset from "@/assets/leader-portraits/neelam-bansal-latest-v2.png.asset.json";
 const neelamBansalPhoto = neelamBansalPhotoAsset.url;
 
 export const bansalStats = [

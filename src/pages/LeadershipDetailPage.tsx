@@ -17,10 +17,10 @@ import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png.asset.json";
 import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.json";
 import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
 import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
-import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-profile.png.asset.json";
-import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest.jpg.asset.json";
-import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest.jpg.asset.json";
-import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest.jpg.asset.json";
+import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
+import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest-v2.png.asset.json";
+import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest-v2.png.asset.json";
+import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest-v2.png.asset.json";
 
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg.url,

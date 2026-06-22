@@ -3,7 +3,7 @@ import { ArrowRight, Eye, Target, BookOpen, Quote, Newspaper } from "lucide-reac
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
-import vkBansalPortraitAsset from "@/assets/leadership/vk-bansal.webp.asset.json";
+import vkBansalPortraitAsset from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
 import heroBgAsset from "@/assets/about/about-hero-bg.png.asset.json";
 import wsjFeatureAsset from "@/assets/about/wsj-feature.png.asset.json";
 import wsjFullAsset from "@/assets/about/wsj-fullpage.png.asset.json";
