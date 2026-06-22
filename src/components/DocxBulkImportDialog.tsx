@@ -862,6 +862,7 @@ const DocxBulkImportDialog = ({
           )}
         </div>
       </div>
+      <MasterImportInstructions open={showInstructions} onClose={() => setShowInstructions(false)} />
     </div>
   );
 };
