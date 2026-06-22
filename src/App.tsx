@@ -141,6 +141,7 @@ const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
+const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -359,6 +360,7 @@ const App = () => (
               <Route path="/admin/overview" element={<AdminDashboard />} />
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
               <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
+              <Route path="/admin/sms-broadcasts" element={<AdminSmsBroadcastsPage />} />
             </Route>
 
             {/* Centre admin portal */}

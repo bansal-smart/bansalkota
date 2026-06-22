@@ -28,6 +28,7 @@ import {
   BarChart3,
   LifeBuoy,
   Megaphone,
+  MessageSquare,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -68,6 +69,7 @@ const baseNav: NavItem[] = [
   { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
   { label: "Reports", icon: Flag, path: "/admin/reports" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },
+  { label: "SMS Broadcasts", icon: MessageSquare, path: "/admin/sms-broadcasts" },
 ];
 
 // Items only super-admin sees: revenue, settings, moderation.

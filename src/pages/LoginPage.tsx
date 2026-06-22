@@ -59,12 +59,19 @@ const LoginPage = () => {
       return;
     }
     setSubmitting(true);
-    // Mock: pretend we sent it
-    await new Promise((r) => setTimeout(r, 500));
-    setSubmitting(false);
-    setStep("otp");
-    startTimer();
-    toast.success("OTP sent. (Dev: any 6 digits work)");
+    try {
+      const { error } = await supabase.functions.invoke("prpsms-send-otp", {
+        body: { phone: `+91${mobile}`, purpose: "login" },
+      });
+      if (error) throw new Error(error.message);
+      setStep("otp");
+      startTimer();
+      toast.success("OTP sent to your mobile.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send OTP");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleOtpChange = (i: number, v: string) => {
@@ -83,14 +90,16 @@ const LoginPage = () => {
     }
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("mobile-otp-mock", {
-        body: { mobile: `+91${mobile}`, otp: code },
+      const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
+        body: { phone: `+91${mobile}`, otp: code, purpose: "login" },
       });
-      if (error || !data?.email || !data?.password) {
+      if (error || !data?.token_hash || !data?.email) {
         throw new Error(error?.message || "Could not verify OTP");
       }
-      const signIn = await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
-      if (signIn.error) throw signIn.error;
+      const verify = await supabase.auth.verifyOtp({
+        type: "magiclink", token_hash: data.token_hash,
+      });
+      if (verify.error) throw verify.error;
       toast.success("Logged in!");
       // Redirect handled by useEffect when session settles.
     } catch (e) {
