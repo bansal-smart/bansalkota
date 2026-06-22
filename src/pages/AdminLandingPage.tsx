@@ -338,7 +338,7 @@ export default function AdminLandingPage() {
                     {items.map((it, i) => (
                       <div key={i} className="grid items-center gap-2 rounded-md border border-border bg-card p-2 md:grid-cols-[110px_1fr_1fr_1fr_auto]">
                         <span className="rounded bg-primary/10 px-2 py-1 text-center text-[10px] font-bold uppercase text-primary">{it.kind.replace("_", " ")}</span>
-                        <div className="truncate text-xs font-semibold">{it.ref_id || <span className="text-muted-foreground">—</span>}</div>
+                        <div className="truncate text-xs font-semibold" title={it.ref_id}>{nameFor(it.kind, it.ref_id) || it.ref_id || <span className="text-muted-foreground">—</span>}</div>
                         <Input className="h-8" placeholder="Badge (e.g. NEW)" value={it.badge || ""} onChange={(e) => updateFeat(i, { badge: e.target.value })} />
                         <Input className="h-8" placeholder="Link override (optional)" value={it.link_override || ""} onChange={(e) => updateFeat(i, { link_override: e.target.value })} />
                         <div className="flex gap-1">
