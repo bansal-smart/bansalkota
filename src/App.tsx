@@ -360,6 +360,7 @@ const App = () => (
               <Route path="/admin/overview" element={<AdminDashboard />} />
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
               <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
+              <Route path="/admin/sms-broadcasts" element={<AdminSmsBroadcastsPage />} />
             </Route>
 
             {/* Centre admin portal */}
