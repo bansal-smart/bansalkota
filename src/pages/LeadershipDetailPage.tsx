@@ -13,18 +13,27 @@ import BansalButton from "@/components/bansal/BansalButton";
 import { leadershipPhotos } from "@/content/bansal/about";
 import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
-import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
 import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png.asset.json";
 import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.json";
 import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
 import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
+import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-profile.png.asset.json";
+import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-profile.png.asset.json";
+import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-profile.png.asset.json";
+import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-profile.png.asset.json";
 
-/** Per-leader hero background image (face on the right side of the frame). */
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg.url,
   "sameer-bansal": sameerHeroBg.url,
   "neelam-bansal": neelamHeroBg.url,
   "mahima-bansal": mahimaHeroBg.url,
+};
+
+const LEADER_PROFILE_PHOTO: Record<string, string> = {
+  "vk-bansal": vkProfilePhoto.url,
+  "sameer-bansal": sameerProfilePhoto.url,
+  "neelam-bansal": neelamProfilePhoto.url,
+  "mahima-bansal": mahimaProfilePhoto.url,
 };
 
 const SECTION = "py-16 md:py-24";
@@ -55,8 +64,7 @@ export default function LeadershipDetailPage() {
   }
   if (!profile) return <Navigate to="/about" replace />;
 
-  const portrait =
-    extra?.heroPhotoOverride || profile.hero_photo_url || leadershipPhotos[slug];
+  const portrait = LEADER_PROFILE_PHOTO[slug] || profile.hero_photo_url || leadershipPhotos[slug];
   const heroBg = LEADER_HERO_BG[slug] || portrait;
   const nameParts = profile.name.split(" ");
   const firstName = nameParts.slice(0, -1).join(" ");
@@ -399,7 +407,7 @@ export default function LeadershipDetailPage() {
                 >
                   <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl overflow-hidden ring-4 ring-bansal-orange/20 shadow-xl">
                     <img
-                      src={vkPortrait.url}
+                      src={vkProfilePhoto.url}
                       alt="V.K. Bansal Sir"
                       className="w-full h-full object-cover"
                       loading="lazy"
