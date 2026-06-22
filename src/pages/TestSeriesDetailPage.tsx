@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingCart, Tag, Trophy } from "lucide-react";
 import { useTestSeriesDetail } from "@/hooks/useTestSeries";
 import { useAppStore } from "@/store/useAppStore";
-import { supabase } from "@/integrations/supabase/client";
+import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -24,31 +24,13 @@ const TestSeriesDetailPage = () => {
     if (!item) return;
 
     setPlacing(true);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        subtotal: item.price,
-        total: item.price,
-        currency: "INR",
-        status: "pending",
-        notes: `Test series: ${item.title}`,
-      })
-      .select("id")
-      .single();
-    if (!error && order) {
-      await supabase.from("order_items").insert({
-        order_id: order.id,
-        item_type: "book",
-        item_id: item.id,
-        item_title: item.title,
-        unit_price: item.price,
-        quantity: 1,
-      });
+    try {
+      await startCashfreeCheckout({ orderType: "test_series", testSeriesId: item.id });
+      // redirects to Cashfree
+    } catch (e) {
+      setPlacing(false);
+      toast.error((e as Error).message || "Could not start payment");
     }
-    setPlacing(false);
-    if (error) toast.error("Could not place order");
-    else toast.success("Enrollment requested — our team will activate your access shortly.");
   };
 
   if (loading) {

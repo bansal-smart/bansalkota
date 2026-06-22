@@ -33,3 +33,6 @@ verify_jwt = false
 [functions.mobile-otp-mock]
 verify_jwt = false
 
+
+[functions.cashfree-webhook]
+verify_jwt = false
