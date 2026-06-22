@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
+import MasterImportInstructions from "@/components/MasterImportInstructions";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
