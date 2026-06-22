@@ -14,16 +14,17 @@ import { leadershipPhotos } from "@/content/bansal/about";
 import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
 import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
+import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png.asset.json";
+import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.json";
+import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
+import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
 
-/**
- * Per-leader hero background. These are placeholders today — drop the user's
- * real banners in here later (one constant per slug) and nothing else changes.
- */
+/** Per-leader hero background image (face on the right side of the frame). */
 const LEADER_HERO_BG: Record<string, string> = {
-  "vk-bansal": leadershipPhotos["vk-bansal"],
-  "sameer-bansal": leadershipPhotos["sameer-bansal"],
-  "neelam-bansal": leadershipPhotos["neelam-bansal"],
-  "mahima-bansal": leadershipPhotos["mahima-bansal"],
+  "vk-bansal": vkHeroBg.url,
+  "sameer-bansal": sameerHeroBg.url,
+  "neelam-bansal": neelamHeroBg.url,
+  "mahima-bansal": mahimaHeroBg.url,
 };
 
 const SECTION = "py-16 md:py-24";
