@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
-import { supabase } from "@/integrations/supabase/client";
+import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 
 const CheckoutPage = () => {
-  const { cart, user, clearCart } = useAppStore();
+  const { cart, user } = useAppStore();
   const navigate = useNavigate();
   const [placing, setPlacing] = useState(false);
   const [form, setForm] = useState({
@@ -38,51 +38,17 @@ const CheckoutPage = () => {
     }
 
     setPlacing(true);
-    const { data: order, error } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        status: "pending",
-        subtotal,
-        shipping_fee: shippingFee,
-        total,
-        currency: "INR",
-        shipping_name: form.name,
-        shipping_phone: form.phone,
-        shipping_address: form.address,
-        shipping_city: form.city,
-        shipping_state: form.state,
-        shipping_pincode: form.pincode,
-      })
-      .select("id")
-      .single();
-
-    if (error || !order) {
+    try {
+      await startCashfreeCheckout({
+        orderType: "cart",
+        items: cart.map((c) => ({ type: c.type, id: c.id, quantity: c.quantity })),
+        shipping: form,
+      });
+      // Browser redirects to Cashfree; control returns via /payments/return
+    } catch (e) {
       setPlacing(false);
-      toast.error(error?.message ?? "Could not place order");
-      return;
+      toast.error((e as Error).message || "Could not start payment");
     }
-
-    const items = cart.map((c) => ({
-      order_id: order.id,
-      item_type: c.type,
-      item_id: c.id,
-      item_title: c.title,
-      unit_price: c.price,
-      quantity: c.quantity,
-    }));
-    const { error: itemsErr } = await supabase.from("order_items").insert(items);
-
-    setPlacing(false);
-
-    if (itemsErr) {
-      toast.error("Order saved but items failed: " + itemsErr.message);
-      return;
-    }
-
-    clearCart();
-    toast.success("Order placed! Our team will contact you to confirm payment & delivery.");
-    navigate("/orders");
   };
 
   return (
@@ -185,10 +151,10 @@ const CheckoutPage = () => {
                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[hsl(var(--bansal-orange))] py-3 font-bold text-white hover:bg-[hsl(var(--bansal-orange))]/90 disabled:opacity-50"
               >
                 {placing && <Loader2 className="h-4 w-4 animate-spin" />}
-                Place Order
+                Pay ₹{total.toLocaleString()}
               </button>
               <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                <ShieldCheck className="h-3.5 w-3.5" /> Payment via Razorpay activates once test keys are connected.
+                <ShieldCheck className="h-3.5 w-3.5" /> Secure payment by Cashfree — UPI, Cards, Netbanking, Wallets.
               </p>
             </div>
           </aside>
