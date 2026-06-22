@@ -97,7 +97,7 @@ export default function LandingNewPage() {
         <FeaturedProductsSection data={config.featured} />
       )}
 
-      {config.cta?.enabled !== false && (config.cta?.headline || config.cta?.cta_label) && (
+      {config.cta?.enabled !== false && (config.cta?.headline || config.cta?.button_label) && (
         <FinalCtaSection data={config.cta} />
       )}
 
