@@ -41,14 +41,34 @@ const CenterWebsiteEnquiriesPage = () => {
     load();
   };
 
+  const handleExport = () => {
+    if (items.length === 0) return toast.error("No enquiries to export");
+    exportCsv("centre-website-enquiries", items, [
+      { key: "name", label: "Name" },
+      { key: "phone", label: "Phone" },
+      { key: "email", label: "Email" },
+      { key: "category", label: "Type" },
+      { key: "class_level", label: "Class" },
+      { key: "message", label: "Description" },
+      { key: "status", label: "Status" },
+      { key: "created_at", label: "Submitted", value: (r) => new Date(r.created_at).toLocaleString() },
+    ]);
+  };
+
   if (!primaryCenterId) return <div className="p-8 text-sm text-muted-foreground">No centre assigned.</div>;
 
   return (
     <div className="p-6 lg:p-8 space-y-4">
-      <div>
-        <h1 className="text-2xl font-black font-display text-foreground">Website Enquiries</h1>
-        <p className="text-sm text-muted-foreground">Admission, course & general enquiries from your centre's public page.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black font-display text-foreground">Website Enquiries</h1>
+          <p className="text-sm text-muted-foreground">Admission, course & general enquiries from your centre's public page.</p>
+        </div>
+        <Button variant="outline" onClick={handleExport} disabled={items.length === 0}>
+          <Download className="mr-2 h-4 w-4" /> Export CSV
+        </Button>
       </div>
+
 
       <div className="flex gap-2 flex-wrap">
         {["all", ...STATUSES].map((s) => (
