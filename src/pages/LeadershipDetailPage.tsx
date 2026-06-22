@@ -18,9 +18,9 @@ import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.j
 import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
 import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
 import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-profile.png.asset.json";
-import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-profile.png.asset.json";
-import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-profile.png.asset.json";
-import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-profile.png.asset.json";
+import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest.jpg.asset.json";
+import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest.jpg.asset.json";
+import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest.jpg.asset.json";
 
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg.url,
@@ -34,6 +34,13 @@ const LEADER_PROFILE_PHOTO: Record<string, string> = {
   "sameer-bansal": sameerProfilePhoto.url,
   "neelam-bansal": neelamProfilePhoto.url,
   "mahima-bansal": mahimaProfilePhoto.url,
+};
+
+const HONORIFIC: Record<string, string> = {
+  "vk-bansal": "Sir",
+  "sameer-bansal": "Sir",
+  "mahima-bansal": "Ma'am",
+  "neelam-bansal": "Ma'am",
 };
 
 const SECTION = "py-16 md:py-24";
@@ -69,6 +76,8 @@ export default function LeadershipDetailPage() {
   const nameParts = profile.name.split(" ");
   const firstName = nameParts.slice(0, -1).join(" ");
   const lastName = nameParts[nameParts.length - 1];
+  const honorific = HONORIFIC[slug] ?? "";
+  const displayFirst = honorific ? `${firstName || profile.name} ${honorific}` : (firstName || profile.name);
 
   return (
     <div className="bg-background">
@@ -168,7 +177,7 @@ export default function LeadershipDetailPage() {
 
             {/* Text */}
             <div className="md:col-span-7">
-              <Eyebrow>About {profile.name.split(" ")[0]}</Eyebrow>
+              <Eyebrow>About {displayFirst}</Eyebrow>
               {profile.pull_quote && (
                 <blockquote className="relative font-display italic text-xl md:text-3xl font-semibold text-bansal-blue leading-[1.25] tracking-tight mb-6">
                   <Quote
@@ -189,6 +198,69 @@ export default function LeadershipDetailPage() {
           </div>
         </div>
       </section>
+
+      {/* ============= SAMEER: credential ribbon + Books (right after About) ============= */}
+      {slug === "sameer-bansal" && (
+        <>
+          <section className="bg-bansal-blue text-white py-10">
+            <div className={`${CONTAINER} max-w-6xl`}>
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                <div className="shrink-0 mx-auto md:mx-0 inline-flex items-center justify-center h-16 w-16 rounded-full bg-bansal-orange/20 ring-2 ring-bansal-orange/40">
+                  <AwardIcon className="h-7 w-7 text-bansal-orange" />
+                </div>
+                <p className="font-display text-base md:text-2xl font-semibold leading-relaxed text-center md:text-left">
+                  <span className="text-bansal-orange">Author of 4 best-selling JEE preparation books</span>
+                  <span className="mx-2 text-white/40">·</span>
+                  Mentor of <span className="text-bansal-orange">All India Rank 1</span> and{" "}
+                  <span className="text-bansal-orange">single-digit ranks</span> several times.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className={`${SECTION} bg-bansal-cream`}>
+            <div className={`${CONTAINER} max-w-6xl`}>
+              <div className="flex items-center gap-3 mb-4">
+                <BookOpen className="h-5 w-5 text-bansal-orange" />
+                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
+                  Authored Library
+                </span>
+              </div>
+              <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-3 tracking-tight">
+                Books by Sameer Sir
+              </h2>
+              <p className="text-bansal-gray max-w-2xl mb-10">
+                A four-volume problem-solving series read by JEE aspirants across India — written from a quarter-century inside the classroom.
+              </p>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {sameerBooks.map((b) => (
+                  <Link
+                    key={b.title}
+                    to="/e-store"
+                    className="group h-full rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl block"
+                  >
+                    <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gradient-to-br from-bansal-cream to-bansal-blue/5 mb-4 flex items-center justify-center p-3">
+                      <img
+                        src={b.cover}
+                        alt={`${b.title} cover`}
+                        loading="lazy"
+                        className="max-h-full max-w-full object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="font-display text-lg font-extrabold text-bansal-blue leading-tight">
+                      {b.title}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-bansal-orange uppercase tracking-wide">
+                      {b.subtitle}
+                    </div>
+                    <div className="mt-2 text-[11px] text-bansal-gray">{b.edition}</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* ============= CHAPTERS ============= */}
       {sections.length > 0 && (
@@ -332,71 +404,9 @@ export default function LeadershipDetailPage() {
         </section>
       )}
 
-      {/* ============= SAMEER: credential ribbon + books + V.K. continuity ============= */}
+      {/* ============= SAMEER: V.K. continuity ============= */}
       {slug === "sameer-bansal" && (
         <>
-          <section className="bg-bansal-blue text-white py-10">
-            <div className={`${CONTAINER} max-w-6xl`}>
-              <div className="flex flex-col md:flex-row md:items-center gap-6">
-                <div className="shrink-0 mx-auto md:mx-0 inline-flex items-center justify-center h-16 w-16 rounded-full bg-bansal-orange/20 ring-2 ring-bansal-orange/40">
-                  <AwardIcon className="h-7 w-7 text-bansal-orange" />
-                </div>
-                <p className="font-display text-base md:text-2xl font-semibold leading-relaxed text-center md:text-left">
-                  <span className="text-bansal-orange">
-                    Author of 4 best-selling JEE preparation books
-                  </span>
-                  <span className="mx-2 text-white/40">·</span>
-                  Mentor of{" "}
-                  <span className="text-bansal-orange">All India Rank 1</span> and{" "}
-                  <span className="text-bansal-orange">single-digit ranks</span>{" "}
-                  several times.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className={`${SECTION} bg-bansal-cream`}>
-            <div className={`${CONTAINER} max-w-6xl`}>
-              <div className="flex items-center gap-3 mb-4">
-                <BookOpen className="h-5 w-5 text-bansal-orange" />
-                <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
-                  Authored Library
-                </span>
-              </div>
-              <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-3 tracking-tight">
-                Books by Sameer Sir
-              </h2>
-              <p className="text-bansal-gray max-w-2xl mb-10">
-                A four-volume problem-solving series read by JEE aspirants
-                across India — written from a quarter-century inside the classroom.
-              </p>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                {sameerBooks.map((b) => (
-                  <Link
-                    key={b.title}
-                    to="/e-store"
-                    className="group h-full rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl block"
-                  >
-                    <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gradient-to-br from-bansal-cream to-bansal-blue/5 mb-4 flex items-center justify-center p-3">
-                      <img
-                        src={b.cover}
-                        alt={`${b.title} cover`}
-                        loading="lazy"
-                        className="max-h-full max-w-full object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="font-display text-lg font-extrabold text-bansal-blue leading-tight">
-                      {b.title}
-                    </div>
-                    <div className="mt-1 text-xs font-semibold text-bansal-orange uppercase tracking-wide">
-                      {b.subtitle}
-                    </div>
-                    <div className="mt-2 text-[11px] text-bansal-gray">{b.edition}</div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
 
           <section className={SECTION}>
             <div className={`${CONTAINER} max-w-5xl`}>
@@ -452,7 +462,7 @@ export default function LeadershipDetailPage() {
             Continue the Bansal Journey
           </h2>
           <p className="text-white/80 mb-8">
-            Inspired by {profile.name.split(" ")[0]}? Talk to our admissions team
+            Inspired by {displayFirst}? Talk to our admissions team
             or explore more of the family.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
