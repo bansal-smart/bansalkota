@@ -226,11 +226,25 @@ const AdminTestResultPage = () => {
       .from("tests")
       .update({ results_released_at: new Date().toISOString() })
       .eq("id", test.id);
-    setReleasing(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setReleasing(false);
+      return toast.error(error.message);
+    }
     toast.success("Results released — students can now view ranks");
+    // Fire-and-forget SMS broadcast to all students who submitted
+    supabase.functions
+      .invoke("prpsms-send-result-sms", { body: { test_id: test.id } })
+      .then(({ data, error: sErr }) => {
+        if (sErr) {
+          toast.error(`Result SMS failed: ${sErr.message}`);
+        } else if (data?.sent !== undefined) {
+          toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed`);
+        }
+      });
+    setReleasing(false);
     load();
   };
+
 
   const backRelease = async () => {
     if (!test) return;

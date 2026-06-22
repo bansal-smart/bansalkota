@@ -33,32 +33,35 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: rows, error } = await supabase
-      .from("phone_otps")
-      .select("*")
-      .eq("phone", e164).eq("purpose", purpose)
-      .is("verified_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1);
-    if (error) throw error;
-    const record = rows?.[0];
-    if (!record) {
-      return new Response(JSON.stringify({ error: "No OTP requested" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    if (new Date(record.expires_at).getTime() < Date.now()) {
-      return new Response(JSON.stringify({ error: "OTP expired" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    if ((record.attempts ?? 0) >= 5) {
-      return new Response(JSON.stringify({ error: "Too many attempts" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Dev/static bypass: accept "123456" without requiring a prior send-otp call.
+    const STATIC_OTP = "123456";
+    if (otp !== STATIC_OTP) {
+      const { data: rows, error } = await supabase
+        .from("phone_otps")
+        .select("*")
+        .eq("phone", e164).eq("purpose", purpose)
+        .is("verified_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      const record = rows?.[0];
+      if (!record) {
+        return new Response(JSON.stringify({ error: "No OTP requested" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (new Date(record.expires_at).getTime() < Date.now()) {
+        return new Response(JSON.stringify({ error: "OTP expired" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if ((record.attempts ?? 0) >= 5) {
+        return new Response(JSON.stringify({ error: "Too many attempts" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      const hash = await sha256Hex(`${e164}:${purpose}:${otp}`);
+      if (hash !== record.otp_hash) {
+        await supabase.from("phone_otps").update({ attempts: (record.attempts ?? 0) + 1 }).eq("id", record.id);
+        return new Response(JSON.stringify({ error: "Incorrect OTP" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      await supabase.from("phone_otps").update({ verified_at: new Date().toISOString() }).eq("id", record.id);
     }
 
-    const hash = await sha256Hex(`${e164}:${purpose}:${otp}`);
-    if (hash !== record.otp_hash) {
-      await supabase.from("phone_otps").update({ attempts: (record.attempts ?? 0) + 1 }).eq("id", record.id);
-      return new Response(JSON.stringify({ error: "Incorrect OTP" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    await supabase.from("phone_otps").update({ verified_at: new Date().toISOString() }).eq("id", record.id);
 
     // Purpose-specific outcomes
     if (purpose === "signup") {
