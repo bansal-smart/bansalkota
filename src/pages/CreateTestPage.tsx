@@ -1510,6 +1510,7 @@ const CreateTestPage = () => {
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
         examPattern={examPattern}
       />
+      <MasterImportInstructions open={masterInstructionsOpen} onClose={() => setMasterInstructionsOpen(false)} />
     </DndContext>
   );
 };
