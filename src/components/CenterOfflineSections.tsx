@@ -200,31 +200,35 @@ const CourseEnquiryModal = ({ course, centerId, onClose }: { course: Course; cen
   );
 };
 
+const ENQUIRY_TYPES = [
+  { value: "course", label: "Course" },
+  { value: "admission", label: "Admission" },
+  { value: "general", label: "General" },
+];
+const CLASS_LEVELS = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+
 const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: string; centerCity: string; onClose: () => void }) => {
-  const [form, setForm] = useState({ name: "", phone: "", email: "", message: "" });
+  const [form, setForm] = useState({ name: "", phone: "", enquiry_type: "admission", class_level: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return toast.error("Name, email and message are required");
+    if (!form.name.trim() || !form.phone.trim()) return toast.error("Name and phone are required");
+    if (!form.enquiry_type) return toast.error("Please choose an enquiry type");
     setSubmitting(true);
     const { error } = await (supabase as any).from("enquiries").insert({
       name: form.name,
-      email: form.email,
-      phone: form.phone || null,
-      message: form.message,
+      email: null,
+      phone: form.phone,
+      message: form.message || `${form.enquiry_type} enquiry`,
       source: "admission",
       source_type: "admission",
       centre_id: centerId,
+      category: form.enquiry_type,
+      class_level: form.class_level || null,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Enquiry sent! The centre will reach out within 24 hours.");
-    void sendConfirmation({
-      templateName: "enquiry-confirmation",
-      recipientEmail: form.email,
-      idempotencyKey: `enquiry-admission-${centerId}-${form.email}-${Date.now()}`,
-      templateData: { name: form.name, source: `${centerCity} admissions`, message: form.message },
-    });
     onClose();
   };
 
@@ -236,8 +240,15 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
           <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
         </div>
         <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
+        <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone number" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
+        <select value={form.enquiry_type} onChange={(e) => setForm({ ...form, enquiry_type: e.target.value })} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm">
+          <option value="">Enquiry type</option>
+          {ENQUIRY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <select value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm">
+          <option value="">Class</option>
+          {CLASS_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
         <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us about your goal (e.g. JEE 2026, Class 11)" rows={4} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
         <button onClick={submit} disabled={submitting} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-bansal-orange py-2.5 text-sm font-bold text-white disabled:opacity-60">
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send enquiry
@@ -246,5 +257,6 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
     </div>
   );
 };
+
 
 export default CenterOfflineSections;

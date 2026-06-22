@@ -1357,8 +1357,9 @@ export type Database = {
           assigned_to: string | null
           category: string | null
           centre_id: string | null
+          class_level: string | null
           created_at: string
-          email: string
+          email: string | null
           id: string
           message: string
           name: string
@@ -1375,8 +1376,9 @@ export type Database = {
           assigned_to?: string | null
           category?: string | null
           centre_id?: string | null
+          class_level?: string | null
           created_at?: string
-          email: string
+          email?: string | null
           id?: string
           message: string
           name: string
@@ -1393,8 +1395,9 @@ export type Database = {
           assigned_to?: string | null
           category?: string | null
           centre_id?: string | null
+          class_level?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           id?: string
           message?: string
           name?: string
