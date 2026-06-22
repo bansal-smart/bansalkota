@@ -1502,10 +1502,13 @@ export type Database = {
       }
       landing_page_config: {
         Row: {
+          about: Json
           banners: Json
           contact: Json
+          cta: Json
           details: Json
           faqs: Json
+          featured: Json
           form_config: Json
           hero: Json
           highlights: Json
@@ -1513,14 +1516,18 @@ export type Database = {
           is_published: boolean
           outcomes: Json
           overview: string | null
+          top_banner: Json
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          about?: Json
           banners?: Json
           contact?: Json
+          cta?: Json
           details?: Json
           faqs?: Json
+          featured?: Json
           form_config?: Json
           hero?: Json
           highlights?: Json
@@ -1528,14 +1535,18 @@ export type Database = {
           is_published?: boolean
           outcomes?: Json
           overview?: string | null
+          top_banner?: Json
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          about?: Json
           banners?: Json
           contact?: Json
+          cta?: Json
           details?: Json
           faqs?: Json
+          featured?: Json
           form_config?: Json
           hero?: Json
           highlights?: Json
@@ -1543,6 +1554,7 @@ export type Database = {
           is_published?: boolean
           outcomes?: Json
           overview?: string | null
+          top_banner?: Json
           updated_at?: string
           updated_by?: string | null
         }
