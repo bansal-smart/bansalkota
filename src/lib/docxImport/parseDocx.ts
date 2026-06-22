@@ -502,6 +502,16 @@ const flushBuffer = (
     }
   }
 
+  // Per-question Type: tag wins over everything else.
+  if (buf.forcedType) {
+    if (buf.forcedType === "mcq-multi" && type === "mcq-single" && typeof correctAnswer === "number") {
+      correctAnswer = [correctAnswer];
+    } else if (buf.forcedType === "mcq-single" && Array.isArray(correctAnswer) && correctAnswer.length === 1) {
+      correctAnswer = correctAnswer[0];
+    }
+    type = buf.forcedType;
+  }
+
   // Sanity: integer/numerical question dropped its bogus options
   if ((type === "integer" || type === "numerical") && options.length > 0) {
     options = [];
