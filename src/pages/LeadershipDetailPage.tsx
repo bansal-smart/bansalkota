@@ -76,6 +76,8 @@ export default function LeadershipDetailPage() {
   const nameParts = profile.name.split(" ");
   const firstName = nameParts.slice(0, -1).join(" ");
   const lastName = nameParts[nameParts.length - 1];
+  const honorific = HONORIFIC[slug] ?? "";
+  const displayFirst = honorific ? `${firstName || profile.name} ${honorific}` : (firstName || profile.name);
 
   return (
     <div className="bg-background">
