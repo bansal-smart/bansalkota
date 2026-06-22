@@ -36,7 +36,7 @@ interface TemplateDef {
 
 export const TEMPLATES: Record<TemplateName, TemplateDef> = {
   "PaymentGateway_OTP": {
-    body: "Dear Applicant, {#var#} is your verification code for Online Application at Bansal Classes.",
+    body: "Dear Applicant, {#var#} is your verification code for Online Application at Bansal Classes. Team Bansal",
     vars: ["otp"],
     description: "OTP for signup / login / password reset / sensitive actions",
   },
