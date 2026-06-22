@@ -3920,6 +3920,16 @@ export type Database = {
           recording_url: string
         }[]
       }
+      get_own_profile_lock_fields: {
+        Args: never
+        Returns: {
+          batch_id: string
+          centre_id: string
+          is_bansal_offline_student: boolean
+          roll_number: string
+          school_id: string
+        }[]
+      }
       get_test_question_answers: {
         Args: { _test_id: string }
         Returns: {
