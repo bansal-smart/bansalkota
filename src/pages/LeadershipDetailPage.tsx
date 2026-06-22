@@ -64,8 +64,7 @@ export default function LeadershipDetailPage() {
   }
   if (!profile) return <Navigate to="/about" replace />;
 
-  const portrait =
-    extra?.heroPhotoOverride || profile.hero_photo_url || leadershipPhotos[slug];
+  const portrait = LEADER_PROFILE_PHOTO[slug] || profile.hero_photo_url || leadershipPhotos[slug];
   const heroBg = LEADER_HERO_BG[slug] || portrait;
   const nameParts = profile.name.split(" ");
   const firstName = nameParts.slice(0, -1).join(" ");
