@@ -160,6 +160,10 @@ export default function AdminLandingPage() {
     if (j < 0 || j >= next.length) return; [next[i], next[j]] = [next[j], next[i]]; setFeat({ items: next });
   };
 
+  const { data: resolvedFeatured = [] } = useFeaturedProducts(cfg.featured.items || []);
+  const featuredNameFor = (kind: FeaturedKind, id: string) =>
+    resolvedFeatured.find((r) => r.kind === kind && r.ref_id === id)?.title;
+
   if (loading) {
     return <div className="flex h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
