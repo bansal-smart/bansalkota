@@ -66,6 +66,49 @@ export type FormConfig = {
   success_message?: string;
 };
 
+export type TopBannerConfig = {
+  enabled?: boolean;
+  image_url?: string;
+  alt?: string;
+  headline?: string;
+  subheading?: string;
+  cta_label?: string;
+  cta_link?: string;
+  link?: string;
+};
+
+export type UspItem = { icon: string; title: string; text: string };
+export type AboutConfig = {
+  enabled?: boolean;
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  usps: UspItem[];
+};
+
+export type FeaturedKind = "test_series" | "course" | "book";
+export type FeaturedItem = {
+  kind: FeaturedKind;
+  ref_id: string;
+  badge?: string;
+  link_override?: string;
+};
+export type FeaturedConfig = {
+  enabled?: boolean;
+  title?: string;
+  subtitle?: string;
+  items: FeaturedItem[];
+};
+
+export type CtaConfig = {
+  enabled?: boolean;
+  headline?: string;
+  subheading?: string;
+  button_label?: string;
+  button_link?: string;
+  background_image_url?: string;
+};
+
 export type LandingConfig = {
   id: string;
   hero: HeroConfig;
@@ -77,5 +120,10 @@ export type LandingConfig = {
   contact: ContactBlock;
   form_config: FormConfig;
   banners: BannerItem[];
+  top_banner: TopBannerConfig;
+  about: AboutConfig;
+  featured: FeaturedConfig;
+  cta: CtaConfig;
   is_published: boolean;
 };
+
