@@ -18,7 +18,7 @@ import TablePagination from "@/components/TablePagination";
 type Enquiry = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   message: string;
   source: string;
@@ -26,7 +26,10 @@ type Enquiry = {
   status: string;
   staff_notes: string | null;
   created_at: string;
+  category: string | null;
+  class_level: string | null;
 };
+
 
 const statusStyle: Record<string, string> = {
   new: "bg-warning/15 text-warning border-warning/30",
