@@ -316,38 +316,58 @@ export default function AdminLandingPage() {
             <div><Label>Subtitle</Label><Input value={cfg.featured.subtitle || ""} onChange={(e) => setFeat({ subtitle: e.target.value })} /></div>
           </div>
 
-          <div className="space-y-3">
-            {(cfg.featured.items || []).map((it, i) => (
-              <div key={i} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[180px_1fr_1fr_auto]">
-                <div>
-                  <Label className="text-xs">Kind</Label>
-                  <Select value={it.kind} onValueChange={(v) => updateFeat(i, { kind: v as FeaturedKind, ref_id: "" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="test_series">Test Series</SelectItem>
-                      <SelectItem value="course">Course</SelectItem>
-                      <SelectItem value="book">Study Material (Book)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Pick product</Label>
-                  <ProductPicker kind={it.kind} value={it.ref_id} onChange={(id) => updateFeat(i, { ref_id: id })} />
-                </div>
-                <div className="space-y-2">
-                  <div><Label className="text-xs">Badge (optional)</Label><Input placeholder="NEW / BESTSELLER" value={it.badge || ""} onChange={(e) => updateFeat(i, { badge: e.target.value })} /></div>
-                  <div><Label className="text-xs">Link override (optional)</Label><Input placeholder="/custom-link" value={it.link_override || ""} onChange={(e) => updateFeat(i, { link_override: e.target.value })} /></div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => moveFeat(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => moveFeat(i, 1)} disabled={i === (cfg.featured.items?.length || 0) - 1}><ArrowDown className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => removeFeat(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Button variant="outline" onClick={addFeat}><Plus className="mr-2 h-4 w-4" /> Add product</Button>
-          <p className="text-xs text-muted-foreground">Cards pull live title, image and price from the linked record.</p>
+          {(() => {
+            const items = cfg.featured.items || [];
+            const toggle = (kind: FeaturedKind, id: string) => {
+              const idx = items.findIndex((it) => it.kind === kind && it.ref_id === id);
+              if (idx >= 0) removeFeat(idx);
+              else setFeat({ items: [...items, { kind, ref_id: id }] });
+            };
+            const selectedFor = (kind: FeaturedKind) =>
+              new Set(items.filter((it) => it.kind === kind && it.ref_id).map((it) => it.ref_id));
+
+            return (
+              <>
+                {items.length > 0 && (
+                  <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                    <div className="text-xs font-semibold text-muted-foreground">Selected ({items.length}) — drag order with arrows, set optional badge / link override</div>
+                    {items.map((it, i) => (
+                      <div key={i} className="grid items-center gap-2 rounded-md border border-border bg-card p-2 md:grid-cols-[110px_1fr_1fr_1fr_auto]">
+                        <span className="rounded bg-primary/10 px-2 py-1 text-center text-[10px] font-bold uppercase text-primary">{it.kind.replace("_", " ")}</span>
+                        <div className="truncate text-xs font-semibold">{it.ref_id || <span className="text-muted-foreground">—</span>}</div>
+                        <Input className="h-8" placeholder="Badge (e.g. NEW)" value={it.badge || ""} onChange={(e) => updateFeat(i, { badge: e.target.value })} />
+                        <Input className="h-8" placeholder="Link override (optional)" value={it.link_override || ""} onChange={(e) => updateFeat(i, { link_override: e.target.value })} />
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => moveFeat(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveFeat(i, 1)} disabled={i === items.length - 1}><ArrowDown className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => removeFeat(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Tabs defaultValue="course" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="course">Courses</TabsTrigger>
+                    <TabsTrigger value="test_series">Test Series</TabsTrigger>
+                    <TabsTrigger value="book">Books / Study Material</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="course" className="mt-3">
+                    <MultiProductPicker kind="course" selectedIds={selectedFor("course")} onToggle={(id) => toggle("course", id)} />
+                  </TabsContent>
+                  <TabsContent value="test_series" className="mt-3">
+                    <MultiProductPicker kind="test_series" selectedIds={selectedFor("test_series")} onToggle={(id) => toggle("test_series", id)} />
+                  </TabsContent>
+                  <TabsContent value="book" className="mt-3">
+                    <MultiProductPicker kind="book" selectedIds={selectedFor("book")} onToggle={(id) => toggle("book", id)} />
+                  </TabsContent>
+                </Tabs>
+
+                <p className="text-xs text-muted-foreground">Click a card to toggle selection. Cards on the landing page pull live title, image and price from the linked record.</p>
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* CTA */}
