@@ -25,7 +25,7 @@ const navItems: NavItem[] = [
   { label: "About", path: "/about", children: aboutChildren },
   { label: "Courses", path: "/courses" },
   { label: "Test Series", path: "/test-series" },
-  { label: "Centres", path: "/centers" },
+  { label: "Centres", path: "/centres" },
   { label: "BOOST", path: "/boost", logo: boostLogo },
   { label: "E-Store", path: "/e-store" },
   { label: "Career", path: "/career" },
