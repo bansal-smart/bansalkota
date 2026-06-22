@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone, ArrowUp, ArrowDown, Search } from "lucide-react";
+import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone, ArrowUp, ArrowDown, Search, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -39,37 +39,45 @@ async function uploadToStorage(file: File, folder: string): Promise<string | nul
   return data.publicUrl;
 }
 
-function ProductPicker({
-  kind, value, onChange,
-}: { kind: FeaturedKind; value?: string; onChange: (id: string) => void }) {
+function MultiProductPicker({
+  kind, selectedIds, onToggle,
+}: { kind: FeaturedKind; selectedIds: Set<string>; onToggle: (id: string) => void }) {
   const [search, setSearch] = useState("");
   const { data: options = [], isLoading } = useProductOptions(kind, search);
-  const selected = options.find((o) => o.id === value);
   return (
     <div className="space-y-2">
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input className="pl-8" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
-      <div className="max-h-44 overflow-y-auto rounded-md border border-border bg-background">
+      <div className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto rounded-md border border-border bg-background p-2 sm:grid-cols-2 lg:grid-cols-3">
         {isLoading && <div className="p-2 text-xs text-muted-foreground">Loading…</div>}
         {!isLoading && options.length === 0 && <div className="p-2 text-xs text-muted-foreground">No results</div>}
-        {options.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => onChange(o.id)}
-            className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs hover:bg-muted ${value === o.id ? "bg-primary/10 text-primary" : ""}`}
-          >
-            {o.image ? <img src={o.image} className="h-7 w-10 rounded object-cover" /> : <div className="h-7 w-10 rounded bg-muted" />}
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold">{o.label}</div>
-              {o.subtitle && <div className="truncate text-[10px] text-muted-foreground">{o.subtitle}</div>}
-            </div>
-          </button>
-        ))}
+        {options.map((o) => {
+          const isSel = selectedIds.has(o.id);
+          return (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => onToggle(o.id)}
+              className={`relative flex items-center gap-2 rounded-md border p-2 text-left text-xs transition hover:bg-muted ${
+                isSel ? "border-primary bg-primary/10 ring-2 ring-primary/40" : "border-border"
+              }`}
+            >
+              {o.image ? <img src={o.image} className="h-10 w-14 shrink-0 rounded object-cover" /> : <div className="h-10 w-14 shrink-0 rounded bg-muted" />}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold">{o.label}</div>
+                {o.subtitle && <div className="truncate text-[10px] text-muted-foreground">{o.subtitle}</div>}
+              </div>
+              {isSel && (
+                <span className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Check className="h-3 w-3" />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
-      {selected && <div className="text-[11px] text-muted-foreground">Selected: <strong>{selected.label}</strong></div>}
     </div>
   );
 }
@@ -308,38 +316,58 @@ export default function AdminLandingPage() {
             <div><Label>Subtitle</Label><Input value={cfg.featured.subtitle || ""} onChange={(e) => setFeat({ subtitle: e.target.value })} /></div>
           </div>
 
-          <div className="space-y-3">
-            {(cfg.featured.items || []).map((it, i) => (
-              <div key={i} className="grid gap-3 rounded-md border border-border p-3 md:grid-cols-[180px_1fr_1fr_auto]">
-                <div>
-                  <Label className="text-xs">Kind</Label>
-                  <Select value={it.kind} onValueChange={(v) => updateFeat(i, { kind: v as FeaturedKind, ref_id: "" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="test_series">Test Series</SelectItem>
-                      <SelectItem value="course">Course</SelectItem>
-                      <SelectItem value="book">Study Material (Book)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Pick product</Label>
-                  <ProductPicker kind={it.kind} value={it.ref_id} onChange={(id) => updateFeat(i, { ref_id: id })} />
-                </div>
-                <div className="space-y-2">
-                  <div><Label className="text-xs">Badge (optional)</Label><Input placeholder="NEW / BESTSELLER" value={it.badge || ""} onChange={(e) => updateFeat(i, { badge: e.target.value })} /></div>
-                  <div><Label className="text-xs">Link override (optional)</Label><Input placeholder="/custom-link" value={it.link_override || ""} onChange={(e) => updateFeat(i, { link_override: e.target.value })} /></div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => moveFeat(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => moveFeat(i, 1)} disabled={i === (cfg.featured.items?.length || 0) - 1}><ArrowDown className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => removeFeat(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Button variant="outline" onClick={addFeat}><Plus className="mr-2 h-4 w-4" /> Add product</Button>
-          <p className="text-xs text-muted-foreground">Cards pull live title, image and price from the linked record.</p>
+          {(() => {
+            const items = cfg.featured.items || [];
+            const toggle = (kind: FeaturedKind, id: string) => {
+              const idx = items.findIndex((it) => it.kind === kind && it.ref_id === id);
+              if (idx >= 0) removeFeat(idx);
+              else setFeat({ items: [...items, { kind, ref_id: id }] });
+            };
+            const selectedFor = (kind: FeaturedKind) =>
+              new Set(items.filter((it) => it.kind === kind && it.ref_id).map((it) => it.ref_id));
+
+            return (
+              <>
+                {items.length > 0 && (
+                  <div className="space-y-2 rounded-md border border-border bg-muted/30 p-3">
+                    <div className="text-xs font-semibold text-muted-foreground">Selected ({items.length}) — drag order with arrows, set optional badge / link override</div>
+                    {items.map((it, i) => (
+                      <div key={i} className="grid items-center gap-2 rounded-md border border-border bg-card p-2 md:grid-cols-[110px_1fr_1fr_1fr_auto]">
+                        <span className="rounded bg-primary/10 px-2 py-1 text-center text-[10px] font-bold uppercase text-primary">{it.kind.replace("_", " ")}</span>
+                        <div className="truncate text-xs font-semibold">{it.ref_id || <span className="text-muted-foreground">—</span>}</div>
+                        <Input className="h-8" placeholder="Badge (e.g. NEW)" value={it.badge || ""} onChange={(e) => updateFeat(i, { badge: e.target.value })} />
+                        <Input className="h-8" placeholder="Link override (optional)" value={it.link_override || ""} onChange={(e) => updateFeat(i, { link_override: e.target.value })} />
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => moveFeat(i, -1)} disabled={i === 0}><ArrowUp className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => moveFeat(i, 1)} disabled={i === items.length - 1}><ArrowDown className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => removeFeat(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Tabs defaultValue="course" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="course">Courses</TabsTrigger>
+                    <TabsTrigger value="test_series">Test Series</TabsTrigger>
+                    <TabsTrigger value="book">Books / Study Material</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="course" className="mt-3">
+                    <MultiProductPicker kind="course" selectedIds={selectedFor("course")} onToggle={(id) => toggle("course", id)} />
+                  </TabsContent>
+                  <TabsContent value="test_series" className="mt-3">
+                    <MultiProductPicker kind="test_series" selectedIds={selectedFor("test_series")} onToggle={(id) => toggle("test_series", id)} />
+                  </TabsContent>
+                  <TabsContent value="book" className="mt-3">
+                    <MultiProductPicker kind="book" selectedIds={selectedFor("book")} onToggle={(id) => toggle("book", id)} />
+                  </TabsContent>
+                </Tabs>
+
+                <p className="text-xs text-muted-foreground">Click a card to toggle selection. Cards on the landing page pull live title, image and price from the linked record.</p>
+              </>
+            );
+          })()}
         </TabsContent>
 
         {/* CTA */}
