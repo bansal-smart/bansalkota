@@ -104,6 +104,30 @@ Deno.serve(async (req) => {
         link: it.item_type === "course" ? "/my-courses" : "/orders",
       });
     }
+
+    // Send PRPSMS payment confirmation SMS (non-fatal)
+    try {
+      const { data: profile } = await admin
+        .from("profiles").select("full_name, phone_e164, phone").eq("user_id", order.user_id).maybeSingle();
+      const phone = profile?.phone_e164 || profile?.phone;
+      const firstItem = (items || [])[0];
+      if (phone && firstItem) {
+        await admin.functions.invoke("prpsms-send-transactional", {
+          body: {
+            to_phone: phone,
+            template_name: "Payment Confirmation-1",
+            vars: {
+              name: profile?.full_name || "Student",
+              test_date: firstItem.item_title || "your course",
+              time_slot: "as scheduled",
+            },
+            purpose: "enrollment_confirmation",
+          },
+        });
+      }
+    } catch (smsErr) {
+      console.error("PRPSMS SMS failed (non-fatal)", smsErr);
+    }
   } else if (type === "PAYMENT_FAILED_WEBHOOK" || type === "PAYMENT_USER_DROPPED_WEBHOOK") {
     if (order.status === "pending") {
       await admin.from("orders").update({
