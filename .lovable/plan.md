@@ -1,90 +1,73 @@
 ## Goal
 
-Make "Master import" on the New Test page reliably accept one canonical Word format that supports every question type Bansal uses — SCQ, MCQ, Integer (single value or range), Numerical/Decimal (single value or range), and Match the Following — with images and equations in the stem and in each option. Ship a ready-to-use template file and an "Instructions" button next to Master import so any teacher can produce a perfect file.
+Rewrite the `/new` page with a new section order, fully managed from the admin panel, styled to the Bansal brand (orange #F97316 + navy #1E293B, cream #FFFBF5 bg, editorial display type — same vocabulary as the rest of the site).
 
-## The STEM template format (single source of truth)
-
-Each question is a block separated by a blank line. Order is fixed:
+## New page structure
 
 ```text
-Topic: Kinematics                       (optional, carries to next Qs until changed)
-Type: SCQ                               (SCQ | MCQ | Integer | Numerical | Match)
-
-1. Question stem text. Equations inline with $...$ or display $$...$$.
-   [Insert image here — paste directly into Word]
-
-(A) Option A text or image
-(B) Option B text or image
-(C) Option C text or image
-(D) Option D text or image
-
-Answer: B
-Solution: Optional explanation, supports $LaTeX$ and images.
+1. TOP BANNER       — full-width hero image (16:5), optional overlay headline/subheading/CTA, whole banner can link out
+2. HERO + FORM      — title + subtitle + CTA on the left, lead form on the right (no background image now)
+3. ABOUT + USPs     — about copy on left, 3–6 USP cards (icon, title, text) on right
+4. FEATURED PRODUCTS — 3–6 cards auto-pulled live from DB (test series, courses, books)
+5. CTA STRIP        — headline, subheading, button label + link, optional bg image
++ existing footer + StickyMobileCTA
 ```
 
-Per-type Answer line:
+Old sections (banner gallery, overview, highlights, outcomes, details, FAQ, contact, footer-form strip) are removed from `/new` rendering and from the admin tabs. The DB columns stay so historical data isn't dropped, but they're no longer surfaced.
 
-- SCQ → `Answer: B` (or `Answer: 2`)
-- MCQ → `Answer: A, C` (or `Answer: 1,3,4`)
-- Integer → `Answer: 9` or `Answer: 5-9` (range)
-- Numerical/Decimal → `Answer: 3.14` or `Answer: 3.10-3.18` (range, decimals allowed)
-- Match → use a 2-column table with header row `Column A | Column B`, rows `A | P`, `B | Q`, …, then `Answer: A-Q, B-S, C-P, D-R`. Options/items can be text or images.
+## Data model (extend `landing_page_config`)
 
-Images in any slot (stem, A/B/C/D, Column A/B rows, Solution) are auto-attached to that slot. LaTeX and native Word equations are preserved.
+Add 4 JSONB columns (default `'{}'`):
 
-## Deliverables
+- `top_banner` — `{ enabled, image_url, alt, headline, subheading, cta_label, cta_link, link }`
+- `about` — `{ enabled, eyebrow, title, body, usps: [{ icon, title, text }] }`
+- `featured` — `{ enabled, title, subtitle, items: [{ kind: "test_series"|"course"|"book", ref_id, badge?, link_override? }] }`  ← only the reference is stored; title/image/price are fetched live
+- `cta` — `{ enabled, headline, subheading, button_label, button_link, background_image_url }`
 
-### 1. Template file
-- New `public/templates/master-question-template.docx`, generated with `docx-js` and validated.
-- Contains one fully worked example per question type (SCQ, MCQ, Integer single, Integer range, Numerical decimal, Numerical range, Match-the-following with table).
-- Each example uses the exact `Type:` / `Topic:` / numbered stem / `(A)`–`(D)` / `Answer:` / `Solution:` layout.
-- Uses Arial 11 pt body, bold question numbers, light-gray instructional preface paragraph.
+## Frontend (`/new`)
 
-### 2. Instructions dialog
-- New `MasterImportInstructions` modal component.
-- Trigger: an "Instructions" button rendered next to "Master import" on `CreateTestPage.tsx`, and a secondary "View instructions" link inside `DocxBulkImportDialog`'s upload step.
-- Content (rendered as styled markdown):
-  - Why this format exists
-  - Block layout diagram (same as above)
-  - Per-type table: Type tag → Answer-line syntax → Example
-  - Image rules (paste inline; one per slot; PNG/JPG ≤ 5 MB)
-  - LaTeX & equation rules (`$...$`, `$$...$$`, Word native equations OK)
-  - Match-the-Following table requirements
-  - Common pitfalls (mixed numbering, missing `Answer:`, `(A)` vs `A.`)
-  - "Download template" button (links to `/templates/master-question-template.docx`)
+Refactor `LandingNewPage.tsx` to render the new order with brand styling (cream bg, navy headings, orange accents, `font-display` for H1/H2). Remove `BannerGallery`, `HighlightsGrid`, `OutcomesList`, `DetailsGrid`, `FAQAccordion`, `ContactBlock`, and the existing footer-CTA strip from this page.
 
-### 3. Parser hardening (`src/lib/docxImport/parseDocx.ts`)
-- Honor an explicit `Type: SCQ|MCQ|Integer|Numerical|Match` line per question. When present it overrides auto-detection; when absent we fall back to the existing answer-line inference.
-- Treat `Numerical` and `Decimal` synonyms; route decimal values to `numerical`, integer ranges still map to `integer` with `{min,max}`.
-- Tighten the Match table detector: accept `Column A`/`Column B`, `List I`/`List II`, and `A|P` short-header variants.
-- Keep current LaTeX/image/per-slot logic untouched.
+New components in `src/components/landing/`:
 
-### 4. Import dialog UX (`src/components/DocxBulkImportDialog.tsx`)
-- Replace the cryptic "Arke format" copy with: "Master Question Template — one block per question. Click Instructions for the full guide."
-- Add two buttons in the upload step: **Download template** and **View instructions** (opens the modal from #2).
-- On parse failure, show a one-line tip: "Not detecting questions? Open Instructions and compare your file to the template."
-- Show per-question detected `Type` badge in the preview list so the teacher can spot mis-classified questions and re-pick from a dropdown before saving.
+- `TopBannerSection.tsx` — full-bleed image, optional overlay text + orange CTA pill, wraps in `<a>` if `link` set.
+- `AboutUspSection.tsx` — left: eyebrow + title + body. Right: grid of USP cards, each with rounded border, orange icon chip, navy title.
+- `FeaturedProductsSection.tsx` — fetches the referenced rows via TanStack Query (`test_series`, `courses`, `books`) in one batched hook. Renders a responsive 3-up card grid (image, title, subtitle, optional badge, "Explore →"). Cards link to `/test-series/:slug`, `/courses/:slug`, `/books/:slug` by default, overridable.
+- `FinalCtaSection.tsx` — navy band (or `background_image_url`) with H2 + subheading + orange button.
 
-### 5. CreateTestPage entry point (`src/pages/CreateTestPage.tsx`)
-- Next to the existing "Master import" button add a small `?` icon button → opens the instructions modal without opening the importer.
+Modify `HeroSection.tsx` to drop the background-image branch and use a clean cream/white surface with navy text + orange CTA.
 
-## Technical details
+## Admin panel (`AdminLandingPage.tsx`)
 
-- Template generation script: `scripts/build-master-template.mjs` using `docx` (Document/Paragraph/Table/TableRow/TableCell/ImageRun). Output written to `public/templates/master-question-template.docx`. Add an npm script `build:template` so it can be regenerated; commit the built file too so users get it without running the script.
-- The parser change is additive — a new `extractTypeLine(text)` helper plus a `forcedType` field on the buffer, applied in `flushBuffer` before the existing inference.
-- No DB or RLS changes. Grants on `question_bank`, `test_questions`, `question_import_batches` are already in place from the previous migration.
-- No edge functions touched.
+Replace the current tab list with the 5 new tabs (the legacy editor moves out — old DB data preserved but no longer editable here, since it isn't rendered):
 
-## Files
+1. **Top Banner** — image upload + URL, alt, headline, subheading, CTA label, CTA link, whole-banner link, enabled switch.
+2. **Hero + Form** — keeps current Hero fields (title, subtitle, CTA, start date pill, seats, early-bird countdown) + Form tab fields (city/message toggles, submit label, success message).
+3. **About & USPs** — eyebrow, title, body textarea, USP card repeater (Lucide icon name, title, text) with add/remove/reorder.
+4. **Featured Products** — repeater. Each row: kind dropdown (Test series / Course / Study material) + searchable combobox that queries the matching table and stores `ref_id`. Optional badge and link override. Preview chip showing the live title/image so the admin sees what will render.
+5. **CTA** — headline, subheading, button label, button link, optional background image upload.
 
-- New: `public/templates/master-question-template.docx`
-- New: `scripts/build-master-template.mjs`
-- New: `src/components/MasterImportInstructions.tsx`
-- Edit: `src/lib/docxImport/parseDocx.ts` (Type line + Match detector + numerical/decimal alias)
-- Edit: `src/components/DocxBulkImportDialog.tsx` (copy, buttons, per-Q Type badge + dropdown)
-- Edit: `src/pages/CreateTestPage.tsx` (instructions `?` button next to Master import)
+Header gets an "Edit /new" badge and a Preview button (already there).
+
+## Brand styling rules applied
+
+- Background `bg-[#FFFBF5]` (cream), headings `text-bansal-navy font-display font-black`, body `text-slate-600`.
+- Primary accent uses existing `--primary` (orange) tokens — no hardcoded colors.
+- Cards: `rounded-2xl border border-border bg-card shadow-sm hover:shadow-lg transition`.
+- Section spacing: `py-16 lg:py-20`, container `max-w-6xl mx-auto px-4`.
+
+## Files touched
+
+- DB migration: add `top_banner`, `about`, `featured`, `cta` JSONB columns to `landing_page_config`.
+- `src/lib/landingSchemas.ts` — new types, extend `LandingConfig`.
+- `src/pages/LandingNewPage.tsx` — new render order, remove old sections.
+- `src/components/landing/HeroSection.tsx` — drop bg image, brand styling.
+- New: `TopBannerSection.tsx`, `AboutUspSection.tsx`, `FeaturedProductsSection.tsx`, `FinalCtaSection.tsx`.
+- New hook: `src/hooks/useFeaturedProducts.ts` — batched fetch by `(kind, ref_id)` list.
+- `src/pages/AdminLandingPage.tsx` — replace tabs with the 5 new ones, add product picker.
 
 ## Out of scope
 
-- Changing the "Common" cropped-table importer (`DocxCommonImportDialog`) — it stays as-is.
-- Backend changes, payments, auth, schema migrations.
+- No changes to `site_banners` (other pages).
+- No deletion of legacy `landing_page_config` columns.
+- No changes to lead-form submission or `landing_page_leads`.
