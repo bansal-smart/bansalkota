@@ -407,7 +407,7 @@ export default function LeadershipDetailPage() {
                 >
                   <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl overflow-hidden ring-4 ring-bansal-orange/20 shadow-xl">
                     <img
-                      src={vkPortrait.url}
+                      src={vkProfilePhoto.url}
                       alt="V.K. Bansal Sir"
                       className="w-full h-full object-cover"
                       loading="lazy"
