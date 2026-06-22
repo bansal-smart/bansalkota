@@ -15,7 +15,6 @@ import {
   GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons,
 } from "@/components/bansal/BansalDecor";
 import { useSiteTestimonials, useSiteStats } from "@/hooks/useSiteContent";
-import UpcomingBatches from "@/components/landing/UpcomingBatches";
 import ToppersWall from "@/components/landing/ToppersWall";
 import ResourcesTeaser from "@/components/landing/ResourcesTeaser";
 import CentresShowcase from "@/components/landing/CentresShowcase";
@@ -733,10 +732,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 11. Upcoming Batches (live from DB) */}
-      <UpcomingBatches />
-
-      {/* 12. Toppers Wall (live from DB) */}
+      {/* 11. Toppers Wall (live from DB) */}
       <ToppersWall />
 
       {/* 13. Free Resources teaser */}
