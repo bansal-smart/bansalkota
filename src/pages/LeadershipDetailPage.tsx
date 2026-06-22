@@ -14,16 +14,17 @@ import { leadershipPhotos } from "@/content/bansal/about";
 import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
 import vkPortrait from "@/assets/vk-bansal-portrait.jpg.asset.json";
+import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png.asset.json";
+import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.json";
+import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
+import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
 
-/**
- * Per-leader hero background. These are placeholders today — drop the user's
- * real banners in here later (one constant per slug) and nothing else changes.
- */
+/** Per-leader hero background image (face on the right side of the frame). */
 const LEADER_HERO_BG: Record<string, string> = {
-  "vk-bansal": leadershipPhotos["vk-bansal"],
-  "sameer-bansal": leadershipPhotos["sameer-bansal"],
-  "neelam-bansal": leadershipPhotos["neelam-bansal"],
-  "mahima-bansal": leadershipPhotos["mahima-bansal"],
+  "vk-bansal": vkHeroBg.url,
+  "sameer-bansal": sameerHeroBg.url,
+  "neelam-bansal": neelamHeroBg.url,
+  "mahima-bansal": mahimaHeroBg.url,
 };
 
 const SECTION = "py-16 md:py-24";
@@ -65,16 +66,17 @@ export default function LeadershipDetailPage() {
     <div className="bg-background">
       {/* ============= HERO (uniform across all leaders) ============= */}
       <section className="relative w-full min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden bg-bansal-blue-dark">
-        {/* Background image + overlays */}
+        {/* Background image — face anchored to the right so it stays visible */}
         <img
           src={heroBg}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
+          className="absolute inset-0 w-full h-full object-cover object-right md:object-[75%_center]"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue-dark/95 via-bansal-blue-dark/80 to-bansal-blue-dark/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark via-transparent to-transparent" />
-        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-bansal-orange/20 blur-3xl pointer-events-none" />
+        {/* Brand-tint overlays: heavy on the left (legible text), faded on the right (face stays visible) */}
+        <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue-dark via-bansal-blue-dark/80 via-40% to-bansal-blue-dark/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark/70 via-transparent to-bansal-blue-dark/30" />
+        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-bansal-orange/15 blur-3xl pointer-events-none" />
 
         {/* Back link */}
         <div className="absolute top-0 inset-x-0 z-10">
