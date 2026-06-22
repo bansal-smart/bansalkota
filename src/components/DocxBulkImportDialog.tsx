@@ -25,6 +25,7 @@ import {
 import { SUBJECTS } from "@/lib/constants";
 import MathRenderer from "@/components/MathRenderer";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
+import MasterImportInstructions from "@/components/MasterImportInstructions";
 
 type Props = {
   open: boolean;
@@ -62,6 +63,7 @@ const DocxBulkImportDialog = ({
   const [topic, setTopic] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
+  const [showInstructions, setShowInstructions] = useState(false);
 
   // Test picker (only when launched without a fixed testId)
   const [alsoPushToTest, setAlsoPushToTest] = useState(false);
@@ -512,35 +514,36 @@ const DocxBulkImportDialog = ({
                   <span>{errorMsg}</span>
                 </div>
               )}
-              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="font-semibold text-foreground">Arke format reference</p>
-                  <a
-                    href="/templates/question-bank-template.txt"
-                    download
-                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
-                  >
-                    Download sample
-                  </a>
+                  <p className="font-semibold text-foreground">Master Question Template — one block per question</p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowInstructions(true)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold text-foreground hover:bg-muted"
+                    >
+                      View instructions
+                    </button>
+                    <a
+                      href="/templates/master-question-template.docx"
+                      download
+                      className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground hover:opacity-90"
+                    >
+                      Download template
+                    </a>
+                  </div>
                 </div>
                 <p>
-                  • <b>Number</b> on its own line: <code>1.</code>
+                  Supports <b>SCQ</b>, <b>MCQ</b>, <b>Integer</b> (value or range), <b>Numerical/Decimal</b> (value or range),
+                  and <b>Match the Following</b> — with images and LaTeX in stems, options, and solutions.
+                  Click <b>View instructions</b> for the full guide, or download the template and replace the example questions.
                 </p>
-                <p>
-                  • <b>Stem</b> follows, may include images, LaTeX (<code>$x^2$</code>), or display math (<code>$$…$$</code>).
-                </p>
-                <p>
-                  • <b>Options</b>: <code>(1) ...</code> <code>(2) ...</code> <code>(3) ...</code> <code>(4) ...</code> (or A–D).
-                </p>
-                <p>
-                  • <b>Answer line</b>: <code>Answer: (3)</code> · multi: <code>Answer: (1),(2),(4)</code> · integer: <code>Answer: 9</code> · match: <code>Answer: A-Q, B-S, C-P, D-R</code>.
-                </p>
-                <p>
-                  • <b>Match-the-Following</b>: 2-column table inside the stem with header row "Column A" / "Column B".
-                </p>
-                <p>
-                  • Optional <code>Topic: …</code> and a paragraph after the Answer is treated as the <b>Solution</b>.
-                </p>
+                {errorMsg && (
+                  <p className="text-amber-700">
+                    Not detecting questions? Open <b>View instructions</b> and compare your file to the template.
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -859,6 +862,7 @@ const DocxBulkImportDialog = ({
           )}
         </div>
       </div>
+      <MasterImportInstructions open={showInstructions} onClose={() => setShowInstructions(false)} />
     </div>
   );
 };

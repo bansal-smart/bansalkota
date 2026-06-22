@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText, Image as ImageIcon, Upload } from "lucide-react";
+import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText, Image as ImageIcon, Upload, HelpCircle } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
+import MasterImportInstructions from "@/components/MasterImportInstructions";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 import { useExams } from "@/hooks/useExams";
@@ -160,6 +161,7 @@ const CreateTestPage = () => {
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
   const [docxImportOpen, setDocxImportOpen] = useState(false);
+  const [masterInstructionsOpen, setMasterInstructionsOpen] = useState(false);
   const [commonImportOpen, setCommonImportOpen] = useState(false);
   const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
@@ -1028,14 +1030,25 @@ const CreateTestPage = () => {
                 </div>
               </SheetContent>
             </Sheet>
-            <button
-              onClick={() => openDocxImport("master")}
-              disabled={submitting}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-              title="Master method — parses numbered questions with (1)–(4) options and Answer: line"
-            >
-              <FileText className="h-3.5 w-3.5" /> Master import
-            </button>
+            <div className="inline-flex items-stretch rounded-lg border border-border bg-background overflow-hidden">
+              <button
+                onClick={() => openDocxImport("master")}
+                disabled={submitting}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+                title="Master method — uses the Bansal STEM template (SCQ/MCQ/Integer/Numerical/Match) with images and LaTeX"
+              >
+                <FileText className="h-3.5 w-3.5" /> Master import
+              </button>
+              <button
+                type="button"
+                onClick={() => setMasterInstructionsOpen(true)}
+                className="inline-flex items-center justify-center border-l border-border px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                title="View Master import instructions and download template"
+                aria-label="Master import instructions"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <button
               onClick={() => openDocxImport("common")}
               disabled={submitting}
@@ -1497,6 +1510,7 @@ const CreateTestPage = () => {
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
         examPattern={examPattern}
       />
+      <MasterImportInstructions open={masterInstructionsOpen} onClose={() => setMasterInstructionsOpen(false)} />
     </DndContext>
   );
 };

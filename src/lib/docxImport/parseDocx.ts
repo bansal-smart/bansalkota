@@ -202,6 +202,24 @@ const extractTopic = (text: string): string | null => {
   return m ? m[1].trim() : null;
 };
 
+// Extract an explicit `Type: SCQ|MCQ|Integer|Numerical|Decimal|Match` tag.
+// Returns the normalized ParsedQuestionType, or null when absent / unknown.
+const extractTypeTag = (text: string): ParsedQuestionType | null => {
+  const m = text.match(/^\s*(?:q-?)?type\s*[:\-–]\s*([a-zA-Z\- ]+?)\s*$/i);
+  if (!m) return null;
+  const raw = m[1].trim().toLowerCase().replace(/\s+/g, "-");
+  if (raw === "scq" || raw === "single" || raw === "single-correct" || raw === "mcq-single")
+    return "mcq-single";
+  if (raw === "mcq" || raw === "mcq-multi" || raw === "multi" || raw === "multiple" || raw === "multiple-correct")
+    return "mcq-multi";
+  if (raw === "integer" || raw === "int") return "integer";
+  if (raw === "numerical" || raw === "decimal" || raw === "numeric" || raw === "float")
+    return "numerical";
+  if (raw === "match" || raw === "match-following" || raw === "match-the-following" || raw === "matching")
+    return "match-following";
+  return null;
+};
+
 // Extract `Answer: ...` payload. Returns raw string after the colon, or null.
 const extractAnswerLine = (text: string): string | null => {
   const m = text.match(/^\s*(?:answer|ans\.?|correct)\s*[:\-–]\s*(.+?)\s*$/i);
@@ -375,6 +393,8 @@ type Buffer = {
   topic: string | null;
   matchTable: HTMLTableElement | null;
   sectionType: ParsedQuestionType | null;
+  /** Per-question Type: tag override, beats section + auto-detect. */
+  forcedType: ParsedQuestionType | null;
   // raw blocks captured so we can extract images per slot later
   optionBlocks: { key: string; html: string }[];
 };
@@ -388,6 +408,7 @@ const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType
   topic: carryTopic ?? null,
   matchTable: null,
   sectionType: carrySection ?? null,
+  forcedType: null,
   optionBlocks: [],
 });
 
@@ -481,6 +502,16 @@ const flushBuffer = (
     }
   }
 
+  // Per-question Type: tag wins over everything else.
+  if (buf.forcedType) {
+    if (buf.forcedType === "mcq-multi" && type === "mcq-single" && typeof correctAnswer === "number") {
+      correctAnswer = [correctAnswer];
+    } else if (buf.forcedType === "mcq-single" && Array.isArray(correctAnswer) && correctAnswer.length === 1) {
+      correctAnswer = correctAnswer[0];
+    }
+    type = buf.forcedType;
+  }
+
   // Sanity: integer/numerical question dropped its bogus options
   if ((type === "integer" || type === "numerical") && options.length > 0) {
     options = [];
@@ -569,6 +600,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   let ordinal = 0;
   let seenFirstNumber = false;
   let pendingTopic: string | null = null;
+  let pendingType: ParsedQuestionType | null = null;
   let currentSection: ParsedQuestionType | null = null;
 
   const startsNewQuestionAtAny = (text: string) =>
@@ -577,6 +609,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const isSectionHeader = (text: string) => /^\s*section\b/i.test(text);
 
   const tryTopic = (text: string) => extractTopic(text);
+  const tryType = (text: string) => extractTypeTag(text);
   const tryAnswer = (text: string) => extractAnswerLine(text);
   const trySolution = (text: string) => {
     const m = text.match(/^\s*solution\s*[:\-–]\s*(.*)$/i);
@@ -596,6 +629,10 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     if (pendingTopic) {
       buf.topic = pendingTopic;
       pendingTopic = null;
+    }
+    if (pendingType) {
+      buf.forcedType = pendingType;
+      pendingType = null;
     }
   };
 
@@ -648,6 +685,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     }
 
 
+    // Type tag (Type: SCQ | MCQ | Integer | Numerical | Decimal | Match)
+    const typeTag = tryType(text);
+    if (typeTag) {
+      if (buf.number == null) {
+        buf.forcedType = typeTag;
+      } else {
+        pendingType = typeTag;
+      }
+      continue;
+    }
+
     // Question number marker (styled "q-number" paragraph OR "N." line OR "N. rest...")
     const isNumberLine = style === "q-number" || looksLikeNumberOnly(text) ||
       (startsNewQuestionAtAny(text) && !isOptionLine(text));
@@ -659,6 +707,10 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       if (pendingTopic) {
         buf.topic = pendingTopic;
         pendingTopic = null;
+      }
+      if (pendingType) {
+        buf.forcedType = pendingType;
+        pendingType = null;
       }
       const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
       if (m) {
