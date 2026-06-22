@@ -322,10 +322,7 @@ export default function AdminLandingPage() {
 
           {(() => {
             const items = cfg.featured.items || [];
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const { data: resolved = [] } = useFeaturedProducts(items);
-            const nameFor = (kind: FeaturedKind, id: string) =>
-              resolved.find((r) => r.kind === kind && r.ref_id === id)?.title;
+            const nameFor = featuredNameFor;
             const toggle = (kind: FeaturedKind, id: string) => {
               const idx = items.findIndex((it) => it.kind === kind && it.ref_id === id);
               if (idx >= 0) removeFeat(idx);
