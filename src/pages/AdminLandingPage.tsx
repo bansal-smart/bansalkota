@@ -217,18 +217,9 @@ export default function AdminLandingPage() {
             <Label>Or image URL</Label>
             <Input value={cfg.top_banner.image_url || ""} onChange={(e) => setTop({ image_url: e.target.value })} />
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div><Label>Alt text</Label><Input value={cfg.top_banner.alt || ""} onChange={(e) => setTop({ alt: e.target.value })} /></div>
-            <div><Label>Whole-banner link (optional)</Label><Input placeholder="/admissions or https://…" value={cfg.top_banner.link || ""} onChange={(e) => setTop({ link: e.target.value })} /></div>
-          </div>
-          <div className="rounded-md border border-dashed border-border p-3">
-            <p className="mb-2 text-xs font-bold text-muted-foreground">Optional overlay (leave blank for image-only banner)</p>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div><Label>Headline</Label><Input value={cfg.top_banner.headline || ""} onChange={(e) => setTop({ headline: e.target.value })} /></div>
-              <div><Label>Subheading</Label><Input value={cfg.top_banner.subheading || ""} onChange={(e) => setTop({ subheading: e.target.value })} /></div>
-              <div><Label>CTA label</Label><Input value={cfg.top_banner.cta_label || ""} onChange={(e) => setTop({ cta_label: e.target.value })} /></div>
-              <div><Label>CTA link</Label><Input value={cfg.top_banner.cta_link || ""} onChange={(e) => setTop({ cta_link: e.target.value })} /></div>
-            </div>
+          <div>
+            <Label>Whole-banner link (optional)</Label>
+            <Input placeholder="/admissions or https://…" value={cfg.top_banner.link || ""} onChange={(e) => setTop({ link: e.target.value })} />
           </div>
         </TabsContent>
 
