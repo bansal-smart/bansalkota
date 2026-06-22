@@ -1,9 +1,11 @@
 import vkBansalPhotoAsset from "@/assets/leadership/vk-bansal.webp.asset.json";
 const vkBansalPhoto = vkBansalPhotoAsset.url;
-import sameerBansalPhotoAsset from "@/assets/leadership/sameer-bansal.webp.asset.json";
+import sameerBansalPhotoAsset from "@/assets/leader-portraits/sameer-bansal-latest.jpg.asset.json";
 const sameerBansalPhoto = sameerBansalPhotoAsset.url;
-import mahimaBansalPhoto from "@/assets/leadership/mahima-bansal.jpg";
-import neelamBansalPhoto from "@/assets/leadership/neelam-bansal.jpg";
+import mahimaBansalPhotoAsset from "@/assets/leader-portraits/mahima-bansal-latest.jpg.asset.json";
+const mahimaBansalPhoto = mahimaBansalPhotoAsset.url;
+import neelamBansalPhotoAsset from "@/assets/leader-portraits/neelam-bansal-latest.jpg.asset.json";
+const neelamBansalPhoto = neelamBansalPhotoAsset.url;
 
 export const bansalStats = [
   { value: "Daily", label: "Live Interactive Sessions" },
