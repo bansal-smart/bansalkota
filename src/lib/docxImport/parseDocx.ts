@@ -202,6 +202,24 @@ const extractTopic = (text: string): string | null => {
   return m ? m[1].trim() : null;
 };
 
+// Extract an explicit `Type: SCQ|MCQ|Integer|Numerical|Decimal|Match` tag.
+// Returns the normalized ParsedQuestionType, or null when absent / unknown.
+const extractTypeTag = (text: string): ParsedQuestionType | null => {
+  const m = text.match(/^\s*(?:q-?)?type\s*[:\-–]\s*([a-zA-Z\- ]+?)\s*$/i);
+  if (!m) return null;
+  const raw = m[1].trim().toLowerCase().replace(/\s+/g, "-");
+  if (raw === "scq" || raw === "single" || raw === "single-correct" || raw === "mcq-single")
+    return "mcq-single";
+  if (raw === "mcq" || raw === "mcq-multi" || raw === "multi" || raw === "multiple" || raw === "multiple-correct")
+    return "mcq-multi";
+  if (raw === "integer" || raw === "int") return "integer";
+  if (raw === "numerical" || raw === "decimal" || raw === "numeric" || raw === "float")
+    return "numerical";
+  if (raw === "match" || raw === "match-following" || raw === "match-the-following" || raw === "matching")
+    return "match-following";
+  return null;
+};
+
 // Extract `Answer: ...` payload. Returns raw string after the colon, or null.
 const extractAnswerLine = (text: string): string | null => {
   const m = text.match(/^\s*(?:answer|ans\.?|correct)\s*[:\-–]\s*(.+?)\s*$/i);
