@@ -28,6 +28,7 @@ import {
   BarChart3,
   LifeBuoy,
   Megaphone,
+  MessageSquare,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
