@@ -10,9 +10,10 @@ export default function TopBannerSection({ data }: { data: TopBannerConfig }) {
       <img
         src={data.image_url}
         alt={data.alt || data.headline || "Promotional banner"}
-        className="h-auto w-full object-cover"
+        className="w-full object-cover h-[180px] sm:h-[260px] md:h-[340px] lg:h-[420px] max-h-[60vh]"
         loading="eager"
       />
+
       {hasOverlay && (
         <div className="absolute inset-0 flex items-center bg-gradient-to-r from-black/55 via-black/25 to-transparent">
           <div className="container mx-auto px-4">
