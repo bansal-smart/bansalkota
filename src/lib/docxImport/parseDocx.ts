@@ -685,6 +685,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     }
 
 
+    // Type tag (Type: SCQ | MCQ | Integer | Numerical | Decimal | Match)
+    const typeTag = tryType(text);
+    if (typeTag) {
+      if (buf.number == null) {
+        buf.forcedType = typeTag;
+      } else {
+        pendingType = typeTag;
+      }
+      continue;
+    }
+
     // Question number marker (styled "q-number" paragraph OR "N." line OR "N. rest...")
     const isNumberLine = style === "q-number" || looksLikeNumberOnly(text) ||
       (startsNewQuestionAtAny(text) && !isOptionLine(text));
@@ -696,6 +707,10 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       if (pendingTopic) {
         buf.topic = pendingTopic;
         pendingTopic = null;
+      }
+      if (pendingType) {
+        buf.forcedType = pendingType;
+        pendingType = null;
       }
       const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
       if (m) {
