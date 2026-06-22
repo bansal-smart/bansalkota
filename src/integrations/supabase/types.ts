@@ -2327,10 +2327,13 @@ export type Database = {
       }
       orders: {
         Row: {
+          cf_order_id: string | null
+          cf_payment_session_id: string | null
           created_at: string
           currency: string
           id: string
           notes: string | null
+          provider: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           razorpay_signature: string | null
@@ -2348,10 +2351,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cf_order_id?: string | null
+          cf_payment_session_id?: string | null
           created_at?: string
           currency?: string
           id?: string
           notes?: string | null
+          provider?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           razorpay_signature?: string | null
@@ -2369,10 +2375,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cf_order_id?: string | null
+          cf_payment_session_id?: string | null
           created_at?: string
           currency?: string
           id?: string
           notes?: string | null
+          provider?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           razorpay_signature?: string | null
