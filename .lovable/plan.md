@@ -1,76 +1,65 @@
 ## Goal
-Make `/about/vk-bansal`, `/about/sameer-bansal`, `/about/neelam-bansal`, `/about/mahima-bansal` look polished and identical in structure — fixing alignment, padding, spacing, and the text overlap issues. Only the About Bansal Classes page is left untouched.
+Bring `src/pages/AboutPage.tsx` (About Bansal Classes) to the same polished, uniform standard as the leader detail pages — consistent spacing rhythm, aligned containers, no irregular padding, fully responsive.
 
-## What's wrong today
-All four pages share `src/pages/LeadershipDetailPage.tsx`, but the hero has two divergent branches (one custom for Sameer, one for everyone else), uses giant initials behind text that causes the overlap feeling, has `whitespace-nowrap` on the H1 (forces text off-screen on small phones), and the downstream sections (quote, intro, chapters, gallery, timeline, pillars, books) use mismatched paddings (`py-16/20/24/28`) and container widths (`max-w-3xl/4xl/5xl/6xl`), so the rhythm feels irregular.
-
-## New uniform page structure (same for all 4 leaders)
-
-```text
-┌─────────────────────────────────────────────┐
-│ HERO  (full-bleed bg image + dark overlay)  │
-│   • Back link (top-left)                    │
-│   • Eyebrow • Name (H1) • Headline • Tags   │
-│   • Centered vertically, max-w-3xl          │
-│   • Placeholder bg per leader (swappable)   │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│ PROFILE  (photo + intro side-by-side)       │
-│   • Left: portrait card (rounded, shadow)   │
-│   • Right: pull-quote + intro paragraph     │
-│   • Stacks vertically on mobile             │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│ CHAPTERS (numbered editorial sections)      │
-├─────────────────────────────────────────────┤
-│ TIMELINE                                    │
-├─────────────────────────────────────────────┤
-│ PILLARS / PHILOSOPHY                        │
-├─────────────────────────────────────────────┤
-│ RECOGNITION  (callout card)                 │
-├─────────────────────────────────────────────┤
-│ BOOKS  (Sameer only)                        │
-└─────────────────────────────────────────────┘
-```
+## What's irregular today
+- Section paddings drift: `py-10`, `py-16`, `py-16 md:py-24` mixed — feels uneven.
+- Container widths jump between sections (no `max-w-` on Teaching/Vision/Leadership grids, `max-w-4xl` on History, `max-w-2xl` on CTA).
+- Horizontal padding inconsistent (`px-4` vs `px-4 sm:px-6 lg:px-8`).
+- Heading sizes vary (`text-3xl`, `text-3xl md:text-4xl`, no `md:` upscale on most). Eyebrow styles differ from the leader pages.
+- Hero H1 wraps awkwardly on mobile because line one is long; tags/CTA stack inconsistently.
+- Vision/Mission cards use a 2-col bullet `<ul>` that overflows on narrow phones.
+- Leadership grid mixes `md:grid-cols-2 lg:grid-cols-4` but cards have no equal-height anchor.
 
 ## Changes to make
+All edits in `src/pages/AboutPage.tsx`, layout only — no content, data, or logic changes.
 
-1. **Hero — single unified version, no per-slug branches**
-   - Replace the giant-initials background with a full-bleed background image. Use a per-leader placeholder map (existing `leadershipPhotos[slug]` or a neutral campus photo) until the user supplies real backgrounds; expose one constant `LEADER_HERO_BG` so swapping later is one-line.
-   - Dark gradient overlay (`from-bansal-blue-dark/90 via-bansal-blue-dark/70 to-bansal-blue-dark/40`) for legibility.
-   - Remove `whitespace-nowrap` on the H1, drop the side-portrait Sameer variant (his portrait moves to the Profile section).
-   - Centered content: `min-h-[80vh] flex items-center`, content in `container max-w-3xl`, vertical centering — fixes the “too much top margin” complaint and the overlap.
-   - Responsive type scale: `clamp(2.25rem, 6vw, 5rem)` for H1, smaller on phones; tags wrap cleanly.
+1. **Standardize tokens** (match leader pages)
+   - Section padding: `py-16 md:py-24` everywhere except the thin stats strip (`py-10 md:py-12`).
+   - Container: `container mx-auto px-4 sm:px-6 lg:px-8` on every section.
+   - Inner max-widths: prose `max-w-4xl`, grids `max-w-6xl`, CTA `max-w-3xl`.
+   - Use the same eyebrow pattern (`h-px w-12 bg-bansal-orange` + uppercase tracking label) instead of mixed `BansalBadge` styles for section intros.
 
-2. **New Profile section (photo + text)** — added right after hero
-   - Two-column `md:grid-cols-12`: portrait (cols 5) + text (cols 7) with `gap-10`.
-   - Portrait uses `extra.heroPhotoOverride || profile.hero_photo_url || leadershipPhotos[slug]` in a `rounded-2xl` card with subtle shadow and orange accent border.
-   - Text column shows pull-quote (if any) + intro paragraph with the drop-cap.
-   - Removes the standalone “PULL-QUOTE BAND” and “INTRO LEAD” sections (merged here) so the page doesn't feel like a wall of separate bands.
+2. **Hero**
+   - Keep founder portrait + overlays.
+   - Tighten H1 line breaks: drop hard line breaks, let it wrap; cap at `clamp(2.25rem, 7vw, 5.75rem)` so mobile doesn't blow out.
+   - Wrap content in `max-w-3xl` (was 4xl) for tighter alignment with leader hero.
+   - Ensure CTA row uses `flex-wrap gap-3 justify-start`.
 
-3. **Uniform spacing & containers across all downstream sections**
-   - Standard section padding: `py-16 md:py-24` everywhere (no more 20/28 outliers).
-   - Standard container: `container mx-auto px-4 sm:px-6 max-w-6xl` for grids, `max-w-4xl` for prose blocks. Pick one per section type and use it consistently across all four leaders.
-   - Standard eyebrow component (small line + uppercase label) reused — already exists inline, just keep dimensions identical (`h-px w-12`, `tracking-[0.25em] text-xs`).
+3. **Pull-quote band** — keep, normalize padding to `py-16 md:py-24`, container `max-w-4xl`.
 
-4. **Chapters / Timeline / Pillars / Recognition**
-   - Keep current visual treatment but normalize: same vertical padding, same heading sizes (`text-3xl md:text-5xl` for section H2s, `text-xl md:text-2xl` for cards), same `gap-` values.
-   - Timeline: fix the alternating-side layout on tablet (currently jumps at `md:`), switch breakpoint to `lg:` so tablets get the cleaner single-rail layout — avoids cramped text overlap.
-   - Pillars: equalize card heights via `h-full` on the grid items.
+4. **Stats strip** — `py-10 md:py-12`, container with `max-w-6xl`, grid `gap-6 md:gap-8`.
 
-5. **Sameer’s Books and the V.K. continuity ribbon** stay, but their wrapper sections adopt the same `py-16 md:py-24` + `max-w-6xl` rhythm so they don't break the flow.
+5. **History section**
+   - Add the standard eyebrow (replace blue badge with the orange line+label) so it matches leader pages.
+   - `max-w-4xl`, `py-16 md:py-24`, heading `text-3xl md:text-5xl`.
 
-6. **Mobile responsiveness checklist applied to every section**
-   - No `whitespace-nowrap` on display text.
-   - All images: `w-full h-auto` with explicit aspect ratios (`aspect-[4/5]` for portraits, `aspect-video` for landscape).
-   - Tag rows use `flex-wrap gap-2`.
-   - Container side padding `px-4 sm:px-6 lg:px-8` consistently.
-   - Verify at 360, 414, 768, 1024, 1440 widths.
+6. **Teaching methodology**
+   - `py-16 md:py-24`, `max-w-6xl`, centered intro `max-w-3xl mx-auto`.
+   - Heading `text-3xl md:text-4xl`, eyebrow standardized.
+   - Cards: add `h-full` for equal heights, gap `gap-6 md:gap-8`.
 
-## File touched
-- `src/pages/LeadershipDetailPage.tsx` — full rewrite of the JSX (logic, hooks, and `extra`/`profile`/`sections` data flow stay identical; `sameerBooks` and the V.K. ribbon stay; only layout/markup changes).
+7. **Vision & Mission**
+   - `py-16 md:py-24`, `max-w-6xl`.
+   - Cards `h-full`; bullet list switches to `grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5` so it never overflows on phones.
 
-No data, schema, route, or backend changes. No new assets required now — placeholders will be the existing portrait images; the user can drop real hero backgrounds in later by replacing one constant.
+8. **Leadership grid**
+   - `py-16 md:py-24`, `max-w-6xl`, intro eyebrow standardized, heading `text-3xl md:text-5xl`.
+   - Grid `sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8`, cards `h-full`.
+   - Add subtle hover lift (`hover:-translate-y-1 transition-transform`) to match leader-page card behavior.
+
+9. **CTA footer**
+   - `py-16 md:py-20`, `max-w-3xl`, heading `text-2xl md:text-4xl` (matches leader pages).
+
+10. **Responsive checklist** applied per section:
+    - No fixed `whitespace-nowrap` on display text.
+    - All grids `gap-6 md:gap-8`.
+    - Tag/CTA rows `flex-wrap`.
+    - Verified visually at 375 / 768 / 1440 widths.
+
+## Files touched
+- `src/pages/AboutPage.tsx` — single-file JSX restructure (imports and data unchanged).
+
+No new assets, routes, schema, or backend changes.
 
 ## Verification
-- Visit `/about/vk-bansal`, `/about/sameer-bansal`, `/about/neelam-bansal`, `/about/mahima-bansal` at mobile (375), tablet (768), and desktop (1440) widths via `browser--view_preview` and confirm: hero text centered with no overlap, photo+text section reads cleanly, equal spacing rhythm down the page.
+- Visit `/about` at 375, 768, 1440 widths via `browser--view_preview`; confirm hero text aligns cleanly, all sections share the same vertical rhythm, leadership cards align in even rows, no overflow on the bullet lists, CTA matches the look of the leader pages' CTA.
