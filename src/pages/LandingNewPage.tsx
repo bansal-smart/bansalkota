@@ -83,15 +83,15 @@ export default function LandingNewPage() {
         </div>
       </header>
 
-      {config.top_banner?.enabled && <TopBannerSection config={config.top_banner} />}
+      {config.top_banner?.enabled && <TopBannerSection data={config.top_banner} />}
 
       <HeroSection hero={config.hero || {}} formConfig={config.form_config || {}} />
 
-      {config.about?.enabled && <AboutUspSection config={config.about} />}
+      {config.about?.enabled && <AboutUspSection data={config.about} />}
 
-      {config.featured?.enabled && <FeaturedProductsSection config={config.featured} />}
+      {config.featured?.enabled && <FeaturedProductsSection data={config.featured} />}
 
-      {config.cta?.enabled && <FinalCtaSection config={config.cta} />}
+      {config.cta?.enabled && <FinalCtaSection data={config.cta} />}
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} Bansal Classes ·{" "}
