@@ -18,9 +18,9 @@ import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.j
 import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
 import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
 import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-profile.png.asset.json";
-import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-profile.png.asset.json";
-import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-profile.png.asset.json";
-import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-profile.png.asset.json";
+import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest.jpg.asset.json";
+import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest.jpg.asset.json";
+import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest.jpg.asset.json";
 
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg.url,
@@ -34,6 +34,13 @@ const LEADER_PROFILE_PHOTO: Record<string, string> = {
   "sameer-bansal": sameerProfilePhoto.url,
   "neelam-bansal": neelamProfilePhoto.url,
   "mahima-bansal": mahimaProfilePhoto.url,
+};
+
+const HONORIFIC: Record<string, string> = {
+  "vk-bansal": "Sir",
+  "sameer-bansal": "Sir",
+  "mahima-bansal": "Ma'am",
+  "neelam-bansal": "Ma'am",
 };
 
 const SECTION = "py-16 md:py-24";
