@@ -83,15 +83,23 @@ export default function LandingNewPage() {
         </div>
       </header>
 
-      {config.top_banner?.enabled && <TopBannerSection data={config.top_banner} />}
+      {config.top_banner?.enabled !== false && (config.top_banner?.image_url || config.top_banner?.headline) && (
+        <TopBannerSection data={config.top_banner} />
+      )}
 
       <HeroSection hero={config.hero || {}} formConfig={config.form_config || {}} />
 
-      {config.about?.enabled && <AboutUspSection data={config.about} />}
+      {config.about?.enabled !== false && (config.about?.title || (config.about?.usps && config.about.usps.length > 0)) && (
+        <AboutUspSection data={config.about} />
+      )}
 
-      {config.featured?.enabled && <FeaturedProductsSection data={config.featured} />}
+      {config.featured?.enabled !== false && config.featured?.items && config.featured.items.length > 0 && (
+        <FeaturedProductsSection data={config.featured} />
+      )}
 
-      {config.cta?.enabled && <FinalCtaSection data={config.cta} />}
+      {config.cta?.enabled !== false && (config.cta?.headline || config.cta?.cta_label) && (
+        <FinalCtaSection data={config.cta} />
+      )}
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} Bansal Classes ·{" "}
