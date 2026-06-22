@@ -4,15 +4,11 @@ import { Flame, Phone } from "lucide-react";
 import { useLandingConfig } from "@/hooks/useLandingConfig";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import HeroSection from "@/components/landing/HeroSection";
-import HighlightsGrid from "@/components/landing/HighlightsGrid";
-import OutcomesList from "@/components/landing/OutcomesList";
-import DetailsGrid from "@/components/landing/DetailsGrid";
-import FAQAccordion from "@/components/landing/FAQAccordion";
-import ContactBlock from "@/components/landing/ContactBlock";
+import TopBannerSection from "@/components/landing/TopBannerSection";
+import AboutUspSection from "@/components/landing/AboutUspSection";
+import FeaturedProductsSection from "@/components/landing/FeaturedProductsSection";
+import FinalCtaSection from "@/components/landing/FinalCtaSection";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
-import LeadForm from "@/components/landing/LeadForm";
-import BannerGallery from "@/components/landing/BannerGallery";
-import { DEFAULT_BANNERS } from "@/lib/landingBannerDefaults";
 
 export default function LandingNewPage() {
   const { data: config, isLoading } = useLandingConfig();
@@ -70,8 +66,7 @@ export default function LandingNewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-0">
-
+    <div className="min-h-screen bg-[#FFFBF5] pb-20 lg:pb-0">
       {/* Minimal top bar */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
@@ -88,40 +83,15 @@ export default function LandingNewPage() {
         </div>
       </header>
 
+      {config.top_banner?.enabled && <TopBannerSection data={config.top_banner} />}
+
       <HeroSection hero={config.hero || {}} formConfig={config.form_config || {}} />
 
-      <BannerGallery items={config.banners?.length ? config.banners : DEFAULT_BANNERS} />
+      {config.about?.enabled && <AboutUspSection data={config.about} />}
 
+      {config.featured?.enabled && <FeaturedProductsSection data={config.featured} />}
 
-      {config.overview && (
-        <section className="container mx-auto max-w-3xl px-4 py-12 lg:py-16">
-          <h2 className="text-center font-display text-3xl font-black lg:text-4xl">Program overview</h2>
-          <p className="mt-6 whitespace-pre-line text-center text-base text-muted-foreground lg:text-lg">
-            {config.overview}
-          </p>
-        </section>
-      )}
-
-      <HighlightsGrid items={config.highlights || []} />
-      <OutcomesList items={config.outcomes || []} />
-      <DetailsGrid details={config.details || {}} />
-      <FAQAccordion items={config.faqs || []} />
-      <ContactBlock contact={config.contact || {}} />
-
-      {/* Footer CTA strip */}
-      <section className="bg-foreground py-12 text-background">
-        <div className="container mx-auto grid max-w-4xl gap-6 px-4 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h2 className="font-display text-2xl font-black lg:text-3xl">
-              Ready to take the next step?
-            </h2>
-            <p className="mt-2 text-sm opacity-80">
-              Limited seats. Don't miss this batch — register now.
-            </p>
-          </div>
-          <LeadForm config={config.form_config || {}} compact />
-        </div>
-      </section>
+      {config.cta?.enabled && <FinalCtaSection data={config.cta} />}
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
         © {new Date().getFullYear()} Bansal Classes ·{" "}
