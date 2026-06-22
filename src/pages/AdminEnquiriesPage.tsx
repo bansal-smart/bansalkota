@@ -220,33 +220,51 @@ const AdminEnquiriesPage = () => {
             <p className="mt-3 font-semibold text-foreground">No enquiries found</p>
           </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {paged.map((r) => (
-              <li
-                key={r.id}
-                className="flex cursor-pointer items-center gap-4 p-4 hover:bg-muted/40 transition-colors"
-                onClick={() => setActive(r)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-foreground truncate">{r.name}</p>
-                    <Badge variant="outline" className="text-[10px]">{sourceLabel[r.source] ?? r.source}</Badge>
-                    {r.region && <Badge variant="outline" className="text-[10px] uppercase">{r.region}</Badge>}
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {r.email}{r.phone ? ` · ${r.phone}` : ""}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{r.message}</p>
-                </div>
-                <div className="hidden md:block text-xs text-muted-foreground">
-                  {format(new Date(r.created_at), "dd MMM, HH:mm")}
-                </div>
-                <Badge variant="outline" className={statusStyle[r.status]}>
-                  {r.status.replace("_", " ")}
-                </Badge>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted text-left text-xs uppercase">
+                <tr>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Class</th>
+                  <th className="px-4 py-3">Source</th>
+                  <th className="px-4 py-3">Message</th>
+                  <th className="px-4 py-3">Submitted</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paged.map((r) => (
+                  <tr
+                    key={r.id}
+                    onClick={() => setActive(r)}
+                    className="border-t border-border align-top cursor-pointer hover:bg-muted/40"
+                  >
+                    <td className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">{r.name}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {r.email && <div className="truncate max-w-[180px]">{r.email}</div>}
+                      {r.phone && <div>{r.phone}</div>}
+                      {!r.email && !r.phone && "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs capitalize">{r.category || "—"}</td>
+                    <td className="px-4 py-3 text-xs">{r.class_level || "—"}</td>
+                    <td className="px-4 py-3 text-xs">
+                      <Badge variant="outline" className="text-[10px]">{sourceLabel[r.source] ?? r.source}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground max-w-[280px]">
+                      <div className="line-clamp-2">{r.message}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs whitespace-nowrap">{format(new Date(r.created_at), "dd MMM, HH:mm")}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className={statusStyle[r.status]}>{r.status.replace("_", " ")}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
         )}
         <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
       </div>
