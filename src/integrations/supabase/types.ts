@@ -2463,6 +2463,75 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_otps: {
+        Row: {
+          attempts: number
+          created_at: string
+          expires_at: string
+          id: string
+          ip: string | null
+          otp_hash: string
+          phone: string
+          purpose: string
+          user_id: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip?: string | null
+          otp_hash: string
+          phone: string
+          purpose: string
+          user_id?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip?: string | null
+          otp_hash?: string
+          phone?: string
+          purpose?: string
+          user_id?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      phone_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          phone: string
+          purpose: string | null
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          phone: string
+          purpose?: string | null
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          phone?: string
+          purpose?: string | null
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           admin_email_alerts: boolean
@@ -2512,6 +2581,8 @@ export type Database = {
           is_suspended: boolean
           onboarding_completed: boolean
           phone: string | null
+          phone_e164: string | null
+          phone_verified: boolean
           plan: string
           roll_number: string | null
           school_id: string | null
@@ -2539,6 +2610,8 @@ export type Database = {
           is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
+          phone_e164?: string | null
+          phone_verified?: boolean
           plan?: string
           roll_number?: string | null
           school_id?: string | null
@@ -2566,6 +2639,8 @@ export type Database = {
           is_suspended?: boolean
           onboarding_completed?: boolean
           phone?: string | null
+          phone_e164?: string | null
+          phone_verified?: boolean
           plan?: string
           roll_number?: string | null
           school_id?: string | null
@@ -2950,6 +3025,158 @@ export type Database = {
           region?: string | null
           sort_order?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_broadcast_recipients: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          phone: string
+          provider_msg_id: string | null
+          sent_at: string | null
+          status: string
+          user_id: string | null
+          vars: Json
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          phone: string
+          provider_msg_id?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string | null
+          vars?: Json
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          phone?: string
+          provider_msg_id?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string | null
+          vars?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_broadcast_recipients_broadcast_id_fkey"
+            columns: ["broadcast_id"]
+            isOneToOne: false
+            referencedRelation: "sms_broadcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_broadcasts: {
+        Row: {
+          audience_filter: Json
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          id: string
+          scheduled_at: string | null
+          sent_count: number
+          started_at: string | null
+          status: string
+          template_name: string
+          title: string
+          total_recipients: number
+          updated_at: string
+          vars_defaults: Json
+        }
+        Insert: {
+          audience_filter?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_name: string
+          title: string
+          total_recipients?: number
+          updated_at?: string
+          vars_defaults?: Json
+        }
+        Update: {
+          audience_filter?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          scheduled_at?: string | null
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_name?: string
+          title?: string
+          total_recipients?: number
+          updated_at?: string
+          vars_defaults?: Json
+        }
+        Relationships: []
+      }
+      sms_send_log: {
+        Row: {
+          broadcast_id: string | null
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          provider_msg_id: string | null
+          purpose: string | null
+          rendered_body: string | null
+          sent_by: string | null
+          status: string
+          template_name: string
+          to_phone: string
+          vars: Json
+        }
+        Insert: {
+          broadcast_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          provider_msg_id?: string | null
+          purpose?: string | null
+          rendered_body?: string | null
+          sent_by?: string | null
+          status?: string
+          template_name: string
+          to_phone: string
+          vars?: Json
+        }
+        Update: {
+          broadcast_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          provider_msg_id?: string | null
+          purpose?: string | null
+          rendered_body?: string | null
+          sent_by?: string | null
+          status?: string
+          template_name?: string
+          to_phone?: string
+          vars?: Json
         }
         Relationships: []
       }
