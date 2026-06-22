@@ -1,73 +1,111 @@
-## Goal
 
-Rewrite the `/new` page with a new section order, fully managed from the admin panel, styled to the Bansal brand (orange #F97316 + navy #1E293B, cream #FFFBF5 bg, editorial display type — same vocabulary as the rest of the site).
+# PRPSMS Integration Plan (with DLT-approved templates)
 
-## New page structure
+Wire PRPSMS into the platform for OTP, transactional SMS, admin broadcast, and balance widget — using the approved templates already registered on PRPSMS account `20190332`.
 
-```text
-1. TOP BANNER       — full-width hero image (16:5), optional overlay headline/subheading/CTA, whole banner can link out
-2. HERO + FORM      — title + subtitle + CTA on the left, lead form on the right (no background image now)
-3. ABOUT + USPs     — about copy on left, 3–6 USP cards (icon, title, text) on right
-4. FEATURED PRODUCTS — 3–6 cards auto-pulled live from DB (test series, courses, books)
-5. CTA STRIP        — headline, subheading, button label + link, optional bg image
-+ existing footer + StickyMobileCTA
-```
+## 1. Template mapping (from your Manage Template list)
 
-Old sections (banner gallery, overview, highlights, outcomes, details, FAQ, contact, footer-form strip) are removed from `/new` rendering and from the admin tabs. The DB columns stay so historical data isn't dropped, but they're no longer surfaced.
+All sends use the exact approved wording, only `{#var#}` slots are filled at runtime. Variables are positional — order matters.
 
-## Data model (extend `landing_page_config`)
+| Use case | Template name | Variables (in order) |
+|---|---|---|
+| OTP — signup / login / password reset / sensitive action | **PaymentGateway_OTP** | `{otp_code}` |
+| OTP — fallback / alt | CodeRed | `{otp_code}` |
+| Enrollment confirmation (after payment) | **Payment Confirmation-1** | `{name}`, `{test_date}`, `{time_slot}` |
+| Result + rank declaration | **Result** | `{name}`, `{test_name}`, `{date}`, `{score}`, `{rank}` (matches `Dear {#var#}, Result of Test {#var#} dated {#var#} {#var#} {#var#}`) |
+| Registration / welcome | **Registration1** | `{name_or_intro}`, `{institute}`, `{course}`, `{cta_visit}`, `{cta_call}` |
+| Login credentials (post-enrollment) | **Login_URL** / **Login Credential-1** | per template |
+| Roll no + password | Roll_pwd | `{name}`, `{roll}`, `{password}`, `{date}`, `{timing}` |
+| Test reminder (day before / day of) | Reminder Message 1 / 2 | `{date}`, `{time}` |
+| Test submission acknowledgement | Test Submission | `{name}`, `{result_date}`, `{by_time}` |
+| Parent — absent | Absent_prnt | `{date}` |
+| Parent — info (gate punch) | Information New | `{name}`, `{date}`, `{time}` |
+| Generic broadcast (admin tool) | uses Registration1 / Reminder / etc. (admin picks from approved templates only) | per template |
+| Cancel/ignore previous | ignore | none |
 
-Add 4 JSONB columns (default `'{}'`):
+A small server-side template registry (`sms_templates.ts`) holds the canonical text + variable schema for each template name, so callers pass `{ template: 'PaymentGateway_OTP', vars: { otp: '123456' } }` and the registry renders the final body that PRPSMS expects.
 
-- `top_banner` — `{ enabled, image_url, alt, headline, subheading, cta_label, cta_link, link }`
-- `about` — `{ enabled, eyebrow, title, body, usps: [{ icon, title, text }] }`
-- `featured` — `{ enabled, title, subtitle, items: [{ kind: "test_series"|"course"|"book", ref_id, badge?, link_override? }] }`  ← only the reference is stored; title/image/price are fetched live
-- `cta` — `{ enabled, headline, subheading, button_label, button_link, background_image_url }`
+**Admin broadcast is restricted to approved templates** — admins can't send free-form text (DLT compliance). They pick a template, fill variables, choose audience, send.
 
-## Frontend (`/new`)
+## 2. Secrets
 
-Refactor `LandingNewPage.tsx` to render the new order with brand styling (cream bg, navy headings, orange accents, `font-display` for H1/H2). Remove `BannerGallery`, `HighlightsGrid`, `OutcomesList`, `DetailsGrid`, `FAQAccordion`, `ContactBlock`, and the existing footer-CTA strip from this page.
+Request via secrets tool:
+- `PRPSMS_UNAME` — account username
+- `PRPSMS_PASS` — account password
+- `PRPSMS_SENDER` — defaulted to `20190332`
 
-New components in `src/components/landing/`:
+All PRPSMS API calls happen server-side only.
 
-- `TopBannerSection.tsx` — full-bleed image, optional overlay text + orange CTA pill, wraps in `<a>` if `link` set.
-- `AboutUspSection.tsx` — left: eyebrow + title + body. Right: grid of USP cards, each with rounded border, orange icon chip, navy title.
-- `FeaturedProductsSection.tsx` — fetches the referenced rows via TanStack Query (`test_series`, `courses`, `books`) in one batched hook. Renders a responsive 3-up card grid (image, title, subtitle, optional badge, "Explore →"). Cards link to `/test-series/:slug`, `/courses/:slug`, `/books/:slug` by default, overridable.
-- `FinalCtaSection.tsx` — navy band (or `background_image_url`) with H2 + subheading + orange button.
+## 3. Database (new tables)
 
-Modify `HeroSection.tsx` to drop the background-image branch and use a clean cream/white surface with navy text + orange CTA.
+- `phone_otps` — `phone`, `otp_hash` (sha256), `purpose` (`signup`|`login`|`password_reset`|`sensitive_action`), `attempts`, `expires_at`, `verified_at`, `ip`. Service-role only.
+- `phone_verifications` — `user_id` ↔ verified `phone` + `verified_at`. Gates sensitive actions.
+- `sms_send_log` — `to_phone`, `template_name`, `vars` (jsonb), `rendered_body`, `purpose`, `provider_msg_id`, `status`, `error_code`, `sent_by`, `created_at`. Admin/super_admin readable.
+- `sms_broadcasts` — `template_name`, `vars_defaults` (jsonb), `audience_filter` (jsonb: role/course/centre/batch), `total_recipients`, `sent_count`, `failed_count`, `status`, `created_by`, timestamps.
+- `sms_broadcast_recipients` — per-recipient row tied to a broadcast (`phone`, `vars` jsonb, `status`, `provider_msg_id`, `error_code`).
+- Add `phone_e164 TEXT` and `phone_verified BOOLEAN DEFAULT false` to `profiles`.
 
-## Admin panel (`AdminLandingPage.tsx`)
+Each table gets explicit GRANTs + RLS policies per platform rules.
 
-Replace the current tab list with the 5 new tabs (the legacy editor moves out — old DB data preserved but no longer editable here, since it isn't rendered):
+## 4. Edge Functions
 
-1. **Top Banner** — image upload + URL, alt, headline, subheading, CTA label, CTA link, whole-banner link, enabled switch.
-2. **Hero + Form** — keeps current Hero fields (title, subtitle, CTA, start date pill, seats, early-bird countdown) + Form tab fields (city/message toggles, submit label, success message).
-3. **About & USPs** — eyebrow, title, body textarea, USP card repeater (Lucide icon name, title, text) with add/remove/reorder.
-4. **Featured Products** — repeater. Each row: kind dropdown (Test series / Course / Study material) + searchable combobox that queries the matching table and stores `ref_id`. Optional badge and link override. Preview chip showing the live title/image so the admin sees what will render.
-5. **CTA** — headline, subheading, button label, button link, optional background image upload.
+All under `supabase/functions/`, with Zod validation, CORS, and structured JSON errors.
 
-Header gets an "Edit /new" badge and a Preview button (already there).
+- `prpsms-send-otp` — `{ phone, purpose }`. Generates 6-digit OTP, stores SHA-256 hash (5-min TTL), rate-limited (1/60s, 5/hour/phone, 20/hour/IP), renders **PaymentGateway_OTP** with the OTP, calls PRPSMS `SendMsg.aspx`, logs to `sms_send_log`.
+- `prpsms-verify-otp` — `{ phone, otp, purpose }`. Verifies hash, max 5 attempts.
+  - `signup` → returns short-lived verification token consumed by account creation
+  - `login` → mints a session via admin auth (`createUser` if new, else issue session) and returns it
+  - `password_reset` → returns a reset token used by the reset endpoint
+  - `sensitive_action` → writes a `phone_verifications` row valid 10 min
+- `prpsms-send-transactional` — internal helper; service-role only. Inputs `{ template_name, vars, to_phone, purpose, idempotency_key }`. Used by payment webhooks, result-release, etc.
+- `prpsms-broadcast` — admin/super_admin only. Expands audience filter, queues rows into `sms_broadcast_recipients`, processes in chunks (~50/sec), updates counters.
+- `prpsms-balance` — calls `BalAlert.aspx`, parses plain-text response, caches 5 min, admin-only.
 
-## Brand styling rules applied
+PRPSMS returns either a 19-char message ID (success) or an error code/message — parsed into structured JSON.
 
-- Background `bg-[#FFFBF5]` (cream), headings `text-bansal-navy font-display font-black`, body `text-slate-600`.
-- Primary accent uses existing `--primary` (orange) tokens — no hardcoded colors.
-- Cards: `rounded-2xl border border-border bg-card shadow-sm hover:shadow-lg transition`.
-- Section spacing: `py-16 lg:py-20`, container `max-w-6xl mx-auto px-4`.
+## 5. Triggers for transactional sends
 
-## Files touched
+- **Cashfree / Stripe payment success webhook** → invoke `prpsms-send-transactional` with `Payment Confirmation-1`.
+- **Result release** (the action that flips `tests`/`test_series` to results-released and warms `test_leaderboard_cache`) → enqueue per-student sends using `Result` template (score + rank). Throttled batch.
+- **Account creation after phone OTP** → optionally send `Registration1`.
+- **Test reminders** → pg_cron job 24h + 1h before `live_classes`/`tests` start → `Reminder Message 1` / `Reminder Message 2`.
 
-- DB migration: add `top_banner`, `about`, `featured`, `cta` JSONB columns to `landing_page_config`.
-- `src/lib/landingSchemas.ts` — new types, extend `LandingConfig`.
-- `src/pages/LandingNewPage.tsx` — new render order, remove old sections.
-- `src/components/landing/HeroSection.tsx` — drop bg image, brand styling.
-- New: `TopBannerSection.tsx`, `AboutUspSection.tsx`, `FeaturedProductsSection.tsx`, `FinalCtaSection.tsx`.
-- New hook: `src/hooks/useFeaturedProducts.ts` — batched fetch by `(kind, ref_id)` list.
-- `src/pages/AdminLandingPage.tsx` — replace tabs with the 5 new ones, add product picker.
+## 6. Frontend flows
 
-## Out of scope
+- **Signup (phone verify):** Phone step → Send OTP → 6-digit input → Verify → continue to account creation.
+- **Login via phone + OTP:** New tab on login screen — mobile + OTP, session returned by `prpsms-verify-otp`.
+- **Password reset via OTP:** Option alongside email reset on forgot-password screen.
+- **Sensitive actions:** Reusable `<PhoneOtpGuard>` modal used before changing password / email / phone in profile settings.
+- **Admin broadcast tool** (`/admin/sms-broadcasts`):
+  - Step 1: pick approved template from dropdown (live preview of rendered text)
+  - Step 2: fill variables (defaults + per-recipient overrides where applicable)
+  - Step 3: pick audience (role / course / centre / batch)
+  - Recipient preview count
+  - Send now / schedule (via `schtm`)
+  - History table with status, sent/failed counts, per-recipient drilldown
+- **Balance widget** in Admin Command Centre: card showing current balance, last-fetched time, refresh button, red warning when balance < threshold (default 500).
 
-- No changes to `site_banners` (other pages).
-- No deletion of legacy `landing_page_config` columns.
-- No changes to lead-form submission or `landing_page_leads`.
+## 7. Security / abuse controls
+
+- OTPs SHA-256 hashed, never stored plain
+- 5-min expiry, max 5 attempts, 60s resend cooldown, 5/hour/phone, 20/hour/IP
+- PRPSMS credentials only in edge function env
+- Broadcast endpoint role-gated (admin + super_admin)
+- Phones normalized to E.164; PRPSMS `dest` gets 10-digit local form
+- Free-form SMS is disallowed in UI — only approved templates can be sent
+
+## 8. Out of scope
+
+- New DLT template registration (use existing approved list above)
+- Two-way SMS replies
+- WhatsApp fallback
+
+---
+
+### Technical notes
+
+- PRPSMS uses GET with query params, returns plain text. Use `URLSearchParams` + `fetch`. Treat any non-19-char-ID response as an error and log raw body.
+- `dest` expects 10-digit Indian mobile; strip `+91` / leading `0` before sending; store full E.164 internally.
+- For phone-login session minting, use Supabase admin API (`createUser` if new, then issue a session). The verify function returns session JSON the client sets on the supabase client.
+- Balance response is plain text — regex parse, surface raw text on error.
+- Template renderer replaces `{#var#}` left-to-right with the variable array; reject sends where variable count doesn't match.
