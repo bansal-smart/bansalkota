@@ -74,8 +74,6 @@ const CenterStudentsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryCenterId]);
 
-  if (!primaryCenterId) return <div className="p-8 text-sm text-muted-foreground">No centre assigned.</div>;
-
   const filtered = useMemo(() => {
     const lq = q.trim().toLowerCase();
     return items.filter((s) => {
@@ -89,6 +87,8 @@ const CenterStudentsPage = () => {
       );
     });
   }, [items, q, statusFilter, batchFilter]);
+
+  if (!primaryCenterId) return <div className="p-8 text-sm text-muted-foreground">No centre assigned.</div>;
 
   const updateStudent = async (s: Student, patch: Partial<Student>) => {
     setSavingId(s.id);
