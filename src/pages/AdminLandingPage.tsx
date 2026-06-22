@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { LandingConfig, FeaturedItem, FeaturedKind, UspItem } from "@/lib/landingSchemas";
-import { useProductOptions } from "@/hooks/useFeaturedProducts";
+import { useProductOptions, useFeaturedProducts } from "@/hooks/useFeaturedProducts";
 
 const EMPTY: LandingConfig = {
   id: "default",
