@@ -280,11 +280,19 @@ const AdminEnquiriesPage = () => {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-muted-foreground">Email</p>
-                    <p className="font-medium text-foreground break-all">{active.email}</p>
+                    <p className="font-medium text-foreground break-all">{active.email || "—"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Phone</p>
                     <p className="font-medium text-foreground">{active.phone || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Enquiry type</p>
+                    <p className="font-medium text-foreground capitalize">{active.category || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Class</p>
+                    <p className="font-medium text-foreground">{active.class_level || "—"}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Source</p>
@@ -294,6 +302,11 @@ const AdminEnquiriesPage = () => {
                     <p className="text-xs text-muted-foreground">Region</p>
                     <p className="font-medium text-foreground capitalize">{active.region || "—"}</p>
                   </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Submitted</p>
+                    <p className="font-medium text-foreground">{format(new Date(active.created_at), "dd MMM yyyy, HH:mm")}</p>
+                  </div>
+
                   <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Submitted</p>
                     <p className="font-medium text-foreground">{format(new Date(active.created_at), "dd MMM yyyy, HH:mm")}</p>
