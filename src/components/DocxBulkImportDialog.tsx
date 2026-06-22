@@ -25,6 +25,7 @@ import {
 import { SUBJECTS } from "@/lib/constants";
 import MathRenderer from "@/components/MathRenderer";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
+import MasterImportInstructions from "@/components/MasterImportInstructions";
 
 type Props = {
   open: boolean;
