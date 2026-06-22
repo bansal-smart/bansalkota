@@ -161,6 +161,7 @@ const CreateTestPage = () => {
   const [myCourses, setMyCourses] = useState<{ id: string; name: string }[]>([]);
   const [resolvedTestId, setResolvedTestId] = useState<string | null>(testIdParam ?? null);
   const [docxImportOpen, setDocxImportOpen] = useState(false);
+  const [masterInstructionsOpen, setMasterInstructionsOpen] = useState(false);
   const [commonImportOpen, setCommonImportOpen] = useState(false);
   const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
