@@ -1,4 +1,4 @@
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, GraduationCap, BookOpen, FileText } from "lucide-react";
 import type { FeaturedConfig } from "@/lib/landingSchemas";
 import { useFeaturedProducts } from "@/hooks/useFeaturedProducts";
 
@@ -34,9 +34,12 @@ export default function FeaturedProductsSection({ data }: { data: FeaturedConfig
               >
                 <div className="relative aspect-video w-full overflow-hidden bg-muted">
                   {p.image_url ? (
-                    <img src={p.image_url} alt={p.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                    <img src={p.image_url} alt={p.title} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No image</div>
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-primary/10 via-primary/5 to-background text-primary">
+                      {p.kind === 'book' ? <BookOpen className="h-12 w-12" /> : p.kind === 'test_series' ? <FileText className="h-12 w-12" /> : <GraduationCap className="h-12 w-12" />}
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">{KIND_LABEL[p.kind]}</span>
+                    </div>
                   )}
                   {p.badge && (
                     <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-primary-foreground">
