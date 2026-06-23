@@ -146,7 +146,7 @@ const CbtLiveTestsPage = () => {
                         <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {t.duration_minutes} min</span>
                         <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> {t.total_questions} questions · {t.total_marks} marks</span>
                         {t.subjects && t.subjects.length > 0 && <span>{t.subjects.join(" · ")}</span>}
-                        {t.ends_at && <span>Closes {new Date(t.ends_at).toLocaleString()}</span>}
+                        {t.ends_at && <span>Closes {formatTestDateTime(t.ends_at)}</span>}
                       </div>
                       {countdown && (
                         <p className="mt-2 text-xs font-semibold text-amber-700">Opens in <span className="font-display text-base font-black tabular-nums">{countdown}</span></p>
