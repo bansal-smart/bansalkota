@@ -209,6 +209,34 @@ const AdminTestResultPage = () => {
     load();
   }, [slug]);
 
+  // Load potential partner tests when picker opens / query changes
+  useEffect(() => {
+    if (!combineOpen || !test) return;
+    let cancelled = false;
+    const run = async () => {
+      setPartnerLoading(true);
+      let q = supabase
+        .from("tests")
+        .select("id, title, slug, starts_at, exam_pattern")
+        .neq("id", test.id)
+        .order("starts_at", { ascending: false, nullsFirst: false })
+        .limit(50);
+      if (partnerQuery.trim()) q = q.ilike("title", `%${partnerQuery.trim()}%`);
+      const { data } = await q;
+      if (!cancelled) setPartnerCandidates((data ?? []) as any);
+      setPartnerLoading(false);
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [combineOpen, partnerQuery, test]);
+
+  const openCombined = (partnerSlug: string) => {
+    if (!test) return;
+    setCombineOpen(false);
+    navigate(`/admin/tests/${test.slug}/combined?with=${encodeURIComponent(partnerSlug)}`);
+  };
+
+
   const subjects = useMemo(() => {
     const set = new Set<string>(Array.isArray(test?.subjects) ? (test!.subjects as string[]) : []);
     for (const r of rows) {
