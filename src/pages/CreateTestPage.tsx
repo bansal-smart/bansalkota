@@ -357,6 +357,42 @@ const CreateTestPage = () => {
     }
   };
 
+  const [replacingTitleImgIdx, setReplacingTitleImgIdx] = useState<number | null>(null);
+  const replaceTitleImage = async (i: number, file: File) => {
+    if (!user) return toast.error("Sign in required");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    if (!file.type.startsWith("image/")) return toast.error("File must be an image");
+    setReplacingTitleImgIdx(i);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `${user.id}/title-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      const url = signed.signedUrl;
+      const current = questions[i];
+      const hasInlineImg = /<img\b[^>]*>/i.test(current.text);
+      if (hasInlineImg) {
+        const nextText = current.text.replace(/<img\b([^>]*?)\bsrc=("|')[^"']*("|')([^>]*)>/i, (_m, pre, _q1, _q2, post) => {
+          return `<img${pre}src="${url}"${post}>`;
+        });
+        updateQ(i, { text: nextText });
+      } else {
+        updateQ(i, { imageUrl: url });
+      }
+      toast.success("Title image replaced");
+    } catch (e: any) {
+      toast.error(e?.message || "Upload failed");
+    } finally {
+      setReplacingTitleImgIdx(null);
+    }
+  };
+
   const [uploadingOpt, setUploadingOpt] = useState<string | null>(null); // `${i}:${oi}`
   const uploadOptionImage = async (i: number, oi: number, file: File) => {
     if (!user) return toast.error("Sign in required");
