@@ -78,7 +78,7 @@ const AdminTestDetailPage = () => {
       const [qRes, aRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong")
+          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong, is_bonus")
           .eq("test_id", t.id)
           .order("position"),
         supabase
