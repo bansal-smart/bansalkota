@@ -46,6 +46,7 @@ const CenterStudentsPage = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
