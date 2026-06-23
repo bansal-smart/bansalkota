@@ -174,7 +174,7 @@ const CreateTestPage = () => {
   const [startTime, setStartTime] = useState<string>(""); // HH:mm
   const [endTime, setEndTime] = useState<string>(""); // HH:mm
   const [autoRelease, setAutoRelease] = useState<boolean>(true);
-  const [openWindowMinutes, setOpenWindowMinutes] = useState<string>(""); // minutes after start_time during which students may begin
+  const [openWindowTime, setOpenWindowTime] = useState<string>(""); // HH:mm — entry-window close time on same date as test
   const importedQuestionCount = useRef(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
