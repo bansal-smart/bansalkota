@@ -1149,6 +1149,56 @@ const AdminTestResultPage = () => {
           </div>
         </div>
       )}
+
+      {/* Combine-with picker */}
+      {combineOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setCombineOpen(false)}>
+          <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Combine with another test</h3>
+                <p className="text-xs text-muted-foreground">Pick the partner paper (e.g. JEE Adv Paper 2) to see a merged ranked sheet.</p>
+              </div>
+              <button onClick={() => setCombineOpen(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  autoFocus
+                  placeholder="Search by test title…"
+                  value={partnerQuery}
+                  onChange={(e) => setPartnerQuery(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background pl-7 pr-2 py-1.5 text-sm"
+                />
+              </div>
+              <div className="max-h-80 overflow-auto rounded-lg border border-border divide-y divide-border">
+                {partnerLoading ? (
+                  <div className="p-6 text-center"><Loader2 className="h-5 w-5 animate-spin inline text-primary" /></div>
+                ) : partnerCandidates.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-muted-foreground">No tests found.</div>
+                ) : (
+                  partnerCandidates.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => openCombined(p.slug)}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/50 flex items-center justify-between gap-3"
+                    >
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{p.title}</div>
+                        <div className="text-[11px] text-muted-foreground">{safeFmt(p.starts_at, "dd MMM yyyy")} · {p.exam_pattern}</div>
+                      </div>
+                      <GitMerge className="h-4 w-4 text-primary" />
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
