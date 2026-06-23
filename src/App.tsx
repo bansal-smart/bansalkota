@@ -332,6 +332,7 @@ const App = () => (
               <Route path="/admin/tests/new" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
               <Route path="/admin/tests/:slug/result" element={<AdminTestResultPage />} />
+              <Route path="/admin/tests/:slug/combined" element={<AdminCombinedResultPage />} />
               <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
               <Route path="/admin/books" element={<AdminBooksPage />} />
               <Route path="/admin/orders" element={<AdminOrdersPage />} />
