@@ -23,6 +23,7 @@ type ResponseQuestion = {
   marks_correct: number | null;
   marks_wrong: number | null;
   selected: any;
+  is_bonus?: boolean;
 };
 
 type SheetData = {
