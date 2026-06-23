@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Loader2, ArrowLeft, Pencil, Trash2, Check, X, Eye, Upload, BarChart3, Trophy, FileSpreadsheet } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Trash2, Check, X, Eye, Upload, BarChart3, Trophy, FileSpreadsheet, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +34,7 @@ type TestRow = {
 type QRow = {
   id: string; position: number; subject: string | null; topic: string | null;
   question_text: string; question_type: string | null; difficulty: string | null;
-  marks_correct: number | null; marks_wrong: number | null;
+  marks_correct: number | null; marks_wrong: number | null; is_bonus: boolean | null;
 };
 
 const AdminTestDetailPage = () => {
@@ -78,7 +78,7 @@ const AdminTestDetailPage = () => {
       const [qRes, aRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong")
+          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong, is_bonus")
           .eq("test_id", t.id)
           .order("position"),
         supabase
@@ -189,6 +189,26 @@ const AdminTestDetailPage = () => {
     const { error } = await supabase.from("test_questions").delete().eq("id", q.id);
     if (error) return toast.error(error.message);
     toast.success("Question removed");
+    load();
+  };
+
+  const toggleBonus = async (q: QRow) => {
+    const next = !q.is_bonus;
+    const ok = await confirm({
+      title: next ? `Mark Q${q.position} as bonus?` : `Remove bonus from Q${q.position}?`,
+      description: next
+        ? "Every student who appeared will get full marks for this question (attempted or not). Scores, percentiles and ranks will recompute now — even if results are already released."
+        : "Bonus will be removed and the question will be re-scored normally for every submitted attempt.",
+      confirmLabel: next ? "Mark as bonus" : "Remove bonus",
+    });
+    if (!ok) return;
+    const { data, error } = await supabase.rpc("admin_set_question_bonus", {
+      _question_id: q.id,
+      _bonus: next,
+    });
+    if (error) return toast.error(error.message);
+    const n = (data as any)?.updated_attempts ?? 0;
+    toast.success(next ? `Bonus applied · ${n} attempts re-scored` : `Bonus removed · ${n} attempts re-scored`);
     load();
   };
 
@@ -323,25 +343,46 @@ const AdminTestDetailPage = () => {
                 <th className="px-3 py-2 text-left">Type</th>
                 <th className="px-3 py-2 text-left">Subject</th>
                 <th className="px-3 py-2 text-center">Marks</th>
+                <th className="px-3 py-2 text-center">Bonus</th>
                 <th className="px-3 py-2"></th>
               </tr></thead>
               <tbody>
                 {questions.map((q) => (
-                  <tr key={q.id} className="border-b border-border last:border-0">
+                  <tr key={q.id} className={`border-b border-border last:border-0 ${q.is_bonus ? "bg-amber-50/50" : ""}`}>
                     <td className="px-3 py-2 text-muted-foreground">{q.position}</td>
                     <td className="px-3 py-2 text-foreground max-w-md truncate">
-                      <MathRenderer content={q.question_text} inline />
+                      <div className="flex items-center gap-2">
+                        {q.is_bonus && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
+                            <Sparkles className="h-2.5 w-2.5" /> Bonus
+                          </span>
+                        )}
+                        <span className="truncate"><MathRenderer content={q.question_text} inline /></span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.question_type ?? "mcq"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.subject ?? "—"}</td>
                     <td className="px-3 py-2 text-center text-xs">+{q.marks_correct ?? 0}/{q.marks_wrong ?? 0}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => toggleBonus(q)}
+                        title={q.is_bonus ? "Remove bonus" : "Mark as bonus (award full marks to all)"}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                          q.is_bonus
+                            ? "border-amber-400 bg-amber-100 text-amber-700 hover:bg-amber-200"
+                            : "border-border bg-card text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <Sparkles className="h-3 w-3" /> {q.is_bonus ? "On" : "Off"}
+                      </button>
+                    </td>
                     <td className="px-3 py-2 text-right">
                       <button onClick={() => deleteQuestion(q)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 ))}
                 {questions.length === 0 && (
-                  <tr><td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">No questions yet. Add some via the editor or bulk import.</td></tr>
+                  <tr><td colSpan={7} className="p-10 text-center text-sm text-muted-foreground">No questions yet. Add some via the editor or bulk import.</td></tr>
                 )}
               </tbody>
             </table>
