@@ -12,12 +12,30 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Verify caller identity
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const callerId: string = claimsData.claims.sub;
 
     const body = await req.json();
     const doubtId = String(body.doubtId ?? "");
@@ -27,6 +45,37 @@ serve(async (req) => {
     if (!doubtId || !question.trim() || question.length > 4000) {
       return new Response(JSON.stringify({ error: "Invalid input" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const admin = createClient(supabaseUrl, serviceKey);
+
+    // Ownership / authorization check: doubt owner OR assigned teacher OR admin/super_admin
+    const { data: doubt, error: doubtErr } = await admin
+      .from("doubts")
+      .select("id, user_id, assigned_teacher_id")
+      .eq("id", doubtId)
+      .maybeSingle();
+    if (doubtErr || !doubt) {
+      return new Response(JSON.stringify({ error: "Doubt not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let allowed = doubt.user_id === callerId || doubt.assigned_teacher_id === callerId;
+    if (!allowed) {
+      const { data: roleRows } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", callerId);
+      const roles = (roleRows ?? []).map((r: { role: string }) => r.role);
+      allowed = roles.includes("admin") || roles.includes("super_admin");
+    }
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -103,10 +152,6 @@ serve(async (req) => {
     const aiJson = await aiResp.json();
     const answer: string = aiJson.choices?.[0]?.message?.content ?? "Sorry, I could not generate an answer.";
 
-    // Update doubt row with the AI answer (service role to bypass RLS for the system update)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const admin = createClient(supabaseUrl, serviceKey);
     await admin
       .from("doubts")
       .update({ ai_answer: answer, status: "ai_solved", updated_at: new Date().toISOString() })
