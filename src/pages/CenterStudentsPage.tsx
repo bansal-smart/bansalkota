@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 import { toast } from "sonner";
-import { FileSpreadsheet, Loader2, Users } from "lucide-react";
+import { FileSpreadsheet, Loader2, Users, UserPlus, X, Copy } from "lucide-react";
 
 type Status = "active" | "inactive" | "passed_out" | "dropped";
 
@@ -46,6 +46,7 @@ const CenterStudentsPage = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
@@ -147,12 +148,20 @@ const CenterStudentsPage = () => {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setBulkOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold hover:bg-muted"
-        >
-          <FileSpreadsheet className="h-4 w-4" /> Bulk import / export
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAddOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+          >
+            <UserPlus className="h-4 w-4" /> Add Student
+          </button>
+          <button
+            onClick={() => setBulkOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold hover:bg-muted"
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Bulk import / export
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
@@ -265,8 +274,187 @@ const CenterStudentsPage = () => {
         bulkImport={bulkImport}
         onDone={load}
       />
+
+      {addOpen && (
+        <AddStudentDialog
+          centreId={primaryCenterId}
+          batches={batches}
+          onClose={() => setAddOpen(false)}
+          onCreated={() => {
+            setAddOpen(false);
+            load();
+          }}
+        />
+      )}
     </div>
   );
 };
+
+type AddDialogProps = {
+  centreId: string;
+  batches: Batch[];
+  onClose: () => void;
+  onCreated: () => void;
+};
+
+const AddStudentDialog = ({ centreId, batches, onClose, onCreated }: AddDialogProps) => {
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    roll_number: "",
+    class_level: "",
+    target_exam: "JEE",
+    city: "",
+    batch_id: "",
+    email: "",
+    password: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<{ email: string; password: string } | null>(null);
+
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.full_name.trim()) return toast.error("Name is required");
+    if (!form.phone.trim() && !form.roll_number.trim())
+      return toast.error("Phone or roll number is required");
+    setSubmitting(true);
+    const { data, error } = await (supabase as any).functions.invoke("center-create-student", {
+      body: {
+        centre_id: centreId,
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim() || null,
+        roll_number: form.roll_number.trim() || null,
+        class_level: form.class_level.trim() || null,
+        target_exam: form.target_exam.trim() || null,
+        city: form.city.trim() || null,
+        batch_id: form.batch_id || null,
+        email: form.email.trim() || null,
+        password: form.password || null,
+      },
+    });
+    setSubmitting(false);
+    if (error || data?.error) {
+      toast.error(error?.message || data?.error || "Failed to create student");
+      return;
+    }
+    toast.success("Student added");
+    setResult({ email: data.email, password: data.password });
+  };
+
+  const copy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="text-lg font-black font-display">Add Student</h3>
+          <button onClick={onClose} className="rounded p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {result ? (
+          <div className="space-y-3 p-5">
+            <p className="text-sm text-muted-foreground">
+              Student created successfully. Share these login details with the student:
+            </p>
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span><b>Email:</b> {result.email}</span>
+                <button onClick={() => copy(result.email)} className="rounded p-1 hover:bg-background">
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span><b>Password:</b> {result.password}</span>
+                <button onClick={() => copy(result.password)} className="rounded p-1 hover:bg-background">
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={onCreated}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 p-5 max-h-[70vh] overflow-y-auto">
+            <Field label="Full Name *" className="col-span-2">
+              <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Phone">
+              <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Roll Number">
+              <input value={form.roll_number} onChange={(e) => set("roll_number", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Class">
+              <select value={form.class_level} onChange={(e) => set("class_level", e.target.value)} className={inputCls}>
+                <option value="">—</option>
+                {["Class 6","Class 7","Class 8","Class 9","Class 10","Class 11","Class 12","Dropper"].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Target Exam">
+              <select value={form.target_exam} onChange={(e) => set("target_exam", e.target.value)} className={inputCls}>
+                {["JEE","NEET","Foundation","Other"].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Batch" className="col-span-2">
+              <select value={form.batch_id} onChange={(e) => set("batch_id", e.target.value)} className={inputCls}>
+                <option value="">— None —</option>
+                {batches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="City">
+              <input value={form.city} onChange={(e) => set("city", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Email (optional)">
+              <input value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} placeholder="auto-generated" />
+            </Field>
+            <Field label="Password (optional)" className="col-span-2">
+              <input value={form.password} onChange={(e) => set("password", e.target.value)} className={inputCls} placeholder="auto-generated (min 8 chars)" />
+            </Field>
+            <div className="col-span-2 flex justify-end gap-2 pt-2">
+              <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-muted">
+                Cancel
+              </button>
+              <button
+                onClick={submit}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Create Student
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const inputCls = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm";
+
+const Field = ({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) => (
+  <label className={`flex flex-col gap-1 text-xs font-semibold text-muted-foreground ${className ?? ""}`}>
+    {label}
+    {children}
+  </label>
+);
 
 export default CenterStudentsPage;
