@@ -160,7 +160,7 @@ const CenterOnlineCoursesPage = () => {
                 <Link to={`/center/online-courses/${c.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
                   Manage Content <ArrowRight className="h-3 w-3" />
                 </Link>
-                <button onClick={() => setEditing(c)} className="rounded-md border border-border px-3 py-1 text-xs">Edit</button>
+                <button onClick={() => openEditor(c)} className="rounded-md border border-border px-3 py-1 text-xs">Edit</button>
                 <button onClick={() => handleDelete(c.id)} className="rounded-md border border-destructive/40 text-destructive px-2 py-1 text-xs">
                   <Trash2 className="h-3 w-3" />
                 </button>
