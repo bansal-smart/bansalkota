@@ -61,6 +61,19 @@ const CenterOnlineCoursesPage = () => {
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [outcomeDraft, setOutcomeDraft] = useState("");
+  const [requirementDraft, setRequirementDraft] = useState("");
+
+  const openEditor = (data: any) => {
+    setEditing({
+      ...data,
+      learning_outcomes: Array.isArray(data.learning_outcomes) ? data.learning_outcomes : [],
+      requirements: Array.isArray(data.requirements) ? data.requirements : [],
+    });
+    setOutcomeDraft("");
+    setRequirementDraft("");
+  };
+
 
   const load = async () => {
     if (!primaryCenterId) return;
