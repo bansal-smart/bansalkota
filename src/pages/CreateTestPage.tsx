@@ -1321,6 +1321,27 @@ const CreateTestPage = () => {
                 />
               )}
 
+              {/* Replace inline title image (for imported questions with embedded <img>) */}
+              {/<img\b[^>]*>/i.test(q.text) && (
+                <div>
+                  <label className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer">
+                    {replacingTitleImgIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                    {replacingTitleImgIdx === i ? "Uploading…" : "Replace title image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={replacingTitleImgIdx === i}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) replaceTitleImage(i, f);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+
               {/* Question image (diagram / figure) */}
               <div className="flex items-start gap-3">
                 {q.imageUrl ? (
