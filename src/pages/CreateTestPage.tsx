@@ -1014,18 +1014,21 @@ const CreateTestPage = () => {
               />
             </div>
             <div>
-              <label className={labelCls}>Open window (minutes)</label>
+              <label className={labelCls}>Open window (entry closes at)</label>
               <input
-                type="number"
-                min={1}
-                placeholder="e.g. 15 — leave blank for no limit"
-                value={openWindowMinutes}
-                onChange={(e) => setOpenWindowMinutes(e.target.value.replace(/[^0-9]/g, ""))}
+                type="time"
+                value={openWindowTime}
+                onChange={(e) => setOpenWindowTime(e.target.value)}
                 className={inputCls}
               />
               <p className="mt-1 text-[10px] text-muted-foreground">
-                Students can start the test only within this many minutes after Start time. Blank = no limit.
+                Students can start the test only up to this time on the test date. Leave blank for no limit.
               </p>
+              {openWindowTime && startTime && openWindowTime <= startTime && (
+                <p className="mt-1 text-[10px] font-semibold text-red-600">
+                  Open window time must be later than the start time.
+                </p>
+              )}
             </div>
             <div>
               <label className={labelCls}>End time (results release)</label>
@@ -1039,14 +1042,15 @@ const CreateTestPage = () => {
           </div>
           {testDate && (startTime || endTime) && (
             <p className="text-[11px] text-muted-foreground">
-              Scheduled: <span className="font-semibold text-foreground">{testDate}</span>
+              Scheduled: <span className="font-semibold text-foreground">{formatTestDate(`${testDate}T00:00:00`)}</span>
               {startTime && <> · opens <span className="font-semibold text-foreground">{startTime}</span></>}
-              {startTime && openWindowMinutes && (
-                <> · entry closes <span className="font-semibold text-foreground">+{openWindowMinutes} min</span></>
+              {startTime && openWindowTime && openWindowTime > startTime && (
+                <> · entry closes <span className="font-semibold text-foreground">{openWindowTime}</span></>
               )}
               {endTime && <> · closes & results at <span className="font-semibold text-foreground">{endTime}</span></>}
             </p>
           )}
+
         </div>
       </section>
 
