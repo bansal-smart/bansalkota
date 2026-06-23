@@ -141,6 +141,7 @@ const AdminTestResultPage = () => {
       setBatchNames(((bs ?? []) as any[]).map((b) => b.code || b.name).filter(Boolean).join(", "));
     } else {
       setBatchNames("");
+    }
     // Count attempts still in_progress (started but never submitted)
     const { count: pCount } = await supabase
       .from("test_attempts")
