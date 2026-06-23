@@ -137,6 +137,9 @@ const CenterContentPage = lazy(() => import("./pages/CenterContentPage"));
 const CenterGalleryPage = lazy(() => import("./pages/CenterGalleryPage"));
 const CenterUpdatesPage = lazy(() => import("./pages/CenterUpdatesPage"));
 const CenterCoursesPage = lazy(() => import("./pages/CenterCoursesPage"));
+const CenterLiveClassesPage = lazy(() => import("./pages/CenterLiveClassesPage"));
+const CenterTestsPage = lazy(() => import("./pages/CenterTestsPage"));
+const CenterTestResultsPage = lazy(() => import("./pages/CenterTestResultsPage"));
 const CenterWebsiteEnquiriesPage = lazy(() => import("./pages/CenterWebsiteEnquiriesPage"));
 const CenterCourseEnquiriesPage = lazy(() => import("./pages/CenterCourseEnquiriesPage"));
 const CenterStudentsPage = lazy(() => import("./pages/CenterStudentsPage"));
@@ -387,6 +390,9 @@ const App = () => (
               <Route path="/center/updates" element={<CenterUpdatesPage />} />
               <Route path="/center/online-courses" element={<CenterOnlineCoursesPage />} />
               <Route path="/center/online-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
+              <Route path="/center/live-classes" element={<CenterLiveClassesPage />} />
+              <Route path="/center/tests" element={<CenterTestsPage />} />
+              <Route path="/center/tests/:testId/results" element={<CenterTestResultsPage />} />
             </Route>
 
 

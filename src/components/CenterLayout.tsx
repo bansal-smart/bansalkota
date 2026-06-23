@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   CircleDot,
   Building2,
+  ClipboardList,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -27,6 +28,8 @@ const nav = [
   { label: "Gallery", icon: ImageIcon, path: "/center/gallery" },
   { label: "Online Courses", icon: Video, path: "/center/online-courses" },
   { label: "Offline Courses", icon: BookOpen, path: "/center/courses" },
+  { label: "Live Classes", icon: Video, path: "/center/live-classes" },
+  { label: "Test Platform", icon: ClipboardList, path: "/center/tests" },
   { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries" },
   { label: "Course Enquiries", icon: ClipboardList, path: "/center/course-enquiries" },
   { label: "My Students", icon: Users, path: "/center/students" },
