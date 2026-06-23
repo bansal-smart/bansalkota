@@ -1,14 +1,5 @@
 project_id = "zmkgboiqubtowmionplq"
 
-[functions.seed-staff-user]
-verify_jwt = false
-
-[functions.seed-mentor-demo]
-verify_jwt = false
-
-[functions.seed-super-admin]
-verify_jwt = false
-
 [functions.process-email-queue]
 verify_jwt = true
 
@@ -26,13 +17,6 @@ verify_jwt = false
 
 [functions.send-live-class-reminders]
 verify_jwt = true
-
-[functions.migrate-helper]
-verify_jwt = false
-
-[functions.mobile-otp-mock]
-verify_jwt = false
-
 
 [functions.cashfree-webhook]
 verify_jwt = false
