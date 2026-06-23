@@ -298,7 +298,7 @@ const TestInstructionsPage = () => {
             onClick={() => navigate(`/tests/${test.slug}/take`)}
             className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : "Start Test"}
+            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : entryClosed ? "Entry window closed" : "Start Test"}
           </button>
         </div>
       </section>
