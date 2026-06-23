@@ -304,19 +304,22 @@ const AdminTestResultPage = () => {
 
   const sendResultSms = async () => {
     if (!test) return;
-    if (!confirm("Send result SMS to all students (present + absent)?")) return;
     setSendingResultSms(true);
     const { data, error: sErr } = await supabase.functions
       .invoke("prpsms-send-result-sms", { body: { test_id: test.id } });
     setSendingResultSms(false);
+    setSmsConfirmOpen(false);
     if (sErr) {
       toast.error(`Result SMS failed: ${sErr.message}`);
+    } else if (data?.error) {
+      toast.error(`Result SMS failed: ${data.error}`);
     } else if (data?.sent !== undefined) {
       toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed (of ${data.total})`);
     } else {
       toast.success("Result SMS dispatched");
     }
   };
+
 
 
   const backRelease = async () => {
