@@ -148,12 +148,20 @@ const CenterStudentsPage = () => {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setBulkOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold hover:bg-muted"
-        >
-          <FileSpreadsheet className="h-4 w-4" /> Bulk import / export
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAddOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+          >
+            <UserPlus className="h-4 w-4" /> Add Student
+          </button>
+          <button
+            onClick={() => setBulkOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold hover:bg-muted"
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Bulk import / export
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
