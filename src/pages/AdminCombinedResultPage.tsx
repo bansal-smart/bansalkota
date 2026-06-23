@@ -434,11 +434,11 @@ const AdminCombinedResultPage = () => {
                       const v1 = cellNum(m, 1, s);
                       const v2 = cellNum(m, 2, s);
                       return (
-                        <>
-                          <td key={`${m.key}-${s}-1`} className={`border border-border px-2 py-1.5 text-center ${absentClass(v1)}`}>{v1}</td>
-                          <td key={`${m.key}-${s}-2`} className={`border border-border px-2 py-1.5 text-center ${absentClass(v2)}`}>{v2}</td>
-                          <td key={`${m.key}-${s}-t`} className="border border-border px-2 py-1.5 text-center font-semibold">{subjTot(s)}</td>
-                        </>
+                        <Fragment key={`${m.key}-${s}`}>
+                          <td className={`border border-border px-2 py-1.5 text-center ${absentClass(v1)}`}>{v1}</td>
+                          <td className={`border border-border px-2 py-1.5 text-center ${absentClass(v2)}`}>{v2}</td>
+                          <td className="border border-border px-2 py-1.5 text-center font-semibold">{subjTot(s)}</td>
+                        </Fragment>
                       );
                     })}
                     <td className={`border border-border px-2 py-1.5 text-center ${absentClass(cellTot(m, 1))}`}>{cellTot(m, 1)}</td>
