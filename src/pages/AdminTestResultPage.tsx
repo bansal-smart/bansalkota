@@ -1213,6 +1213,11 @@ const AdminTestResultPage = () => {
                       <GitMerge className="h-4 w-4 text-primary" />
                     </button>
                   ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {smsConfirmOpen && test && (
@@ -1297,11 +1302,6 @@ const AdminTestResultPage = () => {
                   <><Send className="h-3.5 w-3.5" /> Send Now</>
                 )}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
             </div>
           </div>
         </div>
