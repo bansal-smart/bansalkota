@@ -195,7 +195,7 @@ const AdminTestDetailPage = () => {
   const toggleBonus = async (q: QRow) => {
     const next = !q.is_bonus;
     const ok = await confirm({
-      title: next ? `Mark Q${q.position} as bonus?` : `Remove bonus from Q${q.position}?`,
+      title: next ? `Mark Q${q.position + 1} as bonus?` : `Remove bonus from Q${q.position + 1}?`,
       description: next
         ? "Every student who appeared will get full marks for this question (attempted or not). Scores, percentiles and ranks will recompute now — even if results are already released."
         : "Bonus will be removed and the question will be re-scored normally for every submitted attempt.",
