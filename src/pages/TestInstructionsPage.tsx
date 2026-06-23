@@ -88,8 +88,13 @@ const TestInstructionsPage = () => {
   const ACTIVATION_LEAD_MS = 60_000;
   const startsAt = test?.starts_at ? new Date(test.starts_at).getTime() : null;
   const endsAt = test?.ends_at ? new Date(test.ends_at).getTime() : null;
+  const entryDeadline =
+    startsAt !== null && test?.open_window_minutes != null && test.open_window_minutes > 0
+      ? startsAt + test.open_window_minutes * 60_000
+      : null;
   const notYetOpen = startsAt !== null && now < startsAt - ACTIVATION_LEAD_MS;
   const closed = endsAt !== null && now > endsAt;
+  const entryClosed = !hasExistingAttempt && entryDeadline !== null && now > entryDeadline;
 
   const countdown = useMemo(() => {
     if (!startsAt || !notYetOpen) return null;
