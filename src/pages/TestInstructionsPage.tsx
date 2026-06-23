@@ -59,6 +59,21 @@ const TestInstructionsPage = () => {
         }
       }
       setTest(row);
+      // Check if current user already has an attempt — if so, entry-window restriction does not apply.
+      if (row) {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData?.user?.id;
+        if (uid) {
+          const { data: att } = await supabase
+            .from("test_attempts")
+            .select("id")
+            .eq("test_id", row.id)
+            .eq("user_id", uid)
+            .limit(1)
+            .maybeSingle();
+          if (active) setHasExistingAttempt(!!att);
+        }
+      }
       setLoading(false);
     })();
     return () => { active = false; };
