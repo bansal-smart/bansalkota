@@ -37,7 +37,7 @@ const CenterTestResultsPage = () => {
       setLoading(true);
       const [{ data: test }, { data: profileRows }] = await Promise.all([
         supabase.from("tests").select("title").eq("id", testId).maybeSingle(),
-        supabase.from("profiles").select("id, full_name, email, phone_number").eq("centre_id" as any, primaryCenterId),
+        (supabase as any).from("profiles").select("id, full_name, email, phone_number").eq("centre_id", primaryCenterId),
       ]);
       setTestTitle(test?.title ?? "");
       const studentList = (profileRows ?? []) as any[];
