@@ -70,6 +70,7 @@ const loadLogoDataUrl = async (): Promise<string | null> => {
 
 const AdminTestResultPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [test, setTest] = useState<TestRow | null>(null);
   const [rows, setRows] = useState<ResultRow[]>([]);
   const [batchNames, setBatchNames] = useState<string>("");
