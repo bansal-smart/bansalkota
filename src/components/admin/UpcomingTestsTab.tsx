@@ -91,7 +91,7 @@ const UpcomingTestsTab = () => {
 
                   </td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                    {t.ends_at ? format(new Date(t.ends_at), "dd MMM yyyy · HH:mm") : "—"}
+                    {t.ends_at ? format(new Date(t.ends_at), "dd/MM/yyyy · HH:mm") : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-center text-xs">
                     {t.total_questions} · {t.duration_minutes}m
