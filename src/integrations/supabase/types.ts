@@ -3391,6 +3391,48 @@ export type Database = {
           },
         ]
       }
+      test_question_bonus_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          marked_by: string
+          question_id: string
+          test_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          marked_by: string
+          question_id: string
+          test_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          marked_by?: string
+          question_id?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_question_bonus_log_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_question_bonus_log_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_question_reports: {
         Row: {
           attempt_id: string | null
@@ -3469,6 +3511,7 @@ export type Database = {
           explanation: string | null
           id: string
           import_batch_id: string | null
+          is_bonus: boolean
           marks_correct: number | null
           marks_unanswered: number
           marks_wrong: number | null
@@ -3500,6 +3543,7 @@ export type Database = {
           explanation?: string | null
           id?: string
           import_batch_id?: string | null
+          is_bonus?: boolean
           marks_correct?: number | null
           marks_unanswered?: number
           marks_wrong?: number | null
@@ -3531,6 +3575,7 @@ export type Database = {
           explanation?: string | null
           id?: string
           import_batch_id?: string | null
+          is_bonus?: boolean
           marks_correct?: number | null
           marks_unanswered?: number
           marks_wrong?: number | null
@@ -4035,6 +4080,10 @@ export type Database = {
           _fresh: boolean
           _reason: string
         }
+        Returns: Json
+      }
+      admin_set_question_bonus: {
+        Args: { _bonus: boolean; _question_id: string }
         Returns: Json
       }
       admin_set_user_role: {
