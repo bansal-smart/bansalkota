@@ -469,11 +469,11 @@ const AdminCombinedResultPage = () => {
                   <td className="border border-border px-2 py-1.5"></td>
                   <td className="border border-border px-2 py-1.5"></td>
                   {subjects.map((s) => (
-                    <>
-                      <td key={`${k}-${s}-1`} className="border border-border px-2 py-1.5 text-center">{stats.pSub[s].p1[k]}</td>
-                      <td key={`${k}-${s}-2`} className="border border-border px-2 py-1.5 text-center">{stats.pSub[s].p2[k]}</td>
-                      <td key={`${k}-${s}-t`} className="border border-border px-2 py-1.5 text-center">{stats.pSub[s].tot[k]}</td>
-                    </>
+                    <Fragment key={`${k}-${s}`}>
+                      <td className="border border-border px-2 py-1.5 text-center">{stats.pSub[s].p1[k]}</td>
+                      <td className="border border-border px-2 py-1.5 text-center">{stats.pSub[s].p2[k]}</td>
+                      <td className="border border-border px-2 py-1.5 text-center">{stats.pSub[s].tot[k]}</td>
+                    </Fragment>
                   ))}
                   <td className="border border-border px-2 py-1.5 text-center">{stats.total1[k]}</td>
                   <td className="border border-border px-2 py-1.5 text-center">{stats.total2[k]}</td>
