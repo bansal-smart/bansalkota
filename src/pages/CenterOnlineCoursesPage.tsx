@@ -140,9 +140,10 @@ const CenterOnlineCoursesPage = () => {
           <h1 className="text-2xl font-black font-display text-foreground">Online Courses</h1>
           <p className="text-sm text-muted-foreground">Create centre-specific online video courses. Add chapters and YouTube lectures inside each course.</p>
         </div>
-        <button onClick={() => setEditing(blank(primaryCenterId, user.id))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
+        <button onClick={() => openEditor(blank(primaryCenterId, user.id))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
           <Plus className="h-4 w-4" /> New Online Course
         </button>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
