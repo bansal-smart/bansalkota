@@ -2228,6 +2228,7 @@ export type Database = {
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by: string | null
+          centre_id: string | null
           course_id: string | null
           created_at: string
           created_by: string | null
@@ -2252,6 +2253,7 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
+          centre_id?: string | null
           course_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -2276,6 +2278,7 @@ export type Database = {
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
+          centre_id?: string | null
           course_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -2297,6 +2300,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "live_classes_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "live_classes_course_id_fkey"
             columns: ["course_id"]

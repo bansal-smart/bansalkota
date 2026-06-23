@@ -48,8 +48,6 @@ const blank = (centreId: string, userId: string) => ({
   educator_name: "",
   learning_outcomes: [] as string[],
   requirements: [] as string[],
-  price: null as number | null,
-  original_price: null as number | null,
   is_published: true,
   sort_order: 0,
 });
@@ -107,11 +105,11 @@ const CenterOnlineCoursesPage = () => {
     const payload: any = {
       ...editing,
       centre_id: primaryCenterId,
-      price: editing.price === "" || editing.price == null ? null : Number(editing.price),
-      original_price: editing.original_price === "" || editing.original_price == null ? null : Number(editing.original_price),
       learning_outcomes: editing.learning_outcomes ?? [],
       requirements: editing.requirements ?? [],
     };
+    delete payload.price;
+    delete payload.original_price;
     if (typeof publish === "boolean") payload.is_published = publish;
     if (!payload.id) payload.created_by = user.id;
     if (!payload.slug) payload.slug = `${slugify(payload.title)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -384,38 +382,6 @@ const CenterOnlineCoursesPage = () => {
               </div>
             </section>
 
-            {/* Pricing */}
-            <section className="rounded-lg border border-border p-5 space-y-3">
-              <h3 className="text-base font-bold text-foreground">Pricing</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">Price</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
-                    <input
-                      type="number"
-                      value={editing.price ?? ""}
-                      onChange={(e) => setEditing({ ...editing, price: e.target.value })}
-                      placeholder="1300"
-                      className="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">Original Price (optional)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
-                    <input
-                      type="number"
-                      value={editing.original_price ?? ""}
-                      onChange={(e) => setEditing({ ...editing, original_price: e.target.value })}
-                      placeholder="2500"
-                      className="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button

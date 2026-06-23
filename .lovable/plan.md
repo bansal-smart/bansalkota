@@ -1,59 +1,46 @@
-# Online Courses for Centre Dashboard
+## 1. Remove pricing from Online Course form (Centre panel)
+File: `src/pages/CenterOnlineCoursesPage.tsx`
+- Drop the `price` / `original_price` inputs from the create/edit modal.
+- Remove them from the `blank()` initial state and from the `handleSave` payload.
+- Note: the columns stay in the DB (harmless), no migration needed.
 
-Add a new "Online Courses" module to the Centre Admin panel (right after Gallery) so each centre can build its own online video courses — independent from the platform-wide Bansal courses. Centre admins create a course → add chapters → add lectures (YouTube). They can also bulk-upload lectures from an XLSX file in the format you shared.
+## 2. Remove pricing from Offline Course form (Centre panel)
+File: `src/pages/CenterCoursesPage.tsx`
+- Drop the `currency` + `fees` inputs from the edit modal.
+- Remove the "Fees on enquiry / `${currency} ${fees}`" line from each card.
+- Remove the `fees` / `currency` rows from the bulk-CSV `fields` array so import/export no longer references pricing.
 
-## Scope
+## 3. Add Live Classes management for centres (under the Courses area)
+This needs both UI and a small DB tweak so live classes are scoped to a centre.
 
-- New sidebar tab **"Online Courses"** in Centre Dashboard (after Gallery, before Offline Courses).
-- Listing page → create / edit / delete centre online courses.
-- Course detail page → manage chapters + lectures (similar to Admin Course Content flow, scoped to centre).
-- **Bulk Lecture Import** (XLSX) on a course's detail page — columns: `subject`, `Chapter Name`, `Lecture Name`, `topic`, `Youtube Link`. Auto-creates chapters by name and adds lectures into them. Re-importing the same lecture (same chapter + title) updates the YouTube link.
-- Courses, chapters, lectures are **centre-specific** — only that centre's admins (and platform admins) can manage them. Students mapped to that centre see them on the centre's online learning page (separate concern; out of scope for this turn but data model supports it).
+Backend:
+- Add `centre_id uuid` (nullable, FK to `centres.id`) to `live_classes`, indexed.
+- Add an RLS policy so a centre admin can `SELECT / INSERT / UPDATE / DELETE` rows where `centre_id` equals one of their staff-mapped centres (using the existing `centre_staff` table + `has_role('center_admin')`). Existing global policies remain untouched for super admin.
 
-## Data model (new tables)
+Frontend:
+- New page `src/pages/CenterLiveClassesPage.tsx` — list/create/edit live classes for the centre (title, subject, educator, target exam, start time, end time, meeting URL, description, status). On create it sets `centre_id = primaryCenterId` and `created_by = user.id`.
+- Add the route `/center/live-classes` in `src/App.tsx` (wrapped by `ProtectedCenterRoute` + `CenterLayout`, same pattern as the other centre pages).
+- Add a "Live Classes" sidebar entry in `src/components/CenterLayout.tsx`.
+- Add a "Live Classes" tile on `src/pages/CenterDashboardPage.tsx`.
 
-```text
-centre_online_courses
-  centre_id, title, slug, description, thumbnail_url,
-  target_exam, class_level, subject, is_published, sort_order, created_by
+Students of the centre will see these classes through the existing live-class views — no student-facing changes in this step.
 
-centre_online_chapters
-  centre_course_id, title, subject, position, is_published
+## 4. Integrate Test Platform into the Centre admin panel
+The Super Admin "Test Platform Hub" already exists (`AdminTestPlatformHub`, `AdminTestsPage`, `AdminTestResultPage`, etc.). For centres we will surface a read-only/operational subset:
 
-centre_online_lessons
-  centre_course_id, centre_chapter_id, title, topic,
-  video_url, youtube_id, duration_seconds, position, is_published
-```
+- New page `src/pages/CenterTestsPage.tsx` — lists tests published by super admin (reuse the same `tests` query as `useTests`, filtered to `is_published = true`). For each test show: title, exam, total questions, duration, start/end, and two actions:
+  - **Enroll Students** — opens a dialog listing the centre's mapped students (`profiles.centre_id = primaryCenterId`) with checkboxes; on submit, upsert rows into the existing test-enrollment mechanism (we'll piggyback on `enrollments` keyed by test id, or add a lightweight `test_enrollments` table if the codebase doesn't already have one — to be confirmed during implementation by reading `AdminTestsPage.tsx`).
+  - **View Results** — links to a centre-scoped results page that reuses `AdminTestResultPage`'s data hooks but filters attempts to students whose `centre_id = primaryCenterId`.
+- New page `src/pages/CenterTestResultsPage.tsx` — same table the super admin sees, but filtered to centre students. No "Send Result SMS" button (kept super-admin only).
+- Add routes `/center/tests` and `/center/tests/:testId/results` in `src/App.tsx`.
+- Add a "Test Platform" tile on the centre dashboard and sidebar.
 
-RLS:
-- Centre staff of the owning centre + admin/super_admin → full manage.
-- `authenticated` SELECT when `is_published` (students/centre-mapped users can read).
-- All tables get GRANTs + RLS + policies + updated_at trigger.
+No new pricing/payment surfaces are added on the centre side — enrolment is free and managed by the centre admin.
 
-## Frontend
+## Technical notes
+- All centre pages stay under `ProtectedCenterRoute` so only `center_admin` / `super_admin` can access them.
+- No changes to super-admin pages.
+- Existing `centre_online_courses` rows keep their `price` columns; we just stop showing/writing those fields. We can drop the columns later if you confirm.
+- For item 4, exact storage of "test enrolment per centre" depends on what `AdminTestsPage` already uses. If a suitable table doesn't exist we'll add `centre_test_enrollments(centre_id, test_id, student_id)` with the standard GRANT + RLS block.
 
-New files:
-- `src/pages/CenterOnlineCoursesPage.tsx` — list, create, edit, delete centre online courses (similar visual style to `CenterCoursesPage`).
-- `src/pages/CenterOnlineCourseContentPage.tsx` — chapters + lectures manager; trimmed-down version of `AdminCourseContentPage` (chapter add/edit/delete, YouTube lecture add/edit/delete, drag-reorder, **Bulk import** button).
-- `src/components/CentreLectureBulkImportDialog.tsx` — XLSX/CSV uploader; parses with `xlsx` lib (already a dep via existing bulk imports — will verify and add if missing); preview rows → confirm → batch insert.
-
-Updates:
-- `src/pages/CenterDashboardPage.tsx` — add **Online Courses** tile after Gallery.
-- `src/components/CenterLayout` sidebar — add nav link after Gallery.
-- `src/App.tsx` — routes `/center/online-courses` and `/center/online-courses/:courseId`.
-
-## Bulk import behavior
-
-- Accept `.xlsx` or `.csv`. Required columns (case-insensitive): `Chapter Name`, `Lecture Name`, `Youtube Link`. Optional: `subject`, `topic`.
-- For each row:
-  1. Find or create chapter by `Chapter Name` (within the selected course); inherit `subject` if provided.
-  2. Extract YouTube ID from link (reject row if invalid).
-  3. Upsert lesson by `(chapter, title)` — update `video_url`/`topic` if exists; else insert at next position.
-- Show summary: created chapters, created lectures, updated lectures, skipped rows (with reasons).
-
-## Out of scope (this turn)
-
-- Public student-facing centre online course viewer page (data model is ready; UI can come next).
-- Paid enrollments, certificates, progress tracking.
-
-Confirm and I'll build it.
+Confirm and I'll implement all four in order.

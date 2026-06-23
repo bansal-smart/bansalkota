@@ -70,6 +70,8 @@ const CenterDashboardPage = () => {
     { label: "Online Courses", value: "Videos", icon: Video, to: "/center/online-courses" },
     { label: "Updates & Feed", value: "Posts", icon: Megaphone, to: "/center/updates" },
     { label: "Offline Courses", value: counts.courses, icon: BookOpen, to: "/center/courses" },
+    { label: "Live Classes", value: "Sessions", icon: Video, to: "/center/live-classes" },
+    { label: "Test Platform", value: "Tests", icon: ClipboardList, to: "/center/tests" },
     { label: "Website Enquiries", value: counts.websiteEnquiries, icon: Inbox, to: "/center/enquiries" },
     { label: "New Course Enquiries", value: counts.courseEnquiries, icon: ClipboardList, to: "/center/course-enquiries" },
     { label: "Mapped Students", value: counts.students, icon: Users, to: "/center/students" },
