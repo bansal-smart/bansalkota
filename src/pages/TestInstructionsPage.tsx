@@ -18,6 +18,7 @@ type TestRow = {
   total_marks: number;
   starts_at: string | null;
   ends_at: string | null;
+  open_window_minutes: number | null;
   is_published: boolean;
   instructions_image_url: string | null;
 };
@@ -37,6 +38,7 @@ const TestInstructionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [agreed, setAgreed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [hasExistingAttempt, setHasExistingAttempt] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -57,6 +59,21 @@ const TestInstructionsPage = () => {
         }
       }
       setTest(row);
+      // Check if current user already has an attempt — if so, entry-window restriction does not apply.
+      if (row) {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData?.user?.id;
+        if (uid) {
+          const { data: att } = await supabase
+            .from("test_attempts")
+            .select("id")
+            .eq("test_id", row.id)
+            .eq("user_id", uid)
+            .limit(1)
+            .maybeSingle();
+          if (active) setHasExistingAttempt(!!att);
+        }
+      }
       setLoading(false);
     })();
     return () => { active = false; };
@@ -71,8 +88,13 @@ const TestInstructionsPage = () => {
   const ACTIVATION_LEAD_MS = 60_000;
   const startsAt = test?.starts_at ? new Date(test.starts_at).getTime() : null;
   const endsAt = test?.ends_at ? new Date(test.ends_at).getTime() : null;
+  const entryDeadline =
+    startsAt !== null && test?.open_window_minutes != null && test.open_window_minutes > 0
+      ? startsAt + test.open_window_minutes * 60_000
+      : null;
   const notYetOpen = startsAt !== null && now < startsAt - ACTIVATION_LEAD_MS;
   const closed = endsAt !== null && now > endsAt;
+  const entryClosed = !hasExistingAttempt && entryDeadline !== null && now > entryDeadline;
 
   const countdown = useMemo(() => {
     if (!startsAt || !notYetOpen) return null;
@@ -100,7 +122,7 @@ const TestInstructionsPage = () => {
     );
   }
 
-  const canStart = agreed && !notYetOpen && !closed;
+  const canStart = agreed && !notYetOpen && !closed && !entryClosed;
 
   return (
     <div className="mx-auto max-w-4xl p-4 pb-24 lg:p-8">
@@ -133,6 +155,12 @@ const TestInstructionsPage = () => {
       {closed && (
         <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-700">
           This test window has closed.
+        </div>
+      )}
+
+      {!closed && entryClosed && (
+        <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          The entry window for this test has closed. New attempts are no longer accepted. Please contact your centre admin if you need to start late.
         </div>
       )}
 
@@ -270,7 +298,7 @@ const TestInstructionsPage = () => {
             onClick={() => navigate(`/tests/${test.slug}/take`)}
             className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : "Start Test"}
+            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : entryClosed ? "Entry window closed" : "Start Test"}
           </button>
         </div>
       </section>

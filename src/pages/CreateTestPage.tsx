@@ -174,6 +174,7 @@ const CreateTestPage = () => {
   const [startTime, setStartTime] = useState<string>(""); // HH:mm
   const [endTime, setEndTime] = useState<string>(""); // HH:mm
   const [autoRelease, setAutoRelease] = useState<boolean>(true);
+  const [openWindowMinutes, setOpenWindowMinutes] = useState<string>(""); // minutes after start_time during which students may begin
   const importedQuestionCount = useRef(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -274,6 +275,8 @@ const CreateTestPage = () => {
       }
       if (eAt) setEndTime(timeStr(eAt));
       setAutoRelease((test as any).auto_release !== false);
+      const owm = (test as any).open_window_minutes;
+      setOpenWindowMinutes(owm == null ? "" : String(owm));
       setQuestions(
         tqs.map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
@@ -442,10 +445,12 @@ const CreateTestPage = () => {
       const dt = new Date(`${d}T${t}:00`);
       return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
     };
+    const owmNum = openWindowMinutes === "" ? null : Number(openWindowMinutes);
     return {
       starts_at: toISO(testDate, startTime),
       ends_at: toISO(testDate, endTime),
       auto_release: autoRelease,
+      open_window_minutes: owmNum != null && Number.isFinite(owmNum) && owmNum > 0 ? Math.floor(owmNum) : null,
     };
   };
 
@@ -972,7 +977,7 @@ const CreateTestPage = () => {
               Auto-release results after end time
             </label>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>Test date</label>
               <input
@@ -992,6 +997,20 @@ const CreateTestPage = () => {
               />
             </div>
             <div>
+              <label className={labelCls}>Open window (minutes)</label>
+              <input
+                type="number"
+                min={1}
+                placeholder="e.g. 15 — leave blank for no limit"
+                value={openWindowMinutes}
+                onChange={(e) => setOpenWindowMinutes(e.target.value.replace(/[^0-9]/g, ""))}
+                className={inputCls}
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Students can start the test only within this many minutes after Start time. Blank = no limit.
+              </p>
+            </div>
+            <div>
               <label className={labelCls}>End time (results release)</label>
               <input
                 type="time"
@@ -1005,6 +1024,9 @@ const CreateTestPage = () => {
             <p className="text-[11px] text-muted-foreground">
               Scheduled: <span className="font-semibold text-foreground">{testDate}</span>
               {startTime && <> · opens <span className="font-semibold text-foreground">{startTime}</span></>}
+              {startTime && openWindowMinutes && (
+                <> · entry closes <span className="font-semibold text-foreground">+{openWindowMinutes} min</span></>
+              )}
               {endTime && <> · closes & results at <span className="font-semibold text-foreground">{endTime}</span></>}
             </p>
           )}

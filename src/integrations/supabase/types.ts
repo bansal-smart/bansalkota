@@ -3843,6 +3843,7 @@ export type Database = {
           import_method: string
           instructions_image_url: string | null
           is_published: boolean
+          open_window_minutes: number | null
           paper_group_id: string | null
           paper_label: string | null
           partial_marking_scheme: string | null
@@ -3877,6 +3878,7 @@ export type Database = {
           import_method?: string
           instructions_image_url?: string | null
           is_published?: boolean
+          open_window_minutes?: number | null
           paper_group_id?: string | null
           paper_label?: string | null
           partial_marking_scheme?: string | null
@@ -3911,6 +3913,7 @@ export type Database = {
           import_method?: string
           instructions_image_url?: string | null
           is_published?: boolean
+          open_window_minutes?: number | null
           paper_group_id?: string | null
           paper_label?: string | null
           partial_marking_scheme?: string | null
