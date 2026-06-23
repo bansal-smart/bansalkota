@@ -452,14 +452,24 @@ const CreateTestPage = () => {
       const dt = new Date(`${d}T${t}:00`);
       return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
     };
-    const owmNum = openWindowMinutes === "" ? null : Number(openWindowMinutes);
+    // Open window: derived from openWindowTime (HH:mm on the same date as the test).
+    // Must be strictly after start time. If invalid or <= start, persist NULL.
+    let openWindowMinutes: number | null = null;
+    if (openWindowTime && testDate && startTime) {
+      const startMs = new Date(`${testDate}T${startTime}:00`).getTime();
+      const winMs = new Date(`${testDate}T${openWindowTime}:00`).getTime();
+      if (Number.isFinite(startMs) && Number.isFinite(winMs) && winMs > startMs) {
+        openWindowMinutes = Math.round((winMs - startMs) / 60_000);
+      }
+    }
     return {
       starts_at: toISO(testDate, startTime),
       ends_at: toISO(testDate, endTime),
       auto_release: autoRelease,
-      open_window_minutes: owmNum != null && Number.isFinite(owmNum) && owmNum > 0 ? Math.floor(owmNum) : null,
+      open_window_minutes: openWindowMinutes,
     };
   };
+
 
   const ensureDraftForImport = async (): Promise<string | null> => {
     if (resolvedTestId) return resolvedTestId;
