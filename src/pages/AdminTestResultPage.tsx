@@ -870,6 +870,15 @@ const AdminTestResultPage = () => {
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
           <button
+            onClick={forceSubmitPending}
+            disabled={forceSubmitting || pendingCount === 0}
+            title={pendingCount === 0 ? "No pending (in-progress) attempts" : `Force-submit ${pendingCount} pending attempt${pendingCount === 1 ? "" : "s"}`}
+            className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          >
+            {forceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            Submit pending{pendingCount > 0 ? ` (${pendingCount})` : ""}
+          </button>
+          <button
             onClick={downloadMasterPDF}
             disabled={!released}
             title={released ? "Download branded master result PDF" : "Available after results are released"}
