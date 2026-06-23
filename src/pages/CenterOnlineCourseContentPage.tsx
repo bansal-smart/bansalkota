@@ -58,33 +58,97 @@ const ytEmbed = (id: string) => `https://www.youtube.com/embed/${id}`;
 const CenterOnlineCourseContentPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { primaryCenterId } = useCenterAdmin();
+  const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [chapterDialog, setChapterDialog] = useState<{ open: boolean; id?: string; title: string; subject: string }>({ open: false, title: "", subject: "" });
   const [lectureDialog, setLectureDialog] = useState<{ open: boolean; id?: string; chapterId: string; title: string; topic: string; youtubeUrl: string }>({
     open: false, chapterId: "", title: "", topic: "", youtubeUrl: "",
   });
+  const [liveDialog, setLiveDialog] = useState<any>(null);
+  const [savingLive, setSavingLive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const load = async () => {
     if (!courseId) return;
     setLoading(true);
-    const [{ data: c }, { data: ch }, { data: ls }] = await Promise.all([
+    const [{ data: c }, { data: ch }, { data: ls }, { data: lc }] = await Promise.all([
       supabase.from("centre_online_courses" as any).select("id, title, centre_id").eq("id", courseId).maybeSingle(),
       supabase.from("centre_online_chapters" as any).select("*").eq("centre_course_id", courseId).order("position"),
       supabase.from("centre_online_lessons" as any).select("*").eq("centre_course_id", courseId).order("position"),
+      supabase.from("live_classes" as any)
+        .select("id, title, subject, educator_name, target_exam, starts_at, ends_at, meeting_url, status, description")
+        .eq("centre_online_course_id" as any, courseId)
+        .order("starts_at", { ascending: false }),
     ]);
     setCourse((c as any) ?? null);
     setChapters((ch as any) ?? []);
     setLessons((ls as any) ?? []);
+    setLiveClasses((lc as any) ?? []);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [courseId]);
+
+  const blankLive = () => ({
+    title: "",
+    subject: "Physics",
+    educator_name: "",
+    target_exam: "JEE Main",
+    starts_at: "",
+    ends_at: "",
+    meeting_url: "",
+    status: "scheduled",
+    description: "",
+  });
+
+  const saveLive = async () => {
+    if (!liveDialog?.title) return toast.error("Title is required");
+    if (!liveDialog?.starts_at) return toast.error("Start time is required");
+    if (!liveDialog?.educator_name) return toast.error("Educator name is required");
+    if (!course || !user) return;
+    setSavingLive(true);
+    const payload: any = {
+      title: liveDialog.title,
+      subject: liveDialog.subject,
+      educator_name: liveDialog.educator_name,
+      target_exam: liveDialog.target_exam || null,
+      starts_at: new Date(liveDialog.starts_at).toISOString(),
+      ends_at: liveDialog.ends_at ? new Date(liveDialog.ends_at).toISOString() : null,
+      meeting_url: liveDialog.meeting_url || null,
+      status: liveDialog.status || "scheduled",
+      description: liveDialog.description || null,
+      centre_id: course.centre_id,
+      centre_online_course_id: course.id,
+    };
+    let error;
+    if (liveDialog.id) {
+      ({ error } = await (supabase as any).from("live_classes").update(payload).eq("id", liveDialog.id));
+    } else {
+      payload.created_by = user.id;
+      payload.slug = `${liveSlugify(payload.title)}-${Math.random().toString(36).slice(2, 6)}`;
+      ({ error } = await (supabase as any).from("live_classes").insert(payload));
+    }
+    setSavingLive(false);
+    if (error) return toast.error(error.message);
+    toast.success("Live class saved");
+    setLiveDialog(null);
+    load();
+  };
+
+  const deleteLive = async (id: string) => {
+    if (!confirm("Delete this live class?")) return;
+    const { error } = await (supabase as any).from("live_classes").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    load();
+  };
+
 
   const lessonsByChapter = useMemo(() => {
     const m = new Map<string, Lesson[]>();
