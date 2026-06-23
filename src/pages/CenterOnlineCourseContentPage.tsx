@@ -221,7 +221,7 @@ const CenterOnlineCourseContentPage = () => {
                         <td colSpan={6} className="px-4 py-3 text-xs text-muted-foreground italic">No lectures yet.</td>
                       </tr>
                     )}
-                  </>
+                  </FragmentWithKey>
                 );
               })}
               {!chapters.length && (
