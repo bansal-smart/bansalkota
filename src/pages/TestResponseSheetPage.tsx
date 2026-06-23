@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Printer, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Printer, Sparkles, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TestImage } from "@/components/test/TestImage";
