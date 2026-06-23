@@ -34,7 +34,7 @@ type TestRow = {
 type QRow = {
   id: string; position: number; subject: string | null; topic: string | null;
   question_text: string; question_type: string | null; difficulty: string | null;
-  marks_correct: number | null; marks_wrong: number | null;
+  marks_correct: number | null; marks_wrong: number | null; is_bonus: boolean | null;
 };
 
 const AdminTestDetailPage = () => {
