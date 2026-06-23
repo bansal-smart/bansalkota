@@ -3284,6 +3284,8 @@ export type Database = {
           attempted_at: string
           correct_answers: number | null
           created_at: string
+          force_submitted_at: string | null
+          force_submitted_by: string | null
           id: string
           metadata: Json | null
           percentile: number | null
@@ -3309,6 +3311,8 @@ export type Database = {
           attempted_at?: string
           correct_answers?: number | null
           created_at?: string
+          force_submitted_at?: string | null
+          force_submitted_by?: string | null
           id?: string
           metadata?: Json | null
           percentile?: number | null
@@ -3334,6 +3338,8 @@ export type Database = {
           attempted_at?: string
           correct_answers?: number | null
           created_at?: string
+          force_submitted_at?: string | null
+          force_submitted_by?: string | null
           id?: string
           metadata?: Json | null
           percentile?: number | null
@@ -4035,6 +4041,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_force_submit_pending: { Args: { _test_id: string }; Returns: Json }
       admin_get_lessons_full: {
         Args: { _course_id: string }
         Returns: {
