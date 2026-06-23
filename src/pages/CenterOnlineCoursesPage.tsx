@@ -101,10 +101,18 @@ const CenterOnlineCoursesPage = () => {
     setUploading(false);
   };
 
-  const handleSave = async () => {
-    if (!editing?.title) return toast.error("Title is required");
+  const handleSave = async (publish?: boolean) => {
+    if (!editing?.title) return toast.error("Course Title is required");
     setSaving(true);
-    const payload: any = { ...editing, centre_id: primaryCenterId };
+    const payload: any = {
+      ...editing,
+      centre_id: primaryCenterId,
+      price: editing.price === "" || editing.price == null ? null : Number(editing.price),
+      original_price: editing.original_price === "" || editing.original_price == null ? null : Number(editing.original_price),
+      learning_outcomes: editing.learning_outcomes ?? [],
+      requirements: editing.requirements ?? [],
+    };
+    if (typeof publish === "boolean") payload.is_published = publish;
     if (!payload.id) payload.created_by = user.id;
     if (!payload.slug) payload.slug = `${slugify(payload.title)}-${Math.random().toString(36).slice(2, 6)}`;
     const { error } = payload.id
@@ -112,10 +120,11 @@ const CenterOnlineCoursesPage = () => {
       : await (supabase as any).from("centre_online_courses" as any).insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success(publish === false ? "Saved as draft" : "Saved");
     setEditing(null);
     load();
   };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this course and all its chapters/lectures?")) return;
