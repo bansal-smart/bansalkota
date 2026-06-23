@@ -82,33 +82,35 @@ export default function LeadershipDetailPage() {
   return (
     <div className="bg-background">
       {/* ============= HERO (uniform across all leaders) ============= */}
-      <section className="relative w-full min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden bg-bansal-blue-dark">
-        {/* Background image — face anchored to the right so it stays visible */}
+      <section className="relative w-full min-h-[88vh] md:min-h-[80vh] flex items-end md:items-center overflow-hidden bg-bansal-blue-dark">
+        {/* Background image — anchored top on mobile (face visible), right on desktop */}
         <img
           src={heroBg}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-right md:object-[75%_center]"
+          className="absolute inset-0 w-full h-full object-cover object-top md:object-[75%_center]"
         />
-        {/* Brand-tint overlays: heavy on the left (legible text), faded on the right (face stays visible) */}
-        <div className="absolute inset-0 bg-gradient-to-r from-bansal-blue-dark via-bansal-blue-dark/80 via-40% to-bansal-blue-dark/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue-dark/70 via-transparent to-bansal-blue-dark/30" />
-        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-bansal-orange/15 blur-3xl pointer-events-none" />
+        {/* Mobile: bottom-up tint only (keeps photo clearly visible up top) */}
+        <div className="absolute inset-0 md:hidden bg-gradient-to-t from-bansal-blue-dark via-bansal-blue-dark/85 via-35% to-transparent" />
+        {/* Desktop: left-weighted brand tint for legible text */}
+        <div className="absolute inset-0 hidden md:block bg-gradient-to-r from-bansal-blue-dark via-bansal-blue-dark/80 via-40% to-bansal-blue-dark/10" />
+        <div className="absolute inset-0 hidden md:block bg-gradient-to-t from-bansal-blue-dark/70 via-transparent to-bansal-blue-dark/30" />
+        <div className="absolute -right-32 -top-32 h-[24rem] w-[24rem] rounded-full bg-bansal-orange/15 blur-3xl pointer-events-none hidden md:block" />
 
         {/* Back link */}
         <div className="absolute top-0 inset-x-0 z-10">
           <div className={`${CONTAINER} pt-6`}>
             <Link
               to="/about"
-              className="inline-flex items-center gap-2 text-white/85 hover:text-bansal-orange text-sm font-medium backdrop-blur-sm bg-white/5 border border-white/15 px-3 py-1.5 rounded-full transition-colors"
+              className="inline-flex items-center gap-2 text-white/85 hover:text-bansal-orange text-sm font-medium backdrop-blur-sm bg-bansal-blue-dark/40 border border-white/15 px-3 py-1.5 rounded-full transition-colors"
             >
               <ArrowLeft className="h-4 w-4" /> Back to About
             </Link>
           </div>
         </div>
 
-        {/* Centered content */}
-        <div className={`relative z-10 ${CONTAINER} py-20 md:py-24`}>
+        {/* Content — pinned to bottom on mobile, centered on desktop */}
+        <div className={`relative z-10 w-full ${CONTAINER} pb-10 pt-32 md:py-24`}>
           <div className="max-w-3xl mx-auto md:mx-0 text-center md:text-left animate-fade-in">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-5">
               <span className="h-px w-12 bg-bansal-orange" />
@@ -121,7 +123,14 @@ export default function LeadershipDetailPage() {
               style={{ fontSize: "clamp(2.25rem, 7vw, 5.5rem)" }}
             >
               {firstName && <span className="block">{firstName}</span>}
-              <span className="block text-bansal-orange">{lastName}</span>
+              <span className="block text-bansal-orange">
+                {lastName}
+                {honorific && (
+                  <span className="ml-3 align-baseline text-white/85 font-bold" style={{ fontSize: "0.55em" }}>
+                    {honorific}
+                  </span>
+                )}
+              </span>
             </h1>
             {profile.headline && (
               <p className="mt-6 text-base md:text-lg text-white/85 font-medium leading-relaxed">
