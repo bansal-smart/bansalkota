@@ -158,6 +158,12 @@ const TestInstructionsPage = () => {
         </div>
       )}
 
+      {!closed && entryClosed && (
+        <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-700">
+          The entry window for this test has closed. New attempts are no longer accepted. Please contact your centre admin if you need to start late.
+        </div>
+      )}
+
       <section className="mt-6 rounded-2xl border border-border bg-card p-6">
         <h2 className="font-display text-lg font-black text-foreground">General instructions</h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-foreground/85">
