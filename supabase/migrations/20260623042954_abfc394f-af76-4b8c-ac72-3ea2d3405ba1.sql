@@ -1,0 +1,2 @@
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS open_window_minutes integer;
+COMMENT ON COLUMN public.tests.open_window_minutes IS 'Minutes after starts_at during which students may begin the test for the first time. NULL = no limit.';
