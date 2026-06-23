@@ -81,9 +81,9 @@ const CenterOnlineCourseContentPage = () => {
       supabase.from("centre_online_courses" as any).select("id, title, centre_id").eq("id", courseId).maybeSingle(),
       supabase.from("centre_online_chapters" as any).select("*").eq("centre_course_id", courseId).order("position"),
       supabase.from("centre_online_lessons" as any).select("*").eq("centre_course_id", courseId).order("position"),
-      supabase.from("live_classes" as any)
+      (supabase as any).from("live_classes")
         .select("id, title, subject, educator_name, target_exam, starts_at, ends_at, meeting_url, status, description")
-        .eq("centre_online_course_id" as any, courseId)
+        .eq("centre_online_course_id", courseId)
         .order("starts_at", { ascending: false }),
     ]);
     setCourse((c as any) ?? null);
