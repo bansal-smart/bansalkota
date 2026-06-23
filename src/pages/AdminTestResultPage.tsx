@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck, Send } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck, Send, GitMerge, Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -70,6 +70,7 @@ const loadLogoDataUrl = async (): Promise<string | null> => {
 
 const AdminTestResultPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [test, setTest] = useState<TestRow | null>(null);
   const [rows, setRows] = useState<ResultRow[]>([]);
   const [batchNames, setBatchNames] = useState<string>("");
@@ -86,6 +87,10 @@ const AdminTestResultPage = () => {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [forceSubmitting, setForceSubmitting] = useState(false);
+  const [combineOpen, setCombineOpen] = useState(false);
+  const [partnerQuery, setPartnerQuery] = useState("");
+  const [partnerCandidates, setPartnerCandidates] = useState<Array<{ id: string; title: string; slug: string; starts_at: string | null; exam_pattern: string }>>([]);
+  const [partnerLoading, setPartnerLoading] = useState(false);
 
   const load = async () => {
     if (!slug) return;
@@ -203,6 +208,34 @@ const AdminTestResultPage = () => {
   useEffect(() => {
     load();
   }, [slug]);
+
+  // Load potential partner tests when picker opens / query changes
+  useEffect(() => {
+    if (!combineOpen || !test) return;
+    let cancelled = false;
+    const run = async () => {
+      setPartnerLoading(true);
+      let q = supabase
+        .from("tests")
+        .select("id, title, slug, starts_at, exam_pattern")
+        .neq("id", test.id)
+        .order("starts_at", { ascending: false, nullsFirst: false })
+        .limit(50);
+      if (partnerQuery.trim()) q = q.ilike("title", `%${partnerQuery.trim()}%`);
+      const { data } = await q;
+      if (!cancelled) setPartnerCandidates((data ?? []) as any);
+      setPartnerLoading(false);
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [combineOpen, partnerQuery, test]);
+
+  const openCombined = (partnerSlug: string) => {
+    if (!test) return;
+    setCombineOpen(false);
+    navigate(`/admin/tests/${test.slug}/combined?with=${encodeURIComponent(partnerSlug)}`);
+  };
+
 
   const subjects = useMemo(() => {
     const set = new Set<string>(Array.isArray(test?.subjects) ? (test!.subjects as string[]) : []);
@@ -879,6 +912,13 @@ const AdminTestResultPage = () => {
             Submit pending{pendingCount > 0 ? ` (${pendingCount})` : ""}
           </button>
           <button
+            onClick={() => { setPartnerQuery(""); setCombineOpen(true); }}
+            title="Combine with another test (e.g. Paper 1 + Paper 2)"
+            className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 inline-flex items-center gap-1"
+          >
+            <GitMerge className="h-3.5 w-3.5" /> Combine with…
+          </button>
+          <button
             onClick={downloadMasterPDF}
             disabled={!released}
             title={released ? "Download branded master result PDF" : "Available after results are released"}
@@ -1105,6 +1145,56 @@ const AdminTestResultPage = () => {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Combine-with picker */}
+      {combineOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setCombineOpen(false)}>
+          <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Combine with another test</h3>
+                <p className="text-xs text-muted-foreground">Pick the partner paper (e.g. JEE Adv Paper 2) to see a merged ranked sheet.</p>
+              </div>
+              <button onClick={() => setCombineOpen(false)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  autoFocus
+                  placeholder="Search by test title…"
+                  value={partnerQuery}
+                  onChange={(e) => setPartnerQuery(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background pl-7 pr-2 py-1.5 text-sm"
+                />
+              </div>
+              <div className="max-h-80 overflow-auto rounded-lg border border-border divide-y divide-border">
+                {partnerLoading ? (
+                  <div className="p-6 text-center"><Loader2 className="h-5 w-5 animate-spin inline text-primary" /></div>
+                ) : partnerCandidates.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-muted-foreground">No tests found.</div>
+                ) : (
+                  partnerCandidates.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => openCombined(p.slug)}
+                      className="w-full text-left px-3 py-2 hover:bg-muted/50 flex items-center justify-between gap-3"
+                    >
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{p.title}</div>
+                        <div className="text-[11px] text-muted-foreground">{safeFmt(p.starts_at, "dd MMM yyyy")} · {p.exam_pattern}</div>
+                      </div>
+                      <GitMerge className="h-4 w-4 text-primary" />
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
