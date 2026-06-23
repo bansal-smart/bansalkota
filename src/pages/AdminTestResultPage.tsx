@@ -141,8 +141,38 @@ const AdminTestResultPage = () => {
       setBatchNames(((bs ?? []) as any[]).map((b) => b.code || b.name).filter(Boolean).join(", "));
     } else {
       setBatchNames("");
-    }
+    // Count attempts still in_progress (started but never submitted)
+    const { count: pCount } = await supabase
+      .from("test_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("test_id", (t as any).id)
+      .eq("status", "in_progress");
+    setPendingCount(pCount ?? 0);
     setLoading(false);
+  };
+
+  const forceSubmitPending = async () => {
+    if (!test) return;
+    if (pendingCount === 0) {
+      toast.info("No pending attempts to submit");
+      return;
+    }
+    const ok = window.confirm(
+      `Force-submit ${pendingCount} pending attempt${pendingCount === 1 ? "" : "s"}?\n\n` +
+        `Each student's most recently saved answers will be graded as their final submission. ` +
+        `This is meant for students who closed the tab without clicking Submit.`,
+    );
+    if (!ok) return;
+    setForceSubmitting(true);
+    const { data, error } = await (supabase.rpc as any)("admin_force_submit_pending", { _test_id: test.id });
+    setForceSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const n = (data as any)?.submitted_count ?? 0;
+    toast.success(n > 0 ? `Submitted ${n} pending attempt${n === 1 ? "" : "s"}` : "No pending attempts found");
+    load();
   };
 
   const toggleExclusion = async (userId: string, exclude: boolean, name?: string | null) => {
