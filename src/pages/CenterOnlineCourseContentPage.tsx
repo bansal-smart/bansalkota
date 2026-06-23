@@ -36,8 +36,8 @@ const CenterOnlineCourseContentPage = () => {
   const [loading, setLoading] = useState(true);
 
   const [chapterDialog, setChapterDialog] = useState<{ open: boolean; id?: string; title: string; subject: string }>({ open: false, title: "", subject: "" });
-  const [lectureDialog, setLectureDialog] = useState<{ open: boolean; id?: string; chapterId: string; title: string; topic: string; youtubeUrl: string; durationMin: number }>({
-    open: false, chapterId: "", title: "", topic: "", youtubeUrl: "", durationMin: 10,
+  const [lectureDialog, setLectureDialog] = useState<{ open: boolean; id?: string; chapterId: string; title: string; topic: string; youtubeUrl: string }>({
+    open: false, chapterId: "", title: "", topic: "", youtubeUrl: "",
   });
   const [saving, setSaving] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
