@@ -161,41 +161,77 @@ const CenterOnlineCourseContentPage = () => {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {chapters.map((ch) => (
-          <div key={ch.id} className="rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div>
-                <p className="text-sm font-bold text-foreground">{ch.title}</p>
-                {ch.subject && <p className="text-xs text-muted-foreground">{ch.subject}</p>}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setLectureDialog({ open: true, chapterId: ch.id, title: "", topic: "", youtubeUrl: "" })} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
-                  <Plus className="h-3 w-3" /> Add Lecture
-                </button>
-                <button onClick={() => setChapterDialog({ open: true, id: ch.id, title: ch.title, subject: ch.subject ?? "" })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
-                <button onClick={() => deleteChapter(ch.id)} className="rounded-md border border-destructive/40 text-destructive p-1.5"><Trash2 className="h-3 w-3" /></button>
-              </div>
-            </div>
-            <ul className="divide-y divide-border">
-              {(lessonsByChapter.get(ch.id) ?? []).map((l) => (
-                <li key={l.id} className="flex items-center justify-between p-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm text-foreground truncate">{l.title}</p>
-                    {l.topic && <p className="text-xs text-muted-foreground truncate">{l.topic}</p>}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {l.youtube_id && <a href={`https://youtu.be/${l.youtube_id}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline">YouTube</a>}
-                    <button onClick={() => setLectureDialog({ open: true, id: l.id, chapterId: l.centre_chapter_id, title: l.title, topic: l.topic ?? "", youtubeUrl: l.youtube_id ?? "" })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
-                    <button onClick={() => deleteLecture(l.id)} className="rounded-md border border-destructive/40 text-destructive p-1.5"><Trash2 className="h-3 w-3" /></button>
-                  </div>
-                </li>
-              ))}
-              {!(lessonsByChapter.get(ch.id) ?? []).length && <li className="p-3 text-xs text-muted-foreground">No lectures yet.</li>}
-            </ul>
-          </div>
-        ))}
-        {!chapters.length && <p className="text-sm text-muted-foreground">No chapters yet. Add a chapter or use Bulk upload.</p>}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b border-border">
+              <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="px-4 py-3 w-16">#</th>
+                <th className="px-4 py-3">Lecture / Chapter</th>
+                <th className="px-4 py-3">Topic</th>
+                <th className="px-4 py-3">Subject</th>
+                <th className="px-4 py-3 w-28">Video</th>
+                <th className="px-4 py-3 w-40 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chapters.map((ch) => {
+                const chLessons = lessonsByChapter.get(ch.id) ?? [];
+                return (
+                  <>
+                    <tr key={`ch-${ch.id}`} className="bg-muted/30 border-b border-border">
+                      <td className="px-4 py-3 font-bold text-foreground" colSpan={4}>
+                        <div className="flex flex-col">
+                          <span>{ch.title}</span>
+                          {ch.subject && <span className="text-xs font-normal text-muted-foreground">{ch.subject}</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{chLessons.length} lecture{chLessons.length === 1 ? "" : "s"}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => setLectureDialog({ open: true, chapterId: ch.id, title: "", topic: "", youtubeUrl: "" })} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-2 py-1 text-xs font-bold hover:bg-primary/20">
+                            <Plus className="h-3 w-3" /> Add
+                          </button>
+                          <button onClick={() => setChapterDialog({ open: true, id: ch.id, title: ch.title, subject: ch.subject ?? "" })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
+                          <button onClick={() => deleteChapter(ch.id)} className="rounded-md border border-destructive/40 text-destructive p-1.5"><Trash2 className="h-3 w-3" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                    {chLessons.map((l, idx) => (
+                      <tr key={l.id} className="border-b border-border hover:bg-muted/20">
+                        <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
+                        <td className="px-4 py-3 text-foreground">{l.title}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{l.topic || "—"}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{ch.subject || "—"}</td>
+                        <td className="px-4 py-3">
+                          {l.youtube_id ? (
+                            <a href={`https://youtu.be/${l.youtube_id}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline">YouTube</a>
+                          ) : <span className="text-xs text-muted-foreground">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => setLectureDialog({ open: true, id: l.id, chapterId: l.centre_chapter_id, title: l.title, topic: l.topic ?? "", youtubeUrl: l.youtube_id ?? "" })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
+                            <button onClick={() => deleteLecture(l.id)} className="rounded-md border border-destructive/40 text-destructive p-1.5"><Trash2 className="h-3 w-3" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {!chLessons.length && (
+                      <tr key={`empty-${ch.id}`} className="border-b border-border">
+                        <td colSpan={6} className="px-4 py-3 text-xs text-muted-foreground italic">No lectures yet.</td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+              {!chapters.length && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">No chapters yet. Add a chapter or use Bulk upload.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {chapterDialog.open && (
