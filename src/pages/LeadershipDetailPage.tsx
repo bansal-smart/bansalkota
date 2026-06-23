@@ -122,15 +122,23 @@ export default function LeadershipDetailPage() {
               className="font-display font-extrabold text-white leading-[1] tracking-tight"
               style={{ fontSize: "clamp(2.25rem, 7vw, 5.5rem)" }}
             >
-              {firstName && <span className="block">{firstName}</span>}
-              <span className="block text-bansal-orange">
-                {lastName}
-                {honorific && (
-                  <span className="ml-3 align-baseline text-white/85 font-bold" style={{ fontSize: "0.55em" }}>
-                    {honorific}
+              {slug === "vk-bansal" ? (
+                <span className="block text-bansal-orange">
+                  Bansal <span className="text-white">Sir</span>
+                </span>
+              ) : (
+                <>
+                  {firstName && <span className="block">{firstName}</span>}
+                  <span className="block text-bansal-orange">
+                    {lastName}
+                    {honorific && (
+                      <span className="ml-3 align-baseline text-white/85 font-bold" style={{ fontSize: "0.55em" }}>
+                        {honorific}
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
+                </>
+              )}
             </h1>
             {profile.headline && (
               <p className="mt-6 text-base md:text-lg text-white/85 font-medium leading-relaxed">
