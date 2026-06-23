@@ -549,8 +549,15 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          educator_name: string | null
+          full_description: string | null
           id: string
           is_published: boolean
+          learning_outcomes: string[]
+          original_price: number | null
+          price: number | null
+          requirements: string[]
+          short_description: string | null
           slug: string | null
           sort_order: number
           subject: string | null
@@ -565,8 +572,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          educator_name?: string | null
+          full_description?: string | null
           id?: string
           is_published?: boolean
+          learning_outcomes?: string[]
+          original_price?: number | null
+          price?: number | null
+          requirements?: string[]
+          short_description?: string | null
           slug?: string | null
           sort_order?: number
           subject?: string | null
@@ -581,8 +595,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          educator_name?: string | null
+          full_description?: string | null
           id?: string
           is_published?: boolean
+          learning_outcomes?: string[]
+          original_price?: number | null
+          price?: number | null
+          requirements?: string[]
+          short_description?: string | null
           slug?: string | null
           sort_order?: number
           subject?: string | null

@@ -12,6 +12,13 @@ type OnlineCourse = {
   title: string;
   slug: string | null;
   description: string | null;
+  short_description: string | null;
+  full_description: string | null;
+  educator_name: string | null;
+  learning_outcomes: string[] | null;
+  requirements: string[] | null;
+  price: number | null;
+  original_price: number | null;
   thumbnail_url: string | null;
   subject: string | null;
   target_exam: string | null;
@@ -20,6 +27,10 @@ type OnlineCourse = {
   sort_order: number;
 };
 
+const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "Mixed"];
+const EXAMS = ["JEE Main", "JEE Advanced", "IIT JEE", "NEET", "Foundation", "Boards"];
+const CLASSES = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 
@@ -27,11 +38,18 @@ const blank = (centreId: string, userId: string) => ({
   centre_id: centreId,
   created_by: userId,
   title: "",
+  short_description: "",
+  full_description: "",
   description: "",
   thumbnail_url: "",
   subject: "Physics",
-  target_exam: "IIT JEE",
+  target_exam: "JEE Main",
   class_level: "Class 11",
+  educator_name: "",
+  learning_outcomes: [] as string[],
+  requirements: [] as string[],
+  price: null as number | null,
+  original_price: null as number | null,
   is_published: true,
   sort_order: 0,
 });
@@ -43,6 +61,19 @@ const CenterOnlineCoursesPage = () => {
   const [editing, setEditing] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [outcomeDraft, setOutcomeDraft] = useState("");
+  const [requirementDraft, setRequirementDraft] = useState("");
+
+  const openEditor = (data: any) => {
+    setEditing({
+      ...data,
+      learning_outcomes: Array.isArray(data.learning_outcomes) ? data.learning_outcomes : [],
+      requirements: Array.isArray(data.requirements) ? data.requirements : [],
+    });
+    setOutcomeDraft("");
+    setRequirementDraft("");
+  };
+
 
   const load = async () => {
     if (!primaryCenterId) return;
@@ -70,10 +101,18 @@ const CenterOnlineCoursesPage = () => {
     setUploading(false);
   };
 
-  const handleSave = async () => {
-    if (!editing?.title) return toast.error("Title is required");
+  const handleSave = async (publish?: boolean) => {
+    if (!editing?.title) return toast.error("Course Title is required");
     setSaving(true);
-    const payload: any = { ...editing, centre_id: primaryCenterId };
+    const payload: any = {
+      ...editing,
+      centre_id: primaryCenterId,
+      price: editing.price === "" || editing.price == null ? null : Number(editing.price),
+      original_price: editing.original_price === "" || editing.original_price == null ? null : Number(editing.original_price),
+      learning_outcomes: editing.learning_outcomes ?? [],
+      requirements: editing.requirements ?? [],
+    };
+    if (typeof publish === "boolean") payload.is_published = publish;
     if (!payload.id) payload.created_by = user.id;
     if (!payload.slug) payload.slug = `${slugify(payload.title)}-${Math.random().toString(36).slice(2, 6)}`;
     const { error } = payload.id
@@ -81,10 +120,11 @@ const CenterOnlineCoursesPage = () => {
       : await (supabase as any).from("centre_online_courses" as any).insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success(publish === false ? "Saved as draft" : "Saved");
     setEditing(null);
     load();
   };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this course and all its chapters/lectures?")) return;
@@ -100,9 +140,10 @@ const CenterOnlineCoursesPage = () => {
           <h1 className="text-2xl font-black font-display text-foreground">Online Courses</h1>
           <p className="text-sm text-muted-foreground">Create centre-specific online video courses. Add chapters and YouTube lectures inside each course.</p>
         </div>
-        <button onClick={() => setEditing(blank(primaryCenterId, user.id))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
+        <button onClick={() => openEditor(blank(primaryCenterId, user.id))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90">
           <Plus className="h-4 w-4" /> New Online Course
         </button>
+
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -119,7 +160,7 @@ const CenterOnlineCoursesPage = () => {
                 <Link to={`/center/online-courses/${c.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
                   Manage Content <ArrowRight className="h-3 w-3" />
                 </Link>
-                <button onClick={() => setEditing(c)} className="rounded-md border border-border px-3 py-1 text-xs">Edit</button>
+                <button onClick={() => openEditor(c)} className="rounded-md border border-border px-3 py-1 text-xs">Edit</button>
                 <button onClick={() => handleDelete(c.id)} className="rounded-md border border-destructive/40 text-destructive px-2 py-1 text-xs">
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -134,43 +175,270 @@ const CenterOnlineCoursesPage = () => {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-card p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit" : "New"} Online Course</h2>
-            <div>
-              <label className="text-xs font-medium text-foreground">Thumbnail</label>
-              {editing.thumbnail_url && <img src={editing.thumbnail_url} alt="" className="h-28 w-full object-cover rounded-md mt-1" />}
-              <label className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer">
-                <Upload className="h-3 w-3" /> {uploading ? "Uploading…" : "Upload thumbnail"}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
-              </label>
-            </div>
-            <input value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="Course title" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            <textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Description" rows={3} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            <div className="grid grid-cols-3 gap-2">
-              <select value={editing.subject ?? ""} onChange={(e) => setEditing({ ...editing, subject: e.target.value })} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option>Physics</option><option>Chemistry</option><option>Mathematics</option><option>Biology</option><option>Mixed</option>
-              </select>
-              <select value={editing.target_exam ?? ""} onChange={(e) => setEditing({ ...editing, target_exam: e.target.value })} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option>IIT JEE</option><option>NEET</option><option>Foundation</option><option>Boards</option>
-              </select>
-              <select value={editing.class_level ?? ""} onChange={(e) => setEditing({ ...editing, class_level: e.target.value })} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option>Class 8</option><option>Class 9</option><option>Class 10</option><option>Class 11</option><option>Class 12</option><option>Dropper</option>
-              </select>
-            </div>
-            <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" checked={editing.is_published ?? true} onChange={(e) => setEditing({ ...editing, is_published: e.target.checked })} />
-              Published
-            </label>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setEditing(null)} className="rounded-md border border-border px-3 py-2 text-xs">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground inline-flex items-center gap-1">
-                {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />} Save
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto" onClick={() => setEditing(null)}>
+          <div className="w-full max-w-3xl my-8 rounded-xl bg-card p-6 space-y-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-black font-display text-foreground">{editing.id ? "Edit Course" : "Create New Course"}</h2>
+
+            {/* Basic Information */}
+            <section className="rounded-lg border border-border p-5 space-y-4">
+              <h3 className="text-base font-bold text-foreground">Basic Information</h3>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground">Course Title</label>
+                <input
+                  value={editing.title ?? ""}
+                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                  placeholder="e.g. JEE Physics Booster 2027"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground">Short Description</label>
+                <input
+                  value={editing.short_description ?? ""}
+                  onChange={(e) => setEditing({ ...editing, short_description: e.target.value.slice(0, 150) })}
+                  placeholder="150 chars max"
+                  maxLength={150}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground">Full Description</label>
+                <textarea
+                  value={editing.full_description ?? ""}
+                  onChange={(e) => setEditing({ ...editing, full_description: e.target.value })}
+                  placeholder="Detailed course description..."
+                  rows={4}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground">Exam</label>
+                  <select
+                    value={editing.target_exam ?? ""}
+                    onChange={(e) => setEditing({ ...editing, target_exam: e.target.value })}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {EXAMS.map((x) => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground">Subject</label>
+                  <select
+                    value={editing.subject ?? ""}
+                    onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {SUBJECTS.map((x) => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground">Class</label>
+                  <select
+                    value={editing.class_level ?? ""}
+                    onChange={(e) => setEditing({ ...editing, class_level: e.target.value })}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    {CLASSES.map((x) => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground">Educator Name</label>
+                  <input
+                    value={editing.educator_name ?? ""}
+                    onChange={(e) => setEditing({ ...editing, educator_name: e.target.value })}
+                    placeholder="e.g. Vikram Thapar"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Thumbnail */}
+            <section className="rounded-lg border border-border p-5 space-y-3">
+              <h3 className="text-base font-bold text-foreground">Thumbnail</h3>
+              {editing.thumbnail_url ? (
+                <div className="space-y-2">
+                  <img src={editing.thumbnail_url} alt="" className="h-40 w-full object-cover rounded-md" />
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...editing, thumbnail_url: "" })}
+                    className="text-xs text-destructive"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center h-40 w-full rounded-md border-2 border-dashed border-border cursor-pointer text-muted-foreground hover:bg-muted/50">
+                  <Upload className="h-6 w-6 mb-1" />
+                  <span className="text-xs">{uploading ? "Uploading…" : "Click to upload thumbnail"}</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+                </label>
+              )}
+            </section>
+
+            {/* What You'll Learn */}
+            <section className="rounded-lg border border-border p-5 space-y-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">What You'll Learn</h3>
+                <p className="text-xs text-muted-foreground">Add learning outcomes students will gain from this course.</p>
+              </div>
+              {(editing.learning_outcomes ?? []).length > 0 && (
+                <ul className="space-y-1">
+                  {(editing.learning_outcomes as string[]).map((o, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <span className="flex-1 rounded-md bg-muted px-3 py-1.5">{o}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditing({ ...editing, learning_outcomes: (editing.learning_outcomes as string[]).filter((_, idx) => idx !== i) })}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="flex gap-2">
+                <input
+                  value={outcomeDraft}
+                  onChange={(e) => setOutcomeDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && outcomeDraft.trim()) {
+                      e.preventDefault();
+                      setEditing({ ...editing, learning_outcomes: [...(editing.learning_outcomes ?? []), outcomeDraft.trim()] });
+                      setOutcomeDraft("");
+                    }
+                  }}
+                  placeholder="e.g. Core fundamentals and theory"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!outcomeDraft.trim()) return;
+                    setEditing({ ...editing, learning_outcomes: [...(editing.learning_outcomes ?? []), outcomeDraft.trim()] });
+                    setOutcomeDraft("");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md bg-[#1e3a8a] px-4 py-2 text-xs font-bold text-white"
+                >
+                  <Plus className="h-3 w-3" /> Add
+                </button>
+              </div>
+            </section>
+
+            {/* Requirements */}
+            <section className="rounded-lg border border-border p-5 space-y-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Requirements</h3>
+                <p className="text-xs text-muted-foreground">Add prerequisites or things students should know before starting.</p>
+              </div>
+              {(editing.requirements ?? []).length > 0 && (
+                <ul className="space-y-1">
+                  {(editing.requirements as string[]).map((o, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <span className="flex-1 rounded-md bg-muted px-3 py-1.5">{o}</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditing({ ...editing, requirements: (editing.requirements as string[]).filter((_, idx) => idx !== i) })}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="flex gap-2">
+                <input
+                  value={requirementDraft}
+                  onChange={(e) => setRequirementDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && requirementDraft.trim()) {
+                      e.preventDefault();
+                      setEditing({ ...editing, requirements: [...(editing.requirements ?? []), requirementDraft.trim()] });
+                      setRequirementDraft("");
+                    }
+                  }}
+                  placeholder="e.g. Basic algebra and calculus"
+                  className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!requirementDraft.trim()) return;
+                    setEditing({ ...editing, requirements: [...(editing.requirements ?? []), requirementDraft.trim()] });
+                    setRequirementDraft("");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md bg-[#1e3a8a] px-4 py-2 text-xs font-bold text-white"
+                >
+                  <Plus className="h-3 w-3" /> Add
+                </button>
+              </div>
+            </section>
+
+            {/* Pricing */}
+            <section className="rounded-lg border border-border p-5 space-y-3">
+              <h3 className="text-base font-bold text-foreground">Pricing</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground">Price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
+                    <input
+                      type="number"
+                      value={editing.price ?? ""}
+                      onChange={(e) => setEditing({ ...editing, price: e.target.value })}
+                      placeholder="1300"
+                      className="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-foreground">Original Price (optional)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
+                    <input
+                      type="number"
+                      value={editing.original_price ?? ""}
+                      onChange={(e) => setEditing({ ...editing, original_price: e.target.value })}
+                      placeholder="2500"
+                      className="w-full rounded-md border border-border bg-background pl-7 pr-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={() => handleSave(false)}
+                disabled={saving}
+                className="rounded-md border border-border px-4 py-3 text-sm font-bold text-foreground hover:bg-muted"
+              >
+                Save Draft
+              </button>
+              <button
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                className="rounded-md bg-primary px-4 py-3 text-sm font-bold text-primary-foreground inline-flex items-center justify-center gap-2 hover:opacity-90"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {editing.id ? "Save Course" : "Publish Course"}
               </button>
             </div>
+            <button onClick={() => setEditing(null)} className="w-full text-xs text-muted-foreground hover:text-foreground">Cancel</button>
           </div>
         </div>
       )}
+
     </div>
   );
 };
