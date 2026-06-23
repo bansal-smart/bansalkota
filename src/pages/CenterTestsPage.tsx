@@ -36,7 +36,7 @@ const CenterTestsPage = () => {
           .select("id, slug, title, test_type, exam_pattern, subjects, duration_minutes, total_questions, total_marks, starts_at, ends_at")
           .eq("is_published", true)
           .order("created_at", { ascending: false }),
-        supabase.from("profiles").select("id").eq("centre_id" as any, primaryCenterId),
+        (supabase as any).from("profiles").select("id").eq("centre_id", primaryCenterId),
       ]);
       const ids = new Set<string>((profileRows ?? []).map((p: any) => p.id));
       setStudentIds(ids);
