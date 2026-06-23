@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 import { toast } from "sonner";
-import { FileSpreadsheet, Loader2, Users } from "lucide-react";
+import { FileSpreadsheet, Loader2, Users, UserPlus, X, Copy } from "lucide-react";
 
 type Status = "active" | "inactive" | "passed_out" | "dropped";
 
