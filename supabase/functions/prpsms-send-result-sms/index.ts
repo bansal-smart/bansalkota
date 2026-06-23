@@ -22,6 +22,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "test_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -29,12 +34,21 @@ Deno.serve(async (req) => {
 
     // A second client that forwards the caller's JWT — required for the
     // `admin_test_result_sheet` RPC, which checks auth.uid() / role.
-    const authHeader = req.headers.get("Authorization") ?? "";
     const supabaseAsUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } },
     );
+
+    const { data: userData, error: userErr } = await supabaseAsUser.auth.getUser();
+    if (userErr || !userData.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { data: isAllowed, error: roleErr } = await supabaseAsUser.rpc("is_admin_or_super", { _user_id: userData.user.id });
+    if (roleErr) throw roleErr;
+    if (!isAllowed) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Fetch test
     const { data: test, error: testErr } = await supabase
