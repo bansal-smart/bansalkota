@@ -155,7 +155,7 @@ export default function LeadershipDetailPage() {
         <section className="bg-bansal-blue text-white py-5 border-b-2 border-bansal-orange/40">
           <div className={`${CONTAINER} max-w-6xl`}>
             <p className="font-display text-base md:text-xl font-semibold text-center md:text-left leading-snug">
-              <span className="text-bansal-orange">Mr. V.K. Bansal Sir</span>
+              <span className="text-bansal-orange">Bansal Sir</span>
               <span className="mx-2 text-white/40">—</span>
               Founder, Bansal Classes
               <span className="mx-2 text-white/40">·</span>
