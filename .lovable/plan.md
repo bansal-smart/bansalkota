@@ -1,93 +1,77 @@
-# Plan: Admin force-submit + relaxed proctoring warnings
+# Combined Result (Paper 1 + Paper 2)
 
-## 1. Admin "Force-Submit Pending" on Result Sheet
+Adds a "Combined Result" flow on the admin test result page so admins can merge any two tests (typically JEE Advanced Paper 1 & Paper 2) into a single ranked sheet — without changing the existing individual result view.
 
-**Where:** `src/pages/AdminTestResultPage.tsx` — add a new pill-style button next to `Excel` / `Master Result PDF`, labeled **"Submit pending"** with a count badge (e.g., "Submit pending (3)").
+## 1. Entry point
 
-**Behavior:**
-- Visible only to `admin` / `super_admin`.
-- Shows count of attempts for this test whose `status = 'in_progress'` (started but never submitted).
-- Click → confirm dialog: *"Force-submit N pending attempts? Their current saved answers will be graded as their final submission."*
-- On confirm → call a new RPC `admin_force_submit_pending(_test_id uuid)` that:
-  1. Finds all `test_attempts` for the test with `status = 'in_progress'`.
-  2. For each, runs the same scoring logic as `submit_test_attempt` (using last-persisted answers from `test_attempt_answer_snapshots`), sets `status = 'submitted'`, `submitted_at = now()`, `auto_submitted = true`, `force_submitted_by = auth.uid()`.
-  3. Recomputes ranks / leaderboard cache.
-  4. Returns `{ submitted_count }`.
-- After success: toast `"Submitted N attempts"`, refetch the result sheet.
-- Audit: add `force_submitted_by uuid` + `force_submitted_at timestamptz` columns to `test_attempts` so we know which were admin-forced.
+On `AdminTestResultPage.tsx`, next to **Excel / Submit pending / Master Result PDF**, add a new button:
 
-**Security:** RPC is `SECURITY DEFINER` and starts with `if not has_role(auth.uid(),'admin') and not has_role(auth.uid(),'super_admin') then raise exception ...`.
+- **Combine with…** → opens a dialog listing other tests (same exam/category, ordered by date desc, searchable).
+- Admin picks the partner test → navigates to `/admin/tests/<base-id>/combined?with=<partner-id>`.
 
-## 2. Relax proctoring warnings in TestTakingPage
+No schema changes, no persistent link — purely an on-demand merged view. Admin can re-pick a different partner any time.
 
-**File:** `src/pages/TestTakingPage.tsx` (lines 270–316).
+## 2. New page: `AdminCombinedResultPage.tsx`
 
-**Current:** Warning fires on BOTH `visibilitychange` (hidden) AND `window blur`. `blur` fires when clicking the taskbar, system notifications, dev-tools, alt-tab to another app, etc. — too aggressive.
+Route: `/admin/tests/:testId/combined?with=<partnerId>`
 
-**Change:**
-- Remove the `window.addEventListener("blur", onBlur)` listener entirely.
-- Keep only `document.addEventListener("visibilitychange", ...)` which fires when:
-  - User switches to another browser tab, OR
-  - User opens a new tab, OR
-  - The browser window itself is fully hidden (minimized).
-- This means clicking on the taskbar, OS notifications, or other apps while the browser remains visible will NOT trigger a warning.
-- Keep the 3-strike auto-submit logic, debounce, and `contextmenu` block unchanged.
+Loads both tests' attempts + students in parallel, merges in memory, renders the same visual style as the existing result page.
 
-Minimization technically still fires `visibilitychange`, which is acceptable — the user's two listed cases (tab switch, new tab) are the primary triggers, and minimizing is a clear "leaving the test" signal.
+### Columns
 
-## Technical Details
-
-**New migration:**
-```sql
-alter table public.test_attempts
-  add column if not exists force_submitted_by uuid references auth.users(id),
-  add column if not exists force_submitted_at timestamptz;
-
-create or replace function public.admin_force_submit_pending(_test_id uuid)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  _count int := 0;
-  _attempt record;
-begin
-  if not (has_role(auth.uid(),'admin') or has_role(auth.uid(),'super_admin')) then
-    raise exception 'forbidden';
-  end if;
-
-  for _attempt in
-    select id from public.test_attempts
-    where test_id = _test_id and status = 'in_progress'
-  loop
-    -- reuse existing scoring path
-    perform public.score_test_attempt(_attempt.id);
-    update public.test_attempts
-       set status = 'submitted',
-           submitted_at = coalesce(submitted_at, now()),
-           auto_submitted = true,
-           force_submitted_by = auth.uid(),
-           force_submitted_at = now()
-     where id = _attempt.id;
-    _count := _count + 1;
-  end loop;
-
-  -- refresh leaderboard cache for this test
-  perform public.refresh_test_leaderboard(_test_id);
-
-  return jsonb_build_object('submitted_count', _count);
-end;
-$$;
-
-grant execute on function public.admin_force_submit_pending(uuid) to authenticated;
 ```
-(Function names `score_test_attempt` / `refresh_test_leaderboard` will be verified against the existing SQL before writing the final migration.)
+RANK(P1) | RANK(P2) | RANK(COMBINED) | ROLL NO | NAME | BATCH |
+PHYSI 1 | PHYSI 2 | PHYSI TOT |
+CHEMI 1 | CHEMI 2 | CHEMI TOT |
+MATHE 1 | MATHE 2 | MATHE TOT |
+TOTAL 1 | TOTAL 2 | GRAND TOTAL | %AGE | VIEW | EXCLUDE
+```
 
-**Frontend:**
-- `AdminTestResultPage.tsx`: derive `pendingCount` from already-loaded roster (students with status `in_progress`); add button + AlertDialog; call RPC via `supabase.rpc('admin_force_submit_pending', { _test_id })`; refetch on success.
-- `TestTakingPage.tsx`: remove the blur listener and its cleanup.
+Subject columns are derived dynamically from the union of subjects in both papers (so it also works for any 2-test combination, not just JEE Adv).
 
-## Out of Scope
-- No change to the 3-strike threshold or auto-submit-on-3rd-violation logic.
-- No change to absent students (those who never started) — they remain ABS.
+### Student matching & display rules (per user feedback)
+
+- Match by **profile roll_no** (fall back to user_id when roll absent).
+- Union of all students from both papers is shown.
+- For any paper a student did not attempt, that paper's subject cells and `TOTAL n` show **"Absent"** (greyed), and their other paper's marks display normally.
+- `GRAND TOTAL` = sum of attempted paper(s) only; `%AGE` = grand total ÷ (max marks of attempted papers only) — so a single-paper student isn't unfairly diluted.
+
+### Ranking (side-by-side)
+
+- `RANK(P1)` — rank within Paper 1 attendees only.
+- `RANK(P2)` — rank within Paper 2 attendees only.
+- `RANK(COMBINED)` — rank by `GRAND TOTAL` desc across the full union; single-paper students participate using their one-paper total.
+- Ties: dense rank (same as existing logic).
+- ABS-in-both / IT-test rows excluded from ranking, shown at the bottom like the current page.
+
+### Footer aggregates
+
+MAX / MIN / AVG rows reproduced for every numeric column (per-paper subjects, per-paper totals, and grand total), matching the current page's footer style.
+
+### Actions reused
+
+- **Excel** export — same shape as new columns.
+- **Master Result PDF** — combined layout (subject 1 / 2 / total triplets).
+- **Exclude** — toggling exclusion on combined view excludes that student from the combined ranking only (uses existing `test_result_exclusions` keyed per-test for the underlying papers; for the combined view we keep a local in-memory exclusion list, no DB change).
+- **VIEW** opens the student's response sheet of whichever paper(s) they attempted (dropdown if both).
+- **Release / Back-release / Submit pending** are *not* duplicated here — those remain on each individual test's page.
+
+## 3. Implementation notes
+
+- No DB migration. Pure frontend aggregation on top of existing `test_attempts`, `tests`, `test_questions`, `profiles` queries.
+- Reuse helpers from `AdminTestResultPage.tsx` (subject grouping, rank computation, formatINR-free numeric formatters) — extract them into `src/lib/tests/resultAggregation.ts` so both pages share logic without divergence.
+- Partner test selector: query `tests` where `exam_id = base.exam_id` and `id != base.id`, ordered by `starts_at desc`, limit 50, with search.
+- URL is shareable; reloading restores the same combined view.
+
+## 4. Files touched
+
+- `src/pages/AdminTestResultPage.tsx` — add "Combine with…" button + partner-picker dialog.
+- `src/pages/AdminCombinedResultPage.tsx` — **new**, the combined view.
+- `src/lib/tests/resultAggregation.ts` — **new**, shared subject/rank helpers extracted from the existing page.
+- `src/App.tsx` — register the new route.
+
+## Out of scope
+
+- Persistent "test group" entity.
+- Combining 3+ papers.
+- Release/SMS for combined results (releases stay per-paper).
