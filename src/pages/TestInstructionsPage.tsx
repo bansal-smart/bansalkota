@@ -122,7 +122,7 @@ const TestInstructionsPage = () => {
     );
   }
 
-  const canStart = agreed && !notYetOpen && !closed;
+  const canStart = agreed && !notYetOpen && !closed && !entryClosed;
 
   return (
     <div className="mx-auto max-w-4xl p-4 pb-24 lg:p-8">
