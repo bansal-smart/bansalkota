@@ -298,18 +298,24 @@ const AdminTestResultPage = () => {
       return toast.error(error.message);
     }
     toast.success("Results released — students can now view ranks");
-    // Fire-and-forget SMS broadcast to all students who submitted
-    supabase.functions
-      .invoke("prpsms-send-result-sms", { body: { test_id: test.id } })
-      .then(({ data, error: sErr }) => {
-        if (sErr) {
-          toast.error(`Result SMS failed: ${sErr.message}`);
-        } else if (data?.sent !== undefined) {
-          toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed`);
-        }
-      });
     setReleasing(false);
     load();
+  };
+
+  const sendResultSms = async () => {
+    if (!test) return;
+    if (!confirm("Send result SMS to all students (present + absent)?")) return;
+    setSendingResultSms(true);
+    const { data, error: sErr } = await supabase.functions
+      .invoke("prpsms-send-result-sms", { body: { test_id: test.id } });
+    setSendingResultSms(false);
+    if (sErr) {
+      toast.error(`Result SMS failed: ${sErr.message}`);
+    } else if (data?.sent !== undefined) {
+      toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed (of ${data.total})`);
+    } else {
+      toast.success("Result SMS dispatched");
+    }
   };
 
 
