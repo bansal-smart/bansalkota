@@ -200,10 +200,16 @@ const CenterOnlineCourseContentPage = () => {
 
       {chapterDialog.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setChapterDialog({ open: false, title: "", subject: "" })}>
-          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-foreground">{chapterDialog.id ? "Edit" : "New"} Chapter</h2>
-            <input value={chapterDialog.title} onChange={(e) => setChapterDialog({ ...chapterDialog, title: e.target.value })} placeholder="Chapter title" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            <input value={chapterDialog.subject} onChange={(e) => setChapterDialog({ ...chapterDialog, subject: e.target.value })} placeholder="Subject (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Chapter Title</label>
+              <input value={chapterDialog.title} onChange={(e) => setChapterDialog({ ...chapterDialog, title: e.target.value })} placeholder="e.g. 02-Coordination Compound" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Subject</label>
+              <input value={chapterDialog.subject} onChange={(e) => setChapterDialog({ ...chapterDialog, subject: e.target.value })} placeholder="e.g. INORGANIC CHEMISTRY (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setChapterDialog({ open: false, title: "", subject: "" })} className="rounded-md border border-border px-3 py-2 text-xs">Cancel</button>
               <button onClick={saveChapter} disabled={saving} className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground inline-flex items-center gap-1">
@@ -216,16 +222,31 @@ const CenterOnlineCourseContentPage = () => {
 
       {lectureDialog.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setLectureDialog({ ...lectureDialog, open: false })}>
-          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-foreground">{lectureDialog.id ? "Edit" : "New"} Lecture</h2>
-            <select value={lectureDialog.chapterId} onChange={(e) => setLectureDialog({ ...lectureDialog, chapterId: e.target.value })} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
-              <option value="">Select chapter…</option>
-              {chapters.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
-            <input value={lectureDialog.title} onChange={(e) => setLectureDialog({ ...lectureDialog, title: e.target.value })} placeholder="Lecture title" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            <input value={lectureDialog.topic} onChange={(e) => setLectureDialog({ ...lectureDialog, topic: e.target.value })} placeholder="Topic (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            <input value={lectureDialog.youtubeUrl} onChange={(e) => setLectureDialog({ ...lectureDialog, youtubeUrl: e.target.value })} placeholder="YouTube link" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            <input type="number" value={lectureDialog.durationMin} onChange={(e) => setLectureDialog({ ...lectureDialog, durationMin: Number(e.target.value) })} placeholder="Duration (min)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Chapter</label>
+              <select value={lectureDialog.chapterId} onChange={(e) => setLectureDialog({ ...lectureDialog, chapterId: e.target.value })} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <option value="">Select chapter…</option>
+                {chapters.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Lecture Title</label>
+              <input value={lectureDialog.title} onChange={(e) => setLectureDialog({ ...lectureDialog, title: e.target.value })} placeholder="e.g. 02-IOC-XII Lec-01" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Topic</label>
+              <input value={lectureDialog.topic} onChange={(e) => setLectureDialog({ ...lectureDialog, topic: e.target.value })} placeholder="e.g. Introduction (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">YouTube Link</label>
+              <input value={lectureDialog.youtubeUrl} onChange={(e) => setLectureDialog({ ...lectureDialog, youtubeUrl: e.target.value })} placeholder="Paste YouTube URL or video ID" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">Duration (minutes)</label>
+              <input type="number" value={lectureDialog.durationMin} onChange={(e) => setLectureDialog({ ...lectureDialog, durationMin: Number(e.target.value) })} placeholder="e.g. 10" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setLectureDialog({ ...lectureDialog, open: false })} className="rounded-md border border-border px-3 py-2 text-xs">Cancel</button>
               <button onClick={saveLecture} disabled={saving} className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground inline-flex items-center gap-1">
