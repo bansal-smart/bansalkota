@@ -12,6 +12,13 @@ type OnlineCourse = {
   title: string;
   slug: string | null;
   description: string | null;
+  short_description: string | null;
+  full_description: string | null;
+  educator_name: string | null;
+  learning_outcomes: string[] | null;
+  requirements: string[] | null;
+  price: number | null;
+  original_price: number | null;
   thumbnail_url: string | null;
   subject: string | null;
   target_exam: string | null;
@@ -20,6 +27,10 @@ type OnlineCourse = {
   sort_order: number;
 };
 
+const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "Mixed"];
+const EXAMS = ["JEE Main", "JEE Advanced", "IIT JEE", "NEET", "Foundation", "Boards"];
+const CLASSES = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 
@@ -27,11 +38,18 @@ const blank = (centreId: string, userId: string) => ({
   centre_id: centreId,
   created_by: userId,
   title: "",
+  short_description: "",
+  full_description: "",
   description: "",
   thumbnail_url: "",
   subject: "Physics",
-  target_exam: "IIT JEE",
+  target_exam: "JEE Main",
   class_level: "Class 11",
+  educator_name: "",
+  learning_outcomes: [] as string[],
+  requirements: [] as string[],
+  price: null as number | null,
+  original_price: null as number | null,
   is_published: true,
   sort_order: 0,
 });
