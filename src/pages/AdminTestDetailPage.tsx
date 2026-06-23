@@ -343,25 +343,46 @@ const AdminTestDetailPage = () => {
                 <th className="px-3 py-2 text-left">Type</th>
                 <th className="px-3 py-2 text-left">Subject</th>
                 <th className="px-3 py-2 text-center">Marks</th>
+                <th className="px-3 py-2 text-center">Bonus</th>
                 <th className="px-3 py-2"></th>
               </tr></thead>
               <tbody>
                 {questions.map((q) => (
-                  <tr key={q.id} className="border-b border-border last:border-0">
+                  <tr key={q.id} className={`border-b border-border last:border-0 ${q.is_bonus ? "bg-amber-50/50" : ""}`}>
                     <td className="px-3 py-2 text-muted-foreground">{q.position}</td>
                     <td className="px-3 py-2 text-foreground max-w-md truncate">
-                      <MathRenderer content={q.question_text} inline />
+                      <div className="flex items-center gap-2">
+                        {q.is_bonus && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-700">
+                            <Sparkles className="h-2.5 w-2.5" /> Bonus
+                          </span>
+                        )}
+                        <span className="truncate"><MathRenderer content={q.question_text} inline /></span>
+                      </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.question_type ?? "mcq"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.subject ?? "—"}</td>
                     <td className="px-3 py-2 text-center text-xs">+{q.marks_correct ?? 0}/{q.marks_wrong ?? 0}</td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => toggleBonus(q)}
+                        title={q.is_bonus ? "Remove bonus" : "Mark as bonus (award full marks to all)"}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors ${
+                          q.is_bonus
+                            ? "border-amber-400 bg-amber-100 text-amber-700 hover:bg-amber-200"
+                            : "border-border bg-card text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <Sparkles className="h-3 w-3" /> {q.is_bonus ? "On" : "Off"}
+                      </button>
+                    </td>
                     <td className="px-3 py-2 text-right">
                       <button onClick={() => deleteQuestion(q)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
                 ))}
                 {questions.length === 0 && (
-                  <tr><td colSpan={6} className="p-10 text-center text-sm text-muted-foreground">No questions yet. Add some via the editor or bulk import.</td></tr>
+                  <tr><td colSpan={7} className="p-10 text-center text-sm text-muted-foreground">No questions yet. Add some via the editor or bulk import.</td></tr>
                 )}
               </tbody>
             </table>
