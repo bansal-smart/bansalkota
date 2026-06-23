@@ -1,0 +1,1 @@
+CREATE POLICY "Centre admins manage site-content" ON storage.objects FOR ALL TO authenticated USING (bucket_id = 'site-content' AND has_role(auth.uid(), 'center_admin'::app_role)) WITH CHECK (bucket_id = 'site-content' AND has_role(auth.uid(), 'center_admin'::app_role));
