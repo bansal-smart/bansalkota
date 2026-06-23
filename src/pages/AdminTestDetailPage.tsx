@@ -349,7 +349,7 @@ const AdminTestDetailPage = () => {
               <tbody>
                 {questions.map((q) => (
                   <tr key={q.id} className={`border-b border-border last:border-0 ${q.is_bonus ? "bg-amber-50/50" : ""}`}>
-                    <td className="px-3 py-2 text-muted-foreground">{q.position}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{q.position + 1}</td>
                     <td className="px-3 py-2 text-foreground max-w-md truncate">
                       <div className="flex items-center gap-2">
                         {q.is_bonus && (
@@ -438,7 +438,7 @@ const AdminTestDetailPage = () => {
                 <ul className="space-y-2">
                   {hardest.map((q) => (
                     <li key={q.id} className="flex items-center gap-2 text-xs">
-                      <span className="font-bold w-6 text-muted-foreground">Q{q.position}</span>
+                      <span className="font-bold w-6 text-muted-foreground">Q{q.position + 1}</span>
                       <span className="flex-1 truncate text-foreground"><MathRenderer content={q.question_text} inline /></span>
                       <span className="font-bold text-destructive">{q.accuracy.toFixed(0)}%</span>
                     </li>
@@ -452,7 +452,7 @@ const AdminTestDetailPage = () => {
                 <ul className="space-y-2">
                   {easiest.map((q) => (
                     <li key={q.id} className="flex items-center gap-2 text-xs">
-                      <span className="font-bold w-6 text-muted-foreground">Q{q.position}</span>
+                      <span className="font-bold w-6 text-muted-foreground">Q{q.position + 1}</span>
                       <span className="flex-1 truncate text-foreground"><MathRenderer content={q.question_text} inline /></span>
                       <span className="font-bold text-secondary">{q.accuracy.toFixed(0)}%</span>
                     </li>
