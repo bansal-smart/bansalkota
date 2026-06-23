@@ -1213,8 +1213,95 @@ const AdminTestResultPage = () => {
                       <GitMerge className="h-4 w-4 text-primary" />
                     </button>
                   ))
-                )}
+      )}
+
+      {smsConfirmOpen && test && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => !sendingResultSms && setSmsConfirmOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between p-4 border-b border-border">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Send Result SMS</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Each student will receive their score & rank (or "Absent") for this test.
+                  </p>
+                </div>
               </div>
+              <button
+                onClick={() => !sendingResultSms && setSmsConfirmOpen(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-40"
+                disabled={sendingResultSms}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Test</div>
+                <div className="text-sm font-bold text-foreground">{test.title}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {safeFmt(test.starts_at ?? test.ends_at, "dd MMM yyyy")} · M.M. {test.total_marks}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg border border-border bg-card p-2.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Total</div>
+                  <div className="text-lg font-bold text-foreground">{rows.length}</div>
+                </div>
+                <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-emerald-700 font-semibold">Present</div>
+                  <div className="text-lg font-bold text-emerald-700">
+                    {rows.filter((r) => r.status === "present").length}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-amber-700 font-semibold">Absent</div>
+                  <div className="text-lg font-bold text-amber-700">
+                    {rows.filter((r) => r.status === "absent").length}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-[11px] text-amber-800">
+                SMS will be delivered via PRPSMS DLT route. Students without a registered mobile number will be skipped.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-border bg-muted/20 rounded-b-2xl">
+              <button
+                onClick={() => setSmsConfirmOpen(false)}
+                disabled={sendingResultSms}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendResultSms}
+                disabled={sendingResultSms}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1.5 disabled:opacity-60"
+              >
+                {sendingResultSms ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending…</>
+                ) : (
+                  <><Send className="h-3.5 w-3.5" /> Send Now</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
             </div>
           </div>
         </div>
