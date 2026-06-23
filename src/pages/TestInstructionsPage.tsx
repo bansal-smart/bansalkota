@@ -38,6 +38,7 @@ const TestInstructionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [agreed, setAgreed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [hasExistingAttempt, setHasExistingAttempt] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
