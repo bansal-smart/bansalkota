@@ -445,10 +445,12 @@ const CreateTestPage = () => {
       const dt = new Date(`${d}T${t}:00`);
       return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
     };
+    const owmNum = openWindowMinutes === "" ? null : Number(openWindowMinutes);
     return {
       starts_at: toISO(testDate, startTime),
       ends_at: toISO(testDate, endTime),
       auto_release: autoRelease,
+      open_window_minutes: owmNum != null && Number.isFinite(owmNum) && owmNum > 0 ? Math.floor(owmNum) : null,
     };
   };
 
