@@ -501,6 +501,169 @@ export type Database = {
           },
         ]
       }
+      centre_online_chapters: {
+        Row: {
+          centre_course_id: string
+          created_at: string
+          id: string
+          is_published: boolean
+          position: number
+          subject: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          centre_course_id: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          position?: number
+          subject?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          centre_course_id?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          position?: number
+          subject?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_online_chapters_centre_course_id_fkey"
+            columns: ["centre_course_id"]
+            isOneToOne: false
+            referencedRelation: "centre_online_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centre_online_courses: {
+        Row: {
+          centre_id: string
+          class_level: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_published: boolean
+          slug: string | null
+          sort_order: number
+          subject: string | null
+          target_exam: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          centre_id: string
+          class_level?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          slug?: string | null
+          sort_order?: number
+          subject?: string | null
+          target_exam?: string | null
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          centre_id?: string
+          class_level?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          slug?: string | null
+          sort_order?: number
+          subject?: string | null
+          target_exam?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_online_courses_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centre_online_lessons: {
+        Row: {
+          centre_chapter_id: string
+          centre_course_id: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          is_free_preview: boolean
+          is_published: boolean
+          position: number
+          title: string
+          topic: string | null
+          updated_at: string
+          video_url: string | null
+          youtube_id: string | null
+        }
+        Insert: {
+          centre_chapter_id: string
+          centre_course_id: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          is_free_preview?: boolean
+          is_published?: boolean
+          position?: number
+          title: string
+          topic?: string | null
+          updated_at?: string
+          video_url?: string | null
+          youtube_id?: string | null
+        }
+        Update: {
+          centre_chapter_id?: string
+          centre_course_id?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          is_free_preview?: boolean
+          is_published?: boolean
+          position?: number
+          title?: string
+          topic?: string | null
+          updated_at?: string
+          video_url?: string | null
+          youtube_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_online_lessons_centre_chapter_id_fkey"
+            columns: ["centre_chapter_id"]
+            isOneToOne: false
+            referencedRelation: "centre_online_chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "centre_online_lessons_centre_course_id_fkey"
+            columns: ["centre_course_id"]
+            isOneToOne: false
+            referencedRelation: "centre_online_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centre_staff: {
         Row: {
           centre_id: string
