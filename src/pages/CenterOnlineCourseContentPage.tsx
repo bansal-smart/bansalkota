@@ -1,10 +1,38 @@
 import { useEffect, useMemo, useState, Fragment as FragmentWithKey } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Loader2, Pencil, FolderPlus, Upload, FileSpreadsheet, Download, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Loader2, Pencil, FolderPlus, Upload, FileSpreadsheet, Download, X, CheckCircle2, AlertCircle, Video, ExternalLink, Save } from "lucide-react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+
+type LiveClass = {
+  id: string;
+  title: string;
+  subject: string;
+  educator_name: string;
+  target_exam: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  meeting_url: string | null;
+  status: string;
+  description: string | null;
+};
+
+const LIVE_SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "Mixed"];
+const LIVE_EXAMS = ["JEE Main", "JEE Advanced", "IIT JEE", "NEET", "Foundation", "Boards"];
+const LIVE_STATUSES = ["scheduled", "live", "completed", "cancelled"];
+
+const liveSlugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+
+const toLocalInput = (iso: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 
 type Course = { id: string; title: string; centre_id: string };
 type Chapter = { id: string; title: string; subject: string | null; position: number; is_published: boolean };
