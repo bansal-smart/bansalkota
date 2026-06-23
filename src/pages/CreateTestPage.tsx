@@ -275,6 +275,8 @@ const CreateTestPage = () => {
       }
       if (eAt) setEndTime(timeStr(eAt));
       setAutoRelease((test as any).auto_release !== false);
+      const owm = (test as any).open_window_minutes;
+      setOpenWindowMinutes(owm == null ? "" : String(owm));
       setQuestions(
         tqs.map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
