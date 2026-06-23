@@ -88,7 +88,7 @@ export default function LeadershipDetailPage() {
           src={heroBg}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-top md:object-[75%_center]"
+          className="absolute inset-0 w-full h-full object-cover object-[80%_top] md:object-[75%_center]"
         />
         {/* Mobile: bottom-up tint only (keeps photo clearly visible up top) */}
         <div className="absolute inset-0 md:hidden bg-gradient-to-t from-bansal-blue-dark via-bansal-blue-dark/85 via-35% to-transparent" />
