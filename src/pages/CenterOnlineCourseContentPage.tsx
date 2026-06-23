@@ -178,8 +178,8 @@ const CenterOnlineCourseContentPage = () => {
               {chapters.map((ch) => {
                 const chLessons = lessonsByChapter.get(ch.id) ?? [];
                 return (
-                  <>
-                    <tr key={`ch-${ch.id}`} className="bg-muted/30 border-b border-border">
+                  <FragmentWithKey key={ch.id}>
+                    <tr className="bg-muted/30 border-b border-border">
                       <td className="px-4 py-3 font-bold text-foreground" colSpan={4}>
                         <div className="flex flex-col">
                           <span>{ch.title}</span>
