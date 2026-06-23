@@ -127,15 +127,21 @@ Deno.serve(async (req) => {
 
       const res = await prpsmsSend({ to: dest, body });
       await supabase.from("sms_send_log").insert({
-        recipient_phone: `+91${dest}`,
+        to_phone: `+91${dest}`,
         template_name: "Result",
+        vars: {
+          name,
+          test_name: test.title,
+          date: dateStr,
+          score: scoreField,
+          rank: rankField,
+        },
         purpose: "result_release",
-        body,
+        rendered_body: body,
         status: res.ok ? "sent" : "failed",
         provider_msg_id: res.msg_id ?? null,
-        provider_response: res.raw,
         error_message: res.ok ? null : res.error,
-        user_id: row.user_id,
+        sent_by: userData.user.id,
       });
       if (res.ok) {
         sent++;
