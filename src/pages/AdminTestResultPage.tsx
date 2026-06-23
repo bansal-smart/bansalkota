@@ -92,6 +92,7 @@ const AdminTestResultPage = () => {
   const [partnerCandidates, setPartnerCandidates] = useState<Array<{ id: string; title: string; slug: string; starts_at: string | null; exam_pattern: string }>>([]);
   const [partnerLoading, setPartnerLoading] = useState(false);
   const [sendingResultSms, setSendingResultSms] = useState(false);
+  const [smsConfirmOpen, setSmsConfirmOpen] = useState(false);
 
   const load = async () => {
     if (!slug) return;
