@@ -402,11 +402,11 @@ const AdminCombinedResultPage = () => {
               </tr>
               <tr className="bg-muted/40 text-foreground">
                 {subjects.map((s) => (
-                  <>
-                    <th key={`${s}-1`} className="border border-border px-1 py-1 text-center font-normal">P1</th>
-                    <th key={`${s}-2`} className="border border-border px-1 py-1 text-center font-normal">P2</th>
-                    <th key={`${s}-t`} className="border border-border px-1 py-1 text-center">TOT</th>
-                  </>
+                  <Fragment key={s}>
+                    <th className="border border-border px-1 py-1 text-center font-normal">P1</th>
+                    <th className="border border-border px-1 py-1 text-center font-normal">P2</th>
+                    <th className="border border-border px-1 py-1 text-center">TOT</th>
+                  </Fragment>
                 ))}
                 <th className="border border-border px-1 py-1 text-center font-normal">P1</th>
                 <th className="border border-border px-1 py-1 text-center font-normal">P2</th>
