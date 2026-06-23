@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -84,6 +84,8 @@ const AdminTestResultPage = () => {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [exclusions, setExclusions] = useState<Record<string, { reason: string | null; full_name: string | null; roll_number: string | null }>>({});
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [forceSubmitting, setForceSubmitting] = useState(false);
 
   const load = async () => {
     if (!slug) return;
@@ -140,7 +142,38 @@ const AdminTestResultPage = () => {
     } else {
       setBatchNames("");
     }
+    // Count attempts still in_progress (started but never submitted)
+    const { count: pCount } = await supabase
+      .from("test_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("test_id", (t as any).id)
+      .eq("status", "in_progress");
+    setPendingCount(pCount ?? 0);
     setLoading(false);
+  };
+
+  const forceSubmitPending = async () => {
+    if (!test) return;
+    if (pendingCount === 0) {
+      toast.info("No pending attempts to submit");
+      return;
+    }
+    const ok = window.confirm(
+      `Force-submit ${pendingCount} pending attempt${pendingCount === 1 ? "" : "s"}?\n\n` +
+        `Each student's most recently saved answers will be graded as their final submission. ` +
+        `This is meant for students who closed the tab without clicking Submit.`,
+    );
+    if (!ok) return;
+    setForceSubmitting(true);
+    const { data, error } = await (supabase.rpc as any)("admin_force_submit_pending", { _test_id: test.id });
+    setForceSubmitting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const n = (data as any)?.submitted_count ?? 0;
+    toast.success(n > 0 ? `Submitted ${n} pending attempt${n === 1 ? "" : "s"}` : "No pending attempts found");
+    load();
   };
 
   const toggleExclusion = async (userId: string, exclude: boolean, name?: string | null) => {
@@ -835,6 +868,15 @@ const AdminTestResultPage = () => {
           )}
           <button onClick={downloadXLSX} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </button>
+          <button
+            onClick={forceSubmitPending}
+            disabled={forceSubmitting || pendingCount === 0}
+            title={pendingCount === 0 ? "No pending (in-progress) attempts" : `Force-submit ${pendingCount} pending attempt${pendingCount === 1 ? "" : "s"}`}
+            className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          >
+            {forceSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            Submit pending{pendingCount > 0 ? ` (${pendingCount})` : ""}
           </button>
           <button
             onClick={downloadMasterPDF}
