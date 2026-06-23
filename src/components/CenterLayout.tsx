@@ -11,7 +11,6 @@ import {
   LifeBuoy,
   CircleDot,
   Building2,
-  ClipboardList,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
