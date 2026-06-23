@@ -110,12 +110,12 @@ const CenterOnlineCourseContentPage = () => {
     if (!lectureDialog.chapterId) return toast.error("Chapter required");
     const ytId = extractYouTubeId(lectureDialog.youtubeUrl);
     if (!ytId) return toast.error("Valid YouTube link required");
-    const durationSecs = Math.max(60, Math.round((lectureDialog.durationMin || 10) * 60));
+    
     setSaving(true);
     if (lectureDialog.id) {
       const { error } = await (supabase as any).from("centre_online_lessons" as any).update({
         title, topic: lectureDialog.topic || null, video_url: ytEmbed(ytId), youtube_id: ytId,
-        duration_seconds: durationSecs, centre_chapter_id: lectureDialog.chapterId,
+        centre_chapter_id: lectureDialog.chapterId,
       }).eq("id", lectureDialog.id);
       setSaving(false);
       if (error) return toast.error(error.message);
@@ -124,13 +124,13 @@ const CenterOnlineCourseContentPage = () => {
       const { error } = await (supabase as any).from("centre_online_lessons" as any).insert({
         centre_course_id: course.id, centre_chapter_id: lectureDialog.chapterId,
         title, topic: lectureDialog.topic || null, video_url: ytEmbed(ytId), youtube_id: ytId,
-        duration_seconds: durationSecs, position: positionInChapter,
+        duration_seconds: 0, position: positionInChapter,
       });
       setSaving(false);
       if (error) return toast.error(error.message);
     }
     toast.success("Lecture saved");
-    setLectureDialog({ open: false, chapterId: "", title: "", topic: "", youtubeUrl: "", durationMin: 10 });
+    setLectureDialog({ open: false, chapterId: "", title: "", topic: "", youtubeUrl: "" });
     load();
   };
 
@@ -170,7 +170,7 @@ const CenterOnlineCourseContentPage = () => {
                 {ch.subject && <p className="text-xs text-muted-foreground">{ch.subject}</p>}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setLectureDialog({ open: true, chapterId: ch.id, title: "", topic: "", youtubeUrl: "", durationMin: 10 })} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
+                <button onClick={() => setLectureDialog({ open: true, chapterId: ch.id, title: "", topic: "", youtubeUrl: "" })} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
                   <Plus className="h-3 w-3" /> Add Lecture
                 </button>
                 <button onClick={() => setChapterDialog({ open: true, id: ch.id, title: ch.title, subject: ch.subject ?? "" })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
@@ -186,7 +186,7 @@ const CenterOnlineCourseContentPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {l.youtube_id && <a href={`https://youtu.be/${l.youtube_id}`} target="_blank" rel="noreferrer" className="text-xs text-primary underline">YouTube</a>}
-                    <button onClick={() => setLectureDialog({ open: true, id: l.id, chapterId: l.centre_chapter_id, title: l.title, topic: l.topic ?? "", youtubeUrl: l.youtube_id ?? "", durationMin: Math.max(1, Math.round((l.duration_seconds || 0) / 60)) })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
+                    <button onClick={() => setLectureDialog({ open: true, id: l.id, chapterId: l.centre_chapter_id, title: l.title, topic: l.topic ?? "", youtubeUrl: l.youtube_id ?? "" })} className="rounded-md border border-border p-1.5"><Pencil className="h-3 w-3" /></button>
                     <button onClick={() => deleteLecture(l.id)} className="rounded-md border border-destructive/40 text-destructive p-1.5"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 </li>
@@ -242,10 +242,6 @@ const CenterOnlineCourseContentPage = () => {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">YouTube Link</label>
               <input value={lectureDialog.youtubeUrl} onChange={(e) => setLectureDialog({ ...lectureDialog, youtubeUrl: e.target.value })} placeholder="Paste YouTube URL or video ID" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Duration (minutes)</label>
-              <input type="number" value={lectureDialog.durationMin} onChange={(e) => setLectureDialog({ ...lectureDialog, durationMin: Number(e.target.value) })} placeholder="e.g. 10" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setLectureDialog({ ...lectureDialog, open: false })} className="rounded-md border border-border px-3 py-2 text-xs">Cancel</button>
