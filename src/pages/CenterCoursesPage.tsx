@@ -140,7 +140,6 @@ const CenterCoursesPage = () => {
               <p className="text-sm font-bold text-foreground">{c.title}</p>
               <p className="text-xs text-muted-foreground">{c.target_exam} · {c.class_level}</p>
               <p className="text-xs text-muted-foreground">Starts: {c.start_date || "TBD"} · {c.duration || "—"}</p>
-              <p className="text-xs text-foreground">{c.fees ? `${c.currency} ${c.fees}` : "Fees on enquiry"}</p>
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setEditing(c)} className="rounded-md border border-border px-3 py-1 text-xs">Edit</button>
                 <button onClick={() => handleDelete(c.id)} className="rounded-md border border-destructive/40 text-destructive px-3 py-1 text-xs inline-flex items-center gap-1">
@@ -181,12 +180,6 @@ const CenterCoursesPage = () => {
               <input type="date" value={editing.start_date ?? ""} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
               <input value={editing.duration ?? ""} onChange={(e) => setEditing({ ...editing, duration: e.target.value })} placeholder="Duration (e.g. 2 years)" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <select value={editing.currency ?? "INR"} onChange={(e) => setEditing({ ...editing, currency: e.target.value })} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option>INR</option><option>AED</option>
-              </select>
-              <input type="number" value={editing.fees ?? ""} onChange={(e) => setEditing({ ...editing, fees: e.target.value === "" ? null : Number(e.target.value) })} placeholder="Fees" className="col-span-2 rounded-md border border-border bg-background px-3 py-2 text-sm" />
-            </div>
             <input value={editing.schedule ?? ""} onChange={(e) => setEditing({ ...editing, schedule: e.target.value })} placeholder="Schedule (e.g. Mon–Sat, 7 AM)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             <textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} placeholder="Description" rows={4} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             <input value={editing.brochure_url ?? ""} onChange={(e) => setEditing({ ...editing, brochure_url: e.target.value })} placeholder="Brochure URL (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
@@ -217,8 +210,6 @@ const CenterCoursesPage = () => {
           { key: "class_level", label: "Class", example: "Class 11" },
           { key: "start_date", label: "Start Date", example: "2026-04-01" },
           { key: "duration", label: "Duration", example: "2 years" },
-          { key: "fees", label: "Fees", parse: (v) => (v ? Number(v) : null), example: "180000" },
-          { key: "currency", label: "Currency", example: "INR" },
           { key: "schedule", label: "Schedule", example: "Mon–Sat 7–11 AM" },
           { key: "description", label: "Description", example: "Comprehensive JEE Advanced program" },
           { key: "brochure_url", label: "Brochure URL", example: "" },
