@@ -87,6 +87,10 @@ const AdminTestResultPage = () => {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [forceSubmitting, setForceSubmitting] = useState(false);
+  const [combineOpen, setCombineOpen] = useState(false);
+  const [partnerQuery, setPartnerQuery] = useState("");
+  const [partnerCandidates, setPartnerCandidates] = useState<Array<{ id: string; title: string; slug: string; starts_at: string | null; exam_pattern: string }>>([]);
+  const [partnerLoading, setPartnerLoading] = useState(false);
 
   const load = async () => {
     if (!slug) return;
