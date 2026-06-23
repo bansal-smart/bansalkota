@@ -646,6 +646,10 @@ const CreateTestPage = () => {
 
     const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
+    if (openWindowTime && startTime && openWindowTime <= startTime) {
+      return toast.error("Open window time must be later than the start time");
+    }
+
 
     setSubmitting(true);
 
