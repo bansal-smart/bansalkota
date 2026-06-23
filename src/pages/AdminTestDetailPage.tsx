@@ -192,6 +192,26 @@ const AdminTestDetailPage = () => {
     load();
   };
 
+  const toggleBonus = async (q: QRow) => {
+    const next = !q.is_bonus;
+    const ok = await confirm({
+      title: next ? `Mark Q${q.position} as bonus?` : `Remove bonus from Q${q.position}?`,
+      description: next
+        ? "Every student who appeared will get full marks for this question (attempted or not). Scores, percentiles and ranks will recompute now — even if results are already released."
+        : "Bonus will be removed and the question will be re-scored normally for every submitted attempt.",
+      confirmLabel: next ? "Mark as bonus" : "Remove bonus",
+    });
+    if (!ok) return;
+    const { data, error } = await supabase.rpc("admin_set_question_bonus", {
+      _question_id: q.id,
+      _bonus: next,
+    });
+    if (error) return toast.error(error.message);
+    const n = (data as any)?.updated_attempts ?? 0;
+    toast.success(next ? `Bonus applied · ${n} attempts re-scored` : `Bonus removed · ${n} attempts re-scored`);
+    load();
+  };
+
   // Analytics
   const avgScore = submitted.length ? (submitted.reduce((s, a) => s + Number(a.score ?? 0), 0) / submitted.length).toFixed(1) : "—";
   const avgAcc = submitted.length
