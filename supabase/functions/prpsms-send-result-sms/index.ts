@@ -1,5 +1,6 @@
-// Sends "Result" DLT template to all students who submitted a given test.
-// Triggered by the admin "Release Results" action.
+// Sends "Result" DLT template to all students on the test roster
+// (both present and absent). Triggered manually by the admin
+// "Send Result SMS" button on the result page.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { prpsmsSend, renderTemplate, toDestNumber } from "../_shared/prpsms.ts";
 
@@ -37,72 +38,70 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Test not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Fetch submitted attempts, highest score first
-    const { data: attempts, error: aErr } = await supabase
-      .from("test_attempts")
-      .select("id, user_id, score")
-      .eq("test_id", test_id)
-      .eq("status", "submitted")
-      .order("score", { ascending: false, nullsFirst: false });
-    if (aErr) throw aErr;
+    // Use the same RPC the admin result page uses so the recipient list
+    // exactly matches what the admin sees (present + absent).
+    const { data: sheet, error: rpcErr } = await (supabase.rpc as any)(
+      "admin_test_result_sheet",
+      { _test_id: test_id },
+    );
+    if (rpcErr) throw rpcErr;
+    const sheetRows = (sheet || []) as Array<{
+      user_id: string;
+      full_name: string | null;
+      total_score: number | null;
+      rank_label: string | null;
+      rank_num: number | null;
+      status: "present" | "absent";
+    }>;
 
-    const submitted = (attempts || []).filter((a) => a.score !== null && a.user_id);
-    if (submitted.length === 0) {
-      return new Response(JSON.stringify({ ok: true, sent: 0, message: "No submitted attempts" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (sheetRows.length === 0) {
+      return new Response(JSON.stringify({ ok: true, sent: 0, failed: 0, total: 0, message: "No students on roster" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Best attempt per user (already sorted desc by score)
-    const bestByUser = new Map<string, { score: number; rank: number }>();
-    for (const a of submitted) {
-      if (!bestByUser.has(a.user_id)) bestByUser.set(a.user_id, { score: Number(a.score), rank: 0 });
-    }
-    // Rank by score (dense rank: ties share rank)
-    const ranked = Array.from(bestByUser.entries()).sort((a, b) => b[1].score - a[1].score);
-    let prevScore: number | null = null;
-    let rank = 0;
-    let i = 0;
-    for (const [uid, v] of ranked) {
-      i += 1;
-      if (prevScore === null || v.score !== prevScore) rank = i;
-      bestByUser.set(uid, { score: v.score, rank });
-      prevScore = v.score;
-    }
-
-    // Fetch profiles
-    const userIds = Array.from(bestByUser.keys());
+    // Phone numbers
+    const userIds = sheetRows.map((r) => r.user_id);
     const { data: profiles, error: pErr } = await supabase
       .from("profiles")
       .select("user_id, full_name, phone_e164, phone")
       .in("user_id", userIds);
     if (pErr) throw pErr;
+    const profMap = new Map<string, any>();
+    (profiles || []).forEach((p: any) => profMap.set(p.user_id, p));
+
+    const presentTotal = sheetRows.filter((r) => r.status === "present").length;
 
     const dateStr = new Date(test.starts_at || test.ends_at || Date.now())
       .toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
     let sent = 0;
     let failed = 0;
+    let absentSent = 0;
     const errors: string[] = [];
-    const totalCount = ranked.length;
 
-    for (const profile of (profiles || [])) {
-      const stats = bestByUser.get(profile.user_id);
-      if (!stats) continue;
+    for (const row of sheetRows) {
+      const profile = profMap.get(row.user_id);
+      if (!profile) { failed++; continue; }
       const phoneRaw = profile.phone_e164 || profile.phone;
       if (!phoneRaw) { failed++; continue; }
       let dest: string;
       try { dest = toDestNumber(phoneRaw); } catch { failed++; continue; }
 
-      const name = profile.full_name || "Student";
+      const name = row.full_name || profile.full_name || "Student";
+      const isAbsent = row.status === "absent";
+      const scoreField = isAbsent ? "Absent" : `Score ${row.total_score ?? 0}`;
+      const rankField = isAbsent
+        ? "Absent"
+        : `Rank ${row.rank_label || row.rank_num || "—"}/${presentTotal}`;
+
       const body = renderTemplate("Result", {
         name,
         test_name: test.title,
         date: dateStr,
-        score: `Score ${stats.score}`,
-        rank: `Rank ${stats.rank}/${totalCount}`,
+        score: scoreField,
+        rank: rankField,
       });
 
       const res = await prpsmsSend({ to: dest, body });
-      // Log
       await supabase.from("sms_send_log").insert({
         recipient_phone: `+91${dest}`,
         template_name: "Result",
@@ -112,12 +111,21 @@ Deno.serve(async (req) => {
         provider_msg_id: res.msg_id ?? null,
         provider_response: res.raw,
         error_message: res.ok ? null : res.error,
-        user_id: profile.user_id,
+        user_id: row.user_id,
       });
-      if (res.ok) sent++; else { failed++; if (errors.length < 5 && res.error) errors.push(res.error); }
+      if (res.ok) {
+        sent++;
+        if (isAbsent) absentSent++;
+      } else {
+        failed++;
+        if (errors.length < 5 && res.error) errors.push(res.error);
+      }
     }
 
-    return new Response(JSON.stringify({ ok: true, sent, failed, total: totalCount, errors }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({ ok: true, sent, failed, total: sheetRows.length, absent_sent: absentSent, errors }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

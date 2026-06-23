@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck, Send, GitMerge, Search } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck, Send, GitMerge, Search, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -91,6 +91,7 @@ const AdminTestResultPage = () => {
   const [partnerQuery, setPartnerQuery] = useState("");
   const [partnerCandidates, setPartnerCandidates] = useState<Array<{ id: string; title: string; slug: string; starts_at: string | null; exam_pattern: string }>>([]);
   const [partnerLoading, setPartnerLoading] = useState(false);
+  const [sendingResultSms, setSendingResultSms] = useState(false);
 
   const load = async () => {
     if (!slug) return;
@@ -297,18 +298,24 @@ const AdminTestResultPage = () => {
       return toast.error(error.message);
     }
     toast.success("Results released — students can now view ranks");
-    // Fire-and-forget SMS broadcast to all students who submitted
-    supabase.functions
-      .invoke("prpsms-send-result-sms", { body: { test_id: test.id } })
-      .then(({ data, error: sErr }) => {
-        if (sErr) {
-          toast.error(`Result SMS failed: ${sErr.message}`);
-        } else if (data?.sent !== undefined) {
-          toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed`);
-        }
-      });
     setReleasing(false);
     load();
+  };
+
+  const sendResultSms = async () => {
+    if (!test) return;
+    if (!confirm("Send result SMS to all students (present + absent)?")) return;
+    setSendingResultSms(true);
+    const { data, error: sErr } = await supabase.functions
+      .invoke("prpsms-send-result-sms", { body: { test_id: test.id } });
+    setSendingResultSms(false);
+    if (sErr) {
+      toast.error(`Result SMS failed: ${sErr.message}`);
+    } else if (data?.sent !== undefined) {
+      toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed (of ${data.total})`);
+    } else {
+      toast.success("Result SMS dispatched");
+    }
   };
 
 
@@ -925,6 +932,15 @@ const AdminTestResultPage = () => {
             className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="h-3.5 w-3.5" /> Master Result PDF
+          </button>
+          <button
+            onClick={sendResultSms}
+            disabled={!released || sendingResultSms}
+            title={released ? "Send result SMS to all students (present + absent)" : "Available after results are released"}
+            className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendingResultSms ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
+            Send Result SMS
           </button>
         </div>
       </div>
