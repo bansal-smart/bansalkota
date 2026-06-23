@@ -300,17 +300,19 @@ const TestTakingPage = () => {
       }
     };
 
+    // Only flag genuine tab/window switches (incl. opening a new tab or
+    // minimising the browser). We intentionally do NOT listen on `window.blur`
+    // because that also fires when the user clicks the taskbar, focuses a
+    // system notification, or alt-tabs to another app while the browser tab
+    // itself stays visible — which the user does not want flagged.
     const onVisibility = () => {
       if (document.hidden) registerViolation();
     };
-    const onBlur = () => { registerViolation(); };
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("blur", onBlur);
     const noContext = (e: Event) => e.preventDefault();
     document.addEventListener("contextmenu", noContext);
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("blur", onBlur);
       document.removeEventListener("contextmenu", noContext);
     };
   }, [started]);
