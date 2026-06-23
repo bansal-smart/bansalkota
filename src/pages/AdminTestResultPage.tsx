@@ -933,6 +933,15 @@ const AdminTestResultPage = () => {
           >
             <Download className="h-3.5 w-3.5" /> Master Result PDF
           </button>
+          <button
+            onClick={sendResultSms}
+            disabled={!released || sendingResultSms}
+            title={released ? "Send result SMS to all students (present + absent)" : "Available after results are released"}
+            className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendingResultSms ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
+            Send Result SMS
+          </button>
         </div>
       </div>
 
