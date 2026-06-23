@@ -22,6 +22,8 @@ import { useExams } from "@/hooks/useExams";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
 import MathRenderer from "@/components/MathRenderer";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { formatTestDate } from "@/lib/utils";
+
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -174,7 +176,7 @@ const CreateTestPage = () => {
   const [startTime, setStartTime] = useState<string>(""); // HH:mm
   const [endTime, setEndTime] = useState<string>(""); // HH:mm
   const [autoRelease, setAutoRelease] = useState<boolean>(true);
-  const [openWindowMinutes, setOpenWindowMinutes] = useState<string>(""); // minutes after start_time during which students may begin
+  const [openWindowTime, setOpenWindowTime] = useState<string>(""); // HH:mm — entry-window close time on same date as test
   const importedQuestionCount = useRef(0);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -276,7 +278,14 @@ const CreateTestPage = () => {
       if (eAt) setEndTime(timeStr(eAt));
       setAutoRelease((test as any).auto_release !== false);
       const owm = (test as any).open_window_minutes;
-      setOpenWindowMinutes(owm == null ? "" : String(owm));
+      if (owm != null && Number(owm) > 0 && sAt) {
+        const closeMs = sAt.getTime() + Number(owm) * 60_000;
+        const close = new Date(closeMs);
+        setOpenWindowTime(`${pad(close.getHours())}:${pad(close.getMinutes())}`);
+      } else {
+        setOpenWindowTime("");
+      }
+
       setQuestions(
         tqs.map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
@@ -445,14 +454,24 @@ const CreateTestPage = () => {
       const dt = new Date(`${d}T${t}:00`);
       return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
     };
-    const owmNum = openWindowMinutes === "" ? null : Number(openWindowMinutes);
+    // Open window: derived from openWindowTime (HH:mm on the same date as the test).
+    // Must be strictly after start time. If invalid or <= start, persist NULL.
+    let openWindowMinutes: number | null = null;
+    if (openWindowTime && testDate && startTime) {
+      const startMs = new Date(`${testDate}T${startTime}:00`).getTime();
+      const winMs = new Date(`${testDate}T${openWindowTime}:00`).getTime();
+      if (Number.isFinite(startMs) && Number.isFinite(winMs) && winMs > startMs) {
+        openWindowMinutes = Math.round((winMs - startMs) / 60_000);
+      }
+    }
     return {
       starts_at: toISO(testDate, startTime),
       ends_at: toISO(testDate, endTime),
       auto_release: autoRelease,
-      open_window_minutes: owmNum != null && Number.isFinite(owmNum) && owmNum > 0 ? Math.floor(owmNum) : null,
+      open_window_minutes: openWindowMinutes,
     };
   };
+
 
   const ensureDraftForImport = async (): Promise<string | null> => {
     if (resolvedTestId) return resolvedTestId;
@@ -627,6 +646,10 @@ const CreateTestPage = () => {
 
     const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
+    if (openWindowTime && startTime && openWindowTime <= startTime) {
+      return toast.error("Open window time must be later than the start time");
+    }
+
 
     setSubmitting(true);
 
@@ -997,18 +1020,21 @@ const CreateTestPage = () => {
               />
             </div>
             <div>
-              <label className={labelCls}>Open window (minutes)</label>
+              <label className={labelCls}>Open window (entry closes at)</label>
               <input
-                type="number"
-                min={1}
-                placeholder="e.g. 15 — leave blank for no limit"
-                value={openWindowMinutes}
-                onChange={(e) => setOpenWindowMinutes(e.target.value.replace(/[^0-9]/g, ""))}
+                type="time"
+                value={openWindowTime}
+                onChange={(e) => setOpenWindowTime(e.target.value)}
                 className={inputCls}
               />
               <p className="mt-1 text-[10px] text-muted-foreground">
-                Students can start the test only within this many minutes after Start time. Blank = no limit.
+                Students can start the test only up to this time on the test date. Leave blank for no limit.
               </p>
+              {openWindowTime && startTime && openWindowTime <= startTime && (
+                <p className="mt-1 text-[10px] font-semibold text-red-600">
+                  Open window time must be later than the start time.
+                </p>
+              )}
             </div>
             <div>
               <label className={labelCls}>End time (results release)</label>
@@ -1022,14 +1048,15 @@ const CreateTestPage = () => {
           </div>
           {testDate && (startTime || endTime) && (
             <p className="text-[11px] text-muted-foreground">
-              Scheduled: <span className="font-semibold text-foreground">{testDate}</span>
+              Scheduled: <span className="font-semibold text-foreground">{formatTestDate(`${testDate}T00:00:00`)}</span>
               {startTime && <> · opens <span className="font-semibold text-foreground">{startTime}</span></>}
-              {startTime && openWindowMinutes && (
-                <> · entry closes <span className="font-semibold text-foreground">+{openWindowMinutes} min</span></>
+              {startTime && openWindowTime && openWindowTime > startTime && (
+                <> · entry closes <span className="font-semibold text-foreground">{openWindowTime}</span></>
               )}
               {endTime && <> · closes & results at <span className="font-semibold text-foreground">{endTime}</span></>}
             </p>
           )}
+
         </div>
       </section>
 

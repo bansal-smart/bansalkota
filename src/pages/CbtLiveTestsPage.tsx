@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, Clock, FileText, LogOut, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatTestDateTime } from "@/lib/utils";
+
 
 type LiveTest = {
   id: string;
@@ -122,7 +124,7 @@ const CbtLiveTestsPage = () => {
                 statusLabel = "Closed";
                 statusClass = "bg-muted text-muted-foreground";
               } else if (notYetOpen && startMs) {
-                statusLabel = `Starts ${new Date(startMs).toLocaleString()}`;
+                statusLabel = `Starts ${formatTestDateTime(new Date(startMs).toISOString())}`;
                 statusClass = "bg-amber-100 text-amber-800";
                 const diff = Math.max(0, startMs - ACTIVATION_LEAD_MS - now);
                 const h = Math.floor(diff / 3_600_000);
@@ -144,7 +146,7 @@ const CbtLiveTestsPage = () => {
                         <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {t.duration_minutes} min</span>
                         <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" /> {t.total_questions} questions · {t.total_marks} marks</span>
                         {t.subjects && t.subjects.length > 0 && <span>{t.subjects.join(" · ")}</span>}
-                        {t.ends_at && <span>Closes {new Date(t.ends_at).toLocaleString()}</span>}
+                        {t.ends_at && <span>Closes {formatTestDateTime(t.ends_at)}</span>}
                       </div>
                       {countdown && (
                         <p className="mt-2 text-xs font-semibold text-amber-700">Opens in <span className="font-display text-base font-black tabular-nums">{countdown}</span></p>

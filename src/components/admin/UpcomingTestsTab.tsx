@@ -87,10 +87,11 @@ const UpcomingTestsTab = () => {
                   <td className="px-4 py-2.5 font-medium text-foreground">{t.title}</td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground capitalize">{t.test_type}</td>
                   <td className="px-4 py-2.5 text-xs text-foreground">
-                    {t.starts_at ? format(new Date(t.starts_at), "dd MMM yyyy · HH:mm") : "—"}
+                    {t.starts_at ? format(new Date(t.starts_at), "dd/MM/yyyy · HH:mm") : "—"}
+
                   </td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                    {t.ends_at ? format(new Date(t.ends_at), "dd MMM yyyy · HH:mm") : "—"}
+                    {t.ends_at ? format(new Date(t.ends_at), "dd/MM/yyyy · HH:mm") : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-center text-xs">
                     {t.total_questions} · {t.duration_minutes}m
