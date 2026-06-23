@@ -27,6 +27,15 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // A second client that forwards the caller's JWT — required for the
+    // `admin_test_result_sheet` RPC, which checks auth.uid() / role.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const supabaseAsUser = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+
     // Fetch test
     const { data: test, error: testErr } = await supabase
       .from("tests")
@@ -40,11 +49,12 @@ Deno.serve(async (req) => {
 
     // Use the same RPC the admin result page uses so the recipient list
     // exactly matches what the admin sees (present + absent).
-    const { data: sheet, error: rpcErr } = await (supabase.rpc as any)(
+    const { data: sheet, error: rpcErr } = await (supabaseAsUser.rpc as any)(
       "admin_test_result_sheet",
       { _test_id: test_id },
     );
     if (rpcErr) throw rpcErr;
+
     const sheetRows = (sheet || []) as Array<{
       user_id: string;
       full_name: string | null;
