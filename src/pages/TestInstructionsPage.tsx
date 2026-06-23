@@ -18,6 +18,7 @@ type TestRow = {
   total_marks: number;
   starts_at: string | null;
   ends_at: string | null;
+  open_window_minutes: number | null;
   is_published: boolean;
   instructions_image_url: string | null;
 };
