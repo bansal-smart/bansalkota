@@ -912,6 +912,13 @@ const AdminTestResultPage = () => {
             Submit pending{pendingCount > 0 ? ` (${pendingCount})` : ""}
           </button>
           <button
+            onClick={() => { setPartnerQuery(""); setCombineOpen(true); }}
+            title="Combine with another test (e.g. Paper 1 + Paper 2)"
+            className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 inline-flex items-center gap-1"
+          >
+            <GitMerge className="h-3.5 w-3.5" /> Combine with…
+          </button>
+          <button
             onClick={downloadMasterPDF}
             disabled={!released}
             title={released ? "Download branded master result PDF" : "Available after results are released"}
