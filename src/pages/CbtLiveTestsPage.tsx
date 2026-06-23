@@ -122,7 +122,7 @@ const CbtLiveTestsPage = () => {
                 statusLabel = "Closed";
                 statusClass = "bg-muted text-muted-foreground";
               } else if (notYetOpen && startMs) {
-                statusLabel = `Starts ${new Date(startMs).toLocaleString()}`;
+                statusLabel = `Starts ${formatTestDateTime(new Date(startMs).toISOString())}`;
                 statusClass = "bg-amber-100 text-amber-800";
                 const diff = Math.max(0, startMs - ACTIVATION_LEAD_MS - now);
                 const h = Math.floor(diff / 3_600_000);
