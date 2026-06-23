@@ -185,7 +185,10 @@ const TestResponseSheetPage = () => {
             const sel = selectedIndices(q.selected);
             const corr = correctIndices(q.correct_answer);
 
-            const stateBadge = !attempted
+            const isBonus = !!q.is_bonus;
+            const stateBadge = isBonus
+              ? { label: "Bonus", cls: "bg-amber-100 text-amber-700", Icon: Sparkles }
+              : !attempted
               ? { label: "Unattempted", cls: "bg-muted text-muted-foreground", Icon: MinusCircle }
               : isCorrect
               ? { label: "Correct", cls: "bg-emerald-100 text-emerald-700", Icon: CheckCircle2 }
@@ -201,6 +204,11 @@ const TestResponseSheetPage = () => {
                     <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-foreground">Q{q.position}</span>
                     {q.subject && <span className="text-xs font-semibold text-muted-foreground">{q.subject}</span>}
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{q.question_type}</span>
+                    {isBonus && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                        <Sparkles className="h-3 w-3" /> Bonus
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${stateBadge.cls}`}>
