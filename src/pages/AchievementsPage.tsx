@@ -131,30 +131,18 @@ export default function AchievementsPage() {
                         <BansalBadge variant="orange">{t.year}</BansalBadge>
                       </div>
                     )}
-                    <div className="flex items-center gap-3 mb-4">
-                      {t.photo_url ? (
-                        <img
-                          src={t.photo_url}
-                          alt={t.name}
-                          loading="lazy"
-                          className="h-14 w-14 rounded-full object-cover border border-border"
-                        />
-                      ) : (
-                        <div className="h-14 w-14 rounded-full bg-bansal-blue text-white font-display font-bold text-lg flex items-center justify-center">
-                          {initialsFor(t.name)}
+                    <div className="mb-4">
+                      {t.rank_label && (
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-bansal-orange/10 text-bansal-orange px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-3">
+                          <Trophy className="h-3 w-3" /> {t.rank_label}
                         </div>
                       )}
-                      <div>
-                        <h3 className="font-display text-lg font-bold text-bansal-black">{t.name}</h3>
-                        <p className="text-xs text-muted-foreground">{t.exam}</p>
-                      </div>
+                      <h3 className="font-display text-lg font-bold text-bansal-black leading-tight">{t.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{t.exam}</p>
                     </div>
-                    {t.rank_label && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <Trophy className="h-4 w-4 text-bansal-orange" />
-                        <span className="font-display font-bold text-bansal-blue text-xl">{t.rank_label}</span>
-                      </div>
-                    )}
+
+
+
                     {t.quote && (
                       <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
                         "{t.quote}"
