@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Download, Upload, X, Loader2, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 export type CsvField = {
@@ -86,106 +87,129 @@ const BulkCsvDialog = ({
     download(`${fileBase}-${stamp}.csv`, [header, ...lines].join("\n"));
   };
 
-  const handleFile = (file: File) => {
+  const processRows = async (rows: Record<string, any>[]) => {
+    const labelToKey = new Map(fields.map((f) => [f.label.trim().toLowerCase(), f] as const));
+    setProgress({ done: 0, total: rows.length });
+
+    const errors: { row: number; error: string }[] = [];
+    let ok = 0;
+
+    const mappedRows: ({ ok: true; row: Record<string, any> } | { ok: false; error: string })[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const raw = rows[i] ?? {};
+      const mapped: Record<string, any> = {};
+      let rowErr: string | null = null;
+      for (const [labelLower, field] of labelToKey) {
+        const entry = Object.entries(raw).find(([k]) => String(k).trim().toLowerCase() === labelLower);
+        const rawVal = entry?.[1];
+        const trimmed = rawVal == null ? "" : String(rawVal).trim();
+        if (field.required && !trimmed) {
+          rowErr = `Missing required "${field.label}"`;
+          break;
+        }
+        if (trimmed === "") {
+          mapped[field.key] = null;
+          continue;
+        }
+        try {
+          mapped[field.key] = field.parse ? field.parse(trimmed) : trimmed;
+        } catch (e: any) {
+          rowErr = `Invalid "${field.label}": ${e.message}`;
+          break;
+        }
+      }
+      if (rowErr) {
+        mappedRows.push({ ok: false, error: rowErr });
+        errors.push({ row: i + 2, error: rowErr });
+      } else {
+        mappedRows.push({ ok: true, row: mapped });
+      }
+    }
+
+    if (bulkImport) {
+      const validRows = mappedRows
+        .map((m, i) => (m.ok ? { idx: i, row: m.row } : null))
+        .filter(Boolean) as { idx: number; row: Record<string, any> }[];
+      setProgress({ done: 0, total: validRows.length });
+      if (validRows.length === 0 && errors.length === 0) {
+        toast.error("No rows found in file. Check that the first row matches the column labels.");
+        setBusy(false);
+        return;
+      }
+      try {
+        const res = await bulkImport(validRows.map((v) => v.row), dryRun);
+        ok = res.ok;
+        res.results.forEach((r) => {
+          if (!r.ok) {
+            const orig = validRows[r.row - 1];
+            errors.push({ row: (orig?.idx ?? r.row - 1) + 2, error: r.error || "Unknown error" });
+          }
+        });
+        setProgress({ done: validRows.length, total: validRows.length });
+      } catch (e: any) {
+        toast.error(e.message || "Bulk import failed");
+        setBusy(false);
+        return;
+      }
+    } else if (importRow) {
+      setProgress({ done: 0, total: rows.length });
+      for (let i = 0; i < mappedRows.length; i++) {
+        const m = mappedRows[i];
+        if (m.ok) {
+          try {
+            const r = await importRow(m.row, i);
+            if (typeof r === "string") errors.push({ row: i + 2, error: r });
+            else ok++;
+          } catch (e: any) {
+            errors.push({ row: i + 2, error: e.message || String(e) });
+          }
+        }
+        setProgress({ done: i + 1, total: mappedRows.length });
+      }
+    }
+
+    setResults({ ok, errors, dryRun });
+    setBusy(false);
+    const label = dryRun ? "validated" : "imported";
+    if (ok > 0) {
+      toast.success(`${ok} row${ok === 1 ? "" : "s"} ${label}${errors.length ? ` (${errors.length} failed)` : ""}`);
+      if (!dryRun) onDone?.();
+    } else if (errors.length) {
+      toast.error(`${dryRun ? "Validation" : "Import"} failed: ${errors.length} row${errors.length === 1 ? "" : "s"} had errors`);
+    }
+  };
+
+  const handleFile = async (file: File) => {
     setBusy(true);
     setResults(null);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (parsed) => {
-        const labelToKey = new Map(fields.map((f) => [f.label.trim().toLowerCase(), f] as const));
-        const rows = parsed.data;
-        setProgress({ done: 0, total: rows.length });
-
-        const errors: { row: number; error: string }[] = [];
-        let ok = 0;
-
-        // First pass: parse + validate
-        const mappedRows: ({ ok: true; row: Record<string, any> } | { ok: false; error: string })[] = [];
-        for (let i = 0; i < rows.length; i++) {
-          const raw = rows[i];
-          const mapped: Record<string, any> = {};
-          let rowErr: string | null = null;
-          for (const [labelLower, field] of labelToKey) {
-            const value = Object.entries(raw).find(([k]) => k.trim().toLowerCase() === labelLower)?.[1];
-            const trimmed = (value ?? "").trim();
-            if (field.required && !trimmed) {
-              rowErr = `Missing required "${field.label}"`;
-              break;
-            }
-            if (trimmed === "") {
-              mapped[field.key] = null;
-              continue;
-            }
-            try {
-              mapped[field.key] = field.parse ? field.parse(trimmed) : trimmed;
-            } catch (e: any) {
-              rowErr = `Invalid "${field.label}": ${e.message}`;
-              break;
-            }
-          }
-          if (rowErr) {
-            mappedRows.push({ ok: false, error: rowErr });
-            errors.push({ row: i + 2, error: rowErr });
-          } else {
-            mappedRows.push({ ok: true, row: mapped });
-          }
-        }
-
-        if (bulkImport) {
-          // Server-side batched import
-          const validRows = mappedRows
-            .map((m, i) => (m.ok ? { idx: i, row: m.row } : null))
-            .filter(Boolean) as { idx: number; row: Record<string, any> }[];
-          setProgress({ done: 0, total: validRows.length });
-          try {
-            const res = await bulkImport(validRows.map((v) => v.row), dryRun);
-            ok = res.ok;
-            res.results.forEach((r) => {
-              if (!r.ok) {
-                const orig = validRows[r.row - 1];
-                errors.push({ row: (orig?.idx ?? r.row - 1) + 2, error: r.error || "Unknown error" });
-              }
-            });
-            setProgress({ done: validRows.length, total: validRows.length });
-          } catch (e: any) {
-            toast.error(e.message || "Bulk import failed");
+    const name = file.name.toLowerCase();
+    const isXlsx = name.endsWith(".xlsx") || name.endsWith(".xls") || /sheet|excel/.test(file.type);
+    try {
+      if (isXlsx) {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array", cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "", raw: false });
+        await processRows(rows);
+      } else {
+        Papa.parse<Record<string, string>>(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: async (parsed) => {
+            await processRows(parsed.data as any);
+          },
+          error: (err) => {
             setBusy(false);
-            return;
-          }
-        } else if (importRow) {
-          setProgress({ done: 0, total: rows.length });
-          for (let i = 0; i < mappedRows.length; i++) {
-            const m = mappedRows[i];
-            if (m.ok) {
-              try {
-                const r = await importRow(m.row, i);
-                if (typeof r === "string") errors.push({ row: i + 2, error: r });
-                else ok++;
-              } catch (e: any) {
-                errors.push({ row: i + 2, error: e.message || String(e) });
-              }
-            }
-            setProgress({ done: i + 1, total: mappedRows.length });
-          }
-        }
-
-        setResults({ ok, errors, dryRun });
-        setBusy(false);
-        const label = dryRun ? "validated" : "imported";
-        if (ok > 0) {
-          toast.success(`${ok} row${ok === 1 ? "" : "s"} ${label}${errors.length ? ` (${errors.length} failed)` : ""}`);
-          if (!dryRun) onDone?.();
-        } else if (errors.length) {
-          toast.error(`${dryRun ? "Validation" : "Import"} failed: ${errors.length} row${errors.length === 1 ? "" : "s"} had errors`);
-        }
-      },
-      error: (err) => {
-        setBusy(false);
-        toast.error(err.message);
-      },
-    });
+            toast.error(err.message);
+          },
+        });
+      }
+    } catch (e: any) {
+      setBusy(false);
+      toast.error(e.message || "Failed to read file");
+    }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -223,7 +247,7 @@ const BulkCsvDialog = ({
             <input
               ref={fileRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
@@ -247,8 +271,8 @@ const BulkCsvDialog = ({
               {busy
                 ? `${dryRun ? "Validating" : "Importing"} ${progress.done}/${progress.total}…`
                 : dryRun
-                ? "Choose CSV to validate"
-                : "Choose CSV to import"}
+                ? "Choose CSV/XLSX to validate"
+                : "Choose CSV/XLSX to import"}
             </button>
             <p className="mt-2 text-xs text-muted-foreground">
               First row must match the column labels exactly.
