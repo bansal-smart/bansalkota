@@ -54,7 +54,6 @@ const iconMap: Record<string, any> = {
   Users,
   Brain,
   Lightbulb,
-  Rocket,
   BarChart3,
   Building2,
 };
