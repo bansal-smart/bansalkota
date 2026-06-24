@@ -199,23 +199,15 @@ export default function AlumniPage() {
                   <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-bansal-orange/10 blur-2xl pointer-events-none" />
                   <Quote className="absolute right-5 top-5 h-7 w-7 text-bansal-orange/30" />
                   <div className="relative">
-                    <div className="h-20 w-20 rounded-2xl overflow-hidden ring-4 ring-bansal-orange/20 bg-gradient-to-br from-bansal-orange/20 to-bansal-blue/20 flex items-center justify-center">
-                      {a.photo_url ? (
-                        <img src={a.photo_url} alt={a.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="font-display text-2xl font-extrabold text-bansal-blue">
-                          {initialsOf(a.name)}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="mt-4 font-display text-xl font-extrabold text-bansal-blue">
-                      {a.name}
-                    </h3>
                     {a.rank_label && (
-                      <div className="mt-0.5 text-xs font-bold text-bansal-orange uppercase tracking-wide">
-                        {a.rank_label} {a.exam ? `· ${a.exam}` : ""}
+                      <div className="inline-flex items-center gap-1 rounded-full bg-bansal-orange text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                        {a.rank_label}{a.exam ? ` · ${a.exam}` : ""}
                       </div>
                     )}
+                    <h3 className="mt-3 font-display text-xl font-extrabold text-bansal-blue">
+                      {a.name}
+                    </h3>
+
                     {(a.current_position || a.company) && (
                       <div className="mt-2 flex items-center gap-1.5 text-xs text-bansal-gray">
                         <Building2 className="h-3 w-3 text-bansal-blue/60 shrink-0" />
