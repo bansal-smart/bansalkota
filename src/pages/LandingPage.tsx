@@ -458,7 +458,7 @@ const LandingPage = () => {
           </div>
           <div className="mt-8 md:mt-10 grid md:grid-cols-2 gap-4 sm:gap-6">
             {[
-              { title: "Classroom Learning Program (CLP)", Icon: Users, tone: "blue", features: clpFeatures, desc: "Live classroom sessions at 100+ Bansal centers, daily doubt sessions and a peer environment built for toppers." },
+              { title: "Classroom Learning Program (CLP)", Icon: Users, tone: "blue", features: clpFeatures, desc: "Live classroom sessions at 85+ Bansal centers, daily doubt sessions and a peer environment built for toppers." },
               { title: "Distance Learning Program (DLP)", Icon: BookOpen, tone: "orange", features: dlpFeatures, desc: "Bansal's legendary study material, sectional & full tests and detailed solutions — at your own pace." },
             ].map((p) => (
               <BansalCard key={p.title} className="!p-5 sm:!p-6 flex flex-col h-full">
