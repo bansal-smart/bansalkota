@@ -278,12 +278,25 @@ export default function AdminAlumniSubmissionsPage() {
               <div className="mt-4 space-y-3 text-sm">
                 <Row label="Email" value={active.email} />
                 {active.phone && <Row label="Phone" value={active.phone} />}
-                <Row label="Batch" value={active.batch_year ? String(active.batch_year) : "—"} />
-                {active.exam && <Row label="Exam" value={active.exam} />}
+                {active.father_name && <Row label="Father's Name" value={active.father_name} />}
+                {active.course_program && <Row label="Course/Program" value={active.course_program} />}
+                <Row label="Bansal Batch" value={active.batch_year ? String(active.batch_year) : "—"} />
+                {active.exam && <Row label="Competitive Exam" value={active.exam} />}
+                {active.selection_year && <Row label="Selection Year" value={active.selection_year} />}
                 {active.rank_label && <Row label="Rank" value={active.rank_label} />}
+                {active.college_joined && <Row label="College Joined" value={active.college_joined} />}
+                {active.stream_taken && <Row label="Stream Taken" value={active.stream_taken} />}
                 {active.current_position && <Row label="Role" value={active.current_position} />}
                 {active.company && <Row label="Company" value={active.company} />}
                 {active.city && <Row label="City" value={active.city} />}
+                {active.address && <Row label="Address" value={active.address} />}
+                <Row label="Verified" value={active.verified ? "Yes" : "No"} />
+                {active.source_registration_id != null && (
+                  <Row label="Source ID" value={`#${active.source_registration_id}`} />
+                )}
+                {active.registered_at && (
+                  <Row label="Registered At" value={format(new Date(active.registered_at), "dd MMM yyyy, p")} />
+                )}
                 {active.linkedin_url && (
                   <Row
                     label="LinkedIn"
