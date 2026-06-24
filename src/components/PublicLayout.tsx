@@ -43,11 +43,17 @@ const PublicLayout = () => {
       <div className="hidden md:block bg-bansal-blue text-white text-xs">
         <div className="container mx-auto flex items-center justify-between px-4 py-1.5">
           <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3 text-bansal-orange" /> Admission: +91 9773343246 · +91 8003045222</span>
+            <span className="inline-flex items-center gap-1">
+              <Phone className="h-3 w-3 text-bansal-orange" /> Admission: +91 9773343246 · +91 8003045222
+            </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/centers" className="hover:text-bansal-orange">Find a Centre</Link>
-            <Link to="/login" className="hover:text-bansal-orange font-semibold">Student Login</Link>
+            <Link to="/centers" className="hover:text-bansal-orange">
+              Find a Centre
+            </Link>
+            <Link to="/login" className="hover:text-bansal-orange font-semibold">
+              Student Login
+            </Link>
           </div>
         </div>
       </div>
@@ -115,25 +121,27 @@ const PublicLayout = () => {
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <Link to="/dashboard">
-                <BansalButton variant="primary" className="py-2 text-sm">Dashboard</BansalButton>
+                <BansalButton variant="primary" className="py-2 text-sm">
+                  Dashboard
+                </BansalButton>
               </Link>
             ) : (
               <>
                 <Link to="/login">
-                  <BansalButton variant="outline" className="py-2 text-sm">Login</BansalButton>
+                  <BansalButton variant="outline" className="py-2 text-sm">
+                    Login
+                  </BansalButton>
                 </Link>
                 <Link to="/contact">
-                  <BansalButton variant="cta" className="py-2 text-sm">Enquire</BansalButton>
+                  <BansalButton variant="cta" className="py-2 text-sm">
+                    Enquire
+                  </BansalButton>
                 </Link>
               </>
             )}
           </div>
 
-          <button
-            onClick={() => setOpen(true)}
-            className="md:hidden p-2 text-bansal-blue"
-            aria-label="Open menu"
-          >
+          <button onClick={() => setOpen(true)} className="md:hidden p-2 text-bansal-blue" aria-label="Open menu">
             <Menu className="h-6 w-6" />
           </button>
         </div>
@@ -180,15 +188,21 @@ const PublicLayout = () => {
             <div className="mt-6 flex flex-col gap-3">
               {user ? (
                 <Link to="/dashboard" onClick={() => setOpen(false)}>
-                  <BansalButton variant="cta" className="w-full">My Dashboard</BansalButton>
+                  <BansalButton variant="cta" className="w-full">
+                    My Dashboard
+                  </BansalButton>
                 </Link>
               ) : (
                 <>
                   <Link to="/login" onClick={() => setOpen(false)}>
-                    <BansalButton variant="ghost-white" className="w-full">Login</BansalButton>
+                    <BansalButton variant="ghost-white" className="w-full">
+                      Login
+                    </BansalButton>
                   </Link>
                   <Link to="/contact" onClick={() => setOpen(false)}>
-                    <BansalButton variant="cta" className="w-full">Enquire Now</BansalButton>
+                    <BansalButton variant="cta" className="w-full">
+                      Enquire Now
+                    </BansalButton>
                   </Link>
                 </>
               )}
@@ -209,29 +223,50 @@ const PublicLayout = () => {
               <BansalLogo className="h-12 w-auto mb-4" variant="white" />
               <p className="font-accent text-sm text-white/80 italic">Ideal for Scholars</p>
               <p className="mt-4 text-sm text-white/70 leading-relaxed">
-                India's most trusted JEE &amp; NEET coaching institute. Building foundations for lifelong learning since 1984.
+                India's most trusted JEE &amp; NEET coaching institute. Building foundations for lifelong learning since
+                1981.
               </p>
             </div>
 
             <div>
               <h4 className="text-sm font-bold mb-4 uppercase tracking-wide">Company</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/about" className="block text-white/75 hover:text-bansal-orange">About Us</Link>
-                <Link to="/career" className="block text-white/75 hover:text-bansal-orange">Careers</Link>
-                <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">Achievements</Link>
-                <Link to="/blog" className="block text-white/75 hover:text-bansal-orange">Blogs</Link>
-                <Link to="/contact" className="block text-white/75 hover:text-bansal-orange">Contact</Link>
+                <Link to="/about" className="block text-white/75 hover:text-bansal-orange">
+                  About Us
+                </Link>
+                <Link to="/career" className="block text-white/75 hover:text-bansal-orange">
+                  Careers
+                </Link>
+                <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">
+                  Achievements
+                </Link>
+                <Link to="/blog" className="block text-white/75 hover:text-bansal-orange">
+                  Blogs
+                </Link>
+                <Link to="/contact" className="block text-white/75 hover:text-bansal-orange">
+                  Contact
+                </Link>
               </div>
             </div>
 
             <div>
               <h4 className="text-sm font-bold mb-4 uppercase tracking-wide">Quick Links</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/boost" className="block text-white/75 hover:text-bansal-orange">BOOST Scholarship</Link>
-                <Link to="/courses" className="block text-white/75 hover:text-bansal-orange">Courses</Link>
-                <Link to="/centers" className="block text-white/75 hover:text-bansal-orange">Offline Centres</Link>
-                <Link to="/privacy" className="block text-white/75 hover:text-bansal-orange">Privacy Policy</Link>
-                <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">Terms &amp; Conditions</Link>
+                <Link to="/boost" className="block text-white/75 hover:text-bansal-orange">
+                  BOOST Scholarship
+                </Link>
+                <Link to="/courses" className="block text-white/75 hover:text-bansal-orange">
+                  Courses
+                </Link>
+                <Link to="/centers" className="block text-white/75 hover:text-bansal-orange">
+                  Offline Centres
+                </Link>
+                <Link to="/privacy" className="block text-white/75 hover:text-bansal-orange">
+                  Privacy Policy
+                </Link>
+                <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">
+                  Terms &amp; Conditions
+                </Link>
               </div>
             </div>
 
