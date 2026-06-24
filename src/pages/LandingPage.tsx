@@ -269,6 +269,15 @@ const LandingPage = () => {
   const [exam, setExam] = useState<ExamKey>("jee");
   const { rows: dbTestimonials } = useSiteTestimonials();
   const { rows: dbStats } = useSiteStats();
+  const { banners: dbHeroBanners } = useLandingHeroBanners();
+  const heroBanners = dbHeroBanners.length
+    ? dbHeroBanners.map((b) => ({ src: b.image_url, alt: b.alt ?? "Bansal Classes banner", link: b.link }))
+    : [
+        { src: resultsBanner, alt: "Bansal Classes — JEE Main Result 2026", link: null as string | null },
+        { src: legacyBanner, alt: "Bansal Classes — Trusted since 1981", link: null as string | null },
+      ];
+  // Duplicate the list so the marquee loops seamlessly
+  const heroMarquee = [...heroBanners, ...heroBanners];
   const liveTestimonials = dbTestimonials.length
     ? dbTestimonials.map((t) => ({ name: t.name, rank: t.rank_label ?? "", quote: t.quote }))
     : testimonials;
