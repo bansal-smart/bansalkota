@@ -605,7 +605,7 @@ const LandingPage = () => {
                 Register for ₹99 <ArrowRight className="h-5 w-5" />
               </BansalButton>
             </Link>
-            <p className="mt-3 text-xs text-white/70">Apply before 30 May 2026, 6:00 PM</p>
+            <p className="mt-3 text-xs text-white/70">Apply before 4 July 2026, 6:00 PM</p>
           </div>
         </div>
       </section>
