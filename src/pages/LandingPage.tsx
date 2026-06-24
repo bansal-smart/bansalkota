@@ -187,7 +187,6 @@ const dlpFeatures = [
 ];
 
 const LandingPage = () => {
-  const [exam, setExam] = useState<ExamKey>("jee");
   const { rows: dbTestimonials } = useSiteTestimonials();
   const { rows: dbStats } = useSiteStats();
   const { banners: dbHeroBanners } = useLandingHeroBanners();
