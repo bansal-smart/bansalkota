@@ -34,7 +34,7 @@ import TablePagination from "@/components/TablePagination";
 import BulkLectureUploadDialog from "@/components/admin/BulkLectureUploadDialog";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
-type Chapter = { id: string; title: string; position: number; is_published: boolean };
+type Chapter = { id: string; title: string; position: number; is_published: boolean; subject: string | null };
 type Resource = {
   id: string;
   course_id: string;
