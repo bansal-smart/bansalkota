@@ -15,15 +15,26 @@ const STATES = [
   "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
 ];
 
+const phoneRegex = /^[0-9+\-\s()]{7,20}$/;
+
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(100),
-  phone: z.string().trim().min(7, "Enter a valid phone").max(20),
+  phone: z.string().trim().regex(phoneRegex, "Enter a valid phone"),
+  parent_phone: z.string().trim().regex(phoneRegex, "Enter a valid parent phone"),
   father_name: z.string().trim().min(2, "Enter father's name").max(100),
   class_level: z.string().min(1, "Select your class"),
   target_exam: z.string().min(1, "Select your stream"),
   city: z.string().trim().min(2, "Enter your city").max(100),
   state: z.string().min(1, "Select your state"),
 });
+
+function toE164In(phone: string): string | null {
+  const d = phone.replace(/\D/g, "");
+  if (d.length === 10) return `+91${d}`;
+  if (d.length === 12 && d.startsWith("91")) return `+${d}`;
+  if (d.length === 11 && d.startsWith("0")) return `+91${d.slice(1)}`;
+  return null;
+}
 
 const ProfileCompletionDialog = () => {
   const { user, refreshProfile } = useAuth();
@@ -33,6 +44,7 @@ const ProfileCompletionDialog = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    parent_phone: "",
     father_name: "",
     class_level: "",
     target_exam: "",
@@ -50,7 +62,7 @@ const ProfileCompletionDialog = () => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, father_name, class_level, target_exam, city, state, onboarding_completed")
+        .select("full_name, phone, parent_phone, father_name, class_level, target_exam, city, state, onboarding_completed")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!active) return;
@@ -59,6 +71,7 @@ const ProfileCompletionDialog = () => {
         setForm({
           full_name: p?.full_name ?? "",
           phone: p?.phone ?? "",
+          parent_phone: p?.parent_phone ?? "",
           father_name: p?.father_name ?? "",
           class_level: p?.class_level ?? "",
           target_exam: p?.target_exam ?? "",
@@ -87,7 +100,12 @@ const ProfileCompletionDialog = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ ...parsed.data, onboarding_completed: true } as any)
+      .update({
+        ...parsed.data,
+        phone_e164: toE164In(parsed.data.phone),
+        parent_phone_e164: toE164In(parsed.data.parent_phone),
+        onboarding_completed: true,
+      } as any)
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
@@ -123,6 +141,7 @@ const ProfileCompletionDialog = () => {
           <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} error={errors.full_name} />
           <Field label="Email" value={user.email || ""} disabled />
           <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} error={errors.phone} />
+          <Field label="Parent's Phone" value={form.parent_phone} onChange={(v) => setForm({ ...form, parent_phone: v })} error={errors.parent_phone} />
           <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} error={errors.father_name} />
           <Select label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} error={errors.class_level} />
           <Select label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} error={errors.target_exam} />

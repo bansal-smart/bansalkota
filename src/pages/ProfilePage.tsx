@@ -25,6 +25,7 @@ const ProfilePage = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    parent_phone: "",
     father_name: "",
     city: "",
     state: "",
@@ -54,6 +55,7 @@ const ProfilePage = () => {
         setForm({
           full_name: p.full_name || "",
           phone: p.phone || "",
+          parent_phone: p.parent_phone || "",
           father_name: p.father_name || "",
           city: p.city || "",
           state: p.state || "",
@@ -85,11 +87,21 @@ const ProfilePage = () => {
   const handleSave = async () => {
     if (!authUser) return;
     setSaving(true);
+    const toE164In = (phone: string): string | null => {
+      const d = (phone || "").replace(/\D/g, "");
+      if (d.length === 10) return `+91${d}`;
+      if (d.length === 12 && d.startsWith("91")) return `+${d}`;
+      if (d.length === 11 && d.startsWith("0")) return `+91${d.slice(1)}`;
+      return null;
+    };
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: form.full_name,
         phone: form.phone,
+        phone_e164: toE164In(form.phone),
+        parent_phone: form.parent_phone,
+        parent_phone_e164: toE164In(form.parent_phone),
         father_name: form.father_name,
         city: form.city,
         state: form.state,
@@ -213,6 +225,7 @@ const ProfilePage = () => {
               <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
               <Field label="Email" value={user?.email || ""} disabled />
               <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+              <Field label="Parent's Phone" value={form.parent_phone} onChange={(v) => setForm({ ...form, parent_phone: v })} />
               <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} />
               <SelectField label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} />
               <SelectField label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} />
