@@ -12,15 +12,27 @@ const RefundPolicyPage = () => (
     <section className="py-12">
       <div className="container mx-auto px-4 max-w-3xl prose prose-sm md:prose-base">
         <h2 className="font-display text-bansal-blue">Course fee refunds</h2>
-        <p>Refund requests for classroom (CLP) and distance learning (DLP) courses are processed as per the refund schedule published at the time of admission. The applicable refund amount depends on the date of the formal withdrawal request relative to the course start date.</p>
-        <h2 className="font-display text-bansal-blue">Online courses & test series</h2>
-        <p>Online digital products (live + recorded courses, test series) are non-refundable once the content has been accessed. If you face a technical issue that prevents access, please contact support within 7 days of purchase.</p>
-        <h2 className="font-display text-bansal-blue">Books & printed material</h2>
-        <p>Physical books may be returned within 7 days of delivery if the seal is intact and there are no signs of usage. Return shipping is the responsibility of the customer.</p>
+        <p>
+          We refund course fees only till the 7th day from the date of course commencement — applicable to every course and phase, with no exceptions.
+        </p>
+        <p>
+          If you join late, miss classes, or never attend a single session, the refund window still closes on the 7th day. Refunds are only possible out of the First Installment and before the dates stated in the Information Bulletin. No refund is allowed from the Second Installment, and no refund is given if you leave after the last refund date.
+        </p>
+        <h2 className="font-display text-bansal-blue">How to request a refund</h2>
+        <p>
+          Requests must be submitted in hard copy (fax, phone, SMS, or mobile requests are not accepted) personally or by post to: Account Manager, Bansal Classes, A-11(a), IPIA, Road No. 1, Kota, Rajasthan.
+        </p>
+        <p>
+          Include your name, roll number, course, original receipt, ID card, and full bank details (bank name, account number, branch, and account holder name).
+        </p>
         <h2 className="font-display text-bansal-blue">Processing time</h2>
-        <p>Approved refunds are credited to the original payment method within 7–14 working days.</p>
-        <h2 className="font-display text-bansal-blue">How to request</h2>
-        <p>Email <a href="mailto:info@bansal.ac.in">info@bansal.ac.in</a> with your student ID, course name and reason. For classroom programs, please contact your center administration directly.</p>
+        <p>
+          Once the application is received and verified, refund is initiated within 10–15 working days.
+        </p>
+        <h2 className="font-display text-bansal-blue">Jurisdiction</h2>
+        <p>
+          For any legal dispute, jurisdiction is Kota (Rajasthan) only.
+        </p>
       </div>
     </section>
   </div>
