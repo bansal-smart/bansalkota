@@ -81,14 +81,19 @@ const AdminStudentsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<StudentRow | null>(null);
-  const [schools, setSchools] = useState<SchoolLite[]>([]);
-  const [schoolFilter, setSchoolFilter] = useState<string>(""); // "", "none", or school id
+  const [centres, setCentres] = useState<CentreLite[]>([]);
+  const [batches, setBatches] = useState<BatchLite[]>([]);
+  const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
   const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any).from("schools").select("id, name").order("name");
-      setSchools((data as SchoolLite[]) ?? []);
+      const [{ data: cs }, { data: bs }] = await Promise.all([
+        (supabase as any).from("centres").select("id, city, area, slug").order("city"),
+        (supabase as any).from("course_batches").select("id, name, code").order("name"),
+      ]);
+      setCentres((cs as CentreLite[]) ?? []);
+      setBatches((bs as BatchLite[]) ?? []);
     })();
   }, []);
 
@@ -109,7 +114,7 @@ const AdminStudentsPage = () => {
       let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, school_id",
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id",
           { count: "exact" },
         )
         .in("user_id", studentIds)
@@ -117,10 +122,10 @@ const AdminStudentsPage = () => {
 
       if (search.trim()) {
         const s = search.trim();
-        query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%`);
+        query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
-      if (schoolFilter === "none") query = query.is("school_id", null);
-      else if (schoolFilter) query = query.eq("school_id", schoolFilter);
+      if (centreFilter === "none") query = query.is("centre_id", null);
+      else if (centreFilter) query = query.eq("centre_id", centreFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -128,8 +133,12 @@ const AdminStudentsPage = () => {
       if (error) throw error;
 
       const baseRows = (data ?? []) as StudentRow[];
-      const schoolMap = new Map(schools.map((s) => [s.id, s.name]));
-      baseRows.forEach((r) => { r.school_name = r.school_id ? schoolMap.get(r.school_id) ?? null : null; });
+      const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
+      const batchMap = new Map(batches.map((b) => [b.id, b.name]));
+      baseRows.forEach((r) => {
+        r.centre_name = r.centre_id ? centreMap.get(r.centre_id) ?? null : null;
+        r.batch_name = r.batch_id ? batchMap.get(r.batch_id) ?? null : null;
+      });
 
       // Fetch emails via edge function for visible rows
       let emails: Record<string, string | null> = {};
@@ -143,6 +152,7 @@ const AdminStudentsPage = () => {
       setTotal(count ?? 0);
     } catch (e: any) {
       toast.error("Failed to load students", { description: e.message });
+
     } finally {
       setLoading(false);
     }
