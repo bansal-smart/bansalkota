@@ -157,7 +157,7 @@ const testimonials = [
 ];
 
 const clpFeatures = [
-  "Classroom sessions at 100+ Bansal centers",
+  "Classroom sessions at 85+ Bansal centers",
   "Direct interaction with master mentors",
   "Daily doubt sessions & weekly tests",
   "Peer learning with India's top scholars",
