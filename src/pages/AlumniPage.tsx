@@ -137,7 +137,7 @@ export default function AlumniPage() {
                 <div className="flex items-center gap-3 mb-2">
                   <span className="h-px w-10 bg-bansal-orange" />
                   <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
-                    Notable Bansalians
+                    Notable Bansalites
                   </span>
                 </div>
                 <h2 className="font-display text-3xl md:text-4xl font-extrabold text-bansal-blue">
@@ -194,7 +194,7 @@ export default function AlumniPage() {
                     <div className="mt-5 flex items-center justify-between text-[11px] text-bansal-gray">
                       <span>Batch {a.batch_year ?? a.year ?? "—"}</span>
                       <span className="font-semibold text-bansal-blue/60 uppercase tracking-wide">
-                        Bansalian
+                        Bansalite
                       </span>
                     </div>
                   </div>
@@ -250,7 +250,7 @@ export default function AlumniPage() {
                           <p className="mt-2 text-sm text-bansal-gray">
                             {decade <= 1990 && "The founding generation — first IIT selections from Kota."}
                             {decade === 2000 && "Kota becomes a verb. Bansal alumni land top single-digit ranks."}
-                            {decade === 2010 && "Bansalians spread across IITs, AIIMS, ISRO, IIMs and founders' desks."}
+                            {decade === 2010 && "Bansalites spread across IITs, AIIMS, ISRO, IIMs and founders' desks."}
                             {decade >= 2020 && "A new wave — JEE Advanced, NEET UG, Olympiad winners and beyond."}
                           </p>
                           <div className="mt-5 flex flex-wrap gap-2">
@@ -393,7 +393,7 @@ export default function AlumniPage() {
                   <div className="mt-4 flex items-center justify-between text-[11px] text-bansal-gray">
                     <span>Batch {a.batch_year ?? a.year ?? "—"}</span>
                     <span className="font-semibold text-bansal-blue/60 uppercase tracking-wide">
-                      Bansalian
+                      Bansalite
                     </span>
                   </div>
                 </article>
@@ -407,7 +407,7 @@ export default function AlumniPage() {
       <section className="bg-bansal-cream py-16">
         <div className="container mx-auto px-4 sm:px-6 max-w-3xl text-center">
           <h2 className="font-display text-3xl md:text-4xl font-extrabold text-bansal-blue">
-            Are you a <span className="text-bansal-orange">Bansalian</span>?
+            Are you a <span className="text-bansal-orange">Bansalite</span>?
           </h2>
           <p className="mt-3 text-bansal-gray">
             Share your story, mentor a current student, or return as guest faculty.
@@ -442,7 +442,7 @@ function AlumniHero({ onSubmit }: { onSubmit: () => void }) {
           </span>
         </div>
         <h1 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.05]">
-          Forty years of <span className="text-bansal-orange">Bansalians</span> —
+          Forty years of <span className="text-bansal-orange">Bansalites</span> —
           <br className="hidden md:block" /> the people who learned here, and then changed the world.
         </h1>
         <p className="mt-5 max-w-2xl text-white/85 text-base md:text-lg">

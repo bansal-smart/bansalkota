@@ -156,7 +156,7 @@ export default function AdminAlumniSubmissionsPage() {
           Alumni Story Submissions
         </h1>
         <p className="text-sm text-bansal-gray mt-1">
-          Stories submitted by Bansalians on the public Alumni page. Approve to publish into the Toppers wall.
+          Stories submitted by Bansalites on the public Alumni page. Approve to publish into the Toppers wall.
         </p>
       </header>
 
