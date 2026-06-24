@@ -807,7 +807,7 @@ const AdminCourseContentPage = () => {
                                   <div className="flex-1 min-w-0">
                                     {/* Field row: Subject · Chapter · Lecture · Topic · Badges */}
                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                                      <span className="font-semibold text-primary">{selectedCourse?.subject}</span>
+                                      <span className="font-semibold text-primary">{ch.subject || selectedCourse?.subject}</span>
                                       <span className="text-muted-foreground">|</span>
                                       <span className="font-medium text-foreground">{ch.title}</span>
                                       <span className="text-muted-foreground">|</span>
