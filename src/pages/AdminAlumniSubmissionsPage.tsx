@@ -34,6 +34,15 @@ type Submission = {
   published_topper_id: string | null;
   created_at: string;
   reviewed_at: string | null;
+  father_name: string | null;
+  course_program: string | null;
+  selection_year: string | null;
+  college_joined: string | null;
+  stream_taken: string | null;
+  address: string | null;
+  verified: boolean | null;
+  source_registration_id: number | null;
+  registered_at: string | null;
 };
 
 const statusStyle: Record<string, string> = {
