@@ -141,12 +141,8 @@ export default function AchievementsPage() {
                       <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{t.exam}</p>
                     </div>
 
-                    {t.rank_label && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <Trophy className="h-4 w-4 text-bansal-orange" />
-                        <span className="font-display font-bold text-bansal-blue text-xl">{t.rank_label}</span>
-                      </div>
-                    )}
+
+
                     {t.quote && (
                       <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
                         "{t.quote}"
