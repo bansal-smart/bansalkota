@@ -2784,6 +2784,8 @@ export type Database = {
           is_bansal_offline_student: boolean
           is_suspended: boolean
           onboarding_completed: boolean
+          parent_phone: string | null
+          parent_phone_e164: string | null
           phone: string | null
           phone_e164: string | null
           phone_verified: boolean
@@ -2813,6 +2815,8 @@ export type Database = {
           is_bansal_offline_student?: boolean
           is_suspended?: boolean
           onboarding_completed?: boolean
+          parent_phone?: string | null
+          parent_phone_e164?: string | null
           phone?: string | null
           phone_e164?: string | null
           phone_verified?: boolean
@@ -2842,6 +2846,8 @@ export type Database = {
           is_bansal_offline_student?: boolean
           is_suspended?: boolean
           onboarding_completed?: boolean
+          parent_phone?: string | null
+          parent_phone_e164?: string | null
           phone?: string | null
           phone_e164?: string | null
           phone_verified?: boolean
