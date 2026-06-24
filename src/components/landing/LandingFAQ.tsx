@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Is there a fee refund policy?",
-    a: "We refund course fees only till the 7th day from the date of course commencement — applicable to every course and phase, with no exceptions.\n\nIf you join late, miss classes, or never attend a single session, the refund window still closes on the 7th day. Refunds are only possible out of the First Installment and before the dates stated in the Information Bulletin. No refund is allowed from the Second Installment, and no refund is given if you leave after the last refund date.\n\nRequests must be submitted in hard copy (fax, phone, SMS, or mobile requests are not accepted) personally or by post to: Account Manager, Bansal Classes, A-11(a), IPIA, Road No. 1, Kota, Rajasthan. Include your name, roll number, course, original receipt, ID card, and full bank details (bank name, account number, branch, and account holder name). Once the application is received and verified, refund is initiated within 10–15 working days. For any legal dispute, jurisdiction is Kota (Rajasthan) only.",
+    a: "Yes. A full 7-day no-questions-asked refund applies on every online course. Classroom programs follow the standard Bansal admission policy.",
   },
   {
     q: "Will I get a personal mentor?",
@@ -37,7 +37,7 @@ const faqs = [
   },
   {
     q: "What makes Bansal different from other coaching brands?",
-    a: "Refined pedagogy since 1981, IIT/AIIMS alumni faculty, a legendary printed study material set and a results-first culture that has produced 2,500+ IITians and 5,000+ doctors.",
+    a: "Refined pedagogy since 1981, IIT/AIIMS alumni faculty, a legendary printed study material set and a results-first culture that has produced more than 1,00,000+ IITians and doctors.",
   },
 ];
 
