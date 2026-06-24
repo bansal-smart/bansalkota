@@ -255,7 +255,7 @@ const LandingPage = () => {
               { Icon: Play, value: "Daily", label: "Live Interactive Sessions" },
               { Icon: BookOpen, value: "10M+", label: "Tests, Papers & Notes" },
               { Icon: Headphones, value: "24×7", label: "Learning Support" },
-              { Icon: Building2, value: "100+", label: "Offline Centres" },
+              { Icon: Building2, value: "85+", label: "Offline Centres" },
             ].map(({ Icon, value, label }) => (
               <div key={label} className="text-center">
                 <Icon className="h-5 w-5 mx-auto text-bansal-orange mb-1.5" />
