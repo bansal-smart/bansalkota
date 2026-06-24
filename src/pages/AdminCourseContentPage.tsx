@@ -1135,31 +1135,19 @@ const AdminCourseContentPage = () => {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="lec-dur">Duration (minutes)</Label>
-                <Input
-                  id="lec-dur"
-                  type="number"
-                  min={1}
-                  value={lectureForm.durationMin}
-                  onChange={(e) => setLectureForm({ ...lectureForm, durationMin: Number(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
-                <Label>Chapter</Label>
-                <Select
-                  value={lectureForm.chapter_id}
-                  onValueChange={(v) => setLectureForm({ ...lectureForm, chapter_id: v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Choose chapter" /></SelectTrigger>
-                  <SelectContent>
-                    {chapters.map((ch) => (
-                      <SelectItem key={ch.id} value={ch.id}>{ch.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label>Chapter</Label>
+              <Select
+                value={lectureForm.chapter_id}
+                onValueChange={(v) => setLectureForm({ ...lectureForm, chapter_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Choose chapter" /></SelectTrigger>
+                <SelectContent>
+                  {chapters.map((ch) => (
+                    <SelectItem key={ch.id} value={ch.id}>{ch.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
