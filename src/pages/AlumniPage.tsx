@@ -62,20 +62,60 @@ export default function AlumniPage() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("toppers")
-        .select(
-          "id,name,rank_label,exam,year,photo_url,quote,story,current_position,company,batch_year,is_alumni,is_featured",
-        )
-        .eq("is_alumni", true)
-        .order("is_featured", { ascending: false })
-        .order("batch_year", { ascending: false, nullsFirst: false })
-        .order("year", { ascending: false })
-        .limit(500);
-      setItems((data ?? []) as Alumnus[]);
+      const [{ data: toppersData }, { data: subsData }] = await Promise.all([
+        supabase
+          .from("toppers")
+          .select(
+            "id,name,rank_label,exam,year,photo_url,quote,story,current_position,company,batch_year,is_alumni,is_featured",
+          )
+          .eq("is_alumni", true)
+          .order("is_featured", { ascending: false })
+          .order("batch_year", { ascending: false, nullsFirst: false })
+          .order("year", { ascending: false })
+          .limit(500),
+        supabase
+          .from("alumni_submissions")
+          .select(
+            "id,full_name,rank_label,exam,selection_year,batch_year,photo_url,story,current_position,company",
+          )
+          .eq("status", "approved")
+          .order("batch_year", { ascending: false, nullsFirst: false })
+          .order("selection_year", { ascending: false, nullsFirst: false })
+          .limit(500),
+      ]);
+
+      const fromToppers = (toppersData ?? []) as Alumnus[];
+      const fromSubs: Alumnus[] = (subsData ?? []).map((s: any) => ({
+        id: `sub-${s.id}`,
+        name: s.full_name,
+        rank_label: s.rank_label,
+        exam: s.exam,
+        year: s.selection_year ?? null,
+        photo_url: s.photo_url,
+        quote: null,
+        story: s.story,
+        current_position: s.current_position,
+        company: s.company,
+        batch_year: s.batch_year ?? null,
+        is_alumni: true,
+        is_featured: false,
+      }));
+
+      // De-dupe by name+batch_year so a submission that's already promoted to toppers doesn't double-show
+      const seen = new Set(
+        fromToppers.map((a) => `${a.name?.toLowerCase()}|${a.batch_year ?? a.year ?? ""}`),
+      );
+      const merged = [
+        ...fromToppers,
+        ...fromSubs.filter(
+          (a) => !seen.has(`${a.name?.toLowerCase()}|${a.batch_year ?? a.year ?? ""}`),
+        ),
+      ];
+      setItems(merged);
       setLoading(false);
     })();
   }, []);
+
 
   const featured = useMemo(
     () => items.filter((a) => a.is_featured).slice(0, 6),
