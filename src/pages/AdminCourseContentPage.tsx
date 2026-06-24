@@ -124,7 +124,7 @@ const SortableLecture = ({ lesson, children }: { lesson: Lesson; children: React
   const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
 
   return (
-    <li ref={setNodeRef} style={style} className={`flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2 ${isDragging ? "opacity-60" : ""}`}>
+    <li ref={setNodeRef} style={style} className={`flex items-start gap-3 rounded-lg bg-muted/30 px-3 py-2 ${isDragging ? "opacity-60" : ""}`}>
       <button
         ref={setActivatorNodeRef}
         type="button"
