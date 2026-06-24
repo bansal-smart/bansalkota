@@ -148,13 +148,26 @@ const BulkLectureUploadDialog = ({ open, onOpenChange, courseId, existingChapter
     let nextChapterPos = existingChapters.length;
     existingChapters.forEach((c) => chMap.set(c.title.trim().toLowerCase(), c.id));
 
-    // Create missing chapters
+    // Pick a representative subject per chapter from the CSV rows
+    const chapterSubject = new Map<string, string>(); // titleLower -> subject
+    rows.forEach((r) => {
+      const k = r.chapter.trim().toLowerCase();
+      if (r.subject && !chapterSubject.has(k)) chapterSubject.set(k, r.subject.trim());
+    });
+
+    // Create missing chapters (with subject) and backfill subject on existing ones
     for (const chapterTitle of grouped.keys()) {
       const key = chapterTitle.toLowerCase();
-      if (chMap.has(key)) continue;
+      const subject = chapterSubject.get(key) || null;
+      if (chMap.has(key)) {
+        if (subject) {
+          await supabase.from("chapters").update({ subject }).eq("id", chMap.get(key)!);
+        }
+        continue;
+      }
       const { data, error } = await supabase
         .from("chapters")
-        .insert({ course_id: courseId, title: chapterTitle, position: nextChapterPos++ })
+        .insert({ course_id: courseId, title: chapterTitle, position: nextChapterPos++, subject })
         .select("id")
         .single();
       if (error || !data) {

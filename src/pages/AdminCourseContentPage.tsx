@@ -34,7 +34,7 @@ import TablePagination from "@/components/TablePagination";
 import BulkLectureUploadDialog from "@/components/admin/BulkLectureUploadDialog";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
-type Chapter = { id: string; title: string; position: number; is_published: boolean };
+type Chapter = { id: string; title: string; position: number; is_published: boolean; subject: string | null };
 type Resource = {
   id: string;
   course_id: string;
@@ -254,7 +254,7 @@ const AdminCourseContentPage = () => {
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
     const [{ data: ch }, { data: ls }, { data: rs }, { data: vids }] = await Promise.all([
-      supabase.from("chapters").select("id,title,position,is_published").eq("course_id", courseId).order("position"),
+      supabase.from("chapters").select("id,title,position,is_published,subject").eq("course_id", courseId).order("position"),
       supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,is_free_preview,is_published,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
       supabase.rpc("admin_get_lessons_full", { _course_id: courseId }),
@@ -807,7 +807,7 @@ const AdminCourseContentPage = () => {
                                   <div className="flex-1 min-w-0">
                                     {/* Field row: Subject · Chapter · Lecture · Topic · Badges */}
                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                                      <span className="font-semibold text-primary">{selectedCourse?.subject}</span>
+                                      <span className="font-semibold text-primary">{ch.subject || selectedCourse?.subject}</span>
                                       <span className="text-muted-foreground">|</span>
                                       <span className="font-medium text-foreground">{ch.title}</span>
                                       <span className="text-muted-foreground">|</span>
@@ -1135,31 +1135,19 @@ const AdminCourseContentPage = () => {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="lec-dur">Duration (minutes)</Label>
-                <Input
-                  id="lec-dur"
-                  type="number"
-                  min={1}
-                  value={lectureForm.durationMin}
-                  onChange={(e) => setLectureForm({ ...lectureForm, durationMin: Number(e.target.value) || 0 })}
-                />
-              </div>
-              <div>
-                <Label>Chapter</Label>
-                <Select
-                  value={lectureForm.chapter_id}
-                  onValueChange={(v) => setLectureForm({ ...lectureForm, chapter_id: v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Choose chapter" /></SelectTrigger>
-                  <SelectContent>
-                    {chapters.map((ch) => (
-                      <SelectItem key={ch.id} value={ch.id}>{ch.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label>Chapter</Label>
+              <Select
+                value={lectureForm.chapter_id}
+                onValueChange={(v) => setLectureForm({ ...lectureForm, chapter_id: v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Choose chapter" /></SelectTrigger>
+                <SelectContent>
+                  {chapters.map((ch) => (
+                    <SelectItem key={ch.id} value={ch.id}>{ch.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
