@@ -98,10 +98,10 @@ export default function AchievementsPage() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mb-10">
-            {FILTERS.map((f) => (
+            {exams.map((f) => (
               <button
                 key={f}
-                onClick={() => setFilter(f)}
+                onClick={() => { setFilter(f); setVisibleCount(PAGE_SIZE); }}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                   filter === f
                     ? "bg-bansal-blue text-white"
@@ -113,33 +113,65 @@ export default function AchievementsPage() {
             ))}
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((t) => (
-              <BansalCard key={t.name + t.rank} className="relative">
-                <div className="absolute top-4 right-4">
-                  <BansalBadge variant="orange">{t.year}</BansalBadge>
+          {loading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-44 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">No toppers to show yet.</p>
+          ) : (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {visible.map((t) => (
+                  <BansalCard key={t.id} className="relative">
+                    {t.year && (
+                      <div className="absolute top-4 right-4">
+                        <BansalBadge variant="orange">{t.year}</BansalBadge>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 mb-4">
+                      {t.photo_url ? (
+                        <img
+                          src={t.photo_url}
+                          alt={t.name}
+                          loading="lazy"
+                          className="h-14 w-14 rounded-full object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 rounded-full bg-bansal-blue text-white font-display font-bold text-lg flex items-center justify-center">
+                          {initialsFor(t.name)}
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-display text-lg font-bold text-bansal-black">{t.name}</h3>
+                        <p className="text-xs text-muted-foreground">{t.exam}</p>
+                      </div>
+                    </div>
+                    {t.rank_label && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <Trophy className="h-4 w-4 text-bansal-orange" />
+                        <span className="font-display font-bold text-bansal-blue text-xl">{t.rank_label}</span>
+                      </div>
+                    )}
+                    {t.quote && (
+                      <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
+                        "{t.quote}"
+                      </p>
+                    )}
+                  </BansalCard>
+                ))}
+              </div>
+              {visibleCount < filtered.length && (
+                <div className="text-center mt-10">
+                  <BansalButton variant="ghost" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                    Show more ({filtered.length - visibleCount} remaining)
+                  </BansalButton>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-14 w-14 rounded-full bg-bansal-blue text-white font-display font-bold text-lg flex items-center justify-center">
-                    {t.initials}
-                  </div>
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-bansal-black">{t.name}</h3>
-                    <p className="text-xs text-muted-foreground">{t.exam}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy className="h-4 w-4 text-bansal-orange" />
-                  <span className="font-display font-bold text-bansal-blue text-xl">{t.rank}</span>
-                </div>
-                {t.quote && (
-                  <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
-                    "{t.quote}"
-                  </p>
-                )}
-              </BansalCard>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
