@@ -602,7 +602,7 @@ const LandingPage = () => {
           <div className="text-center lg:text-right">
             <Link to="/boost" className="inline-block">
               <BansalButton variant="cta" className="text-base px-8 py-4">
-                Register for ₹99 <ArrowRight className="h-5 w-5" />
+                Explore <ArrowRight className="h-5 w-5" />
               </BansalButton>
             </Link>
             <p className="mt-3 text-xs text-white/70">Apply before 4 July 2026, 6:00 PM</p>
