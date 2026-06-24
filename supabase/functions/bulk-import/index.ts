@@ -44,16 +44,21 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json(401, { error: "Unauthorized" });
+    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
+    if (!authHeader?.toLowerCase().startsWith("bearer ")) {
+      console.error("bulk-import: missing Authorization header");
+      return json(401, { error: "Unauthorized: missing bearer token" });
+    }
+    const token = authHeader.slice(7).trim();
 
     const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: `Bearer ${token}` } },
     });
-    const { data: userData, error: userErr } = await userClient.auth.getUser(
-      authHeader.replace("Bearer ", ""),
-    );
-    if (userErr || !userData?.user) return json(401, { error: "Unauthorized" });
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      console.error("bulk-import: getUser failed", userErr?.message);
+      return json(401, { error: `Unauthorized: ${userErr?.message ?? "no user"}` });
+    }
 
     const admin = createClient(supabaseUrl, serviceKey);
     const uid = userData.user.id;
