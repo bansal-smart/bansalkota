@@ -141,6 +141,7 @@ const ProfileCompletionDialog = () => {
           <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} error={errors.full_name} />
           <Field label="Email" value={user.email || ""} disabled />
           <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} error={errors.phone} />
+          <Field label="Parent's Phone" value={form.parent_phone} onChange={(v) => setForm({ ...form, parent_phone: v })} error={errors.parent_phone} />
           <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} error={errors.father_name} />
           <Select label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} error={errors.class_level} />
           <Select label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} error={errors.target_exam} />
