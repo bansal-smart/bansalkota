@@ -25,11 +25,6 @@ const benefits = [
     desc: "Win huge fee waivers on Bansal Classes JEE/NEET/Foundation programs based on your rank.",
   },
   {
-    icon: Award,
-    title: "Cash Prizes",
-    desc: "Top performers across categories receive cash rewards and Bansal Achiever certificates.",
-  },
-  {
     icon: GraduationCap,
     title: "Personal Mentorship",
     desc: "Top 100 rankers get a one-on-one mentor session with Bansal senior faculty.",
