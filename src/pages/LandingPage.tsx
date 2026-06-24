@@ -25,7 +25,6 @@ import {
   FlaskConical,
   Calculator,
   PenTool,
-  Rocket,
   BarChart3,
   Building2,
 } from "lucide-react";
