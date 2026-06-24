@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -26,7 +25,6 @@ import {
   FlaskConical,
   Calculator,
   PenTool,
-  Rocket,
   BarChart3,
   Building2,
 } from "lucide-react";
@@ -56,7 +54,6 @@ const iconMap: Record<string, any> = {
   Users,
   Brain,
   Lightbulb,
-  Rocket,
   BarChart3,
   Building2,
 };
@@ -109,82 +106,6 @@ const streams = [
   },
 ];
 
-type ExamKey = "jee" | "neet" | "foundation";
-
-const coursesByExam: Record<
-  ExamKey,
-  { name: string; duration: string; mode: string; icon: typeof BookOpen; perks: string[] }[]
-> = {
-  jee: [
-    {
-      name: "JEE Main + Advanced (Class XI)",
-      duration: "2 Years",
-      mode: "Classroom · Online",
-      icon: GraduationCap,
-      perks: ["Live + recorded sessions", "Weekly chapter tests", "Personal mentor pod"],
-    },
-    {
-      name: "JEE Main + Advanced (Class XII)",
-      duration: "1 Year",
-      mode: "Classroom · Online",
-      icon: Trophy,
-      perks: ["AIR-focused problem sheets", "All-India test series", "1:1 doubt sessions"],
-    },
-    {
-      name: "JEE Crash Course",
-      duration: "3 Months",
-      mode: "Online",
-      icon: Rocket,
-      perks: ["High-yield revision", "PYQ marathons", "Mock-test analytics"],
-    },
-  ],
-  neet: [
-    {
-      name: "NEET-UG (Class XI)",
-      duration: "2 Years",
-      mode: "Classroom · Online",
-      icon: GraduationCap,
-      perks: ["Bio-Phy-Chem in depth", "NCERT mastery drills", "Mentor-led revisions"],
-    },
-    {
-      name: "NEET-UG (Class XII)",
-      duration: "1 Year",
-      mode: "Classroom · Online",
-      icon: Trophy,
-      perks: ["Daily MCQ practice", "Full-syllabus tests", "Personal strategy plan"],
-    },
-    {
-      name: "NEET Repeater Batch",
-      duration: "1 Year",
-      mode: "Classroom",
-      icon: Award,
-      perks: ["Gap analysis", "Concept rebuild", "Top-rank coaching"],
-    },
-  ],
-  foundation: [
-    {
-      name: "Pre-Foundation (Class VI-VIII)",
-      duration: "Annual",
-      mode: "Classroom · Online",
-      icon: BookOpen,
-      perks: ["Concept-first teaching", "Logical reasoning", "Olympiad prep"],
-    },
-    {
-      name: "Foundation (Class IX-X)",
-      duration: "Annual",
-      mode: "Classroom · Online",
-      icon: BookOpen,
-      perks: ["NTSE-ready curriculum", "Board + competitive blend", "Weekly mentor reviews"],
-    },
-    {
-      name: "NTSE / Olympiad Booster",
-      duration: "6 Months",
-      mode: "Online",
-      icon: Award,
-      perks: ["Targeted question banks", "Time-bound drills", "Performance reports"],
-    },
-  ],
-};
 
 const achievements = [
   { value: "Since 1981", label: "Trusted Legacy", icon: Award },
@@ -266,7 +187,6 @@ const dlpFeatures = [
 ];
 
 const LandingPage = () => {
-  const [exam, setExam] = useState<ExamKey>("jee");
   const { rows: dbTestimonials } = useSiteTestimonials();
   const { rows: dbStats } = useSiteStats();
   const { banners: dbHeroBanners } = useLandingHeroBanners();
@@ -584,73 +504,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 5. COURSES */}
-      <section className="relative py-12 md:py-20 bg-white section-decor">
-        <GridTexture tone="orange" className="opacity-30 decor-fade" />
-        <div className="relative container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto">
-            <BansalBadge tone="blue">Programs</BansalBadge>
-            <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black">
-              Explore the Ideal Course For You
-            </h2>
-            <p className="mt-3 text-sm md:text-base text-bansal-gray">
-              From Pre-Foundation to JEE Advanced &amp; NEET-UG — every Bansal batch combines master-mentor classes, the
-              legendary Bansal study material, a smart test engine and a personal mentor who tracks you week after week.
-            </p>
-          </div>
-
-          <div className="mt-8 flex justify-center gap-2 flex-wrap">
-            {(
-              [
-                { k: "jee", label: "JEE", Icon: Atom },
-                { k: "neet", label: "NEET UG", Icon: Stethoscope },
-                { k: "foundation", label: "Pre Foundation", Icon: Sprout },
-              ] as const
-            ).map((t) => (
-              <button
-                key={t.k}
-                onClick={() => setExam(t.k)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-semibold transition-all ${
-                  exam === t.k
-                    ? "bg-bansal-blue text-white shadow-blue"
-                    : "bg-bansal-blue-light/60 text-bansal-blue hover:bg-bansal-blue/10"
-                }`}
-              >
-                <t.Icon className="h-4 w-4" /> {t.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8 md:mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 stagger-children max-w-6xl mx-auto">
-            {coursesByExam[exam].map((c) => (
-              <BansalCard key={c.name} className="relative !p-5 flex flex-col">
-                <CornerSparkles position="tr" />
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-bansal-orange-light flex items-center justify-center mb-3 sm:mb-4">
-                  <c.icon className="h-5 w-5 sm:h-6 sm:w-6 text-bansal-orange" />
-                </div>
-                <h3 className="font-display text-base sm:text-lg font-bold text-bansal-black leading-snug">{c.name}</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <BansalBadge tone="blue">{c.duration}</BansalBadge>
-                  <BansalBadge tone="gray">{c.mode}</BansalBadge>
-                </div>
-                <ul className="mt-4 space-y-1.5 flex-1">
-                  {c.perks.map((p) => (
-                    <li key={p} className="flex items-start gap-2 text-xs sm:text-sm text-bansal-gray">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-bansal-orange shrink-0 mt-0.5" /> {p}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/courses"
-                  className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange"
-                >
-                  View Details <ArrowRight className="h-4 w-4" />
-                </Link>
-              </BansalCard>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* 6. CLP vs DLP */}
       <section className="relative py-12 md:py-20 bg-bansal-blue-light/40 section-decor">
