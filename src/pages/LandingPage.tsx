@@ -107,11 +107,10 @@ const streams = [
   },
 ];
 
-
 const achievements = [
   { value: "Since 1981", label: "Trusted Legacy", icon: Award },
   { value: "85+", label: "Centres", icon: Building2 },
-  { value: "1,00,000+", label: "IITians & Doctors Produced", icon: GraduationCap },
+  { value: "1,00,000+", label: "Engineers & Doctors Produced", icon: GraduationCap },
   { value: "Kota", label: "Where it all began", icon: ShieldCheck },
 ];
 
@@ -475,7 +474,6 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-
 
       {/* 6. CLP vs DLP */}
       <section className="relative py-12 md:py-20 bg-bansal-blue-light/40 section-decor">
