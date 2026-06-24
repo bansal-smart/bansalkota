@@ -18,7 +18,7 @@ export type Topper = {
 
 export const useToppers = () => {
   const query = useQuery({
-    queryKey: ["toppers", "published"],
+    queryKey: ["toppers", "published", "all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("toppers")
@@ -26,8 +26,10 @@ export const useToppers = () => {
           "id, name, exam, rank_label, year, score, photo_url, quote, city, category, sort_order, is_published"
         )
         .eq("is_published", true)
-        .order("sort_order")
-        .limit(200);
+        .order("sort_order", { ascending: true })
+        .order("year", { ascending: false })
+        .order("name", { ascending: true })
+        .limit(2000);
       if (error) throw error;
       return (data ?? []) as Topper[];
     },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trophy, Medal, Star, Award, TrendingUp, Building2 } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
@@ -6,67 +6,18 @@ import BansalButton from "@/components/bansal/BansalButton";
 import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
 const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import { useToppers, type Topper } from "@/hooks/useToppers";
 
-type Topper = {
-  name: string;
-  rank: string;
-  exam: "JEE Advanced" | "JEE Main" | "NEET" | "KVPY" | "NTSE";
-  year: number;
-  quote?: string;
-  initials: string;
-};
+const PAGE_SIZE = 24;
 
-const TOPPERS: Topper[] = [
-  {
-    name: "Aarav Sharma",
-    rank: "AIR 12",
-    exam: "JEE Advanced",
-    year: 2025,
-    initials: "AS",
-    quote: "Bansal's problem-solving culture is unmatched.",
-  },
-  {
-    name: "Diya Mehta",
-    rank: "AIR 28",
-    exam: "JEE Advanced",
-    year: 2025,
-    initials: "DM",
-    quote: "The faculty here teach concepts that stay for life.",
-  },
-  { name: "Rohan Verma", rank: "AIR 41", exam: "JEE Advanced", year: 2025, initials: "RV" },
-  {
-    name: "Anvi Iyer",
-    rank: "AIR 6",
-    exam: "NEET",
-    year: 2025,
-    initials: "AI",
-    quote: "Daily tests at Bansal made the final NEET feel routine.",
-  },
-  { name: "Kabir Rao", rank: "AIR 19", exam: "NEET", year: 2025, initials: "KR" },
-  { name: "Sneha Kulkarni", rank: "AIR 34", exam: "NEET", year: 2025, initials: "SK" },
-  {
-    name: "Ishaan Gupta",
-    rank: "AIR 3",
-    exam: "JEE Main",
-    year: 2025,
-    initials: "IG",
-    quote: "From doubt sessions to mock tests, every hour was purposeful.",
-  },
-  { name: "Pari Choudhury", rank: "AIR 15", exam: "JEE Main", year: 2025, initials: "PC" },
-  { name: "Aryan Nair", rank: "AIR 47", exam: "JEE Main", year: 2025, initials: "AN" },
-  { name: "Tanvi Joshi", rank: "AIR 22", exam: "KVPY", year: 2024, initials: "TJ" },
-  { name: "Vivaan Patel", rank: "State Topper", exam: "NTSE", year: 2024, initials: "VP" },
-  {
-    name: "Riya Khanna",
-    rank: "AIR 9",
-    exam: "JEE Advanced",
-    year: 2024,
-    initials: "RK",
-    quote: "Bansal pushed me to think beyond the syllabus.",
-  },
-];
-
-const FILTERS = ["All", "JEE Advanced", "JEE Main", "NEET", "KVPY", "NTSE"] as const;
+const initialsFor = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 const milestones = [
   { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
@@ -76,9 +27,21 @@ const milestones = [
 ];
 
 export default function AchievementsPage() {
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const { toppers, loading } = useToppers();
+  const [filter, setFilter] = useState<string>("All");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const filtered = filter === "All" ? TOPPERS : TOPPERS.filter((t) => t.exam === filter);
+  const exams = useMemo(() => {
+    const set = new Set<string>();
+    toppers.forEach((t) => t.exam && set.add(t.exam));
+    return ["All", ...Array.from(set)];
+  }, [toppers]);
+
+  const filtered = useMemo(() => {
+    return filter === "All" ? toppers : toppers.filter((t) => t.exam === filter);
+  }, [toppers, filter]);
+
+  const visible = filtered.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen bg-background">
@@ -135,10 +98,10 @@ export default function AchievementsPage() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mb-10">
-            {FILTERS.map((f) => (
+            {exams.map((f) => (
               <button
                 key={f}
-                onClick={() => setFilter(f)}
+                onClick={() => { setFilter(f); setVisibleCount(PAGE_SIZE); }}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                   filter === f
                     ? "bg-bansal-blue text-white"
@@ -150,33 +113,65 @@ export default function AchievementsPage() {
             ))}
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((t) => (
-              <BansalCard key={t.name + t.rank} className="relative">
-                <div className="absolute top-4 right-4">
-                  <BansalBadge variant="orange">{t.year}</BansalBadge>
+          {loading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-44 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">No toppers to show yet.</p>
+          ) : (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {visible.map((t) => (
+                  <BansalCard key={t.id} className="relative">
+                    {t.year && (
+                      <div className="absolute top-4 right-4">
+                        <BansalBadge variant="orange">{t.year}</BansalBadge>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 mb-4">
+                      {t.photo_url ? (
+                        <img
+                          src={t.photo_url}
+                          alt={t.name}
+                          loading="lazy"
+                          className="h-14 w-14 rounded-full object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 rounded-full bg-bansal-blue text-white font-display font-bold text-lg flex items-center justify-center">
+                          {initialsFor(t.name)}
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-display text-lg font-bold text-bansal-black">{t.name}</h3>
+                        <p className="text-xs text-muted-foreground">{t.exam}</p>
+                      </div>
+                    </div>
+                    {t.rank_label && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <Trophy className="h-4 w-4 text-bansal-orange" />
+                        <span className="font-display font-bold text-bansal-blue text-xl">{t.rank_label}</span>
+                      </div>
+                    )}
+                    {t.quote && (
+                      <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
+                        "{t.quote}"
+                      </p>
+                    )}
+                  </BansalCard>
+                ))}
+              </div>
+              {visibleCount < filtered.length && (
+                <div className="text-center mt-10">
+                  <BansalButton variant="outline" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                    Show more ({filtered.length - visibleCount} remaining)
+                  </BansalButton>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-14 w-14 rounded-full bg-bansal-blue text-white font-display font-bold text-lg flex items-center justify-center">
-                    {t.initials}
-                  </div>
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-bansal-black">{t.name}</h3>
-                    <p className="text-xs text-muted-foreground">{t.exam}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy className="h-4 w-4 text-bansal-orange" />
-                  <span className="font-display font-bold text-bansal-blue text-xl">{t.rank}</span>
-                </div>
-                {t.quote && (
-                  <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
-                    "{t.quote}"
-                  </p>
-                )}
-              </BansalCard>
-            ))}
-          </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
