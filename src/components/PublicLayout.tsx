@@ -4,7 +4,7 @@ import { Menu, X, Phone, MapPin, Mail, ChevronDown } from "lucide-react";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
-import boostLogoAsset from "@/assets/boost-logo.webp.asset.json";
+import boostLogoAsset from "@/assets/boost-logo.png.asset.json";
 const boostLogo = boostLogoAsset.url;
 
 type NavItem =
