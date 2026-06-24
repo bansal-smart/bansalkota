@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trophy, Medal, Star, Award, TrendingUp } from "lucide-react";
+import { Trophy, Medal, Star, Award, TrendingUp, Building2 } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
