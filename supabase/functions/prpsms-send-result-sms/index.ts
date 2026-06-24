@@ -100,6 +100,8 @@ Deno.serve(async (req) => {
     let sent = 0;
     let failed = 0;
     let absentSent = 0;
+    let parentSent = 0;
+    let parentFailed = 0;
     const errors: string[] = [];
 
     for (const row of sheetRows) {
@@ -117,25 +119,21 @@ Deno.serve(async (req) => {
         ? "Absent"
         : `Rank ${row.rank_label || row.rank_num || "—"}/${presentTotal}`;
 
-      const body = renderTemplate("Result", {
+      const vars = {
         name,
         test_name: test.title,
         date: dateStr,
         score: scoreField,
         rank: rankField,
-      });
+      };
+      const body = renderTemplate("Result", vars);
 
+      // Send to student
       const res = await prpsmsSend({ to: dest, body });
       await supabase.from("sms_send_log").insert({
         to_phone: `+91${dest}`,
         template_name: "Result",
-        vars: {
-          name,
-          test_name: test.title,
-          date: dateStr,
-          score: scoreField,
-          rank: rankField,
-        },
+        vars,
         purpose: "result_release",
         rendered_body: body,
         status: res.ok ? "sent" : "failed",
@@ -150,10 +148,36 @@ Deno.serve(async (req) => {
         failed++;
         if (errors.length < 5 && res.error) errors.push(res.error);
       }
+
+      // Send to parent (if parent phone available)
+      const parentRaw = profile.parent_phone_e164 || profile.parent_phone;
+      if (parentRaw) {
+        let parentDest: string | null = null;
+        try { parentDest = toDestNumber(parentRaw); } catch { parentDest = null; }
+        if (parentDest && parentDest !== dest) {
+          const pRes = await prpsmsSend({ to: parentDest, body });
+          await supabase.from("sms_send_log").insert({
+            to_phone: `+91${parentDest}`,
+            template_name: "Result",
+            vars,
+            purpose: "result_release_parent",
+            rendered_body: body,
+            status: pRes.ok ? "sent" : "failed",
+            provider_msg_id: pRes.msg_id ?? null,
+            error_message: pRes.ok ? null : pRes.error,
+            sent_by: userData.user.id,
+          });
+          if (pRes.ok) parentSent++;
+          else {
+            parentFailed++;
+            if (errors.length < 5 && pRes.error) errors.push(`parent: ${pRes.error}`);
+          }
+        }
+      }
     }
 
     return new Response(
-      JSON.stringify({ ok: true, sent, failed, total: sheetRows.length, absent_sent: absentSent, errors }),
+      JSON.stringify({ ok: true, sent, failed, total: sheetRows.length, absent_sent: absentSent, parent_sent: parentSent, parent_failed: parentFailed, errors }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
