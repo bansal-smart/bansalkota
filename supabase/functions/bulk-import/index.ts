@@ -225,9 +225,10 @@ Deno.serve(async (req) => {
 
           // Resolve batch
           let batchId: string | null = null;
+          const batchRaw = trimOrNull(r.batch);
           if (r.batch_id) batchId = String(r.batch_id);
-          else if (r.batch) {
-            const key = String(r.batch).toLowerCase().trim();
+          else if (batchRaw) {
+            const key = batchRaw.toLowerCase();
             batchId = batchByKey.get(key) ?? null;
           }
 
