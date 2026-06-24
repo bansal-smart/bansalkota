@@ -211,8 +211,10 @@ export default function AdminAlumniSubmissionsPage() {
             <thead className="bg-bansal-cream/40 text-xs uppercase tracking-wider text-bansal-blue/70">
               <tr>
                 <th className="text-left px-4 py-3">Alumnus</th>
-                <th className="text-left px-4 py-3">Batch</th>
-                <th className="text-left px-4 py-3">Now</th>
+                <th className="text-left px-4 py-3">Batch / Exam</th>
+                <th className="text-left px-4 py-3">College</th>
+                <th className="text-left px-4 py-3">Stream</th>
+                <th className="text-left px-4 py-3">Verified</th>
                 <th className="text-left px-4 py-3">Status</th>
                 <th className="text-left px-4 py-3">Received</th>
                 <th />
@@ -224,12 +226,24 @@ export default function AdminAlumniSubmissionsPage() {
                   <td className="px-4 py-3">
                     <div className="font-semibold text-bansal-blue">{r.full_name}</div>
                     <div className="text-xs text-bansal-gray">{r.email}</div>
+                    {r.phone && <div className="text-xs text-bansal-gray">{r.phone}</div>}
                   </td>
                   <td className="px-4 py-3 text-bansal-gray">
-                    {r.batch_year ?? "—"}{r.rank_label ? ` · ${r.rank_label}` : ""}
+                    <div>{r.batch_year ?? "—"}</div>
+                    {r.exam && <div className="text-xs">{r.exam}{r.selection_year ? ` · ${r.selection_year}` : ""}</div>}
                   </td>
-                  <td className="px-4 py-3 text-bansal-gray">
-                    {[r.current_position, r.company].filter(Boolean).join(" · ") || "—"}
+                  <td className="px-4 py-3 text-bansal-gray text-xs">
+                    {r.college_joined || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-bansal-gray text-xs">
+                    {r.stream_taken || "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {r.verified ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Yes</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-muted text-muted-foreground">No</Badge>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className={statusStyle[r.status]}>
@@ -237,7 +251,7 @@ export default function AdminAlumniSubmissionsPage() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-xs text-bansal-gray">
-                    {format(new Date(r.created_at), "dd MMM yyyy")}
+                    {format(new Date(r.registered_at ?? r.created_at), "dd MMM yyyy")}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button size="sm" variant="outline" onClick={() => setActive(r)}>
