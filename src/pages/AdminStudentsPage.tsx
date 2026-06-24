@@ -280,21 +280,24 @@ const AdminStudentsPage = () => {
       <BulkCsvDialog
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
-        title="Bulk import enrollments"
-        description="Match each student to a course by email/phone/roll number and course slug. Existing enrollments are upserted."
-        fileBase="enrollments"
+        title="Bulk import students"
+        description="Upload a CSV/XLSX with one row per student. Existing students (matched by roll number or phone) are updated; new students are created automatically. Centre is matched by city name."
+        fileBase="students"
         fields={[
-          { key: "course_slug", label: "Course Slug", required: true, example: "jee-main-2026" },
-          { key: "email", label: "Email", example: "student@example.com" },
-          { key: "phone", label: "Phone", example: "9876543210" },
-          { key: "roll_number", label: "Roll Number", example: "BC-2024-001" },
-          { key: "progress_percent", label: "Progress %", example: "0" },
-          { key: "completed_lessons", label: "Completed Lessons", example: "0" },
-          { key: "is_active", label: "Active", example: "true" },
+          { key: "roll_number", label: "Roll No", required: true, example: "1001" },
+          { key: "full_name", label: "Student Name", required: true, example: "Aviral Singh" },
+          { key: "father_name", label: "Father's Name", example: "Ashok Kumar Singh" },
+          { key: "phone", label: "Contact No.", example: "7857852344" },
+          { key: "parent_phone", label: "Parent No.", example: "7909075201" },
+          { key: "dob", label: "DOB", example: "2008-05-12" },
+          { key: "target_exam", label: "Stream", example: "JEE" },
+          { key: "class_level", label: "Class", example: "XI" },
+          { key: "batch", label: "Batch", example: "Bull's Eye" },
+          { key: "centre", label: "Centre", required: true, example: "Jamshedpur" },
         ]}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
           const { data, error } = await supabase.functions.invoke("bulk-import", {
-            body: { kind: "enrollments", rows, dry_run: dryRun },
+            body: { kind: "students", rows, dry_run: dryRun },
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
@@ -308,20 +311,21 @@ const AdminStudentsPage = () => {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            placeholder="Search by name, phone, city, or target exam..."
+            placeholder="Search by name, phone, roll no, city, or target exam..."
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
         <select
-          value={schoolFilter}
-          onChange={(e) => { setSchoolFilter(e.target.value); setPage(0); }}
+          value={centreFilter}
+          onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
           className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
         >
-          <option value="">All schools</option>
-          <option value="none">Not associated</option>
-          {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <option value="">All Centres</option>
+          <option value="none">No centre assigned</option>
+          {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
         </select>
       </div>
+
 
       {selected.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3 flex-wrap">
