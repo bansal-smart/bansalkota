@@ -115,7 +115,7 @@ const AdminStudentsPage = () => {
       let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id",
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label",
           { count: "exact" },
         )
         .in("user_id", studentIds)
