@@ -65,7 +65,7 @@ const AboutPage = () => {
               className="font-display font-extrabold text-white leading-[1.05] tracking-tight"
               style={{ fontSize: "clamp(2rem, 6vw, 4.75rem)" }}
             >
-              45 years of shaping
+              Since 1981, shaping
               <span className="block text-bansal-orange">India's Brightest Minds.</span>
             </h1>
             <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-2xl">
@@ -110,7 +110,7 @@ const AboutPage = () => {
                   Born on 26 October 1949 in Jhansi, Shri V.K. Bansal Sir graduated from IIT (BHU) Varanasi and moved to Kota to work at J.K. Synthetics. In <strong>1981</strong>, he began coaching a handful of students — and quietly created a movement that would redefine engineering education in India.
                 </p>
                 <p>
-                  His belief was simple: every aspirant deserves <em>ideal guidance</em>. Four decades later, that belief remains the soul of every Bansal classroom.
+                  His belief was simple: every aspirant deserves <em>ideal guidance</em>. Since 1981, that belief has remained the soul of every Bansal classroom.
                 </p>
               </div>
               <div className="mt-7">
@@ -254,7 +254,7 @@ const AboutPage = () => {
                   In 1981, V.K. Bansal Sir recognised the need to provide proper guidance to JEE aspirants and dedicated himself to this cause. With his discipline and positive attitude, Bansal Classes produced remarkable results year after year — each batch challenging the next to perform even better.
                 </p>
                 <p>
-                  Accepting change and creating strategies accordingly is the quality of a true leader — and that is exactly what Bansal Classes has been doing for four decades: <em>adopting the methods that best suit our students to crack the JEE</em>.
+                  Accepting change and creating strategies accordingly is the quality of a true leader — and that is exactly what Bansal Classes has been doing since 1981: <em>adopting the methods that best suit our students to crack the JEE</em>.
                 </p>
               </div>
             </div>

@@ -37,7 +37,7 @@ const milestones = [
   { icon: Trophy, value: "30+", label: "AIR Top 100 in JEE Advanced 2025" },
   { icon: Medal, value: "85+", label: "AIR Top 500 in NEET 2025" },
   { icon: Star, value: "1,200+", label: "IIT selections since 1984" },
-  { icon: Award, value: "40+", label: "Years of teaching excellence" },
+  { icon: Award, value: "Since 1981", label: "Teaching excellence" },
 ];
 
 export default function AchievementsPage() {
@@ -59,7 +59,7 @@ export default function AchievementsPage() {
             Toppers Born at <span className="text-bansal-orange">Bansal Classes</span>
           </h1>
           <p className="text-white/85 text-lg">
-            Four decades. Thousands of IIT &amp; NEET selections. Here are some of the recent stars who walked through our doors.
+            Since 1981. Thousands of IIT &amp; NEET selections. Here are some of the recent stars who walked through our doors.
           </p>
         </div>
       </section>

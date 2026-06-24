@@ -75,7 +75,7 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
   "vk-bansal": {
     accentLabel: "The Architect of Kota",
     signatureLine: "A single chalkboard in 1981 — and a teaching tradition that reshaped Indian engineering education.",
-    galleryCaption: "Four decades, one classroom philosophy",
+    galleryCaption: "Since 1981, one classroom philosophy",
     heroPhotoOverride: vkPortraitV2,
     gallery: [
       { src: vkStatesman.url, alt: "Mr. V.K. Bansal Sir — formal statesman portrait", tall: true },
@@ -120,7 +120,7 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     pillars: [
       { title: "Concept before shortcut", body: "Never let a formula travel without its idea." },
       { title: "Ruthless basics", body: "If the foundation cracks, the building cannot be saved by speed." },
-      { title: "Quiet discipline", body: "Show up, prepare, teach. Repeat for forty years." },
+      { title: "Quiet discipline", body: "Show up, prepare, teach. Every day since 1981." },
     ],
     closingNote: "Every Bansal Classes blackboard, in every city, still answers to the standard he set in 1981.",
   },
