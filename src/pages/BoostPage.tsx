@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Trophy,
-  Award,
   GraduationCap,
   Calendar,
   IndianRupee,
