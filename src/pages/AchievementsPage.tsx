@@ -165,7 +165,7 @@ export default function AchievementsPage() {
               </div>
               {visibleCount < filtered.length && (
                 <div className="text-center mt-10">
-                  <BansalButton variant="ghost" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                  <BansalButton variant="outline" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
                     Show more ({filtered.length - visibleCount} remaining)
                   </BansalButton>
                 </div>
