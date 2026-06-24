@@ -1,42 +1,60 @@
 ## Goal
+Import all 122 alumni records from `bansal_alumni_registrations.xlsx` into the `alumni_submissions` table and display every detail in the admin **Alumni Submissions** tab.
 
-Make the "Wall of Fame" on `/achievements` driven by the existing `toppers` table, ensure the Admin → "Toppers" tab is the place to add/edit/delete entries, and bulk-import the 332 students from `TOPPERS.xlsx`, sorted rank-wise.
+## Issue
+The XLSX has several fields the current `alumni_submissions` table doesn't store (father's name, course/program, college joined, stream taken, selection year, full address, verified flag, original registration date/id). To preserve "all available details" we need to extend the schema first.
 
-## What we have today
-- `toppers` table already exists (name, exam, rank_label, year, sort_order, is_published, photo_url, quote, city, …) with admin + public-read RLS.
-- `/admin/toppers` page (`AdminToppersPage`) already supports create / edit / delete / publish + a CSV bulk dialog and Toppers/Alumni view toggle.
-- `/achievements` `The Wall of Fame` grid currently renders from a hardcoded `TOPPERS[]` array — this is what we need to switch over.
-- Uploaded file: 332 rows → 331 `JEE ADVANCED` + 1 `JEE MAIN`; columns `COURSE, NAME, AIR, YEAR`.
+## Steps
 
-## Plan
+### 1. Schema migration — add new columns to `alumni_submissions`
+Add nullable columns (no breaking change to existing flow):
+- `father_name text`
+- `course_program text`
+- `selection_year text` (XLSX contains values like `2014` and `"unselected"`)
+- `college_joined text`
+- `stream_taken text`
+- `address text`
+- `verified boolean default false`
+- `source_registration_id integer` (the legacy ID 1..135 — used as dedup key)
+- `registered_at timestamptz` (original registration date)
 
-### 1. Seed the database from the XLSX (one-time data import)
-- Parse `TOPPERS.xlsx` and insert all 332 rows into `public.toppers`:
-  - `name` ← title-cased NAME
-  - `exam` ← "JEE Advanced" / "JEE Main"
-  - `rank_label` ← `AIR <n>`
-  - `year` ← YEAR
-  - `sort_order` ← AIR number (so ORDER BY sort_order ASC = rank-wise; ties broken by year desc, then name)
-  - `is_alumni = false`, `is_published = true`
-- Skip duplicates using the existing `(name, exam, year)` unique key.
+Add unique index on `source_registration_id` (where not null) to make re-imports idempotent.
 
-### 2. Make `/achievements` Wall of Fame dynamic
-- In `src/pages/AchievementsPage.tsx`:
-  - Replace the hardcoded `TOPPERS[]` with a query against `toppers` (via the existing `useToppers` hook or a small inline query) ordered `sort_order ASC, year DESC, name ASC`.
-  - Filters at the top become dynamic — derived from distinct `exam` values present in DB (so JEE Advanced / JEE Main show up automatically; KVPY/NTSE only appear if data exists).
-  - Keep the same card visual: avatar (initials when no `photo_url`), name, exam, rank label as the AIR pill, year badge, optional quote.
-  - Show a "Load more" (paginate ~24 per page) since 332 cards is too many to render at once.
-  - Empty/loading skeleton state.
+### 2. Bulk insert 122 rows
+Parse the XLSX and insert with this mapping:
 
-### 3. Admin "Topper Student" tab
-- The Admin sidebar already links to `/admin/toppers`. Rename that nav label from "Toppers" to "Topper Students" so it matches the user's wording, and make sure it's reachable for super_admin (it already is via the existing route).
-- No structural change to the admin page itself — it already supports add / edit / delete / publish, the existing bulk CSV importer stays available for future uploads, and the "Toppers" view filter is preserved.
+| XLSX column | DB column |
+|---|---|
+| ID | source_registration_id |
+| Full Name | full_name |
+| Father's Name | father_name |
+| Email | email |
+| Phone Number | phone (cast to text) |
+| Course/Program | course_program |
+| Bansal Study Year (`2009-10`) | batch_year = 2009 (first 4 digits) |
+| Competitive Exam | exam |
+| Selection Year | selection_year |
+| Exam Rank | rank_label |
+| College Joined | college_joined, also → `company` for back-compat display |
+| Stream Taken | stream_taken, also → `current_position` for back-compat display |
+| Address | address |
+| LinkedIn Profile | linkedin_url |
+| Verified (`Yes`/`No`) | verified bool; `status` = `approved` if Yes else `pending` |
+| Registration Date | registered_at |
 
-### 4. Sorting contract
-- All listings (admin grid + Wall of Fame) standardize on `ORDER BY sort_order ASC, year DESC, name ASC`, so AIR 1 always renders first.
+`story` is NOT NULL — fill with a synthesized line (e.g. `"Bansal alumnus, batch <year>, selected in <exam> <year>, joined <college>."`) so existing UI keeps rendering.
 
-## Technical notes (devs only)
-- No schema migration needed — `sort_order INT` already exists on `toppers`.
-- Bulk import is a data-only `INSERT … ON CONFLICT (name, exam, year) DO NOTHING` against the existing unique index, done via the data-insert tool from a parsed XLSX.
-- `useTopToppers` (landing) and `useToppers` (achievements) both already point at the `toppers` table; the landing strip will start showing the imported AIR 1 / AIR 2 stars automatically once data is in.
-- Sidebar label change is in `src/components/AdminLayout.tsx` only.
+Dedup: `ON CONFLICT (source_registration_id) DO NOTHING`.
+
+### 3. Update Admin "Alumni Submissions" tab
+`src/pages/AdminAlumniSubmissionsPage.tsx` — extend the row detail / card to surface the new fields:
+- Father's Name, Course/Program, College Joined, Stream Taken, Selection Year, Address, Verified badge, Registered At, Source ID.
+- Keep existing approve/reject/status workflow untouched.
+
+### 4. Verification
+- Query `SELECT count(*) FROM alumni_submissions WHERE source_registration_id IS NOT NULL` → expect 122.
+- Open `/admin/alumni-submissions` and confirm rows render with all new fields.
+
+## Out of scope
+- No changes to the public `/alumni` page rendering logic.
+- No changes to the alumni submission form schema (the new columns stay nullable).
