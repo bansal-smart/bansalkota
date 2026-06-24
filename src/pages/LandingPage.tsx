@@ -42,6 +42,7 @@ import CentresShowcase from "@/components/landing/CentresShowcase";
 import LandingFAQ from "@/components/landing/LandingFAQ";
 import LandingCTAForm from "@/components/landing/LandingCTAForm";
 import WelcomeEnquiryPopup from "@/components/landing/WelcomeEnquiryPopup";
+import { useLandingHeroBanners } from "@/hooks/useLandingHeroBanners";
 
 const iconMap: Record<string, any> = {
   Trophy,
