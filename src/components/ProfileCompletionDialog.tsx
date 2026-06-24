@@ -62,7 +62,7 @@ const ProfileCompletionDialog = () => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, father_name, class_level, target_exam, city, state, onboarding_completed")
+        .select("full_name, phone, parent_phone, father_name, class_level, target_exam, city, state, onboarding_completed")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!active) return;
@@ -71,6 +71,7 @@ const ProfileCompletionDialog = () => {
         setForm({
           full_name: p?.full_name ?? "",
           phone: p?.phone ?? "",
+          parent_phone: p?.parent_phone ?? "",
           father_name: p?.father_name ?? "",
           class_level: p?.class_level ?? "",
           target_exam: p?.target_exam ?? "",
