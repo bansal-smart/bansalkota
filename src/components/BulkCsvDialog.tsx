@@ -271,8 +271,8 @@ const BulkCsvDialog = ({
               {busy
                 ? `${dryRun ? "Validating" : "Importing"} ${progress.done}/${progress.total}…`
                 : dryRun
-                ? "Choose CSV to validate"
-                : "Choose CSV to import"}
+                ? "Choose CSV/XLSX to validate"
+                : "Choose CSV/XLSX to import"}
             </button>
             <p className="mt-2 text-xs text-muted-foreground">
               First row must match the column labels exactly.
