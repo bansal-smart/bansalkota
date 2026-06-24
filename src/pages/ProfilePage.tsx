@@ -225,6 +225,7 @@ const ProfilePage = () => {
               <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
               <Field label="Email" value={user?.email || ""} disabled />
               <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+              <Field label="Parent's Phone" value={form.parent_phone} onChange={(v) => setForm({ ...form, parent_phone: v })} />
               <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} />
               <SelectField label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} />
               <SelectField label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} />
