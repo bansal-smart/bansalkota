@@ -26,33 +26,32 @@ const ToppersWall = () => {
           {(isLoading ? Array.from({ length: 8 }) : toppers).map((t: any, i) => (
             <div
               key={t?.id ?? i}
-              className="group relative rounded-2xl overflow-hidden bg-bansal-blue text-white shadow-md hover:shadow-2xl hover-lift transition-all aspect-[4/5]"
+              className="group relative rounded-2xl overflow-hidden bg-bansal-blue text-white shadow-md hover:shadow-2xl hover-lift transition-all p-4 md:p-5 flex flex-col justify-between min-h-[160px]"
             >
-              {t?.photo_url ? (
-                <img src={t.photo_url} alt={t.name} className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500" loading="lazy" />
-              ) : (
-                <div className="absolute inset-0 grid place-items-center text-white/30 font-display font-extrabold text-5xl">
-                  {t?.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2) ?? "★"}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue via-bansal-blue/50 to-transparent" />
+              <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-bansal-orange/20 blur-2xl pointer-events-none" />
               {t?.rank_label && (
-                <span className="absolute top-2.5 left-2.5 rounded-full bg-bansal-orange text-white text-[10px] font-bold px-2 py-1">
+                <span className="self-start rounded-full bg-bansal-orange text-white text-[10px] font-bold px-2.5 py-1 shadow">
                   {t.rank_label}
                 </span>
               )}
-              <div className="absolute inset-x-0 bottom-0 p-3">
-                <div className="font-display font-bold text-sm leading-tight line-clamp-1">{t?.name ?? "Loading…"}</div>
-                <div className="mt-0.5 text-[10px] text-white/80 uppercase tracking-wide">{t?.exam}</div>
-                {t?.city && (
-                  <div className="mt-1 text-[10px] text-white/70 flex items-center gap-1">
-                    <MapPin className="h-2.5 w-2.5" /> {t.city}{t?.year ? ` · ${t.year}` : ""}
+              <div className="relative mt-4">
+                <div className="font-display font-bold text-base md:text-lg leading-tight line-clamp-2">
+                  {t?.name ?? "Loading…"}
+                </div>
+                <div className="mt-1 text-[10px] md:text-xs text-white/80 uppercase tracking-wider font-semibold">
+                  {t?.exam}
+                </div>
+                {(t?.city || t?.year) && (
+                  <div className="mt-2 text-[10px] md:text-xs text-white/70 flex items-center gap-1">
+                    {t?.city && <MapPin className="h-2.5 w-2.5" />}
+                    {t?.city}{t?.city && t?.year ? " · " : ""}{t?.year ?? ""}
                   </div>
                 )}
               </div>
             </div>
           ))}
         </div>
+
 
         <div className="mt-8 text-center">
           <Link to="/achievements" className="inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
