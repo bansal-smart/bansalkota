@@ -24,10 +24,6 @@ const faqs = [
     a: "Yes. A full 7-day no-questions-asked refund applies on every online course. Classroom programs follow the standard Bansal admission policy.",
   },
   {
-    q: "Do you offer EMI or installment plans?",
-    a: "Most programs are available on no-cost EMI starting around ₹4,999/month via partner banks. Dubai students can pay in AED via Stripe.",
-  },
-  {
     q: "Will I get a personal mentor?",
     a: "Every Bansal student is assigned a personal mentor — a senior teacher who tracks attendance, test performance and concept gaps every single week.",
   },
