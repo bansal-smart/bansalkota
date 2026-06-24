@@ -386,37 +386,27 @@ export default function AlumniPage() {
                   key={a.id}
                   className="group relative rounded-2xl border border-border bg-white p-5 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="h-16 w-16 shrink-0 rounded-2xl overflow-hidden bg-gradient-to-br from-bansal-orange/15 to-bansal-blue/15 flex items-center justify-center ring-2 ring-bansal-orange/20">
-                      {a.photo_url ? (
-                        <img src={a.photo_url} alt={a.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="font-display text-xl font-extrabold text-bansal-blue">
-                          {initialsOf(a.name)}
+                  <div>
+                    {a.rank_label && (
+                      <div className="inline-flex items-center gap-1 rounded-full bg-bansal-orange/10 text-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        {a.rank_label}{a.exam ? ` · ${a.exam}` : ""}
+                      </div>
+                    )}
+                    <h3 className="font-display text-lg font-extrabold text-bansal-blue">
+                      {a.name}
+                    </h3>
+                    {(a.current_position || a.company) && (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-xs text-bansal-gray">
+                        <Building2 className="h-3 w-3 text-bansal-blue/60 shrink-0" />
+                        <span className="truncate">
+                          {a.current_position}
+                          {a.current_position && a.company ? " · " : ""}
+                          {a.company}
                         </span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-display text-lg font-extrabold text-bansal-blue truncate">
-                        {a.name}
-                      </h3>
-                      {a.rank_label && (
-                        <div className="mt-0.5 text-xs font-bold text-bansal-orange uppercase tracking-wide">
-                          {a.rank_label} {a.exam ? `· ${a.exam}` : ""}
-                        </div>
-                      )}
-                      {(a.current_position || a.company) && (
-                        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-bansal-gray">
-                          <Building2 className="h-3 w-3 text-bansal-blue/60 shrink-0" />
-                          <span className="truncate">
-                            {a.current_position}
-                            {a.current_position && a.company ? " · " : ""}
-                            {a.company}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
+
                   {a.quote && (
                     <p className="mt-4 text-sm text-bansal-gray italic leading-relaxed border-l-2 border-bansal-orange/40 pl-3 line-clamp-3">
                       &ldquo;{a.quote}&rdquo;
