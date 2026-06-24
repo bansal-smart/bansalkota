@@ -76,7 +76,7 @@ const PricingPage = () => {
   ];
 
   const guarantees = [
-    { icon: Shield, title: "7-day money back", desc: "Not satisfied? Full refund within 7 days, no questions asked." },
+    { icon: Shield, title: "7-day refund window", desc: "Course fee refunds are available only till the 7th day from course commencement — no exceptions." },
     { icon: Zap, title: "Instant access", desc: "Start learning the moment your payment is confirmed." },
     { icon: Crown, title: "Cancel anytime", desc: "No long-term lock-ins. Pause or cancel from your dashboard." },
   ];
