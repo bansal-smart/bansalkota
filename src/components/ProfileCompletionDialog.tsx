@@ -100,7 +100,12 @@ const ProfileCompletionDialog = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ ...parsed.data, onboarding_completed: true } as any)
+      .update({
+        ...parsed.data,
+        phone_e164: toE164In(parsed.data.phone),
+        parent_phone_e164: toE164In(parsed.data.parent_phone),
+        onboarding_completed: true,
+      } as any)
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
