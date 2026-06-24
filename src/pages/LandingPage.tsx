@@ -246,7 +246,7 @@ const LandingPage = () => {
                 <ShieldCheck className="h-4 w-4 text-bansal-orange" /> Since 1981
               </span>
               <span className="flex items-center gap-1.5">
-                <GraduationCap className="h-4 w-4 text-bansal-orange" /> 1,00,000+ IITians & Doctors
+                <GraduationCap className="h-4 w-4 text-bansal-orange" /> 1,00,000+ IITians, NITians & Doctors
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-bansal-orange" /> 85+ Centres
