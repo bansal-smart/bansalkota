@@ -527,6 +527,7 @@ const LandingPage = () => {
                 tone: "blue",
                 features: clpFeatures,
                 desc: "Live classroom sessions at 100+ Bansal centers, daily doubt sessions and a peer environment built for toppers.",
+                link: "/courses",
               },
               {
                 title: "Distance Learning Program (DLP)",
@@ -534,6 +535,7 @@ const LandingPage = () => {
                 tone: "orange",
                 features: dlpFeatures,
                 desc: "Bansal's legendary study material, sectional & full tests and detailed solutions — at your own pace.",
+                link: "/e-store",
               },
             ].map((p) => (
               <BansalCard key={p.title} className="!p-5 sm:!p-6 flex flex-col h-full">
@@ -556,7 +558,7 @@ const LandingPage = () => {
                   ))}
                 </ul>
                 <Link
-                  to="/courses"
+                  to={p.link}
                   className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange"
                 >
                   Know More <ArrowRight className="h-4 w-4" />
