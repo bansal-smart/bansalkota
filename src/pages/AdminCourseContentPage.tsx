@@ -799,56 +799,79 @@ const AdminCourseContentPage = () => {
                       {chLessons.length > 0 && (
                         <SortableContext items={chLessons.map((lec) => lessonDragId(lec.id))} strategy={verticalListSortingStrategy}>
                           <ul className="mt-3 ml-2 space-y-1.5 border-l border-border pl-4">
-                            {chLessons.map((lec) => (
-                              <SortableLecture key={lec.id} lesson={lec}>
-                                <Youtube className="h-4 w-4 text-destructive shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm font-semibold text-foreground truncate">{lec.title}</p>
-                                    {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
-                                    {!lec.is_published && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">Hidden</Badge>}
+                            {chLessons.map((lec) => {
+                              const { topic, name } = parseTopicFromTitle(lec.title);
+                              return (
+                                <SortableLecture key={lec.id} lesson={lec}>
+                                  <Youtube className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0">
+                                    {/* Field row: Subject · Chapter · Lecture · Topic · Badges */}
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                                      <span className="font-semibold text-primary">{selectedCourse?.subject}</span>
+                                      <span className="text-muted-foreground">|</span>
+                                      <span className="font-medium text-foreground">{ch.title}</span>
+                                      <span className="text-muted-foreground">|</span>
+                                      <span className="font-semibold text-foreground">{name}</span>
+                                      {topic && (
+                                        <>
+                                          <span className="text-muted-foreground">|</span>
+                                          <span className="text-muted-foreground">Topic:</span>
+                                          <span className="font-medium text-foreground">{topic}</span>
+                                        </>
+                                      )}
+                                      {lec.is_free_preview && <Badge variant="outline" className="text-[10px]">Free preview</Badge>}
+                                      {!lec.is_published && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">Hidden</Badge>}
+                                    </div>
+                                    {/* YouTube link row */}
+                                    {lec.video_url && (
+                                      <a
+                                        href={lec.video_url.replace("/embed/", "/watch?v=")}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="mt-0.5 inline-block max-w-full text-xs text-primary hover:underline truncate"
+                                        title={lec.video_url}
+                                      >
+                                        {lec.video_url}
+                                      </a>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {Math.max(1, Math.round((lec.duration_seconds || 0) / 60))} min
-                                    {lec.video_url ? ` · ${lec.video_url}` : ""}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {lec.video_url && (
-                                    <a
-                                      href={lec.video_url.replace("/embed/", "/watch?v=")}
-                                      target="_blank"
-                                      rel="noreferrer"
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {lec.video_url && (
+                                      <a
+                                        href={lec.video_url.replace("/embed/", "/watch?v=")}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                        title="Open on YouTube"
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                      </a>
+                                    )}
+                                    <button
+                                      onClick={() => toggleLessonPublish(lec)}
                                       className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
-                                      title="Open on YouTube"
+                                      title={lec.is_published ? "Hide lecture from students" : "Publish lecture"}
                                     >
-                                      <Eye className="h-4 w-4" />
-                                    </a>
-                                  )}
-                                  <button
-                                    onClick={() => toggleLessonPublish(lec)}
-                                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
-                                    title={lec.is_published ? "Hide lecture from students" : "Publish lecture"}
-                                  >
-                                    {lec.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                                  </button>
-                                  <button
-                                    onClick={() => openEditLecture(lec)}
-                                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
-                                    title="Edit"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => deleteLesson(lec)}
-                                    className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </SortableLecture>
-                            ))}
+                                      {lec.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                    </button>
+                                    <button
+                                      onClick={() => openEditLecture(lec)}
+                                      className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-colors"
+                                      title="Edit"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteLesson(lec)}
+                                      className="rounded-lg p-2 text-destructive hover:bg-destructive/10 transition-colors"
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </SortableLecture>
+                              );
+                            })}
                           </ul>
                         </SortableContext>
                       )}
