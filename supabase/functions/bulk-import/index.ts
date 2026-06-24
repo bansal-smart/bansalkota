@@ -225,9 +225,10 @@ Deno.serve(async (req) => {
 
           // Resolve batch
           let batchId: string | null = null;
+          const batchRaw = trimOrNull(r.batch);
           if (r.batch_id) batchId = String(r.batch_id);
-          else if (r.batch) {
-            const key = String(r.batch).toLowerCase().trim();
+          else if (batchRaw) {
+            const key = batchRaw.toLowerCase();
             batchId = batchByKey.get(key) ?? null;
           }
 
@@ -263,6 +264,7 @@ Deno.serve(async (req) => {
           if (cls) payload.class_level = cls;
           if (centreId) payload.centre_id = centreId;
           if (batchId) payload.batch_id = batchId;
+          if (batchRaw) payload.batch_label = batchRaw;
           if (roll) payload.roll_number = roll;
           if (trimOrNull(r.city)) payload.city = trimOrNull(r.city);
           if (status) payload.student_status = status;

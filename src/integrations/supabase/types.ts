@@ -2833,6 +2833,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           batch_id: string | null
+          batch_label: string | null
           centre_id: string | null
           city: string | null
           class_level: string | null
@@ -2865,6 +2866,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           batch_id?: string | null
+          batch_label?: string | null
           centre_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -2897,6 +2899,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           batch_id?: string | null
+          batch_label?: string | null
           centre_id?: string | null
           city?: string | null
           class_level?: string | null
