@@ -44,6 +44,7 @@ const ProfileCompletionDialog = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    parent_phone: "",
     father_name: "",
     class_level: "",
     target_exam: "",
