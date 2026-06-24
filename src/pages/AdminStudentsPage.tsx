@@ -7,6 +7,7 @@ import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog
 type StudentRow = {
   user_id: string;
   full_name: string | null;
+  father_name: string | null;
   phone: string | null;
   parent_phone: string | null;
   avatar_url: string | null;
@@ -21,26 +22,35 @@ type StudentRow = {
   doubt_preference: string;
   created_at: string;
   email?: string | null;
-  school_id?: string | null;
-  school_name?: string | null;
+  roll_number: string | null;
+  dob: string | null;
+  centre_id?: string | null;
+  centre_name?: string | null;
+  batch_id?: string | null;
+  batch_name?: string | null;
 };
 
-type SchoolLite = { id: string; name: string };
+type CentreLite = { id: string; city: string; area: string | null; slug: string };
+type BatchLite = { id: string; name: string; code: string | null };
 
 const PAGE_SIZE = 25;
 
+const centreLabel = (c: { city: string; area: string | null }) =>
+  c.area ? `${c.city} — ${c.area}` : c.city;
+
+
 const exportCsv = (rows: StudentRow[]) => {
   const header = [
-    "Name", "Email", "Phone", "Parent Phone", "Plan", "Target Exam", "Class", "Goal",
-    "City", "Country", "Onboarding", "Suspended", "Joined",
+    "Roll No", "Student Name", "Father's Name", "Contact No.", "Parent No.",
+    "DOB", "Stream", "Class", "Batch", "Centre", "Email", "Plan", "Joined",
   ];
   const lines = rows.map((u) =>
     [
-      u.full_name ?? "", u.email ?? "", u.phone ?? "", u.parent_phone ?? "", u.plan,
-      u.target_exam ?? "", u.class_level ?? "", u.goal ?? "",
-      u.city ?? "", u.country ?? "",
-      u.onboarding_completed ? "Yes" : "No",
-      u.is_suspended ? "Yes" : "No",
+      u.roll_number ?? "", u.full_name ?? "", u.father_name ?? "",
+      u.phone ?? "", u.parent_phone ?? "",
+      u.dob ?? "", u.target_exam ?? "", u.class_level ?? "",
+      u.batch_name ?? "", u.centre_name ?? "",
+      u.email ?? "", u.plan,
       new Date(u.created_at).toISOString(),
     ]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
@@ -59,6 +69,7 @@ const exportCsv = (rows: StudentRow[]) => {
 const PLAN_OPTIONS = ["Free", "Pro", "Elite"];
 
 const AdminStudentsPage = () => {
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<StudentRow[]>([]);
@@ -70,14 +81,19 @@ const AdminStudentsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<StudentRow | null>(null);
-  const [schools, setSchools] = useState<SchoolLite[]>([]);
-  const [schoolFilter, setSchoolFilter] = useState<string>(""); // "", "none", or school id
+  const [centres, setCentres] = useState<CentreLite[]>([]);
+  const [batches, setBatches] = useState<BatchLite[]>([]);
+  const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
   const [bulkOpen, setBulkOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase as any).from("schools").select("id, name").order("name");
-      setSchools((data as SchoolLite[]) ?? []);
+      const [{ data: cs }, { data: bs }] = await Promise.all([
+        (supabase as any).from("centres").select("id, city, area, slug").order("city"),
+        (supabase as any).from("course_batches").select("id, name, code").order("name"),
+      ]);
+      setCentres((cs as CentreLite[]) ?? []);
+      setBatches((bs as BatchLite[]) ?? []);
     })();
   }, []);
 
@@ -98,7 +114,7 @@ const AdminStudentsPage = () => {
       let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, school_id",
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id",
           { count: "exact" },
         )
         .in("user_id", studentIds)
@@ -106,10 +122,10 @@ const AdminStudentsPage = () => {
 
       if (search.trim()) {
         const s = search.trim();
-        query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%`);
+        query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
-      if (schoolFilter === "none") query = query.is("school_id", null);
-      else if (schoolFilter) query = query.eq("school_id", schoolFilter);
+      if (centreFilter === "none") query = query.is("centre_id", null);
+      else if (centreFilter) query = query.eq("centre_id", centreFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -117,8 +133,12 @@ const AdminStudentsPage = () => {
       if (error) throw error;
 
       const baseRows = (data ?? []) as StudentRow[];
-      const schoolMap = new Map(schools.map((s) => [s.id, s.name]));
-      baseRows.forEach((r) => { r.school_name = r.school_id ? schoolMap.get(r.school_id) ?? null : null; });
+      const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
+      const batchMap = new Map(batches.map((b) => [b.id, b.name]));
+      baseRows.forEach((r) => {
+        r.centre_name = r.centre_id ? centreMap.get(r.centre_id) ?? null : null;
+        r.batch_name = r.batch_id ? batchMap.get(r.batch_id) ?? null : null;
+      });
 
       // Fetch emails via edge function for visible rows
       let emails: Record<string, string | null> = {};
@@ -132,10 +152,11 @@ const AdminStudentsPage = () => {
       setTotal(count ?? 0);
     } catch (e: any) {
       toast.error("Failed to load students", { description: e.message });
+
     } finally {
       setLoading(false);
     }
-  }, [search, page, schoolFilter, schools]);
+  }, [search, page, centreFilter, centres, batches]);
 
   useEffect(() => {
     load();
@@ -259,21 +280,24 @@ const AdminStudentsPage = () => {
       <BulkCsvDialog
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
-        title="Bulk import enrollments"
-        description="Match each student to a course by email/phone/roll number and course slug. Existing enrollments are upserted."
-        fileBase="enrollments"
+        title="Bulk import students"
+        description="Upload a CSV/XLSX with one row per student. Existing students (matched by roll number or phone) are updated; new students are created automatically. Centre is matched by city name."
+        fileBase="students"
         fields={[
-          { key: "course_slug", label: "Course Slug", required: true, example: "jee-main-2026" },
-          { key: "email", label: "Email", example: "student@example.com" },
-          { key: "phone", label: "Phone", example: "9876543210" },
-          { key: "roll_number", label: "Roll Number", example: "BC-2024-001" },
-          { key: "progress_percent", label: "Progress %", example: "0" },
-          { key: "completed_lessons", label: "Completed Lessons", example: "0" },
-          { key: "is_active", label: "Active", example: "true" },
+          { key: "roll_number", label: "Roll No", required: true, example: "1001" },
+          { key: "full_name", label: "Student Name", required: true, example: "Aviral Singh" },
+          { key: "father_name", label: "Father's Name", example: "Ashok Kumar Singh" },
+          { key: "phone", label: "Contact No.", example: "7857852344" },
+          { key: "parent_phone", label: "Parent No.", example: "7909075201" },
+          { key: "dob", label: "DOB", example: "2008-05-12" },
+          { key: "target_exam", label: "Stream", example: "JEE" },
+          { key: "class_level", label: "Class", example: "XI" },
+          { key: "batch", label: "Batch", example: "Bull's Eye" },
+          { key: "centre", label: "Centre", required: true, example: "Jamshedpur" },
         ]}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
           const { data, error } = await supabase.functions.invoke("bulk-import", {
-            body: { kind: "enrollments", rows, dry_run: dryRun },
+            body: { kind: "students", rows, dry_run: dryRun },
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
@@ -287,20 +311,21 @@ const AdminStudentsPage = () => {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            placeholder="Search by name, phone, city, or target exam..."
+            placeholder="Search by name, phone, roll no, city, or target exam..."
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
         <select
-          value={schoolFilter}
-          onChange={(e) => { setSchoolFilter(e.target.value); setPage(0); }}
+          value={centreFilter}
+          onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
           className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
         >
-          <option value="">All schools</option>
-          <option value="none">Not associated</option>
-          {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <option value="">All Centres</option>
+          <option value="none">No centre assigned</option>
+          {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
         </select>
       </div>
+
 
       {selected.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3 flex-wrap">
@@ -333,28 +358,29 @@ const AdminStudentsPage = () => {
                     onChange={(e) => setSelected(e.target.checked ? rows.map((u) => u.user_id) : [])}
                   />
                 </th>
+                <th className="p-3 text-left font-medium">Roll No</th>
                 <th className="p-3 text-left font-medium">Name</th>
-                <th className="p-3 text-left font-medium hidden md:table-cell">Email</th>
-                <th className="p-3 text-left font-medium hidden sm:table-cell">Phone</th>
-                <th className="p-3 text-left font-medium hidden xl:table-cell">Parent Phone</th>
-                <th className="p-3 text-left font-medium hidden lg:table-cell">Target Exam</th>
+                <th className="p-3 text-left font-medium hidden xl:table-cell">Father's Name</th>
+                <th className="p-3 text-left font-medium hidden sm:table-cell">Contact</th>
+                <th className="p-3 text-left font-medium hidden xl:table-cell">Parent No.</th>
+                <th className="p-3 text-left font-medium hidden xl:table-cell">DOB</th>
+                <th className="p-3 text-left font-medium hidden lg:table-cell">Stream</th>
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Class</th>
-                <th className="p-3 text-left font-medium hidden lg:table-cell">School</th>
-                <th className="p-3 text-left font-medium">Plan</th>
-                <th className="p-3 text-left font-medium hidden xl:table-cell">Joined</th>
+                <th className="p-3 text-left font-medium hidden lg:table-cell">Batch</th>
+                <th className="p-3 text-left font-medium hidden md:table-cell">Centre</th>
                 <th className="p-3 text-left font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="p-10 text-center">
+                  <td colSpan={12} className="p-10 text-center">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-10 text-center text-muted-foreground">No students found.</td>
+                  <td colSpan={12} className="p-10 text-center text-muted-foreground">No students found.</td>
                 </tr>
               ) : (
                 rows.map((u) => (
@@ -373,6 +399,7 @@ const AdminStudentsPage = () => {
                         }
                       />
                     </td>
+                    <td className="p-3 font-mono text-[11px] text-muted-foreground">{u.roll_number || "—"}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0 overflow-hidden">
@@ -385,18 +412,17 @@ const AdminStudentsPage = () => {
                         <span className="font-medium text-foreground truncate">{u.full_name || "Unnamed"}</span>
                       </div>
                     </td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[200px]">{u.email || "—"}</td>
+                    <td className="p-3 hidden xl:table-cell text-muted-foreground truncate max-w-[160px]">{u.father_name || "—"}</td>
                     <td className="p-3 hidden sm:table-cell text-muted-foreground">{u.phone || "—"}</td>
                     <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.parent_phone || "—"}</td>
+                    <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.dob ? new Date(u.dob).toLocaleDateString() : "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
-                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.school_name || "—"}</td>
-                    <td className="p-3">
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">{u.plan}</span>
-                    </td>
-                    <td className="p-3 hidden xl:table-cell text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.batch_name || "—"}</td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[140px]">{u.centre_name || "—"}</td>
                     <td className="p-3">
                       {u.is_suspended ? (
+
                         <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive uppercase">Suspended</span>
                       ) : (
                         <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase">Active</span>
