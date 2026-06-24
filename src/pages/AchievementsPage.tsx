@@ -17,27 +17,62 @@ type Topper = {
 };
 
 const TOPPERS: Topper[] = [
-  { name: "Aarav Sharma", rank: "AIR 12", exam: "JEE Advanced", year: 2025, initials: "AS", quote: "Bansal's problem-solving culture is unmatched." },
-  { name: "Diya Mehta", rank: "AIR 28", exam: "JEE Advanced", year: 2025, initials: "DM", quote: "The faculty here teach concepts that stay for life." },
+  {
+    name: "Aarav Sharma",
+    rank: "AIR 12",
+    exam: "JEE Advanced",
+    year: 2025,
+    initials: "AS",
+    quote: "Bansal's problem-solving culture is unmatched.",
+  },
+  {
+    name: "Diya Mehta",
+    rank: "AIR 28",
+    exam: "JEE Advanced",
+    year: 2025,
+    initials: "DM",
+    quote: "The faculty here teach concepts that stay for life.",
+  },
   { name: "Rohan Verma", rank: "AIR 41", exam: "JEE Advanced", year: 2025, initials: "RV" },
-  { name: "Anvi Iyer", rank: "AIR 6", exam: "NEET", year: 2025, initials: "AI", quote: "Daily tests at Bansal made the final NEET feel routine." },
+  {
+    name: "Anvi Iyer",
+    rank: "AIR 6",
+    exam: "NEET",
+    year: 2025,
+    initials: "AI",
+    quote: "Daily tests at Bansal made the final NEET feel routine.",
+  },
   { name: "Kabir Rao", rank: "AIR 19", exam: "NEET", year: 2025, initials: "KR" },
   { name: "Sneha Kulkarni", rank: "AIR 34", exam: "NEET", year: 2025, initials: "SK" },
-  { name: "Ishaan Gupta", rank: "AIR 3", exam: "JEE Main", year: 2025, initials: "IG", quote: "From doubt sessions to mock tests, every hour was purposeful." },
+  {
+    name: "Ishaan Gupta",
+    rank: "AIR 3",
+    exam: "JEE Main",
+    year: 2025,
+    initials: "IG",
+    quote: "From doubt sessions to mock tests, every hour was purposeful.",
+  },
   { name: "Pari Choudhury", rank: "AIR 15", exam: "JEE Main", year: 2025, initials: "PC" },
   { name: "Aryan Nair", rank: "AIR 47", exam: "JEE Main", year: 2025, initials: "AN" },
   { name: "Tanvi Joshi", rank: "AIR 22", exam: "KVPY", year: 2024, initials: "TJ" },
   { name: "Vivaan Patel", rank: "State Topper", exam: "NTSE", year: 2024, initials: "VP" },
-  { name: "Riya Khanna", rank: "AIR 9", exam: "JEE Advanced", year: 2024, initials: "RK", quote: "Bansal pushed me to think beyond the syllabus." },
+  {
+    name: "Riya Khanna",
+    rank: "AIR 9",
+    exam: "JEE Advanced",
+    year: 2024,
+    initials: "RK",
+    quote: "Bansal pushed me to think beyond the syllabus.",
+  },
 ];
 
 const FILTERS = ["All", "JEE Advanced", "JEE Main", "NEET", "KVPY", "NTSE"] as const;
 
 const milestones = [
-  { icon: Trophy, value: "30+", label: "AIR Top 100 in JEE Advanced 2025" },
-  { icon: Medal, value: "85+", label: "AIR Top 500 in NEET 2025" },
-  { icon: Star, value: "1,200+", label: "IIT selections since 1984" },
-  { icon: Award, value: "Since 1981", label: "Teaching excellence" },
+  { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
+  { icon: Medal, value: "5000+", label: "NEET Qualified" },
+  { icon: Star, value: "25,000+", label: "IITians" },
+  { icon: Building2, value: "85+", label: "Centres" },
 ];
 
 export default function AchievementsPage() {
@@ -49,17 +84,25 @@ export default function AchievementsPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
-        <img src={achievementsHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <img
+          src={achievementsHero}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
         <FloatingIcons defaultTone="white" />
         <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">
-          <BansalBadge variant="orange" className="mb-4">Our Achievements</BansalBadge>
+          <BansalBadge variant="orange" className="mb-4">
+            Our Achievements
+          </BansalBadge>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
             Toppers Born at <span className="text-bansal-orange">Bansal Classes</span>
           </h1>
           <p className="text-white/85 text-lg">
-            Since 1981. Thousands of IIT &amp; NEET selections. Here are some of the recent stars who walked through our doors.
+            Since 1981. Thousands of IIT &amp; NEET selections. Here are some of the recent stars who walked through our
+            doors.
           </p>
         </div>
       </section>
@@ -85,10 +128,10 @@ export default function AchievementsPage() {
       <section className="py-14">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <BansalBadge variant="blue" className="mb-3">Recent Toppers</BansalBadge>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">
-              The Wall of Fame
-            </h2>
+            <BansalBadge variant="blue" className="mb-3">
+              Recent Toppers
+            </BansalBadge>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">The Wall of Fame</h2>
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mb-10">
@@ -141,15 +184,17 @@ export default function AchievementsPage() {
       <section className="py-14 bg-bansal-blue text-white">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <TrendingUp className="h-12 w-12 text-bansal-orange mx-auto mb-4" />
-          <h2 className="font-display text-3xl font-bold mb-3">
-            Be the next name on this wall.
-          </h2>
+          <h2 className="font-display text-3xl font-bold mb-3">Be the next name on this wall.</h2>
           <p className="text-white/80 mb-6">
             Start your journey with India's most trusted JEE/NEET coaching. Win up to 90% scholarship via BOOST.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <a href="/boost"><BansalButton variant="cta">Register for BOOST</BansalButton></a>
-            <a href="/contact"><BansalButton variant="ghost-white">Talk to Counsellor</BansalButton></a>
+            <a href="/boost">
+              <BansalButton variant="cta">Register for BOOST</BansalButton>
+            </a>
+            <a href="/contact">
+              <BansalButton variant="ghost-white">Talk to Counsellor</BansalButton>
+            </a>
           </div>
         </div>
       </section>
