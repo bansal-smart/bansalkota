@@ -50,7 +50,7 @@ const exportCsv = (rows: StudentRow[]) => {
       u.roll_number ?? "", u.full_name ?? "", u.father_name ?? "",
       u.phone ?? "", u.parent_phone ?? "",
       u.dob ?? "", u.target_exam ?? "", u.class_level ?? "",
-      u.batch_name ?? "", u.centre_name ?? "",
+      u.batch_name ?? u.batch_label ?? "", u.centre_name ?? "",
       u.email ?? "", u.plan,
       new Date(u.created_at).toISOString(),
     ]
