@@ -2802,6 +2802,7 @@ export type Database = {
           class_level: string | null
           country: string | null
           created_at: string
+          dob: string | null
           doubt_preference: string
           father_name: string | null
           full_name: string | null
@@ -2833,6 +2834,7 @@ export type Database = {
           class_level?: string | null
           country?: string | null
           created_at?: string
+          dob?: string | null
           doubt_preference?: string
           father_name?: string | null
           full_name?: string | null
@@ -2864,6 +2866,7 @@ export type Database = {
           class_level?: string | null
           country?: string | null
           created_at?: string
+          dob?: string | null
           doubt_preference?: string
           father_name?: string | null
           full_name?: string | null
