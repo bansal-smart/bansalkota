@@ -86,6 +86,40 @@ const AdminStudentsPage = () => {
   const [batches, setBatches] = useState<BatchLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSaving, setAddSaving] = useState(false);
+  const emptyAdd = {
+    roll_number: "", full_name: "", father_name: "", phone: "", parent_phone: "",
+    dob: "", target_exam: "", class_level: "", batch: "", centre: "",
+  };
+  const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
+
+  const submitAddStudent = async () => {
+    if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !addForm.centre.trim()) {
+      return toast.error("Roll No, Student Name and Centre are required");
+    }
+    setAddSaving(true);
+    try {
+      const row: Record<string, any> = {};
+      Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
+      const { data, error } = await supabase.functions.invoke("bulk-import", {
+        body: { kind: "students", rows: [row], dry_run: false },
+      });
+      if (error) throw new Error(error.message);
+      const res = data as BulkServerResult;
+      if (res.errors > 0) {
+        throw new Error(res.results.find((r) => !r.ok)?.error || "Failed to add student");
+      }
+      toast.success("Student added");
+      setAddOpen(false);
+      setAddForm(emptyAdd);
+      load();
+    } catch (e: any) {
+      toast.error("Add failed", { description: e.message });
+    } finally {
+      setAddSaving(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
