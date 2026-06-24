@@ -5,7 +5,7 @@ import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
 import vkBansalPortraitAsset from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
 import heroBgAsset from "@/assets/about/about-hero-bg.png.asset.json";
-import wsjFeatureAsset from "@/assets/about/wsj-feature.png.asset.json";
+import wsjFeatureAsset from "@/assets/about/wsj-feature.jpg.asset.json";
 import wsjFullAsset from "@/assets/about/wsj-fullpage.png.asset.json";
 import vkGehlotAsset from "@/assets/about/vk-with-gehlot.jpg.asset.json";
 import {
@@ -65,7 +65,7 @@ const AboutPage = () => {
               className="font-display font-extrabold text-white leading-[1.05] tracking-tight"
               style={{ fontSize: "clamp(2rem, 6vw, 4.75rem)" }}
             >
-              Forty Years of Shaping
+              45 years of shaping
               <span className="block text-bansal-orange">India's Brightest Minds.</span>
             </h1>
             <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-2xl">
