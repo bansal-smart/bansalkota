@@ -117,10 +117,10 @@ const coursesByExam: Record<
 };
 
 const achievements = [
-  { value: "Since 1981", label: "Trusted Legacy", icon: Award },
+  { value: "330+", label: "AIR in Top 100", icon: Trophy },
+  { value: "25,000+", label: "IITians", icon: GraduationCap },
+  { value: "5,000+", label: "NEET Qualified", icon: Stethoscope },
   { value: "85+", label: "Centres", icon: Building2 },
-  { value: "1,00,000+", label: "IITians & Doctors Produced", icon: GraduationCap },
-  { value: "Kota", label: "Where it all began", icon: ShieldCheck },
 ];
 
 const pillars = [
