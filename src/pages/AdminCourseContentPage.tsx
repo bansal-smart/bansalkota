@@ -85,6 +85,15 @@ const extractYouTubeId = (url: string): string | null => {
 const getYouTubeEmbedUrl = (videoId: string) => `https://www.youtube.com/embed/${videoId}`;
 const getYouTubePreviewUrl = (videoId: string) => `${getYouTubeEmbedUrl(videoId)}?rel=0&modestbranding=1`;
 
+const parseTopicFromTitle = (title: string) => {
+  const sep = " — ";
+  const idx = title.indexOf(sep);
+  if (idx > 0) {
+    return { topic: title.slice(0, idx).trim(), name: title.slice(idx + sep.length).trim() };
+  }
+  return { topic: null, name: title.trim() };
+};
+
 const chapterDragId = (id: string) => `chapter:${id}`;
 const lessonDragId = (id: string) => `lesson:${id}`;
 const parseDragId = (id: string) => {
