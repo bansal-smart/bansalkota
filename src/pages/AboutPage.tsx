@@ -149,7 +149,7 @@ const AboutPage = () => {
                   <div className="text-white/70 uppercase tracking-wider text-xs">Students in Kota</div>
                 </div>
                 <div>
-                  <div className="font-display text-2xl font-extrabold text-bansal-orange">100+</div>
+                  <div className="font-display text-2xl font-extrabold text-bansal-orange">85+</div>
                   <div className="text-white/70 uppercase tracking-wider text-xs">Coaching Schools</div>
                 </div>
                 <div>
