@@ -148,7 +148,7 @@ export default function BoostPage() {
             </BansalBadge>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">Rewards Worth the Hustle</h2>
           </div>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {benefits.map((b) => (
               <BansalCard key={b.title}>
                 <div className="h-12 w-12 rounded-lg bg-bansal-orange/10 text-bansal-orange flex items-center justify-center mb-4">
