@@ -8,7 +8,7 @@ const faqs = [
   { q: "Can I learn online or only in classroom?", a: "Both. Choose Classroom Learning Programs (CLP) at any of our 85+ centres, or fully online Live Classes with the same faculty and study material." },
   { q: "What is the BOOST scholarship and how do I qualify?", a: "BOOST is our annual scholarship test open to Classes V–XII. You can win up to 90% off on tuition. Register at ₹99 and appear on any of the scheduled Sundays." },
   { q: "Is there a fee refund policy?", a: "Yes. A full 7-day no-questions-asked refund applies on every online course. Classroom programs follow the standard Bansal admission policy." },
-  { q: "Do you offer EMI or installment plans?", a: "Most programs are available on no-cost EMI starting around ₹4,999/month via partner banks. Dubai students can pay in AED via Stripe." },
+  { q: "Do you offer EMI or installment plans?", a: "Most programs are available on no-cost EMI starting around ₹4,999/month via partner banks." },
   { q: "Will I get a personal mentor?", a: "Every Bansal student is assigned a personal mentor — a senior teacher who tracks attendance, test performance and concept gaps every single week." },
   { q: "Is there support for parents to track progress?", a: "Yes. Parents receive weekly mentor reports, test analytics and class attendance summaries via WhatsApp and the parent portal." },
   { q: "Do you have a centre in my city?", a: "Bansal operates 85+ centres across India and Dubai. Use the Centres section above to find the one nearest you — or learn online with the same faculty." },

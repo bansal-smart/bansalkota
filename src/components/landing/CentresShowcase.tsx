@@ -26,12 +26,12 @@ const CentresShowcase = () => {
     <section className="relative py-12 md:py-20 bg-bansal-cream/40">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-8 md:mb-10">
-          <BansalBadge tone="blue"><Building2 className="h-3 w-3 mr-1" /> Pan-India & Dubai</BansalBadge>
+          <BansalBadge tone="blue"><Building2 className="h-3 w-3 mr-1" /> Pan-India</BansalBadge>
           <h2 className="mt-3 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black">
             A Bansal Centre Near <span className="text-bansal-orange">You</span>
           </h2>
           <p className="mt-2 text-sm md:text-base text-bansal-gray">
-            85+ centres across India and Dubai — every one staffed with master mentors, libraries and the same Bansal curriculum that built Kota.
+            85+ centres across India — every one staffed with master mentors, libraries and the same Bansal curriculum that built Kota.
           </p>
           <div className="mt-5 max-w-md mx-auto relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-bansal-gray" />
