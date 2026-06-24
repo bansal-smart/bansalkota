@@ -117,10 +117,10 @@ const coursesByExam: Record<
 };
 
 const achievements = [
-  { value: "30+", label: "AIR in JEE Top 100", icon: Trophy },
-  { value: "2,500+", label: "IIT Selections", icon: GraduationCap },
-  { value: "5,000+", label: "NEET Qualifiers", icon: Star },
-  { value: "40+", label: "Years of Legacy", icon: ShieldCheck },
+  { value: "Since 1981", label: "", icon: Award },
+  { value: "45+", label: "Years of Legacy", icon: ShieldCheck },
+  { value: "85+", label: "Centres", icon: Building2 },
+  { value: "1,00,000+", label: "IITians & Doctors Produced", icon: GraduationCap },
 ];
 
 const pillars = [

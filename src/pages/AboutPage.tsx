@@ -65,7 +65,7 @@ const AboutPage = () => {
               className="font-display font-extrabold text-white leading-[1.05] tracking-tight"
               style={{ fontSize: "clamp(2rem, 6vw, 4.75rem)" }}
             >
-              Forty Years of Shaping
+              45 years of shaping
               <span className="block text-bansal-orange">India's Brightest Minds.</span>
             </h1>
             <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-2xl">
