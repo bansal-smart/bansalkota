@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
+import BulkLectureUploadDialog from "@/components/admin/BulkLectureUploadDialog";
 
 type Course = { id: string; name: string; slug: string; subject: string; educator_name: string; thumbnail_url: string | null };
 type Chapter = { id: string; title: string; position: number; is_published: boolean };
@@ -212,6 +213,7 @@ const AdminCourseContentPage = () => {
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [savingLecture, setSavingLecture] = useState(false);
   const [reordering, setReordering] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const lectureVideoId = useMemo(() => extractYouTubeId(lectureForm.youtubeUrl), [lectureForm.youtubeUrl]);
@@ -707,9 +709,12 @@ const AdminCourseContentPage = () => {
               Add lectures via YouTube link. Use <strong>Unlisted</strong> videos so they're not publicly listed but still play here.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={() => { setChapterTitle(""); setChapterDialogOpen(true); }}>
               <FolderPlus className="h-4 w-4" /> Add chapter
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setBulkUploadOpen(true)}>
+              <Upload className="h-4 w-4" /> Bulk upload
             </Button>
             <Button
               size="sm"
@@ -722,6 +727,19 @@ const AdminCourseContentPage = () => {
             </Button>
           </div>
         </div>
+        {selectedCourse && (
+          <BulkLectureUploadDialog
+            open={bulkUploadOpen}
+            onOpenChange={setBulkUploadOpen}
+            courseId={selectedCourse.id}
+            existingChapters={chapters}
+            existingLessonsCount={chapters.reduce((acc, ch) => {
+              acc[ch.id] = lessons.filter((l) => l.chapter_id === ch.id).length;
+              return acc;
+            }, {} as Record<string, number>)}
+            onDone={() => loadCourseDetail(selectedCourse.id)}
+          />
+        )}
 
         {chapters.length === 0 ? (
           <div className="p-12 text-center">
