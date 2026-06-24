@@ -31,12 +31,12 @@ const PAGE_SIZE = 25;
 
 const exportCsv = (rows: StudentRow[]) => {
   const header = [
-    "Name", "Email", "Phone", "Plan", "Target Exam", "Class", "Goal",
+    "Name", "Email", "Phone", "Parent Phone", "Plan", "Target Exam", "Class", "Goal",
     "City", "Country", "Onboarding", "Suspended", "Joined",
   ];
   const lines = rows.map((u) =>
     [
-      u.full_name ?? "", u.email ?? "", u.phone ?? "", u.plan,
+      u.full_name ?? "", u.email ?? "", u.phone ?? "", u.parent_phone ?? "", u.plan,
       u.target_exam ?? "", u.class_level ?? "", u.goal ?? "",
       u.city ?? "", u.country ?? "",
       u.onboarding_completed ? "Yes" : "No",
