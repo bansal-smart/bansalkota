@@ -386,6 +386,7 @@ const AdminStudentsPage = () => {
                     </td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[200px]">{u.email || "—"}</td>
                     <td className="p-3 hidden sm:table-cell text-muted-foreground">{u.phone || "—"}</td>
+                    <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.parent_phone || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.school_name || "—"}</td>
