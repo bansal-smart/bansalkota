@@ -72,7 +72,7 @@ const AboutPage = () => {
               Founded in Kota in 1981 by Shri V.K. Bansal Sir, we built the institution that turned a town into a national symbol of academic excellence.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/centers">
+              <Link to="/centres">
                 <BansalButton variant="cta">Visit a Centre <ArrowRight className="h-4 w-4" /></BansalButton>
               </Link>
               <Link to="/contact">
@@ -354,7 +354,7 @@ const AboutPage = () => {
           <p className="text-white/85 mb-8">Talk to our admissions team or visit your nearest centre.</p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link to="/contact"><BansalButton variant="cta">Enquire Now</BansalButton></Link>
-            <Link to="/centers"><BansalButton variant="ghost-white">Find a Centre</BansalButton></Link>
+            <Link to="/centres"><BansalButton variant="ghost-white">Find a Centre</BansalButton></Link>
           </div>
         </div>
       </section>
