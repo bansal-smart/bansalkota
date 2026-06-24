@@ -11,7 +11,7 @@ export const bansalStats = [
   { value: "Daily", label: "Live Interactive Sessions" },
   { value: "10M+", label: "Tests, papers & notes" },
   { value: "24 × 7", label: "Doubt support" },
-  { value: "100+", label: "Offline centers" },
+  { value: "85+", label: "Offline centers" },
 ];
 
 export const teachingMethodology = [
