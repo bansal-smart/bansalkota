@@ -1,37 +1,42 @@
-## Changes
+## Goal
 
-**1. "100+ Offline Centres" → "85+ Offline Centres" (Homepage stats banner)**
-- `src/pages/LandingPage.tsx` line 258: `value: "100+"` → `"85+"` for Offline Centres tile.
+Make the "Wall of Fame" on `/achievements` driven by the existing `toppers` table, ensure the Admin → "Toppers" tab is the place to add/edit/delete entries, and bulk-import the 332 students from `TOPPERS.xlsx`, sorted rank-wise.
 
-**2. Remove "Explore the Ideal Course For You" section (Homepage)**
-- `src/pages/LandingPage.tsx`: delete the entire `{/* 5. COURSES */}` section (lines 444–504), including the exam-tab buttons and the `coursesByExam[exam]` grid.
+## What we have today
+- `toppers` table already exists (name, exam, rank_label, year, sort_order, is_published, photo_url, quote, city, …) with admin + public-read RLS.
+- `/admin/toppers` page (`AdminToppersPage`) already supports create / edit / delete / publish + a CSV bulk dialog and Toppers/Alumni view toggle.
+- `/achievements` `The Wall of Fame` grid currently renders from a hardcoded `TOPPERS[]` array — this is what we need to switch over.
+- Uploaded file: 332 rows → 331 `JEE ADVANCED` + 1 `JEE MAIN`; columns `COURSE, NAME, AIR, YEAR`.
 
-**3. BOOST page — remove "Cash Prizes" card from "Rewards Worth the Hustle"**
-- `src/pages/BoostPage.tsx` line 13: remove the `{ icon: Award, title: "Cash Prizes", … }` entry from the `benefits` array.
+## Plan
 
-**4. /test-series page — title change**
-- `src/pages/TestSeriesCatalogPage.tsx` line 26: `Test Series & Mocks` → `Test Series`.
+### 1. Seed the database from the XLSX (one-time data import)
+- Parse `TOPPERS.xlsx` and insert all 332 rows into `public.toppers`:
+  - `name` ← title-cased NAME
+  - `exam` ← "JEE Advanced" / "JEE Main"
+  - `rank_label` ← `AIR <n>`
+  - `year` ← YEAR
+  - `sort_order` ← AIR number (so ORDER BY sort_order ASC = rank-wise; ties broken by year desc, then name)
+  - `is_alumni = false`, `is_published = true`
+- Skip duplicates using the existing `(name, exam, year)` unique key.
 
-**5. Replace remaining "100+ centres / centers" mentions with "85+"**
-- `src/content/bansal/about.ts` line 14: `"100+"` Offline centers → `"85+"`.
-- `src/components/landing/CentresShowcase.tsx` line 34: `100+ centres` → `85+ centres`.
-- `src/pages/AboutPage.tsx` line 152: `100+` → `85+`.
-- `src/components/landing/LandingFAQ.tsx` lines 8 & 14: `100+ centres` → `85+ centres`.
-- `src/pages/LandingPage.tsx` line 160 (`clpFeatures`): `100+ Bansal centers` → `85+`.
-- `src/pages/LandingPage.tsx` line 520 (CLP card desc): `100+ Bansal centers` → `85+`.
-- `src/pages/LandingPage.tsx` line 668 (Centres heading): `100+ Centres Across India` → `85+ Centres Across India`.
+### 2. Make `/achievements` Wall of Fame dynamic
+- In `src/pages/AchievementsPage.tsx`:
+  - Replace the hardcoded `TOPPERS[]` with a query against `toppers` (via the existing `useToppers` hook or a small inline query) ordered `sort_order ASC, year DESC, name ASC`.
+  - Filters at the top become dynamic — derived from distinct `exam` values present in DB (so JEE Advanced / JEE Main show up automatically; KVPY/NTSE only appear if data exists).
+  - Keep the same card visual: avatar (initials when no `photo_url`), name, exam, rank label as the AIR pill, year badge, optional quote.
+  - Show a "Load more" (paginate ~24 per page) since 332 cards is too many to render at once.
+  - Empty/loading skeleton state.
 
-**6. "Numbers That Speak for Themselves" stats (Homepage)**
-Update the `achievements` fallback array in `src/pages/LandingPage.tsx` (lines 119–124) to:
-1. `330+` — AIR in Top 100 (icon: Trophy)
-2. `25,000+` — IITians (icon: GraduationCap)
-3. `5,000+` — NEET Qualified (icon: Stethoscope)
-4. `85+` — Centres (icon: Building2)
+### 3. Admin "Topper Student" tab
+- The Admin sidebar already links to `/admin/toppers`. Rename that nav label from "Toppers" to "Topper Students" so it matches the user's wording, and make sure it's reachable for super_admin (it already is via the existing route).
+- No structural change to the admin page itself — it already supports add / edit / delete / publish, the existing bulk CSV importer stays available for future uploads, and the "Toppers" view filter is preserved.
 
-Note: this section also reads `dbStats` from the `site_stats` table — when DB rows exist, they override the fallback. Editing the fallback updates the page only if the admin hasn't populated DB stats. If the live page is showing the old numbers because DB rows exist, those need to be edited from the Admin → Site Content area (no code change can override them).
+### 4. Sorting contract
+- All listings (admin grid + Wall of Fame) standardize on `ORDER BY sort_order ASC, year DESC, name ASC`, so AIR 1 always renders first.
 
-**7. Landing FAQ — drop NTSE from the exams answer**
-- `src/components/landing/LandingFAQ.tsx` line 7: answer becomes `"JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X) & Olympiads. Dedicated batches exist for repeaters and droppers."` (NTSE removed).
-
-## Out of scope
-- Other NTSE references (BOOST eligibility, Achievements filter, Center Detail, Topper admin, modal exam list) — kept since the user only asked about the landing FAQ question.
+## Technical notes (devs only)
+- No schema migration needed — `sort_order INT` already exists on `toppers`.
+- Bulk import is a data-only `INSERT … ON CONFLICT (name, exam, year) DO NOTHING` against the existing unique index, done via the data-insert tool from a parsed XLSX.
+- `useTopToppers` (landing) and `useToppers` (achievements) both already point at the `toppers` table; the landing strip will start showing the imported AIR 1 / AIR 2 stars automatically once data is in.
+- Sidebar label change is in `src/components/AdminLayout.tsx` only.
