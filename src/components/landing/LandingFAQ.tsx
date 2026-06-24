@@ -12,7 +12,7 @@ const faqs = [
   { q: "Will I get a personal mentor?", a: "Every Bansal student is assigned a personal mentor — a senior teacher who tracks attendance, test performance and concept gaps every single week." },
   { q: "Is there support for parents to track progress?", a: "Yes. Parents receive weekly mentor reports, test analytics and class attendance summaries via WhatsApp and the parent portal." },
   { q: "Do you have a centre in my city?", a: "Bansal operates 100+ centres across India and Dubai. Use the Centres section above to find the one nearest you — or learn online with the same faculty." },
-  { q: "What makes Bansal different from other coaching brands?", a: "Four decades of refined pedagogy, IIT/AIIMS alumni faculty, a legendary printed study material set and a results-first culture that has produced 2,500+ IITians and 5,000+ doctors." },
+  { q: "What makes Bansal different from other coaching brands?", a: "Refined pedagogy since 1981, IIT/AIIMS alumni faculty, a legendary printed study material set and a results-first culture that has produced 2,500+ IITians and 5,000+ doctors." },
 ];
 
 const LandingFAQ = () => {

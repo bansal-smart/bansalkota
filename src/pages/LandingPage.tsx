@@ -117,15 +117,15 @@ const coursesByExam: Record<
 };
 
 const achievements = [
-  { value: "Since 1981", label: "", icon: Award },
-  { value: "45+", label: "Years of Legacy", icon: ShieldCheck },
+  { value: "Since 1981", label: "Trusted Legacy", icon: Award },
   { value: "85+", label: "Centres", icon: Building2 },
   { value: "1,00,000+", label: "IITians & Doctors Produced", icon: GraduationCap },
+  { value: "Kota", label: "Where it all began", icon: ShieldCheck },
 ];
 
 const pillars = [
   { icon: Users, title: "Master Mentors", desc: "Faculty with 20+ years of competitive-exam mentoring." },
-  { icon: BookOpen, title: "Legendary Material", desc: "Refined over 40 years of toppers and JEE/NEET patterns." },
+  { icon: BookOpen, title: "Legendary Material", desc: "Refined since 1981 across generations of toppers and JEE/NEET patterns." },
   { icon: Target, title: "Personal Mentor", desc: "One-to-one mentor for every student — no one studies alone." },
   { icon: Headphones, title: "24×7 Support", desc: "Doubt solving, test analysis, and round-the-clock guidance." },
   { icon: Microscope, title: "Concept Labs", desc: "Live demos and visualisations that make physics & chem stick." },
@@ -140,7 +140,7 @@ const expertise = [
   },
   {
     Icon: PenTool, title: "Bansal Curriculum",
-    desc: "The legendary modules that shaped 40+ years of toppers — refined every year for new exam patterns.",
+    desc: "The legendary modules that have shaped toppers since 1981 — refined every year for new exam patterns.",
     bullets: ["DPPs & sheets", "Sectional + full tests", "Detailed solution videos"],
   },
   {
@@ -218,7 +218,7 @@ const LandingPage = () => {
 
             {/* Trust strip */}
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/75">
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-bansal-orange" /> 45+ Yrs Legacy</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-bansal-orange" /> Since 1981</span>
               <span className="flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-bansal-orange" /> 1,00,000+ IITians & Doctors</span>
               <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-bansal-orange" /> 85+ Centres</span>
             </div>
@@ -232,7 +232,7 @@ const LandingPage = () => {
                     <img
                       key={i}
                       src={src}
-                      alt={i < 2 ? (i === 0 ? "Bansal Classes — JEE Main Result 2026" : "Bansal Classes — 45+ Years of Excellence") : ""}
+                      alt={i < 2 ? (i === 0 ? "Bansal Classes — JEE Main Result 2026" : "Bansal Classes — Trusted since 1981") : ""}
                       aria-hidden={i >= 2}
                       className="h-[220px] sm:h-[280px] lg:h-[320px] w-auto block flex-shrink-0"
                       loading="eager"
@@ -366,8 +366,8 @@ const LandingPage = () => {
               />
             </div>
             <div className="absolute -bottom-6 -right-6 bg-bansal-orange text-white rounded-2xl p-4 sm:p-5 shadow-xl">
-              <div className="font-display text-2xl sm:text-3xl font-extrabold">40+</div>
-              <div className="text-[10px] sm:text-xs font-medium">Years of Excellence</div>
+              <div className="font-display text-2xl sm:text-3xl font-extrabold">Since</div>
+              <div className="text-[10px] sm:text-xs font-medium">1981 · Excellence</div>
             </div>
             <Atom className="absolute -top-6 -left-6 h-16 w-16 text-bansal-orange/20 animate-float-slow hidden md:block" />
           </div>
@@ -378,7 +378,7 @@ const LandingPage = () => {
               Built for <span className="text-bansal-orange">Scholars</span>. Backed by <span className="text-bansal-orange">Legacy</span>.
             </h2>
             <p className="mt-4 text-bansal-gray text-sm md:text-base">
-              Four decades of disciplined preparation, master mentors, and a structured ecosystem designed to take every student to their highest potential.
+              Since 1981, disciplined preparation, master mentors, and a structured ecosystem have taken every Bansal student to their highest potential.
             </p>
             <div className="mt-6 grid sm:grid-cols-2 gap-3 sm:gap-4">
               {pillars.map((p) => (
@@ -396,7 +396,7 @@ const LandingPage = () => {
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-bansal-blue">
               <span className="flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-bansal-orange" /> 12 IIT alumni faculty</span>
               <span className="flex items-center gap-1.5"><Brain className="h-4 w-4 text-bansal-orange" /> 8 PhD subject heads</span>
-              <span className="flex items-center gap-1.5"><Trophy className="h-4 w-4 text-bansal-orange" /> 40+ AIRs mentored</span>
+              <span className="flex items-center gap-1.5"><Trophy className="h-4 w-4 text-bansal-orange" /> AIRs mentored since 1981</span>
             </div>
             <Link to="/about" className="inline-block mt-7">
               <BansalButton variant="cta">Read More <ArrowRight className="h-4 w-4" /></BansalButton>

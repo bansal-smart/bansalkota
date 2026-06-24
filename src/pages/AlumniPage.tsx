@@ -213,7 +213,7 @@ export default function AlumniPage() {
               <div className="flex items-center justify-center gap-3 mb-2">
                 <span className="h-px w-10 bg-bansal-orange" />
                 <span className="text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold">
-                  Four decades, one classroom
+                  Since 1981, one classroom
                 </span>
                 <span className="h-px w-10 bg-bansal-orange" />
               </div>
@@ -442,7 +442,7 @@ function AlumniHero({ onSubmit }: { onSubmit: () => void }) {
           </span>
         </div>
         <h1 className="font-display text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.05]">
-          Forty years of <span className="text-bansal-orange">Bansalites</span> —
+          Since 1981, generations of <span className="text-bansal-orange">Bansalites</span> —
           <br className="hidden md:block" /> the people who learned here, and then changed the world.
         </h1>
         <p className="mt-5 max-w-2xl text-white/85 text-base md:text-lg">
@@ -454,7 +454,7 @@ function AlumniHero({ onSubmit }: { onSubmit: () => void }) {
             <Trophy className="h-3 w-3 mr-1" /> 1,200+ IIT selections
           </BansalBadge>
           <BansalBadge tone="orange">
-            <Sparkles className="h-3 w-3 mr-1" /> 40+ years of legacy
+            <Sparkles className="h-3 w-3 mr-1" /> Legacy since 1981
           </BansalBadge>
           <BansalBadge tone="orange">
             <GraduationCap className="h-3 w-3 mr-1" /> AIR 1, single-digit ranks
