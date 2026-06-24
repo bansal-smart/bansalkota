@@ -141,12 +141,72 @@ Deno.serve(async (req) => {
         }
       }
     } else if (kind === "students") {
+      // Preload centres + batches for name-based lookups (admin bulk create flow)
+      const { data: centresList } = await admin
+        .from("centres")
+        .select("id, slug, city, area");
+      const { data: batchesList } = await admin
+        .from("course_batches")
+        .select("id, name, code");
+      const centreByKey = new Map<string, string>();
+      (centresList ?? []).forEach((c: any) => {
+        const keys = [c.slug, c.city, c.area, `${c.city} ${c.area ?? ""}`.trim()]
+          .filter(Boolean)
+          .map((k: string) => k.toLowerCase().trim());
+        keys.forEach((k) => centreByKey.set(k, c.id));
+      });
+      const batchByKey = new Map<string, string>();
+      (batchesList ?? []).forEach((b: any) => {
+        if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
+        if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
+      });
+
+      const normStream = (v: any): string | null => {
+        const s = trimOrNull(v);
+        if (!s) return null;
+        const u = s.toUpperCase();
+        if (u.includes("NEET")) return "NEET";
+        if (u.includes("JEE")) return "JEE";
+        return s;
+      };
+      const normClass = (v: any): string | null => {
+        const s = trimOrNull(v);
+        if (!s) return null;
+        const u = s.toUpperCase().replace(/CLASS\s*/i, "").trim();
+        const map: Record<string, string> = {
+          "XI": "Class 11", "11": "Class 11", "11TH": "Class 11",
+          "XII": "Class 12", "12": "Class 12", "12TH": "Class 12",
+          "XIII": "Dropper", "DROPPER": "Dropper",
+          "IX": "Class 9", "9": "Class 9",
+          "X": "Class 10", "10": "Class 10",
+          "VIII": "Class 8", "8": "Class 8",
+          "VII": "Class 7", "7": "Class 7",
+          "VI": "Class 6", "6": "Class 6",
+        };
+        return map[u] ?? s;
+      };
+      const parseDob = (v: any): string | null => {
+        if (v == null || v === "") return null;
+        if (v instanceof Date) return v.toISOString().slice(0, 10);
+        const s = String(v).trim();
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+        const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+        if (m) {
+          const yyyy = m[3].length === 2 ? `20${m[3]}` : m[3];
+          return `${yyyy}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+        }
+        return null;
+      };
+
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         try {
-          const phone = trimOrNull(r.phone);
-          const roll = trimOrNull(r.roll_number);
-          if (!phone && !roll) throw new Error("phone or roll_number is required");
+          const phone = trimOrNull(r.phone ?? r.contact_no);
+          const roll = trimOrNull(r.roll_number ?? r.roll_no);
+          const fullName = trimOrNull(r.full_name ?? r.student_name);
+          if (!roll && !phone) throw new Error("roll_number or phone is required");
+
           const validStatus = ["active", "inactive", "passed_out", "dropped"];
           const status = r.student_status
             ? String(r.student_status).trim().toLowerCase().replace(/\s+/g, "_")
@@ -154,12 +214,29 @@ Deno.serve(async (req) => {
           if (status && !validStatus.includes(status))
             throw new Error("student_status must be active/inactive/passed_out/dropped");
 
-          // Find profile
-          let target: { id: string } | null = null;
+          // Resolve centre
+          let centreId: string | null = forcedCentreId;
+          if (!centreId && r.centre_id) centreId = String(r.centre_id);
+          if (!centreId && r.centre) {
+            const key = String(r.centre).toLowerCase().trim();
+            centreId = centreByKey.get(key) ?? null;
+            if (!centreId) throw new Error(`Centre not found: ${r.centre}`);
+          }
+
+          // Resolve batch
+          let batchId: string | null = null;
+          if (r.batch_id) batchId = String(r.batch_id);
+          else if (r.batch) {
+            const key = String(r.batch).toLowerCase().trim();
+            batchId = batchByKey.get(key) ?? null;
+          }
+
+          // Find existing profile
+          let target: { id: string; user_id: string } | null = null;
           if (roll) {
             const { data } = await admin
               .from("profiles")
-              .select("id")
+              .select("id, user_id")
               .eq("roll_number", roll)
               .maybeSingle();
             target = data as any;
@@ -167,31 +244,77 @@ Deno.serve(async (req) => {
           if (!target && phone) {
             const { data } = await admin
               .from("profiles")
-              .select("id")
+              .select("id, user_id")
               .eq("phone", phone)
               .maybeSingle();
             target = data as any;
           }
-          if (!target)
-            throw new Error("No profile matches that roll number or phone — student must sign up first");
 
-          const update: Record<string, any> = {};
-          if (forcedCentreId) update.centre_id = forcedCentreId;
-          else if (r.centre_id) update.centre_id = String(r.centre_id);
-          if (r.full_name) update.full_name = String(r.full_name).trim();
-          if (r.class_level) update.class_level = String(r.class_level).trim();
-          if (r.target_exam) update.target_exam = String(r.target_exam).trim();
-          if (r.city) update.city = String(r.city).trim();
-          if (status) update.student_status = status;
-          if (roll) update.roll_number = roll;
+          const payload: Record<string, any> = {};
+          if (fullName) payload.full_name = fullName;
+          if (trimOrNull(r.father_name ?? r.fathers_name)) payload.father_name = trimOrNull(r.father_name ?? r.fathers_name);
+          if (phone) payload.phone = phone;
+          if (trimOrNull(r.parent_phone ?? r.parent_no)) payload.parent_phone = trimOrNull(r.parent_phone ?? r.parent_no);
+          const dob = parseDob(r.dob);
+          if (dob) payload.dob = dob;
+          const stream = normStream(r.target_exam ?? r.stream);
+          if (stream) payload.target_exam = stream;
+          const cls = normClass(r.class_level ?? r.class);
+          if (cls) payload.class_level = cls;
+          if (centreId) payload.centre_id = centreId;
+          if (batchId) payload.batch_id = batchId;
+          if (roll) payload.roll_number = roll;
+          if (trimOrNull(r.city)) payload.city = trimOrNull(r.city);
+          if (status) payload.student_status = status;
+          payload.is_bansal_offline_student = true;
 
-          if (dryRun) {
+          if (target) {
+            if (dryRun) { results.push({ row: i + 1, ok: true, id: target.id }); continue; }
+            const { error } = await admin.from("profiles").update(payload).eq("id", target.id);
+            if (error) throw error;
             results.push({ row: i + 1, ok: true, id: target.id });
-            continue;
+          } else {
+            // Create new student (admins only)
+            if (!isAnyAdmin) throw new Error("Student not found — only admins can create new students via bulk import");
+            if (!fullName) throw new Error("full_name (Student Name) is required to create a new student");
+            if (dryRun) { results.push({ row: i + 1, ok: true }); continue; }
+
+            const emailSeed = roll
+              ? `roll-${roll}`
+              : `phone-${phone}`;
+            const email = `${emailSeed}@bansal.ac.in`.toLowerCase().replace(/[^a-z0-9@.\-]/g, "");
+            const password = `Bansal@${Math.random().toString(36).slice(2, 10)}`;
+
+            const { data: created, error: cErr } = await admin.auth.admin.createUser({
+              email,
+              password,
+              email_confirm: true,
+              user_metadata: { full_name: fullName, source: "bulk_import" },
+            });
+            if (cErr || !created?.user) throw new Error(cErr?.message || "Failed to create auth user");
+            const newUid = created.user.id;
+
+            // Profile may have been auto-created by trigger; upsert
+            const { data: existingProfile } = await admin
+              .from("profiles")
+              .select("id")
+              .eq("user_id", newUid)
+              .maybeSingle();
+            if (existingProfile) {
+              const { error } = await admin.from("profiles").update(payload).eq("id", (existingProfile as any).id);
+              if (error) throw error;
+            } else {
+              const { error } = await admin.from("profiles").insert({ user_id: newUid, ...payload });
+              if (error) throw error;
+            }
+
+            await admin.from("user_roles").upsert(
+              { user_id: newUid, role: "student" },
+              { onConflict: "user_id,role" },
+            );
+
+            results.push({ row: i + 1, ok: true, id: newUid });
           }
-          const { error } = await admin.from("profiles").update(update).eq("id", target.id);
-          if (error) throw error;
-          results.push({ row: i + 1, ok: true, id: target.id });
         } catch (e: any) {
           results.push({ row: i + 1, ok: false, error: e.message ?? String(e) });
         }
