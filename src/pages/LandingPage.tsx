@@ -41,6 +41,7 @@ import LandingFAQ from "@/components/landing/LandingFAQ";
 import LandingCTAForm from "@/components/landing/LandingCTAForm";
 import WelcomeEnquiryPopup from "@/components/landing/WelcomeEnquiryPopup";
 import { useLandingHeroBanners } from "@/hooks/useLandingHeroBanners";
+import HeroBannerCarousel from "@/components/landing/HeroBannerCarousel";
 
 const iconMap: Record<string, any> = {
   Trophy,
@@ -196,8 +197,6 @@ const LandingPage = () => {
         { src: resultsBanner, alt: "Bansal Classes — JEE Main Result 2026", link: null as string | null },
         { src: legacyBanner, alt: "Bansal Classes — Trusted since 1981", link: null as string | null },
       ];
-  // Duplicate the list so the marquee loops seamlessly
-  const heroMarquee = [...heroBanners, ...heroBanners];
   const liveTestimonials = dbTestimonials.length
     ? dbTestimonials.map((t) => ({ name: t.name, rank: t.rank_label ?? "", quote: t.quote }))
     : testimonials;
@@ -258,34 +257,7 @@ const LandingPage = () => {
 
           <div className="relative animate-fade-in-up-delay-2 max-w-md mx-auto lg:max-w-none w-full">
             <div className="rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-2xl">
-              <div className="relative h-auto rounded-2xl overflow-hidden bg-white">
-                <div className="flex flex-row animate-marquee-x w-max">
-                  {heroMarquee.map((b, i) => {
-                    const isClone = i >= heroBanners.length;
-                    const img = (
-                      <img
-                        src={b.src}
-                        alt={isClone ? "" : b.alt}
-                        aria-hidden={isClone}
-                        className="h-[220px] sm:h-[280px] lg:h-[320px] w-auto block flex-shrink-0"
-                        loading="eager"
-                      />
-                    );
-                    return b.link && !isClone ? (
-                      <a key={i} href={b.link} target={b.link.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="block flex-shrink-0">
-                        {img}
-                      </a>
-                    ) : (
-                      <span key={i} className="block flex-shrink-0">{img}</span>
-                    );
-                  })}
-                </div>
-                <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />
-                <span className="absolute top-3 right-3 rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
-                  Latest Results
-                </span>
-              </div>
+              <HeroBannerCarousel banners={heroBanners} />
             </div>
           </div>
         </div>
