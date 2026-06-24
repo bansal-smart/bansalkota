@@ -106,8 +106,6 @@ const streams = [
   },
 ];
 
-type ExamKey = "jee" | "neet" | "foundation";
-
 const coursesByExam: Record<
   ExamKey,
   { name: string; duration: string; mode: string; icon: typeof BookOpen; perks: string[] }[]
