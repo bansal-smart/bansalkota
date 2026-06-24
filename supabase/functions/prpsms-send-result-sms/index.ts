@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     const userIds = sheetRows.map((r) => r.user_id);
     const { data: profiles, error: pErr } = await supabase
       .from("profiles")
-      .select("user_id, full_name, phone_e164, phone")
+      .select("user_id, full_name, phone_e164, phone, parent_phone_e164, parent_phone")
       .in("user_id", userIds);
     if (pErr) throw pErr;
     const profMap = new Map<string, any>();
