@@ -120,13 +120,8 @@ const ProfileCompletionDialog = () => {
   if (checking || !user) return null;
 
   return (
-    <Dialog open={open} onOpenChange={() => { /* not dismissible */ }}>
-      <DialogContent
-        className="max-w-lg max-h-[90vh] overflow-y-auto"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <GraduationCap className="h-6 w-6" />
