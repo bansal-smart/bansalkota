@@ -84,7 +84,7 @@ const CentresShowcase = () => {
                         </div>
                       </div>
                       <p className="mt-3 text-xs text-white/80 leading-relaxed">
-                        The original Bansal Classes campus — where forty years of JEE legacy began.
+                        The original Bansal Classes campus — where the JEE legacy began in 1981.
                       </p>
                       <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-bansal-orange group-hover:underline">
                         Visit flagship campus <ArrowRight className="h-3.5 w-3.5" />
