@@ -62,53 +62,20 @@ export default function AlumniPage() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: tops }, { data: subs }] = await Promise.all([
-        supabase
-          .from("toppers")
-          .select(
-            "id,name,rank_label,exam,year,photo_url,quote,story,current_position,company,batch_year,is_alumni,is_featured",
-          )
-          .eq("is_alumni", true)
-          .order("is_featured", { ascending: false })
-          .order("batch_year", { ascending: false, nullsFirst: false })
-          .order("year", { ascending: false })
-          .limit(500),
-        (supabase as any)
-          .from("alumni_submissions")
-          .select(
-            "id,full_name,rank_label,exam,selection_year,photo_url,story,current_position,company,batch_year",
-          )
-          .eq("status", "approved")
-          .order("batch_year", { ascending: false, nullsFirst: false })
-          .limit(500),
-      ]);
-      const mappedSubs: Alumnus[] = ((subs ?? []) as any[]).map((s) => ({
-        id: `sub-${s.id}`,
-        name: s.full_name,
-        rank_label: s.rank_label,
-        exam: s.exam,
-        year: s.selection_year,
-        photo_url: s.photo_url,
-        quote: null,
-        story: s.story,
-        current_position: s.current_position,
-        company: s.company,
-        batch_year: s.batch_year,
-        is_alumni: true,
-        is_featured: false,
-      }));
-      // Dedupe by name+batch_year (toppers take priority since fetched first)
-      const seen = new Set(
-        ((tops ?? []) as Alumnus[]).map((t) => `${t.name?.toLowerCase()}|${t.batch_year ?? t.year ?? ""}`),
-      );
-      const extraSubs = mappedSubs.filter(
-        (s) => !seen.has(`${s.name?.toLowerCase()}|${s.batch_year ?? s.year ?? ""}`),
-      );
-      setItems([...((tops ?? []) as Alumnus[]), ...extraSubs]);
+      const { data } = await supabase
+        .from("toppers")
+        .select(
+          "id,name,rank_label,exam,year,photo_url,quote,story,current_position,company,batch_year,is_alumni,is_featured",
+        )
+        .eq("is_alumni", true)
+        .order("is_featured", { ascending: false })
+        .order("batch_year", { ascending: false, nullsFirst: false })
+        .order("year", { ascending: false })
+        .limit(500);
+      setItems((data ?? []) as Alumnus[]);
       setLoading(false);
     })();
   }, []);
-
 
   const featured = useMemo(
     () => items.filter((a) => a.is_featured).slice(0, 6),
