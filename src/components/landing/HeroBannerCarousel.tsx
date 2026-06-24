@@ -49,7 +49,7 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
     >
       <div
         className="flex h-full transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${index * 100}%)`, width: `${total * 100}%` }}
+        style={{ transform: `translateX(-${index * 100}%)` }}
       >
         {banners.map((b, i) => {
           const img = (
@@ -61,7 +61,8 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
             />
           );
           return (
-            <div key={i} className="h-full shrink-0" style={{ width: `${100 / total}%` }}>
+            <div key={i} className="h-full w-full shrink-0">
+
               {b.link ? (
                 <a
                   href={b.link}
