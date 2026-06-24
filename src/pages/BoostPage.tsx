@@ -10,7 +10,7 @@ import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 
 const benefits = [
   { icon: Trophy, title: "Up to 90% Scholarship", desc: "Win huge fee waivers on Bansal Classes JEE/NEET/Foundation programs based on your rank." },
-  { icon: Award, title: "Cash Prizes", desc: "Top performers across categories receive cash rewards and Bansal Achiever certificates." },
+  
   { icon: GraduationCap, title: "Personal Mentorship", desc: "Top 100 rankers get a one-on-one mentor session with Bansal senior faculty." },
   { icon: Sparkles, title: "Free Study Material", desc: "All registrants receive a Bansal Foundation booklet and exclusive practice sheets." },
 ];

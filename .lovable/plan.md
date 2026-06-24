@@ -1,29 +1,37 @@
-## Add Parent Phone Number for Students + Send Result SMS to Parent
+## Changes
 
-### 1. Database
-Migration on `profiles`:
-- Add `parent_phone TEXT` and `parent_phone_e164 TEXT` columns (nullable, so existing non-student profiles aren't blocked).
+**1. "100+ Offline Centres" → "85+ Offline Centres" (Homepage stats banner)**
+- `src/pages/LandingPage.tsx` line 258: `value: "100+"` → `"85+"` for Offline Centres tile.
 
-### 2. Profile Completion (student onboarding)
-Update `src/components/ProfileCompletionDialog.tsx`:
-- Add a required **Parent's Phone** field next to the student's Phone.
-- Validate with zod (min 7, max 20, digits only).
-- Save into `parent_phone` (and store an E.164-normalised copy in `parent_phone_e164`).
+**2. Remove "Explore the Ideal Course For You" section (Homepage)**
+- `src/pages/LandingPage.tsx`: delete the entire `{/* 5. COURSES */}` section (lines 444–504), including the exam-tab buttons and the `coursesByExam[exam]` grid.
 
-### 3. Profile Page
-Update `src/pages/ProfilePage.tsx` so students can view/edit Parent Phone after onboarding (read-only display + edit if profile editing is supported there).
+**3. BOOST page — remove "Cash Prizes" card from "Rewards Worth the Hustle"**
+- `src/pages/BoostPage.tsx` line 13: remove the `{ icon: Award, title: "Cash Prizes", … }` entry from the `benefits` array.
 
-### 4. Result SMS — send to parent too
-Update `supabase/functions/prpsms-send-result-sms/index.ts`:
-- Fetch `parent_phone_e164, parent_phone` alongside the student phone.
-- For each roster row, after sending to the student, if a parent phone exists, send the same rendered "Result" SMS to the parent number.
-- Log each parent send in `sms_send_log` with `purpose: "result_release_parent"` so admin reports separate the two.
-- Include parent sends in the `sent` / `failed` totals and return `parent_sent` count in the JSON response.
+**4. /test-series page — title change**
+- `src/pages/TestSeriesCatalogPage.tsx` line 26: `Test Series & Mocks` → `Test Series`.
 
-### 5. Admin visibility (small)
-Update `src/pages/AdminStudentsPage.tsx` to display the Parent Phone column (read-only) so admins can verify students filled it in. No edit UI changes beyond surfacing the field.
+**5. Replace remaining "100+ centres / centers" mentions with "85+"**
+- `src/content/bansal/about.ts` line 14: `"100+"` Offline centers → `"85+"`.
+- `src/components/landing/CentresShowcase.tsx` line 34: `100+ centres` → `85+ centres`.
+- `src/pages/AboutPage.tsx` line 152: `100+` → `85+`.
+- `src/components/landing/LandingFAQ.tsx` lines 8 & 14: `100+ centres` → `85+ centres`.
+- `src/pages/LandingPage.tsx` line 160 (`clpFeatures`): `100+ Bansal centers` → `85+`.
+- `src/pages/LandingPage.tsx` line 520 (CLP card desc): `100+ Bansal centers` → `85+`.
+- `src/pages/LandingPage.tsx` line 668 (Centres heading): `100+ Centres Across India` → `85+ Centres Across India`.
 
-### Notes
-- No changes to BOOST registration flow (it already has its own parent fields).
-- No pricing changes. No new RLS policies required — `profiles` policies already cover the new columns.
-- Existing students who completed onboarding before this change will see the parent phone prompt next time they open the dialog only if we re-flag them; we will NOT force re-onboarding — instead the Profile page will show a banner asking them to add it. (Confirm if you'd prefer to force re-onboarding instead.)
+**6. "Numbers That Speak for Themselves" stats (Homepage)**
+Update the `achievements` fallback array in `src/pages/LandingPage.tsx` (lines 119–124) to:
+1. `330+` — AIR in Top 100 (icon: Trophy)
+2. `25,000+` — IITians (icon: GraduationCap)
+3. `5,000+` — NEET Qualified (icon: Stethoscope)
+4. `85+` — Centres (icon: Building2)
+
+Note: this section also reads `dbStats` from the `site_stats` table — when DB rows exist, they override the fallback. Editing the fallback updates the page only if the admin hasn't populated DB stats. If the live page is showing the old numbers because DB rows exist, those need to be edited from the Admin → Site Content area (no code change can override them).
+
+**7. Landing FAQ — drop NTSE from the exams answer**
+- `src/components/landing/LandingFAQ.tsx` line 7: answer becomes `"JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X) & Olympiads. Dedicated batches exist for repeaters and droppers."` (NTSE removed).
+
+## Out of scope
+- Other NTSE references (BOOST eligibility, Achievements filter, Center Detail, Topper admin, modal exam list) — kept since the user only asked about the landing FAQ question.

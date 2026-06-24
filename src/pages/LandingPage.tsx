@@ -117,10 +117,10 @@ const coursesByExam: Record<
 };
 
 const achievements = [
-  { value: "Since 1981", label: "Trusted Legacy", icon: Award },
+  { value: "330+", label: "AIR in Top 100", icon: Trophy },
+  { value: "25,000+", label: "IITians", icon: GraduationCap },
+  { value: "5,000+", label: "NEET Qualified", icon: Stethoscope },
   { value: "85+", label: "Centres", icon: Building2 },
-  { value: "1,00,000+", label: "IITians & Doctors Produced", icon: GraduationCap },
-  { value: "Kota", label: "Where it all began", icon: ShieldCheck },
 ];
 
 const pillars = [
@@ -157,7 +157,7 @@ const testimonials = [
 ];
 
 const clpFeatures = [
-  "Classroom sessions at 100+ Bansal centers",
+  "Classroom sessions at 85+ Bansal centers",
   "Direct interaction with master mentors",
   "Daily doubt sessions & weekly tests",
   "Peer learning with India's top scholars",
@@ -255,7 +255,7 @@ const LandingPage = () => {
               { Icon: Play, value: "Daily", label: "Live Interactive Sessions" },
               { Icon: BookOpen, value: "10M+", label: "Tests, Papers & Notes" },
               { Icon: Headphones, value: "24×7", label: "Learning Support" },
-              { Icon: Building2, value: "100+", label: "Offline Centres" },
+              { Icon: Building2, value: "85+", label: "Offline Centres" },
             ].map(({ Icon, value, label }) => (
               <div key={label} className="text-center">
                 <Icon className="h-5 w-5 mx-auto text-bansal-orange mb-1.5" />
@@ -441,67 +441,8 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 5. COURSES */}
-      <section className="relative py-12 md:py-20 bg-white section-decor">
-        <GridTexture tone="orange" className="opacity-30 decor-fade" />
-        <div className="relative container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto">
-            <BansalBadge tone="blue">Programs</BansalBadge>
-            <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black">
-              Explore the Ideal Course For You
-            </h2>
-            <p className="mt-3 text-sm md:text-base text-bansal-gray">
-              From Pre-Foundation to JEE Advanced &amp; NEET-UG — every Bansal batch combines master-mentor classes, the legendary Bansal study material, a smart test engine and a personal mentor who tracks you week after week.
-            </p>
-          </div>
 
-          <div className="mt-8 flex justify-center gap-2 flex-wrap">
-            {([
-              { k: "jee", label: "JEE", Icon: Atom },
-              { k: "neet", label: "NEET UG", Icon: Stethoscope },
-              { k: "foundation", label: "Pre Foundation", Icon: Sprout },
-            ] as const).map((t) => (
-              <button
-                key={t.k}
-                onClick={() => setExam(t.k)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-5 sm:px-6 py-2 sm:py-2.5 text-sm font-semibold transition-all ${
-                  exam === t.k
-                    ? "bg-bansal-blue text-white shadow-blue"
-                    : "bg-bansal-blue-light/60 text-bansal-blue hover:bg-bansal-blue/10"
-                }`}
-              >
-                <t.Icon className="h-4 w-4" /> {t.label}
-              </button>
-            ))}
-          </div>
 
-          <div className="mt-8 md:mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 stagger-children max-w-6xl mx-auto">
-            {coursesByExam[exam].map((c) => (
-              <BansalCard key={c.name} className="relative !p-5 flex flex-col">
-                <CornerSparkles position="tr" />
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-bansal-orange-light flex items-center justify-center mb-3 sm:mb-4">
-                  <c.icon className="h-5 w-5 sm:h-6 sm:w-6 text-bansal-orange" />
-                </div>
-                <h3 className="font-display text-base sm:text-lg font-bold text-bansal-black leading-snug">{c.name}</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <BansalBadge tone="blue">{c.duration}</BansalBadge>
-                  <BansalBadge tone="gray">{c.mode}</BansalBadge>
-                </div>
-                <ul className="mt-4 space-y-1.5 flex-1">
-                  {c.perks.map((p) => (
-                    <li key={p} className="flex items-start gap-2 text-xs sm:text-sm text-bansal-gray">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-bansal-orange shrink-0 mt-0.5" /> {p}
-                    </li>
-                  ))}
-                </ul>
-                <Link to="/courses" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
-                  View Details <ArrowRight className="h-4 w-4" />
-                </Link>
-              </BansalCard>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* 6. CLP vs DLP */}
       <section className="relative py-12 md:py-20 bg-bansal-blue-light/40 section-decor">
@@ -517,7 +458,7 @@ const LandingPage = () => {
           </div>
           <div className="mt-8 md:mt-10 grid md:grid-cols-2 gap-4 sm:gap-6">
             {[
-              { title: "Classroom Learning Program (CLP)", Icon: Users, tone: "blue", features: clpFeatures, desc: "Live classroom sessions at 100+ Bansal centers, daily doubt sessions and a peer environment built for toppers." },
+              { title: "Classroom Learning Program (CLP)", Icon: Users, tone: "blue", features: clpFeatures, desc: "Live classroom sessions at 85+ Bansal centers, daily doubt sessions and a peer environment built for toppers." },
               { title: "Distance Learning Program (DLP)", Icon: BookOpen, tone: "orange", features: dlpFeatures, desc: "Bansal's legendary study material, sectional & full tests and detailed solutions — at your own pace." },
             ].map((p) => (
               <BansalCard key={p.title} className="!p-5 sm:!p-6 flex flex-col h-full">
@@ -665,7 +606,7 @@ const LandingPage = () => {
           <div>
             <BansalBadge tone="blue">Pan-India Presence</BansalBadge>
             <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
-              100+ Centres Across <span className="text-bansal-orange">India</span>
+              85+ Centres Across <span className="text-bansal-orange">India</span>
             </h2>
             <p className="mt-4 text-sm md:text-base text-bansal-gray">
               From our headquarters in Kota to every major city — find a Bansal centre near you and start your journey with India's most trusted coaching legacy.
