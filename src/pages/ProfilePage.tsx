@@ -55,6 +55,7 @@ const ProfilePage = () => {
         setForm({
           full_name: p.full_name || "",
           phone: p.phone || "",
+          parent_phone: p.parent_phone || "",
           father_name: p.father_name || "",
           city: p.city || "",
           state: p.state || "",
