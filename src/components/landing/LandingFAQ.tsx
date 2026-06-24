@@ -4,8 +4,8 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 
 const faqs = [
   { q: "Is Bansal Classes really the original Kota institute?", a: "Yes. Bansal Classes was founded in 1984 by Shri V. K. Bansal in Kota and pioneered the IIT-JEE coaching model that became the Kota legacy." },
-  { q: "Which exams do you prepare students for?", a: "JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X), NTSE & Olympiads. Dedicated batches exist for repeaters and droppers." },
-  { q: "Can I learn online or only in classroom?", a: "Both. Choose Classroom Learning Programs (CLP) at any of our 100+ centres, or fully online Live Classes with the same faculty and study material." },
+  { q: "Which exams do you prepare students for?", a: "JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X) & Olympiads. Dedicated batches exist for repeaters and droppers." },
+  { q: "Can I learn online or only in classroom?", a: "Both. Choose Classroom Learning Programs (CLP) at any of our 85+ centres, or fully online Live Classes with the same faculty and study material." },
   { q: "What is the BOOST scholarship and how do I qualify?", a: "BOOST is our annual scholarship test open to Classes V–XII. You can win up to 90% off on tuition. Register at ₹99 and appear on any of the scheduled Sundays." },
   { q: "Is there a fee refund policy?", a: "Yes. A full 7-day no-questions-asked refund applies on every online course. Classroom programs follow the standard Bansal admission policy." },
   { q: "Do you offer EMI or installment plans?", a: "Most programs are available on no-cost EMI starting around ₹4,999/month via partner banks. Dubai students can pay in AED via Stripe." },
