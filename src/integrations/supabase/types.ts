@@ -43,14 +43,18 @@ export type Database = {
       }
       alumni_submissions: {
         Row: {
+          address: string | null
           admin_notes: string | null
           batch_year: number | null
           city: string | null
+          college_joined: string | null
           company: string | null
+          course_program: string | null
           created_at: string
           current_position: string | null
           email: string
           exam: string | null
+          father_name: string | null
           full_name: string
           id: string
           linkedin_url: string | null
@@ -58,21 +62,30 @@ export type Database = {
           photo_url: string | null
           published_topper_id: string | null
           rank_label: string | null
+          registered_at: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          selection_year: string | null
+          source_registration_id: number | null
           status: string
           story: string
+          stream_taken: string | null
           updated_at: string
+          verified: boolean
         }
         Insert: {
+          address?: string | null
           admin_notes?: string | null
           batch_year?: number | null
           city?: string | null
+          college_joined?: string | null
           company?: string | null
+          course_program?: string | null
           created_at?: string
           current_position?: string | null
           email: string
           exam?: string | null
+          father_name?: string | null
           full_name: string
           id?: string
           linkedin_url?: string | null
@@ -80,21 +93,30 @@ export type Database = {
           photo_url?: string | null
           published_topper_id?: string | null
           rank_label?: string | null
+          registered_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selection_year?: string | null
+          source_registration_id?: number | null
           status?: string
           story: string
+          stream_taken?: string | null
           updated_at?: string
+          verified?: boolean
         }
         Update: {
+          address?: string | null
           admin_notes?: string | null
           batch_year?: number | null
           city?: string | null
+          college_joined?: string | null
           company?: string | null
+          course_program?: string | null
           created_at?: string
           current_position?: string | null
           email?: string
           exam?: string | null
+          father_name?: string | null
           full_name?: string
           id?: string
           linkedin_url?: string | null
@@ -102,11 +124,16 @@ export type Database = {
           photo_url?: string | null
           published_topper_id?: string | null
           rank_label?: string | null
+          registered_at?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          selection_year?: string | null
+          source_registration_id?: number | null
           status?: string
           story?: string
+          stream_taken?: string | null
           updated_at?: string
+          verified?: boolean
         }
         Relationships: [
           {
