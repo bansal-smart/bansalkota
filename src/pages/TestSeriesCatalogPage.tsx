@@ -23,7 +23,7 @@ const TestSeriesCatalogPage = () => {
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur">
             <Trophy className="h-3.5 w-3.5" /> All India Test Series
           </div>
-          <h1 className="mt-4 font-display text-4xl md:text-5xl font-black">Test Series & Mocks</h1>
+          <h1 className="mt-4 font-display text-4xl md:text-5xl font-black">Test Series</h1>
           <p className="mt-3 max-w-2xl text-white/80">
             JEE Main, JEE Advanced, NEET and Foundation test series with AIR predictor and Bansal-grade analytics.
           </p>
