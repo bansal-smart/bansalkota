@@ -264,6 +264,7 @@ Deno.serve(async (req) => {
           if (cls) payload.class_level = cls;
           if (centreId) payload.centre_id = centreId;
           if (batchId) payload.batch_id = batchId;
+          if (batchRaw) payload.batch_label = batchRaw;
           if (roll) payload.roll_number = roll;
           if (trimOrNull(r.city)) payload.city = trimOrNull(r.city);
           if (status) payload.student_status = status;
