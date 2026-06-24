@@ -465,6 +465,7 @@ const AdminStudentsPage = () => {
                 {[
                   { key: "full_name", label: "Full name" },
                   { key: "phone", label: "Phone" },
+                  { key: "parent_phone", label: "Parent phone" },
                   { key: "target_exam", label: "Target exam" },
                   { key: "class_level", label: "Class level" },
                   { key: "city", label: "City" },
