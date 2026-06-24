@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Trophy, Medal, Star, Award, TrendingUp, Building2 } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
@@ -6,67 +6,18 @@ import BansalButton from "@/components/bansal/BansalButton";
 import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
 const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import { useToppers, type Topper } from "@/hooks/useToppers";
 
-type Topper = {
-  name: string;
-  rank: string;
-  exam: "JEE Advanced" | "JEE Main" | "NEET" | "KVPY" | "NTSE";
-  year: number;
-  quote?: string;
-  initials: string;
-};
+const PAGE_SIZE = 24;
 
-const TOPPERS: Topper[] = [
-  {
-    name: "Aarav Sharma",
-    rank: "AIR 12",
-    exam: "JEE Advanced",
-    year: 2025,
-    initials: "AS",
-    quote: "Bansal's problem-solving culture is unmatched.",
-  },
-  {
-    name: "Diya Mehta",
-    rank: "AIR 28",
-    exam: "JEE Advanced",
-    year: 2025,
-    initials: "DM",
-    quote: "The faculty here teach concepts that stay for life.",
-  },
-  { name: "Rohan Verma", rank: "AIR 41", exam: "JEE Advanced", year: 2025, initials: "RV" },
-  {
-    name: "Anvi Iyer",
-    rank: "AIR 6",
-    exam: "NEET",
-    year: 2025,
-    initials: "AI",
-    quote: "Daily tests at Bansal made the final NEET feel routine.",
-  },
-  { name: "Kabir Rao", rank: "AIR 19", exam: "NEET", year: 2025, initials: "KR" },
-  { name: "Sneha Kulkarni", rank: "AIR 34", exam: "NEET", year: 2025, initials: "SK" },
-  {
-    name: "Ishaan Gupta",
-    rank: "AIR 3",
-    exam: "JEE Main",
-    year: 2025,
-    initials: "IG",
-    quote: "From doubt sessions to mock tests, every hour was purposeful.",
-  },
-  { name: "Pari Choudhury", rank: "AIR 15", exam: "JEE Main", year: 2025, initials: "PC" },
-  { name: "Aryan Nair", rank: "AIR 47", exam: "JEE Main", year: 2025, initials: "AN" },
-  { name: "Tanvi Joshi", rank: "AIR 22", exam: "KVPY", year: 2024, initials: "TJ" },
-  { name: "Vivaan Patel", rank: "State Topper", exam: "NTSE", year: 2024, initials: "VP" },
-  {
-    name: "Riya Khanna",
-    rank: "AIR 9",
-    exam: "JEE Advanced",
-    year: 2024,
-    initials: "RK",
-    quote: "Bansal pushed me to think beyond the syllabus.",
-  },
-];
-
-const FILTERS = ["All", "JEE Advanced", "JEE Main", "NEET", "KVPY", "NTSE"] as const;
+const initialsFor = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 const milestones = [
   { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
@@ -76,9 +27,21 @@ const milestones = [
 ];
 
 export default function AchievementsPage() {
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const { toppers, loading } = useToppers();
+  const [filter, setFilter] = useState<string>("All");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
-  const filtered = filter === "All" ? TOPPERS : TOPPERS.filter((t) => t.exam === filter);
+  const exams = useMemo(() => {
+    const set = new Set<string>();
+    toppers.forEach((t) => t.exam && set.add(t.exam));
+    return ["All", ...Array.from(set)];
+  }, [toppers]);
+
+  const filtered = useMemo(() => {
+    return filter === "All" ? toppers : toppers.filter((t) => t.exam === filter);
+  }, [toppers, filter]);
+
+  const visible = filtered.slice(0, visibleCount);
 
   return (
     <div className="min-h-screen bg-background">
