@@ -25,6 +25,7 @@ const ProfilePage = () => {
   const [form, setForm] = useState({
     full_name: "",
     phone: "",
+    parent_phone: "",
     father_name: "",
     city: "",
     state: "",
