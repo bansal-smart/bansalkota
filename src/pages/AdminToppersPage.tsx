@@ -243,7 +243,7 @@ const AdminToppersPage = () => {
           <label className="flex items-center gap-2 text-sm font-bold text-bansal-blue">
             <GraduationCap className="h-4 w-4" />
             <input type="checkbox" checked={form.is_alumni ?? false} onChange={(e) => setForm({ ...form, is_alumni: e.target.checked })} />
-            Show on Alumni page (Bansalian)
+            Show on Alumni page (Bansalite)
           </label>
           {form.is_alumni && (
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
