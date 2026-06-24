@@ -592,7 +592,7 @@ const LandingPage = () => {
               <span className="text-bansal-orange font-bold">₹99</span> to register.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              {["31 May 2026", "07 Jun 2026", "14 Jun 2026"].map((d) => (
+              {["5 July 2026", "12 July 2026"].map((d) => (
                 <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
                   {d}
                 </span>
