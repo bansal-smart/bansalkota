@@ -15,15 +15,26 @@ const STATES = [
   "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
 ];
 
+const phoneRegex = /^[0-9+\-\s()]{7,20}$/;
+
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(100),
-  phone: z.string().trim().min(7, "Enter a valid phone").max(20),
+  phone: z.string().trim().regex(phoneRegex, "Enter a valid phone"),
+  parent_phone: z.string().trim().regex(phoneRegex, "Enter a valid parent phone"),
   father_name: z.string().trim().min(2, "Enter father's name").max(100),
   class_level: z.string().min(1, "Select your class"),
   target_exam: z.string().min(1, "Select your stream"),
   city: z.string().trim().min(2, "Enter your city").max(100),
   state: z.string().min(1, "Select your state"),
 });
+
+function toE164In(phone: string): string | null {
+  const d = phone.replace(/\D/g, "");
+  if (d.length === 10) return `+91${d}`;
+  if (d.length === 12 && d.startsWith("91")) return `+${d}`;
+  if (d.length === 11 && d.startsWith("0")) return `+91${d.slice(1)}`;
+  return null;
+}
 
 const ProfileCompletionDialog = () => {
   const { user, refreshProfile } = useAuth();
