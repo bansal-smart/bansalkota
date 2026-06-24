@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Image as ImageIcon, Loader2, Save, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import LandingHeroBannersEditor from "@/components/admin/LandingHeroBannersEditor";
 
 type Banner = {
   id: string;
