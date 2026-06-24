@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Image as ImageIcon, Loader2, Save, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import LandingHeroBannersEditor from "@/components/admin/LandingHeroBannersEditor";
 
 type Banner = {
   id: string;
@@ -140,7 +141,9 @@ const AdminBannersPage = () => {
 
         {/* Editor */}
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
-          {loading ? (
+          {activeKey === "landing" ? (
+            <LandingHeroBannersEditor />
+          ) : loading ? (
             <div className="flex h-40 items-center justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
