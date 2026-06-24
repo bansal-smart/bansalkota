@@ -358,28 +358,29 @@ const AdminStudentsPage = () => {
                     onChange={(e) => setSelected(e.target.checked ? rows.map((u) => u.user_id) : [])}
                   />
                 </th>
+                <th className="p-3 text-left font-medium">Roll No</th>
                 <th className="p-3 text-left font-medium">Name</th>
-                <th className="p-3 text-left font-medium hidden md:table-cell">Email</th>
-                <th className="p-3 text-left font-medium hidden sm:table-cell">Phone</th>
-                <th className="p-3 text-left font-medium hidden xl:table-cell">Parent Phone</th>
-                <th className="p-3 text-left font-medium hidden lg:table-cell">Target Exam</th>
+                <th className="p-3 text-left font-medium hidden xl:table-cell">Father's Name</th>
+                <th className="p-3 text-left font-medium hidden sm:table-cell">Contact</th>
+                <th className="p-3 text-left font-medium hidden xl:table-cell">Parent No.</th>
+                <th className="p-3 text-left font-medium hidden xl:table-cell">DOB</th>
+                <th className="p-3 text-left font-medium hidden lg:table-cell">Stream</th>
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Class</th>
-                <th className="p-3 text-left font-medium hidden lg:table-cell">School</th>
-                <th className="p-3 text-left font-medium">Plan</th>
-                <th className="p-3 text-left font-medium hidden xl:table-cell">Joined</th>
+                <th className="p-3 text-left font-medium hidden lg:table-cell">Batch</th>
+                <th className="p-3 text-left font-medium hidden md:table-cell">Centre</th>
                 <th className="p-3 text-left font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="p-10 text-center">
+                  <td colSpan={12} className="p-10 text-center">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-10 text-center text-muted-foreground">No students found.</td>
+                  <td colSpan={12} className="p-10 text-center text-muted-foreground">No students found.</td>
                 </tr>
               ) : (
                 rows.map((u) => (
@@ -398,6 +399,7 @@ const AdminStudentsPage = () => {
                         }
                       />
                     </td>
+                    <td className="p-3 font-mono text-[11px] text-muted-foreground">{u.roll_number || "—"}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-[10px] font-bold text-primary shrink-0 overflow-hidden">
@@ -410,18 +412,17 @@ const AdminStudentsPage = () => {
                         <span className="font-medium text-foreground truncate">{u.full_name || "Unnamed"}</span>
                       </div>
                     </td>
-                    <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[200px]">{u.email || "—"}</td>
+                    <td className="p-3 hidden xl:table-cell text-muted-foreground truncate max-w-[160px]">{u.father_name || "—"}</td>
                     <td className="p-3 hidden sm:table-cell text-muted-foreground">{u.phone || "—"}</td>
                     <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.parent_phone || "—"}</td>
+                    <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.dob ? new Date(u.dob).toLocaleDateString() : "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
-                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.school_name || "—"}</td>
-                    <td className="p-3">
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">{u.plan}</span>
-                    </td>
-                    <td className="p-3 hidden xl:table-cell text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.batch_name || "—"}</td>
+                    <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[140px]">{u.centre_name || "—"}</td>
                     <td className="p-3">
                       {u.is_suspended ? (
+
                         <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive uppercase">Suspended</span>
                       ) : (
                         <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase">Active</span>
