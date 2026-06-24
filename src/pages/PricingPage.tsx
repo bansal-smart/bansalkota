@@ -98,7 +98,7 @@ const PricingPage = () => {
     { q: "Do you offer scholarships?", a: "Absolutely. We run a monthly scholarship test giving up to 100% off Elite plans for top performers and need-based students." },
     { q: "What payment methods do you accept?", a: "UPI, debit/credit cards, net banking, and EMI options on UPI/cards via Razorpay." },
     { q: "Can my parents pay for me?", a: "Yes, anyone can pay using your account. We also send GST-compliant invoices for parents and employer reimbursements." },
-    { q: "Is there a refund policy?", a: "Yes — every paid plan comes with a 7-day no-questions-asked refund window from the date of purchase." },
+    { q: "Is there a refund policy?", a: "We refund course fees only till the 7th day from the date of course commencement — applicable to every course and phase, with no exceptions.\n\nIf you join late, miss classes, or never attend a single session, the refund window still closes on the 7th day. Refunds are only possible out of the First Installment and before the dates stated in the Information Bulletin. No refund is allowed from the Second Installment, and no refund is given if you leave after the last refund date.\n\nRequests must be submitted in hard copy (fax, phone, SMS, or mobile requests are not accepted) personally or by post to: Account Manager, Bansal Classes, A-11(a), IPIA, Road No. 1, Kota, Rajasthan. Include your name, roll number, course, original receipt, ID card, and full bank details (bank name, account number, branch, and account holder name). Once the application is received and verified, refund is initiated within 10–15 working days. For any legal dispute, jurisdiction is Kota (Rajasthan) only." },
   ];
 
   return (
