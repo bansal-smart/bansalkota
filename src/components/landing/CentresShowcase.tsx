@@ -35,7 +35,7 @@ const CentresShowcase = () => {
             A Bansal Centre Near <span className="text-bansal-orange">You</span>
           </h2>
           <p className="mt-2 text-sm md:text-base text-bansal-gray">
-            100+ centres across India — every one staffed with master mentors, libraries and the same Bansal curriculum
+            85+ centres across India — every one staffed with master mentors, libraries and the same Bansal curriculum
             that built Kota.
           </p>
           <div className="mt-5 max-w-md mx-auto relative">
