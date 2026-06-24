@@ -254,7 +254,7 @@ const AdminCourseContentPage = () => {
   const loadCourseDetail = async (courseId: string) => {
     setResLoading(true);
     const [{ data: ch }, { data: ls }, { data: rs }, { data: vids }] = await Promise.all([
-      supabase.from("chapters").select("id,title,position,is_published").eq("course_id", courseId).order("position"),
+      supabase.from("chapters").select("id,title,position,is_published,subject").eq("course_id", courseId).order("position"),
       supabase.from("lessons").select("id,course_id,chapter_id,slug,title,position,duration_seconds,is_free_preview,is_published,type").eq("course_id", courseId).order("position"),
       supabase.from("course_resources").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
       supabase.rpc("admin_get_lessons_full", { _course_id: courseId }),
