@@ -28,6 +28,7 @@ type StudentRow = {
   centre_name?: string | null;
   batch_id?: string | null;
   batch_name?: string | null;
+  batch_label?: string | null;
 };
 
 type CentreLite = { id: string; city: string; area: string | null; slug: string };
