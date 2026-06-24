@@ -156,7 +156,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, page, schoolFilter, schools]);
+  }, [search, page, centreFilter, centres, batches]);
 
   useEffect(() => {
     load();
