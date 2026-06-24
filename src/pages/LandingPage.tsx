@@ -483,7 +483,7 @@ const LandingPage = () => {
           <div className="text-center max-w-2xl mx-auto">
             <BansalBadge tone="blue">Teaching Programs</BansalBadge>
             <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black">
-              Two Ways to Learn the <span className="text-bansal-orange">Bansal Way</span>
+              Two Ways to Learn the - <span className="text-bansal-orange">Bansal Way</span>
             </h2>
             <p className="mt-3 text-sm md:text-base text-bansal-gray">
               Whether you walk into a Bansal center or learn from home, the standards stay legendary.
