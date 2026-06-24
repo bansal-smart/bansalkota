@@ -41,16 +41,16 @@ const centreLabel = (c: { city: string; area: string | null }) =>
 
 const exportCsv = (rows: StudentRow[]) => {
   const header = [
-    "Name", "Email", "Phone", "Parent Phone", "Plan", "Target Exam", "Class", "Goal",
-    "City", "Country", "Onboarding", "Suspended", "Joined",
+    "Roll No", "Student Name", "Father's Name", "Contact No.", "Parent No.",
+    "DOB", "Stream", "Class", "Batch", "Centre", "Email", "Plan", "Joined",
   ];
   const lines = rows.map((u) =>
     [
-      u.full_name ?? "", u.email ?? "", u.phone ?? "", u.parent_phone ?? "", u.plan,
-      u.target_exam ?? "", u.class_level ?? "", u.goal ?? "",
-      u.city ?? "", u.country ?? "",
-      u.onboarding_completed ? "Yes" : "No",
-      u.is_suspended ? "Yes" : "No",
+      u.roll_number ?? "", u.full_name ?? "", u.father_name ?? "",
+      u.phone ?? "", u.parent_phone ?? "",
+      u.dob ?? "", u.target_exam ?? "", u.class_level ?? "",
+      u.batch_name ?? "", u.centre_name ?? "",
+      u.email ?? "", u.plan,
       new Date(u.created_at).toISOString(),
     ]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
@@ -69,6 +69,7 @@ const exportCsv = (rows: StudentRow[]) => {
 const PLAN_OPTIONS = ["Free", "Pro", "Elite"];
 
 const AdminStudentsPage = () => {
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<StudentRow[]>([]);
