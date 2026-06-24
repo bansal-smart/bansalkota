@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Download, Upload, X, Loader2, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 export type CsvField = {
