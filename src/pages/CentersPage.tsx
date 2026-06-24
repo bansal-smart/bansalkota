@@ -33,8 +33,7 @@ export default function CentersPage() {
     });
   }, [query, region]);
 
-  const displayName = (c: DBCenter) =>
-    c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city;
+  const displayName = (c: DBCenter) => (c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city);
 
   const regionCount = (r: (typeof REGIONS)[number]) =>
     r === "All" ? CENTER_COUNT : CENTERS.filter((c) => c.region === r).length;
@@ -43,19 +42,33 @@ export default function CentersPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-14 md:py-20 relative overflow-hidden">
-        <img src={banner?.image_url || centersHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <img
+          src={banner?.image_url || centersHero}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-60"
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue/85 via-bansal-blue/80 to-bansal-blue-dark/90" />
         <div className="absolute inset-0 grid-texture opacity-40" />
         <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-bansal-orange/30 blur-3xl" />
         <FloatingIcons defaultTone="white" />
         <DotTexture tone="white" className="opacity-25 decor-fade" />
         <div className="container mx-auto px-4 max-w-5xl text-center relative">
-          <BansalBadge tone="orange" className="mb-4">Offline Network · Pan India</BansalBadge>
+          <BansalBadge tone="orange" className="mb-4">
+            Offline Network · Pan India
+          </BansalBadge>
           <h1 className="font-display text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
-            {banner?.headline ? banner.headline : (<>Bansal Classes <span className="text-bansal-orange">Centres</span></>)}
+            {banner?.headline ? (
+              banner.headline
+            ) : (
+              <>
+                Bansal Classes <span className="text-bansal-orange">Centres</span>
+              </>
+            )}
           </h1>
           <p className="text-white/85 text-base md:text-lg max-w-2xl mx-auto">
-            {banner?.subheading || `From the legendary Kota headquarters to ${CENTER_COUNT - 1}+ centres across India — walk in to a Bansal centre near you for counselling, demo classes & admissions.`}
+            {banner?.subheading ||
+              `From the legendary Kota headquarters to ${CENTER_COUNT - 1}+ centres across India — walk in to a Bansal centre near you for counselling, demo classes & admissions.`}
           </p>
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto">
             <div className="rounded-2xl bg-white/10 backdrop-blur p-4">
@@ -67,7 +80,7 @@ export default function CentersPage() {
               <div className="text-xs text-white/80 mt-1">States & UTs</div>
             </div>
             <div className="rounded-2xl bg-white/10 backdrop-blur p-4">
-              <div className="font-display text-3xl font-extrabold text-bansal-orange">34+</div>
+              <div className="font-display text-3xl font-extrabold text-bansal-orange">45+</div>
               <div className="text-xs text-white/80 mt-1">Years Legacy</div>
             </div>
           </div>
@@ -196,8 +209,8 @@ export default function CentersPage() {
             Not sure which centre suits you?
           </h2>
           <p className="text-muted-foreground mb-6">
-            Talk to a Bansal admissions counsellor — we'll guide you on programs, batches,
-            and the nearest centre with available seats.
+            Talk to a Bansal admissions counsellor — we'll guide you on programs, batches, and the nearest centre with
+            available seats.
           </p>
           <a href="/contact">
             <BansalButton variant="cta">Talk to a Counsellor</BansalButton>
