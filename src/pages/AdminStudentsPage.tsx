@@ -340,6 +340,63 @@ const AdminStudentsPage = () => {
         onDone={() => load()}
       />
 
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !addSaving && setAddOpen(false)}>
+          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                <h2 className="font-bold">Add Student</h2>
+              </div>
+              <button onClick={() => !addSaving && setAddOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { k: "roll_number", l: "Roll No *", ph: "1001" },
+                { k: "full_name", l: "Student Name *", ph: "Aviral Singh" },
+                { k: "father_name", l: "Father's Name", ph: "Ashok Kumar Singh" },
+                { k: "phone", l: "Contact No.", ph: "7857852344" },
+                { k: "parent_phone", l: "Parent No.", ph: "7909075201" },
+                { k: "dob", l: "DOB", ph: "2008-05-12" },
+                { k: "target_exam", l: "Stream", ph: "JEE / NEET" },
+                { k: "class_level", l: "Class", ph: "XI" },
+                { k: "batch", l: "Batch", ph: "Bull's Eye" },
+                { k: "centre", l: "Centre *", ph: "Jamshedpur" },
+              ].map((f) => (
+                <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
+                  <span>{f.l}</span>
+                  <input
+                    value={addForm[f.k] ?? ""}
+                    onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
+                    placeholder={f.ph}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-border p-4">
+              <button
+                onClick={() => setAddOpen(false)}
+                disabled={addSaving}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitAddStudent}
+                disabled={addSaving}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {addSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+                {addSaving ? "Adding..." : "Add Student"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
