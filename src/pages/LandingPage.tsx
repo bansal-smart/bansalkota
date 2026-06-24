@@ -606,7 +606,7 @@ const LandingPage = () => {
           <div>
             <BansalBadge tone="blue">Pan-India Presence</BansalBadge>
             <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
-              100+ Centres Across <span className="text-bansal-orange">India</span>
+              85+ Centres Across <span className="text-bansal-orange">India</span>
             </h2>
             <p className="mt-4 text-sm md:text-base text-bansal-gray">
               From our headquarters in Kota to every major city — find a Bansal centre near you and start your journey with India's most trusted coaching legacy.
