@@ -8,6 +8,7 @@ type StudentRow = {
   user_id: string;
   full_name: string | null;
   phone: string | null;
+  parent_phone: string | null;
   avatar_url: string | null;
   country: string | null;
   city: string | null;
