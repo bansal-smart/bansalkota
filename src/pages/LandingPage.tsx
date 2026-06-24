@@ -136,7 +136,7 @@ const expertise = [
     Icon: Brain,
     title: "Faculty Depth",
     desc: "IIT & AIIMS alumni faculty trained on the Bansal pedagogy — concepts first, application always.",
-    bullets: ["20+ IIT alumni mentors", "15+ PhD subject heads", "Trained in JEE/NEET pattern shifts"],
+    bullets: ["IIT alumni mentors", "PhD subject heads", "Trained in JEE/NEET pattern shifts"],
   },
   {
     Icon: PenTool,
