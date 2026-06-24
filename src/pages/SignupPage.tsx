@@ -223,7 +223,6 @@ const SignupPage = () => {
                 <label className="text-sm font-medium text-foreground">Country</label>
                 <select value={form.country} onChange={(e) => update("country", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground">
                   <option>India</option>
-                  <option>UAE</option>
                 </select>
               </div>
             </div>

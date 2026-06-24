@@ -42,7 +42,7 @@ const ResourcesTeaser = () => (
           Start Studying the <span className="text-bansal-orange">Bansal Way</span> — Today
         </h2>
         <p className="mt-2 text-sm md:text-base text-bansal-gray">
-          No credit card. No catch. Unlock the same resources used by 2L+ Bansal scholars across India and Dubai.
+          No credit card. No catch. Unlock the same resources used by 2L+ Bansal scholars across India.
         </p>
       </div>
 
