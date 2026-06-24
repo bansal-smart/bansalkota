@@ -7,6 +7,7 @@ import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog
 type StudentRow = {
   user_id: string;
   full_name: string | null;
+  father_name: string | null;
   phone: string | null;
   parent_phone: string | null;
   avatar_url: string | null;
@@ -21,13 +22,22 @@ type StudentRow = {
   doubt_preference: string;
   created_at: string;
   email?: string | null;
-  school_id?: string | null;
-  school_name?: string | null;
+  roll_number: string | null;
+  dob: string | null;
+  centre_id?: string | null;
+  centre_name?: string | null;
+  batch_id?: string | null;
+  batch_name?: string | null;
 };
 
-type SchoolLite = { id: string; name: string };
+type CentreLite = { id: string; city: string; area: string | null; slug: string };
+type BatchLite = { id: string; name: string; code: string | null };
 
 const PAGE_SIZE = 25;
+
+const centreLabel = (c: { city: string; area: string | null }) =>
+  c.area ? `${c.city} — ${c.area}` : c.city;
+
 
 const exportCsv = (rows: StudentRow[]) => {
   const header = [
