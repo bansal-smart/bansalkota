@@ -159,6 +159,7 @@ const AdminStudentsPage = () => {
     setEdit({
       full_name: u.full_name ?? "",
       phone: u.phone ?? "",
+      parent_phone: u.parent_phone ?? "",
       target_exam: u.target_exam ?? "",
       class_level: u.class_level ?? "",
       city: u.city ?? "",
@@ -464,6 +465,7 @@ const AdminStudentsPage = () => {
                 {[
                   { key: "full_name", label: "Full name" },
                   { key: "phone", label: "Phone" },
+                  { key: "parent_phone", label: "Parent phone" },
                   { key: "target_exam", label: "Target exam" },
                   { key: "class_level", label: "Class level" },
                   { key: "city", label: "City" },
