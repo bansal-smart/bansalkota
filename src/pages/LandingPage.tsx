@@ -195,15 +195,15 @@ const LandingPage = () => {
 
         <div className="relative container mx-auto px-4 py-10 md:py-20 lg:py-24 grid lg:grid-cols-[1.05fr_1fr] gap-8 md:gap-10 items-center">
           <div className="animate-fade-in-up">
-            <BansalBadge tone="orange">
-              <Sparkles className="h-3 w-3 mr-1" /> Since 1984 · Kota, Rajasthan
+              <BansalBadge tone="orange">
+              <Sparkles className="h-3 w-3 mr-1" /> Since 1981 · Kota, Rajasthan
             </BansalBadge>
             <h1 className="mt-5 font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
               Ideal Guidance.{" "}
               <span className="text-bansal-orange">Exceptional Results.</span>
             </h1>
             <p className="mt-5 text-base md:text-lg text-white/85 max-w-xl">
-              India's most trusted JEE &amp; NEET coaching institute since 1984. Powering dreams from Kota to every corner of India.
+              India's most trusted JEE &amp; NEET coaching institute since 1981. Powering dreams from Kota to every corner of India.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/courses">
@@ -218,9 +218,9 @@ const LandingPage = () => {
 
             {/* Trust strip */}
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/75">
-              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-bansal-orange" /> 40+ Yrs Legacy</span>
-              <span className="flex items-center gap-1.5"><Trophy className="h-4 w-4 text-bansal-orange" /> 2,500+ IIT Selections</span>
-              <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-bansal-orange" /> 100+ Centres</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-bansal-orange" /> 45+ Yrs Legacy</span>
+              <span className="flex items-center gap-1.5"><GraduationCap className="h-4 w-4 text-bansal-orange" /> 1,00,000+ IITians & Doctors</span>
+              <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-bansal-orange" /> 85+ Centres</span>
             </div>
           </div>
 
