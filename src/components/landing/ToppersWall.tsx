@@ -55,7 +55,7 @@ const ToppersWall = () => {
 
         <div className="mt-8 text-center">
           <Link to="/achievements" className="inline-flex items-center gap-1 text-sm font-semibold text-bansal-blue hover:text-bansal-orange">
-            See all 5,000+ selections <ArrowRight className="h-4 w-4" />
+            See all selections <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

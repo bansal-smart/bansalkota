@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     q: "Which exams do you prepare students for?",
-    a: "JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X), NTSE & Olympiads. Dedicated batches exist for repeaters and droppers.",
+    a: "JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X) & Olympiads. Dedicated batches exist for repeaters and droppers.",
   },
   {
     q: "Can I learn online or only in classroom?",
@@ -33,7 +33,7 @@ const faqs = [
   },
   {
     q: "Do you have a centre in my city?",
-    a: "Bansal operates 100+ centres across India and Dubai. Use the Centres section above to find the one nearest you — or learn online with the same faculty.",
+    a: "Bansal operates 100+ centres across India. Use the Centres section above to find the one nearest you — or learn online with the same faculty.",
   },
   {
     q: "What makes Bansal different from other coaching brands?",
