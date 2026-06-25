@@ -83,6 +83,12 @@ const faqs = [
 export default function BoostPage() {
   const [regOpen, setRegOpen] = useState(false);
   const boost = useBoostSettings();
+  const timeline = [
+    { phase: "Registration", date: "Open Now", desc: `Pay ₹${boost.priceInr} and reserve your slot on bansal.ac.in` },
+    { phase: "Admit Card", date: "T-3 days", desc: "Download your admit card from the official portal" },
+    { phase: "Test Day", date: "Every Sunday", desc: "Online slots and offline center slots available" },
+    { phase: "Result", date: "Within 48 hrs", desc: "Scholarship + counselling call from Bansal admissions" },
+  ];
   return (
     <div className="min-h-screen bg-background">
       <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
