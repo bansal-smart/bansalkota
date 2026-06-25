@@ -5,6 +5,26 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useExams } from "@/hooks/useExams";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
+
+const EDUCATION_LEVELS = [
+  "Class 6",
+  "Class 7",
+  "Class 8",
+  "Class 9",
+  "Class 10",
+  "Class 11",
+  "Class 12",
+  "Class 9th–10th",
+  "Class 11th–12th",
+  "Droppers",
+];
+const DURATION_OPTIONS = ["6 Months", "1 Year", "2 Years", "Up to 12 Months", "Up to 24 Months"];
+const MODE_OPTIONS = ["Online", "Offline", "Hybrid", "Residential"];
+const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
+const SUBJECT_PRESETS = ["Physics", "Chemistry", "Maths", "Biology", "All Subjects"];
+
 
 const slugify = (s: string) =>
   s
