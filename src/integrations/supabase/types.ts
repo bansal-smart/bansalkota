@@ -1129,6 +1129,7 @@ export type Database = {
           id: string
           message: string | null
           paid_at: string | null
+          parent_phone: string | null
           payment_id: string | null
           payment_order_id: string | null
           payment_status: string
@@ -1152,6 +1153,7 @@ export type Database = {
           id?: string
           message?: string | null
           paid_at?: string | null
+          parent_phone?: string | null
           payment_id?: string | null
           payment_order_id?: string | null
           payment_status?: string
@@ -1175,6 +1177,7 @@ export type Database = {
           id?: string
           message?: string | null
           paid_at?: string | null
+          parent_phone?: string | null
           payment_id?: string | null
           payment_order_id?: string | null
           payment_status?: string

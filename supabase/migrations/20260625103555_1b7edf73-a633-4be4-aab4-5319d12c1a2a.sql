@@ -1,0 +1,1 @@
+ALTER TABLE public.course_enquiries ADD COLUMN parent_phone TEXT;
