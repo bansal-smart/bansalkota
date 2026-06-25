@@ -547,9 +547,9 @@ const CourseDetailPage = () => {
         <aside className="lg:sticky lg:top-24 self-start space-y-4">
           {/* Banner + payment card */}
           <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-            <div className="aspect-[4/3] bg-gradient-to-br from-[hsl(var(--navy))] to-[hsl(var(--navy2))] flex items-center justify-center overflow-hidden">
+            <div className="bg-gradient-to-br from-[hsl(var(--navy))] to-[hsl(var(--navy2))] flex items-center justify-center overflow-hidden">
               {course.thumbnail_url ? (
-                <img src={course.thumbnail_url} alt={course.name} className="h-full w-full object-cover" />
+                <img src={course.thumbnail_url} alt={course.name} className="w-full h-auto object-contain" />
               ) : (
                 <div className="text-center text-white px-4">
                   <p className="font-display text-3xl font-black text-primary">{category}</p>
