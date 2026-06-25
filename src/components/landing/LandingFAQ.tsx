@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     q: "Can I learn online or only in classroom?",
-    a: "Both. Choose Classroom Learning Programs (CLP) at any of our 100+ centres, or fully online Live Classes with the same faculty and study material.",
+    a: "Both. Choose Classroom Learning Programs (CLP) at any of our 85+ centres, or fully online Live Classes with the same faculty and study material.",
   },
   {
     q: "What is the BOOST scholarship and how do I qualify?",
@@ -33,11 +33,11 @@ const faqs = [
   },
   {
     q: "Do you have a centre in my city?",
-    a: "Bansal operates 100+ centres across India. Use the Centres section above to find the one nearest you — or learn online with the same faculty.",
+    a: "Bansal operates 85+ centres across India. Use the Centres section above to find the one nearest you — or learn online with the same faculty.",
   },
   {
     q: "What makes Bansal different from other coaching brands?",
-    a: "Refined pedagogy since 1981, IIT/AIIMS alumni faculty, a legendary printed study material set and a results-first culture that has produced more than 1,00,000+ IITians and doctors.",
+    a: "Refined pedagogy since 1981, IIT/AIIMS alumni faculty, a legendary printed study material set and a results-first culture that has produced more than 1,00,000+ IITians, NITians and doctors.",
   },
 ];
 
