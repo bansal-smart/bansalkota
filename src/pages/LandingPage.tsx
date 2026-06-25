@@ -695,8 +695,6 @@ const LandingPage = () => {
       {/* 11. Toppers Wall (live from DB) */}
       <ToppersWall />
 
-      {/* 13. Free Resources teaser */}
-      <ResourcesTeaser />
 
       {/* 14. Centres Showcase (live from DB) */}
       <CentresShowcase />
