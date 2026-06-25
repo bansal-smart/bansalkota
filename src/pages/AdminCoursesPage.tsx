@@ -198,6 +198,27 @@ const AdminCoursesPage = () => {
               <tbody>
                 {paged.map((c) => (
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-2 py-3">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <button
+                          onClick={() => move(c, -1)}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-30"
+                          title="Move up"
+                          disabled={!!search}
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-[10px] text-muted-foreground tabular-nums">{c.sort_order ?? 0}</span>
+                        <button
+                          onClick={() => move(c, 1)}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-30"
+                          title="Move down"
+                          disabled={!!search}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
