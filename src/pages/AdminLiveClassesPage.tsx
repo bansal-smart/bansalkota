@@ -517,7 +517,7 @@ const AdminLiveClassesPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white">
+      <div className="rounded-2xl bg-[#1C3F8E] p-6 text-white">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-black font-display">Live Classes</h1>
