@@ -57,6 +57,7 @@ const baseNav: NavItem[] = [
   { label: "Centres", icon: MapPin, path: "/admin/centres" },
   { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
   { label: "Topper Students", icon: Award, path: "/admin/toppers" },
+  { label: "Achievement Posters", icon: ImageIcon, path: "/admin/achievement-posters" },
   { label: "Alumni Submissions", icon: GraduationCap, path: "/admin/alumni-submissions" },
   { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
   { label: "Testimonials", icon: Quote, path: "/admin/testimonials" },
