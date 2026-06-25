@@ -4,9 +4,9 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useExams } from "@/hooks/useExams";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
+import { X } from "lucide-react";
 
 const EDUCATION_LEVELS = [
   "Class 6",
@@ -23,7 +23,7 @@ const EDUCATION_LEVELS = [
 const DURATION_OPTIONS = ["6 Months", "1 Year", "2 Years", "Up to 12 Months", "Up to 24 Months"];
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid", "Residential"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
-const SUBJECT_PRESETS = ["Physics", "Chemistry", "Maths", "Biology", "All Subjects"];
+const EXAM_OPTIONS = ["IIT-JEE", "NEET", "Foundation"];
 
 
 const slugify = (s: string) =>
@@ -38,7 +38,6 @@ type DraftLecture = { id?: string; title: string; durationMin: number };
 type DraftChapter = { id?: string; title: string; lectures: DraftLecture[] };
 
 const CreateCoursePage = () => {
-  const { examNames } = useExams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId?: string }>();
@@ -50,9 +49,9 @@ const CreateCoursePage = () => {
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [exam, setExam] = useState("JEE");
-  const [subject, setSubject] = useState("Physics");
+  const [exam, setExam] = useState("IIT-JEE");
   const [educatorName, setEducatorName] = useState("");
+  const [subjectInput, setSubjectInput] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [originalPrice, setOriginalPrice] = useState<number>(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -94,8 +93,7 @@ const CreateCoursePage = () => {
       setShortDesc((c.short_description as string | null) ?? "");
       setDescription(course.description ?? "");
       setDescriptionHtml((c.description_html as string | null) ?? "");
-      setExam(course.target_exam ?? "JEE");
-      setSubject(course.subject ?? "Physics");
+      setExam(course.target_exam ?? "IIT-JEE");
       setEducatorName(course.educator_name ?? "");
       setPrice(Number(course.price ?? 0));
       setOriginalPrice(Number(course.original_price ?? 0));
@@ -192,7 +190,7 @@ const CreateCoursePage = () => {
       description: description || shortDesc,
       short_description: shortDesc || null,
       description_html: descriptionHtml || null,
-      subject,
+      subject: subjectsCovered[0] || "General",
       target_exam: exam,
       educator_name: resolvedEducatorName,
       price,
@@ -264,7 +262,7 @@ const CreateCoursePage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pb-32 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 lg:p-6 pb-10 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
@@ -305,58 +303,48 @@ const CreateCoursePage = () => {
             placeholder="Shown below the course name (e.g. Online course for Class XII PCM students)"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-foreground">Exam</label>
-            <select value={exam} onChange={(e) => setExam(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-              {examNames.map((x) => <option key={x}>{x}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground">Subject</label>
-            <select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-              <option>Physics</option>
-              <option>Chemistry</option>
-              <option>Maths</option>
-              <option>Biology</option>
-            </select>
-          </div>
+        <div>
+          <label className="text-xs font-semibold text-foreground">Exam</label>
+          <select value={exam} onChange={(e) => setExam(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+            {EXAM_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+          </select>
         </div>
-        {isAdminContext && (
-          <div>
-            <label className="text-xs font-semibold text-foreground">Educator Name</label>
-            <input
-              value={educatorName}
-              onChange={(e) => setEducatorName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              placeholder="e.g. Vikram Thapar"
-            />
-          </div>
-        )}
         <div>
           <label className="text-xs font-semibold text-foreground">Subjects Covered</label>
-          <p className="text-[11px] text-muted-foreground mb-1.5">Shown as chips under "Subjects Covered" on the course detail page.</p>
-          <div className="flex flex-wrap gap-2">
-            {SUBJECT_PRESETS.map((s) => {
-              const active = subjectsCovered.includes(s);
-              return (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() =>
-                    setSubjectsCovered(active ? subjectsCovered.filter((x) => x !== s) : [...subjectsCovered, s])
-                  }
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-foreground border-border hover:border-primary"
-                  }`}
-                >
+          <p className="text-[11px] text-muted-foreground mb-1.5">Type a subject and press Enter to add as a chip.</p>
+          {subjectsCovered.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {subjectsCovered.map((s) => (
+                <span key={s} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold">
                   {s}
-                </button>
-              );
-            })}
-          </div>
+                  <button
+                    type="button"
+                    onClick={() => setSubjectsCovered(subjectsCovered.filter((x) => x !== s))}
+                    className="hover:text-destructive"
+                    aria-label={`Remove ${s}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            value={subjectInput}
+            onChange={(e) => setSubjectInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const v = subjectInput.trim().replace(/,$/, "");
+                if (v && !subjectsCovered.includes(v)) setSubjectsCovered([...subjectsCovered, v]);
+                setSubjectInput("");
+              } else if (e.key === "Backspace" && !subjectInput && subjectsCovered.length) {
+                setSubjectsCovered(subjectsCovered.slice(0, -1));
+              }
+            }}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="e.g. Physics — press Enter"
+          />
         </div>
       </div>
 
@@ -467,19 +455,19 @@ const CreateCoursePage = () => {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-        <div className="max-w-3xl mx-auto flex gap-3 px-4 py-3 lg:px-6">
+      <div className="sticky bottom-4 z-30 flex justify-end mt-8 pointer-events-none">
+        <div className="pointer-events-auto flex gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
           <button
             disabled={submitting}
             onClick={() => submit(false)}
-            className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save as Draft" : "Save Draft"}
           </button>
           <button
             disabled={submitting}
             onClick={() => submit(true)}
-            className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
+            className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save & Publish" : "Publish Course"}
           </button>

@@ -273,10 +273,10 @@ const CoursesPage = () => {
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                       {c.original_price && c.original_price > c.price && (
                         <span className="text-xs line-through text-muted-foreground">
-                          ₹{Number(c.original_price).toLocaleString()}
+                          ₹{Number(c.original_price).toLocaleString("en-IN")}
                         </span>
                       )}
-                      <span className="text-sm font-bold text-foreground">₹{Number(c.price).toLocaleString()}</span>
+                      <span className="text-sm font-bold text-foreground">₹{Number(c.price).toLocaleString("en-IN")}</span>
                       {!!c.discount_percent && c.discount_percent > 0 && (
                         <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
                           {c.discount_percent}% OFF

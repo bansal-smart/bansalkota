@@ -264,10 +264,10 @@ const CourseDetailPage = () => {
               <span className="flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-primary text-primary" />
                 <strong className="text-foreground">{Number(course.rating || 4.8).toFixed(1)}</strong>
-                <span>({(course.total_enrolled || 2100).toLocaleString()} reviews)</span>
+                <span>({(course.total_enrolled || 2100).toLocaleString("en-IN")} reviews)</span>
               </span>
               <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-primary" /> {(course.total_enrolled || 12400).toLocaleString()}{" "}
+                <Users className="h-3.5 w-3.5 text-primary" /> {(course.total_enrolled || 12400).toLocaleString("en-IN")}{" "}
                 enrolled
               </span>
             </div>
@@ -375,7 +375,7 @@ const CourseDetailPage = () => {
 
             {course.description_html ? (
               <div
-                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground"
+                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-headings:mt-6 prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground [&_p:empty]:block [&_p:empty]:h-4 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1"
                 dangerouslySetInnerHTML={{ __html: course.description_html }}
               />
             ) : (
@@ -399,7 +399,7 @@ const CourseDetailPage = () => {
                 <div>
                   <p className="text-sm font-bold text-foreground mb-1.5">Fee Structure:</p>
                   <p className="text-xs text-foreground">
-                    Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString()}/-</span>{" "}
+                    Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString("en-IN")}/-</span>{" "}
                     <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
                   </p>
                 </div>
@@ -536,10 +536,10 @@ const CourseDetailPage = () => {
               <div className="flex items-baseline gap-2 flex-wrap">
                 {course.original_price && course.original_price > course.price && (
                   <span className="text-sm text-muted-foreground line-through">
-                    ₹{Number(course.original_price).toLocaleString()}
+                    ₹{Number(course.original_price).toLocaleString("en-IN")}
                   </span>
                 )}
-                <span className="font-display text-2xl font-black text-foreground">₹{price.toLocaleString()}</span>
+                <span className="font-display text-2xl font-black text-foreground">₹{price.toLocaleString("en-IN")}</span>
                 {discount > 0 && <span className="text-xs font-bold text-destructive">{discount}% Off</span>}
               </div>
 
@@ -548,7 +548,7 @@ const CourseDetailPage = () => {
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Price</span>
-                    <span className="text-foreground">₹{price.toLocaleString()}</span>
+                    <span className="text-foreground">₹{price.toLocaleString("en-IN")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Coupon Discount</span>
@@ -556,7 +556,7 @@ const CourseDetailPage = () => {
                   </div>
                   <div className="flex justify-between border-t border-border pt-2 mt-2">
                     <span className="font-bold text-foreground">Total Payable</span>
-                    <span className="font-bold text-foreground">₹{price.toLocaleString()}.00</span>
+                    <span className="font-bold text-foreground">₹{price.toLocaleString("en-IN")}.00</span>
                   </div>
                 </div>
               </div>

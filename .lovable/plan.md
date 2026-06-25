@@ -1,61 +1,42 @@
-# Plan
+## 1. Indian number format for prices
 
-## 1. Landing page cleanup (`src/pages/LandingPage.tsx`)
-- Remove the entire "Why Bansal" section (BansalBadge "Why Bansal" → Read More button, ~lines 370–441, including the paired Since-1981 image block).
-- Remove the `<ResourcesTeaser />` render and its import (the "Free Forever" section).
+Replace `.toLocaleString()` with `.toLocaleString("en-IN")` everywhere a course/book price renders so ₹135,700 becomes ₹1,35,700.
 
-## 2. Courses heading (`src/pages/CoursesPage.tsx`)
-- Replace `Popular Batches` → `Popular Courses`.
+Files to touch:
+- `src/pages/CourseDetailPage.tsx` — price, original_price, fee-structure breakdown lines
+- `src/pages/CoursesPage.tsx` — card prices
+- `src/pages/BookDetailPage.tsx`, `src/pages/EStorePage.tsx`, `src/pages/CheckoutPage.tsx`, `src/pages/OrdersPage.tsx` — quick audit and fix any plain `toLocaleString()` on rupee values
 
-## 3. Footer + utility bar (`src/components/PublicLayout.tsx`)
-- Footer email `info@bansal.ac.in` → `admin@bansal.ac.in`.
-- Replace Quick Links with: Achievements (`/achievements`), Disclaimer (`/disclaimer`), Terms & Conditions (`/terms`), Privacy Policy (`/privacy`), Refund Policy (`/refund-policy`).
-- Fix top-bar "Find a Centre" link `/centers` → `/centres`.
+(`FeaturedProductsSection`/`UpcomingBatches` already use `en-IN`.)
 
-## 4. Editable legal/info pages from admin panel
+## 2. Render tables & spacing in admin-authored description
 
-### 4a. Database
-New migration creating `site_pages` (one row per page, identified by slug):
-- columns: `slug` (text PK, e.g. `achievements`, `disclaimer`, `terms`, `privacy`, `refund-policy`), `title` (text), `content_html` (text), `updated_at`, `updated_by`.
-- Grants: `SELECT` to `anon` + `authenticated` (public read); `ALL` to `service_role`; `INSERT/UPDATE` to `authenticated`.
-- RLS: anyone may read; only `admin` / `super_admin` (via existing `has_role`) may insert/update/delete.
-- Seed the 5 rows with initial copy fetched from:
-  - https://bansal.ac.in/achievements
-  - https://bansal.ac.in/disclaimer
-  - https://bansal.ac.in/terms-conditions
-  - https://bansal.ac.in/privacy-policy
-  - https://bansal.ac.in/refund-policy
+The detail page renders `description_html` inside Tailwind `prose`, which collapses empty paragraphs and gives tables no borders. Update the wrapper in `src/pages/CourseDetailPage.tsx` (the block around line 376) so the saved HTML matches what the rich-text editor shows:
 
-  For Refund Policy, preserve the previously-agreed 7-day / hard-copy wording the user pinned earlier; only update surrounding copy.
+- Add table styling utilities (same set used in `RichTextEditor.tsx`): `[&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1`
+- Preserve gaps between sections: add `[&_p:empty]:h-4 [&_p:empty]:block` (so empty paragraphs from Enter-Enter still show vertical gap) and `prose-headings:mt-6`.
 
-### 4b. Public pages
-Update these files to load `content_html` from `site_pages` by slug and render via the project's `prose` styles inside the existing page chrome:
-- `src/pages/AchievementsPage.tsx` — keep the dynamic Wall of Fame data; replace only the static intro/marketing copy with the CMS content block.
-- `src/pages/DisclaimerPage.tsx`
-- `src/pages/TermsOfServicePage.tsx`
-- `src/pages/PrivacyPolicyPage.tsx`
-- `src/pages/RefundPolicyPage.tsx`
+## 3. Course create/edit form fixes (`src/pages/CreateCoursePage.tsx`)
 
-Show a small skeleton while loading; fall back to the seeded HTML if the row is missing.
+- **Exam dropdown**: replace `examNames` from `useExams` with a hardcoded list `["IIT-JEE", "NEET", "Foundation"]`. Default value `"IIT-JEE"`.
+- **Remove Subject dropdown** (top-level `subject` select). Keep saving `subject` in payload as the first item of `subjectsCovered` (or `"General"` fallback) so existing DB column stays satisfied.
+- **Remove Educator Name input** (the `isAdminContext` block). On submit, fall back to user's name/email automatically (already implemented in `resolvedEducatorName`).
+- **Subjects Covered → chip input**: remove the `SUBJECT_PRESETS` toggle buttons. Add a text input; pressing Enter (or comma) pushes the trimmed value into `subjectsCovered` and clears the field; each chip has an × button to remove. Display existing chips above the input.
+- **Floating action bar**:
+  - Change container from `fixed bottom-0 left-0 right-0` to a sticky bar inside the form column. Use `sticky bottom-0` with a transparent outer wrapper and an inner pill (`bg-card border border-border rounded-xl shadow-lg`) so it sits only over the form, not over the admin sidebar.
+  - Increase form bottom padding (`pb-32` → `pb-40`) and add `mb-8` after the Pricing card so the price inputs are never hidden under the bar.
 
-### 4c. Admin panel
-- New folder of admin pages, one per slug, each using the existing `RichTextEditor` (`src/components/RichTextEditor.tsx`) with a Title input, content editor, and Save button that upserts into `site_pages`.
-  - `src/pages/AdminPageAchievementsPage.tsx`
-  - `src/pages/AdminPageDisclaimerPage.tsx`
-  - `src/pages/AdminPageTermsPage.tsx`
-  - `src/pages/AdminPagePrivacyPage.tsx`
-  - `src/pages/AdminPageRefundPage.tsx`
+No DB / schema changes required.
 
-  All share a tiny internal `<SitePageEditor slug=... />` component to avoid duplication (kept inside the admin pages directory).
-- Register the 5 routes in `src/App.tsx` under the existing admin layout.
-- Add a sidebar group "Site Pages" in `src/components/AdminLayout.tsx` with one nav link per page (Achievements, Disclaimer, Terms & Conditions, Privacy Policy, Refund Policy).
-
-## 5. Admin testimonials — explicit Edit button (`src/pages/AdminTestimonialsPage.tsx`)
-- Switch the always-inline editor to read-only rows.
-- Each row shows name, rank label, quote excerpt, rating, region, active toggle, with `Edit` and `Delete` buttons.
-- `Edit` (and `Add`) open a shadcn `Dialog` containing the existing fields and a Save button that reuses the current upsert logic.
-- No schema changes.
-
-## Out of scope
-- No changes to other admin modules.
-- No new auth/role definitions; reuse existing admin/super_admin roles.
+### Technical detail
+- `inrFormat = (n) => Number(n||0).toLocaleString("en-IN")` helper used in CourseDetailPage / CoursesPage.
+- Chip input state: reuse `subjectsCovered`; new `subjectInput` state; handler on `onKeyDown` for `Enter`/`,`.
+- Sticky bar markup roughly:
+  ```tsx
+  <div className="sticky bottom-4 z-40 flex justify-end">
+    <div className="flex gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+      <button …>Save as Draft</button>
+      <button …>Save & Publish</button>
+    </div>
+  </div>
+  ```

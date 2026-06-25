@@ -111,7 +111,7 @@ const CheckoutPage = () => {
                     <span className="truncate">
                       {c.title} <span className="text-muted-foreground">× {c.quantity}</span>
                     </span>
-                    <span className="font-semibold">₹{(Number(c.price) * c.quantity).toLocaleString()}</span>
+                    <span className="font-semibold">₹{(Number(c.price) * c.quantity).toLocaleString("en-IN")}</span>
                   </div>
                 ))}
                 {cart.length === 0 && (
@@ -133,7 +133,7 @@ const CheckoutPage = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span>₹{subtotal.toLocaleString()}</span>
+                  <span>₹{subtotal.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
@@ -141,7 +141,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-black">
                   <span>Total</span>
-                  <span>₹{total.toLocaleString()}</span>
+                  <span>₹{total.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
@@ -151,7 +151,7 @@ const CheckoutPage = () => {
                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[hsl(var(--bansal-orange))] py-3 font-bold text-white hover:bg-[hsl(var(--bansal-orange))]/90 disabled:opacity-50"
               >
                 {placing && <Loader2 className="h-4 w-4 animate-spin" />}
-                Pay ₹{total.toLocaleString()}
+                Pay ₹{total.toLocaleString("en-IN")}
               </button>
               <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5" /> Secure payment by Cashfree — UPI, Cards, Netbanking, Wallets.
