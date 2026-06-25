@@ -22,6 +22,7 @@ import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-latest.png.asset
 import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest-v2.png.asset.json";
 import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest-v2.png.asset.json";
 import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest-v2.png.asset.json";
+import wsjFeatureAsset from "@/assets/about/wsj-feature.jpg.asset.json";
 
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg.url,
