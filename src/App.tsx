@@ -124,6 +124,7 @@ const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
 const AdminBooksPage = lazy(() => import("./pages/AdminBooksPage"));
 const AdminCentersPage = lazy(() => import("./pages/AdminCentersPage"));
 const AdminToppersPage = lazy(() => import("./pages/AdminToppersPage"));
+const AdminAchievementPostersPage = lazy(() => import("./pages/AdminAchievementPostersPage"));
 const AdminAlumniSubmissionsPage = lazy(() => import("./pages/AdminAlumniSubmissionsPage"));
 const AdminBannersPage = lazy(() => import("./pages/AdminBannersPage"));
 const AdminBoostPage = lazy(() => import("./pages/AdminBoostPage"));
