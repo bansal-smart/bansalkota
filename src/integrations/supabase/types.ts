@@ -4271,7 +4271,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_alumni_submissions: {
+        Row: {
+          batch_year: number | null
+          college_joined: string | null
+          company: string | null
+          created_at: string | null
+          current_position: string | null
+          exam: string | null
+          full_name: string | null
+          id: string | null
+          photo_url: string | null
+          rank_label: string | null
+          selection_year: string | null
+          status: string | null
+          story: string | null
+          stream_taken: string | null
+        }
+        Insert: {
+          batch_year?: number | null
+          college_joined?: string | null
+          company?: string | null
+          created_at?: string | null
+          current_position?: string | null
+          exam?: string | null
+          full_name?: string | null
+          id?: string | null
+          photo_url?: string | null
+          rank_label?: string | null
+          selection_year?: string | null
+          status?: string | null
+          story?: string | null
+          stream_taken?: string | null
+        }
+        Update: {
+          batch_year?: number | null
+          college_joined?: string | null
+          company?: string | null
+          created_at?: string | null
+          current_position?: string | null
+          exam?: string | null
+          full_name?: string | null
+          id?: string | null
+          photo_url?: string | null
+          rank_label?: string | null
+          selection_year?: string | null
+          status?: string | null
+          story?: string | null
+          stream_taken?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _backfill_subject_metadata_for_attempt: {
@@ -4447,6 +4497,16 @@ export type Database = {
       }
       get_own_profile_lock_fields: {
         Args: never
+        Returns: {
+          batch_id: string
+          centre_id: string
+          is_bansal_offline_student: boolean
+          roll_number: string
+          school_id: string
+        }[]
+      }
+      get_profile_lock_fields: {
+        Args: { _user_id: string }
         Returns: {
           batch_id: string
           centre_id: string
