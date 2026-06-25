@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Loader2, GraduationCap, Sparkles, ArrowRight, BookOpen, Award, Clock, Video, MapPin, Home } from "lucide-react";
+import {
+  Loader2,
+  GraduationCap,
+  Sparkles,
+  ArrowRight,
+  BookOpen,
+  Award,
+  Clock,
+  Video,
+  MapPin,
+  Home,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
 import { useAppStore } from "@/store/useAppStore";
@@ -58,7 +69,7 @@ const courseImages: Record<string, string> = {
 };
 
 const highlights = [
-  { icon: BookOpen, label: "120+ Hours per Course", desc: "Conceptual + problem-solving" },
+  { icon: BookOpen, label: "600+ Hours per Course", desc: "Conceptual + problem-solving" },
   { icon: Award, label: "IIT & AIIMS Educators", desc: "Top 1% of India's faculty" },
   { icon: Clock, label: "Lifetime Access", desc: "Learn at your own pace" },
 ];
@@ -71,7 +82,7 @@ const CoursesPage = () => {
   const navigate = useNavigate();
   const { courses: allCourses, loading } = useCourses();
   const courses = allCourses.filter(
-    (c) => matchesGoal(c, goalFilters[activeGoal]) && matchesType(c, courseTypeFilters[activeType])
+    (c) => matchesGoal(c, goalFilters[activeGoal]) && matchesType(c, courseTypeFilters[activeType]),
   );
 
   const handleEnroll = (c: CourseRow) => {
@@ -95,8 +106,14 @@ const CoursesPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
         <FloatingIcons defaultTone="white" />
         <DotTexture tone="white" className="opacity-30 decor-fade" />
-        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 30% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }} />
-        <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 70% 30%, hsl(38 92% 50% / 0.2) 0%, transparent 50%)" }} />
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{ background: "radial-gradient(circle at 30% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }}
+        />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{ background: "radial-gradient(circle at 70% 30%, hsl(38 92% 50% / 0.2) 0%, transparent 50%)" }}
+        />
         <div className="container relative z-10 mx-auto px-4 text-center animate-fade-in-up">
           <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-4 py-1.5 text-xs font-bold text-white/90 backdrop-blur-sm">
             <Sparkles className="h-3.5 w-3.5 text-accent" /> Curated by toppers
@@ -105,12 +122,16 @@ const CoursesPage = () => {
             All <span className="gradient-text">courses</span> in one place
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-white/80">
-            Browse complete batches for JEE, NEET, Boards and Foundation. Live classes, recorded lectures, tests and doubt support — all bundled together.
+            Browse complete batches for JEE, NEET, Boards and Foundation. Live classes, recorded lectures, tests and
+            doubt support — all bundled together.
           </p>
 
           <div className="mx-auto mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
             {highlights.map((h) => (
-              <div key={h.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm text-left">
+              <div
+                key={h.label}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm text-left"
+              >
                 <h.icon className="h-5 w-5 text-accent" />
                 <p className="mt-2 text-sm font-bold text-white">{h.label}</p>
                 <p className="mt-0.5 text-xs text-white/60">{h.desc}</p>
@@ -192,7 +213,12 @@ const CoursesPage = () => {
                   <Link to={`/courses/${c.slug}`} className="block">
                     {c.thumbnail_url ? (
                       <div className="relative bg-muted">
-                        <img src={c.thumbnail_url} alt={c.name} loading="lazy" className="w-full h-auto object-contain" />
+                        <img
+                          src={c.thumbnail_url}
+                          alt={c.name}
+                          loading="lazy"
+                          className="w-full h-auto object-contain"
+                        />
                         {c.badge && (
                           <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground shadow">
                             {c.badge}
@@ -237,9 +263,13 @@ const CoursesPage = () => {
                       );
                     })()}
                     <Link to={`/courses/${c.slug}`} className="block">
-                      <p className="text-sm font-bold text-foreground mt-2 line-clamp-2 hover:text-primary transition-colors">{c.name}</p>
+                      <p className="text-sm font-bold text-foreground mt-2 line-clamp-2 hover:text-primary transition-colors">
+                        {c.name}
+                      </p>
                     </Link>
-                    {c.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>}
+                    {c.description && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>
+                    )}
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                       {c.original_price && c.original_price > c.price && (
                         <span className="text-xs line-through text-muted-foreground">
