@@ -36,6 +36,11 @@ const schema = z.object({
     .string()
     .trim()
     .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone"),
+  parent_phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone")
+    .optional(),
   class_level: z.string().min(1, "Select class"),
   city: z.string().trim().min(1, "Enter city").max(80),
   state: z.string().trim().min(1, "Enter state").max(80),
@@ -53,6 +58,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     full_name: "",
     email: "",
     phone: "",
+    parent_phone: "",
     class_level: "",
     city: "",
     state: "",
