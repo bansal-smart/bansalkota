@@ -480,7 +480,9 @@ export default function LeadershipDetailPage() {
                     ? profile.recognition_text.replace(/V\s*\.?\s*K\.?\s*Bansal/gi, "Bansal Sir")
                     : slug === "mahima-bansal"
                       ? profile.recognition_text.replace(/Mahima Bansal\b(?!\s+Ma'am)/g, "Mahima Bansal Ma'am")
-                      : profile.recognition_text}
+                      : slug === "sameer-bansal"
+                        ? profile.recognition_text.replace(/Sameer Bansal\b(?!\s+Sir)/g, "Sameer Bansal Sir")
+                        : profile.recognition_text}
                 </p>
               </div>
             </div>
