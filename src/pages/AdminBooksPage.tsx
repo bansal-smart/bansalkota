@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
-import { BookOpen, Boxes, Loader2, Plus, Trash2, Save } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BookOpen, Boxes, Loader2, Plus, Trash2, Save, Pencil, Upload, X, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 type Book = {
   id: string;
@@ -15,6 +18,8 @@ type Book = {
   original_price: number | null;
   stock: number;
   is_published: boolean;
+  cover_url: string | null;
+  description: string | null;
 };
 
 type Pack = {
@@ -29,7 +34,26 @@ type Pack = {
   items?: { book_id: string; book?: { title: string } | null }[];
 };
 
-const blankBook = {
+const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "Mental Ability", "Mixed / General"];
+const TARGET_EXAMS = ["JEE", "NEET", "NTSE / Olympiads", "Foundation", "CBSE / Board", "Mixed"];
+const CLASS_LEVELS = ["Class V", "Class VI", "Class VII", "Class VIII", "Class IX", "Class X", "Class XI", "Class XII", "XI & XII", "Droppers"];
+
+type BookForm = {
+  slug: string;
+  title: string;
+  author: string;
+  subject: string;
+  target_exam: string;
+  class_level: string;
+  price: number;
+  original_price: number;
+  stock: number;
+  is_published: boolean;
+  cover_url: string;
+  description: string;
+};
+
+const blankBook: BookForm = {
   slug: "",
   title: "",
   author: "",
@@ -40,6 +64,8 @@ const blankBook = {
   original_price: 0,
   stock: 0,
   is_published: true,
+  cover_url: "",
+  description: "",
 };
 
 const blankPack = {
@@ -86,11 +112,218 @@ const AdminBooksPage = () => {
   );
 };
 
+const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: string) => void }) => {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const upload = async (file: File) => {
+    if (!file.type.startsWith("image/")) return toast.error("Please choose an image file");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5 MB");
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `book-covers/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("site-content").upload(path, file, { cacheControl: "3600", upsert: false });
+    if (error) {
+      setUploading(false);
+      return toast.error(error.message);
+    }
+    const { data } = supabase.storage.from("site-content").getPublicUrl(path);
+    onChange(data.publicUrl);
+    setUploading(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>Cover image</Label>
+      <div className="flex items-start gap-3">
+        <div className="flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+          {value ? (
+            <img src={value} alt="Cover" className="h-full w-full object-cover" />
+          ) : (
+            <ImageIcon className="h-6 w-6 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) upload(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold hover:bg-muted disabled:opacity-50"
+          >
+            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+            {value ? "Replace" : "Upload"} cover
+          </button>
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-destructive hover:bg-muted"
+            >
+              <X className="h-3.5 w-3.5" /> Remove
+            </button>
+          )}
+          <p className="text-[11px] text-muted-foreground">PNG / JPG, up to 5 MB</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BookFormFields = ({ form, setForm }: { form: BookForm; setForm: (f: BookForm) => void }) => {
+  return (
+    <div className="space-y-4">
+      <CoverUploader value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url })} />
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="bk-slug">Slug *</Label>
+          <input id="bk-slug" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. jee-physics-xi" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+        </div>
+        <div className="space-y-1.5 md:col-span-1 lg:col-span-2">
+          <Label htmlFor="bk-title">Title *</Label>
+          <input id="bk-title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Book title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="bk-author">Author</Label>
+          <input id="bk-author" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Author name" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Subject</Label>
+          <Select value={form.subject || undefined} onValueChange={(v) => setForm({ ...form, subject: v })}>
+            <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+            <SelectContent>
+              {SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Target exam</Label>
+          <Select value={form.target_exam || undefined} onValueChange={(v) => setForm({ ...form, target_exam: v })}>
+            <SelectTrigger><SelectValue placeholder="Select exam" /></SelectTrigger>
+            <SelectContent>
+              {TARGET_EXAMS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Class level</Label>
+          <Select value={form.class_level || undefined} onValueChange={(v) => setForm({ ...form, class_level: v })}>
+            <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+            <SelectContent>
+              {CLASS_LEVELS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="bk-price">Price (₹) *</Label>
+          <input id="bk-price" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="bk-original">Original price (₹)</Label>
+          <input id="bk-original" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Optional" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="bk-stock">Stock</Label>
+          <input id="bk-stock" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+        </div>
+
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-3">
+          <Label htmlFor="bk-desc">Description</Label>
+          <textarea id="bk-desc" rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Short description shown on the store page" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const EditBookModal = ({ book, onClose, onSaved }: { book: Book | null; onClose: () => void; onSaved: () => void }) => {
+  const [form, setForm] = useState<BookForm>(blankBook);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (book) {
+      setForm({
+        slug: book.slug ?? "",
+        title: book.title ?? "",
+        author: book.author ?? "",
+        subject: book.subject ?? "",
+        target_exam: book.target_exam ?? "",
+        class_level: book.class_level ?? "",
+        price: Number(book.price ?? 0),
+        original_price: Number(book.original_price ?? 0),
+        stock: Number(book.stock ?? 0),
+        is_published: book.is_published,
+        cover_url: book.cover_url ?? "",
+        description: book.description ?? "",
+      });
+    }
+  }, [book]);
+
+  const save = async () => {
+    if (!book) return;
+    if (!form.title || !form.slug) return toast.error("Title and slug are required");
+    setSaving(true);
+    const { error } = await supabase
+      .from("books")
+      .update({
+        ...form,
+        original_price: form.original_price || null,
+        cover_url: form.cover_url || null,
+        description: form.description || null,
+        author: form.author || null,
+        subject: form.subject || null,
+        target_exam: form.target_exam || null,
+        class_level: form.class_level || null,
+      })
+      .eq("id", book.id);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Book updated");
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <Dialog open={!!book} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit book</DialogTitle>
+        </DialogHeader>
+        <BookFormFields form={form} setForm={setForm} />
+        <DialogFooter>
+          <button onClick={onClose} className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-bold hover:bg-muted">Cancel</button>
+          <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save changes
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const BooksTab = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState(blankBook);
+  const [form, setForm] = useState<BookForm>(blankBook);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<Book | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -105,7 +338,16 @@ const BooksTab = () => {
   const save = async () => {
     if (!form.title || !form.slug) return toast.error("Title and slug are required");
     setSaving(true);
-    const { error } = await supabase.from("books").insert({ ...form, original_price: form.original_price || null });
+    const { error } = await supabase.from("books").insert({
+      ...form,
+      original_price: form.original_price || null,
+      cover_url: form.cover_url || null,
+      description: form.description || null,
+      author: form.author || null,
+      subject: form.subject || null,
+      target_exam: form.target_exam || null,
+      class_level: form.class_level || null,
+    });
     setSaving(false);
     if (error) toast.error(error.message);
     else {
@@ -134,20 +376,10 @@ const BooksTab = () => {
   return (
     <>
       <div className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="mb-3 flex items-center gap-2 font-bold">
+        <h2 className="mb-4 flex items-center gap-2 font-bold">
           <Plus className="h-4 w-4" /> Add Book
         </h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-2" placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Author" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Subject" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Target Exam" value={form.target_exam} onChange={(e) => setForm({ ...form, target_exam: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Class Level" value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })} />
-          <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Price" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
-          <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Original Price" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} />
-          <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
-        </div>
+        <BookFormFields form={form} setForm={setForm} />
         <button onClick={save} disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save Book
@@ -163,6 +395,7 @@ const BooksTab = () => {
           <table className="w-full text-sm">
             <thead className="bg-muted text-left text-xs uppercase">
               <tr>
+                <th className="px-4 py-3">Cover</th>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Exam</th>
                 <th className="px-4 py-3">Class</th>
@@ -175,6 +408,15 @@ const BooksTab = () => {
             <tbody>
               {books.map((b) => (
                 <tr key={b.id} className="border-t border-border">
+                  <td className="px-4 py-3">
+                    <div className="flex h-14 w-10 items-center justify-center overflow-hidden rounded border border-border bg-muted">
+                      {b.cover_url ? (
+                        <img src={b.cover_url} alt={b.title} className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 font-semibold">{b.title}</td>
                   <td className="px-4 py-3">{b.target_exam ?? "-"}</td>
                   <td className="px-4 py-3">{b.class_level ?? "-"}</td>
@@ -185,16 +427,21 @@ const BooksTab = () => {
                       {b.is_published ? "Published" : "Hidden"}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => remove(b.id)} className="text-destructive hover:text-destructive/70">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => setEditing(b)} className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => remove(b.id)} className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted" title="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {books.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
                     No books yet.
                   </td>
                 </tr>
@@ -203,6 +450,8 @@ const BooksTab = () => {
           </table>
         )}
       </div>
+
+      <EditBookModal book={editing} onClose={() => setEditing(null)} onSaved={load} />
     </>
   );
 };
