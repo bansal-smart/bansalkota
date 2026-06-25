@@ -154,6 +154,10 @@ const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage")
 const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
 const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
 const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
+const GalleryImagesPage = lazy(() => import("./pages/GalleryImagesPage"));
+const GalleryVideosPage = lazy(() => import("./pages/GalleryVideosPage"));
+const AdminGalleryPage = lazy(() => import("./pages/AdminGalleryPage"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -231,7 +235,11 @@ const App = () => (
               <Route path="/centres/:slug/updates" element={<CentreUpdatesPublicPage />} />
               <Route path="/centres/:slug/updates/:id" element={<CentreUpdateDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
+              <Route path="/gallery" element={<Navigate to="/gallery/images" replace />} />
+              <Route path="/gallery/images" element={<GalleryImagesPage />} />
+              <Route path="/gallery/videos" element={<GalleryVideosPage />} />
               <Route path="/alumni" element={<AlumniPage />} />
+
               <Route path="/e-store" element={<EStorePage />} />
               <Route path="/e-store/checkout" element={<CheckoutPage />} />
               <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
@@ -359,6 +367,8 @@ const App = () => (
               <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
               <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
+              <Route path="/admin/gallery" element={<AdminGalleryPage />} />
+
               <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />

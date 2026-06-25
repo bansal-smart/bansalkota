@@ -1828,6 +1828,74 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_album_images: {
+        Row: {
+          album_id: string
+          created_at: string
+          id: string
+          image_url: string
+          sort_order: number
+        }
+        Insert: {
+          album_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          sort_order?: number
+        }
+        Update: {
+          album_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gallery_album_images_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gallery_albums: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          sort_order: number
+          title: string
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       landing_hero_banners: {
         Row: {
           alt: string | null
