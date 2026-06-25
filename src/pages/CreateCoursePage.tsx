@@ -90,16 +90,23 @@ const CreateCoursePage = () => {
         return;
       }
       setName(course.name ?? "");
-      setShortDesc("");
+      const c = course as unknown as Record<string, unknown>;
+      setShortDesc((c.short_description as string | null) ?? "");
       setDescription(course.description ?? "");
+      setDescriptionHtml((c.description_html as string | null) ?? "");
       setExam(course.target_exam ?? "JEE");
       setSubject(course.subject ?? "Physics");
       setEducatorName(course.educator_name ?? "");
       setPrice(Number(course.price ?? 0));
       setOriginalPrice(Number(course.original_price ?? 0));
       setExistingThumbnail(course.thumbnail_url ?? null);
-      setLearnItems((course.what_youll_learn ?? []) as string[]);
-      setReqItems((course.requirements ?? []) as string[]);
+      setEducationLevel((c.education_level as string | null) ?? "Class 11th–12th");
+      setDurationLabel((c.duration_label as string | null) ?? "1 Year");
+      setModeValue((c.mode as string | null) ?? "Online");
+      setLanguage((c.language as string | null) ?? "English / Hindi");
+      setSubjectsCovered(((c.subjects_covered as string[] | null) ?? []) as string[]);
+      setIncludedServices(((c.included_services as string[] | null) ?? []) as string[]);
+
 
       const { data: chs } = await supabase
         .from("chapters")
