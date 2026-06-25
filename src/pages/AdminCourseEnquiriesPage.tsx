@@ -157,6 +157,7 @@ const AdminCourseEnquiriesPage = () => {
               { key: "full_name", label: "Name" },
               { key: "email", label: "Email" },
               { key: "phone", label: "Phone" },
+              { key: "parent_phone", label: "Parent Phone" },
               { key: "course_name", label: "Course" },
               { key: "course_price", label: "Price" },
               { key: "class_level", label: "Class" },
@@ -258,6 +259,7 @@ const AdminCourseEnquiriesPage = () => {
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       <div className="truncate max-w-[180px]">{r.email}</div>
                       <div>{r.phone}</div>
+                      {r.parent_phone && <div className="text-[11px]">Parent: {r.parent_phone}</div>}
                     </td>
                     <td className="px-4 py-3 text-xs max-w-[220px]">
                       <div className="line-clamp-2 text-foreground">{r.course_name}</div>
@@ -293,6 +295,7 @@ const AdminCourseEnquiriesPage = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Email" value={active.email} />
                   <Field label="Phone" value={active.phone} />
+                  <Field label="Parent's Phone" value={active.parent_phone || "—"} />
                   <Field label="Class" value={active.class_level || "—"} />
                   <Field label="City" value={active.city || "—"} />
                   <Field label="State" value={active.state || "—"} />
