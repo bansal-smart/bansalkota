@@ -213,7 +213,9 @@ export default function LeadershipDetailPage() {
                     ? profile.intro.replace(/V\s*K\.?\s*Bansal/g, "Bansal Sir")
                     : slug === "sameer-bansal"
                       ? profile.intro.replace(/Sameer Bansal\b(?!\s+Sir)/g, "Sameer Bansal Sir")
-                      : profile.intro}
+                      : slug === "neelam-bansal"
+                        ? profile.intro.replace(/Mrs\.\s*/g, "").replace(/Neelam Bansal\b(?!\s+Ma'am)/g, "Neelam Bansal Ma'am")
+                        : profile.intro}
                 </p>
               )}
             </div>
