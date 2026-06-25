@@ -162,7 +162,7 @@ const CareerPage = () => {
 
               <div>
                 <Label>Applying for *</Label>
-                <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v })}>
+                <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v, subject: "" })}>
                   <SelectTrigger><SelectValue placeholder="Select a position" /></SelectTrigger>
                   <SelectContent>
                     {positions.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
