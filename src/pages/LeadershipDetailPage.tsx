@@ -7,6 +7,7 @@ import {
   Compass,
   BookOpen,
   Award as AwardIcon,
+  Newspaper,
 } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
