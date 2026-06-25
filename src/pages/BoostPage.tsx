@@ -60,12 +60,6 @@ const pattern = [
   },
 ];
 
-const timeline = [
-  { phase: "Registration", date: "Open Now", desc: "Pay ₹99 and reserve your slot on bansal.ac.in" },
-  { phase: "Admit Card", date: "T-3 days", desc: "Download your admit card from the official portal" },
-  { phase: "Test Day", date: "Every Sunday", desc: "Online slots and offline center slots available" },
-  { phase: "Result", date: "Within 48 hrs", desc: "Scholarship + counselling call from Bansal admissions" },
-];
 
 const faqs = [
   {
@@ -89,6 +83,12 @@ const faqs = [
 export default function BoostPage() {
   const [regOpen, setRegOpen] = useState(false);
   const boost = useBoostSettings();
+  const timeline = [
+    { phase: "Registration", date: "Open Now", desc: `Pay ₹${boost.priceInr} and reserve your slot on bansal.ac.in` },
+    { phase: "Admit Card", date: "T-3 days", desc: "Download your admit card from the official portal" },
+    { phase: "Test Day", date: "Every Sunday", desc: "Online slots and offline center slots available" },
+    { phase: "Result", date: "Within 48 hrs", desc: "Scholarship + counselling call from Bansal admissions" },
+  ];
   return (
     <div className="min-h-screen bg-background">
       <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
@@ -208,7 +208,7 @@ export default function BoostPage() {
                 {[
                   "Open to Class 5 through Class 12 + droppers",
                   "Both online and offline modes available",
-                  "Single ₹99 fee — no hidden charges",
+                  `Single ₹${boost.priceInr} fee — no hidden charges`,
                   "Test material kit shipped to every registrant",
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2 text-bansal-black">
