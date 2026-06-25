@@ -78,10 +78,10 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     galleryCaption: "Since 1981, one classroom philosophy",
     heroPhotoOverride: vkPortraitV2,
     gallery: [
-      { src: vkStatesman.url, alt: "Mr. V.K. Bansal Sir — formal statesman portrait", tall: true },
-      { src: vkDesk.url, alt: "V.K. Bansal at his founder's desk" },
-      { src: vkChalkboard.url, alt: "V.K. Bansal teaching mathematics at the chalkboard" },
-      { src: vkLibrary.url, alt: "V.K. Bansal in his study with books" },
+      { src: vkStatesman.url, alt: "Mr. Bansal Sir — formal statesman portrait", tall: true },
+      { src: vkDesk.url, alt: "Bansal Sir at his founder's desk" },
+      { src: vkChalkboard.url, alt: "Bansal Sir teaching mathematics at the chalkboard" },
+      { src: vkLibrary.url, alt: "Bansal Sir in his study with books" },
     ],
     timelineHeading: "Defining Moments",
     timeline: [
@@ -260,7 +260,7 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
       {
         year: "Early years",
         title: "Partner from day one",
-        body: "Stood beside Mr. V.K. Bansal when the institute was still a single classroom and an uncertain idea.",
+        body: "Stood beside Mr. Bansal Sir when the institute was still a single classroom and an uncertain idea.",
       },
       {
         year: "1980s",

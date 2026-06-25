@@ -13,7 +13,7 @@ type NavItem =
 
 const aboutChildren = [
   { label: "About Bansal Classes", path: "/about" },
-  { label: "About VK Bansal Sir", path: "/about/vk-bansal" },
+  { label: "About Bansal Sir", path: "/about/vk-bansal" },
   { label: "About Sameer Bansal Sir", path: "/about/sameer-bansal" },
   { label: "About Neelam Bansal Ma'am", path: "/about/neelam-bansal" },
   { label: "About Mahima Bansal Ma'am", path: "/about/mahima-bansal" },

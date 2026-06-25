@@ -69,7 +69,7 @@ const AboutPage = () => {
               <span className="block text-bansal-orange">India's Brightest Minds.</span>
             </h1>
             <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed max-w-2xl">
-              Founded in Kota in 1981 by Shri V.K. Bansal Sir, we built the institution that turned a town into a national symbol of academic excellence.
+              Founded in Kota in 1981 by Shri Bansal Sir, we built the institution that turned a town into a national symbol of academic excellence.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/centres">
@@ -91,7 +91,7 @@ const AboutPage = () => {
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-bansal-cream shadow-xl">
                 <img
                   src={vkBansalPortrait}
-                  alt="Shri V.K. Bansal Sir — Founder"
+                  alt="Shri Bansal Sir — Founder"
                   className="absolute inset-0 w-full h-full object-cover object-top"
                   loading="lazy"
                 />
@@ -100,14 +100,14 @@ const AboutPage = () => {
             <div className="md:col-span-7">
               <Eyebrow>The Founder · 1949 – Forever Honored</Eyebrow>
               <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue tracking-tight leading-[1.1]">
-                Shri V.K. Bansal Sir
+                Shri Bansal Sir
               </h2>
               <p className="mt-2 text-bansal-orange font-semibold uppercase tracking-wide text-sm">
                 Founder, Bansal Classes
               </p>
               <div className="mt-5 space-y-4 text-base md:text-lg text-bansal-gray leading-relaxed">
                 <p>
-                  Born on 26 October 1949 in Jhansi, Shri V.K. Bansal Sir graduated from IIT (BHU) Varanasi and moved to Kota to work at J.K. Synthetics. In <strong>1981</strong>, he began coaching a handful of students — and quietly created a movement that would redefine engineering education in India.
+                  Born on 26 October 1949 in Jhansi, Shri Bansal Sir graduated from IIT (BHU) Varanasi and moved to Kota to work at J.K. Synthetics. In <strong>1981</strong>, he began coaching a handful of students — and quietly created a movement that would redefine engineering education in India.
                 </p>
                 <p>
                   His belief was simple: every aspirant deserves <em>ideal guidance</em>. Since 1981, that belief has remained the soul of every Bansal classroom.
@@ -141,7 +141,7 @@ const AboutPage = () => {
                 "India's Cram-School Confidential — Bansalites Rock."
               </p>
               <p className="mt-5 text-white/85 leading-relaxed text-base md:text-lg max-w-xl">
-                A front-page Wall Street Journal feature on how Kota — and the man behind it, V.K. Bansal Sir — transformed Indian competitive education. A story read across the world.
+                A front-page Wall Street Journal feature on how Kota — and the man behind it, Bansal Sir — transformed Indian competitive education. A story read across the world.
               </p>
               <div className="mt-6 flex flex-wrap gap-6 text-sm">
                 <div>
@@ -163,7 +163,7 @@ const AboutPage = () => {
                 <div className="absolute -inset-3 bg-bansal-orange/20 rounded-2xl blur-2xl" />
                 <img
                   src={wsjFeatureAsset.url}
-                  alt="Wall Street Journal feature on V.K. Bansal Sir and Kota coaching"
+                  alt="Wall Street Journal feature on Bansal Sir and Kota coaching"
                   className="relative w-full rounded-xl shadow-2xl border-4 border-white/90"
                   loading="lazy"
                 />
@@ -195,7 +195,7 @@ const AboutPage = () => {
           <div className="mt-8 flex items-center gap-3">
             <span className="h-px w-10 bg-bansal-orange" />
             <span className="text-bansal-orange uppercase tracking-[0.2em] text-xs font-bold">
-              V.K. Bansal Sir · Founder
+              Bansal Sir · Founder
             </span>
           </div>
         </div>
@@ -251,7 +251,7 @@ const AboutPage = () => {
               </h2>
               <div className="space-y-4 text-base md:text-lg text-bansal-gray leading-relaxed">
                 <p>
-                  In 1981, V.K. Bansal Sir recognised the need to provide proper guidance to JEE aspirants and dedicated himself to this cause. With his discipline and positive attitude, Bansal Classes produced remarkable results year after year — each batch challenging the next to perform even better.
+                  In 1981, Bansal Sir recognised the need to provide proper guidance to JEE aspirants and dedicated himself to this cause. With his discipline and positive attitude, Bansal Classes produced remarkable results year after year — each batch challenging the next to perform even better.
                 </p>
                 <p>
                   Accepting change and creating strategies accordingly is the quality of a true leader — and that is exactly what Bansal Classes has been doing since 1981: <em>adopting the methods that best suit our students to crack the JEE</em>.
@@ -263,12 +263,12 @@ const AboutPage = () => {
               <figure className="rounded-xl overflow-hidden bg-white shadow-md border border-border">
                 <img
                   src={vkGehlotAsset.url}
-                  alt="Shri V.K. Bansal Sir with Shri Ashok Gehlot, former Chief Minister of Rajasthan"
+                  alt="Shri Bansal Sir with Shri Ashok Gehlot, former Chief Minister of Rajasthan"
                   className="w-full h-auto object-cover"
                   loading="lazy"
                 />
                 <figcaption className="p-4 text-xs text-bansal-gray border-t border-border">
-                  Shri V.K. Bansal Sir in conversation with <strong className="text-bansal-blue">Shri Ashok Gehlot</strong>, former Chief Minister of Rajasthan.
+                  Shri Bansal Sir in conversation with <strong className="text-bansal-blue">Shri Ashok Gehlot</strong>, former Chief Minister of Rajasthan.
                 </figcaption>
               </figure>
             </div>

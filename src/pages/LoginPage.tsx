@@ -137,7 +137,7 @@ const LoginPage = () => {
           <p className="font-display text-3xl md:text-4xl font-bold leading-tight">
             "Believe in yourself and strive for excellence with unwavering dedication."
           </p>
-          <p className="font-accent mt-5 text-white/85">— Late Shri V.K. Bansal, Founder</p>
+          <p className="font-accent mt-5 text-white/85">— Late Shri Bansal Sir, Founder</p>
         </div>
 
         <div className="relative font-accent text-white/80 text-sm">

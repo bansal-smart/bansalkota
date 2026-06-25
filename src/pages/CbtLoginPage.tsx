@@ -74,7 +74,7 @@ const CbtLoginPage = () => {
             <Sparkles className="h-4 w-4 text-bansal-orange" />
             <span className="italic">"Believe in yourself and strive for excellence."</span>
           </div>
-          <p className="mt-1 ml-7 text-xs text-white/60">— Late Shri V.K. Bansal, Founder</p>
+          <p className="mt-1 ml-7 text-xs text-white/60">— Late Shri Bansal Sir, Founder</p>
         </div>
 
         <div className="relative flex items-center justify-between text-xs text-white/60">

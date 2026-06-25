@@ -63,7 +63,7 @@ export const leadershipPhotos: Record<string, string> = {
 export const leadership = [
   {
     slug: "vk-bansal",
-    name: "VK Bansal Sir",
+    name: "Bansal Sir",
     role: "Founder",
     tagline: "Forever Honored — The Icon of Excellence in Education",
     photo: vkBansalPhoto,
