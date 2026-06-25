@@ -15,7 +15,6 @@ import {
   Tag,
   GraduationCap,
   MapPin,
-  Calendar,
   BadgeCheck,
   BookOpen,
   ClipboardList,
@@ -53,49 +52,6 @@ type EnrollmentInfo = {
 
 // ----- Fallback data (Bansal-styled demo) -----
 
-const FALLBACK_COMMENCEMENT = [
-  {
-    stream: "JEE (Main + Advanced)",
-    phase: "Phase I",
-    medium: "English",
-    target: "2028",
-    eligibility: "Class 10th to 11th Moving",
-    mode: "Direct/BOOST",
-    date: "01/04/2026",
-  },
-  {
-    stream: "JEE (Main + Advanced)",
-    phase: "Phase II",
-    medium: "English",
-    target: "2028",
-    eligibility: "Class 10th to 11th Moving",
-    mode: "Direct/BOOST",
-    date: "27/05/2026",
-  },
-];
-
-const BOARD_SCHOLARSHIPS = [
-  { range: "95% +", pct: "55%" },
-  { range: "90 to 95%", pct: "50%" },
-  { range: "80 to 89%", pct: "45%" },
-  { range: "75 to 79%", pct: "40%" },
-];
-
-const OLYMPIAD_SCHOLARSHIPS = [
-  { label: "Stage III Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "100%" },
-  { label: "Stage II Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "90%" },
-  { label: "Stage I Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "75%" },
-  {
-    label: "Stage III Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)",
-    pct: "100%",
-  },
-  {
-    label: "Stage II Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)",
-    pct: "90%",
-  },
-  { label: "Stage I Qualified (Int'l Sr. Olympiads – HBCSE / NSEs)", pct: "75%" },
-  { label: "Based on Pre-RMO", pct: "25%" },
-];
 
 const SERVICES = [
   { icon: BookOpen, label: "Study Material" },
@@ -420,83 +376,6 @@ const CourseDetailPage = () => {
             </div>
           </section>
 
-          {/* Commencement Dates */}
-          <section>
-            <h3 className="font-display text-xl font-black text-foreground mb-3 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" /> Class Commencement Dates
-            </h3>
-            <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-              <table className="w-full text-xs min-w-[640px]">
-                <thead className="bg-muted/40">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-3 py-2.5 font-bold">Stream</th>
-                    <th className="px-3 py-2.5 font-bold">Phase</th>
-                    <th className="px-3 py-2.5 font-bold">Medium</th>
-                    <th className="px-3 py-2.5 font-bold">Target</th>
-                    <th className="px-3 py-2.5 font-bold">Eligibility</th>
-                    <th className="px-3 py-2.5 font-bold">Admission Mode</th>
-                    <th className="px-3 py-2.5 font-bold">Commencement</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {FALLBACK_COMMENCEMENT.map((r, i) => (
-                    <tr key={i} className="border-t border-border text-foreground">
-                      <td className="px-3 py-3">{r.stream}</td>
-                      <td className="px-3 py-3">{r.phase}</td>
-                      <td className="px-3 py-3">{r.medium}</td>
-                      <td className="px-3 py-3">{r.target}</td>
-                      <td className="px-3 py-3">{r.eligibility}</td>
-                      <td className="px-3 py-3">{r.mode}</td>
-                      <td className="px-3 py-3 font-bold text-primary">{r.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* Scholarships */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="bg-primary/10 px-4 py-3">
-                <p className="font-display text-sm font-black text-foreground">Scholarship — Board Performance</p>
-                <p className="text-[11px] text-muted-foreground">For 10th Pass Students</p>
-              </div>
-              <table className="w-full text-xs">
-                <thead className="bg-muted/30">
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-4 py-2 font-bold">Board %</th>
-                    <th className="px-4 py-2 font-bold text-right">Scholarship</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {BOARD_SCHOLARSHIPS.map((s) => (
-                    <tr key={s.range} className="border-t border-border text-foreground">
-                      <td className="px-4 py-2.5">{s.range}</td>
-                      <td className="px-4 py-2.5 text-right font-bold text-primary">{s.pct}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="bg-primary/10 px-4 py-3">
-                <p className="font-display text-sm font-black text-foreground">Scholarship — Olympiads</p>
-                <p className="text-[11px] text-muted-foreground">For Class XI / XII admissions, Session 2025–26</p>
-              </div>
-              <table className="w-full text-xs">
-                <tbody>
-                  {OLYMPIAD_SCHOLARSHIPS.map((s) => (
-                    <tr key={s.label} className="border-t border-border text-foreground first:border-t-0">
-                      <td className="px-4 py-2.5 pr-2 leading-snug">{s.label}</td>
-                      <td className="px-4 py-2.5 text-right font-bold text-primary whitespace-nowrap">{s.pct}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
 
           {/* Curriculum (if any) */}
           {chapters.length > 0 && (
