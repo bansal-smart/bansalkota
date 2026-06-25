@@ -222,9 +222,13 @@ export const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorP
   }, [value, editor]);
 
   return (
-    <div className="overflow-hidden rounded-md border border-input bg-background">
-      <Toolbar editor={editor} />
-      <EditorContent editor={editor} />
+    <div className="flex max-h-[420px] flex-col overflow-hidden rounded-md border border-input bg-background">
+      <div className="shrink-0">
+        <Toolbar editor={editor} />
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 };
