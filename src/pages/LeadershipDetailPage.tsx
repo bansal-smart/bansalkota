@@ -195,7 +195,7 @@ export default function LeadershipDetailPage() {
 
             {/* Text */}
             <div className="md:col-span-7">
-              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : displayFirst}</Eyebrow>
+              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : slug === "neelam-bansal" ? "Neelam Bansal Ma'am" : displayFirst}</Eyebrow>
               {profile.pull_quote && (
                 <blockquote className="relative font-display italic text-xl md:text-3xl font-semibold text-bansal-blue leading-[1.25] tracking-tight mb-6">
                   <Quote
