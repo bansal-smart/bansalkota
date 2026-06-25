@@ -375,7 +375,7 @@ const CourseDetailPage = () => {
 
             {course.description_html ? (
               <div
-                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground"
+                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-headings:mt-6 prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground [&_p:empty]:block [&_p:empty]:h-4 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1"
                 dangerouslySetInnerHTML={{ __html: course.description_html }}
               />
             ) : (
