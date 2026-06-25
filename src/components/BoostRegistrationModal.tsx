@@ -175,7 +175,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
                   ))}
                 </select>
               </div>
-              <Select name="exam_slot" label="Exam slot *" options={SLOTS} required />
+              <Select name="exam_slot" label="Exam slot *" options={slots.length ? slots : ["Exam dates not announced yet"]} required />
             </Section>
 
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
