@@ -38,7 +38,6 @@ type DraftLecture = { id?: string; title: string; durationMin: number };
 type DraftChapter = { id?: string; title: string; lectures: DraftLecture[] };
 
 const CreateCoursePage = () => {
-  const { examNames } = useExams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId?: string }>();
