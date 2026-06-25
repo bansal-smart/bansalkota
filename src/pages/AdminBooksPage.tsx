@@ -36,7 +36,18 @@ type Pack = {
 
 const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "Mental Ability", "Mixed / General"];
 const TARGET_EXAMS = ["JEE", "NEET", "NTSE / Olympiads", "Foundation", "CBSE / Board", "Mixed"];
-const CLASS_LEVELS = ["Class V", "Class VI", "Class VII", "Class VIII", "Class IX", "Class X", "Class XI", "Class XII", "XI & XII", "Droppers"];
+const CLASS_LEVELS = [
+  "Class V",
+  "Class VI",
+  "Class VII",
+  "Class VIII",
+  "Class IX",
+  "Class X",
+  "Class XI",
+  "Class XII",
+  "XI & XII",
+  "Droppers",
+];
 
 type BookForm = {
   slug: string;
@@ -122,7 +133,9 @@ const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: str
     setUploading(true);
     const ext = file.name.split(".").pop() || "jpg";
     const path = `book-covers/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("site-content").upload(path, file, { cacheControl: "3600", upsert: false });
+    const { error } = await supabase.storage
+      .from("site-content")
+      .upload(path, file, { cacheControl: "3600", upsert: false });
     if (error) {
       setUploading(false);
       return toast.error(error.message);
@@ -188,24 +201,48 @@ const BookFormFields = ({ form, setForm }: { form: BookForm; setForm: (f: BookFo
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="space-y-1.5 md:col-span-2">
           <Label htmlFor="bk-title">Title *</Label>
-          <input id="bk-title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Book title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <input
+            id="bk-title"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Book title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="bk-stock">Stock</Label>
-          <input id="bk-stock" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+          <input
+            id="bk-stock"
+            type="number"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            value={form.stock}
+            onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+          />
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="bk-author">Author</Label>
-          <input id="bk-author" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Author name" value={form.author} onChange={(e) => setForm({ ...form, author: e.target.value })} />
+          <input
+            id="bk-author"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Author name"
+            value={form.author}
+            onChange={(e) => setForm({ ...form, author: e.target.value })}
+          />
         </div>
 
         <div className="space-y-1.5">
           <Label>Subject</Label>
           <Select value={form.subject || undefined} onValueChange={(v) => setForm({ ...form, subject: v })}>
-            <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Select subject" />
+            </SelectTrigger>
             <SelectContent>
-              {SUBJECTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {SUBJECTS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -213,9 +250,15 @@ const BookFormFields = ({ form, setForm }: { form: BookForm; setForm: (f: BookFo
         <div className="space-y-1.5">
           <Label>Target exam</Label>
           <Select value={form.target_exam || undefined} onValueChange={(v) => setForm({ ...form, target_exam: v })}>
-            <SelectTrigger><SelectValue placeholder="Select exam" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Select exam" />
+            </SelectTrigger>
             <SelectContent>
-              {TARGET_EXAMS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {TARGET_EXAMS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -223,27 +266,52 @@ const BookFormFields = ({ form, setForm }: { form: BookForm; setForm: (f: BookFo
         <div className="space-y-1.5">
           <Label>Class level</Label>
           <Select value={form.class_level || undefined} onValueChange={(v) => setForm({ ...form, class_level: v })}>
-            <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="Select class" />
+            </SelectTrigger>
             <SelectContent>
-              {CLASS_LEVELS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {CLASS_LEVELS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="bk-price">Price (₹) *</Label>
-          <input id="bk-price" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
+          <Label htmlFor="bk-price">Price (₹ MRP) *</Label>
+          <input
+            id="bk-price"
+            type="number"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+          />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="bk-original">Original price (₹)</Label>
-          <input id="bk-original" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Optional" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} />
+          <Label htmlFor="bk-original">Original price (₹ Sale Price)</Label>
+          <input
+            id="bk-original"
+            type="number"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Optional"
+            value={form.original_price}
+            onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })}
+          />
         </div>
 
         <div className="space-y-1.5 md:col-span-3">
           <Label htmlFor="bk-desc">Description</Label>
-          <textarea id="bk-desc" rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Short description shown on the store page" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <textarea
+            id="bk-desc"
+            rows={3}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Short description shown on the store page"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
         </div>
-
       </div>
     </div>
   );
@@ -304,8 +372,17 @@ const EditBookModal = ({ book, onClose, onSaved }: { book: Book | null; onClose:
         </DialogHeader>
         <BookFormFields form={form} setForm={setForm} />
         <DialogFooter>
-          <button onClick={onClose} className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-bold hover:bg-muted">Cancel</button>
-          <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-bold hover:bg-muted"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save changes
           </button>
@@ -335,7 +412,13 @@ const BooksTab = () => {
   const save = async () => {
     if (!form.title) return toast.error("Title is required");
     setSaving(true);
-    const baseSlug = form.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "book";
+    const baseSlug =
+      form.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "book";
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
     const { error } = await supabase.from("books").insert({
       ...form,
@@ -380,7 +463,11 @@ const BooksTab = () => {
           <Plus className="h-4 w-4" /> Add Book
         </h2>
         <BookFormFields form={form} setForm={setForm} />
-        <button onClick={save} disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save Book
         </button>
@@ -423,16 +510,27 @@ const BooksTab = () => {
                   <td className="px-4 py-3">₹{Number(b.price).toLocaleString()}</td>
                   <td className="px-4 py-3">{b.stock}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => togglePublish(b)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${b.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                    <button
+                      onClick={() => togglePublish(b)}
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${b.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}
+                    >
                       {b.is_published ? "Published" : "Hidden"}
                     </button>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => setEditing(b)} className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
+                      <button
+                        onClick={() => setEditing(b)}
+                        className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Edit"
+                      >
                         <Pencil className="h-4 w-4" />
                       </button>
-                      <button onClick={() => remove(b.id)} className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted" title="Delete">
+                      <button
+                        onClick={() => remove(b.id)}
+                        className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted"
+                        title="Delete"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -536,14 +634,52 @@ const PacksTab = () => {
           <Plus className="h-4 w-4" /> Create Module Pack
         </h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-2" placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <textarea className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-3" placeholder="Description" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Target Exam" value={form.target_exam} onChange={(e) => setForm({ ...form, target_exam: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Class Level" value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })} />
+          <input
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Slug"
+            value={form.slug}
+            onChange={(e) => setForm({ ...form, slug: e.target.value })}
+          />
+          <input
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-2"
+            placeholder="Title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
+          <textarea
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-3"
+            placeholder="Description"
+            rows={2}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+          <input
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Target Exam"
+            value={form.target_exam}
+            onChange={(e) => setForm({ ...form, target_exam: e.target.value })}
+          />
+          <input
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Class Level"
+            value={form.class_level}
+            onChange={(e) => setForm({ ...form, class_level: e.target.value })}
+          />
           <div />
-          <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Pack Price" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
-          <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Original (sum) Price" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} />
+          <input
+            type="number"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Pack Price"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+          />
+          <input
+            type="number"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="Original (sum) Price"
+            value={form.original_price}
+            onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })}
+          />
         </div>
 
         <div className="mt-4">
@@ -554,11 +690,7 @@ const PacksTab = () => {
             ) : (
               books.map((b) => (
                 <label key={b.id} className="flex cursor-pointer items-center gap-2 py-1 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedBookIds.includes(b.id)}
-                    onChange={() => toggleBook(b.id)}
-                  />
+                  <input type="checkbox" checked={selectedBookIds.includes(b.id)} onChange={() => toggleBook(b.id)} />
                   <span className="flex-1">{b.title}</span>
                   <span className="text-xs text-muted-foreground">₹{Number(b.price).toLocaleString()}</span>
                 </label>
@@ -567,7 +699,11 @@ const PacksTab = () => {
           </div>
         </div>
 
-        <button onClick={save} disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save Pack
         </button>
@@ -600,7 +736,10 @@ const PacksTab = () => {
                   <td className="px-4 py-3">{p.class_level ?? "-"}</td>
                   <td className="px-4 py-3">₹{Number(p.price).toLocaleString()}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => togglePublish(p)} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                    <button
+                      onClick={() => togglePublish(p)}
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${p.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}
+                    >
                       {p.is_published ? "Published" : "Hidden"}
                     </button>
                   </td>
