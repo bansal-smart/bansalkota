@@ -53,15 +53,16 @@ type EnrollmentInfo = {
 
 // ----- Fallback data (Bansal-styled demo) -----
 
-const SERVICES = [
-  { icon: BookOpen, label: "Study Material" },
-  { icon: Video, label: "Recorded Lectures" },
-  { icon: ClipboardList, label: "Test Series" },
-  { icon: Shirt, label: "T-Shirt" },
-  { icon: Umbrella, label: "Umbrella" },
-  { icon: HelpCircle, label: "Doubt Classes" },
-  { icon: Backpack, label: "Bag" },
-];
+export const SERVICE_OPTIONS = [
+  { key: "study_material", icon: BookOpen, label: "Study Material" },
+  { key: "recorded_lectures", icon: Video, label: "Recorded Lectures" },
+  { key: "test_series", icon: ClipboardList, label: "Test Series" },
+  { key: "t_shirt", icon: Shirt, label: "T-Shirt" },
+  { key: "umbrella", icon: Umbrella, label: "Umbrella" },
+  { key: "doubt_classes", icon: HelpCircle, label: "Doubt Classes" },
+  { key: "bag", icon: Backpack, label: "Bag" },
+] as const;
+
 
 const formatBytes = (bytes: number | null) => {
   if (!bytes) return "";
