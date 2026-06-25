@@ -36,6 +36,11 @@ const schema = z.object({
     .string()
     .trim()
     .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone"),
+  parent_phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone")
+    .optional(),
   class_level: z.string().min(1, "Select class"),
   city: z.string().trim().min(1, "Enter city").max(80),
   state: z.string().trim().min(1, "Enter state").max(80),
@@ -53,6 +58,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     full_name: "",
     email: "",
     phone: "",
+    parent_phone: "",
     class_level: "",
     city: "",
     state: "",
@@ -114,6 +120,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           full_name: parsed.data.full_name,
           email: parsed.data.email,
           phone: parsed.data.phone,
+          parent_phone: parsed.data.parent_phone || null,
           class_level: parsed.data.class_level,
           city: parsed.data.city,
           state: parsed.data.state,
@@ -170,6 +177,10 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           <div>
             <Label htmlFor="ce-email">Email *</Label>
             <Input id="ce-email" type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="ce-parent-phone">Parent's phone</Label>
+            <Input id="ce-parent-phone" value={form.parent_phone} onChange={(e) => update("parent_phone", e.target.value)} placeholder="Parent's phone number" />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
