@@ -252,20 +252,20 @@ const PublicLayout = () => {
             <div>
               <h4 className="text-sm font-bold mb-4 uppercase tracking-wide">Quick Links</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/boost" className="block text-white/75 hover:text-bansal-orange">
-                  BOOST Scholarship
+                <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">
+                  Achievements
                 </Link>
-                <Link to="/courses" className="block text-white/75 hover:text-bansal-orange">
-                  Courses
+                <Link to="/disclaimer" className="block text-white/75 hover:text-bansal-orange">
+                  Disclaimer
                 </Link>
-                <Link to="/centers" className="block text-white/75 hover:text-bansal-orange">
-                  Offline Centres
+                <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">
+                  Terms &amp; Conditions
                 </Link>
                 <Link to="/privacy" className="block text-white/75 hover:text-bansal-orange">
                   Privacy Policy
                 </Link>
-                <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">
-                  Terms &amp; Conditions
+                <Link to="/refund-policy" className="block text-white/75 hover:text-bansal-orange">
+                  Refund Policy
                 </Link>
               </div>
             </div>
