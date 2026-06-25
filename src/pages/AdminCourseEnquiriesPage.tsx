@@ -30,6 +30,7 @@ type Row = {
   full_name: string;
   email: string;
   phone: string;
+  parent_phone: string | null;
   class_level: string | null;
   city: string | null;
   state: string | null;
