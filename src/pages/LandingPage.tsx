@@ -219,7 +219,7 @@ const LandingPage = () => {
         <GlowBlob color="white" size="lg" className="-left-32 -bottom-32" />
         <FloatingIcons defaultTone="white" />
 
-        <div className="relative container mx-auto px-4 py-10 md:py-20 lg:py-24 grid lg:grid-cols-[1.05fr_1fr] gap-8 md:gap-10 items-center">
+        <div className="relative container mx-auto px-4 py-10 md:py-20 lg:py-24 grid lg:grid-cols-[1fr_1.5fr] gap-8 md:gap-10 items-center">
           <div className="animate-fade-in-up">
             <BansalBadge tone="orange">
               <Sparkles className="h-3 w-3 mr-1" /> Since 1981 · Kota, Rajasthan
