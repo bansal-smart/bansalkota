@@ -17,6 +17,7 @@ type AdminCourse = {
   total_enrolled: number;
   price: number;
   created_at: string;
+  sort_order: number;
   chapter_count?: number;
   test_count?: number;
   lesson_count?: number;
