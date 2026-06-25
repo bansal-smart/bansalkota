@@ -187,6 +187,29 @@ const CreateCoursePage = () => {
       educatorName.trim() ||
       ((user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "Educator").trim();
 
+    const sharedFields = {
+      name,
+      description: description || shortDesc,
+      short_description: shortDesc || null,
+      description_html: descriptionHtml || null,
+      subject,
+      target_exam: exam,
+      educator_name: resolvedEducatorName,
+      price,
+      original_price: originalPrice || null,
+      discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+      thumbnail_url: thumbnailUrl,
+      is_published: publish,
+      what_youll_learn: learnItems,
+      requirements: reqItems,
+      education_level: educationLevel || null,
+      duration_label: durationLabel || null,
+      mode: modeValue || null,
+      language: language || null,
+      subjects_covered: subjectsCovered,
+      included_services: includedServices,
+    };
+
     let workingCourseId = courseId;
 
     if (!isEditMode) {
@@ -195,22 +218,7 @@ const CreateCoursePage = () => {
 
       const { data: course, error: courseErr } = await supabase
         .from("courses")
-        .insert({
-          name,
-          slug,
-          description: description || shortDesc,
-          subject,
-          target_exam: exam,
-          educator_name: resolvedEducatorName,
-          price,
-          original_price: originalPrice || null,
-          discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
-          thumbnail_url: thumbnailUrl,
-          is_published: publish,
-          created_by: user.id,
-          what_youll_learn: learnItems,
-          requirements: reqItems,
-        })
+        .insert({ ...sharedFields, slug, created_by: user.id })
         .select("id, slug")
         .single();
 
@@ -224,21 +232,9 @@ const CreateCoursePage = () => {
     } else {
       const { error: updErr } = await supabase
         .from("courses")
-        .update({
-          name,
-          description: description || shortDesc,
-          subject,
-          target_exam: exam,
-          educator_name: resolvedEducatorName,
-          price,
-          original_price: originalPrice || null,
-          discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
-          thumbnail_url: thumbnailUrl,
-          is_published: publish,
-          what_youll_learn: learnItems,
-          requirements: reqItems,
-        })
+        .update(sharedFields)
         .eq("id", courseId!);
+
       if (updErr) {
         toast.error(updErr.message);
         setSubmitting(false);
