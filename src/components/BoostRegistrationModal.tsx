@@ -60,7 +60,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       date_of_birth: parsed.data.date_of_birth || null,
       preferred_centre_id: parsed.data.preferred_centre_id || null,
       preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
-      amount: 99,
+      amount: priceInr,
       payment_status: "pending",
     };
     const { data, error } = await supabase
