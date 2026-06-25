@@ -173,21 +173,30 @@ const EStorePage = () => {
                           </>
                         )}
                       </div>
-                      <button
-                        onClick={() => {
-                          addToCart({
-                            type: "book",
-                            id: b.id,
-                            title: b.title,
-                            price: Number(b.price),
-                            cover_url: b.cover_url,
-                          });
-                          toast.success("Added to cart");
-                        }}
-                        className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[hsl(var(--bansal-orange))]/10 py-2 text-xs font-bold text-[hsl(var(--bansal-orange))] hover:bg-[hsl(var(--bansal-orange))]/20"
-                      >
-                        <ShoppingCart className="h-3.5 w-3.5" /> Add to Cart
-                      </button>
+                      {b.stock === 0 ? (
+                        <button
+                          disabled
+                          className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-muted py-2 text-xs font-bold text-muted-foreground opacity-60"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" /> Out of stock
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            addToCart({
+                              type: "book",
+                              id: b.id,
+                              title: b.title,
+                              price: Number(b.price),
+                              cover_url: b.cover_url,
+                            });
+                            toast.success("Added to cart");
+                          }}
+                          className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[hsl(var(--bansal-orange))]/10 py-2 text-xs font-bold text-[hsl(var(--bansal-orange))] hover:bg-[hsl(var(--bansal-orange))]/20"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" /> Add to Cart
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
