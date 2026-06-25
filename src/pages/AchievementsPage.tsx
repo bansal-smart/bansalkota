@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trophy, Medal, Star, TrendingUp, Building2 } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
@@ -7,11 +7,8 @@ import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
 const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
-import { supabase } from "@/integrations/supabase/client";
 import { useToppers } from "@/hooks/useToppers";
 import { MapPin } from "lucide-react";
-
-type Poster = { id: string; image_url: string; caption: string };
 
 const milestones = [
   { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
