@@ -19,27 +19,12 @@ const milestones = [
 
 export default function AchievementsPage() {
   const { page: cmsPage } = useSitePage("achievements");
-  const [posters, setPosters] = useState<Poster[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toppers, loading: toppersLoading } = useToppers();
   const [examFilter, setExamFilter] = useState<string>("All");
   const [visible, setVisible] = useState(48);
 
   const exams = ["All", ...Array.from(new Set(toppers.map((t) => t.exam).filter(Boolean)))];
   const filtered = examFilter === "All" ? toppers : toppers.filter((t) => t.exam === examFilter);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("achievement_posters")
-        .select("id, image_url, caption")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-      setPosters((data as Poster[]) ?? []);
-      setLoading(false);
-    })();
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,58 +82,12 @@ export default function AchievementsPage() {
         </section>
       )}
 
-      {/* Result posters wall */}
+      {/* The Wall of Fame — topper students */}
       <section className="py-14">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <BansalBadge variant="blue" className="mb-3">
-              Result Posters
-            </BansalBadge>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">The Wall of Fame</h2>
-            <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-              A glimpse of our year-on-year results across JEE Main, JEE Advanced and NEET.
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-xl bg-muted animate-pulse" />
-              ))}
-            </div>
-          ) : posters.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">No result posters published yet.</p>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {posters.map((p) => (
-                <figure
-                  key={p.id}
-                  className="group rounded-2xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-lg transition-shadow"
-                >
-                  <div className="aspect-[3/4] overflow-hidden bg-muted">
-                    <img
-                      src={p.image_url}
-                      alt={p.caption}
-                      loading="lazy"
-                      className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                    />
-                  </div>
-                  <figcaption className="text-center py-3 text-sm font-bold text-bansal-blue tracking-wide">
-                    {p.caption}
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Toppers students grid */}
-      <section className="py-14 bg-muted/30">
-        <div className="container mx-auto px-4">
           <div className="text-center mb-8">
-            <BansalBadge variant="orange" className="mb-3">
-              Topper Students
+            <BansalBadge variant="blue" className="mb-3">
+              The Wall of Fame
             </BansalBadge>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">
               Every Rank. Every Name.
@@ -215,10 +154,6 @@ export default function AchievementsPage() {
           )}
         </div>
       </section>
-
-
-
-
 
       {/* CTA */}
       <section className="py-14 bg-bansal-blue text-white">
