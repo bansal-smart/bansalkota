@@ -91,7 +91,12 @@ const BookDetailPage = () => {
               )}
             </div>
 
-            {book.description && <p className="mt-6 leading-relaxed text-muted-foreground">{book.description}</p>}
+            {book.description && (
+              <div
+                className="prose prose-sm sm:prose-base mt-6 max-w-none text-muted-foreground"
+                dangerouslySetInnerHTML={{ __html: book.description }}
+              />
+            )}
 
             <div className="mt-8 flex flex-wrap gap-3">
               <button
