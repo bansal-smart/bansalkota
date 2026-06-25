@@ -355,6 +355,7 @@ const App = () => (
               <Route path="/admin/centre-support" element={<AdminCenterSupportPage />} />
               <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
+              <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
               <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
