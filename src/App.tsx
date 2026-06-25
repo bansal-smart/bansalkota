@@ -153,6 +153,7 @@ const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
 const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
 const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
+const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -340,6 +341,8 @@ const App = () => (
               <Route path="/admin/test-attempts" element={<Navigate to="/admin/tests-hub?tab=attempts" replace />} />
               <Route path="/admin/test-imports" element={<Navigate to="/admin/tests-hub?tab=imports" replace />} />
               <Route path="/admin/test-series" element={<Navigate to="/admin/tests-hub?tab=series" replace />} />
+              <Route path="/admin/test-series/new" element={<CreateTestSeriesPage />} />
+              <Route path="/admin/test-series/:id/edit" element={<CreateTestSeriesPage />} />
               <Route path="/admin/question-bank" element={<Navigate to="/admin/tests-hub?tab=bank" replace />} />
               {/* Editor flows keep their own routes */}
               <Route path="/admin/tests/new" element={<CreateTestPage />} />

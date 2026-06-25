@@ -189,6 +189,7 @@ export type Database = {
           original_price: number | null
           price: number
           slug: string
+          sort_order: number
           stock: number
           subject: string | null
           tags: string[] | null
@@ -209,6 +210,7 @@ export type Database = {
           original_price?: number | null
           price?: number
           slug: string
+          sort_order?: number
           stock?: number
           subject?: string | null
           tags?: string[] | null
@@ -229,6 +231,7 @@ export type Database = {
           original_price?: number | null
           price?: number
           slug?: string
+          sort_order?: number
           stock?: number
           subject?: string | null
           tags?: string[] | null
@@ -4121,16 +4124,23 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          description_html: string | null
           discount_percent: number | null
           duration_months: number | null
           features: string[] | null
           id: string
+          included_services: string[]
           is_featured: boolean
           is_published: boolean
+          language: string | null
+          mode: string | null
           original_price: number | null
           price: number
+          short_description: string | null
           slug: string
+          sort_order: number
           subject: string | null
+          subjects_covered: string[]
           target_exam: string | null
           thumbnail_url: string | null
           title: string
@@ -4141,16 +4151,23 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          description_html?: string | null
           discount_percent?: number | null
           duration_months?: number | null
           features?: string[] | null
           id?: string
+          included_services?: string[]
           is_featured?: boolean
           is_published?: boolean
+          language?: string | null
+          mode?: string | null
           original_price?: number | null
           price?: number
+          short_description?: string | null
           slug: string
+          sort_order?: number
           subject?: string | null
+          subjects_covered?: string[]
           target_exam?: string | null
           thumbnail_url?: string | null
           title: string
@@ -4161,16 +4178,23 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          description_html?: string | null
           discount_percent?: number | null
           duration_months?: number | null
           features?: string[] | null
           id?: string
+          included_services?: string[]
           is_featured?: boolean
           is_published?: boolean
+          language?: string | null
+          mode?: string | null
           original_price?: number | null
           price?: number
+          short_description?: string | null
           slug?: string
+          sort_order?: number
           subject?: string | null
+          subjects_covered?: string[]
           target_exam?: string | null
           thumbnail_url?: string | null
           title?: string

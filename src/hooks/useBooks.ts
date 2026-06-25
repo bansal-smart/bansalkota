@@ -30,6 +30,7 @@ export const useBooks = (filter?: { exam?: string; classLevel?: string }) => {
         .from("books")
         .select(BOOK_COLUMNS)
         .eq("is_published", true)
+        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
       if (filter?.exam && filter.exam !== "All") q = q.eq("target_exam", filter.exam);
       if (filter?.classLevel && filter.classLevel !== "All") q = q.eq("class_level", filter.classLevel);

@@ -78,7 +78,7 @@ const SortableRow = ({
           className={`flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors ${
             draggable ? "cursor-grab active:cursor-grabbing hover:bg-muted hover:text-primary" : "cursor-not-allowed opacity-30"
           }`}
-          title={draggable ? "Drag to reorder" : "Clear search to reorder"}
+          title={draggable ? "Drag to reorder" : "Enable reorder mode to drag"}
           aria-label="Drag handle"
           type="button"
         >
@@ -152,6 +152,7 @@ const AdminCoursesPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -262,7 +263,8 @@ const AdminCoursesPage = () => {
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
   );
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
-  const draggable = !search;
+  const draggable = reorderMode && !search;
+  const rows = reorderMode ? filtered : paged;
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -280,19 +282,33 @@ const AdminCoursesPage = () => {
         </Link>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search courses or educators..."
-          className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            disabled={reorderMode}
+            placeholder={reorderMode ? "Search disabled in reorder mode" : "Search courses or educators..."}
+            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none disabled:opacity-60"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => { setReorderMode((v) => !v); setSearch(""); }}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold border transition-colors ${
+            reorderMode ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-foreground hover:bg-muted"
+          }`}
+        >
+          <GripVertical className="h-4 w-4" />
+          {reorderMode ? "Exit reorder mode" : "Reorder courses"}
+        </button>
       </div>
 
-      {!search && (
+      {reorderMode && (
         <p className="text-xs text-muted-foreground -mt-3">
-          Drag the <GripVertical className="inline h-3.5 w-3.5 align-text-bottom" /> handle to reorder courses. The new order is reflected on the public courses page automatically.
+          All {filtered.length} courses are shown on one page so you can drag any course to any position.
+          Drag the <GripVertical className="inline h-3.5 w-3.5 align-text-bottom" /> handle to reorder. The new order is reflected on the public courses page automatically.
           {savingOrder && <span className="ml-2 inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> saving…</span>}
         </p>
       )}
@@ -330,9 +346,9 @@ const AdminCoursesPage = () => {
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
-                <SortableContext items={paged.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={rows.map((c) => c.id)} strategy={verticalListSortingStrategy}>
                   <tbody>
-                    {paged.map((c) => (
+                    {rows.map((c) => (
                       <SortableRow
                         key={c.id}
                         c={c}
@@ -347,7 +363,9 @@ const AdminCoursesPage = () => {
                 </SortableContext>
               </table>
             </DndContext>
-            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+            {!reorderMode && (
+              <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+            )}
           </div>
         )}
       </div>
