@@ -1,11 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Boxes, Loader2, Plus, Trash2, Save, Pencil, Upload, X, ImageIcon } from "lucide-react";
+import { BookOpen, Boxes, Loader2, Plus, Trash2, Save, Pencil, Upload, X, ImageIcon, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Book = {
   id: string;
