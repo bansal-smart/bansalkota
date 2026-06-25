@@ -235,7 +235,11 @@ const App = () => (
               <Route path="/centres/:slug/updates" element={<CentreUpdatesPublicPage />} />
               <Route path="/centres/:slug/updates/:id" element={<CentreUpdateDetailPage />} />
               <Route path="/achievements" element={<AchievementsPage />} />
+              <Route path="/gallery" element={<Navigate to="/gallery/images" replace />} />
+              <Route path="/gallery/images" element={<GalleryImagesPage />} />
+              <Route path="/gallery/videos" element={<GalleryVideosPage />} />
               <Route path="/alumni" element={<AlumniPage />} />
+
               <Route path="/e-store" element={<EStorePage />} />
               <Route path="/e-store/checkout" element={<CheckoutPage />} />
               <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
