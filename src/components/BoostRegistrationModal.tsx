@@ -153,7 +153,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             </Section>
 
             <Section title="Exam slot & centre">
-              <div className="md:col-span-2">
+              <div>
                 <label className="text-xs font-semibold text-muted-foreground">Preferred centre</label>
                 <select name="preferred_centre_id" className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm">
                   <option value="">Online (no centre)</option>
