@@ -88,6 +88,7 @@ const faqs = [
 
 export default function BoostPage() {
   const [regOpen, setRegOpen] = useState(false);
+  const boost = useBoostSettings();
   return (
     <div className="min-h-screen bg-background">
       <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
