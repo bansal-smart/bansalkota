@@ -190,6 +190,7 @@ const dlpFeatures = [
 const LandingPage = () => {
   const { rows: dbTestimonials } = useSiteTestimonials();
   const { rows: dbStats } = useSiteStats();
+  const boost = useBoostSettings();
   const { banners: dbHeroBanners } = useLandingHeroBanners();
   const heroBanners = dbHeroBanners.length
     ? dbHeroBanners.map((b) => ({ src: b.image_url, alt: b.alt ?? "Bansal Classes banner", link: b.link }))
