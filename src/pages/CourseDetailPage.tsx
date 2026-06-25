@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CourseReviews } from "@/components/CourseReviews";
+import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
+import { Sparkles } from "lucide-react";
 
 type EnrollmentInfo = {
   id: string;
@@ -210,24 +212,6 @@ const CourseDetailPage = () => {
       return;
     }
     setEnrollOpen(true);
-  };
-
-  const handleConfirmEnroll = async () => {
-    if (!user || !course) return;
-    setEnrolling(true);
-    const { data, error } = await supabase
-      .from("enrollments")
-      .insert({ user_id: user.id, course_id: course.id, is_active: true })
-      .select("id, progress_percent, completed_lessons, last_lesson_title, last_accessed_at")
-      .maybeSingle();
-    setEnrolling(false);
-    if (error) {
-      toast.error(error.message || "Could not enroll");
-      return;
-    }
-    setEnrollment(data as EnrollmentInfo);
-    setEnrollOpen(false);
-    toast.success("You're enrolled! Start learning anytime.");
   };
 
   const discount =
