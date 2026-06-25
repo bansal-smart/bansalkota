@@ -214,7 +214,11 @@ export default function LeadershipDetailPage() {
                     : slug === "sameer-bansal"
                       ? profile.intro.replace(/Sameer Bansal\b(?!\s+Sir)/g, "Sameer Bansal Sir")
                       : slug === "neelam-bansal"
-                        ? profile.intro.replace(/Mrs\.\s*/g, "").replace(/Neelam Bansal\b(?!\s+Ma'am)/g, "Neelam Bansal Ma'am")
+                        ? profile.intro
+                            .replace(/Mrs\.\s*/g, "")
+                            .replace(/Neelam Bansal\b(?!\s+Ma'am)/g, "Neelam Bansal Ma'am")
+                            .replace(/V\.K\. Bansal(?! Sir)/g, "V.K. Bansal Sir")
+                            .replace(/Sameer Bansal(?! Sir)/g, "Sameer Bansal Sir")
                         : slug === "mahima-bansal"
                           ? profile.intro.replace(/Mahima Bansal\b(?!\s+Ma'am)/g, "Mahima Bansal Ma'am")
                           : profile.intro}
