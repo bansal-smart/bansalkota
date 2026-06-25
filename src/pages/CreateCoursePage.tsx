@@ -295,12 +295,12 @@ const CreateCoursePage = () => {
         </div>
         <div>
           <label className="text-xs font-semibold text-foreground">Short Description</label>
-          <input
+          <textarea
             value={shortDesc}
             onChange={(e) => setShortDesc(e.target.value)}
-            maxLength={200}
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
             placeholder="Shown below the course name (e.g. Online course for Class XII PCM students)"
+            rows={3}
           />
         </div>
         <div>
