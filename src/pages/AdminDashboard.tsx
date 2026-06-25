@@ -27,7 +27,7 @@ const fetchOverview = async () => {
 
   const [
     profilesRes, coursesRes, enrollmentsRes, liveRes, attemptsRes,
-    eduRes, enqOpenRes, repRes, supportRes,
+    enqOpenRes, repRes, supportRes,
     centresRes, recentEnqRes, toppersRes,
     testsLiveRes, testsTotalRes, qbankRes,
     recentBoostRes,
@@ -37,7 +37,6 @@ const fetchOverview = async () => {
     supabase.from("enrollments").select("id, course_id, created_at").gte("created_at", thirtyDaysAgo),
     supabase.from("live_classes").select("id, title, educator_name, status, starts_at").in("status", ["live", "scheduled"]).order("starts_at", { ascending: true }).limit(8),
     supabase.from("test_attempts").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
-    supabase.from("educator_applications").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("source_type", "center_support").neq("status", "closed"),
@@ -49,6 +48,7 @@ const fetchOverview = async () => {
     supabase.from("question_bank").select("id", { count: "exact", head: true }),
     supabase.from("boost_registrations").select("id, full_name, class_level, target_exam, city, admit_card_number, payment_status, created_at").order("created_at", { ascending: false }).limit(8),
   ]);
+
 
   return {
     profiles: (profilesRes.data ?? []) as ProfileRow[],
