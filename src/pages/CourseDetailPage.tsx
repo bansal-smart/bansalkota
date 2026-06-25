@@ -99,6 +99,7 @@ const CourseDetailPage = () => {
   const [completedSlugs, setCompletedSlugs] = useState<Set<string>>(new Set());
 
   const enrolled = !!enrollment;
+  const boost = useBoostSettings();
 
   useEffect(() => {
     if (!user || !course) {
