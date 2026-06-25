@@ -48,7 +48,7 @@ const PublicLayout = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/centers" className="hover:text-bansal-orange">
+            <Link to="/centres" className="hover:text-bansal-orange">
               Find a Centre
             </Link>
             <Link to="/login" className="hover:text-bansal-orange font-semibold">
@@ -252,20 +252,20 @@ const PublicLayout = () => {
             <div>
               <h4 className="text-sm font-bold mb-4 uppercase tracking-wide">Quick Links</h4>
               <div className="space-y-2 text-sm">
-                <Link to="/boost" className="block text-white/75 hover:text-bansal-orange">
-                  BOOST Scholarship
+                <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">
+                  Achievements
                 </Link>
-                <Link to="/courses" className="block text-white/75 hover:text-bansal-orange">
-                  Courses
+                <Link to="/disclaimer" className="block text-white/75 hover:text-bansal-orange">
+                  Disclaimer
                 </Link>
-                <Link to="/centers" className="block text-white/75 hover:text-bansal-orange">
-                  Offline Centres
+                <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">
+                  Terms &amp; Conditions
                 </Link>
                 <Link to="/privacy" className="block text-white/75 hover:text-bansal-orange">
                   Privacy Policy
                 </Link>
-                <Link to="/terms" className="block text-white/75 hover:text-bansal-orange">
-                  Terms &amp; Conditions
+                <Link to="/refund-policy" className="block text-white/75 hover:text-bansal-orange">
+                  Refund Policy
                 </Link>
               </div>
             </div>
@@ -287,7 +287,7 @@ const PublicLayout = () => {
                 </div>
                 <div className="flex gap-2">
                   <Mail className="h-4 w-4 mt-0.5 shrink-0 text-bansal-orange" />
-                  <span>info@bansal.ac.in</span>
+                  <span>admin@bansal.ac.in</span>
                 </div>
               </div>
             </div>

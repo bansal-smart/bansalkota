@@ -151,6 +151,7 @@ const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
 const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
+const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -374,6 +375,11 @@ const App = () => (
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
               <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
               <Route path="/admin/sms-broadcasts" element={<AdminSmsBroadcastsPage />} />
+              <Route path="/admin/site-pages/achievements" element={<AdminSitePageEditorPage slug="achievements" heading="Achievements" />} />
+              <Route path="/admin/site-pages/disclaimer" element={<AdminSitePageEditorPage slug="disclaimer" heading="Disclaimer" />} />
+              <Route path="/admin/site-pages/terms" element={<AdminSitePageEditorPage slug="terms" heading="Terms & Conditions" />} />
+              <Route path="/admin/site-pages/privacy" element={<AdminSitePageEditorPage slug="privacy" heading="Privacy Policy" />} />
+              <Route path="/admin/site-pages/refund-policy" element={<AdminSitePageEditorPage slug="refund-policy" heading="Refund Policy" />} />
             </Route>
 
             {/* Centre admin portal */}

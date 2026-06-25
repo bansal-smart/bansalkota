@@ -145,7 +145,7 @@ const CoursesPage = () => {
       <section className="container mx-auto px-4 py-12 md:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3 animate-fade-in-up">
           <div>
-            <h2 className="font-display text-2xl font-black text-foreground md:text-3xl">Popular Batches</h2>
+            <h2 className="font-display text-2xl font-black text-foreground md:text-3xl">Popular Courses</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {loading ? "Loading…" : `${courses.length} course${courses.length === 1 ? "" : "s"} available`}
             </p>

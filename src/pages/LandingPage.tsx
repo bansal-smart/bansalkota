@@ -35,7 +35,7 @@ import BansalBadge from "@/components/bansal/BansalBadge";
 import { GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons } from "@/components/bansal/BansalDecor";
 import { useSiteTestimonials, useSiteStats } from "@/hooks/useSiteContent";
 import ToppersWall from "@/components/landing/ToppersWall";
-import ResourcesTeaser from "@/components/landing/ResourcesTeaser";
+
 import CentresShowcase from "@/components/landing/CentresShowcase";
 import LandingFAQ from "@/components/landing/LandingFAQ";
 import LandingCTAForm from "@/components/landing/LandingCTAForm";
@@ -60,7 +60,7 @@ const iconMap: Record<string, any> = {
   Building2,
 };
 
-import mentorTeaching from "@/assets/bansal-mentor-v2.jpg";
+
 import toppersImage from "@/assets/bansal-toppers-v2.jpg";
 import indiaMapAsset from "@/assets/bansal-pan-india.webp.asset.json";
 const indiaMap = indiaMapAsset.url;
@@ -374,71 +374,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 4. WHY BANSAL */}
-      <section className="relative py-12 md:py-20 bg-white section-decor">
-        <GridTexture tone="blue" className="opacity-40 decor-fade" />
-        <div className="relative container mx-auto px-4 grid lg:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div className="relative order-2 lg:order-1 max-w-md mx-auto lg:max-w-none w-full">
-            <div className="aspect-[4/3] sm:aspect-square rounded-3xl overflow-hidden border-4 border-bansal-blue/10 shadow-xl bg-bansal-cream/40 flex items-center justify-center p-2 sm:p-3">
-              <img
-                src={mentorTeaching}
-                alt="Bansal Classes mentor teaching at whiteboard"
-                className="max-h-full max-w-full object-contain"
-                loading="lazy"
-              />
-            </div>
-            <div className="absolute -bottom-6 -right-6 bg-bansal-orange text-white rounded-2xl p-4 sm:p-5 shadow-xl">
-              <div className="font-display text-2xl sm:text-3xl font-extrabold">Since</div>
-              <div className="text-[10px] sm:text-xs font-medium">1981 · Excellence</div>
-            </div>
-            <Atom className="absolute -top-6 -left-6 h-16 w-16 text-bansal-orange/20 animate-float-slow hidden md:block" />
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <BansalBadge tone="blue">Why Bansal</BansalBadge>
-            <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
-              Built for <span className="text-bansal-orange">Scholars</span>. Backed by{" "}
-              <span className="text-bansal-orange">Legacy</span>.
-            </h2>
-            <p className="mt-4 text-bansal-gray text-sm md:text-base">
-              Since 1981, disciplined preparation, master mentors, and a structured ecosystem have taken every Bansal
-              student to their highest potential.
-            </p>
-            <div className="mt-6 grid sm:grid-cols-2 gap-3 sm:gap-4">
-              {pillars.map((p) => (
-                <div
-                  key={p.title}
-                  className="flex gap-3 rounded-xl p-3 hover:bg-bansal-blue-light/40 transition-colors"
-                >
-                  <div className="h-10 w-10 rounded-lg bg-bansal-blue-light flex items-center justify-center shrink-0">
-                    <p.icon className="h-5 w-5 text-bansal-blue" />
-                  </div>
-                  <div>
-                    <div className="font-display font-bold text-bansal-black text-sm sm:text-base">{p.title}</div>
-                    <div className="text-xs sm:text-sm text-bansal-gray">{p.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-bansal-blue">
-              <span className="flex items-center gap-1.5">
-                <GraduationCap className="h-4 w-4 text-bansal-orange" /> 12 IIT alumni faculty
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Brain className="h-4 w-4 text-bansal-orange" /> 8 PhD subject heads
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Trophy className="h-4 w-4 text-bansal-orange" /> AIRs mentored since 1981
-              </span>
-            </div>
-            <Link to="/about" className="inline-block mt-7">
-              <BansalButton variant="cta">
-                Read More <ArrowRight className="h-4 w-4" />
-              </BansalButton>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* 4. WHY BANSAL — removed */}
 
       {/* 4b. BANSAL EXPERTISE */}
       <section className="relative py-12 md:py-20 bg-gradient-to-br from-bansal-blue-light/50 to-bansal-orange-light/30 section-decor">
@@ -759,8 +695,6 @@ const LandingPage = () => {
       {/* 11. Toppers Wall (live from DB) */}
       <ToppersWall />
 
-      {/* 13. Free Resources teaser */}
-      <ResourcesTeaser />
 
       {/* 14. Centres Showcase (live from DB) */}
       <CentresShowcase />

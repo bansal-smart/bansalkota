@@ -3307,6 +3307,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_pages: {
+        Row: {
+          content_html: string
+          slug: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_html?: string
+          slug: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_html?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       site_stats: {
         Row: {
           created_at: string
