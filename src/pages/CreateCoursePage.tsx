@@ -423,7 +423,7 @@ const CreateCoursePage = () => {
       </div>
 
 
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4 mb-6">
         <h2 className="text-sm font-bold text-foreground">Pricing</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
