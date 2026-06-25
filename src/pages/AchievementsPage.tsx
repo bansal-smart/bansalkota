@@ -1,24 +1,15 @@
-import { useMemo, useState } from "react";
-import { Trophy, Medal, Star, Award, TrendingUp, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Trophy, Medal, Star, TrendingUp, Building2 } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
 const achievementsHero = achievementsHeroAsset.url;
-import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
-import { useToppers, type Topper } from "@/hooks/useToppers";
+import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
+import { supabase } from "@/integrations/supabase/client";
 
-const PAGE_SIZE = 24;
-
-const initialsFor = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+type Poster = { id: string; image_url: string; caption: string };
 
 const milestones = [
   { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
@@ -28,22 +19,22 @@ const milestones = [
 ];
 
 export default function AchievementsPage() {
-  const { toppers, loading } = useToppers();
   const { page: cmsPage } = useSitePage("achievements");
-  const [filter, setFilter] = useState<string>("All");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [posters, setPosters] = useState<Poster[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const exams = useMemo(() => {
-    const set = new Set<string>();
-    toppers.forEach((t) => t.exam && set.add(t.exam));
-    return ["All", ...Array.from(set)];
-  }, [toppers]);
-
-  const filtered = useMemo(() => {
-    return filter === "All" ? toppers : toppers.filter((t) => t.exam === filter);
-  }, [toppers, filter]);
-
-  const visible = filtered.slice(0, visibleCount);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("achievement_posters")
+        .select("id, image_url, caption")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      setPosters((data as Poster[]) ?? []);
+      setLoading(false);
+    })();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
