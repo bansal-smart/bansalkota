@@ -167,7 +167,7 @@ const CreateCoursePage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Please sign in");
     if (!name.trim()) return toast.error("Course title is required");
-    if (isEditMode && chapters.length === 0) return toast.error("Add at least one chapter");
+    
 
     setSubmitting(true);
 
