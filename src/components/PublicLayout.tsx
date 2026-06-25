@@ -20,17 +20,25 @@ const aboutChildren = [
   { label: "Bansal Alumni Network", path: "/alumni" },
 ];
 
+const galleriesChildren = [
+  { label: "Image Gallery", path: "/gallery/images" },
+  { label: "Video Gallery", path: "/gallery/videos" },
+  { label: "Achievement Gallery", path: "/achievements" },
+];
+
 const navItems: NavItem[] = [
   { label: "Home", path: "/" },
   { label: "About", path: "/about", children: aboutChildren },
   { label: "Courses", path: "/courses" },
   { label: "Test Series", path: "/test-series" },
   { label: "Centres", path: "/centres" },
+  { label: "Galleries", path: "/gallery/images", children: galleriesChildren },
   { label: "BOOST", path: "/boost", logo: boostLogo },
   { label: "E-Store", path: "/e-store" },
   { label: "Career", path: "/career" },
   { label: "Contact", path: "/contact" },
 ];
+
 
 const PublicLayout = () => {
   const location = useLocation();
