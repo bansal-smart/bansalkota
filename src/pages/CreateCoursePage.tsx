@@ -4,9 +4,9 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useExams } from "@/hooks/useExams";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
+import { X } from "lucide-react";
 
 const EDUCATION_LEVELS = [
   "Class 6",
