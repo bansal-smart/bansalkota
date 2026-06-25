@@ -115,7 +115,7 @@ export default function BoostPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
-                Explore
+                Register Now
               </BansalButton>
               <a href="#how-it-works">
                 <BansalButton variant="ghost-white" className="text-base px-8 py-4">
