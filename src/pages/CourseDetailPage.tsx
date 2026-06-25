@@ -30,6 +30,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useCourseDetail } from "@/hooks/useCourseDetail";
 import { useAuth } from "@/context/AuthContext";
+import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
