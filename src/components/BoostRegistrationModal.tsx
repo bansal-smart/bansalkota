@@ -29,17 +29,28 @@ const schema = z.object({
 
 const CLASS_LEVELS = ["Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
 const EXAMS = ["JEE", "NEET", "NTSE", "Olympiad", "Foundation / School"];
-const SLOTS = [
-  "Online · Next Sunday 10:00 AM",
-  "Online · Next Sunday 3:00 PM",
-  "Offline · Next Sunday 10:00 AM (preferred centre)",
+
+const SLOT_TIMES: { label: string; mode: "Online" | "Offline" }[] = [
+  { label: "10:00 AM", mode: "Online" },
+  { label: "3:00 PM", mode: "Online" },
+  { label: "10:00 AM", mode: "Offline" },
 ];
+
+const slotDateFmt = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long" });
+function buildSlots(dates: Date[]): string[] {
+  if (!dates.length) return [];
+  return dates.flatMap((d) => {
+    const ds = slotDateFmt.format(d);
+    return SLOT_TIMES.map((s) => `${ds} · ${s.label} ${s.mode}`);
+  });
+}
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
-  const { priceInr } = useBoostSettings();
+  const { priceInr, examDates } = useBoostSettings();
+  const slots = buildSlots(examDates);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
 
@@ -164,7 +175,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
                   ))}
                 </select>
               </div>
-              <Select name="exam_slot" label="Exam slot *" options={SLOTS} required />
+              <Select name="exam_slot" label="Exam slot *" options={slots.length ? slots : ["Exam dates not announced yet"]} required />
             </Section>
 
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
