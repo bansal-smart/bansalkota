@@ -135,7 +135,7 @@ const EStorePage = () => {
                     <Link to={`/e-store/${b.slug}`} className="block">
                       <div className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10">
                         {b.cover_url ? (
-                          <img src={b.cover_url} alt={b.title} className="h-full w-full object-contain p-3" />
+                          <img src={b.cover_url} alt={b.title} className="h-full w-full object-cover" />
                         ) : (
                           <BookOpen className="h-16 w-16 text-[hsl(var(--bansal-orange))]" />
                         )}
