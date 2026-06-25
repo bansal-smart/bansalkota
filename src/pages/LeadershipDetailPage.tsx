@@ -434,7 +434,7 @@ export default function LeadershipDetailPage() {
                   <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl overflow-hidden ring-4 ring-bansal-orange/20 shadow-xl">
                     <img
                       src={vkProfilePhoto.url}
-                      alt="V.K. Bansal Sir"
+                      alt="Bansal Sir"
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
@@ -449,11 +449,11 @@ export default function LeadershipDetailPage() {
                   </div>
                   <h3 className="font-display text-2xl md:text-3xl font-extrabold text-bansal-blue leading-tight">
                     In continuation of{" "}
-                    <span className="text-bansal-orange">Mr. V.K. Bansal Sir</span>
+                    <span className="text-bansal-orange">Mr. Bansal Sir</span>
                   </h3>
                   <p className="mt-3 text-bansal-gray leading-relaxed">
                     Every classroom, every test, every blackboard carries forward
-                    the standard that V.K. Bansal Sir set in 1981. Sameer Sir's
+                    the standard that Bansal Sir set in 1981. Sameer Sir's
                     leadership is the next chapter of the same teaching tradition
                     that built Kota.
                   </p>
@@ -461,7 +461,7 @@ export default function LeadershipDetailPage() {
                     to="/about/vk-bansal"
                     className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-bansal-orange hover:text-bansal-blue transition-colors"
                   >
-                    Read about V.K. Bansal Sir{" "}
+                    Read about Bansal Sir{" "}
                     <ArrowLeft className="h-4 w-4 rotate-180" />
                   </Link>
                 </div>
