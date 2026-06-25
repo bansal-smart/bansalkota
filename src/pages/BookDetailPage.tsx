@@ -93,7 +93,7 @@ const BookDetailPage = () => {
 
             {book.description && (
               <div
-                className="prose prose-sm sm:prose-base mt-6 max-w-none text-muted-foreground"
+                className="prose prose-sm sm:prose-base mt-6 max-w-none text-muted-foreground [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1"
                 dangerouslySetInnerHTML={{ __html: book.description }}
               />
             )}
