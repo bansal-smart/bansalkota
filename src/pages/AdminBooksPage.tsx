@@ -337,10 +337,13 @@ const BooksTab = () => {
   }, []);
 
   const save = async () => {
-    if (!form.title || !form.slug) return toast.error("Title and slug are required");
+    if (!form.title) return toast.error("Title is required");
     setSaving(true);
+    const baseSlug = form.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "book";
+    const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
     const { error } = await supabase.from("books").insert({
       ...form,
+      slug,
       original_price: form.original_price || null,
       cover_url: form.cover_url || null,
       description: form.description || null,
