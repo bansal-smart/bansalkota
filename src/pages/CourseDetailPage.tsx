@@ -354,28 +354,6 @@ const CourseDetailPage = () => {
                 Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString()}/-</span>{" "}
                 <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-muted/40 p-3">
-                  <p className="text-muted-foreground">1st Installment</p>
-                  <p className="font-bold text-foreground">₹{firstInstallment.toLocaleString()}/-</p>
-                </div>
-                <div className="rounded-xl bg-muted/40 p-3">
-                  <p className="text-muted-foreground">2nd Installment</p>
-                  <p className="font-bold text-foreground">₹{secondInstallment.toLocaleString()}/-</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-bold text-foreground mb-2">Why Choose this Batch at Bansal Classes?</p>
-              <ul className="space-y-1.5">
-                {whyChoose.map((p) => (
-                  <li key={p} className="flex items-start gap-2 text-sm text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-secondary mt-0.5 shrink-0" />
-                    <span>{p}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {/* BOOST CTA */}
@@ -395,6 +373,18 @@ const CourseDetailPage = () => {
               >
                 Explore <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Link>
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-foreground mb-2">Why Choose this Batch at Bansal Classes?</p>
+              <ul className="space-y-1.5">
+                {whyChoose.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-sm text-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-secondary mt-0.5 shrink-0" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
 
