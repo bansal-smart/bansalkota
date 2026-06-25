@@ -120,6 +120,33 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
       >
         <Minus className="h-4 w-4" />
       </ToolbarButton>
+      <div className="mx-1 h-5 w-px bg-border" />
+      <ToolbarButton
+        onClick={() =>
+          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+        }
+        label="Insert table"
+      >
+        <TableIcon className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().addRowAfter().run()}
+        label="Add row"
+      >
+        <Rows3 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().addColumnAfter().run()}
+        label="Add column"
+      >
+        <Columns3 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().deleteTable().run()}
+        label="Delete table"
+      >
+        <Trash className="h-4 w-4" />
+      </ToolbarButton>
       <div className="ml-auto flex items-center gap-1">
         <Button
           type="button"
