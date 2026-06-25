@@ -315,12 +315,16 @@ export default function BoostPage() {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">Common Questions</h2>
           </div>
           <div className="space-y-3">
-            {faqs.map((f) => (
-              <BansalCard key={f.q} className="hover-lift">
-                <h3 className="font-display font-bold text-bansal-black mb-2">{f.q}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.a}</p>
-              </BansalCard>
-            ))}
+            {faqs.map((f) => {
+              const answer = f.a.replace(/₹99/g, `₹${boost.priceInr}`);
+              const question = f.q.replace(/₹99/g, `₹${boost.priceInr}`);
+              return (
+                <BansalCard key={f.q} className="hover-lift">
+                  <h3 className="font-display font-bold text-bansal-black mb-2">{question}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{answer}</p>
+                </BansalCard>
+              );
+            })}
           </div>
         </div>
       </section>
