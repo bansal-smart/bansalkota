@@ -411,16 +411,107 @@ const EditBookModal = ({ book, onClose, onSaved }: { book: Book | null; onClose:
   );
 };
 
+const SortableBookRow = ({
+  b,
+  draggable,
+  onEdit,
+  onDelete,
+  onTogglePublish,
+}: {
+  b: Book;
+  draggable: boolean;
+  onEdit: (b: Book) => void;
+  onDelete: (id: string) => void;
+  onTogglePublish: (b: Book) => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: b.id, disabled: !draggable });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "hsl(var(--muted))" : undefined,
+  };
+  return (
+    <tr ref={setNodeRef} style={style} className="border-t border-border">
+      <td className="px-2 py-3">
+        <button
+          {...attributes}
+          {...listeners}
+          className={`flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors ${
+            draggable ? "cursor-grab active:cursor-grabbing hover:bg-muted hover:text-primary" : "cursor-not-allowed opacity-30"
+          }`}
+          title={draggable ? "Drag to reorder" : "Enable reorder mode to drag"}
+          aria-label="Drag handle"
+          type="button"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex h-14 w-10 items-center justify-center overflow-hidden rounded border border-border bg-muted">
+          {b.cover_url ? (
+            <img src={b.cover_url} alt={b.title} className="h-full w-full object-cover" />
+          ) : (
+            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </td>
+      <td className="px-4 py-3 font-semibold">{b.title}</td>
+      <td className="px-4 py-3">{b.target_exam ?? "-"}</td>
+      <td className="px-4 py-3">{b.class_level ?? "-"}</td>
+      <td className="px-4 py-3">₹{Number(b.price).toLocaleString()}</td>
+      <td className="px-4 py-3">{b.stock}</td>
+      <td className="px-4 py-3">
+        <button
+          onClick={() => onTogglePublish(b)}
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${b.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}
+        >
+          {b.is_published ? "Published" : "Hidden"}
+        </button>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => onEdit(b)}
+            className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            title="Edit"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onDelete(b.id)}
+            className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
 const BooksTab = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<BookForm>(blankBook);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("books").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("books")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
     setBooks((data ?? []) as Book[]);
     setLoading(false);
   };
@@ -439,9 +530,11 @@ const BooksTab = () => {
         .replace(/^-+|-+$/g, "")
         .slice(0, 60) || "book";
     const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
+    const nextSort = (books.reduce((mx, b) => Math.max(mx, b.sort_order ?? 0), 0) || 0) + 1;
     const { error } = await supabase.from("books").insert({
       ...form,
       slug,
+      sort_order: nextSort,
       original_price: form.original_price || null,
       cover_url: form.cover_url || null,
       description: form.description || null,
@@ -475,6 +568,32 @@ const BooksTab = () => {
     else load();
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = books.findIndex((b) => b.id === active.id);
+    const newIndex = books.findIndex((b) => b.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(books, oldIndex, newIndex).map((b, i) => ({ ...b, sort_order: i + 1 }));
+    setBooks(reordered);
+    setSavingOrder(true);
+    const updates = await Promise.all(
+      reordered.map((b) => supabase.from("books").update({ sort_order: b.sort_order }).eq("id", b.id)),
+    );
+    const firstErr = updates.find((u) => u.error);
+    setSavingOrder(false);
+    if (firstErr?.error) {
+      toast.error(firstErr.error.message);
+      load();
+    } else {
+      toast.success("Order updated");
+    }
+  };
+
+  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(books, 15);
+  const rows = reorderMode ? books : paged;
+  const draggable = reorderMode;
+
   return (
     <>
       <div className="rounded-2xl border border-border bg-card p-5">
@@ -492,79 +611,76 @@ const BooksTab = () => {
         </button>
       </div>
 
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setReorderMode((v) => !v)}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold border transition-colors ${
+            reorderMode ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-foreground hover:bg-muted"
+          }`}
+        >
+          <GripVertical className="h-4 w-4" />
+          {reorderMode ? "Exit reorder mode" : "Reorder books"}
+        </button>
+        {reorderMode && (
+          <p className="text-xs text-muted-foreground">
+            All {books.length} books on one page — drag any row to any position. Order is reflected on the public store.
+            {savingOrder && <span className="ml-2 inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> saving…</span>}
+          </p>
+        )}
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         {loading ? (
           <div className="flex h-40 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-left text-xs uppercase">
-              <tr>
-                <th className="px-4 py-3">Cover</th>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Exam</th>
-                <th className="px-4 py-3">Class</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3">Stock</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {books.map((b) => (
-                <tr key={b.id} className="border-t border-border">
-                  <td className="px-4 py-3">
-                    <div className="flex h-14 w-10 items-center justify-center overflow-hidden rounded border border-border bg-muted">
-                      {b.cover_url ? (
-                        <img src={b.cover_url} alt={b.title} className="h-full w-full object-cover" />
-                      ) : (
-                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+          <>
+            <div className="overflow-x-auto">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <table className="w-full text-sm">
+                  <thead className="bg-muted text-left text-xs uppercase">
+                    <tr>
+                      <th className="px-2 py-3 w-10"></th>
+                      <th className="px-4 py-3">Cover</th>
+                      <th className="px-4 py-3">Title</th>
+                      <th className="px-4 py-3">Exam</th>
+                      <th className="px-4 py-3">Class</th>
+                      <th className="px-4 py-3">Price</th>
+                      <th className="px-4 py-3">Stock</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3"></th>
+                    </tr>
+                  </thead>
+                  <SortableContext items={rows.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+                    <tbody>
+                      {rows.map((b) => (
+                        <SortableBookRow
+                          key={b.id}
+                          b={b}
+                          draggable={draggable}
+                          onEdit={setEditing}
+                          onDelete={remove}
+                          onTogglePublish={togglePublish}
+                        />
+                      ))}
+                      {rows.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
+                            No books yet.
+                          </td>
+                        </tr>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-semibold">{b.title}</td>
-                  <td className="px-4 py-3">{b.target_exam ?? "-"}</td>
-                  <td className="px-4 py-3">{b.class_level ?? "-"}</td>
-                  <td className="px-4 py-3">₹{Number(b.price).toLocaleString()}</td>
-                  <td className="px-4 py-3">{b.stock}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => togglePublish(b)}
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${b.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}
-                    >
-                      {b.is_published ? "Published" : "Hidden"}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setEditing(b)}
-                        className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => remove(b.id)}
-                        className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {books.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                    No books yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    </tbody>
+                  </SortableContext>
+                </table>
+              </DndContext>
+            </div>
+            {!reorderMode && books.length > 0 && (
+              <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+            )}
+          </>
         )}
       </div>
 
@@ -572,6 +688,7 @@ const BooksTab = () => {
     </>
   );
 };
+
 
 const PacksTab = () => {
   const [packs, setPacks] = useState<Pack[]>([]);
