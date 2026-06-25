@@ -49,9 +49,9 @@ const CreateCoursePage = () => {
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [exam, setExam] = useState("JEE");
-  const [subject, setSubject] = useState("Physics");
+  const [exam, setExam] = useState("IIT-JEE");
   const [educatorName, setEducatorName] = useState("");
+  const [subjectInput, setSubjectInput] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [originalPrice, setOriginalPrice] = useState<number>(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
