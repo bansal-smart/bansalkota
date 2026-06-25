@@ -441,7 +441,7 @@ const AdminDashboard = () => {
           <div className="rounded-2xl border border-border bg-card p-4">
             <h2 className="text-sm font-bold text-foreground mb-3">Pending Approvals</h2>
             {[
-              { label: "Educator applications", count: pending.educators, link: "/admin/educator-applications", Icon: Briefcase },
+              
               { label: "Centre support", count: pending.centreSupport, link: "/admin/center-support", Icon: MessageSquareWarning },
               { label: "Reported content", count: pending.reports, link: "/admin/reports", Icon: Flag },
             ].map((a) => (
