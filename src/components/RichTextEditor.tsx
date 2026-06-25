@@ -140,7 +140,7 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
 
 export const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) => {
   const editor = useEditor({
-    extensions: [StarterKit, Underline],
+    extensions: [StarterKit],
     content: value || "",
     editorProps: {
       attributes: {
