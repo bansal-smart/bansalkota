@@ -49,6 +49,7 @@ const CreateCoursePage = () => {
   const [name, setName] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionHtml, setDescriptionHtml] = useState("");
   const [exam, setExam] = useState("JEE");
   const [subject, setSubject] = useState("Physics");
   const [educatorName, setEducatorName] = useState("");
@@ -65,6 +66,13 @@ const CreateCoursePage = () => {
   const [learnInput, setLearnInput] = useState("");
   const [reqItems, setReqItems] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
+  const [educationLevel, setEducationLevel] = useState<string>("Class 11th–12th");
+  const [durationLabel, setDurationLabel] = useState<string>("1 Year");
+  const [modeValue, setModeValue] = useState<string>("Online");
+  const [language, setLanguage] = useState<string>("English / Hindi");
+  const [subjectsCovered, setSubjectsCovered] = useState<string[]>([]);
+  const [includedServices, setIncludedServices] = useState<string[]>([]);
+
 
   // Load existing course in edit mode
   useEffect(() => {
