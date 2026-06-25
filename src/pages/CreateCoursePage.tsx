@@ -106,6 +106,10 @@ const CreateCoursePage = () => {
       setLanguage((c.language as string | null) ?? "English / Hindi");
       setSubjectsCovered(((c.subjects_covered as string[] | null) ?? []) as string[]);
       setIncludedServices(((c.included_services as string[] | null) ?? []) as string[]);
+      setLearnItems(((c.what_youll_learn as string[] | null) ?? []) as string[]);
+      setReqItems(((c.requirements as string[] | null) ?? []) as string[]);
+
+
 
 
       const { data: chs } = await supabase
