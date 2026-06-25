@@ -215,7 +215,7 @@ const EStorePage = () => {
                   <Link to={`/e-store/pack/${p.slug}`}>
                     <div className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10">
                       {p.cover_url ? (
-                        <img src={p.cover_url} alt={p.title} className="h-full w-full object-contain p-3" />
+                        <img src={p.cover_url} alt={p.title} className="h-full w-full object-cover" />
                       ) : (
                         <Boxes className="h-16 w-16 text-[hsl(var(--bansal-orange))]" />
                       )}
