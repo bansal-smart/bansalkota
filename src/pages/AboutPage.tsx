@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Eye, Target, BookOpen, Quote, Newspaper } from "lucide-react";
+import { ArrowRight, Eye, Target, BookOpen, Quote } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
