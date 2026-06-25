@@ -23,22 +23,26 @@ const features = [
   {
     icon: Video,
     title: "HD Live Streaming",
-    description: "Crystal-clear video and audio that works smoothly even on a 2G connection. Built for Indian network conditions.",
+    description:
+      "Crystal-clear video and audio that works smoothly even on a 2G connection. Built for Indian network conditions.",
   },
   {
     icon: Hand,
     title: "Raise Hand & Ask Live",
-    description: "Get your doubts answered in real-time. Raise your hand and your educator will unmute you to discuss live.",
+    description:
+      "Get your doubts answered in real-time. Raise your hand and your educator will unmute you to discuss live.",
   },
   {
     icon: MessageCircle,
     title: "Live Chat & Polls",
-    description: "Chat with the educator and 1,000+ classmates. Take polls, react with emojis and stay engaged throughout.",
+    description:
+      "Chat with the educator and 1,000+ classmates. Take polls, react with emojis and stay engaged throughout.",
   },
   {
     icon: PlayCircle,
     title: "Recordings within 2 Hours",
-    description: "Missed a class? Every live session is recorded and uploaded within 2 hours — rewatch as many times as you want.",
+    description:
+      "Missed a class? Every live session is recorded and uploaded within 2 hours — rewatch as many times as you want.",
   },
   {
     icon: Bell,
@@ -56,7 +60,8 @@ const formats = [
   {
     icon: Users,
     title: "Mega Live Classes",
-    description: "1,000+ students learning together with India's best educators. Conceptual lectures + live problem solving.",
+    description:
+      "1,000+ students learning together with India's best educators. Conceptual lectures + live problem solving.",
     color: "from-primary to-accent",
   },
   {
@@ -68,7 +73,8 @@ const formats = [
   {
     icon: Award,
     title: "1-on-1 Mentor Meets",
-    description: "Personal weekly meets with a senior mentor — strategy, motivation and a custom study plan tailored for you.",
+    description:
+      "Personal weekly meets with a senior mentor — strategy, motivation and a custom study plan tailored for you.",
     color: "from-accent to-primary",
   },
 ];
@@ -87,12 +93,23 @@ const LiveClassesLandingPage = () => {
     <div className="bg-background">
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 md:py-28">
-        <img src={liveClassesHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <img
+          src={liveClassesHero}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
         <FloatingIcons defaultTone="white" />
         <DotTexture tone="white" className="opacity-30 decor-fade" />
-        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 70% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }} />
-        <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 30% 30%, hsl(38 92% 50% / 0.2) 0%, transparent 50%)" }} />
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{ background: "radial-gradient(circle at 70% 50%, hsl(24 95% 53% / 0.25) 0%, transparent 60%)" }}
+        />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{ background: "radial-gradient(circle at 30% 30%, hsl(38 92% 50% / 0.2) 0%, transparent 50%)" }}
+        />
         <div className="container relative z-10 mx-auto px-4 text-center animate-fade-in-up">
           <span className="inline-flex items-center gap-2 rounded-pill bg-white/10 px-4 py-1.5 text-xs font-bold text-white/90 backdrop-blur-sm">
             <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" /> Live every single day
@@ -101,7 +118,8 @@ const LiveClassesLandingPage = () => {
             Learn live from <span className="gradient-text">India's best educators</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-white/80 md:text-lg">
-            Sit in interactive live classes, ask doubts in real-time, and learn from IIT & AIIMS alumni — from anywhere in India.
+            Sit in interactive live classes, ask doubts in real-time, and learn from IIT & AIIMS alumni — from anywhere
+            in India.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -138,7 +156,10 @@ const LiveClassesLandingPage = () => {
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3 stagger-children">
             {formats.map((f) => (
-              <div key={f.title} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 hover-lift">
+              <div
+                key={f.title}
+                className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 hover-lift"
+              >
                 <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${f.color}`}>
                   <f.icon className="h-7 w-7 text-white" />
                 </div>
@@ -154,7 +175,9 @@ const LiveClassesLandingPage = () => {
       <section className="bg-card py-16 md:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center animate-fade-in-up">
-            <h2 className="font-display text-3xl font-black text-foreground md:text-4xl">Built for the live experience</h2>
+            <h2 className="font-display text-3xl font-black text-foreground md:text-4xl">
+              Built for the live experience
+            </h2>
             <p className="mt-3 text-muted-foreground">Every feature designed so you never miss a beat</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3 stagger-children">
@@ -180,10 +203,30 @@ const LiveClassesLandingPage = () => {
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-4">
             {[
-              { icon: Calendar, step: "01", title: "Check the schedule", desc: "See your weekly timetable in your dashboard with one-tap reminders." },
-              { icon: Bell, step: "02", title: "Get notified", desc: "Push, email & WhatsApp ping you 30 mins before each class." },
-              { icon: Wifi, step: "03", title: "Join in one click", desc: "Tap to enter — no app downloads, no install, instant access on any device." },
-              { icon: PlayCircle, step: "04", title: "Rewatch anytime", desc: "Recording is available in your library within 2 hours of class end." },
+              {
+                icon: Calendar,
+                step: "01",
+                title: "Check the schedule",
+                desc: "See your weekly timetable in your dashboard with one-tap reminders.",
+              },
+              {
+                icon: Bell,
+                step: "02",
+                title: "Get notified",
+                desc: "Push, email & WhatsApp ping you 30 mins before each class.",
+              },
+              {
+                icon: Wifi,
+                step: "03",
+                title: "Join in one click",
+                desc: "Tap to enter — no app downloads, no install, instant access on any device.",
+              },
+              {
+                icon: PlayCircle,
+                step: "04",
+                title: "Rewatch anytime",
+                desc: "Recording is available in your library within 2 hours of class end.",
+              },
             ].map((s) => (
               <div key={s.step} className="relative rounded-2xl border border-border bg-card p-6">
                 <span className="absolute -top-3 left-6 rounded-pill bg-gradient-to-r from-primary to-accent px-3 py-0.5 text-[10px] font-black text-white">
@@ -224,12 +267,15 @@ const LiveClassesLandingPage = () => {
       {/* CTA */}
       <section className="relative overflow-hidden py-20">
         <div className="absolute inset-0 bg-gradient-to-r from-[hsl(var(--navy))] to-[hsl(var(--navy2))]" />
-        <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 50% 50%, hsl(24 95% 53% / 0.4) 0%, transparent 60%)" }} />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{ background: "radial-gradient(circle at 50% 50%, hsl(24 95% 53% / 0.4) 0%, transparent 60%)" }}
+        />
         <div className="container relative z-10 mx-auto px-4 text-center animate-fade-in-up">
           <Sparkles className="mx-auto h-8 w-8 text-accent mb-4 animate-pulse" />
           <h2 className="font-display text-3xl font-black text-white md:text-5xl">Your seat is waiting</h2>
           <p className="mt-4 text-lg text-white/90 max-w-lg mx-auto">
-            Sign up free and join your first live class today. No credit card required.
+            Sign up free and join your first live class today.
           </p>
           <Link
             to={user ? "/my-live-classes" : "/signup"}
