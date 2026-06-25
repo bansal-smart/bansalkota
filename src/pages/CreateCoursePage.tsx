@@ -262,7 +262,7 @@ const CreateCoursePage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pb-32 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 lg:p-6 pb-10 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
