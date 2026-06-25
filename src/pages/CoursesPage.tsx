@@ -191,8 +191,8 @@ const CoursesPage = () => {
                 >
                   <Link to={`/courses/${c.slug}`} className="block">
                     {c.thumbnail_url ? (
-                      <div className="relative aspect-[3/2] overflow-hidden bg-muted">
-                        <img src={c.thumbnail_url} alt={c.name} loading="lazy" className="h-full w-full object-contain p-2" />
+                      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                        <img src={c.thumbnail_url} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
                         {c.badge && (
                           <span className="absolute top-3 left-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground shadow">
                             {c.badge}
