@@ -32,6 +32,7 @@ const positions = [
 ];
 
 const subjects = ["Physics", "Chemistry (Organic)", "Chemistry (Inorganic)", "Chemistry (Physical)", "Mathematics", "Biology", "Other"];
+const nonAcademicDepartments = ["HR", "IT", "Accounts", "Marketing", "Operations", "Others"];
 
 const CareerPage = () => {
   const [form, setForm] = useState({ name: "", email: "", phone: "", position: "", subject: "", experience: "", message: "" });
@@ -161,7 +162,7 @@ const CareerPage = () => {
 
               <div>
                 <Label>Applying for *</Label>
-                <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v })}>
+                <Select value={form.position} onValueChange={(v) => setForm({ ...form, position: v, subject: "" })}>
                   <SelectTrigger><SelectValue placeholder="Select a position" /></SelectTrigger>
                   <SelectContent>
                     {positions.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
@@ -171,11 +172,24 @@ const CareerPage = () => {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <Label>Subject (if academic)</Label>
-                  <Select value={form.subject} onValueChange={(v) => setForm({ ...form, subject: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                  <Label>
+                    {form.position === "non-academic" ? "Department" : "Subject (if academic)"}
+                  </Label>
+                  <Select
+                    value={form.subject}
+                    onValueChange={(v) => setForm({ ...form, subject: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          form.position === "non-academic" ? "Select department" : "Select subject"
+                        }
+                      />
+                    </SelectTrigger>
                     <SelectContent>
-                      {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      {(form.position === "non-academic" ? nonAcademicDepartments : subjects).map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
