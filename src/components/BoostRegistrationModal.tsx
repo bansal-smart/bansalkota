@@ -7,6 +7,8 @@ import BansalButton from "@/components/bansal/BansalButton";
 import { useCenters } from "@/hooks/useCenters";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
+import { startBoostCashfreeCheckout } from "@/lib/cashfree";
+
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
@@ -66,12 +68,15 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     const { data, error } = await supabase
       .from("boost_registrations")
       .insert([payload as any])
-      .select("admit_card_number")
+      .select("id, admit_card_number")
       .single();
-    setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setSubmitting(false);
+      return toast.error(error.message);
+    }
+    const regId = (data as any).id as string;
     const admit = (data as any).admit_card_number as string;
-    setSuccess({ admit_card_number: admit });
+    // Send confirmation email (non-blocking)
     void sendConfirmation({
       templateName: "boost-confirmation",
       recipientEmail: parsed.data.email,
@@ -84,7 +89,19 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         preferredCentre: payload.preferred_centre_label,
       },
     });
+    // Redirect to Cashfree hosted checkout
+    try {
+      toast.success("Redirecting to secure payment…");
+      await startBoostCashfreeCheckout(regId);
+      // browser navigates away
+    } catch (e) {
+      setSubmitting(false);
+      toast.error((e as Error).message || "Could not start payment");
+      // Still show admit card so user has a reference; admin can mark paid later
+      setSuccess({ admit_card_number: admit });
+    }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -153,17 +170,19 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
               <div className="font-semibold text-bansal-black">Registration fee: ₹{priceInr}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Payment link will be sent to your WhatsApp after submitting this form. Your slot is held for 24 hours.
+                You'll be redirected to Cashfree's secure checkout (UPI, cards, netbanking, wallets) to complete payment. Your slot is confirmed only after successful payment.
               </p>
             </div>
+
 
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
                 Cancel
               </button>
               <BansalButton variant="cta" disabled={submitting} type="submit">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Registration"}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay ₹${priceInr} & Register`}
               </BansalButton>
+
             </div>
           </form>
         )}

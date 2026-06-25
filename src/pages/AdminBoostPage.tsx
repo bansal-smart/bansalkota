@@ -81,12 +81,20 @@ const AdminBoostPage = () => {
   }, [rows]);
 
   const update = async (id: string, patch: Partial<Registration>) => {
-    const { error } = await supabase.from("boost_registrations").update(patch).eq("id", id);
+    const full: any = { ...patch };
+    // When admin marks paid manually, also stamp paid_at + auto-confirm
+    if (patch.payment_status === "paid") {
+      full.paid_at = new Date().toISOString();
+      const cur = rows.find((r) => r.id === id);
+      if (cur && cur.status === "registered") full.status = "confirmed";
+    }
+    const { error } = await supabase.from("boost_registrations").update(full).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    if (selected?.id === id) setSelected({ ...selected, ...patch } as Registration);
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...full } : r)));
+    if (selected?.id === id) setSelected({ ...selected, ...full } as Registration);
   };
+
 
   const exportCsv = () => {
     const headers = [
@@ -213,12 +221,24 @@ const AdminBoostPage = () => {
                   <td className="p-3 text-xs">{r.email}<br />{r.phone}</td>
                   <td className="p-3">{r.city ?? "—"}</td>
                   <td className="p-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      r.payment_status === "paid" ? "bg-green-100 text-green-700"
-                      : r.payment_status === "failed" ? "bg-red-100 text-red-700"
-                      : "bg-yellow-100 text-yellow-700"
-                    }`}>{r.payment_status}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        r.payment_status === "paid" ? "bg-green-100 text-green-700"
+                        : r.payment_status === "failed" ? "bg-red-100 text-red-700"
+                        : "bg-yellow-100 text-yellow-700"
+                      }`}>{r.payment_status}</span>
+                      {r.payment_status !== "paid" && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); update(r.id, { payment_status: "paid" }); }}
+                          className="inline-flex items-center gap-1 rounded-md border border-green-600 text-green-700 px-2 py-0.5 text-[10px] font-semibold hover:bg-green-50"
+                          title="Mark as paid (e.g. offline payment received)"
+                        >
+                          <Check className="h-3 w-3" /> Mark Paid
+                        </button>
+                      )}
+                    </div>
                   </td>
+
                   <td className="p-3">
                     <span className="inline-flex rounded-full bg-bansal-blue/10 text-bansal-blue px-2 py-0.5 text-[10px] font-bold">{r.status}</span>
                   </td>

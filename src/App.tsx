@@ -115,6 +115,8 @@ const BookDetailPage = lazy(() => import("./pages/BookDetailPage"));
 const PackDetailPage = lazy(() => import("./pages/PackDetailPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const PaymentReturnPage = lazy(() => import("./pages/PaymentReturnPage"));
+const BoostPaymentReturnPage = lazy(() => import("./pages/BoostPaymentReturnPage"));
+
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const TestSeriesCatalogPage = lazy(() => import("./pages/TestSeriesCatalogPage"));
 const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
@@ -230,6 +232,8 @@ const App = () => (
               <Route path="/e-store/checkout" element={<CheckoutPage />} />
               <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
               <Route path="/payments/return" element={<PaymentReturnPage />} />
+              <Route path="/boost/payment-return" element={<BoostPaymentReturnPage />} />
+
               <Route path="/e-store/:slug" element={<BookDetailPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/refund-policy" element={<RefundPolicyPage />} />

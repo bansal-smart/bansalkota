@@ -39,3 +39,17 @@ export async function startCashfreeCheckout(args: StartPaymentArgs) {
   await cf.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: "_self" });
   return data;
 }
+
+export async function startBoostCashfreeCheckout(registrationId: string) {
+  const { data, error } = await supabase.functions.invoke("cashfree-boost-pay", {
+    body: { registration_id: registrationId },
+  });
+  if (error) throw new Error(error.message || "Could not start payment");
+  if (!data?.payment_session_id) throw new Error(data?.error || "Payment session missing");
+
+  await loadSdk();
+  const cf = window.Cashfree!({ mode: (data.env === "production" ? "production" : "sandbox") as any });
+  await cf.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: "_self" });
+  return data;
+}
+

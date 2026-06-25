@@ -212,6 +212,8 @@ export type Database = {
         Row: {
           admit_card_number: string | null
           amount: number
+          cf_order_id: string | null
+          cf_payment_session_id: string | null
           city: string | null
           class_level: string
           created_at: string
@@ -221,6 +223,7 @@ export type Database = {
           full_name: string
           id: string
           notes: string | null
+          paid_at: string | null
           parent_name: string | null
           parent_phone: string | null
           payment_ref: string | null
@@ -238,6 +241,8 @@ export type Database = {
         Insert: {
           admit_card_number?: string | null
           amount?: number
+          cf_order_id?: string | null
+          cf_payment_session_id?: string | null
           city?: string | null
           class_level: string
           created_at?: string
@@ -247,6 +252,7 @@ export type Database = {
           full_name: string
           id?: string
           notes?: string | null
+          paid_at?: string | null
           parent_name?: string | null
           parent_phone?: string | null
           payment_ref?: string | null
@@ -264,6 +270,8 @@ export type Database = {
         Update: {
           admit_card_number?: string | null
           amount?: number
+          cf_order_id?: string | null
+          cf_payment_session_id?: string | null
           city?: string | null
           class_level?: string
           created_at?: string
@@ -273,6 +281,7 @@ export type Database = {
           full_name?: string
           id?: string
           notes?: string | null
+          paid_at?: string | null
           parent_name?: string | null
           parent_phone?: string | null
           payment_ref?: string | null
