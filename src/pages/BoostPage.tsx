@@ -113,7 +113,7 @@ export default function BoostPage() {
             </h1>
             <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl leading-relaxed">
               Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most trusted
-              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹99</span> to register.
+              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹{boost.priceInr}</span> to register.
             </p>
             <div className="flex flex-wrap gap-3">
               <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
@@ -125,10 +125,35 @@ export default function BoostPage() {
                 </BansalButton>
               </a>
             </div>
+            {boost.examDateLabels.length > 0 && (
+              <div className="mt-6 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {boost.examDateLabels.map((d) => {
+                    const isNext = boost.nextExamDateLabel === d;
+                    return (
+                      <span
+                        key={d}
+                        className={
+                          isNext
+                            ? "rounded-full bg-bansal-orange text-white px-4 py-1.5 text-sm font-bold ring-2 ring-white/40 shadow-lg"
+                            : "rounded-full bg-white/15 text-white px-4 py-1.5 text-sm font-semibold"
+                        }
+                      >
+                        {d}
+                        {isNext && <span className="ml-2 text-[10px] uppercase tracking-wider">Upcoming</span>}
+                      </span>
+                    );
+                  })}
+                </div>
+                {boost.applyBeforeLabel && (
+                  <p className="text-xs text-white/70">{boost.applyBeforeLabel}</p>
+                )}
+              </div>
+            )}
             <div className="mt-10 grid grid-cols-3 gap-6 max-w-xl">
               {[
                 { v: "90%", l: "Max Scholarship" },
-                { v: "₹99", l: "Reg. Fee" },
+                { v: `₹${boost.priceInr}`, l: "Reg. Fee" },
                 { v: "30K+", l: "Students/Year" },
               ].map((s) => (
                 <div key={s.l}>
