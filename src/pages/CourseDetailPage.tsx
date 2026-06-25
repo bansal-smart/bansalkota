@@ -313,6 +313,48 @@ const CourseDetailPage = () => {
             </section>
           )}
 
+          {/* BOOST Scholarship Strip */}
+          <section className="relative overflow-hidden rounded-2xl bg-bansal-blue text-white">
+            <div className="absolute inset-0 grid-texture opacity-50" />
+            <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-bansal-orange/20 blur-3xl" />
+            <div className="relative px-5 py-6 sm:px-6 sm:py-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="inline-flex items-center rounded-full bg-bansal-orange px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                    BOOST 2026
+                  </span>
+                  <h3 className="mt-3 font-display text-xl font-extrabold leading-tight sm:text-2xl">
+                    Bansal Open Opportunity Scholarship Test
+                  </h3>
+                  <p className="mt-2 text-sm text-white/85">
+                    Up to <span className="font-bold text-bansal-orange">90% Scholarship</span>. Open to Class V to XII. Just{" "}
+                    <span className="font-bold text-bansal-orange">₹{boost.priceInr}</span> to register.
+                  </p>
+                  {boost.examDateLabels.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {boost.examDateLabels.map((d) => (
+                        <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 text-left sm:text-right">
+                  <Link
+                    to="/boost"
+                    className="inline-flex items-center gap-2 rounded-lg bg-bansal-orange px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-bansal-orange-dark"
+                  >
+                    Explore Now <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  {boost.applyBeforeLabel && (
+                    <p className="mt-2 text-[11px] text-white/70">{boost.applyBeforeLabel}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Know More Details */}
           <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
             <h3 className="font-display text-lg font-black text-foreground">Know More Details</h3>
@@ -355,48 +397,6 @@ const CourseDetailPage = () => {
                   </li>
                 ))}
               </ul>
-            </div>
-          </section>
-
-          {/* BOOST Scholarship Strip */}
-          <section className="relative overflow-hidden rounded-2xl bg-bansal-blue text-white">
-            <div className="absolute inset-0 grid-texture opacity-50" />
-            <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-bansal-orange/20 blur-3xl" />
-            <div className="relative px-5 py-6 sm:px-6 sm:py-8">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <span className="inline-flex items-center rounded-full bg-bansal-orange px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-                    BOOST 2026
-                  </span>
-                  <h3 className="mt-3 font-display text-xl font-extrabold leading-tight sm:text-2xl">
-                    Bansal Open Opportunity Scholarship Test
-                  </h3>
-                  <p className="mt-2 text-sm text-white/85">
-                    Up to <span className="font-bold text-bansal-orange">90% Scholarship</span>. Open to Class V to XII. Just{" "}
-                    <span className="font-bold text-bansal-orange">₹{boost.priceInr}</span> to register.
-                  </p>
-                  {boost.examDateLabels.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {boost.examDateLabels.map((d) => (
-                        <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                          {d}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="shrink-0 text-left sm:text-right">
-                  <Link
-                    to="/boost"
-                    className="inline-flex items-center gap-2 rounded-lg bg-bansal-orange px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-bansal-orange-dark"
-                  >
-                    Explore Now <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  {boost.applyBeforeLabel && (
-                    <p className="mt-2 text-[11px] text-white/70">{boost.applyBeforeLabel}</p>
-                  )}
-                </div>
-              </div>
             </div>
           </section>
 
