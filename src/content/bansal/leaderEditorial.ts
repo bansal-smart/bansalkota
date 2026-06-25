@@ -140,16 +140,6 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     timelineHeading: "Chapters of Leadership",
     timeline: [
       {
-        year: "School",
-        title: "Top of every maths class",
-        body: "A relentless problem-solver, even before he had a desk of his own.",
-      },
-      {
-        year: "IIT",
-        title: "Engineering at the IITs",
-        body: "Trained inside the very system his institute prepares students for.",
-      },
-      {
         year: "Author",
         title: "4 best-selling JEE preparation books",
         body: "Author of 4 best-selling books for JEE preparation — Problems in Calculus, Algebra, Coordinate Geometry, and Trigonometry & Vectors.",
