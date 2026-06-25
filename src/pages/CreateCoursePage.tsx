@@ -262,7 +262,7 @@ const CreateCoursePage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pb-44 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 lg:p-6 pb-64 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
@@ -454,6 +454,9 @@ const CreateCoursePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Spacer so floating action bar never overlaps the Pricing inputs */}
+      <div aria-hidden className="h-40" />
 
       <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none lg:left-[240px]">
         <div className="pointer-events-auto flex gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
