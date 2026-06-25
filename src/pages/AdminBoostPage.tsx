@@ -81,12 +81,20 @@ const AdminBoostPage = () => {
   }, [rows]);
 
   const update = async (id: string, patch: Partial<Registration>) => {
-    const { error } = await supabase.from("boost_registrations").update(patch).eq("id", id);
+    const full: any = { ...patch };
+    // When admin marks paid manually, also stamp paid_at + auto-confirm
+    if (patch.payment_status === "paid") {
+      full.paid_at = new Date().toISOString();
+      const cur = rows.find((r) => r.id === id);
+      if (cur && cur.status === "registered") full.status = "confirmed";
+    }
+    const { error } = await supabase.from("boost_registrations").update(full).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Updated");
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    if (selected?.id === id) setSelected({ ...selected, ...patch } as Registration);
+    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...full } : r)));
+    if (selected?.id === id) setSelected({ ...selected, ...full } as Registration);
   };
+
 
   const exportCsv = () => {
     const headers = [
