@@ -540,7 +540,7 @@ export default function LeadershipDetailPage() {
             Continue the Bansal Journey
           </h2>
           <p className="text-white/80 mb-8">
-            Inspired by {slug === "vk-bansal" ? "Bansal Sir" : displayFirst}? Talk to our admissions team
+            Inspired by {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : displayFirst}? Talk to our admissions team
             or explore more of the family.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
