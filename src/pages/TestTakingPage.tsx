@@ -1017,8 +1017,8 @@ const TestTakingPage = () => {
                   value={numericValue}
                   onChange={handleNumericInput}
                   questionType={q.question_type}
-                  rangeMin={q.answer_range_min}
-                  rangeMax={q.answer_range_max}
+                  rangeMin={null}
+                  rangeMax={null}
                 />
               ) : isMulti(q.question_type) ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
