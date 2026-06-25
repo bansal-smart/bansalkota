@@ -74,11 +74,10 @@ export default function AlumniPage() {
           .order("year", { ascending: false })
           .limit(500),
         supabase
-          .from("alumni_submissions")
+          .from("public_alumni_submissions" as any)
           .select(
             "id,full_name,rank_label,exam,selection_year,batch_year,photo_url,story,current_position,company",
           )
-          .eq("status", "approved")
           .order("batch_year", { ascending: false, nullsFirst: false })
           .order("selection_year", { ascending: false, nullsFirst: false })
           .limit(500),

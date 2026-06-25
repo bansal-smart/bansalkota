@@ -149,7 +149,7 @@ const TestTakingPage = () => {
 
       const { data: qs, error: qErr } = await supabase
         .from("test_questions")
-        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_range_min, answer_range_max")
+        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
         .eq("test_id", t.id).order("position");
       if (qErr) {
         console.error("[TestTakingPage] questions load failed", qErr);
@@ -1017,8 +1017,8 @@ const TestTakingPage = () => {
                   value={numericValue}
                   onChange={handleNumericInput}
                   questionType={q.question_type}
-                  rangeMin={q.answer_range_min}
-                  rangeMax={q.answer_range_max}
+                  rangeMin={null}
+                  rangeMax={null}
                 />
               ) : isMulti(q.question_type) ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
