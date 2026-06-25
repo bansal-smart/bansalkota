@@ -1,35 +1,32 @@
-## Goal
-Polish the admin Books form, add a cover image upload, and add an Edit modal so each book's full details can be updated after creation.
+# Admin Panel UX Polish
 
-## 1. Add labels + dropdowns to the "Add Book" form
-File: `src/pages/AdminBooksPage.tsx` (BooksTab + shared `BookFormFields` extracted for reuse in the edit modal).
+## 1. Persistent layout + skeleton while switching tabs
+The sidebar already lives in `AdminLayout` with `<Outlet />`, but the flash happens because each admin page fetches its own data on mount with no shared loading frame, and large pages re-mount their internals immediately. We will:
 
-- Wrap every input in a labeled field (`<label>` + helper text where useful) so nothing renders as an unlabeled box. Current unlabeled fields are Price, Original Price, and Stock — they will get labels.
-- Convert these inputs to dropdowns (`<Select>` from `@/components/ui/select`):
-  - **Subject** — Physics, Chemistry, Mathematics, Biology, Mental Ability, Mixed / General
-  - **Target Exam** — JEE, NEET, NTSE / Olympiads, Foundation, CBSE / Board, Mixed
-  - **Class Level** — Class V, VI, VII, VIII, IX, X, XI, XII, XI & XII, Droppers
-- Keep Slug, Title, Author as text inputs; Price / Original Price / Stock as labeled number inputs.
-- Re-grid the form to a clean 2-col (md) / 3-col (lg) layout so it doesn't look like the screenshot.
+- Add `<Suspense fallback={<AdminPageSkeleton />}>` around the `<Outlet />` in `src/components/AdminLayout.tsx`.
+- Convert the heavy admin routes in `src/App.tsx` (Users, Students, Courses, Tests Hub, Boost, Toppers, Books, Banners, etc.) to `React.lazy()` so route switches show the skeleton instead of a blank flash while the chunk and its initial query resolve.
+- Create `src/components/admin/AdminPageSkeleton.tsx` — a reusable generic skeleton (header bar + filter row + table rows) using `@/components/ui/skeleton`. Drop it into each page's own `loading` state too (replacing the current ad-hoc spinners on Students/Users) so the same shimmer appears during data refetches.
 
-## 2. Cover image upload
-- Add a "Cover image" field above the rest of the form. Uses the existing `cover_url` column on `public.books` (already present — no migration needed).
-- Create a new public storage bucket `book-covers` (5 MB limit, image mime types) via migration. Policies: public read; admins/super admins can insert/update/delete (matches the role pattern used elsewhere).
-- Upload on file pick → store the public URL in `cover_url`. Show a thumbnail preview + "Remove" action.
-- Show a small cover thumbnail in the first column of the Books table.
+## 2. Bansal logo on the sidebar
+In `src/components/AdminLayout.tsx`, replace the flame icon + "Bansal Classes" text block at the top of `AdminSidebar` with the existing `BansalLogo` component (`src/components/bansal/BansalLogo.tsx`, which uses the `bansal-logo.webp` asset). Keep the "Super Admin Panel / Admin Panel" pill underneath.
 
-## 3. Edit modal for existing books
-- Add a pencil "Edit" button in each row (next to Delete).
-- Clicking opens a Dialog (`@/components/ui/dialog`) containing the same `BookFormFields` component, pre-filled with that book's values, plus the cover uploader.
-- Save → `update` on `public.books`, then refresh the list. Modal also supports replacing the cover image.
-- "Add Book" continues to live inline above the table (unchanged behavior, just better UI).
+## 3. Replace orange→purple gradient CTAs with navy
+The gradient appears on the "Invite User" / "Add Student" style buttons. Swap the classes:
 
-## Technical notes
-- New migration: create `book-covers` storage bucket + policies (public read; write/delete restricted to `admin` / `super_admin` via `has_role`).
-- Refactor: extract a `BookFormFields` component used by both the Add card and the Edit dialog so the field list stays in one place.
-- No changes to PacksTab in this pass (out of scope per the request).
-- Dropdown option lists live in a constants block at the top of the file so they're easy to tweak later.
+- `bg-gradient-to-r from-primary to-accent ... text-primary-foreground` → `bg-[#0F1729] text-white hover:bg-[#0F1729]/90`
 
-## Out of scope
-- Editing module packs (not mentioned).
-- Changing the public store / book detail pages.
+Files to update:
+- `src/pages/AdminUsersPage.tsx` (line 235 — Invite User CTA)
+- `src/pages/AdminStudentsPage.tsx` (line 307 — Add Student CTA)
+
+Avatar circles that use `from-primary/20 to-accent/20` are decorative (not the buttons the user flagged) and will be left alone.
+
+## 4. Fix Students pagination
+`src/pages/AdminStudentsPage.tsx` currently renders a custom one-page indicator (lines 531–552). Replace it with the shared `TablePagination` component already used by `AdminUsersPage`, passing `page + 1`, `totalPages`, `total`, `pageSize`, and an `onPageChange` that sets `page` back to 0-indexed. This gives the same `1, 2, 3, …` UI as the Users table.
+
+## Files touched
+- `src/components/AdminLayout.tsx` — Suspense + skeleton fallback, logo swap.
+- `src/App.tsx` — lazy-load admin routes.
+- `src/components/admin/AdminPageSkeleton.tsx` — new shared skeleton.
+- `src/pages/AdminUsersPage.tsx` — navy Invite User button; use shared skeleton in loading state.
+- `src/pages/AdminStudentsPage.tsx` — navy Add Student button, shared skeleton, replace pagination with `TablePagination`.

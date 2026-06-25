@@ -232,7 +232,7 @@ const AdminUsersPage = () => {
         </div>
         <button
           onClick={() => toast.info("Invite flow coming soon")}
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-2 text-xs font-semibold text-primary-foreground"
+          className="flex items-center gap-1.5 rounded-lg bg-[#0F1729] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F1729]/90 transition-colors"
         >
           <UserPlus className="h-3.5 w-3.5" /> Invite User
         </button>

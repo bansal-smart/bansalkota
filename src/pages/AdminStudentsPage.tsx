@@ -3,6 +3,7 @@ import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
+import TablePagination from "@/components/TablePagination";
 
 type StudentRow = {
   user_id: string;
@@ -304,7 +305,7 @@ const AdminStudentsPage = () => {
           </button>
           <button
             onClick={exportSelected}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-accent px-3 py-2 text-xs font-semibold text-primary-foreground"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0F1729] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F1729]/90 transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
             Export {selected.length ? `(${selected.length})` : "All"}
@@ -528,28 +529,13 @@ const AdminStudentsPage = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          Page {page + 1} of {totalPages} · {rows.length} of {total}
-        </span>
-        <div className="flex gap-1">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-40"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">{page + 1}</span>
-          <button
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="rounded-lg border border-border p-2 text-muted-foreground disabled:opacity-40"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
+      <TablePagination
+        page={page + 1}
+        totalPages={totalPages}
+        total={total}
+        pageSize={PAGE_SIZE}
+        onPageChange={(p) => setPage(p - 1)}
+      />
 
       {/* Drawer */}
       {drawer && (
