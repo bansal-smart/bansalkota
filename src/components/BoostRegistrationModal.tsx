@@ -93,7 +93,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
           <div>
             <h2 className="font-display text-xl font-bold text-bansal-black">BOOST 2026 Registration</h2>
-            <p className="text-xs text-muted-foreground">Just ₹99 to reserve your scholarship test slot</p>
+            <p className="text-xs text-muted-foreground">Just ₹{priceInr} to reserve your scholarship test slot</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded"><X className="h-5 w-5" /></button>
         </div>
