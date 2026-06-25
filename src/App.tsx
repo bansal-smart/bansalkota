@@ -115,6 +115,8 @@ const BookDetailPage = lazy(() => import("./pages/BookDetailPage"));
 const PackDetailPage = lazy(() => import("./pages/PackDetailPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const PaymentReturnPage = lazy(() => import("./pages/PaymentReturnPage"));
+const BoostPaymentReturnPage = lazy(() => import("./pages/BoostPaymentReturnPage"));
+
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const TestSeriesCatalogPage = lazy(() => import("./pages/TestSeriesCatalogPage"));
 const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
