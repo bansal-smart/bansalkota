@@ -249,7 +249,7 @@ export default function LeadershipDetailPage() {
                 </span>
               </div>
               <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-3 tracking-tight">
-                Books by Sameer Sir
+                Books by Sameer Bansal Sir
               </h2>
               <p className="text-bansal-gray max-w-2xl mb-10">
                 A four-volume problem-solving series read by JEE aspirants across India — written from a quarter-century inside the classroom.
