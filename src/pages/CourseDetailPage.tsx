@@ -15,7 +15,6 @@ import {
   Tag,
   GraduationCap,
   MapPin,
-  Calendar,
   BadgeCheck,
   BookOpen,
   ClipboardList,
