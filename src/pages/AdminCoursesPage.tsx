@@ -109,6 +109,29 @@ const AdminCoursesPage = () => {
     load();
   };
 
+  const move = async (c: AdminCourse, direction: -1 | 1) => {
+    // Move within the full (unfiltered) sorted list so order is globally consistent
+    const sorted = [...courses].sort(
+      (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.created_at.localeCompare(b.created_at),
+    );
+    const idx = sorted.findIndex((x) => x.id === c.id);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= sorted.length) return;
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    const aOrder = a.sort_order ?? 0;
+    const bOrder = b.sort_order ?? 0;
+    // If both share the same sort_order (e.g. seeded duplicates), nudge
+    const newA = bOrder === aOrder ? aOrder + direction : bOrder;
+    const newB = bOrder === aOrder ? aOrder : aOrder;
+    const [r1, r2] = await Promise.all([
+      supabase.from("courses").update({ sort_order: newA }).eq("id", a.id),
+      supabase.from("courses").update({ sort_order: newB }).eq("id", b.id),
+    ]);
+    if (r1.error || r2.error) return toast.error((r1.error || r2.error)!.message);
+    load();
+  };
+
   const filtered = courses.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
   );
