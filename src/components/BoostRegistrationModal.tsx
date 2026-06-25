@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useCenters } from "@/hooks/useCenters";
+import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 
 const schema = z.object({
