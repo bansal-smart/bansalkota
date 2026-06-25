@@ -455,7 +455,7 @@ const CreateCoursePage = () => {
         </div>
       </div>
 
-      <div className="sticky bottom-4 z-30 flex justify-end mt-8 pointer-events-none">
+      <div className="sticky bottom-4 z-30 flex justify-center mt-8 pointer-events-none">
         <div className="pointer-events-auto flex gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
           <button
             disabled={submitting}
