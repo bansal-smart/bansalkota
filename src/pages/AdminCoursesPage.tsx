@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2 } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +17,7 @@ type AdminCourse = {
   total_enrolled: number;
   price: number;
   created_at: string;
+  sort_order: number;
   chapter_count?: number;
   test_count?: number;
   lesson_count?: number;
@@ -34,7 +35,8 @@ const AdminCoursesPage = () => {
     setLoading(true);
     const { data } = await supabase
       .from("courses")
-      .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at")
+      .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order")
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
     const base = (data ?? []) as AdminCourse[];
 
@@ -107,6 +109,29 @@ const AdminCoursesPage = () => {
     load();
   };
 
+  const move = async (c: AdminCourse, direction: -1 | 1) => {
+    // Move within the full (unfiltered) sorted list so order is globally consistent
+    const sorted = [...courses].sort(
+      (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.created_at.localeCompare(b.created_at),
+    );
+    const idx = sorted.findIndex((x) => x.id === c.id);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= sorted.length) return;
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    const aOrder = a.sort_order ?? 0;
+    const bOrder = b.sort_order ?? 0;
+    // If both share the same sort_order (e.g. seeded duplicates), nudge
+    const newA = bOrder === aOrder ? aOrder + direction : bOrder;
+    const newB = bOrder === aOrder ? aOrder : aOrder;
+    const [r1, r2] = await Promise.all([
+      supabase.from("courses").update({ sort_order: newA }).eq("id", a.id),
+      supabase.from("courses").update({ sort_order: newB }).eq("id", b.id),
+    ]);
+    if (r1.error || r2.error) return toast.error((r1.error || r2.error)!.message);
+    load();
+  };
+
   const filtered = courses.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
   );
@@ -158,6 +183,7 @@ const AdminCoursesPage = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
+                  <th className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground">Order</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
@@ -172,6 +198,27 @@ const AdminCoursesPage = () => {
               <tbody>
                 {paged.map((c) => (
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-2 py-3">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <button
+                          onClick={() => move(c, -1)}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-30"
+                          title="Move up"
+                          disabled={!!search}
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-[10px] text-muted-foreground tabular-nums">{c.sort_order ?? 0}</span>
+                        <button
+                          onClick={() => move(c, 1)}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-30"
+                          title="Move down"
+                          disabled={!!search}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>

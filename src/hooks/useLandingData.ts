@@ -27,6 +27,7 @@ export function useUpcomingBatches(limit = 6) {
         )
         .eq("is_published", true)
         .order("is_featured", { ascending: false })
+        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false })
         .limit(limit);
       return (data ?? []) as UpcomingBatch[];

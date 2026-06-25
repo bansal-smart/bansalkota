@@ -1347,6 +1347,7 @@ export type Database = {
           rating: number | null
           requirements: string[]
           slug: string
+          sort_order: number
           subject: string
           tags: string[] | null
           target_exam: string | null
@@ -1375,6 +1376,7 @@ export type Database = {
           rating?: number | null
           requirements?: string[]
           slug: string
+          sort_order?: number
           subject: string
           tags?: string[] | null
           target_exam?: string | null
@@ -1403,6 +1405,7 @@ export type Database = {
           rating?: number | null
           requirements?: string[]
           slug?: string
+          sort_order?: number
           subject?: string
           tags?: string[] | null
           target_exam?: string | null
