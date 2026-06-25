@@ -208,7 +208,7 @@ export default function BoostPage() {
                 {[
                   "Open to Class 5 through Class 12 + droppers",
                   "Both online and offline modes available",
-                  "Single ₹99 fee — no hidden charges",
+                  `Single ₹${boost.priceInr} fee — no hidden charges`,
                   "Test material kit shipped to every registrant",
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2 text-bansal-black">
