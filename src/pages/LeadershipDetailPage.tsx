@@ -195,7 +195,7 @@ export default function LeadershipDetailPage() {
 
             {/* Text */}
             <div className="md:col-span-7">
-              <Eyebrow>About {displayFirst}</Eyebrow>
+              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : displayFirst}</Eyebrow>
               {profile.pull_quote && (
                 <blockquote className="relative font-display italic text-xl md:text-3xl font-semibold text-bansal-blue leading-[1.25] tracking-tight mb-6">
                   <Quote
@@ -209,7 +209,9 @@ export default function LeadershipDetailPage() {
               )}
               {profile.intro && (
                 <p className="text-base md:text-lg text-bansal-gray leading-relaxed first-letter:font-display first-letter:text-5xl md:first-letter:text-6xl first-letter:font-bold first-letter:text-bansal-orange first-letter:float-left first-letter:mr-3 first-letter:leading-none first-letter:mt-1">
-                  {profile.intro}
+                  {slug === "vk-bansal"
+                    ? profile.intro.replace(/V\s*K\.?\s*Bansal/g, "Bansal Sir")
+                    : profile.intro}
                 </p>
               )}
             </div>
