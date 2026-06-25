@@ -70,9 +70,15 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     if (!open) return;
     supabase
       .from("centres")
-      .select("id, name")
-      .order("name")
-      .then(({ data }) => setCentres((data as Centre[]) ?? []));
+      .select("id, city, area")
+      .order("city")
+      .then(({ data }) => {
+        const rows = ((data as Array<{ id: string; city: string; area: string | null }> | null) ?? []).map((c) => ({
+          id: c.id,
+          name: c.area ? `${c.city} — ${c.area}` : c.city,
+        }));
+        setCentres(rows);
+      });
     if (user) {
       supabase
         .from("profiles")
