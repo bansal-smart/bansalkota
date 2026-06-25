@@ -1,24 +1,15 @@
-import { useMemo, useState } from "react";
-import { Trophy, Medal, Star, Award, TrendingUp, Building2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Trophy, Medal, Star, TrendingUp, Building2 } from "lucide-react";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
 const achievementsHero = achievementsHeroAsset.url;
-import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
-import { useToppers, type Topper } from "@/hooks/useToppers";
+import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
+import { supabase } from "@/integrations/supabase/client";
 
-const PAGE_SIZE = 24;
-
-const initialsFor = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((p) => p[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+type Poster = { id: string; image_url: string; caption: string };
 
 const milestones = [
   { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
@@ -28,22 +19,22 @@ const milestones = [
 ];
 
 export default function AchievementsPage() {
-  const { toppers, loading } = useToppers();
   const { page: cmsPage } = useSitePage("achievements");
-  const [filter, setFilter] = useState<string>("All");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [posters, setPosters] = useState<Poster[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const exams = useMemo(() => {
-    const set = new Set<string>();
-    toppers.forEach((t) => t.exam && set.add(t.exam));
-    return ["All", ...Array.from(set)];
-  }, [toppers]);
-
-  const filtered = useMemo(() => {
-    return filter === "All" ? toppers : toppers.filter((t) => t.exam === filter);
-  }, [toppers, filter]);
-
-  const visible = filtered.slice(0, visibleCount);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("achievement_posters")
+        .select("id, image_url, caption")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      setPosters((data as Poster[]) ?? []);
+      setLoading(false);
+    })();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,81 +92,53 @@ export default function AchievementsPage() {
         </section>
       )}
 
-      {/* Toppers wall */}
+      {/* Result posters wall */}
       <section className="py-14">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <BansalBadge variant="blue" className="mb-3">
-              Recent Toppers
+              Result Posters
             </BansalBadge>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">The Wall of Fame</h2>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-2 mb-10">
-            {exams.map((f) => (
-              <button
-                key={f}
-                onClick={() => { setFilter(f); setVisibleCount(PAGE_SIZE); }}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                  filter === f
-                    ? "bg-bansal-blue text-white"
-                    : "bg-bansal-blue-light text-bansal-blue hover:bg-bansal-blue hover:text-white"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+            <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+              A glimpse of our year-on-year results across JEE Main, JEE Advanced and NEET.
+            </p>
           </div>
 
           {loading ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-44 rounded-xl bg-muted animate-pulse" />
+                <div key={i} className="aspect-[3/4] rounded-xl bg-muted animate-pulse" />
               ))}
             </div>
-          ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">No toppers to show yet.</p>
+          ) : posters.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">No result posters published yet.</p>
           ) : (
-            <>
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {visible.map((t) => (
-                  <BansalCard key={t.id} className="relative">
-                    {t.year && (
-                      <div className="absolute top-4 right-4">
-                        <BansalBadge variant="orange">{t.year}</BansalBadge>
-                      </div>
-                    )}
-                    <div className="mb-4">
-                      {t.rank_label && (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-bansal-orange/10 text-bansal-orange px-3 py-1 text-[11px] font-bold uppercase tracking-wider mb-3">
-                          <Trophy className="h-3 w-3" /> {t.rank_label}
-                        </div>
-                      )}
-                      <h3 className="font-display text-lg font-bold text-bansal-black leading-tight">{t.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{t.exam}</p>
-                    </div>
-
-
-
-                    {t.quote && (
-                      <p className="text-sm text-muted-foreground italic border-l-2 border-bansal-orange pl-3 leading-relaxed">
-                        "{t.quote}"
-                      </p>
-                    )}
-                  </BansalCard>
-                ))}
-              </div>
-              {visibleCount < filtered.length && (
-                <div className="text-center mt-10">
-                  <BansalButton variant="outline" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
-                    Show more ({filtered.length - visibleCount} remaining)
-                  </BansalButton>
-                </div>
-              )}
-            </>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {posters.map((p) => (
+                <figure
+                  key={p.id}
+                  className="group rounded-2xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-lg transition-shadow"
+                >
+                  <div className="aspect-[3/4] overflow-hidden bg-muted">
+                    <img
+                      src={p.image_url}
+                      alt={p.caption}
+                      loading="lazy"
+                      className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                    />
+                  </div>
+                  <figcaption className="text-center py-3 text-sm font-bold text-bansal-blue tracking-wide">
+                    {p.caption}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
           )}
         </div>
       </section>
+
+
 
       {/* CTA */}
       <section className="py-14 bg-bansal-blue text-white">

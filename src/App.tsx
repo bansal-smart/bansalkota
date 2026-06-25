@@ -124,6 +124,7 @@ const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
 const AdminBooksPage = lazy(() => import("./pages/AdminBooksPage"));
 const AdminCentersPage = lazy(() => import("./pages/AdminCentersPage"));
 const AdminToppersPage = lazy(() => import("./pages/AdminToppersPage"));
+const AdminAchievementPostersPage = lazy(() => import("./pages/AdminAchievementPostersPage"));
 const AdminAlumniSubmissionsPage = lazy(() => import("./pages/AdminAlumniSubmissionsPage"));
 const AdminBannersPage = lazy(() => import("./pages/AdminBannersPage"));
 const AdminBoostPage = lazy(() => import("./pages/AdminBoostPage"));
@@ -354,6 +355,7 @@ const App = () => (
               <Route path="/admin/centre-support" element={<AdminCenterSupportPage />} />
               <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
               <Route path="/admin/toppers" element={<AdminToppersPage />} />
+              <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
               <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
               <Route path="/admin/banners" element={<AdminBannersPage />} />
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
