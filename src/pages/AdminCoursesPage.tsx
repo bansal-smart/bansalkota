@@ -183,6 +183,7 @@ const AdminCoursesPage = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
+                  <th className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground">Order</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
