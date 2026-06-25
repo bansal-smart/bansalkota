@@ -254,11 +254,12 @@ const CourseDetailPage = () => {
             <h1 className="font-display text-3xl md:text-4xl font-black text-foreground leading-tight">
               {course.name}
             </h1>
-            {course.description && (
+            {(course.short_description || course.description) && (
               <p className="mt-3 text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl">
-                {course.description}
+                {course.short_description || course.description}
               </p>
             )}
+
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-primary text-primary" />
