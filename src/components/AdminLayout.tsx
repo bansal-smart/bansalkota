@@ -1,4 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Suspense } from "react";
+import BansalLogo from "@/components/bansal/BansalLogo";
+import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import {
   LayoutDashboard,
   Flame,
@@ -99,11 +102,8 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
       style={{ backgroundColor: "hsl(222, 47%, 11%)" }}
     >
       <div className="p-4">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Flame className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="text-sm font-black font-display text-white">Bansal Classes</span>
+        <Link to="/" className="flex items-center justify-center rounded-lg bg-white px-3 py-2">
+          <BansalLogo className="h-8 w-auto" />
         </Link>
         <div className="mt-3 rounded-md bg-primary/20 px-2 py-1 text-center">
           <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
