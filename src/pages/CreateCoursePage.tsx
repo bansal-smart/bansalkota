@@ -310,8 +310,25 @@ const CreateCoursePage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pb-24 lg:pb-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 lg:p-6 pb-32 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Course Thumbnail <span className="text-xs font-normal text-muted-foreground">(Aspect ratio 4:3 recommended)</span></h2>
+        {existingThumbnail && !thumbnailFile && (
+          <div className="w-48 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
+            <img src={existingThumbnail} alt="Current thumbnail" className="h-full w-full object-cover" />
+          </div>
+        )}
+        <label className="block">
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)} />
+          <div className="rounded-lg border-2 border-dashed border-border bg-background p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : existingThumbnail ? "Click to replace thumbnail (4:3)" : "Click to upload thumbnail (4:3 aspect ratio)"}</p>
+          </div>
+        </label>
+      </div>
+
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Basic Information</h2>
