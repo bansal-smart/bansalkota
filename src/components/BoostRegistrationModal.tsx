@@ -151,7 +151,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             </Section>
 
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
-              <div className="font-semibold text-bansal-black">Registration fee: ₹99</div>
+              <div className="font-semibold text-bansal-black">Registration fee: ₹{priceInr}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Payment link will be sent to your WhatsApp after submitting this form. Your slot is held for 24 hours.
               </p>
