@@ -23,7 +23,7 @@ const aboutChildren = [
 const galleriesChildren = [
   { label: "Image Gallery", path: "/gallery/images" },
   { label: "Video Gallery", path: "/gallery/videos" },
-  { label: "Achievement Gallery", path: "/achievements" },
+  { label: "Achievement Gallery", path: "/gallery/achievements" },
 ];
 
 const navItems: NavItem[] = [

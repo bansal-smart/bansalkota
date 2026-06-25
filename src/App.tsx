@@ -156,6 +156,7 @@ const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPa
 const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 const GalleryImagesPage = lazy(() => import("./pages/GalleryImagesPage"));
 const GalleryVideosPage = lazy(() => import("./pages/GalleryVideosPage"));
+const GalleryAchievementsPage = lazy(() => import("./pages/GalleryAchievementsPage"));
 const AdminGalleryPage = lazy(() => import("./pages/AdminGalleryPage"));
 
 
@@ -238,6 +239,7 @@ const App = () => (
               <Route path="/gallery" element={<Navigate to="/gallery/images" replace />} />
               <Route path="/gallery/images" element={<GalleryImagesPage />} />
               <Route path="/gallery/videos" element={<GalleryVideosPage />} />
+              <Route path="/gallery/achievements" element={<GalleryAchievementsPage />} />
               <Route path="/alumni" element={<AlumniPage />} />
 
               <Route path="/e-store" element={<EStorePage />} />
