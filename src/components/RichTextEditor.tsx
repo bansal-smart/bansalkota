@@ -21,6 +21,8 @@ import {
   Rows3,
   Columns3,
   Trash,
+  Trash2,
+  MinusSquare,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Button } from "@/components/ui/button";
@@ -140,6 +142,18 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         label="Add column"
       >
         <Columns3 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().deleteColumn().run()}
+        label="Delete column"
+      >
+        <MinusSquare className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().deleteRow().run()}
+        label="Delete row"
+      >
+        <Trash2 className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().deleteTable().run()}
