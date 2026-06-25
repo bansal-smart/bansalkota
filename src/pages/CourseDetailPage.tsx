@@ -611,7 +611,7 @@ const CourseDetailPage = () => {
                 onClick={handleEnrollClick}
                 className="w-full rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
               >
-                {enrolled ? `Continue Learning` : `Pay Now ₹${price.toLocaleString()}.00`}
+                {enrolled ? `Continue Learning` : `Enroll Now`}
               </button>
 
               <button className="w-full text-center text-xs font-semibold text-primary hover:underline">
@@ -649,32 +649,12 @@ const CourseDetailPage = () => {
         </aside>
       </div>
 
-      {/* Enroll dialog */}
-      <Dialog open={enrollOpen} onOpenChange={(o) => !enrolling && setEnrollOpen(o)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">Confirm Enrollment</DialogTitle>
-            <DialogDescription>
-              Confirm your enrollment in{" "}
-              <span className="font-semibold text-foreground">{course.name}</span>. Online payments are coming soon —
-              for now you'll be enrolled in demo mode and can start learning immediately.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-xl bg-muted/40 p-3 text-xs text-foreground space-y-1">
-            <p><span className="text-muted-foreground">Course:</span> {course.name}</p>
-            <p><span className="text-muted-foreground">Price:</span> ₹{price.toLocaleString()}</p>
-            <p className="flex items-center gap-1.5"><CreditCard className="h-3 w-3 text-muted-foreground" /> Demo payment flow</p>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" asChild disabled={enrolling}>
-              <Link to="/contact">Contact Support</Link>
-            </Button>
-            <Button onClick={handleConfirmEnroll} disabled={enrolling}>
-              {enrolling ? (<><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Enrolling…</>) : (<>Mark as Enrolled</>)}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Enrollment enquiry + payment dialog */}
+      <CourseEnquiryDialog
+        open={enrollOpen}
+        onOpenChange={setEnrollOpen}
+        course={{ id: course.id, name: course.name, price: course.price }}
+      />
     </div>
   );
 };
