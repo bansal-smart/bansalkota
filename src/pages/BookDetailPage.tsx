@@ -53,9 +53,9 @@ const BookDetailPage = () => {
         </Link>
 
         <div className="mt-6 grid grid-cols-1 gap-10 md:grid-cols-2">
-          <div className="flex aspect-[4/5] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10">
+          <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(var(--bansal-orange))]/15 to-[hsl(var(--navy))]/10">
             {book.cover_url ? (
-              <img src={book.cover_url} alt={book.title} className="h-full w-full object-contain p-4" />
+              <img src={book.cover_url} alt={book.title} className="h-full w-full object-cover" />
             ) : (
               <BookOpen className="h-32 w-32 text-[hsl(var(--bansal-orange))]" />
             )}
