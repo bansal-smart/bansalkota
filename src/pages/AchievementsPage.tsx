@@ -8,6 +8,8 @@ const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
 import { supabase } from "@/integrations/supabase/client";
+import { useToppers } from "@/hooks/useToppers";
+import { MapPin } from "lucide-react";
 
 type Poster = { id: string; image_url: string; caption: string };
 
@@ -22,6 +24,12 @@ export default function AchievementsPage() {
   const { page: cmsPage } = useSitePage("achievements");
   const [posters, setPosters] = useState<Poster[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toppers, loading: toppersLoading } = useToppers();
+  const [examFilter, setExamFilter] = useState<string>("All");
+  const [visible, setVisible] = useState(48);
+
+  const exams = ["All", ...Array.from(new Set(toppers.map((t) => t.exam).filter(Boolean)))];
+  const filtered = examFilter === "All" ? toppers : toppers.filter((t) => t.exam === examFilter);
 
   useEffect(() => {
     (async () => {
@@ -137,6 +145,81 @@ export default function AchievementsPage() {
           )}
         </div>
       </section>
+
+      {/* Toppers students grid */}
+      <section className="py-14 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <BansalBadge variant="orange" className="mb-3">
+              Topper Students
+            </BansalBadge>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">
+              Every Rank. Every Name.
+            </h2>
+            <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+              {toppersLoading ? "Loading toppers…" : `${filtered.length} selections featured.`}
+            </p>
+          </div>
+
+          {exams.length > 1 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {exams.map((e) => (
+                <button
+                  key={e}
+                  onClick={() => { setExamFilter(e); setVisible(48); }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                    examFilter === e
+                      ? "bg-bansal-orange text-white border-bansal-orange"
+                      : "bg-white text-bansal-blue border-border hover:border-bansal-orange"
+                  }`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5 max-w-6xl mx-auto">
+            {filtered.slice(0, visible).map((t) => (
+              <div
+                key={t.id}
+                className="group relative rounded-2xl overflow-hidden bg-bansal-blue text-white shadow-md hover:shadow-2xl transition-all p-4 md:p-5 flex flex-col justify-between min-h-[160px]"
+              >
+                <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-bansal-orange/20 blur-2xl pointer-events-none" />
+                {t.rank_label && (
+                  <span className="self-start rounded-full bg-bansal-orange text-white text-[10px] font-bold px-2.5 py-1 shadow">
+                    {t.rank_label}
+                  </span>
+                )}
+                <div className="relative mt-4">
+                  <div className="font-display font-bold text-base md:text-lg leading-tight line-clamp-2">
+                    {t.name}
+                  </div>
+                  <div className="mt-1 text-[10px] md:text-xs text-white/80 uppercase tracking-wider font-semibold">
+                    {t.exam}
+                  </div>
+                  {(t.city || t.year) && (
+                    <div className="mt-2 text-[10px] md:text-xs text-white/70 flex items-center gap-1">
+                      {t.city && <MapPin className="h-2.5 w-2.5" />}
+                      {t.city}{t.city && t.year ? " · " : ""}{t.year ?? ""}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {visible < filtered.length && (
+            <div className="text-center mt-8">
+              <BansalButton variant="outline" onClick={() => setVisible((v) => v + 48)}>
+                Load more ({filtered.length - visible} remaining)
+              </BansalButton>
+            </div>
+          )}
+        </div>
+      </section>
+
+
 
 
 
