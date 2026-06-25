@@ -11,15 +11,7 @@ const cityTier2 = cityTier2Asset.url;
 
 export type CenterRegion = "North" | "South" | "East" | "West" | "Central";
 
-export type CenterTheme =
-  | "metro"
-  | "hills"
-  | "heritage"
-  | "coastal"
-  | "temple"
-  | "plains"
-  | "east"
-  | "tier2";
+export type CenterTheme = "metro" | "hills" | "heritage" | "coastal" | "temple" | "plains" | "east" | "tier2";
 
 export const THEME_IMAGE: Record<CenterTheme, string> = {
   metro: cityMetro,
@@ -97,7 +89,7 @@ export const CENTERS: Center[] = [
     phone: PHONE_HQ,
     isHQ: true,
     established: 1991,
-    email: "info@bansalclasses.com",
+    email: "admin@bansal.ac.in",
     verified: true,
   }),
 
@@ -248,8 +240,7 @@ export const CENTERS: Center[] = [
   make("Sagar", "Madhya Pradesh", "Central", "tier2"),
 ];
 
-export const findCenter = (slug: string) =>
-  CENTERS.find((c) => c.slug === slug);
+export const findCenter = (slug: string) => CENTERS.find((c) => c.slug === slug);
 
 export const CENTER_COUNT = CENTERS.length;
 export const STATE_COUNT = new Set(CENTERS.map((c) => c.state)).size;
