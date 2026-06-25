@@ -575,20 +575,23 @@ const CourseDetailPage = () => {
             </div>
           </div>
 
-          {/* Our Services */}
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="font-display text-sm font-black text-center text-foreground mb-4">Our Services</p>
-            <div className="grid grid-cols-3 gap-3">
-              {SERVICES.map((s) => (
-                <div key={s.label} className="flex flex-col items-center text-center gap-1.5">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <s.icon className="h-5 w-5 text-primary" />
+          {/* Course Includes */}
+          {selectedServices.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="font-display text-sm font-black text-center text-foreground mb-4">Course Includes</p>
+              <div className="grid grid-cols-3 gap-3">
+                {selectedServices.map((s) => (
+                  <div key={s.key} className="flex flex-col items-center text-center gap-1.5">
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <s.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-[10px] font-semibold text-foreground leading-tight">{s.label}</p>
                   </div>
-                  <p className="text-[10px] font-semibold text-foreground leading-tight">{s.label}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
         </aside>
       </div>
 
