@@ -133,7 +133,7 @@ WITH ins AS (
     'Leading Bansal into the next chapter.',
     'Success is not just about hard work — it''s about smart strategy and relentless focus.',
     'Sameer Bansal Sir leads Bansal Classes, Kota — one of India''s most prestigious coaching institutes for IIT-JEE & NEET. Known for his deep academic roots and modern leadership, he continues the legacy of founder VK Bansal by blending excellence, discipline and innovation.',
-    'Widely praised by both students and educators, Sameer Bansal is considered a ''Mathematical Gem'' and a pillar of academic excellence.',
+    'Widely praised by both students and educators, Sameer Bansal Sir is considered a ''Mathematical Gem'' and a pillar of academic excellence.',
     ARRAY['Mathematics Expert','IITian Mentor','Visionary Leader'], 2),
   ('mahima-bansal', 'Mahima Bansal', 'Director & Academic Mentor, Bansal Classes Kota',
     'Nurturing purpose alongside performance.',
