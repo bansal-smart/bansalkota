@@ -153,6 +153,7 @@ const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
 const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
 const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
+const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
