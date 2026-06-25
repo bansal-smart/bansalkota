@@ -54,8 +54,24 @@ type EnrollmentInfo = {
 // ----- Fallback data (Bansal-styled demo) -----
 
 const FALLBACK_COMMENCEMENT = [
-  { stream: "JEE (Main + Advanced)", phase: "Phase I", medium: "English", target: "2028", eligibility: "Class 10th to 11th Moving", mode: "Direct/BOOST", date: "01/04/2026" },
-  { stream: "JEE (Main + Advanced)", phase: "Phase II", medium: "English", target: "2028", eligibility: "Class 10th to 11th Moving", mode: "Direct/BOOST", date: "27/05/2026" },
+  {
+    stream: "JEE (Main + Advanced)",
+    phase: "Phase I",
+    medium: "English",
+    target: "2028",
+    eligibility: "Class 10th to 11th Moving",
+    mode: "Direct/BOOST",
+    date: "01/04/2026",
+  },
+  {
+    stream: "JEE (Main + Advanced)",
+    phase: "Phase II",
+    medium: "English",
+    target: "2028",
+    eligibility: "Class 10th to 11th Moving",
+    mode: "Direct/BOOST",
+    date: "27/05/2026",
+  },
 ];
 
 const BOARD_SCHOLARSHIPS = [
@@ -69,8 +85,14 @@ const OLYMPIAD_SCHOLARSHIPS = [
   { label: "Stage III Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "100%" },
   { label: "Stage II Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "90%" },
   { label: "Stage I Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "75%" },
-  { label: "Stage III Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)", pct: "100%" },
-  { label: "Stage II Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)", pct: "90%" },
+  {
+    label: "Stage III Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)",
+    pct: "100%",
+  },
+  {
+    label: "Stage II Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)",
+    pct: "90%",
+  },
   { label: "Stage I Qualified (Int'l Sr. Olympiads – HBCSE / NSEs)", pct: "75%" },
   { label: "Based on Pre-RMO", pct: "25%" },
 ];
@@ -175,7 +197,10 @@ const CourseDetailPage = () => {
   const mode = detectMode(course);
   const category = detectCategory(course);
   const subjects = course.subject
-    ? course.subject.split(/[,/]/).map((s) => s.trim()).filter(Boolean)
+    ? course.subject
+        .split(/[,/]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
     : ["Physics", "Chemistry", "Mathematics"];
 
   const educationLevel = course.target_exam?.toLowerCase().includes("foundation")
@@ -190,16 +215,17 @@ const CourseDetailPage = () => {
   ];
 
   const courseAny = course as unknown as { what_youll_learn?: string[] | null; requirements?: string[] | null };
-  const whyChoose = (courseAny.what_youll_learn && courseAny.what_youll_learn.length > 0)
-    ? courseAny.what_youll_learn
-    : [
-        "India's most trusted IIT-JEE coaching institute",
-        "Highly experienced faculty with a proven success record",
-        "Intensive classroom teaching with concept-based learning",
-        "Regular doubt-solving sessions and mentorship support",
-        "Weekly tests with performance analysis and ranking",
-        "Proven study material and structured curriculum",
-      ];
+  const whyChoose =
+    courseAny.what_youll_learn && courseAny.what_youll_learn.length > 0
+      ? courseAny.what_youll_learn
+      : [
+          "India's most trusted IIT-JEE coaching institute",
+          "Highly experienced faculty with a proven success record",
+          "Intensive classroom teaching with concept-based learning",
+          "Regular doubt-solving sessions and mentorship support",
+          "Weekly tests with performance analysis and ranking",
+          "Proven study material and structured curriculum",
+        ];
 
   const handleEnrollClick = () => {
     if (enrolled) {
@@ -223,9 +249,13 @@ const CourseDetailPage = () => {
       {/* Breadcrumb */}
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4 py-3 text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-primary">Home</Link>
+          <Link to="/" className="hover:text-primary">
+            Home
+          </Link>
           {" / "}
-          <Link to="/courses" className="hover:text-primary">Courses</Link>
+          <Link to="/courses" className="hover:text-primary">
+            Courses
+          </Link>
           {" / "}
           <span className="text-foreground font-medium">{course.name}</span>
         </div>
@@ -266,7 +296,8 @@ const CourseDetailPage = () => {
                 <span>({(course.total_enrolled || 2100).toLocaleString()} reviews)</span>
               </span>
               <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-primary" /> {(course.total_enrolled || 12400).toLocaleString()} enrolled
+                <Users className="h-3.5 w-3.5 text-primary" /> {(course.total_enrolled || 12400).toLocaleString()}{" "}
+                enrolled
               </span>
             </div>
           </div>
@@ -276,7 +307,10 @@ const CourseDetailPage = () => {
             <h3 className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">Subjects Covered</h3>
             <div className="flex flex-wrap gap-2">
               {subjects.map((s) => (
-                <span key={s} className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground">
+                <span
+                  key={s}
+                  className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+                >
                   {s}
                 </span>
               ))}
@@ -285,7 +319,9 @@ const CourseDetailPage = () => {
 
           {/* This Course Includes */}
           <section>
-            <h3 className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">This Course Includes</h3>
+            <h3 className="text-xs font-bold tracking-wider uppercase text-muted-foreground mb-3">
+              This Course Includes
+            </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {includes.map((it) => (
                 <div key={it.label} className="rounded-2xl border border-border bg-card p-4">
@@ -303,7 +339,9 @@ const CourseDetailPage = () => {
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
                   <p className="text-sm font-bold text-foreground">Your progress</p>
-                  <p className="text-xs text-muted-foreground">{completedCount} of {totalLessons} lessons completed</p>
+                  <p className="text-xs text-muted-foreground">
+                    {completedCount} of {totalLessons} lessons completed
+                  </p>
                 </div>
                 <button
                   onClick={() => navigate(`/courses/${course.slug}/learn`)}
@@ -318,19 +356,18 @@ const CourseDetailPage = () => {
             </section>
           )}
 
-
-
-
           {/* Know More Details */}
           <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
             <h3 className="font-display text-lg font-black text-foreground">Know More Details</h3>
             <div>
               <p className="text-sm font-bold text-foreground">{course.name} — Bansal Classes Kota</p>
-              <p className="text-xs text-primary mt-1">{mode} Classroom Program · {category}</p>
+              <p className="text-xs text-primary mt-1">
+                {mode} Classroom Program · {category}
+              </p>
               <p className="text-xs text-foreground mt-1">
                 <span className="font-bold">Target:</span> {category} 2028 ·
-                <span className="font-bold"> Duration:</span> 1 Year ·
-                <span className="font-bold"> Commencement:</span> 01/04/2026
+                <span className="font-bold"> Duration:</span> 1 Year ·<span className="font-bold"> Commencement:</span>{" "}
+                01/04/2026
               </p>
             </div>
 
@@ -357,7 +394,7 @@ const CourseDetailPage = () => {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground">Win up to 100% scholarship with BOOST</p>
+                <p className="text-sm font-bold text-foreground">Win up to 90% scholarship with BOOST</p>
                 <p className="text-xs text-muted-foreground">
                   Bansal's scholarship-cum-admission test — qualify and unlock fee discounts on this course.
                 </p>
@@ -382,7 +419,6 @@ const CourseDetailPage = () => {
               </ul>
             </div>
           </section>
-
 
           {/* Commencement Dates */}
           <section>
@@ -476,7 +512,9 @@ const CourseDetailPage = () => {
                       <span className="text-sm font-bold text-foreground text-left">{ch.title}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-xs text-muted-foreground">{ch.lessons.length} lessons</span>
-                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expandedChapter === i ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          className={`h-4 w-4 text-muted-foreground transition-transform ${expandedChapter === i ? "rotate-180" : ""}`}
+                        />
                       </div>
                     </button>
                     {expandedChapter === i && (
@@ -492,12 +530,18 @@ const CourseDetailPage = () => {
                               ) : (
                                 <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                               )}
-                              <span className={`flex-1 ${isDone ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                              <span
+                                className={`flex-1 ${isDone ? "text-muted-foreground line-through" : "text-foreground"}`}
+                              >
                                 {l.title}
                               </span>
-                              <span className="text-xs text-muted-foreground">{Math.round(l.duration_seconds / 60)} min</span>
+                              <span className="text-xs text-muted-foreground">
+                                {Math.round(l.duration_seconds / 60)} min
+                              </span>
                               {l.is_free_preview && (
-                                <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">FREE</span>
+                                <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
+                                  FREE
+                                </span>
                               )}
                             </div>
                           );
@@ -522,11 +566,18 @@ const CourseDetailPage = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-foreground truncate">{pdf.title}</p>
-                      <p className="text-[11px] text-muted-foreground">PDF{pdf.size_bytes ? ` · ${formatBytes(pdf.size_bytes)}` : ""}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        PDF{pdf.size_bytes ? ` · ${formatBytes(pdf.size_bytes)}` : ""}
+                      </p>
                     </div>
                     {enrolled ? (
-                      <a href={pdf.file_url} download target="_blank" rel="noopener noreferrer"
-                        className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0">
+                      <a
+                        href={pdf.file_url}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors shrink-0"
+                      >
                         Download
                       </a>
                     ) : (
@@ -566,12 +617,8 @@ const CourseDetailPage = () => {
                     ₹{Number(course.original_price).toLocaleString()}
                   </span>
                 )}
-                <span className="font-display text-2xl font-black text-foreground">
-                  ₹{price.toLocaleString()}
-                </span>
-                {discount > 0 && (
-                  <span className="text-xs font-bold text-destructive">{discount}% Off</span>
-                )}
+                <span className="font-display text-2xl font-black text-foreground">₹{price.toLocaleString()}</span>
+                {discount > 0 && <span className="text-xs font-bold text-destructive">{discount}% Off</span>}
               </div>
 
               <div className="border-t border-border pt-4">
@@ -606,7 +653,10 @@ const CourseDetailPage = () => {
               {/* Trust strip */}
               <div className="flex items-center justify-center gap-2 pt-2">
                 {["VISA", "MC", "PayPal", "GPay", "UPI"].map((p) => (
-                  <span key={p} className="rounded-md border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground">
+                  <span
+                    key={p}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground"
+                  >
                     {p}
                   </span>
                 ))}
