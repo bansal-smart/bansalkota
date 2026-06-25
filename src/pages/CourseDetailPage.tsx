@@ -202,11 +202,6 @@ const CourseDetailPage = () => {
       ];
 
   const handleEnrollClick = () => {
-    if (!user) {
-      toast.info("Please sign in to enroll");
-      navigate("/login");
-      return;
-    }
     if (enrolled) {
       navigate(`/courses/${course.slug}/learn`);
       return;
