@@ -151,7 +151,7 @@ const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: str
       <div className="flex items-start gap-3">
         <div className="flex w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted aspect-[4/3]">
           {value ? (
-            <img src={value} alt="Cover" className="h-full w-full object-contain" />
+            <img src={value} alt="Cover" className="h-full w-full object-cover" />
           ) : (
             <ImageIcon className="h-6 w-6 text-muted-foreground" />
           )}
