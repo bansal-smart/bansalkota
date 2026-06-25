@@ -307,8 +307,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Hidden: WSJ full-page archive ref kept for future modal */}
-      <link rel="preload" as="image" href={wsjFullAsset.url} />
     </div>
   );
 };
