@@ -32,6 +32,7 @@ export const useCourses = (targetExam?: string, subject?: string) => {
         .from("courses")
         .select(COURSE_COLUMNS)
         .eq("is_published", true)
+        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
       if (targetExam && targetExam !== "All") q = q.eq("target_exam", targetExam);
       if (subject && subject !== "All") q = q.eq("subject", subject);
