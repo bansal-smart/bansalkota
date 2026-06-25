@@ -64,7 +64,7 @@ const fetchOverview = async () => {
     questionBankCount: qbankRes.count ?? 0,
     toppersCount: toppersRes.count ?? 0,
     pending: {
-      educators: eduRes.count ?? 0,
+      educators: 0,
       enquiries: enqOpenRes.count ?? 0,
       reports: repRes.count ?? 0,
       centreSupport: supportRes.count ?? 0,
