@@ -13,13 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { startCashfreeCheckout } from "@/lib/cashfree";
@@ -98,8 +92,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     }
   }, [open, user]);
 
-  const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const submit = async () => {
     const parsed = schema.safeParse(form);
@@ -158,8 +151,8 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
         <DialogHeader>
           <DialogTitle className="font-display">Enquiry & Enrollment</DialogTitle>
           <DialogDescription>
-            Confirm your details for <span className="font-semibold text-foreground">{course.name}</span>. We'll save your
-            enquiry, then take you to the secure payment page.
+            Confirm your details for <span className="font-semibold text-foreground">{course.name}</span>. We'll save
+            your enquiry, then take you to the secure payment page.
           </DialogDescription>
         </DialogHeader>
 
@@ -182,10 +175,14 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             <div>
               <Label>Class *</Label>
               <Select value={form.class_level} onValueChange={(v) => update("class_level", v)}>
-                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
                 <SelectContent>
                   {CLASS_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -193,10 +190,14 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             <div>
               <Label>Preferred centre</Label>
               <Select value={form.preferred_centre_id} onValueChange={(v) => update("preferred_centre_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Any centre" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Any centre" />
+                </SelectTrigger>
                 <SelectContent>
                   {centres.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -223,8 +224,8 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             />
           </div>
           <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <CreditCard className="h-3 w-3" /> You'll be redirected to Cashfree to pay
-            ₹{Number(course.price).toLocaleString()}.
+            <CreditCard className="h-3 w-3" /> You'll be redirected to Cashfree to pay ₹
+            {Number(course.price).toLocaleString()}.
           </p>
         </div>
 
@@ -234,9 +235,11 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           </Button>
           <Button onClick={submit} disabled={submitting}>
             {submitting ? (
-              <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Processing…</>
+              <>
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Processing…
+              </>
             ) : (
-              <>Submit & Pay</>
+              <>Submit</>
             )}
           </Button>
         </DialogFooter>
