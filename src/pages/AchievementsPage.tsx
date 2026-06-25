@@ -24,6 +24,12 @@ export default function AchievementsPage() {
   const { page: cmsPage } = useSitePage("achievements");
   const [posters, setPosters] = useState<Poster[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toppers, loading: toppersLoading } = useToppers();
+  const [examFilter, setExamFilter] = useState<string>("All");
+  const [visible, setVisible] = useState(48);
+
+  const exams = ["All", ...Array.from(new Set(toppers.map((t) => t.exam).filter(Boolean)))];
+  const filtered = examFilter === "All" ? toppers : toppers.filter((t) => t.exam === examFilter);
 
   useEffect(() => {
     (async () => {
