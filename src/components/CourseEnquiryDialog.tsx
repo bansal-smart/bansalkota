@@ -180,6 +180,12 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
+              <Label htmlFor="ce-parent-phone">Parent's phone</Label>
+              <Input id="ce-parent-phone" value={form.parent_phone} onChange={(e) => update("parent_phone", e.target.value)} placeholder="Parent's phone number" />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
               <Label>Class *</Label>
               <Select value={form.class_level} onValueChange={(v) => update("class_level", v)}>
                 <SelectTrigger>
