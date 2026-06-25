@@ -247,54 +247,8 @@ const CreateCoursePage = () => {
       return;
     }
 
-    // Curriculum (chapters + lessons) is only managed during edit; on create,
-    // admins build the curriculum afterwards from the Course Content page.
-    if (isEditMode) {
-      const { data: oldChs } = await supabase.from("chapters").select("id").eq("course_id", workingCourseId);
-      const oldIds = (oldChs ?? []).map((c) => c.id);
-      if (oldIds.length) {
-        await supabase.from("lessons").delete().in("chapter_id", oldIds);
-        await supabase.from("chapters").delete().in("id", oldIds);
-      }
+    // Curriculum (chapters + lessons) is managed from the dedicated Course Content page.
 
-      let totalSecs = 0;
-      let totalLessons = 0;
-      for (let ci = 0; ci < chapters.length; ci++) {
-        const ch = chapters[ci];
-        const { data: chapterRow, error: chapterErr } = await supabase
-          .from("chapters")
-          .insert({ course_id: workingCourseId, title: ch.title || `Chapter ${ci + 1}`, position: ci })
-          .select("id")
-          .single();
-        if (chapterErr || !chapterRow) {
-          toast.error("Failed creating chapter");
-          setSubmitting(false);
-          return;
-        }
-        const lessonRows = ch.lectures.map((l, li) => ({
-          course_id: workingCourseId!,
-          chapter_id: chapterRow.id,
-          slug: `${ci}-${li}-${slugify(l.title) || "lesson"}`,
-          title: l.title || `Lesson ${li + 1}`,
-          position: li,
-          duration_seconds: Math.max(60, l.durationMin * 60),
-          is_free_preview: ci === 0 && li === 0,
-          type: "video",
-        }));
-        lessonRows.forEach((l) => {
-          totalSecs += l.duration_seconds;
-          totalLessons += 1;
-        });
-        if (lessonRows.length) {
-          await supabase.from("lessons").insert(lessonRows);
-        }
-      }
-
-      await supabase
-        .from("courses")
-        .update({ total_lessons: totalLessons, duration_hours: Math.max(1, Math.round(totalSecs / 3600)) })
-        .eq("id", workingCourseId);
-    }
 
     toast.success(isEditMode ? "Course updated" : publish ? "Course published!" : "Draft saved");
     setSubmitting(false);
