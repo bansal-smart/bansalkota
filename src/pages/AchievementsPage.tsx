@@ -7,6 +7,7 @@ import achievementsHeroAsset from "@/assets/achievements-hero.webp.asset.json";
 const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 import { useToppers, type Topper } from "@/hooks/useToppers";
+import { useSitePage } from "@/hooks/useSitePage";
 
 const PAGE_SIZE = 24;
 
@@ -28,6 +29,7 @@ const milestones = [
 
 export default function AchievementsPage() {
   const { toppers, loading } = useToppers();
+  const { page: cmsPage } = useSitePage("achievements");
   const [filter, setFilter] = useState<string>("All");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -86,6 +88,18 @@ export default function AchievementsPage() {
           </div>
         </div>
       </section>
+
+      {/* Editable CMS intro */}
+      {cmsPage?.content_html && (
+        <section className="pb-6">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <div
+              className="prose prose-sm md:prose-base max-w-none prose-headings:font-display prose-headings:text-bansal-blue prose-a:text-bansal-orange"
+              dangerouslySetInnerHTML={{ __html: cmsPage.content_html }}
+            />
+          </div>
+        </section>
+      )}
 
       {/* Toppers wall */}
       <section className="py-14">
