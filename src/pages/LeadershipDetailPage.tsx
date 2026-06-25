@@ -195,7 +195,7 @@ export default function LeadershipDetailPage() {
 
             {/* Text */}
             <div className="md:col-span-7">
-              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : slug === "neelam-bansal" ? "Neelam Bansal Ma'am" : displayFirst}</Eyebrow>
+              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : slug === "neelam-bansal" ? "Neelam Bansal Ma'am" : slug === "mahima-bansal" ? "Mahima Bansal Ma'am" : displayFirst}</Eyebrow>
               {profile.pull_quote && (
                 <blockquote className="relative font-display italic text-xl md:text-3xl font-semibold text-bansal-blue leading-[1.25] tracking-tight mb-6">
                   <Quote
@@ -215,7 +215,9 @@ export default function LeadershipDetailPage() {
                       ? profile.intro.replace(/Sameer Bansal\b(?!\s+Sir)/g, "Sameer Bansal Sir")
                       : slug === "neelam-bansal"
                         ? profile.intro.replace(/Mrs\.\s*/g, "").replace(/Neelam Bansal\b(?!\s+Ma'am)/g, "Neelam Bansal Ma'am")
-                        : profile.intro}
+                        : slug === "mahima-bansal"
+                          ? profile.intro.replace(/Mahima Bansal\b(?!\s+Ma'am)/g, "Mahima Bansal Ma'am")
+                          : profile.intro}
                 </p>
               )}
             </div>
@@ -476,7 +478,9 @@ export default function LeadershipDetailPage() {
                 <p className="font-display text-xl md:text-2xl leading-relaxed text-white/95 whitespace-pre-line">
                   {slug === "vk-bansal"
                     ? profile.recognition_text.replace(/V\s*\.?\s*K\.?\s*Bansal/gi, "Bansal Sir")
-                    : profile.recognition_text}
+                    : slug === "mahima-bansal"
+                      ? profile.recognition_text.replace(/Mahima Bansal\b(?!\s+Ma'am)/g, "Mahima Bansal Ma'am")
+                      : profile.recognition_text}
                 </p>
               </div>
             </div>
@@ -542,7 +546,7 @@ export default function LeadershipDetailPage() {
             Continue the Bansal Journey
           </h2>
           <p className="text-white/80 mb-8">
-            Inspired by {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : slug === "neelam-bansal" ? "Neelam Bansal Ma'am" : displayFirst}? Talk to our admissions team
+            Inspired by {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : slug === "neelam-bansal" ? "Neelam Bansal Ma'am" : slug === "mahima-bansal" ? "Mahima Bansal Ma'am" : displayFirst}? Talk to our admissions team
             or explore more of the family.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
