@@ -17,7 +17,7 @@ type Shipping = {
 };
 type Body =
   | { orderType: "cart"; items: CartItem[]; shipping: Shipping }
-  | { orderType: "course"; courseId: string }
+  | { orderType: "course"; courseId: string; enquiryId?: string }
   | { orderType: "test_series"; testSeriesId: string };
 
 Deno.serve(async (req) => {
@@ -166,6 +166,14 @@ Deno.serve(async (req) => {
       cf_order_id: cfJson.cf_order_id?.toString() ?? null,
       cf_payment_session_id: cfJson.payment_session_id,
     }).eq("id", order.id);
+
+    // Link enquiry → order so the webhook can flip its payment_status.
+    if (body.orderType === "course" && (body as any).enquiryId) {
+      await admin.from("course_enquiries").update({
+        payment_order_id: order.id,
+        payment_status: "initiated",
+      }).eq("id", (body as any).enquiryId);
+    }
 
     return json({
       order_id: order.id,
