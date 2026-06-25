@@ -21,6 +21,8 @@ import {
   Rows3,
   Columns3,
   Trash,
+  Trash2,
+  MinusSquare,
 } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { Button } from "@/components/ui/button";
