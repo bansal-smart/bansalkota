@@ -48,7 +48,7 @@ const PublicLayout = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/centers" className="hover:text-bansal-orange">
+            <Link to="/centres" className="hover:text-bansal-orange">
               Find a Centre
             </Link>
             <Link to="/login" className="hover:text-bansal-orange font-semibold">
@@ -287,7 +287,7 @@ const PublicLayout = () => {
                 </div>
                 <div className="flex gap-2">
                   <Mail className="h-4 w-4 mt-0.5 shrink-0 text-bansal-orange" />
-                  <span>info@bansal.ac.in</span>
+                  <span>admin@bansal.ac.in</span>
                 </div>
               </div>
             </div>
