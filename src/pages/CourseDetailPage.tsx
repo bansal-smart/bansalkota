@@ -152,25 +152,37 @@ const CourseDetailPage = () => {
     );
   }
 
-  const mode = detectMode(course);
+  const mode = course.mode || detectMode(course);
   const category = detectCategory(course);
-  const subjects = course.subject
-    ? course.subject
-        .split(/[,/]/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : ["Physics", "Chemistry", "Mathematics"];
+  const subjects =
+    course.subjects_covered && course.subjects_covered.length > 0
+      ? course.subjects_covered
+      : course.subject
+      ? course.subject
+          .split(/[,/]/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : ["Physics", "Chemistry", "Mathematics"];
 
-  const educationLevel = course.target_exam?.toLowerCase().includes("foundation")
-    ? "Class 9th–10th"
-    : "Class 11th–12th";
+  const educationLevel =
+    course.education_level ||
+    (course.target_exam?.toLowerCase().includes("foundation") ? "Class 9th–10th" : "Class 11th–12th");
+
+  const durationLabel =
+    course.duration_label || `${totalHours >= 100 ? "Up to 12 Months" : `${totalHours} hrs`}`;
+  const languageLabel = course.language || "English / Hindi";
 
   const includes = [
     { icon: GraduationCap, label: "Education Level", value: educationLevel },
-    { icon: Clock, label: "Duration", value: `${totalHours >= 100 ? "Up to 12 Months" : `${totalHours} hrs`}` },
+    { icon: Clock, label: "Duration", value: durationLabel },
     { icon: Video, label: "Mode", value: mode },
-    { icon: BookOpen, label: "Language", value: "English / Hindi" },
+    { icon: BookOpen, label: "Language", value: languageLabel },
   ];
+
+  const selectedServices = SERVICE_OPTIONS.filter((s) =>
+    (course.included_services ?? []).includes(s.key),
+  );
+
 
   const courseAny = course as unknown as { what_youll_learn?: string[] | null; requirements?: string[] | null };
   const whyChoose =
