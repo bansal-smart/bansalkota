@@ -239,6 +239,7 @@ const App = () => (
               <Route path="/gallery" element={<Navigate to="/gallery/images" replace />} />
               <Route path="/gallery/images" element={<GalleryImagesPage />} />
               <Route path="/gallery/videos" element={<GalleryVideosPage />} />
+              <Route path="/gallery/achievements" element={<GalleryAchievementsPage />} />
               <Route path="/alumni" element={<AlumniPage />} />
 
               <Route path="/e-store" element={<EStorePage />} />
