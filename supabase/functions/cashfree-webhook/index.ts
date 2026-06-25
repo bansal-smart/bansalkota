@@ -52,7 +52,6 @@ Deno.serve(async (req) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
   // Branch: BOOST registration payments use order_id prefix "boost_<uuid>"
   if (orderId.startsWith("boost_")) {
