@@ -35,7 +35,8 @@ const AdminCoursesPage = () => {
     setLoading(true);
     const { data } = await supabase
       .from("courses")
-      .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at")
+      .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order")
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
     const base = (data ?? []) as AdminCourse[];
 
