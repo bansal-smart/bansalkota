@@ -52,6 +52,36 @@ Deno.serve(async (req) => {
 
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  // Branch: BOOST registration payments use order_id prefix "boost_<uuid>"
+  if (orderId.startsWith("boost_")) {
+    const regId = orderId.slice("boost_".length);
+    const { data: reg } = await admin
+      .from("boost_registrations")
+      .select("id, payment_status")
+      .eq("id", regId)
+      .maybeSingle();
+    if (!reg) {
+      console.warn("BOOST registration not found", regId);
+      return new Response("ok", { status: 200 });
+    }
+    if (type === "PAYMENT_SUCCESS_WEBHOOK" && paymentStatus === "SUCCESS" && reg.payment_status !== "paid") {
+      await admin.from("boost_registrations").update({
+        payment_status: "paid",
+        status: "confirmed",
+        payment_ref: paymentId ?? null,
+        paid_at: new Date().toISOString(),
+      }).eq("id", reg.id);
+    } else if ((type === "PAYMENT_FAILED_WEBHOOK" || type === "PAYMENT_USER_DROPPED_WEBHOOK") && reg.payment_status === "pending") {
+      await admin.from("boost_registrations").update({
+        payment_status: "failed",
+        payment_ref: paymentId ?? null,
+      }).eq("id", reg.id);
+    }
+    return new Response("ok", { status: 200, headers: corsHeaders });
+  }
+
   // Fetch order + items + user
   const { data: order } = await admin
     .from("orders").select("id, user_id, total, currency, status").eq("id", orderId).maybeSingle();
@@ -59,6 +89,7 @@ Deno.serve(async (req) => {
     console.warn("Order not found", orderId);
     return new Response("ok", { status: 200 });
   }
+
 
   // Upsert payment row (idempotent on gateway + external_id)
   if (paymentId) {
