@@ -144,6 +144,18 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
         <Columns3 className="h-4 w-4" />
       </ToolbarButton>
       <ToolbarButton
+        onClick={() => editor.chain().focus().deleteColumn().run()}
+        label="Delete column"
+      >
+        <MinusSquare className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().deleteRow().run()}
+        label="Delete row"
+      >
+        <Trash2 className="h-4 w-4" />
+      </ToolbarButton>
+      <ToolbarButton
         onClick={() => editor.chain().focus().deleteTable().run()}
         label="Delete table"
       >
