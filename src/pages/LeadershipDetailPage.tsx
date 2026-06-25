@@ -195,7 +195,7 @@ export default function LeadershipDetailPage() {
 
             {/* Text */}
             <div className="md:col-span-7">
-              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : displayFirst}</Eyebrow>
+              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : displayFirst}</Eyebrow>
               {profile.pull_quote && (
                 <blockquote className="relative font-display italic text-xl md:text-3xl font-semibold text-bansal-blue leading-[1.25] tracking-tight mb-6">
                   <Quote
@@ -211,7 +211,9 @@ export default function LeadershipDetailPage() {
                 <p className="text-base md:text-lg text-bansal-gray leading-relaxed first-letter:font-display first-letter:text-5xl md:first-letter:text-6xl first-letter:font-bold first-letter:text-bansal-orange first-letter:float-left first-letter:mr-3 first-letter:leading-none first-letter:mt-1">
                   {slug === "vk-bansal"
                     ? profile.intro.replace(/V\s*K\.?\s*Bansal/g, "Bansal Sir")
-                    : profile.intro}
+                    : slug === "sameer-bansal"
+                      ? profile.intro.replace(/Sameer Bansal\b(?!\s+Sir)/g, "Sameer Bansal Sir")
+                      : profile.intro}
                 </p>
               )}
             </div>
@@ -247,7 +249,7 @@ export default function LeadershipDetailPage() {
                 </span>
               </div>
               <h2 className="font-display text-3xl md:text-5xl font-extrabold text-bansal-blue mb-3 tracking-tight">
-                Books by Sameer Sir
+                Books by Sameer Bansal Sir
               </h2>
               <p className="text-bansal-gray max-w-2xl mb-10">
                 A four-volume problem-solving series read by JEE aspirants across India — written from a quarter-century inside the classroom.
@@ -538,7 +540,7 @@ export default function LeadershipDetailPage() {
             Continue the Bansal Journey
           </h2>
           <p className="text-white/80 mb-8">
-            Inspired by {slug === "vk-bansal" ? "Bansal Sir" : displayFirst}? Talk to our admissions team
+            Inspired by {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : displayFirst}? Talk to our admissions team
             or explore more of the family.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
