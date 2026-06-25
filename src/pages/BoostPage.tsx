@@ -307,7 +307,7 @@ export default function BoostPage() {
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>
           <BansalButton variant="cta" className="text-base px-10 py-4" onClick={() => setRegOpen(true)}>
-            Explore
+            Fill an Application
           </BansalButton>
           <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
             <Clock className="h-3 w-3" /> Limited slots every Sunday
