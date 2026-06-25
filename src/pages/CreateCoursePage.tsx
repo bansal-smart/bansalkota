@@ -190,7 +190,7 @@ const CreateCoursePage = () => {
       description: description || shortDesc,
       short_description: shortDesc || null,
       description_html: descriptionHtml || null,
-      subject,
+      subject: subjectsCovered[0] || "General",
       target_exam: exam,
       educator_name: resolvedEducatorName,
       price,
