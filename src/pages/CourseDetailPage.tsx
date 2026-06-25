@@ -52,7 +52,6 @@ type EnrollmentInfo = {
 
 // ----- Fallback data (Bansal-styled demo) -----
 
-
 const SERVICES = [
   { icon: BookOpen, label: "Study Material" },
   { icon: Video, label: "Recorded Lectures" },
@@ -376,7 +375,6 @@ const CourseDetailPage = () => {
             </div>
           </section>
 
-
           {/* Curriculum (if any) */}
           {chapters.length > 0 && (
             <section>
@@ -525,21 +523,7 @@ const CourseDetailPage = () => {
                 {enrolled ? `Continue Learning` : `Enroll Now`}
               </button>
 
-              <button className="w-full text-center text-xs font-semibold text-primary hover:underline">
-                View Coupon Code &gt;
-              </button>
-
               {/* Trust strip */}
-              <div className="flex items-center justify-center gap-2 pt-2">
-                {["VISA", "MC", "PayPal", "GPay", "UPI"].map((p) => (
-                  <span
-                    key={p}
-                    className="rounded-md border border-border bg-background px-2 py-1 text-[10px] font-bold text-muted-foreground"
-                  >
-                    {p}
-                  </span>
-                ))}
-              </div>
               <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5" /> Safe and secure payment · 100% authentic
               </p>
