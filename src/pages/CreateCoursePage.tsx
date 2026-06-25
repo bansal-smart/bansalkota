@@ -23,7 +23,7 @@ const EDUCATION_LEVELS = [
 const DURATION_OPTIONS = ["6 Months", "1 Year", "2 Years", "Up to 12 Months", "Up to 24 Months"];
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid", "Residential"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
-const SUBJECT_PRESETS = ["Physics", "Chemistry", "Maths", "Biology", "All Subjects"];
+const EXAM_OPTIONS = ["IIT-JEE", "NEET", "Foundation"];
 
 
 const slugify = (s: string) =>
