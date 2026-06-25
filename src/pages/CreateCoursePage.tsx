@@ -324,26 +324,14 @@ const CreateCoursePage = () => {
             placeholder="e.g. JEE Physics Booster 2027"
           />
         </div>
-        {!isEditMode && (
-          <div>
-            <label className="text-xs font-semibold text-foreground">Short Description</label>
-            <input
-              value={shortDesc}
-              onChange={(e) => setShortDesc(e.target.value)}
-              maxLength={150}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
-              placeholder="150 chars max"
-            />
-          </div>
-        )}
         <div>
-          <label className="text-xs font-semibold text-foreground">Full Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
-            placeholder="Detailed course description..."
+          <label className="text-xs font-semibold text-foreground">Short Description</label>
+          <input
+            value={shortDesc}
+            onChange={(e) => setShortDesc(e.target.value)}
+            maxLength={200}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+            placeholder="Shown below the course name (e.g. Online course for Class XII PCM students)"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -374,7 +362,107 @@ const CreateCoursePage = () => {
             />
           </div>
         )}
+        <div>
+          <label className="text-xs font-semibold text-foreground">Subjects Covered</label>
+          <p className="text-[11px] text-muted-foreground mb-1.5">Shown as chips under "Subjects Covered" on the course detail page.</p>
+          <div className="flex flex-wrap gap-2">
+            {SUBJECT_PRESETS.map((s) => {
+              const active = subjectsCovered.includes(s);
+              return (
+                <button
+                  type="button"
+                  key={s}
+                  onClick={() =>
+                    setSubjectsCovered(active ? subjectsCovered.filter((x) => x !== s) : [...subjectsCovered, s])
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-foreground border-border hover:border-primary"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">This Course Includes</h2>
+        <p className="text-xs text-muted-foreground">These four values show in the "This Course Includes" row on the detail page.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-foreground">Education Level</label>
+            <select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {EDUCATION_LEVELS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Duration</label>
+            <select value={durationLabel} onChange={(e) => setDurationLabel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {DURATION_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Mode</label>
+            <select value={modeValue} onChange={(e) => setModeValue(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {MODE_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Language</label>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {LANGUAGE_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Detailed Description</h2>
+        <p className="text-xs text-muted-foreground">Rich text shown under "Know More Details" on the course page.</p>
+        <RichTextEditor
+          value={descriptionHtml}
+          onChange={setDescriptionHtml}
+          placeholder="Write a detailed description, fee notes, eligibility, etc."
+        />
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Course Includes</h2>
+        <p className="text-xs text-muted-foreground">Tick what's included with this course. Selected icons appear on the right-side panel of the course detail page.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {SERVICE_OPTIONS.map((s) => {
+            const checked = includedServices.includes(s.key);
+            return (
+              <label
+                key={s.key}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
+                  checked ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) =>
+                    setIncludedServices(
+                      e.target.checked
+                        ? [...includedServices, s.key]
+                        : includedServices.filter((k) => k !== s.key),
+                    )
+                  }
+                  className="h-4 w-4"
+                />
+                <s.icon className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-foreground">{s.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Thumbnail</h2>
