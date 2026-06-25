@@ -170,9 +170,10 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
               <div className="font-semibold text-bansal-black">Registration fee: ₹{priceInr}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Payment link will be sent to your WhatsApp after submitting this form. Your slot is held for 24 hours.
+                You'll be redirected to Cashfree's secure checkout (UPI, cards, netbanking, wallets) to complete payment. Your slot is confirmed only after successful payment.
               </p>
             </div>
+
 
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground">
