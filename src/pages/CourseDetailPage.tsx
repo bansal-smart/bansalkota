@@ -594,7 +594,7 @@ const CourseDetailPage = () => {
 
               <button
                 onClick={handleEnrollClick}
-                className="w-full rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
               >
                 {enrolled ? `Continue Learning` : `Enroll Now`}
               </button>

@@ -132,7 +132,7 @@ const CoursesPage = () => {
           {user && (
             <Link
               to="/my-courses"
-              className="inline-flex items-center gap-1 rounded-pill bg-gradient-to-r from-primary to-accent px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-1 rounded-pill bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
             >
               My Learning <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -147,7 +147,7 @@ const CoursesPage = () => {
                 onClick={() => setActiveGoal(i)}
                 className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                   i === activeGoal
-                    ? "bg-gradient-to-r from-primary to-accent text-primary-foreground"
+                    ? "bg-primary text-primary-foreground"
                     : "border border-border text-muted-foreground hover:bg-muted/30"
                 }`}
               >
@@ -262,7 +262,7 @@ const CoursesPage = () => {
                       </Link>
                       <button
                         onClick={() => handleEnroll(c)}
-                        className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+                        className="flex-1 rounded-xl bg-primary py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
                       >
                         Enroll Now
                       </button>
