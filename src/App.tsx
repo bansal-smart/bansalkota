@@ -315,7 +315,7 @@ const App = () => (
             >
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
-              <Route path="/admin/educator-applications" element={<AdminEducatorApplicationsPage />} />
+              
               <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
               <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
