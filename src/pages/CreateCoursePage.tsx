@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, GripVertical, Trash2, Upload, Video, IndianRupee, Loader2, X } from "lucide-react";
+import { Upload, IndianRupee, Loader2 } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,7 +167,7 @@ const CreateCoursePage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Please sign in");
     if (!name.trim()) return toast.error("Course title is required");
-    if (isEditMode && chapters.length === 0) return toast.error("Add at least one chapter");
+    
 
     setSubmitting(true);
 
@@ -247,54 +247,8 @@ const CreateCoursePage = () => {
       return;
     }
 
-    // Curriculum (chapters + lessons) is only managed during edit; on create,
-    // admins build the curriculum afterwards from the Course Content page.
-    if (isEditMode) {
-      const { data: oldChs } = await supabase.from("chapters").select("id").eq("course_id", workingCourseId);
-      const oldIds = (oldChs ?? []).map((c) => c.id);
-      if (oldIds.length) {
-        await supabase.from("lessons").delete().in("chapter_id", oldIds);
-        await supabase.from("chapters").delete().in("id", oldIds);
-      }
+    // Curriculum (chapters + lessons) is managed from the dedicated Course Content page.
 
-      let totalSecs = 0;
-      let totalLessons = 0;
-      for (let ci = 0; ci < chapters.length; ci++) {
-        const ch = chapters[ci];
-        const { data: chapterRow, error: chapterErr } = await supabase
-          .from("chapters")
-          .insert({ course_id: workingCourseId, title: ch.title || `Chapter ${ci + 1}`, position: ci })
-          .select("id")
-          .single();
-        if (chapterErr || !chapterRow) {
-          toast.error("Failed creating chapter");
-          setSubmitting(false);
-          return;
-        }
-        const lessonRows = ch.lectures.map((l, li) => ({
-          course_id: workingCourseId!,
-          chapter_id: chapterRow.id,
-          slug: `${ci}-${li}-${slugify(l.title) || "lesson"}`,
-          title: l.title || `Lesson ${li + 1}`,
-          position: li,
-          duration_seconds: Math.max(60, l.durationMin * 60),
-          is_free_preview: ci === 0 && li === 0,
-          type: "video",
-        }));
-        lessonRows.forEach((l) => {
-          totalSecs += l.duration_seconds;
-          totalLessons += 1;
-        });
-        if (lessonRows.length) {
-          await supabase.from("lessons").insert(lessonRows);
-        }
-      }
-
-      await supabase
-        .from("courses")
-        .update({ total_lessons: totalLessons, duration_hours: Math.max(1, Math.round(totalSecs / 3600)) })
-        .eq("id", workingCourseId);
-    }
 
     toast.success(isEditMode ? "Course updated" : publish ? "Course published!" : "Draft saved");
     setSubmitting(false);
@@ -310,8 +264,25 @@ const CreateCoursePage = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6 pb-24 lg:pb-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-4 lg:p-6 pb-32 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Course Thumbnail <span className="text-xs font-normal text-muted-foreground">(Aspect ratio 4:3 recommended)</span></h2>
+        {existingThumbnail && !thumbnailFile && (
+          <div className="w-48 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
+            <img src={existingThumbnail} alt="Current thumbnail" className="h-full w-full object-cover" />
+          </div>
+        )}
+        <label className="block">
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)} />
+          <div className="rounded-lg border-2 border-dashed border-border bg-background p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : existingThumbnail ? "Click to replace thumbnail (4:3)" : "Click to upload thumbnail (4:3 aspect ratio)"}</p>
+          </div>
+        </label>
+      </div>
+
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Basic Information</h2>
@@ -465,143 +436,6 @@ const CreateCoursePage = () => {
 
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Thumbnail</h2>
-        {existingThumbnail && !thumbnailFile && (
-          <img src={existingThumbnail} alt="Current thumbnail" className="h-32 w-auto rounded-lg border border-border object-cover" />
-        )}
-        <label className="block">
-          <input type="file" accept="image/*" className="hidden" onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)} />
-          <div className="rounded-lg border-2 border-dashed border-border bg-background p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
-            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : existingThumbnail ? "Click to replace thumbnail" : "Click to upload thumbnail"}</p>
-          </div>
-        </label>
-      </div>
-
-      {isEditMode && (
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-foreground">Curriculum</h2>
-          <button onClick={addChapter} className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-            <Plus className="h-3 w-3" /> Add Chapter
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {chapters.map((ch, ci) => (
-            <div key={ci} className="rounded-lg border border-border p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                <input
-                  value={ch.title}
-                  onChange={(e) => {
-                    const c = [...chapters];
-                    c[ci].title = e.target.value;
-                    setChapters(c);
-                  }}
-                  className="flex-1 text-sm font-semibold bg-transparent outline-none text-foreground"
-                  placeholder="Chapter title"
-                />
-                <Trash2 className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-destructive shrink-0" onClick={() => removeChapter(ci)} />
-              </div>
-              <div className="ml-6 space-y-1.5">
-                {ch.lectures.map((lec, li) => (
-                  <div key={li} className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 text-xs">
-                    <Video className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <input
-                      value={lec.title}
-                      onChange={(e) => {
-                        const c = [...chapters];
-                        c[ci].lectures[li].title = e.target.value;
-                        setChapters(c);
-                      }}
-                      className="flex-1 bg-transparent outline-none text-foreground"
-                      placeholder="Lecture title"
-                    />
-                    <input
-                      type="number"
-                      value={lec.durationMin}
-                      onChange={(e) => {
-                        const c = [...chapters];
-                        c[ci].lectures[li].durationMin = Number(e.target.value) || 0;
-                        setChapters(c);
-                      }}
-                      className="w-14 bg-transparent outline-none text-muted-foreground text-right"
-                    />
-                    <span className="text-muted-foreground">min</span>
-                    <Trash2 className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-destructive" onClick={() => removeLecture(ci, li)} />
-                  </div>
-                ))}
-                <button onClick={() => addLecture(ci)} className="flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline ml-1">
-                  <Plus className="h-3 w-3" /> Add Lecture
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
-
-
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-bold text-foreground">What You'll Learn</h2>
-        <p className="text-xs text-muted-foreground">Add learning outcomes students will gain from this course.</p>
-        <div className="flex gap-2">
-          <input
-            value={learnInput}
-            onChange={(e) => setLearnInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLearn(); } }}
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            placeholder="e.g. Core fundamentals and theory"
-          />
-          <button type="button" onClick={addLearn} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground flex items-center gap-1">
-            <Plus className="h-3 w-3" /> Add
-          </button>
-        </div>
-        {learnItems.length > 0 && (
-          <ul className="space-y-1.5">
-            {learnItems.map((item, i) => (
-              <li key={i} className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm text-foreground">
-                <span className="flex items-start gap-2"><span className="text-muted-foreground">—</span>{item}</span>
-                <button type="button" onClick={() => setLearnItems(learnItems.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Requirements</h2>
-        <p className="text-xs text-muted-foreground">Add prerequisites or things students should know before starting.</p>
-        <div className="flex gap-2">
-          <input
-            value={reqInput}
-            onChange={(e) => setReqInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addReq(); } }}
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            placeholder="e.g. Basic algebra and calculus"
-          />
-          <button type="button" onClick={addReq} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground flex items-center gap-1">
-            <Plus className="h-3 w-3" /> Add
-          </button>
-        </div>
-        {reqItems.length > 0 && (
-          <ul className="space-y-1.5">
-            {reqItems.map((item, i) => (
-              <li key={i} className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm text-foreground">
-                <span className="flex items-start gap-2"><span className="text-muted-foreground">—</span>{item}</span>
-                <button type="button" onClick={() => setReqItems(reqItems.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Pricing</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -633,24 +467,27 @@ const CreateCoursePage = () => {
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          disabled={submitting}
-          onClick={() => submit(false)}
-          className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-50"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save as Draft" : "Save Draft"}
-        </button>
-        <button
-          disabled={submitting}
-          onClick={() => submit(true)}
-          className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save & Publish" : "Publish Course"}
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+        <div className="max-w-3xl mx-auto flex gap-3 px-4 py-3 lg:px-6">
+          <button
+            disabled={submitting}
+            onClick={() => submit(false)}
+            className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save as Draft" : "Save Draft"}
+          </button>
+          <button
+            disabled={submitting}
+            onClick={() => submit(true)}
+            className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : isEditMode ? "Save & Publish" : "Publish Course"}
+          </button>
+        </div>
       </div>
     </div>
   );
+
 };
 
 export default CreateCoursePage;
