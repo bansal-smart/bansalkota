@@ -551,7 +551,7 @@ const CourseDetailPage = () => {
               {course.thumbnail_url ? (
                 <img src={course.thumbnail_url} alt={course.name} className="w-full h-auto object-contain" />
               ) : (
-                <div className="text-center text-white px-4">
+                <div className="text-center text-white px-4 aspect-[4/3] flex flex-col items-center justify-center w-full">
                   <p className="font-display text-3xl font-black text-primary">{category}</p>
                   <p className="font-display text-xl font-black mt-1">{course.name}</p>
                 </div>
