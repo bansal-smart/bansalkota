@@ -126,7 +126,7 @@ WITH ins AS (
   ('vk-bansal', 'VK Bansal', 'Founder, Bansal Classes',
     'Born from a Father''s Vision. Carried by a Family''s Promise.',
     'Believe in yourself and strive for excellence with unwavering dedication. Success comes to those who persevere through challenges with a positive mindset and a thirst for knowledge.',
-    'VK Bansal was born on October 26, 1949, in the Jhansi district of Uttar Pradesh. His father was a government employee and his mother a homemaker. He graduated from the Indian Institute of Technology at Banaras Hindu University and worked at J. K. Synthetics in Kota before founding Bansal Classes in 1981 to provide proper guidance to JEE aspirants.',
+    'Bansal Sir was born on October 26, 1949, in the Jhansi district of Uttar Pradesh. His father was a government employee and his mother a homemaker. He graduated from the Indian Institute of Technology at Banaras Hindu University and worked at J. K. Synthetics in Kota before founding Bansal Classes in 1981 to provide proper guidance to JEE aspirants.',
     'Though his untimely passing left a void in the educational community, his contributions continue to shape the lives of aspiring engineers across India. Remembering VK Bansal — a mentor, a visionary, a legend.',
     ARRAY['Founder','Visionary Educator','Forever Honored'], 1),
   ('sameer-bansal', 'Sameer Bansal', 'Managing Director & CEO, Bansal Classes Kota',
