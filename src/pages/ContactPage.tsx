@@ -25,7 +25,7 @@ const CHANNELS = [
   { icon: Phone, label: "Admissions Alt.", value: "+91 8003045222", href: "tel:+918003045222" },
   { icon: Phone, label: "HR", value: "+91 8375015384", href: "tel:+918375015384" },
   { icon: Phone, label: "BFTP", value: "+91 8003046222", href: "tel:+918003046222" },
-  { icon: Mail, label: "Email", value: "info@bansal.ac.in", href: "mailto:info@bansal.ac.in" },
+  { icon: Mail, label: "Email", value: "info@bansal.ac.in", href: "mailto:admin@bansal.ac.in" },
   { icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/919773343246" },
 ];
 
@@ -73,7 +73,6 @@ export default function ContactPage() {
         templateData: { name: parsed.data.name, source: "contact", message: parsed.data.message },
       });
       setForm({ name: "", email: "", phone: "", subject: "", message: "" });
-
     } catch (err) {
       toast({
         title: "Something went wrong",
@@ -89,17 +88,25 @@ export default function ContactPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
-        <img src={contactHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <img
+          src={contactHero}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+        />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />
         <FloatingIcons defaultTone="white" />
         <DotTexture tone="white" className="opacity-30 decor-fade" />
         <div className="container relative z-10 mx-auto px-4 text-center max-w-3xl">
-          <BansalBadge variant="orange" className="mb-4">Reach Us</BansalBadge>
+          <BansalBadge variant="orange" className="mb-4">
+            Reach Us
+          </BansalBadge>
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
             We're here to <span className="text-bansal-orange">guide you</span>.
           </h1>
           <p className="text-white/85 text-lg">
-            Have questions about courses, admissions, BOOST, or careers? Drop us a message — a Bansal counsellor will respond within 24 hours.
+            Have questions about courses, admissions, BOOST, or careers? Drop us a message — a Bansal counsellor will
+            respond within 24 hours.
           </p>
         </div>
       </section>
@@ -125,7 +132,9 @@ export default function ContactPage() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Full Name *</label>
+                        <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">
+                          Full Name *
+                        </label>
                         <input
                           type="text"
                           value={form.name}
@@ -137,7 +146,9 @@ export default function ContactPage() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Phone *</label>
+                        <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">
+                          Phone *
+                        </label>
                         <input
                           type="tel"
                           value={form.phone}
@@ -179,7 +190,9 @@ export default function ContactPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">Message *</label>
+                      <label className="text-xs font-semibold text-bansal-black uppercase tracking-wide">
+                        Message *
+                      </label>
                       <textarea
                         rows={5}
                         value={form.message}
@@ -192,9 +205,13 @@ export default function ContactPage() {
                     </div>
                     <BansalButton type="submit" variant="cta" disabled={submitting} className="w-full">
                       {submitting ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" /> Sending…</>
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Sending…
+                        </>
                       ) : (
-                        <><Send className="h-4 w-4" /> Send Message</>
+                        <>
+                          <Send className="h-4 w-4" /> Send Message
+                        </>
                       )}
                     </BansalButton>
                     <p className="text-xs text-muted-foreground text-center">
@@ -204,7 +221,6 @@ export default function ContactPage() {
                 </>
               )}
             </BansalCard>
-
 
             {/* Right column: channels + HQ */}
             <div className="lg:col-span-2 space-y-5">
@@ -248,7 +264,9 @@ export default function ContactPage() {
                   rel="noopener noreferrer"
                   className="block mt-4"
                 >
-                  <BansalButton variant="outline" className="w-full text-sm">Open in Maps</BansalButton>
+                  <BansalButton variant="outline" className="w-full text-sm">
+                    Open in Maps
+                  </BansalButton>
                 </a>
               </BansalCard>
             </div>
