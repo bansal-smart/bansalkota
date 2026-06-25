@@ -37,12 +37,14 @@ const ResourcesTeaser = () => (
   <section className="relative py-12 md:py-20 bg-gradient-to-br from-bansal-blue-light/40 via-white to-bansal-orange-light/30">
     <div className="container mx-auto px-4">
       <div className="text-center max-w-2xl mx-auto mb-8 md:mb-10">
-        <BansalBadge tone="blue"><Sparkles className="h-3 w-3 mr-1" /> Free Forever</BansalBadge>
+        <BansalBadge tone="blue">
+          <Sparkles className="h-3 w-3 mr-1" /> Free Forever
+        </BansalBadge>
         <h2 className="mt-3 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black">
           Start Studying the <span className="text-bansal-orange">Bansal Way</span> — Today
         </h2>
         <p className="mt-2 text-sm md:text-base text-bansal-gray">
-          No credit card. No catch. Unlock the same resources used by 2L+ Bansal scholars across India.
+          Unlock the same resources used by 2L+ Bansal scholars across India.
         </p>
       </div>
 
