@@ -8,6 +8,8 @@ const achievementsHero = achievementsHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
 import { supabase } from "@/integrations/supabase/client";
+import { useToppers } from "@/hooks/useToppers";
+import { MapPin } from "lucide-react";
 
 type Poster = { id: string; image_url: string; caption: string };
 
