@@ -49,7 +49,8 @@ type Props = { open: boolean; onClose: () => void };
 
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
-  const { priceInr } = useBoostSettings();
+  const { priceInr, examDates } = useBoostSettings();
+  const slots = buildSlots(examDates);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
 
