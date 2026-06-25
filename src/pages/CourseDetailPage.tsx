@@ -52,49 +52,6 @@ type EnrollmentInfo = {
 
 // ----- Fallback data (Bansal-styled demo) -----
 
-const FALLBACK_COMMENCEMENT = [
-  {
-    stream: "JEE (Main + Advanced)",
-    phase: "Phase I",
-    medium: "English",
-    target: "2028",
-    eligibility: "Class 10th to 11th Moving",
-    mode: "Direct/BOOST",
-    date: "01/04/2026",
-  },
-  {
-    stream: "JEE (Main + Advanced)",
-    phase: "Phase II",
-    medium: "English",
-    target: "2028",
-    eligibility: "Class 10th to 11th Moving",
-    mode: "Direct/BOOST",
-    date: "27/05/2026",
-  },
-];
-
-const BOARD_SCHOLARSHIPS = [
-  { range: "95% +", pct: "55%" },
-  { range: "90 to 95%", pct: "50%" },
-  { range: "80 to 89%", pct: "45%" },
-  { range: "75 to 79%", pct: "40%" },
-];
-
-const OLYMPIAD_SCHOLARSHIPS = [
-  { label: "Stage III Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "100%" },
-  { label: "Stage II Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "90%" },
-  { label: "Stage I Qualified (Int'l Jr. Astronomy / Jr. Science Olympiad – HBCSE / NSEs)", pct: "75%" },
-  {
-    label: "Stage III Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)",
-    pct: "100%",
-  },
-  {
-    label: "Stage II Qualified (Int'l Sr. Astronomy / Physics / Chemistry / Maths / Biology – HBCSE / NSEs)",
-    pct: "90%",
-  },
-  { label: "Stage I Qualified (Int'l Sr. Olympiads – HBCSE / NSEs)", pct: "75%" },
-  { label: "Based on Pre-RMO", pct: "25%" },
-];
 
 const SERVICES = [
   { icon: BookOpen, label: "Study Material" },
