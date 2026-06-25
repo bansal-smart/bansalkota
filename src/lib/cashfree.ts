@@ -26,7 +26,7 @@ function loadSdk(): Promise<void> {
 
 type StartPaymentArgs =
   | { orderType: "cart"; items: Array<{ type: "book" | "pack"; id: string; quantity: number }>; shipping: any }
-  | { orderType: "course"; courseId: string }
+  | { orderType: "course"; courseId: string; enquiryId?: string }
   | { orderType: "test_series"; testSeriesId: string };
 
 export async function startCashfreeCheckout(args: StartPaymentArgs) {

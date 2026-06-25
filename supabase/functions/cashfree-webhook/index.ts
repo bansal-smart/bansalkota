@@ -113,6 +113,14 @@ Deno.serve(async (req) => {
   if (type === "PAYMENT_SUCCESS_WEBHOOK" && paymentStatus === "SUCCESS" && order.status !== "paid") {
     await admin.from("orders").update({ status: "paid" }).eq("id", order.id);
 
+    // Reflect on linked course enquiry, if any.
+    await admin.from("course_enquiries").update({
+      payment_status: "paid",
+      payment_id: paymentId ?? null,
+      paid_at: new Date().toISOString(),
+      status: "converted",
+    }).eq("payment_order_id", order.id);
+
     // For course / test_series items, create enrollments + notification
     const { data: items } = await admin
       .from("order_items").select("item_type, item_id, item_title").eq("order_id", order.id);
@@ -164,6 +172,11 @@ Deno.serve(async (req) => {
         status: type === "PAYMENT_FAILED_WEBHOOK" ? "failed" : "cancelled",
       }).eq("id", order.id);
     }
+    // Flip enquiry to failed too (only if it isn't already paid).
+    await admin.from("course_enquiries").update({
+      payment_status: "failed",
+      payment_id: paymentId ?? null,
+    }).eq("payment_order_id", order.id).neq("payment_status", "paid");
   }
 
   return new Response("ok", { status: 200, headers: corsHeaders });
