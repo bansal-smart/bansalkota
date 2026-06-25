@@ -76,7 +76,7 @@ const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
 const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
-const AdminEducatorApplicationsPage = lazy(() => import("./pages/AdminEducatorApplicationsPage"));
+
 const AdminLoginPage = lazy(() => import("./pages/AdminLoginPage"));
 const StaffDashboardPage = lazy(() => import("./pages/StaffDashboardPage"));
 const AdminEnquiriesPage = lazy(() => import("./pages/AdminEnquiriesPage"));
