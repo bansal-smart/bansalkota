@@ -70,7 +70,7 @@ const AdminTestPlatformHub = () => {
     <div className="flex flex-col min-h-[calc(100vh-64px)]">
       {/* Hub header */}
       <div className="p-4 lg:p-6 pb-0">
-        <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-5 text-white flex items-start justify-between flex-wrap gap-3">
+        <div className="rounded-2xl bg-[#1C3F8E] p-5 text-white flex items-start justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-white/15 p-2.5">
               <ClipboardCheck className="h-5 w-5" />
