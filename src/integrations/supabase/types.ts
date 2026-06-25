@@ -1115,6 +1115,93 @@ export type Database = {
           },
         ]
       }
+      course_enquiries: {
+        Row: {
+          admin_notes: string | null
+          city: string | null
+          class_level: string | null
+          course_id: string | null
+          course_name: string
+          course_price: number | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string | null
+          paid_at: string | null
+          payment_id: string | null
+          payment_order_id: string | null
+          payment_status: string
+          phone: string
+          preferred_centre_id: string | null
+          state: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          city?: string | null
+          class_level?: string | null
+          course_id?: string | null
+          course_name: string
+          course_price?: number | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
+          payment_order_id?: string | null
+          payment_status?: string
+          phone: string
+          preferred_centre_id?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          city?: string | null
+          class_level?: string | null
+          course_id?: string | null
+          course_name?: string
+          course_price?: number | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
+          payment_order_id?: string | null
+          payment_status?: string
+          phone?: string
+          preferred_centre_id?: string | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_enquiries_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_enquiries_preferred_centre_id_fkey"
+            columns: ["preferred_centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_pdfs: {
         Row: {
           course_id: string

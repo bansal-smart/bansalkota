@@ -1,32 +1,51 @@
-# Admin Panel UX Polish
+## Goal
+On the Course Detail page:
+1. Add a BOOST CTA inside the "Know More Details" section with an "Explore" button → `/boost`.
+2. Rename the right-column "Pay Now" button to "Enroll Now".
+3. Clicking "Enroll Now" first opens a Course Enquiry form. Only after submitting the enquiry does the Cashfree payment window open.
+4. Save every enquiry (even if payment never completes) and surface them in the admin panel under a new "Course Enquiries" tab.
 
-## 1. Persistent layout + skeleton while switching tabs
-The sidebar already lives in `AdminLayout` with `<Outlet />`, but the flash happens because each admin page fetches its own data on mount with no shared loading frame, and large pages re-mount their internals immediately. We will:
+## Implementation
 
-- Add `<Suspense fallback={<AdminPageSkeleton />}>` around the `<Outlet />` in `src/components/AdminLayout.tsx`.
-- Convert the heavy admin routes in `src/App.tsx` (Users, Students, Courses, Tests Hub, Boost, Toppers, Books, Banners, etc.) to `React.lazy()` so route switches show the skeleton instead of a blank flash while the chunk and its initial query resolve.
-- Create `src/components/admin/AdminPageSkeleton.tsx` — a reusable generic skeleton (header bar + filter row + table rows) using `@/components/ui/skeleton`. Drop it into each page's own `loading` state too (replacing the current ad-hoc spinners on Students/Users) so the same shimmer appears during data refetches.
+### 1. Database — new table `course_enquiries`
+Fields: `id`, `course_id` (fk → courses), `course_name` (snapshot), `course_price` (snapshot), `user_id` (nullable), `full_name`, `email`, `phone`, `class_level`, `city`, `state`, `preferred_centre_id` (nullable), `message`, `payment_status` (`pending` | `initiated` | `paid` | `failed`, default `pending`), `payment_order_id`, `payment_id`, `paid_at`, `enrolled`, `status` (`new` | `contacted` | `converted` | `closed`), `admin_notes`, `created_at`, `updated_at`.
 
-## 2. Bansal logo on the sidebar
-In `src/components/AdminLayout.tsx`, replace the flame icon + "Bansal Classes" text block at the top of `AdminSidebar` with the existing `BansalLogo` component (`src/components/bansal/BansalLogo.tsx`, which uses the `bansal-logo.webp` asset). Keep the "Super Admin Panel / Admin Panel" pill underneath.
+RLS:
+- `INSERT` allowed for everyone (anon + authenticated) — needed so enquiry is saved even if user not logged in / before payment.
+- `SELECT/UPDATE/DELETE` only for `admin` / `super_admin` via `has_role`.
+- Grants: `INSERT` to anon + authenticated; full to service_role.
 
-## 3. Replace orange→purple gradient CTAs with navy
-The gradient appears on the "Invite User" / "Add Student" style buttons. Swap the classes:
+### 2. Frontend — `src/pages/CourseDetailPage.tsx`
+- In the "Know More Details" section, add a BOOST callout card: short pitch + `Explore` button linking to `/boost`.
+- Change CTA label from `Pay Now ₹X` → `Enroll Now`.
+- Replace the existing confirm-enroll dialog with a new **CourseEnquiryDialog**:
+  - Fields: Full name, Email, Phone, Class level (dropdown 9/10/11/12/Dropper), City, State, Preferred centre (optional dropdown of centres), Message (optional).
+  - Pre-fill from `profiles` if logged in.
+  - On submit: insert into `course_enquiries` with `payment_status='pending'`, then call existing Cashfree create-order edge function (`cashfree-create-order`) with `enquiry_id` in metadata; on success open Cashfree checkout via `@/lib/cashfree`. If the user closes the modal mid-payment, the enquiry row is already saved.
+  - Update edge functions `cashfree-create-order` + `cashfree-webhook` (or verify) to update the matching `course_enquiries` row (`payment_status`, `payment_id`, `paid_at`) when payment succeeds. Existing enrollment-creation logic remains.
 
-- `bg-gradient-to-r from-primary to-accent ... text-primary-foreground` → `bg-[#0F1729] text-white hover:bg-[#0F1729]/90`
+### 3. Admin panel — new "Course Enquiries" tab
+- New page `src/pages/AdminCourseEnquiriesPage.tsx` mirroring the style of `AdminEnquiriesPage`/`AdminLandingLeadsPage`:
+  - Table columns: Created, Name, Phone, Email, Course, Class, City, Payment status badge (pending/paid/failed), Status, Actions.
+  - Filters: payment status, course, date range, search.
+  - Row click opens a side drawer with full details + editable `status` + `admin_notes` + "Mark as paid" manual override.
+  - CSV export.
+- Add route `/admin/course-enquiries` in `src/App.tsx`.
+- Add sidebar entry "Course Enquiries" in `src/components/AdminLayout.tsx` (near existing Enquiries / Landing Leads).
 
-Files to update:
-- `src/pages/AdminUsersPage.tsx` (line 235 — Invite User CTA)
-- `src/pages/AdminStudentsPage.tsx` (line 307 — Add Student CTA)
-
-Avatar circles that use `from-primary/20 to-accent/20` are decorative (not the buttons the user flagged) and will be left alone.
-
-## 4. Fix Students pagination
-`src/pages/AdminStudentsPage.tsx` currently renders a custom one-page indicator (lines 531–552). Replace it with the shared `TablePagination` component already used by `AdminUsersPage`, passing `page + 1`, `totalPages`, `total`, `pageSize`, and an `onPageChange` that sets `page` back to 0-indexed. This gives the same `1, 2, 3, …` UI as the Users table.
+### 4. Hook
+- `src/hooks/useCourseEnquiries.ts` for list + mutate (admin-only fetch).
 
 ## Files touched
-- `src/components/AdminLayout.tsx` — Suspense + skeleton fallback, logo swap.
-- `src/App.tsx` — lazy-load admin routes.
-- `src/components/admin/AdminPageSkeleton.tsx` — new shared skeleton.
-- `src/pages/AdminUsersPage.tsx` — navy Invite User button; use shared skeleton in loading state.
-- `src/pages/AdminStudentsPage.tsx` — navy Add Student button, shared skeleton, replace pagination with `TablePagination`.
+- New migration creating `course_enquiries` table + RLS + grants.
+- `src/pages/CourseDetailPage.tsx` — BOOST CTA, button rename, enquiry-first flow.
+- New `src/components/CourseEnquiryDialog.tsx`.
+- `src/pages/AdminCourseEnquiriesPage.tsx` (new).
+- `src/hooks/useCourseEnquiries.ts` (new).
+- `src/App.tsx` — admin route.
+- `src/components/AdminLayout.tsx` — sidebar link.
+- `supabase/functions/cashfree-create-order/index.ts` + `cashfree-webhook/index.ts` — accept/update `enquiry_id` and write payment status back to `course_enquiries`.
+
+## Open questions
+- Should the enquiry form require login, or accept anonymous submissions too? (Defaulting to: works for both — pre-fill if logged in, otherwise capture contact details freely.)
+- Any specific fields you want beyond the list above (e.g., parent name, board)?
