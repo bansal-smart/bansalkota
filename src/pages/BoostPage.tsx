@@ -17,6 +17,7 @@ import boostHeroAsset from "@/assets/boost-hero-banner.png.asset.json";
 const boostHero = boostHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import BoostRegistrationModal from "@/components/BoostRegistrationModal";
+import { useBoostSettings } from "@/hooks/useBoostSettings";
 
 const benefits = [
   {
