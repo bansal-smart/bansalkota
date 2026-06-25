@@ -53,4 +53,3 @@ export async function startBoostCashfreeCheckout(registrationId: string) {
   return data;
 }
 
-}
