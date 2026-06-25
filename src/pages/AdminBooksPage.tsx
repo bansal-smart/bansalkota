@@ -278,7 +278,7 @@ const EditBookModal = ({ book, onClose, onSaved }: { book: Book | null; onClose:
 
   const save = async () => {
     if (!book) return;
-    if (!form.title || !form.slug) return toast.error("Title and slug are required");
+    if (!form.title || !form.slug) return toast.error("Title is required");
     setSaving(true);
     const { error } = await supabase
       .from("books")
