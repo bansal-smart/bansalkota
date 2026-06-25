@@ -180,8 +180,9 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
                 Cancel
               </button>
               <BansalButton variant="cta" disabled={submitting} type="submit">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit Registration"}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay ₹${priceInr} & Register`}
               </BansalButton>
+
             </div>
           </form>
         )}
