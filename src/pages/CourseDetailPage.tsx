@@ -23,6 +23,8 @@ import {
   Shirt,
   Umbrella,
   CreditCard,
+  Trophy,
+  Lightbulb,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
