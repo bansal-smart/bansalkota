@@ -470,7 +470,9 @@ export default function LeadershipDetailPage() {
                   </span>
                 </div>
                 <p className="font-display text-xl md:text-2xl leading-relaxed text-white/95 whitespace-pre-line">
-                  {profile.recognition_text}
+                  {slug === "vk-bansal"
+                    ? profile.recognition_text.replace(/V\s*\.?\s*K\.?\s*Bansal/gi, "Bansal Sir")
+                    : profile.recognition_text}
                 </p>
               </div>
             </div>
