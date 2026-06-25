@@ -125,56 +125,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* ============= WALL STREET JOURNAL FEATURE ============= */}
-      <section className={`${SECTION} bg-bansal-blue-dark text-white relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-bansal-blue-dark via-bansal-blue to-bansal-blue-dark" />
-        <div className={`relative ${CONTAINER} max-w-6xl`}>
-          <div className="grid gap-10 lg:gap-14 lg:grid-cols-12 items-center">
-            <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 bg-bansal-orange/15 border border-bansal-orange/40 text-bansal-orange uppercase tracking-[0.25em] text-xs font-bold px-4 py-2 rounded-full mb-5">
-                <Newspaper className="h-3.5 w-3.5" /> As Featured In
-              </div>
-              <h2 className="font-display text-3xl md:text-5xl font-extrabold tracking-tight leading-[1.1]">
-                The Wall Street Journal
-              </h2>
-              <p className="mt-3 text-bansal-orange font-display italic text-xl md:text-2xl">
-                "India's Cram-School Confidential — Bansalites Rock."
-              </p>
-              <p className="mt-5 text-white/85 leading-relaxed text-base md:text-lg max-w-xl">
-                A front-page Wall Street Journal feature on how Kota — and the man behind it, Bansal Sir — transformed Indian competitive education. A story read across the world.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-6 text-sm">
-                <div>
-                  <div className="font-display text-2xl font-extrabold text-bansal-orange">40,000+</div>
-                  <div className="text-white/70 uppercase tracking-wider text-xs">Students in Kota</div>
-                </div>
-                <div>
-                  <div className="font-display text-2xl font-extrabold text-bansal-orange">85+</div>
-                  <div className="text-white/70 uppercase tracking-wider text-xs">Coaching Schools</div>
-                </div>
-                <div>
-                  <div className="font-display text-2xl font-extrabold text-bansal-orange">1 Legacy</div>
-                  <div className="text-white/70 uppercase tracking-wider text-xs">Started It All</div>
-                </div>
-              </div>
-            </div>
-            <div className="lg:col-span-7 order-1 lg:order-2">
-              <div className="relative">
-                <div className="absolute -inset-3 bg-bansal-orange/20 rounded-2xl blur-2xl" />
-                <img
-                  src={wsjFeatureAsset.url}
-                  alt="Wall Street Journal feature on Bansal Sir and Kota coaching"
-                  className="relative w-full rounded-xl shadow-2xl border-4 border-white/90"
-                  loading="lazy"
-                />
-              </div>
-              <p className="mt-4 text-center text-xs uppercase tracking-[0.25em] text-white/60">
-                The Wall Street Journal · Front Page Feature
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ============= STATS STRIP ============= */}
       <section className="bg-white py-10 md:py-12 border-b border-border">
