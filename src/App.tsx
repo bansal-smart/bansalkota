@@ -156,6 +156,7 @@ const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPa
 const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 const GalleryImagesPage = lazy(() => import("./pages/GalleryImagesPage"));
 const GalleryVideosPage = lazy(() => import("./pages/GalleryVideosPage"));
+const GalleryAchievementsPage = lazy(() => import("./pages/GalleryAchievementsPage"));
 const AdminGalleryPage = lazy(() => import("./pages/AdminGalleryPage"));
 
 
