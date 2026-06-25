@@ -43,7 +43,7 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
 
   return (
     <div
-      className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-white"
+      className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden bg-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
