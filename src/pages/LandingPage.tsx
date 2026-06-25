@@ -116,7 +116,7 @@ const achievements = [
 ];
 
 const pillars = [
-  { icon: Users, title: "Master Mentors", desc: "Faculty with 20+ years of competitive-exam mentoring." },
+  { icon: Users, title: "Master Mentors", desc: "Faculty with high experience of competitive-exam mentoring." },
   {
     icon: BookOpen,
     title: "Legendary Material",
@@ -609,9 +609,7 @@ const LandingPage = () => {
                 Explore Now <ArrowRight className="h-5 w-5" />
               </BansalButton>
             </Link>
-            {boost.applyBeforeLabel && (
-              <p className="mt-3 text-xs text-white/70">{boost.applyBeforeLabel}</p>
-            )}
+            {boost.applyBeforeLabel && <p className="mt-3 text-xs text-white/70">{boost.applyBeforeLabel}</p>}
           </div>
         </div>
       </section>
