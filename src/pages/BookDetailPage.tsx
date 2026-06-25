@@ -78,11 +78,11 @@ const BookDetailPage = () => {
             <p className="mt-2 text-sm text-muted-foreground">By {book.author}</p>
 
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-3xl font-black text-foreground">₹{Number(book.price).toLocaleString()}</span>
+              <span className="text-3xl font-black text-foreground">₹{Number(book.price).toLocaleString("en-IN")}</span>
               {book.original_price && Number(book.original_price) > Number(book.price) && (
                 <>
                   <span className="text-lg text-muted-foreground line-through">
-                    ₹{Number(book.original_price).toLocaleString()}
+                    ₹{Number(book.original_price).toLocaleString("en-IN")}
                   </span>
                   <span className="inline-flex items-center gap-1 text-sm font-bold text-green-600">
                     <Tag className="h-4 w-4" /> {discount}% off

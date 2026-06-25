@@ -161,11 +161,11 @@ const EStorePage = () => {
                       </Link>
                       <p className="text-xs text-muted-foreground">{b.author}</p>
                       <div className="flex items-center gap-2 pt-2">
-                        <span className="text-lg font-black text-foreground">₹{Number(b.price).toLocaleString()}</span>
+                        <span className="text-lg font-black text-foreground">₹{Number(b.price).toLocaleString("en-IN")}</span>
                         {b.original_price && Number(b.original_price) > Number(b.price) && (
                           <>
                             <span className="text-xs text-muted-foreground line-through">
-                              ₹{Number(b.original_price).toLocaleString()}
+                              ₹{Number(b.original_price).toLocaleString("en-IN")}
                             </span>
                             <span className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-green-600">
                               <Tag className="h-3 w-3" /> {discount}%
@@ -240,11 +240,11 @@ const EStorePage = () => {
                       </h3>
                     </Link>
                     <div className="flex items-center gap-2 pt-2">
-                      <span className="text-lg font-black text-foreground">₹{Number(p.price).toLocaleString()}</span>
+                      <span className="text-lg font-black text-foreground">₹{Number(p.price).toLocaleString("en-IN")}</span>
                       {p.original_price && Number(p.original_price) > Number(p.price) && (
                         <>
                           <span className="text-xs text-muted-foreground line-through">
-                            ₹{Number(p.original_price).toLocaleString()}
+                            ₹{Number(p.original_price).toLocaleString("en-IN")}
                           </span>
                           <span className="ml-auto inline-flex items-center gap-1 text-xs font-bold text-green-600">
                             <Tag className="h-3 w-3" /> {discount}%

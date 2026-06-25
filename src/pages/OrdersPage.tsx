@@ -82,13 +82,13 @@ const OrdersPage = () => {
                     <span className="truncate">
                       {it.item_title} <span className="text-muted-foreground">× {it.quantity}</span>
                     </span>
-                    <span>₹{(Number(it.unit_price) * it.quantity).toLocaleString()}</span>
+                    <span>₹{(Number(it.unit_price) * it.quantity).toLocaleString("en-IN")}</span>
                   </div>
                 ))}
               </div>
               <div className="mt-3 flex justify-between border-t border-border pt-3 text-sm font-black">
                 <span>Total</span>
-                <span>₹{Number(o.total).toLocaleString()}</span>
+                <span>₹{Number(o.total).toLocaleString("en-IN")}</span>
               </div>
             </div>
           ))}
