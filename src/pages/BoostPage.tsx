@@ -333,7 +333,7 @@ export default function BoostPage() {
       <section className="py-16 md:py-20 bg-bansal-blue text-white">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <IndianRupee className="h-12 w-12 text-bansal-orange mx-auto mb-4" />
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Your future called — at just ₹99.</h2>
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Your future called — at just ₹{boost.priceInr}.</h2>
           <p className="text-white/80 mb-7">
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>
