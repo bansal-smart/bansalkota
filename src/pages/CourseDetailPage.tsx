@@ -347,25 +347,6 @@ const CourseDetailPage = () => {
               </p>
             </div>
 
-            {/* BOOST CTA */}
-            <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-accent/10 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground">Win up to 90% scholarship with BOOST</p>
-                <p className="text-xs text-muted-foreground">
-                  Bansal's scholarship-cum-admission test — qualify and unlock fee discounts on this course.
-                </p>
-              </div>
-              <Link
-                to="/boost"
-                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-dark transition-colors whitespace-nowrap"
-              >
-                Explore <ArrowRight className="h-3.5 w-3.5 ml-1" />
-              </Link>
-            </div>
-
             <div>
               <p className="text-sm font-bold text-foreground mb-2">Why Choose this Batch at Bansal Classes?</p>
               <ul className="space-y-1.5">
@@ -376,6 +357,48 @@ const CourseDetailPage = () => {
                   </li>
                 ))}
               </ul>
+            </div>
+          </section>
+
+          {/* BOOST Scholarship Strip */}
+          <section className="relative overflow-hidden rounded-2xl bg-bansal-blue text-white">
+            <div className="absolute inset-0 grid-texture opacity-50" />
+            <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-bansal-orange/20 blur-3xl" />
+            <div className="relative px-5 py-6 sm:px-6 sm:py-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="inline-flex items-center rounded-full bg-bansal-orange px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                    BOOST 2026
+                  </span>
+                  <h3 className="mt-3 font-display text-xl font-extrabold leading-tight sm:text-2xl">
+                    Bansal Open Opportunity Scholarship Test
+                  </h3>
+                  <p className="mt-2 text-sm text-white/85">
+                    Up to <span className="font-bold text-bansal-orange">90% Scholarship</span>. Open to Class V to XII. Just{" "}
+                    <span className="font-bold text-bansal-orange">₹{boost.priceInr}</span> to register.
+                  </p>
+                  {boost.examDateLabels.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {boost.examDateLabels.map((d) => (
+                        <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 text-left sm:text-right">
+                  <Link
+                    to="/boost"
+                    className="inline-flex items-center gap-2 rounded-lg bg-bansal-orange px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-bansal-orange-dark"
+                  >
+                    Explore Now <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  {boost.applyBeforeLabel && (
+                    <p className="mt-2 text-[11px] text-white/70">{boost.applyBeforeLabel}</p>
+                  )}
+                </div>
+              </div>
             </div>
           </section>
 
