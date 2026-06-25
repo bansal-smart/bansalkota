@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievement_posters: {
+        Row: {
+          caption: string
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          caption: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          caption?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       active_sessions: {
         Row: {
           created_at: string
