@@ -149,9 +149,9 @@ const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: str
     <div className="space-y-2">
       <Label>Cover image</Label>
       <div className="flex items-start gap-3">
-        <div className="flex h-28 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+        <div className="flex w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted aspect-[4/3]">
           {value ? (
-            <img src={value} alt="Cover" className="h-full w-full object-cover" />
+            <img src={value} alt="Cover" className="h-full w-full object-contain" />
           ) : (
             <ImageIcon className="h-6 w-6 text-muted-foreground" />
           )}
@@ -187,6 +187,7 @@ const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: str
             </button>
           )}
           <p className="text-[11px] text-muted-foreground">PNG / JPG, up to 5 MB</p>
+          <p className="text-[11px] text-muted-foreground">Recommended: 4:3 aspect ratio</p>
         </div>
       </div>
     </div>
