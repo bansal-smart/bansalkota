@@ -68,12 +68,15 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     const { data, error } = await supabase
       .from("boost_registrations")
       .insert([payload as any])
-      .select("admit_card_number")
+      .select("id, admit_card_number")
       .single();
-    setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      setSubmitting(false);
+      return toast.error(error.message);
+    }
+    const regId = (data as any).id as string;
     const admit = (data as any).admit_card_number as string;
-    setSuccess({ admit_card_number: admit });
+    // Send confirmation email (non-blocking)
     void sendConfirmation({
       templateName: "boost-confirmation",
       recipientEmail: parsed.data.email,
@@ -86,7 +89,19 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         preferredCentre: payload.preferred_centre_label,
       },
     });
+    // Redirect to Cashfree hosted checkout
+    try {
+      toast.success("Redirecting to secure payment…");
+      await startBoostCashfreeCheckout(regId);
+      // browser navigates away
+    } catch (e) {
+      setSubmitting(false);
+      toast.error((e as Error).message || "Could not start payment");
+      // Still show admit card so user has a reference; admin can mark paid later
+      setSuccess({ admit_card_number: admit });
+    }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
