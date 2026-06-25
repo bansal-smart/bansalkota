@@ -175,6 +175,8 @@ const Toolbar = ({ editor }: { editor: Editor | null }) => {
 
 export const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) => {
   const editor = useEditor({
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: false,
     extensions: [
       StarterKit,
       Table.configure({ resizable: true, HTMLAttributes: { class: "rte-table" } }),
