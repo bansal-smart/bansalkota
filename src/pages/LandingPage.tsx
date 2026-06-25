@@ -353,7 +353,7 @@ const LandingPage = () => {
                   <img
                     src={s.img}
                     alt={`${s.title} — ${s.subtitle}`}
-                    className="absolute inset-0 w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-[1.04]"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue/95 via-bansal-blue/40 to-transparent" />
