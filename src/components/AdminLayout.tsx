@@ -66,6 +66,7 @@ const baseNav: NavItem[] = [
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
   
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
+  { label: "Course Enquiries", icon: Inbox, path: "/admin/course-enquiries" },
   { label: "Campaign Landing", icon: Megaphone, path: "/admin/landing-page" },
   { label: "Campaign Leads", icon: Inbox, path: "/admin/landing-leads" },
   { label: "Course Content", icon: FileText, path: "/admin/course-content" },

@@ -80,6 +80,7 @@ const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 const AdminLoginPage = lazy(() => import("./pages/AdminLoginPage"));
 const StaffDashboardPage = lazy(() => import("./pages/StaffDashboardPage"));
 const AdminEnquiriesPage = lazy(() => import("./pages/AdminEnquiriesPage"));
+const AdminCourseEnquiriesPage = lazy(() => import("./pages/AdminCourseEnquiriesPage"));
 const AdminCourseContentPage = lazy(() => import("./pages/AdminCourseContentPage"));
 const AdminReportsPage = lazy(() => import("./pages/AdminReportsPage"));
 const AdminProfilePage = lazy(() => import("./pages/AdminProfilePage"));
@@ -317,6 +318,7 @@ const App = () => (
               <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
               
               <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
+              <Route path="/admin/course-enquiries" element={<AdminCourseEnquiriesPage />} />
               <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />
