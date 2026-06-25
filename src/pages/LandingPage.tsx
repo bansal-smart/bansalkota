@@ -589,15 +589,17 @@ const LandingPage = () => {
             </h2>
             <p className="mt-4 text-sm md:text-base text-white/85">
               Up to <span className="text-bansal-orange font-bold">90% Scholarship</span>. Open to Class V to XII. Just{" "}
-              <span className="text-bansal-orange font-bold">₹99</span> to register.
+              <span className="text-bansal-orange font-bold">₹{boost.priceInr}</span> to register.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {["5 July 2026", "12 July 2026"].map((d) => (
-                <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                  {d}
-                </span>
-              ))}
-            </div>
+            {boost.examDateLabels.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {boost.examDateLabels.map((d) => (
+                  <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <div className="text-center lg:text-right">
             <Link to="/boost" className="inline-block">
@@ -605,7 +607,9 @@ const LandingPage = () => {
                 Explore Now <ArrowRight className="h-5 w-5" />
               </BansalButton>
             </Link>
-            <p className="mt-3 text-xs text-white/70">Apply before 4 July 2026, 6:00 PM</p>
+            {boost.applyBeforeLabel && (
+              <p className="mt-3 text-xs text-white/70">{boost.applyBeforeLabel}</p>
+            )}
           </div>
         </div>
       </section>
