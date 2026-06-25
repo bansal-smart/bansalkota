@@ -63,7 +63,7 @@ export function useBoostSettings() {
         .eq("id", BOOST_SETTINGS_ID)
         .maybeSingle();
       if (cancelled) return;
-      if (data) setSettings(data as BoostSettings);
+      if (data) setSettings(data as unknown as BoostSettings);
       setLoading(false);
     })();
     return () => {
