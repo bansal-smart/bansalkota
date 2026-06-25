@@ -8,6 +8,8 @@ export type TestSeriesRow = {
   target_exam: string | null;
   subject: string | null;
   description: string | null;
+  short_description: string | null;
+  description_html: string | null;
   thumbnail_url: string | null;
   total_tests: number;
   duration_months: number | null;
@@ -15,12 +17,17 @@ export type TestSeriesRow = {
   original_price: number | null;
   discount_percent: number | null;
   features: string[] | null;
+  included_services: string[] | null;
+  subjects_covered: string[] | null;
+  language: string | null;
+  mode: string | null;
   is_published: boolean;
   is_featured: boolean;
+  sort_order: number | null;
 };
 
 const SERIES_COLUMNS =
-  "id, slug, title, target_exam, subject, description, thumbnail_url, total_tests, duration_months, price, original_price, discount_percent, features, is_published, is_featured";
+  "id, slug, title, target_exam, subject, description, short_description, description_html, thumbnail_url, total_tests, duration_months, price, original_price, discount_percent, features, included_services, subjects_covered, language, mode, is_published, is_featured, sort_order";
 
 export const useTestSeriesList = (exam?: string) => {
   const query = useQuery({
@@ -30,7 +37,8 @@ export const useTestSeriesList = (exam?: string) => {
         .from("test_series")
         .select(SERIES_COLUMNS)
         .eq("is_published", true)
-        .order("is_featured", { ascending: false });
+        .order("is_featured", { ascending: false })
+        .order("sort_order", { ascending: true });
       if (exam && exam !== "All") q = q.eq("target_exam", exam);
       const { data, error } = await q;
       if (error) throw error;
