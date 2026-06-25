@@ -1416,81 +1416,6 @@ export type Database = {
         }
         Relationships: []
       }
-      educator_applications: {
-        Row: {
-          alt_contact_no: string | null
-          candidate_name: string
-          class_level: string[] | null
-          contact_no: string
-          created_at: string
-          credentials_sent_at: string | null
-          current_ctc: number | null
-          current_organization: string | null
-          date_of_birth: string
-          demo_video_link: string
-          email: string
-          expected_ctc: number
-          highest_qualification: string
-          id: string
-          other_qualification: string | null
-          photo_url: string | null
-          previous_organization: string | null
-          resume_url: string | null
-          status: string
-          subject: string
-          total_experience: number
-          updated_at: string
-        }
-        Insert: {
-          alt_contact_no?: string | null
-          candidate_name: string
-          class_level?: string[] | null
-          contact_no: string
-          created_at?: string
-          credentials_sent_at?: string | null
-          current_ctc?: number | null
-          current_organization?: string | null
-          date_of_birth: string
-          demo_video_link: string
-          email: string
-          expected_ctc: number
-          highest_qualification: string
-          id?: string
-          other_qualification?: string | null
-          photo_url?: string | null
-          previous_organization?: string | null
-          resume_url?: string | null
-          status?: string
-          subject: string
-          total_experience: number
-          updated_at?: string
-        }
-        Update: {
-          alt_contact_no?: string | null
-          candidate_name?: string
-          class_level?: string[] | null
-          contact_no?: string
-          created_at?: string
-          credentials_sent_at?: string | null
-          current_ctc?: number | null
-          current_organization?: string | null
-          date_of_birth?: string
-          demo_video_link?: string
-          email?: string
-          expected_ctc?: number
-          highest_qualification?: string
-          id?: string
-          other_qualification?: string | null
-          photo_url?: string | null
-          previous_organization?: string | null
-          resume_url?: string | null
-          status?: string
-          subject?: string
-          total_experience?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       educator_follows: {
         Row: {
           created_at: string
@@ -4490,10 +4415,6 @@ export type Database = {
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      educator_application_exists: {
-        Args: { _contact_no: string; _email: string }
         Returns: boolean
       }
       enqueue_email: {
