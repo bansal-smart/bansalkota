@@ -232,6 +232,8 @@ const App = () => (
               <Route path="/e-store/checkout" element={<CheckoutPage />} />
               <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
               <Route path="/payments/return" element={<PaymentReturnPage />} />
+              <Route path="/boost/payment-return" element={<BoostPaymentReturnPage />} />
+
               <Route path="/e-store/:slug" element={<BookDetailPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/refund-policy" element={<RefundPolicyPage />} />
