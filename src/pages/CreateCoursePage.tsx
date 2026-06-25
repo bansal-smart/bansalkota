@@ -303,58 +303,48 @@ const CreateCoursePage = () => {
             placeholder="Shown below the course name (e.g. Online course for Class XII PCM students)"
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-foreground">Exam</label>
-            <select value={exam} onChange={(e) => setExam(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-              {examNames.map((x) => <option key={x}>{x}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-foreground">Subject</label>
-            <select value={subject} onChange={(e) => setSubject(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-              <option>Physics</option>
-              <option>Chemistry</option>
-              <option>Maths</option>
-              <option>Biology</option>
-            </select>
-          </div>
+        <div>
+          <label className="text-xs font-semibold text-foreground">Exam</label>
+          <select value={exam} onChange={(e) => setExam(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+            {EXAM_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+          </select>
         </div>
-        {isAdminContext && (
-          <div>
-            <label className="text-xs font-semibold text-foreground">Educator Name</label>
-            <input
-              value={educatorName}
-              onChange={(e) => setEducatorName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              placeholder="e.g. Vikram Thapar"
-            />
-          </div>
-        )}
         <div>
           <label className="text-xs font-semibold text-foreground">Subjects Covered</label>
-          <p className="text-[11px] text-muted-foreground mb-1.5">Shown as chips under "Subjects Covered" on the course detail page.</p>
-          <div className="flex flex-wrap gap-2">
-            {SUBJECT_PRESETS.map((s) => {
-              const active = subjectsCovered.includes(s);
-              return (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() =>
-                    setSubjectsCovered(active ? subjectsCovered.filter((x) => x !== s) : [...subjectsCovered, s])
-                  }
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-foreground border-border hover:border-primary"
-                  }`}
-                >
+          <p className="text-[11px] text-muted-foreground mb-1.5">Type a subject and press Enter to add as a chip.</p>
+          {subjectsCovered.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {subjectsCovered.map((s) => (
+                <span key={s} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary border border-primary/30 px-3 py-1 text-xs font-semibold">
                   {s}
-                </button>
-              );
-            })}
-          </div>
+                  <button
+                    type="button"
+                    onClick={() => setSubjectsCovered(subjectsCovered.filter((x) => x !== s))}
+                    className="hover:text-destructive"
+                    aria-label={`Remove ${s}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            value={subjectInput}
+            onChange={(e) => setSubjectInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const v = subjectInput.trim().replace(/,$/, "");
+                if (v && !subjectsCovered.includes(v)) setSubjectsCovered([...subjectsCovered, v]);
+                setSubjectInput("");
+              } else if (e.key === "Backspace" && !subjectInput && subjectsCovered.length) {
+                setSubjectsCovered(subjectsCovered.slice(0, -1));
+              }
+            }}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="e.g. Physics — press Enter"
+          />
         </div>
       </div>
 
