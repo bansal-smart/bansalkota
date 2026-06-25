@@ -185,14 +185,14 @@ const BookFormFields = ({ form, setForm }: { form: BookForm; setForm: (f: BookFo
     <div className="space-y-4">
       <CoverUploader value={form.cover_url} onChange={(url) => setForm({ ...form, cover_url: url })} />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="bk-slug">Slug *</Label>
-          <input id="bk-slug" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. jee-physics-xi" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
-        </div>
-        <div className="space-y-1.5 md:col-span-1 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="space-y-1.5 md:col-span-2">
           <Label htmlFor="bk-title">Title *</Label>
           <input id="bk-title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Book title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="bk-stock">Stock</Label>
+          <input id="bk-stock" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
         </div>
 
         <div className="space-y-1.5">
@@ -238,12 +238,13 @@ const BookFormFields = ({ form, setForm }: { form: BookForm; setForm: (f: BookFo
           <Label htmlFor="bk-original">Original price (₹)</Label>
           <input id="bk-original" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Optional" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: Number(e.target.value) })} />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="bk-stock">Stock</Label>
-          <input id="bk-stock" type="number" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+
+        <div className="space-y-1.5 md:col-span-3">
+          <Label htmlFor="bk-desc">Description</Label>
+          <textarea id="bk-desc" rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Short description shown on the store page" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
 
-        <div className="space-y-1.5 md:col-span-2 lg:col-span-3">
+        <div className="space-y-1.5 md:col-span-3">
           <Label htmlFor="bk-desc">Description</Label>
           <textarea id="bk-desc" rows={3} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Short description shown on the store page" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
@@ -277,7 +278,7 @@ const EditBookModal = ({ book, onClose, onSaved }: { book: Book | null; onClose:
 
   const save = async () => {
     if (!book) return;
-    if (!form.title || !form.slug) return toast.error("Title and slug are required");
+    if (!form.title || !form.slug) return toast.error("Title is required");
     setSaving(true);
     const { error } = await supabase
       .from("books")
@@ -336,10 +337,13 @@ const BooksTab = () => {
   }, []);
 
   const save = async () => {
-    if (!form.title || !form.slug) return toast.error("Title and slug are required");
+    if (!form.title) return toast.error("Title is required");
     setSaving(true);
+    const baseSlug = form.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "book";
+    const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 6)}`;
     const { error } = await supabase.from("books").insert({
       ...form,
+      slug,
       original_price: form.original_price || null,
       cover_url: form.cover_url || null,
       description: form.description || null,
