@@ -297,6 +297,36 @@ export type Database = {
           },
         ]
       }
+      boost_settings: {
+        Row: {
+          apply_deadline_days_before: number
+          apply_deadline_time: string
+          created_at: string
+          exam_dates: string[]
+          id: string
+          price_inr: number
+          updated_at: string
+        }
+        Insert: {
+          apply_deadline_days_before?: number
+          apply_deadline_time?: string
+          created_at?: string
+          exam_dates?: string[]
+          id: string
+          price_inr?: number
+          updated_at?: string
+        }
+        Update: {
+          apply_deadline_days_before?: number
+          apply_deadline_time?: string
+          created_at?: string
+          exam_dates?: string[]
+          id?: string
+          price_inr?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       centre_banners: {
         Row: {
           centre_id: string

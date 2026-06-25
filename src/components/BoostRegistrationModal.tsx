@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useCenters } from "@/hooks/useCenters";
+import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 
 const schema = z.object({
@@ -36,6 +37,7 @@ type Props = { open: boolean; onClose: () => void };
 
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
+  const { priceInr } = useBoostSettings();
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
 
@@ -58,7 +60,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       date_of_birth: parsed.data.date_of_birth || null,
       preferred_centre_id: parsed.data.preferred_centre_id || null,
       preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
-      amount: 99,
+      amount: priceInr,
       payment_status: "pending",
     };
     const { data, error } = await supabase
@@ -91,7 +93,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
           <div>
             <h2 className="font-display text-xl font-bold text-bansal-black">BOOST 2026 Registration</h2>
-            <p className="text-xs text-muted-foreground">Just ₹99 to reserve your scholarship test slot</p>
+            <p className="text-xs text-muted-foreground">Just ₹{priceInr} to reserve your scholarship test slot</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded"><X className="h-5 w-5" /></button>
         </div>
@@ -149,7 +151,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             </Section>
 
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
-              <div className="font-semibold text-bansal-black">Registration fee: ₹99</div>
+              <div className="font-semibold text-bansal-black">Registration fee: ₹{priceInr}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Payment link will be sent to your WhatsApp after submitting this form. Your slot is held for 24 hours.
               </p>

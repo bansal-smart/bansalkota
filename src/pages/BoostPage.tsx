@@ -17,6 +17,7 @@ import boostHeroAsset from "@/assets/boost-hero-banner.png.asset.json";
 const boostHero = boostHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import BoostRegistrationModal from "@/components/BoostRegistrationModal";
+import { useBoostSettings } from "@/hooks/useBoostSettings";
 
 const benefits = [
   {
@@ -87,6 +88,7 @@ const faqs = [
 
 export default function BoostPage() {
   const [regOpen, setRegOpen] = useState(false);
+  const boost = useBoostSettings();
   return (
     <div className="min-h-screen bg-background">
       <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
@@ -111,7 +113,7 @@ export default function BoostPage() {
             </h1>
             <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl leading-relaxed">
               Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most trusted
-              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹99</span> to register.
+              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹{boost.priceInr}</span> to register.
             </p>
             <div className="flex flex-wrap gap-3">
               <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
@@ -123,10 +125,35 @@ export default function BoostPage() {
                 </BansalButton>
               </a>
             </div>
+            {boost.examDateLabels.length > 0 && (
+              <div className="mt-6 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {boost.examDateLabels.map((d) => {
+                    const isNext = boost.nextExamDateLabel === d;
+                    return (
+                      <span
+                        key={d}
+                        className={
+                          isNext
+                            ? "rounded-full bg-bansal-orange text-white px-4 py-1.5 text-sm font-bold ring-2 ring-white/40 shadow-lg"
+                            : "rounded-full bg-white/15 text-white px-4 py-1.5 text-sm font-semibold"
+                        }
+                      >
+                        {d}
+                        {isNext && <span className="ml-2 text-[10px] uppercase tracking-wider">Upcoming</span>}
+                      </span>
+                    );
+                  })}
+                </div>
+                {boost.applyBeforeLabel && (
+                  <p className="text-xs text-white/70">{boost.applyBeforeLabel}</p>
+                )}
+              </div>
+            )}
             <div className="mt-10 grid grid-cols-3 gap-6 max-w-xl">
               {[
                 { v: "90%", l: "Max Scholarship" },
-                { v: "₹99", l: "Reg. Fee" },
+                { v: `₹${boost.priceInr}`, l: "Reg. Fee" },
                 { v: "30K+", l: "Students/Year" },
               ].map((s) => (
                 <div key={s.l}>
@@ -288,12 +315,16 @@ export default function BoostPage() {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">Common Questions</h2>
           </div>
           <div className="space-y-3">
-            {faqs.map((f) => (
-              <BansalCard key={f.q} className="hover-lift">
-                <h3 className="font-display font-bold text-bansal-black mb-2">{f.q}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.a}</p>
-              </BansalCard>
-            ))}
+            {faqs.map((f) => {
+              const answer = f.a.replace(/₹99/g, `₹${boost.priceInr}`);
+              const question = f.q.replace(/₹99/g, `₹${boost.priceInr}`);
+              return (
+                <BansalCard key={f.q} className="hover-lift">
+                  <h3 className="font-display font-bold text-bansal-black mb-2">{question}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{answer}</p>
+                </BansalCard>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -302,7 +333,7 @@ export default function BoostPage() {
       <section className="py-16 md:py-20 bg-bansal-blue text-white">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <IndianRupee className="h-12 w-12 text-bansal-orange mx-auto mb-4" />
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Your future called — at just ₹99.</h2>
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Your future called — at just ₹{boost.priceInr}.</h2>
           <p className="text-white/80 mb-7">
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>

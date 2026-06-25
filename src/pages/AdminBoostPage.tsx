@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Award, Loader2, Search, Download, Check, X as XIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 
 type Registration = {
   id: string;
@@ -131,6 +132,8 @@ const AdminBoostPage = () => {
           <Download className="h-4 w-4" /> Export CSV
         </button>
       </div>
+
+      <BoostSettingsPanel />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
