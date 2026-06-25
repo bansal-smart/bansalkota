@@ -1334,21 +1334,29 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          description_html: string | null
           discount_percent: number | null
           duration_hours: number | null
+          duration_label: string | null
+          education_level: string | null
           educator_name: string
           id: string
+          included_services: string[] | null
           is_featured: boolean | null
           is_published: boolean | null
+          language: string | null
           level: string | null
+          mode: string | null
           name: string
           original_price: number | null
           price: number
           rating: number | null
           requirements: string[]
+          short_description: string | null
           slug: string
           sort_order: number
           subject: string
+          subjects_covered: string[] | null
           tags: string[] | null
           target_exam: string | null
           thumbnail_url: string | null
@@ -1363,21 +1371,29 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          description_html?: string | null
           discount_percent?: number | null
           duration_hours?: number | null
+          duration_label?: string | null
+          education_level?: string | null
           educator_name: string
           id?: string
+          included_services?: string[] | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          language?: string | null
           level?: string | null
+          mode?: string | null
           name: string
           original_price?: number | null
           price?: number
           rating?: number | null
           requirements?: string[]
+          short_description?: string | null
           slug: string
           sort_order?: number
           subject: string
+          subjects_covered?: string[] | null
           tags?: string[] | null
           target_exam?: string | null
           thumbnail_url?: string | null
@@ -1392,21 +1408,29 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          description_html?: string | null
           discount_percent?: number | null
           duration_hours?: number | null
+          duration_label?: string | null
+          education_level?: string | null
           educator_name?: string
           id?: string
+          included_services?: string[] | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          language?: string | null
           level?: string | null
+          mode?: string | null
           name?: string
           original_price?: number | null
           price?: number
           rating?: number | null
           requirements?: string[]
+          short_description?: string | null
           slug?: string
           sort_order?: number
           subject?: string
+          subjects_covered?: string[] | null
           tags?: string[] | null
           target_exam?: string | null
           thumbnail_url?: string | null

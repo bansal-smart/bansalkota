@@ -19,10 +19,19 @@ export type CourseRow = {
   target_exam: string | null;
   is_published: boolean;
   total_enrolled: number | null;
+  short_description: string | null;
+  education_level: string | null;
+  duration_label: string | null;
+  mode: string | null;
+  language: string | null;
+  subjects_covered: string[] | null;
+  description_html: string | null;
+  included_services: string[] | null;
 };
 
 const COURSE_COLUMNS =
-  "id, slug, name, description, subject, educator_name, thumbnail_url, rating, total_lessons, duration_hours, badge, price, original_price, discount_percent, target_exam, is_published, total_enrolled";
+  "id, slug, name, description, subject, educator_name, thumbnail_url, rating, total_lessons, duration_hours, badge, price, original_price, discount_percent, target_exam, is_published, total_enrolled, short_description, education_level, duration_label, mode, language, subjects_covered, description_html, included_services";
+
 
 export const useCourses = (targetExam?: string, subject?: string) => {
   const query = useQuery({

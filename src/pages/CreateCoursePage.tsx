@@ -5,6 +5,26 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useExams } from "@/hooks/useExams";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
+
+const EDUCATION_LEVELS = [
+  "Class 6",
+  "Class 7",
+  "Class 8",
+  "Class 9",
+  "Class 10",
+  "Class 11",
+  "Class 12",
+  "Class 9th–10th",
+  "Class 11th–12th",
+  "Droppers",
+];
+const DURATION_OPTIONS = ["6 Months", "1 Year", "2 Years", "Up to 12 Months", "Up to 24 Months"];
+const MODE_OPTIONS = ["Online", "Offline", "Hybrid", "Residential"];
+const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
+const SUBJECT_PRESETS = ["Physics", "Chemistry", "Maths", "Biology", "All Subjects"];
+
 
 const slugify = (s: string) =>
   s
@@ -29,6 +49,7 @@ const CreateCoursePage = () => {
   const [name, setName] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionHtml, setDescriptionHtml] = useState("");
   const [exam, setExam] = useState("JEE");
   const [subject, setSubject] = useState("Physics");
   const [educatorName, setEducatorName] = useState("");
@@ -45,6 +66,13 @@ const CreateCoursePage = () => {
   const [learnInput, setLearnInput] = useState("");
   const [reqItems, setReqItems] = useState<string[]>([]);
   const [reqInput, setReqInput] = useState("");
+  const [educationLevel, setEducationLevel] = useState<string>("Class 11th–12th");
+  const [durationLabel, setDurationLabel] = useState<string>("1 Year");
+  const [modeValue, setModeValue] = useState<string>("Online");
+  const [language, setLanguage] = useState<string>("English / Hindi");
+  const [subjectsCovered, setSubjectsCovered] = useState<string[]>([]);
+  const [includedServices, setIncludedServices] = useState<string[]>([]);
+
 
   // Load existing course in edit mode
   useEffect(() => {
@@ -62,16 +90,27 @@ const CreateCoursePage = () => {
         return;
       }
       setName(course.name ?? "");
-      setShortDesc("");
+      const c = course as unknown as Record<string, unknown>;
+      setShortDesc((c.short_description as string | null) ?? "");
       setDescription(course.description ?? "");
+      setDescriptionHtml((c.description_html as string | null) ?? "");
       setExam(course.target_exam ?? "JEE");
       setSubject(course.subject ?? "Physics");
       setEducatorName(course.educator_name ?? "");
       setPrice(Number(course.price ?? 0));
       setOriginalPrice(Number(course.original_price ?? 0));
       setExistingThumbnail(course.thumbnail_url ?? null);
-      setLearnItems((course.what_youll_learn ?? []) as string[]);
-      setReqItems((course.requirements ?? []) as string[]);
+      setEducationLevel((c.education_level as string | null) ?? "Class 11th–12th");
+      setDurationLabel((c.duration_label as string | null) ?? "1 Year");
+      setModeValue((c.mode as string | null) ?? "Online");
+      setLanguage((c.language as string | null) ?? "English / Hindi");
+      setSubjectsCovered(((c.subjects_covered as string[] | null) ?? []) as string[]);
+      setIncludedServices(((c.included_services as string[] | null) ?? []) as string[]);
+      setLearnItems(((c.what_youll_learn as string[] | null) ?? []) as string[]);
+      setReqItems(((c.requirements as string[] | null) ?? []) as string[]);
+
+
+
 
       const { data: chs } = await supabase
         .from("chapters")
@@ -148,6 +187,29 @@ const CreateCoursePage = () => {
       educatorName.trim() ||
       ((user.user_metadata?.full_name as string | undefined) ?? user.email?.split("@")[0] ?? "Educator").trim();
 
+    const sharedFields = {
+      name,
+      description: description || shortDesc,
+      short_description: shortDesc || null,
+      description_html: descriptionHtml || null,
+      subject,
+      target_exam: exam,
+      educator_name: resolvedEducatorName,
+      price,
+      original_price: originalPrice || null,
+      discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+      thumbnail_url: thumbnailUrl,
+      is_published: publish,
+      what_youll_learn: learnItems,
+      requirements: reqItems,
+      education_level: educationLevel || null,
+      duration_label: durationLabel || null,
+      mode: modeValue || null,
+      language: language || null,
+      subjects_covered: subjectsCovered,
+      included_services: includedServices,
+    };
+
     let workingCourseId = courseId;
 
     if (!isEditMode) {
@@ -156,22 +218,7 @@ const CreateCoursePage = () => {
 
       const { data: course, error: courseErr } = await supabase
         .from("courses")
-        .insert({
-          name,
-          slug,
-          description: description || shortDesc,
-          subject,
-          target_exam: exam,
-          educator_name: resolvedEducatorName,
-          price,
-          original_price: originalPrice || null,
-          discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
-          thumbnail_url: thumbnailUrl,
-          is_published: publish,
-          created_by: user.id,
-          what_youll_learn: learnItems,
-          requirements: reqItems,
-        })
+        .insert({ ...sharedFields, slug, created_by: user.id })
         .select("id, slug")
         .single();
 
@@ -185,21 +232,9 @@ const CreateCoursePage = () => {
     } else {
       const { error: updErr } = await supabase
         .from("courses")
-        .update({
-          name,
-          description: description || shortDesc,
-          subject,
-          target_exam: exam,
-          educator_name: resolvedEducatorName,
-          price,
-          original_price: originalPrice || null,
-          discount_percent: originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
-          thumbnail_url: thumbnailUrl,
-          is_published: publish,
-          what_youll_learn: learnItems,
-          requirements: reqItems,
-        })
+        .update(sharedFields)
         .eq("id", courseId!);
+
       if (updErr) {
         toast.error(updErr.message);
         setSubmitting(false);
@@ -289,26 +324,14 @@ const CreateCoursePage = () => {
             placeholder="e.g. JEE Physics Booster 2027"
           />
         </div>
-        {!isEditMode && (
-          <div>
-            <label className="text-xs font-semibold text-foreground">Short Description</label>
-            <input
-              value={shortDesc}
-              onChange={(e) => setShortDesc(e.target.value)}
-              maxLength={150}
-              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
-              placeholder="150 chars max"
-            />
-          </div>
-        )}
         <div>
-          <label className="text-xs font-semibold text-foreground">Full Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
-            placeholder="Detailed course description..."
+          <label className="text-xs font-semibold text-foreground">Short Description</label>
+          <input
+            value={shortDesc}
+            onChange={(e) => setShortDesc(e.target.value)}
+            maxLength={200}
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+            placeholder="Shown below the course name (e.g. Online course for Class XII PCM students)"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -339,7 +362,107 @@ const CreateCoursePage = () => {
             />
           </div>
         )}
+        <div>
+          <label className="text-xs font-semibold text-foreground">Subjects Covered</label>
+          <p className="text-[11px] text-muted-foreground mb-1.5">Shown as chips under "Subjects Covered" on the course detail page.</p>
+          <div className="flex flex-wrap gap-2">
+            {SUBJECT_PRESETS.map((s) => {
+              const active = subjectsCovered.includes(s);
+              return (
+                <button
+                  type="button"
+                  key={s}
+                  onClick={() =>
+                    setSubjectsCovered(active ? subjectsCovered.filter((x) => x !== s) : [...subjectsCovered, s])
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-foreground border-border hover:border-primary"
+                  }`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">This Course Includes</h2>
+        <p className="text-xs text-muted-foreground">These four values show in the "This Course Includes" row on the detail page.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-foreground">Education Level</label>
+            <select value={educationLevel} onChange={(e) => setEducationLevel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {EDUCATION_LEVELS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Duration</label>
+            <select value={durationLabel} onChange={(e) => setDurationLabel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {DURATION_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Mode</label>
+            <select value={modeValue} onChange={(e) => setModeValue(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {MODE_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Language</label>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+              {LANGUAGE_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Detailed Description</h2>
+        <p className="text-xs text-muted-foreground">Rich text shown under "Know More Details" on the course page.</p>
+        <RichTextEditor
+          value={descriptionHtml}
+          onChange={setDescriptionHtml}
+          placeholder="Write a detailed description, fee notes, eligibility, etc."
+        />
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+        <h2 className="text-sm font-bold text-foreground">Course Includes</h2>
+        <p className="text-xs text-muted-foreground">Tick what's included with this course. Selected icons appear on the right-side panel of the course detail page.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {SERVICE_OPTIONS.map((s) => {
+            const checked = includedServices.includes(s.key);
+            return (
+              <label
+                key={s.key}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${
+                  checked ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/50"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) =>
+                    setIncludedServices(
+                      e.target.checked
+                        ? [...includedServices, s.key]
+                        : includedServices.filter((k) => k !== s.key),
+                    )
+                  }
+                  className="h-4 w-4"
+                />
+                <s.icon className="h-4 w-4 text-primary" />
+                <span className="text-xs font-semibold text-foreground">{s.label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Thumbnail</h2>

@@ -53,15 +53,16 @@ type EnrollmentInfo = {
 
 // ----- Fallback data (Bansal-styled demo) -----
 
-const SERVICES = [
-  { icon: BookOpen, label: "Study Material" },
-  { icon: Video, label: "Recorded Lectures" },
-  { icon: ClipboardList, label: "Test Series" },
-  { icon: Shirt, label: "T-Shirt" },
-  { icon: Umbrella, label: "Umbrella" },
-  { icon: HelpCircle, label: "Doubt Classes" },
-  { icon: Backpack, label: "Bag" },
-];
+export const SERVICE_OPTIONS = [
+  { key: "study_material", icon: BookOpen, label: "Study Material" },
+  { key: "recorded_lectures", icon: Video, label: "Recorded Lectures" },
+  { key: "test_series", icon: ClipboardList, label: "Test Series" },
+  { key: "t_shirt", icon: Shirt, label: "T-Shirt" },
+  { key: "umbrella", icon: Umbrella, label: "Umbrella" },
+  { key: "doubt_classes", icon: HelpCircle, label: "Doubt Classes" },
+  { key: "bag", icon: Backpack, label: "Bag" },
+] as const;
+
 
 const formatBytes = (bytes: number | null) => {
   if (!bytes) return "";
@@ -151,25 +152,37 @@ const CourseDetailPage = () => {
     );
   }
 
-  const mode = detectMode(course);
+  const mode = course.mode || detectMode(course);
   const category = detectCategory(course);
-  const subjects = course.subject
-    ? course.subject
-        .split(/[,/]/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : ["Physics", "Chemistry", "Mathematics"];
+  const subjects =
+    course.subjects_covered && course.subjects_covered.length > 0
+      ? course.subjects_covered
+      : course.subject
+      ? course.subject
+          .split(/[,/]/)
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : ["Physics", "Chemistry", "Mathematics"];
 
-  const educationLevel = course.target_exam?.toLowerCase().includes("foundation")
-    ? "Class 9th–10th"
-    : "Class 11th–12th";
+  const educationLevel =
+    course.education_level ||
+    (course.target_exam?.toLowerCase().includes("foundation") ? "Class 9th–10th" : "Class 11th–12th");
+
+  const durationLabel =
+    course.duration_label || `${totalHours >= 100 ? "Up to 12 Months" : `${totalHours} hrs`}`;
+  const languageLabel = course.language || "English / Hindi";
 
   const includes = [
     { icon: GraduationCap, label: "Education Level", value: educationLevel },
-    { icon: Clock, label: "Duration", value: `${totalHours >= 100 ? "Up to 12 Months" : `${totalHours} hrs`}` },
+    { icon: Clock, label: "Duration", value: durationLabel },
     { icon: Video, label: "Mode", value: mode },
-    { icon: BookOpen, label: "Language", value: "English / Hindi" },
+    { icon: BookOpen, label: "Language", value: languageLabel },
   ];
+
+  const selectedServices = SERVICE_OPTIONS.filter((s) =>
+    (course.included_services ?? []).includes(s.key),
+  );
+
 
   const courseAny = course as unknown as { what_youll_learn?: string[] | null; requirements?: string[] | null };
   const whyChoose =
@@ -241,11 +254,12 @@ const CourseDetailPage = () => {
             <h1 className="font-display text-3xl md:text-4xl font-black text-foreground leading-tight">
               {course.name}
             </h1>
-            {course.description && (
+            {(course.short_description || course.description) && (
               <p className="mt-3 text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl">
-                {course.description}
+                {course.short_description || course.description}
               </p>
             )}
+
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Star className="h-3.5 w-3.5 fill-primary text-primary" />
@@ -358,34 +372,39 @@ const CourseDetailPage = () => {
           {/* Know More Details */}
           <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
             <h3 className="font-display text-lg font-black text-foreground">Know More Details</h3>
-            <div>
-              <p className="text-sm font-bold text-foreground">{course.name} — Bansal Classes Kota</p>
-              <p className="text-xs text-primary mt-1">
-                {mode} Classroom Program · {category}
-              </p>
-              <p className="text-xs text-foreground mt-1">
-                <span className="font-bold">Target:</span> {category} 2028 ·
-                <span className="font-bold"> Duration:</span> 1 Year ·<span className="font-bold"> Commencement:</span>{" "}
-                01/04/2026
-              </p>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <DetailRow label="Course Name" value={course.name} />
-              <DetailRow label="Eligibility" value="Class X Pass" />
-              <DetailRow label="Mode" value={`${mode} Classroom Coaching`} />
-              <DetailRow label="Location" value="Bansal Classes, Kota" icon={MapPin} />
-              <DetailRow label="Target Exam" value={`${category} — 2028`} />
-              <DetailRow label="Admission Process" value="Direct / BOOST" icon={BadgeCheck} />
-            </div>
+            {course.description_html ? (
+              <div
+                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground"
+                dangerouslySetInnerHTML={{ __html: course.description_html }}
+              />
+            ) : (
+              <>
+                <div>
+                  <p className="text-sm font-bold text-foreground">{course.name} — Bansal Classes Kota</p>
+                  <p className="text-xs text-primary mt-1">
+                    {mode} Classroom Program · {category}
+                  </p>
+                </div>
 
-            <div>
-              <p className="text-sm font-bold text-foreground mb-1.5">Fee Structure:</p>
-              <p className="text-xs text-foreground">
-                Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString()}/-</span>{" "}
-                <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
-              </p>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <DetailRow label="Course Name" value={course.name} />
+                  <DetailRow label="Eligibility" value="Class X Pass" />
+                  <DetailRow label="Mode" value={`${mode} Classroom Coaching`} />
+                  <DetailRow label="Location" value="Bansal Classes, Kota" icon={MapPin} />
+                  <DetailRow label="Target Exam" value={`${category} — 2028`} />
+                  <DetailRow label="Admission Process" value="Direct / BOOST" icon={BadgeCheck} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-foreground mb-1.5">Fee Structure:</p>
+                  <p className="text-xs text-foreground">
+                    Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString()}/-</span>{" "}
+                    <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
+                  </p>
+                </div>
+              </>
+            )}
 
             <div>
               <p className="text-sm font-bold text-foreground mb-2">Why Choose this Batch at Bansal Classes?</p>
@@ -399,6 +418,7 @@ const CourseDetailPage = () => {
               </ul>
             </div>
           </section>
+
 
           {/* Curriculum (if any) */}
           {chapters.length > 0 && (
@@ -555,20 +575,23 @@ const CourseDetailPage = () => {
             </div>
           </div>
 
-          {/* Our Services */}
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="font-display text-sm font-black text-center text-foreground mb-4">Our Services</p>
-            <div className="grid grid-cols-3 gap-3">
-              {SERVICES.map((s) => (
-                <div key={s.label} className="flex flex-col items-center text-center gap-1.5">
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <s.icon className="h-5 w-5 text-primary" />
+          {/* Course Includes */}
+          {selectedServices.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="font-display text-sm font-black text-center text-foreground mb-4">Course Includes</p>
+              <div className="grid grid-cols-3 gap-3">
+                {selectedServices.map((s) => (
+                  <div key={s.key} className="flex flex-col items-center text-center gap-1.5">
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <s.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-[10px] font-semibold text-foreground leading-tight">{s.label}</p>
                   </div>
-                  <p className="text-[10px] font-semibold text-foreground leading-tight">{s.label}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
         </aside>
       </div>
 
