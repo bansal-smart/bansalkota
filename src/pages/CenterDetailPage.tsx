@@ -64,27 +64,22 @@ export default function CenterDetailPage() {
   const nearby = useMemo(() => {
     if (!center) return [];
     const pool = DB_CENTERS.length ? DB_CENTERS : (CENTERS as any[]);
-    return pool.filter(
-      (c) => c.slug !== center.slug && (c.state === center.state || c.region === center.region),
-    ).slice(0, 6);
+    return pool
+      .filter((c) => c.slug !== center.slug && (c.state === center.state || c.region === center.region))
+      .slice(0, 6);
   }, [center, DB_CENTERS]);
 
   if (!center) return <Navigate to="/centres" replace />;
 
-  const displayName =
-    center.area && center.area !== center.city ? `${center.city} — ${center.area}` : center.city;
+  const displayName = center.area && center.area !== center.city ? `${center.city} — ${center.area}` : center.city;
   const mapQuery = encodeURIComponent(`Bansal Classes ${displayName}, ${center.state}`);
-  const heroImg = (dbCenter?.image_url) || THEME_IMAGE[center.theme];
+  const heroImg = dbCenter?.image_url || THEME_IMAGE[center.theme];
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero with city image */}
       <section className="relative h-[420px] md:h-[480px] overflow-hidden">
-        <img
-          src={heroImg}
-          alt={`${displayName} city view`}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src={heroImg} alt={`${displayName} city view`} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-bansal-blue via-bansal-blue/85 to-bansal-blue/40" />
         <div className="absolute inset-0 grid-texture opacity-20" />
 
@@ -122,8 +117,8 @@ export default function CenterDetailPage() {
             <span className="block text-bansal-orange mt-1">{displayName}</span>
           </h1>
           <p className="mt-3 text-white/90 text-base max-w-2xl">
-            {center.state} · Walk in for counselling, demo classes and admission queries.
-            Our centre team is happy to help you choose the right program.
+            {center.state} · Walk in for counselling, demo classes and admission queries. Our centre team is happy to
+            help you choose the right program.
           </p>
 
           <div className="mt-5 flex flex-wrap gap-3">
@@ -156,8 +151,7 @@ export default function CenterDetailPage() {
               Programs offered at {displayName}
             </h2>
             <p className="text-sm text-muted-foreground mb-5">
-              Choose the program that matches your goal. All include Bansal study material,
-              tests and mentor support.
+              Choose the program that matches your goal. All include Bansal study material, tests and mentor support.
             </p>
             <div className="grid md:grid-cols-3 gap-5">
               {PROGRAMS.map((p) => (
@@ -168,9 +162,7 @@ export default function CenterDetailPage() {
                   <div className="h-11 w-11 rounded-xl bg-bansal-blue-light flex items-center justify-center mb-3">
                     <p.icon className="h-6 w-6 text-bansal-blue" />
                   </div>
-                  <h3 className="font-display text-lg font-bold text-bansal-black mb-1.5">
-                    {p.title}
-                  </h3>
+                  <h3 className="font-display text-lg font-bold text-bansal-black mb-1.5">{p.title}</h3>
                   <p className="text-sm text-muted-foreground">{p.desc}</p>
                   <Link
                     to="/courses"
@@ -182,7 +174,6 @@ export default function CenterDetailPage() {
               ))}
             </div>
           </div>
-
         </div>
       </section>
 
@@ -246,7 +237,7 @@ export default function CenterDetailPage() {
                   <div>
                     <p className="font-semibold text-bansal-black">Email</p>
                     <a
-                      href={`mailto:${center.email ?? "info@bansalclasses.com"}`}
+                      href={`mailto:${center.email ?? "admin@bansal.ac.in"}`}
                       className="text-bansal-blue hover:text-bansal-blue-dark font-semibold"
                     >
                       {center.email ?? "info@bansalclasses.com"}
@@ -284,9 +275,7 @@ export default function CenterDetailPage() {
                   <Users className="h-5 w-5 text-bansal-blue" />
                   <p className="font-semibold text-bansal-black text-sm">Students mentored</p>
                 </div>
-                <p className="font-display text-2xl font-bold text-bansal-blue">
-                  {center.isHQ ? "1L+" : "10,000+"}
-                </p>
+                <p className="font-display text-2xl font-bold text-bansal-blue">{center.isHQ ? "1L+" : "10,000+"}</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {center.isHQ ? "Since 1991" : "Across Bansal network"}
                 </p>
@@ -335,7 +324,6 @@ export default function CenterDetailPage() {
         </div>
       </section>
 
-
       {/* CTA */}
       <section className="py-14 bg-bansal-cream">
         <div className="container mx-auto px-4 max-w-2xl text-center">
@@ -343,8 +331,8 @@ export default function CenterDetailPage() {
             Ready to start at {displayName}?
           </h2>
           <p className="text-muted-foreground mb-6">
-            Book a free counselling session. Our team will walk you through batches, fees and
-            scholarship options available at this centre.
+            Book a free counselling session. Our team will walk you through batches, fees and scholarship options
+            available at this centre.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <a href={`tel:${center.phone.replace(/\s+/g, "")}`}>
