@@ -50,15 +50,20 @@ const ToolbarButton = ({
   children: React.ReactNode;
   label: string;
 }) => (
-  <Toggle
-    size="sm"
-    pressed={!!active}
-    onPressedChange={onClick}
-    aria-label={label}
-    className="h-8 w-8 p-0"
-  >
-    {children}
-  </Toggle>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Toggle
+        size="sm"
+        pressed={!!active}
+        onPressedChange={onClick}
+        aria-label={label}
+        className="h-8 w-8 p-0"
+      >
+        {children}
+      </Toggle>
+    </TooltipTrigger>
+    <TooltipContent side="bottom">{label}</TooltipContent>
+  </Tooltip>
 );
 
 const Toolbar = ({ editor }: { editor: Editor | null }) => {
