@@ -120,6 +120,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           full_name: parsed.data.full_name,
           email: parsed.data.email,
           phone: parsed.data.phone,
+          parent_phone: parsed.data.parent_phone || null,
           class_level: parsed.data.class_level,
           city: parsed.data.city,
           state: parsed.data.state,
