@@ -229,7 +229,9 @@ const AdminLayout = () => {
         <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
 
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <Outlet />
+          <Suspense fallback={<AdminPageSkeleton />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
