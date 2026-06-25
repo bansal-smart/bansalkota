@@ -108,10 +108,6 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
       toast.error(first?.message || "Please fill all required fields");
       return;
     }
-    if (!user) {
-      toast.info("Please sign in to continue");
-      return;
-    }
     setSubmitting(true);
     try {
       // 1) Persist enquiry first so admins always see the lead.
@@ -121,7 +117,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           course_id: course.id,
           course_name: course.name,
           course_price: Number(course.price),
-          user_id: user.id,
+          user_id: user?.id || null,
           full_name: parsed.data.full_name,
           email: parsed.data.email,
           phone: parsed.data.phone,
@@ -136,6 +132,13 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
         .select("id")
         .single();
       if (insErr) throw insErr;
+
+      if (!user) {
+        toast.success("Enquiry submitted. A counsellor will contact you soon.");
+        onOpenChange(false);
+        setSubmitting(false);
+        return;
+      }
 
       // 2) Kick off Cashfree checkout — backend links enquiry to order.
       await startCashfreeCheckout({
