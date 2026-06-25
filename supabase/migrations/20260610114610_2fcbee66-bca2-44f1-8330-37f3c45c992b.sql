@@ -153,7 +153,7 @@ INSERT INTO public.leadership_sections (leadership_id, heading, body, sort_order
 SELECT ins.id, s.heading, s.body, s.sort_order
 FROM ins
 JOIN (VALUES
-  ('vk-bansal','Guiding Teachers','VK Bansal aimed for comprehensive JEE exam guidance through a structured curriculum and innovative teaching, offering personalised support and motivation. His holistic approach empowered students to master the syllabus and confidently face exam challenges.',1),
+  ('vk-bansal','Guiding Teachers','Bansal Sir aimed for comprehensive JEE exam guidance through a structured curriculum and innovative teaching, offering personalised support and motivation. His holistic approach empowered students to master the syllabus and confidently face exam challenges.',1),
   ('vk-bansal','Disciplinary Atmosphere','He continuously evolved teaching methods to meet students'' diverse needs, integrating the latest educational technologies to enhance understanding and performance. His adaptive approach ensured students were always well-prepared.',2),
   ('vk-bansal','Setting High Standards','Year after year, his leadership pushed boundaries in academic excellence — challenging both students and educators to strive for higher performance and fostering a culture of continuous improvement within Bansal Classes.',3),
   ('vk-bansal','Building a Legacy','VK Bansal aimed to leave a lasting impact on education by setting benchmarks in coaching innovation and success. His efforts revolutionised educational practices and continue to elevate student achievement across India.',4),
