@@ -40,6 +40,7 @@ type Book = {
   is_published: boolean;
   cover_url: string | null;
   description: string | null;
+  sort_order: number;
 };
 
 type Pack = {
