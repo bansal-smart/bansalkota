@@ -93,8 +93,7 @@ const CreateCoursePage = () => {
       setShortDesc((c.short_description as string | null) ?? "");
       setDescription(course.description ?? "");
       setDescriptionHtml((c.description_html as string | null) ?? "");
-      setExam(course.target_exam ?? "JEE");
-      setSubject(course.subject ?? "Physics");
+      setExam(course.target_exam ?? "IIT-JEE");
       setEducatorName(course.educator_name ?? "");
       setPrice(Number(course.price ?? 0));
       setOriginalPrice(Number(course.original_price ?? 0));
