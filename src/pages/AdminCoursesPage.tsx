@@ -115,7 +115,7 @@ const AdminCoursesPage = () => {
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {ConfirmDialog}
-      <div className="rounded-2xl bg-gradient-to-r from-primary via-accent to-secondary p-6 text-white flex items-start justify-between gap-4 flex-wrap">
+      <div className="rounded-2xl bg-[#1C3F8E] p-6 text-white flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-black font-display">Courses Management</h1>
           <p className="text-white/90 text-sm mt-1">Review, approve, and manage all platform courses</p>

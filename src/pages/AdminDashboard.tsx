@@ -27,7 +27,7 @@ const fetchOverview = async () => {
 
   const [
     profilesRes, coursesRes, enrollmentsRes, liveRes, attemptsRes,
-    eduRes, enqOpenRes, repRes, supportRes,
+    enqOpenRes, repRes, supportRes,
     centresRes, recentEnqRes, toppersRes,
     testsLiveRes, testsTotalRes, qbankRes,
     recentBoostRes,
@@ -37,7 +37,6 @@ const fetchOverview = async () => {
     supabase.from("enrollments").select("id, course_id, created_at").gte("created_at", thirtyDaysAgo),
     supabase.from("live_classes").select("id, title, educator_name, status, starts_at").in("status", ["live", "scheduled"]).order("starts_at", { ascending: true }).limit(8),
     supabase.from("test_attempts").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
-    supabase.from("educator_applications").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("source_type", "center_support").neq("status", "closed"),
@@ -49,6 +48,7 @@ const fetchOverview = async () => {
     supabase.from("question_bank").select("id", { count: "exact", head: true }),
     supabase.from("boost_registrations").select("id, full_name, class_level, target_exam, city, admit_card_number, payment_status, created_at").order("created_at", { ascending: false }).limit(8),
   ]);
+
 
   return {
     profiles: (profilesRes.data ?? []) as ProfileRow[],
@@ -64,7 +64,7 @@ const fetchOverview = async () => {
     questionBankCount: qbankRes.count ?? 0,
     toppersCount: toppersRes.count ?? 0,
     pending: {
-      educators: eduRes.count ?? 0,
+      educators: 0,
       enquiries: enqOpenRes.count ?? 0,
       reports: repRes.count ?? 0,
       centreSupport: supportRes.count ?? 0,
@@ -441,7 +441,7 @@ const AdminDashboard = () => {
           <div className="rounded-2xl border border-border bg-card p-4">
             <h2 className="text-sm font-bold text-foreground mb-3">Pending Approvals</h2>
             {[
-              { label: "Educator applications", count: pending.educators, link: "/admin/educator-applications", Icon: Briefcase },
+              
               { label: "Centre support", count: pending.centreSupport, link: "/admin/center-support", Icon: MessageSquareWarning },
               { label: "Reported content", count: pending.reports, link: "/admin/reports", Icon: Flag },
             ].map((a) => (

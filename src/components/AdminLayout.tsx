@@ -64,7 +64,7 @@ const baseNav: NavItem[] = [
   { label: "Leadership", icon: Users, path: "/admin/leadership" },
   { label: "Lecture Bucket", icon: Youtube, path: "/admin/lecture-bucket" },
   { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
-  { label: "Educator Applications", icon: Briefcase, path: "/admin/educator-applications" },
+  
   { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
   { label: "Campaign Landing", icon: Megaphone, path: "/admin/landing-page" },
   { label: "Campaign Leads", icon: Inbox, path: "/admin/landing-leads" },

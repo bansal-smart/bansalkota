@@ -76,7 +76,7 @@ const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
 const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
-const AdminEducatorApplicationsPage = lazy(() => import("./pages/AdminEducatorApplicationsPage"));
+
 const AdminLoginPage = lazy(() => import("./pages/AdminLoginPage"));
 const StaffDashboardPage = lazy(() => import("./pages/StaffDashboardPage"));
 const AdminEnquiriesPage = lazy(() => import("./pages/AdminEnquiriesPage"));
@@ -315,7 +315,7 @@ const App = () => (
             >
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
-              <Route path="/admin/educator-applications" element={<AdminEducatorApplicationsPage />} />
+              
               <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
               <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
