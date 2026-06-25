@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, GripVertical } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,23 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type AdminCourse = {
   id: string;
@@ -23,6 +40,110 @@ type AdminCourse = {
   lesson_count?: number;
 };
 
+const SortableRow = ({
+  c,
+  isSuperAdmin,
+  navigate,
+  togglePublish,
+  deleteCourse,
+  draggable,
+}: {
+  c: AdminCourse;
+  isSuperAdmin: boolean;
+  navigate: (path: string) => void;
+  togglePublish: (c: AdminCourse, publish: boolean) => void;
+  deleteCourse: (c: AdminCourse) => void;
+  draggable: boolean;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: c.id,
+    disabled: !draggable,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "hsl(var(--muted))" : undefined,
+  };
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+    >
+      <td className="px-2 py-3">
+        <button
+          {...attributes}
+          {...listeners}
+          className={`flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors ${
+            draggable ? "cursor-grab active:cursor-grabbing hover:bg-muted hover:text-primary" : "cursor-not-allowed opacity-30"
+          }`}
+          title={draggable ? "Drag to reorder" : "Clear search to reorder"}
+          aria-label="Drag handle"
+          type="button"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </td>
+      <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+      <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">{c.test_count ?? 0}</td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">{(c.total_enrolled ?? 0).toLocaleString()}</td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
+      <td className="px-4 py-3 text-center">
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+            c.is_published ? "bg-secondary/20 text-secondary" : "bg-amber-500/20 text-amber-600"
+          }`}
+        >
+          {c.is_published ? "Published" : "Draft"}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-center">
+        <div className="flex items-center justify-center gap-1">
+          <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
+            <Eye className="h-3.5 w-3.5" />
+          </a>
+          <button
+            onClick={() => navigate(`/admin/courses/${c.id}/edit`)}
+            className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
+            title="Edit course"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => navigate(`/admin/courses/${c.id}/content`)}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
+            title="Manage content"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+          </button>
+          {!c.is_published ? (
+            <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
+              <Check className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button onClick={() => togglePublish(c, false)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors" title="Unpublish">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {isSuperAdmin && (
+            <button
+              onClick={() => deleteCourse(c)}
+              className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors"
+              title="Delete course (super admin)"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+};
+
 const AdminCoursesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
   const { isSuperAdmin } = useAuth();
@@ -30,6 +151,12 @@ const AdminCoursesPage = () => {
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const load = async () => {
     setLoading(true);
@@ -40,7 +167,6 @@ const AdminCoursesPage = () => {
       .order("created_at", { ascending: false });
     const base = (data ?? []) as AdminCourse[];
 
-    // Fetch chapters + tests + lessons counts in parallel
     const ids = base.map((c) => c.id);
     if (ids.length) {
       const [chaptersRes, testsRes, lessonsRes] = await Promise.all([
@@ -70,7 +196,6 @@ const AdminCoursesPage = () => {
 
   useEffect(() => {
     load();
-    // Real-time sync: refresh whenever courses / chapters / lessons change
     const channel = supabase
       .channel("admin-courses-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "courses" }, () => load())
@@ -109,33 +234,35 @@ const AdminCoursesPage = () => {
     load();
   };
 
-  const move = async (c: AdminCourse, direction: -1 | 1) => {
-    // Move within the full (unfiltered) sorted list so order is globally consistent
-    const sorted = [...courses].sort(
-      (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.created_at.localeCompare(b.created_at),
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = courses.findIndex((c) => c.id === active.id);
+    const newIndex = courses.findIndex((c) => c.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const reordered = arrayMove(courses, oldIndex, newIndex).map((c, i) => ({ ...c, sort_order: i + 1 }));
+    setCourses(reordered);
+    setSavingOrder(true);
+
+    const updates = await Promise.all(
+      reordered.map((c) => supabase.from("courses").update({ sort_order: c.sort_order }).eq("id", c.id)),
     );
-    const idx = sorted.findIndex((x) => x.id === c.id);
-    const swapIdx = idx + direction;
-    if (idx < 0 || swapIdx < 0 || swapIdx >= sorted.length) return;
-    const a = sorted[idx];
-    const b = sorted[swapIdx];
-    const aOrder = a.sort_order ?? 0;
-    const bOrder = b.sort_order ?? 0;
-    // If both share the same sort_order (e.g. seeded duplicates), nudge
-    const newA = bOrder === aOrder ? aOrder + direction : bOrder;
-    const newB = bOrder === aOrder ? aOrder : aOrder;
-    const [r1, r2] = await Promise.all([
-      supabase.from("courses").update({ sort_order: newA }).eq("id", a.id),
-      supabase.from("courses").update({ sort_order: newB }).eq("id", b.id),
-    ]);
-    if (r1.error || r2.error) return toast.error((r1.error || r2.error)!.message);
-    load();
+    const firstErr = updates.find((u) => u.error);
+    setSavingOrder(false);
+    if (firstErr?.error) {
+      toast.error(firstErr.error.message);
+      load();
+    } else {
+      toast.success("Order updated");
+    }
   };
 
   const filtered = courses.filter(
     (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
   );
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
+  const draggable = !search;
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -163,6 +290,13 @@ const AdminCoursesPage = () => {
         />
       </div>
 
+      {!search && (
+        <p className="text-xs text-muted-foreground -mt-3">
+          Drag the <GripVertical className="inline h-3.5 w-3.5 align-text-bottom" /> handle to reorder courses. The new order is reflected on the public courses page automatically.
+          {savingOrder && <span className="ml-2 inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> saving…</span>}
+        </p>
+      )}
+
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {loading ? (
           <div className="flex h-40 items-center justify-center">
@@ -180,104 +314,39 @@ const AdminCoursesPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground">Order</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Lectures</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Students</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map((c) => (
-                  <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-2 py-3">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <button
-                          onClick={() => move(c, -1)}
-                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-30"
-                          title="Move up"
-                          disabled={!!search}
-                        >
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="text-[10px] text-muted-foreground tabular-nums">{c.sort_order ?? 0}</span>
-                        <button
-                          onClick={() => move(c, 1)}
-                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-30"
-                          title="Move down"
-                          disabled={!!search}
-                        >
-                          <ArrowDown className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
-                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
-                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
-                    <td className="px-4 py-3 text-center text-xs text-foreground">{c.test_count ?? 0}</td>
-                    <td className="px-4 py-3 text-center text-xs text-foreground">{(c.total_enrolled ?? 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          c.is_published ? "bg-secondary/20 text-secondary" : "bg-amber-500/20 text-amber-600"
-                        }`}
-                      >
-                        {c.is_published ? "Published" : "Draft"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
-                          <Eye className="h-3.5 w-3.5" />
-                        </a>
-                        <button
-                          onClick={() => navigate(`/admin/courses/${c.id}/edit`)}
-                          className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
-                          title="Edit course"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/admin/courses/${c.id}/content`)}
-                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
-                          title="Manage content"
-                        >
-                          <BookOpen className="h-3.5 w-3.5" />
-                        </button>
-                        {!c.is_published ? (
-                          <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
-                            <Check className="h-3.5 w-3.5" />
-                          </button>
-                        ) : (
-                          <button onClick={() => togglePublish(c, false)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors" title="Unpublish">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        {isSuperAdmin && (
-                          <button
-                            onClick={() => deleteCourse(c)}
-                            className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors"
-                            title="Delete course (super admin)"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground w-10"></th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Lectures</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Students</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <SortableContext items={paged.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  <tbody>
+                    {paged.map((c) => (
+                      <SortableRow
+                        key={c.id}
+                        c={c}
+                        isSuperAdmin={isSuperAdmin}
+                        navigate={navigate}
+                        togglePublish={togglePublish}
+                        deleteCourse={deleteCourse}
+                        draggable={draggable}
+                      />
+                    ))}
+                  </tbody>
+                </SortableContext>
+              </table>
+            </DndContext>
             <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
           </div>
         )}
