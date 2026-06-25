@@ -43,7 +43,7 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
 
   return (
     <div
-      className="relative h-[220px] sm:h-[280px] lg:h-[320px] rounded-2xl overflow-hidden bg-white"
+      className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -56,7 +56,7 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
             <img
               src={b.src}
               alt={b.alt}
-              className="h-full w-full object-contain bg-white"
+              className="h-full w-full object-cover"
               loading={i === 0 ? "eager" : "lazy"}
             />
           );
