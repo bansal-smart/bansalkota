@@ -107,13 +107,15 @@ const BookDetailPage = () => {
                 <ShoppingCart className="h-4 w-4" />
                 {book.stock === 0 ? "Out of stock" : "Add to Cart"}
               </button>
-              <Link
-                to="/e-store/checkout"
-                onClick={handleAdd}
-                className="inline-flex items-center gap-2 rounded-xl border border-[hsl(var(--bansal-orange))] px-6 py-3 font-bold text-[hsl(var(--bansal-orange))] hover:bg-[hsl(var(--bansal-orange))]/10"
-              >
-                Buy Now
-              </Link>
+              {book.stock !== 0 && (
+                <Link
+                  to="/e-store/checkout"
+                  onClick={handleAdd}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[hsl(var(--bansal-orange))] px-6 py-3 font-bold text-[hsl(var(--bansal-orange))] hover:bg-[hsl(var(--bansal-orange))]/10"
+                >
+                  Buy Now
+                </Link>
+              )}
             </div>
 
             <div className="mt-8 grid grid-cols-2 gap-3">
