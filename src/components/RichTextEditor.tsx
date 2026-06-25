@@ -69,132 +69,144 @@ const ToolbarButton = ({
 const Toolbar = ({ editor }: { editor: Editor | null }) => {
   if (!editor) return null;
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted/40 p-1">
-      <ToolbarButton
-        active={editor.isActive("bold")}
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        label="Bold"
-      >
-        <Bold className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("italic")}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        label="Italic"
-      >
-        <Italic className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("underline")}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-        label="Underline"
-      >
-        <UnderlineIcon className="h-4 w-4" />
-      </ToolbarButton>
-      <div className="mx-1 h-5 w-px bg-border" />
-      <ToolbarButton
-        active={editor.isActive("heading", { level: 2 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        label="Heading 2"
-      >
-        <Heading2 className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("heading", { level: 3 })}
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        label="Heading 3"
-      >
-        <Heading3 className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("bulletList")}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        label="Bullet list"
-      >
-        <List className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("orderedList")}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        label="Numbered list"
-      >
-        <ListOrdered className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        active={editor.isActive("blockquote")}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        label="Quote"
-      >
-        <Quote className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        label="Divider"
-      >
-        <Minus className="h-4 w-4" />
-      </ToolbarButton>
-      <div className="mx-1 h-5 w-px bg-border" />
-      <ToolbarButton
-        onClick={() =>
-          editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
-        }
-        label="Insert table"
-      >
-        <TableIcon className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().addRowAfter().run()}
-        label="Add row"
-      >
-        <Rows3 className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().addColumnAfter().run()}
-        label="Add column"
-      >
-        <Columns3 className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().deleteColumn().run()}
-        label="Delete column"
-      >
-        <MinusSquare className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().deleteRow().run()}
-        label="Delete row"
-      >
-        <Trash2 className="h-4 w-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        onClick={() => editor.chain().focus().deleteTable().run()}
-        label="Delete table"
-      >
-        <Trash className="h-4 w-4" />
-      </ToolbarButton>
-      <div className="ml-auto flex items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => editor.chain().focus().undo().run()}
-          aria-label="Undo"
+    <TooltipProvider delayDuration={300}>
+      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted/40 p-1">
+        <ToolbarButton
+          active={editor.isActive("bold")}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          label="Bold"
         >
-          <Undo2 className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => editor.chain().focus().redo().run()}
-          aria-label="Redo"
+          <Bold className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("italic")}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          label="Italic"
         >
-          <Redo2 className="h-4 w-4" />
-        </Button>
+          <Italic className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("underline")}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          label="Underline"
+        >
+          <UnderlineIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <div className="mx-1 h-5 w-px bg-border" />
+        <ToolbarButton
+          active={editor.isActive("heading", { level: 2 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          label="Heading 2"
+        >
+          <Heading2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("heading", { level: 3 })}
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          label="Heading 3"
+        >
+          <Heading3 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("bulletList")}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          label="Bullet list"
+        >
+          <List className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("orderedList")}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          label="Numbered list"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("blockquote")}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          label="Quote"
+        >
+          <Quote className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          label="Divider"
+        >
+          <Minus className="h-4 w-4" />
+        </ToolbarButton>
+        <div className="mx-1 h-5 w-px bg-border" />
+        <ToolbarButton
+          onClick={() =>
+            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+          }
+          label="Insert table"
+        >
+          <TableIcon className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().addRowAfter().run()}
+          label="Add row"
+        >
+          <Rows3 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().addColumnAfter().run()}
+          label="Add column"
+        >
+          <Columns3 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().deleteColumn().run()}
+          label="Delete column"
+        >
+          <MinusSquare className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().deleteRow().run()}
+          label="Delete row"
+        >
+          <Trash2 className="h-4 w-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().deleteTable().run()}
+          label="Delete table"
+        >
+          <Trash className="h-4 w-4" />
+        </ToolbarButton>
+        <div className="ml-auto flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => editor.chain().focus().undo().run()}
+                aria-label="Undo"
+              >
+                <Undo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Undo</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => editor.chain().focus().redo().run()}
+                aria-label="Redo"
+              >
+                <Redo2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Redo</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 
