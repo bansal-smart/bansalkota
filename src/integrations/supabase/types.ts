@@ -419,6 +419,47 @@ export type Database = {
           },
         ]
       }
+      centre_carousel_banners: {
+        Row: {
+          centre_id: string
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          centre_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          centre_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_carousel_banners_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centre_course_enquiries: {
         Row: {
           centre_id: string
