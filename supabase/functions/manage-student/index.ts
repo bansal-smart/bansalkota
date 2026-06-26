@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       if (!user_id) return json(400, { error: "user_id required" });
       if (!(await ensureStudent(user_id))) return json(403, { error: "Target is not a student" });
 
-      const allowed = ["full_name", "phone", "parent_phone", "target_exam", "class_level", "city", "country", "plan", "goal"];
+      const allowed = ["full_name", "father_name", "roll_number", "dob", "phone", "parent_phone", "target_exam", "class_level", "city", "country", "plan", "goal", "centre_id", "batch_id", "batch_label"];
       const update: Record<string, unknown> = { user_id };
       for (const k of allowed) {
         if (body?.[k] !== undefined) update[k] = body[k];
