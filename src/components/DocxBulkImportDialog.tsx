@@ -131,6 +131,7 @@ const DocxBulkImportDialog = ({
       }
       setQuestions(result.questions);
       setWarnings(result.warnings);
+      setDetectedOptionStyle(result.detectedOptionStyle);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
