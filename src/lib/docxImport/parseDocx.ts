@@ -119,6 +119,8 @@ export type ParseResult = {
   questions: ParsedDocxQuestion[];
   warnings: string[];
   totalImages: number;
+  /** Detected option label style from option markers in the source docx. */
+  detectedOptionStyle: "numeric" | "alpha" | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -622,8 +624,18 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const looksLikeNumberOnly = (text: string) =>
     /^\s*\d{1,3}\s*[.)]\s*$/.test(text);
 
+  let numericOptionHits = 0;
+  let alphaOptionHits = 0;
+  const tallyOptionKeys = () => {
+    for (const o of buf.options) {
+      if (/^[1-4]$/.test(o.key)) numericOptionHits += 1;
+      else if (/^[A-Da-d]$/.test(o.key)) alphaOptionHits += 1;
+    }
+  };
+
   const flushAndReset = () => {
     ordinal += 1;
+    tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
     buf = newBuffer(null, currentSection);
     if (pendingTopic) {
@@ -802,11 +814,14 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   // Flush final question
   if (seenFirstNumber) {
     ordinal += 1;
+    tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
   }
 
-
-
   const totalImages = out.reduce((s, q) => s + q.images.length, 0);
-  return { questions: out, warnings, totalImages };
+  let detectedOptionStyle: "numeric" | "alpha" | null = null;
+  if (numericOptionHits + alphaOptionHits >= 2) {
+    detectedOptionStyle = numericOptionHits > alphaOptionHits ? "numeric" : "alpha";
+  }
+  return { questions: out, warnings, totalImages, detectedOptionStyle };
 };

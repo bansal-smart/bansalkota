@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Printer, Sparkles, XCirc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TestImage } from "@/components/test/TestImage";
+import { optionLabel, resolveOptionStyle, type OptionLabelStyle } from "@/lib/optionLabel";
 
 type ResponseQuestion = {
   id: string;
@@ -36,7 +37,7 @@ type SheetData = {
   questions: ResponseQuestion[];
 };
 
-const optionLetter = (i: number) => String.fromCharCode(65 + i);
+// Per-test option labelling style is resolved in the component once the test row loads.
 
 const stringifyAnswer = (val: any): string => {
   if (val == null) return "—";
@@ -66,6 +67,8 @@ const TestResponseSheetPage = () => {
   const [data, setData] = useState<SheetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "unattempted">("all");
+  const [optStyle, setOptStyle] = useState<OptionLabelStyle>("alpha");
+  const optionLetter = (i: number) => optionLabel(i, optStyle);
 
   useEffect(() => {
     let alive = true;
@@ -81,6 +84,15 @@ const TestResponseSheetPage = () => {
         return;
       }
       setData(res as SheetData);
+      const testId = (res as SheetData | null)?.test_id;
+      if (testId) {
+        const { data: tRow } = await supabase
+          .from("tests")
+          .select("option_label_style, exam_pattern")
+          .eq("id", testId)
+          .maybeSingle();
+        setOptStyle(resolveOptionStyle(tRow as any));
+      }
       setLoading(false);
     })();
     return () => { alive = false; };

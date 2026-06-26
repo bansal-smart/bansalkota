@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
 import MathRenderer from "@/components/MathRenderer";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
+import { optionLabel, resolveOptionStyle, type OptionLabelStyle } from "@/lib/optionLabel";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -42,6 +43,7 @@ const TestSubjectBreakdownPage = () => {
   const [answers, setAnswers] = useState<Record<string, { selected: any }>>({});
   const [subjectName, setSubjectName] = useState<string>(subject ?? "");
   const [testName, setTestName] = useState<string>("");
+  const [optStyle, setOptStyle] = useState<OptionLabelStyle>("alpha");
 
   useEffect(() => {
     if (!attemptId || !subject) return;
@@ -59,13 +61,15 @@ const TestSubjectBreakdownPage = () => {
       setTestName(att.test_name ?? "");
       setAnswers((att.answers ?? {}) as Record<string, { selected: any }>);
 
-      const [qsRes, ansRes] = await Promise.all([
+      const [qsRes, ansRes, testRes] = await Promise.all([
         supabase
           .from("test_questions")
           .select("id, subject, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong")
           .eq("test_id", att.test_id),
         supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
+        supabase.from("tests").select("option_label_style, exam_pattern").eq("id", att.test_id).maybeSingle(),
       ]);
+      setOptStyle(resolveOptionStyle(testRes.data as any));
       if (cancelled) return;
       const ansMap = new Map<string, { correct_answer: any; explanation: string | null }>(
         ((ansRes.data ?? []) as any[]).map((a) => [a.id, { correct_answer: a.correct_answer, explanation: a.explanation }]),
@@ -203,7 +207,7 @@ const TestSubjectBreakdownPage = () => {
                             : "border-border text-muted-foreground"
                         }`}
                       >
-                        <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
+                        <span className="mr-2 font-bold">{optionLabel(opt.id, optStyle)}.</span>
                         <MathRenderer content={opt.text} inline />
                         {optImg && (
                           <img src={optImg} alt="" className="mt-1.5 max-h-24 rounded border border-border" />

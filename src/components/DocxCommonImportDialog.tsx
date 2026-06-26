@@ -101,6 +101,7 @@ const DocxCommonImportDialog = ({
 
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
+  const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
 
   const subjectForNumber = (n: number): string => {
     // Iterate in reverse so the most-recently-added (typically narrower / more
@@ -183,6 +184,7 @@ const DocxCommonImportDialog = ({
       }
       setQuestions(result.questions);
       setWarnings(result.warnings);
+      setDetectedOptionStyle(result.detectedOptionStyle);
       const nums = result.questions.map((q) => q.number).filter((n) => Number.isFinite(n));
       const minN = nums.length ? Math.min(...nums) : 1;
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
@@ -381,8 +383,18 @@ const DocxCommonImportDialog = ({
 
     try {
       if (target === "test" && targetTestId) {
-        // Mark the test as common-method
-        await supabase.from("tests").update({ import_method: "common" } as any).eq("id", targetTestId);
+        // Mark the test as common-method; also pin the detected option label style if not set yet.
+        const update: Record<string, unknown> = { import_method: "common" };
+        if (detectedOptionStyle) {
+          const { data: tRow } = await supabase
+            .from("tests")
+            .select("option_label_style")
+            .eq("id", targetTestId)
+            .maybeSingle();
+          if (!(tRow as any)?.option_label_style) update.option_label_style = detectedOptionStyle;
+        }
+        await supabase.from("tests").update(update as any).eq("id", targetTestId);
+
 
         // Dedupe: skip questions whose stem already exists in this test from the same file
         const { data: existingDup } = await supabase

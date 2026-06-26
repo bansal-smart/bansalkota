@@ -1,63 +1,65 @@
-## 1. Remove "NTSE" globally
+# Dynamic Option Label Style (NEET-style "1,2,3,4" vs JEE-style "A,B,C,D")
 
-Strip the word "NTSE" (and "NTSE / Olympiads" / "NTSE, KVPY, ...") from all user-facing copy:
+Today every UI hard-codes `String.fromCharCode(65 + i)` so options always render as A, B, C, D. The .docx importer already understands both `(1)…(4)` and `(A)…(D)` markers, but that information is thrown away. We'll preserve it, combine it with the test's exam pattern, and use it everywhere options are shown.
 
-- `src/pages/CenterDetailPage.tsx` — Foundation program desc.
-- `src/pages/BoostPage.tsx` — target row + FAQ answer.
-- `src/components/BoostRegistrationModal.tsx` — `EXAMS` list (drop "NTSE").
-- `src/pages/AdminBooksPage.tsx` — `TARGET_EXAMS` list (replace "NTSE / Olympiads" → "Olympiads").
-- `src/pages/AdminToppersPage.tsx` — placeholder text.
+## 1. Data
 
-Replacements keep surrounding items intact (e.g. "Olympiads, JEE, NEET").
+Add to `public.tests`:
+- `option_label_style text` — `'numeric' | 'alpha'`, nullable. When null we infer from `exam_pattern` at render time (NEET → numeric, everything else → alpha).
 
-## 2. Centres count "Showing 85 of 78"
+(No change to `test_questions` / `question_bank`. Style is a paper-level decision, not per-question, which matches NEET/JEE reality.)
 
-`src/pages/CentersPage.tsx` line 71 still uses a static `CENTER_COUNT - 1` from `@/data/centres` (the legacy 88-entry file). Fix:
+## 2. Importer — detect from the .docx
 
-- Drive the hero stat (`{CENTER_COUNT}+ Centres`) and the subheading number from `CENTERS.length` (already done for the chip).
-- Replace `STATE_COUNT` import with a derived unique-state count from the live `CENTERS` array so deleting centres updates state count too.
-- Line 121 "Showing X of Y" already uses live count — verify no stale source remains.
+`src/lib/docxImport/parseDocx.ts` and `parseCommonDocx.ts`:
+- While parsing options, count how many option markers were `(1)/1./1)` vs `(A)/A./A)`.
+- Return a `detectedOptionStyle: 'numeric' | 'alpha' | null` alongside the parsed questions.
 
-## 3. Remove floating "S" dropcap
+`src/components/DocxBulkImportDialog.tsx`, `DocxCommonImportDialog.tsx`, `BulkQuestionUploadDialog.tsx`:
+- Pass `detectedOptionStyle` up to `CreateTestPage` via the existing `afterImport` callback / save path.
+- When saving the test, set `option_label_style` using this precedence:
+  1. Admin's explicit choice in the test form (new dropdown, see §4)
+  2. Style detected from the imported docx
+  3. Leave null → falls back to exam_pattern inference
 
-`src/pages/LeadershipDetailPage.tsx` line 211 uses Tailwind `first-letter:*` utilities to render the oversized orange "S". Remove those utility classes so the paragraph is plain body text.
+Also display the detected style in the import preview (so admin sees "Options detected: 1, 2, 3, 4").
 
-## 4. Globalize Class dropdown (Class 6 → Dropper)
+## 3. Render helper
 
-Create a shared constant `CLASS_LEVELS = ["Class 6", … "Class 12", "Dropper"]` in `src/lib/constants.ts` and use it everywhere a class picker exists:
+New `src/lib/optionLabel.ts`:
 
-- `src/components/CourseEnquiryDialog.tsx` (already 6→Dropper, switch to shared constant)
-- `src/components/CenterOfflineSections.tsx` (currently starts at Class 8 — this is the Admission Enquiry modal in the screenshot)
-- `src/components/landing/LandingCTAForm.tsx` (currently "Class 6-8" grouped — replace with individual 6..Dropper)
-- `src/components/landing/LeadForm.tsx` (uses Dropper variants — normalize to shared list)
-- `src/components/BoostRegistrationModal.tsx`, `src/components/ProfileCompletionDialog.tsx`, `src/pages/SignupPage.tsx`, `src/pages/ProfilePage.tsx`, `src/pages/AdmissionsPage.tsx`, `src/pages/AdminStudentsPage.tsx`, `src/pages/AdminBatchesPage.tsx`, `src/pages/CenterStudentsPage.tsx` — audit each and align to the shared list where the field represents the student's class.
+```ts
+export type OptionLabelStyle = 'numeric' | 'alpha';
+export const resolveOptionStyle = (
+  test: { option_label_style?: string | null; exam_pattern?: string | null }
+): OptionLabelStyle =>
+  test.option_label_style === 'numeric' || test.option_label_style === 'alpha'
+    ? test.option_label_style
+    : (test.exam_pattern ?? '').toUpperCase().includes('NEET') ? 'numeric' : 'alpha';
+export const optionLabel = (i: number, style: OptionLabelStyle) =>
+  style === 'numeric' ? String(i + 1) : String.fromCharCode(65 + i);
+```
 
-## 5. Editable centre facilities + stat cards
+Replace every hard-coded `String.fromCharCode(65 + i)` for MCQ options with `optionLabel(i, style)`. Files touched:
 
-Currently `FACILITIES` array and the two stat cards ("Students mentored", "Selections (2024)") are hard-coded in `CenterDetailPage.tsx`. Make them per-centre and editable from admin.
+- `src/pages/TestTakingPage.tsx` (lines 1036, 1056) — student attempt screen
+- `src/pages/TestResponseSheetPage.tsx` (`optionLetter`)
+- `src/pages/TestSubjectBreakdownPage.tsx` (line 206)
+- `src/pages/AdminTestResultPage.tsx` (lines 770, 772, 784) — uses test row already in scope
+- `src/pages/CreateTestPage.tsx` (line 1425) — editor preview
+- `src/components/QuestionEditorDialog.tsx` (lines 182, 372) — accept `style` prop from caller
+- `src/components/DocxBulkImportDialog.tsx` (line 763), `BulkQuestionUploadDialog.tsx` (line 470), `DocxCommonImportDialog.tsx` (line 251) — use detected style in preview
 
-### Schema (migration)
+Match-following labels (P, Q, R, S) and chapter-quiz screens stay as-is — they aren't part of this request.
 
-Add to `public.centres`:
-- `facilities text[] not null default '{}'` — chips shown under Centre details.
-- `students_mentored text` — e.g. "10,000+".
-- `students_mentored_note text` — e.g. "Across Bansal network".
-- `selections_count text` — e.g. "2,500+".
-- `selections_year integer` — e.g. 2024 (drives card title "Selections (2024)").
-- `selections_note text` — e.g. "JEE & NEET combined".
+## 4. Admin control
 
-### Admin (`src/pages/AdminCentersPage.tsx`)
+In `CreateTestPage.tsx` settings panel, next to `exam_pattern`, add a small select:
 
-In the create/edit centre modal add:
-- A chip input (or comma-separated text → array) for `facilities` with suggestions: AC classrooms, Doubt clinics, Library & reading hall, Mock test infrastructure, Mentor support, Parent-teacher meets, In-house CBT.
-- Inputs for `students_mentored`, `students_mentored_note`, `selections_count`, `selections_year`, `selections_note`.
+> **Option label style** — Auto (follow exam pattern) · 1, 2, 3, 4 · A, B, C, D
 
-### Frontend (`src/pages/CenterDetailPage.tsx`)
+"Auto" stores null. Default is Auto so existing tests pick up NEET→numeric / JEE→alpha automatically without any admin work.
 
-- Read the new fields from the centre row (extend `DBCenter` in `src/hooks/useCenters.ts`).
-- Render facility chips from `center.facilities`; hide the section if the array is empty.
-- Stat cards use the centre's own numbers; fall back to current defaults only when unset.
+## 5. Outcome
 
-## Out of scope
-
-No changes to courses, books storefront, or other admin pages beyond the small NTSE label tweaks listed above.
+For the uploaded `NEET.docx`: exam pattern = NEET *and* importer detects numeric markers → test is saved with `option_label_style='numeric'` → student sees `1.` `2.` `3.` `4.` everywhere (taking the test, response sheet, admin result view). A JEE docx with `(A)…(D)` continues to render as A/B/C/D. Admin can always force one style from the test settings.

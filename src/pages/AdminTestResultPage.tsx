@@ -9,12 +9,14 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import bansalLogoAsset from "@/assets/bansal-logo.webp.asset.json";
 const bansalLogo = bansalLogoAsset.url;
+import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 
 type TestRow = {
   id: string;
   title: string;
   slug: string;
   exam_pattern: string;
+  option_label_style?: string | null;
   subjects: string[] | null;
   total_marks: number;
   duration_minutes: number;
@@ -100,7 +102,7 @@ const AdminTestResultPage = () => {
     setError(null);
     const { data: t, error: tErr } = await supabase
       .from("tests")
-      .select("id, title, slug, exam_pattern, subjects, total_marks, duration_minutes, starts_at, ends_at, results_released_at, auto_release, cbt_allowed_batch_ids")
+      .select("id, title, slug, exam_pattern, option_label_style, subjects, total_marks, duration_minutes, starts_at, ends_at, results_released_at, auto_release, cbt_allowed_batch_ids")
       .eq("slug", slug)
       .maybeSingle();
     if (tErr || !t) {
@@ -763,13 +765,14 @@ const AdminTestResultPage = () => {
         drawFooter();
         const answers = (att.answers ?? {}) as Record<string, { selected: any }>;
         const perQ: any[] = ((att as any)?.metadata?.questions as any[]) ?? [];
+        const labelStyle = resolveOptionStyle(test);
         const fmtOptionLabel = (val: any, opts: any): string => {
           if (Array.isArray(opts) && typeof val === "number" && opts[val] != null) {
             const o = opts[val];
             const txt = typeof o === "string" ? o : (o?.text ?? "");
-            return `${String.fromCharCode(65 + val)}${txt ? ". " + String(txt).slice(0, 60) : ""}`;
+            return `${optionLabel(val, labelStyle)}${txt ? ". " + String(txt).slice(0, 60) : ""}`;
           }
-          return `${String.fromCharCode(65 + Number(val))}`;
+          return `${optionLabel(Number(val), labelStyle)}`;
         };
         const fmtAns = (val: any, opts: any, qType: string): string => {
           if (val === null || val === undefined || val === "") return "—";
@@ -781,7 +784,7 @@ const AdminTestResultPage = () => {
           // mcq-multi (array of indices)
           if (Array.isArray(val)) {
             return [...val]
-              .map((v) => (typeof v === "number" ? String.fromCharCode(65 + v) : String(v)))
+              .map((v) => (typeof v === "number" ? optionLabel(v, labelStyle) : String(v)))
               .sort()
               .join(", ");
           }

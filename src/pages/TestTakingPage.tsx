@@ -9,6 +9,7 @@ import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape
 import CandidateCard from "@/components/test/CandidateCard";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 import ReportQuestionButton from "@/components/test/ReportQuestionButton";
+import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 
 type QuestionType =
   | "mcq-single"
@@ -57,7 +58,7 @@ const TestTakingPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number } | null>(null);
+  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number; option_label_style?: string | null; exam_pattern?: string | null } | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
@@ -129,7 +130,7 @@ const TestTakingPage = () => {
       setLoading(true);
       const { data: t } = await supabase
         .from("tests")
-        .select("id, title, duration_minutes, total_questions, instructions_image_url")
+        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       // Legacy instruction images were saved as `/object/public/question-images/...`
@@ -1033,7 +1034,7 @@ const TestTakingPage = () => {
                           {selected && <CheckCircle2 className="h-3 w-3" />}
                         </span>
                         <div className="flex-1">
-                          <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
+                          <span className="font-bold mr-1">{optionLabel(opt.id, resolveOptionStyle(test))}.</span>
                           <MathRenderer content={opt.text} inline />
                           {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
                         </div>
@@ -1053,7 +1054,7 @@ const TestTakingPage = () => {
                           {selected && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
                         </span>
                         <div className="flex-1">
-                          <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
+                          <span className="font-bold mr-1">{optionLabel(opt.id, resolveOptionStyle(test))}.</span>
                           <MathRenderer content={opt.text} inline />
                           {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
                         </div>

@@ -1,0 +1,1 @@
+ALTER TABLE public.tests ADD COLUMN IF NOT EXISTS option_label_style text CHECK (option_label_style IN ('numeric','alpha'));

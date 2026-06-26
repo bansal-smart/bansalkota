@@ -150,6 +150,7 @@ const CreateTestPage = () => {
   const [uploadingInstructions, setUploadingInstructions] = useState(false);
   const [testType, setTestType] = useState("mock");
   const [examPattern, setExamPattern] = useState("jee-main");
+  const [optionLabelStyle, setOptionLabelStyle] = useState<"auto" | "numeric" | "alpha">("auto");
   const [duration, setDuration] = useState(180);
   const [correctMarks, setCorrectMarks] = useState(4);
   const [wrongMarks, setWrongMarks] = useState(-1);
@@ -255,6 +256,8 @@ const CreateTestPage = () => {
       }
       setTestType(test.test_type ?? "mock");
       setExamPattern(test.exam_pattern ?? "jee-main");
+      const styleRaw = (test as { option_label_style?: string | null }).option_label_style;
+      setOptionLabelStyle(styleRaw === "numeric" || styleRaw === "alpha" ? styleRaw : "auto");
       setDuration(test.duration_minutes ?? 180);
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
@@ -530,6 +533,7 @@ const CreateTestPage = () => {
         instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
         test_type: testType,
         exam_pattern: examPattern,
+        option_label_style: optionLabelStyle === "auto" ? null : optionLabelStyle,
         subjects: [],
         duration_minutes: duration,
         correct_marks: correctMarks,
@@ -624,6 +628,7 @@ const CreateTestPage = () => {
           instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
           test_type: testType,
           exam_pattern: examPattern,
+          option_label_style: optionLabelStyle === "auto" ? null : optionLabelStyle,
           duration_minutes: duration,
           correct_marks: correctMarks,
           wrong_marks: wrongMarks,
@@ -696,6 +701,7 @@ const CreateTestPage = () => {
       instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
       test_type: testType,
       exam_pattern: examPattern,
+      option_label_style: optionLabelStyle === "auto" ? null : optionLabelStyle,
       subjects,
       duration_minutes: duration,
       correct_marks: correctMarks,
@@ -970,6 +976,22 @@ const CreateTestPage = () => {
             </select>
           </div>
         </div>
+        <div>
+          <label className={labelCls}>Option Label Style</label>
+          <select
+            value={optionLabelStyle}
+            onChange={(e) => setOptionLabelStyle(e.target.value as "auto" | "numeric" | "alpha")}
+            className={inputCls}
+          >
+            <option value="auto">Auto (NEET → 1,2,3,4 · others → A,B,C,D)</option>
+            <option value="numeric">Numeric (1, 2, 3, 4)</option>
+            <option value="alpha">Alphabetic (A, B, C, D)</option>
+          </select>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Controls how MCQ options are labelled to students. When you bulk-import a .docx whose options are written as (1)(2)(3)(4) this is detected automatically.
+          </p>
+        </div>
+
 
         <div>
           <label className={labelCls}>Associate with Course</label>
