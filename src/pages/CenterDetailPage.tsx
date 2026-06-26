@@ -361,6 +361,13 @@ export default function CenterDetailPage() {
           </div>
         </div>
       </section>
+      {dbCenter?.id && enquiryOpen && (
+        <AdmissionEnquiryModal
+          centerId={dbCenter.id}
+          centerCity={displayName}
+          onClose={() => setEnquiryOpen(false)}
+        />
+      )}
     </div>
   );
 }
