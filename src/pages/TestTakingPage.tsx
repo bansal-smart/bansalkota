@@ -57,7 +57,7 @@ const TestTakingPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number } | null>(null);
+  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number; option_label_style?: string | null; exam_pattern?: string | null } | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
