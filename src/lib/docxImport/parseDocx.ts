@@ -119,6 +119,8 @@ export type ParseResult = {
   questions: ParsedDocxQuestion[];
   warnings: string[];
   totalImages: number;
+  /** Detected option label style from option markers in the source docx. */
+  detectedOptionStyle: "numeric" | "alpha" | null;
 };
 
 // ---------------------------------------------------------------------------
