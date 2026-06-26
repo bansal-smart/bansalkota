@@ -574,7 +574,7 @@ const AdminStudentsPage = () => {
                     <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.dob ? new Date(u.dob).toLocaleDateString() : "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
-                    <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.batch_name || u.batch_label || "—"}</td>
+                    <td className="p-3 hidden lg:table-cell text-muted-foreground truncate max-w-[140px]">{u.batch_name || u.batch_label || "—"}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[140px]">{u.centre_name || "—"}</td>
                     <td className="p-3">
                       {u.is_suspended ? (
