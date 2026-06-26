@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -22,7 +22,7 @@ import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centres";
 import { useCenters } from "@/hooks/useCenters";
-import CenterOfflineSections from "@/components/CenterOfflineSections";
+import CenterOfflineSections, { AdmissionEnquiryModal } from "@/components/CenterOfflineSections";
 import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
 
 const PROGRAMS = [
