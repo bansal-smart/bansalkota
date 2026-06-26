@@ -388,6 +388,20 @@ const DocxBulkImportDialog = ({
 
         okCount = Math.max(okCount, testRows.length);
         toast.success(`Pushed ${testRows.length} question${testRows.length === 1 ? "" : "s"} into the test.`);
+        // Persist the detected option label style if the test hasn't been pinned yet.
+        if (detectedOptionStyle) {
+          const { data: tRow } = await supabase
+            .from("tests")
+            .select("option_label_style")
+            .eq("id", selectedTestId)
+            .maybeSingle();
+          if (!(tRow as any)?.option_label_style) {
+            await supabase
+              .from("tests")
+              .update({ option_label_style: detectedOptionStyle } as any)
+              .eq("id", selectedTestId);
+          }
+        }
         await syncTestStats(selectedTestId);
       } catch (err: any) {
         failCount = questions.length;
