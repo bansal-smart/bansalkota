@@ -147,6 +147,26 @@ export default function CenterDetailPage() {
 
       <section className="py-12">
         <div className="container mx-auto px-4 max-w-5xl">
+          {dbCenter?.id && (
+            <div className="mb-10">
+              <CentreCarousel centerId={dbCenter.id} />
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  to={`/centres/${slug}/gallery`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-bansal-orange/40 bg-white px-4 py-2 text-sm font-bold text-bansal-orange hover:bg-bansal-orange hover:text-white transition-colors"
+                >
+                  View full gallery <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to={`/centres/${slug}/updates`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-bansal-orange/40 bg-white px-4 py-2 text-sm font-bold text-bansal-orange hover:bg-bansal-orange hover:text-white transition-colors"
+                >
+                  All updates & feed <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Programs */}
           <div>
             <h2 className="font-display text-2xl font-bold text-bansal-black mb-2">
