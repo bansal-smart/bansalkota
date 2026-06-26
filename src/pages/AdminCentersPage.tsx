@@ -358,6 +358,120 @@ const AdminCentersPage = () => {
           <label className="flex items-center gap-2 text-sm md:col-span-1"><input type="checkbox" checked={!!form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} /> Flagship (homepage highlight)</label>
           <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Flagship order (1 = first)" value={form.featured_rank ?? ("" as any)} onChange={(e) => setForm({ ...form, featured_rank: e.target.value === "" ? null : Number(e.target.value) })} />
         </div>
+
+        {/* Centre-level details */}
+        <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4">
+          <p className="mb-3 text-sm font-bold text-bansal-black">Centre details (shown on detail page)</p>
+          <div className="grid gap-3 md:grid-cols-3">
+            <input
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="Students mentored (e.g. 1L+)"
+              value={(form.students_mentored as string) ?? ""}
+              onChange={(e) => setForm({ ...form, students_mentored: e.target.value })}
+            />
+            <input
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-2"
+              placeholder="Students mentored note (e.g. Since 1991)"
+              value={(form.students_mentored_note as string) ?? ""}
+              onChange={(e) => setForm({ ...form, students_mentored_note: e.target.value })}
+            />
+            <input
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="Selections count (e.g. 2,500+)"
+              value={(form.selections_count as string) ?? ""}
+              onChange={(e) => setForm({ ...form, selections_count: e.target.value })}
+            />
+            <input
+              type="number"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="Selections year (e.g. 2024)"
+              value={(form.selections_year as any) ?? ""}
+              onChange={(e) =>
+                setForm({ ...form, selections_year: e.target.value === "" ? null : Number(e.target.value) })
+              }
+            />
+            <input
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="Selections note (e.g. JEE & NEET combined)"
+              value={(form.selections_note as string) ?? ""}
+              onChange={(e) => setForm({ ...form, selections_note: e.target.value })}
+            />
+          </div>
+          <div className="mt-4">
+            <label className="text-xs font-bold text-muted-foreground">
+              Facilities (tick the ones available at this centre)
+            </label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {FACILITY_SUGGESTIONS.map((f) => {
+                const current = (form.facilities as string[]) ?? [];
+                const active = current.includes(f);
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        facilities: active ? current.filter((x) => x !== f) : [...current, f],
+                      })
+                    }
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                      active
+                        ? "border-bansal-blue bg-bansal-blue text-white"
+                        : "border-border bg-background text-muted-foreground hover:border-bansal-blue/40"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder="Add custom facilities (comma separated) and press Enter"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const val = (e.target as HTMLInputElement).value;
+                  const extras = val.split(",").map((s) => s.trim()).filter(Boolean);
+                  if (extras.length) {
+                    const current = (form.facilities as string[]) ?? [];
+                    const merged = Array.from(new Set([...current, ...extras]));
+                    setForm({ ...form, facilities: merged });
+                    (e.target as HTMLInputElement).value = "";
+                  }
+                }
+              }}
+            />
+            {((form.facilities as string[]) ?? []).filter((f) => !FACILITY_SUGGESTIONS.includes(f)).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {((form.facilities as string[]) ?? [])
+                  .filter((f) => !FACILITY_SUGGESTIONS.includes(f))
+                  .map((f) => (
+                    <span
+                      key={f}
+                      className="inline-flex items-center gap-1 rounded-full bg-bansal-blue/10 px-3 py-1 text-xs font-semibold text-bansal-blue"
+                    >
+                      {f}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm({
+                            ...form,
+                            facilities: ((form.facilities as string[]) ?? []).filter((x) => x !== f),
+                          })
+                        }
+                        className="text-bansal-blue/60 hover:text-bansal-blue"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
             <label className="text-xs font-bold text-muted-foreground">Centre image</label>
