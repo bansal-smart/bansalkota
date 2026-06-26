@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Search, Eye, Loader2 } from "lucide-react";
+import { Search, Eye, Loader2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePagination } from "@/hooks/usePagination";
+import CenterCourseStudentsDialog from "@/components/CenterCourseStudentsDialog";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import TablePagination from "@/components/TablePagination";
 
 type PlatformCourse = {
