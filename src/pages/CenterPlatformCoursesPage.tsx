@@ -22,9 +22,11 @@ type PlatformCourse = {
 };
 
 const CenterPlatformCoursesPage = () => {
+  const { primaryCenterId } = useCenterAdmin();
   const [courses, setCourses] = useState<PlatformCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [manageCourse, setManageCourse] = useState<{ id: string; name: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
