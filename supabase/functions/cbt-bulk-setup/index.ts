@@ -140,10 +140,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Cache existing auth users by email
-    const { data: usersList } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    // 4. Cache existing auth users by email (paginate up to 10k; fall back to per-row create-or-update on error)
     const emailToId = new Map<string, string>();
-    (usersList?.users ?? []).forEach((u) => { if (u.email) emailToId.set(u.email.toLowerCase(), u.id); });
+    try {
+      for (let page = 1; page <= 10; page++) {
+        const { data: usersList, error: luErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+        if (luErr) break;
+        const users = usersList?.users ?? [];
+        users.forEach((u) => { if (u.email) emailToId.set(u.email.toLowerCase(), u.id); });
+        if (users.length < 1000) break;
+      }
+    } catch (_) { /* fall back to per-row handling */ }
 
     const results: Array<Record<string, unknown>> = [];
 
