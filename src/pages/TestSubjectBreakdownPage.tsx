@@ -207,7 +207,7 @@ const TestSubjectBreakdownPage = () => {
                             : "border-border text-muted-foreground"
                         }`}
                       >
-                        <span className="mr-2 font-bold">{String.fromCharCode(65 + opt.id)}.</span>
+                        <span className="mr-2 font-bold">{optionLabel(opt.id, optStyle)}.</span>
                         <MathRenderer content={opt.text} inline />
                         {optImg && (
                           <img src={optImg} alt="" className="mt-1.5 max-h-24 rounded border border-border" />
