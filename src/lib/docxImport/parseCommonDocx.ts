@@ -29,6 +29,7 @@ export type CommonParseResult = {
   questions: ParsedDocxQuestion[];
   warnings: string[];
   totalImages: number;
+  detectedOptionStyle: "numeric" | "alpha" | null;
 };
 
 const stripTags = (html: string) => {
