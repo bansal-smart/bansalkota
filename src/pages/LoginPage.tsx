@@ -133,8 +133,19 @@ const LoginPage = () => {
       const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
         body: { phone: `+91${mobile}`, otp: code, purpose: "login" },
       });
-      if (error || !data?.token_hash || !data?.email) {
-        throw new Error(error?.message || "Could not verify OTP");
+      if (error) {
+        let msg = error.message || "Could not verify OTP";
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore parse error */ }
+        }
+        throw new Error(msg);
+      }
+      if (!data?.token_hash || !data?.email) {
+        throw new Error("Could not verify OTP");
       }
       const verify = await supabase.auth.verifyOtp({
         type: "magiclink", token_hash: data.token_hash,
