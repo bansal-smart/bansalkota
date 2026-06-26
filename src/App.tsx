@@ -142,6 +142,7 @@ const CenterContentPage = lazy(() => import("./pages/CenterContentPage"));
 const CenterGalleryPage = lazy(() => import("./pages/CenterGalleryPage"));
 const CenterUpdatesPage = lazy(() => import("./pages/CenterUpdatesPage"));
 const CenterCoursesPage = lazy(() => import("./pages/CenterCoursesPage"));
+const CenterPlatformCoursesPage = lazy(() => import("./pages/CenterPlatformCoursesPage"));
 const CenterLiveClassesPage = lazy(() => import("./pages/CenterLiveClassesPage"));
 const CenterTestsPage = lazy(() => import("./pages/CenterTestsPage"));
 const CenterTestResultsPage = lazy(() => import("./pages/CenterTestResultsPage"));
@@ -412,15 +413,15 @@ const App = () => (
               <Route path="/center/content" element={<CenterContentPage />} />
               <Route path="/center/banners" element={<CenterBannersPage />} />
               <Route path="/center/carousel-banners" element={<CenterCarouselBannersPage />} />
-              <Route path="/center/courses" element={<CenterCoursesPage />} />
               <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
               <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
               <Route path="/center/students" element={<CenterStudentsPage />} />
               <Route path="/center/support" element={<CenterSupportPage />} />
               <Route path="/center/gallery" element={<CenterGalleryPage />} />
               <Route path="/center/updates" element={<CenterUpdatesPage />} />
-              <Route path="/center/online-courses" element={<CenterOnlineCoursesPage />} />
-              <Route path="/center/online-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
+              <Route path="/center/online-courses" element={<CenterPlatformCoursesPage />} />
+              <Route path="/center/centre-courses" element={<CenterOnlineCoursesPage />} />
+              <Route path="/center/centre-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
               <Route path="/center/live-classes" element={<CenterLiveClassesPage />} />
               <Route path="/center/tests" element={<CenterTestsPage />} />
               <Route path="/center/tests/:testId/results" element={<CenterTestResultsPage />} />

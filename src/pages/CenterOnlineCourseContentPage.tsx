@@ -237,7 +237,7 @@ const CenterOnlineCourseContentPage = () => {
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Link to="/center/online-courses" className="rounded-md border border-border p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link to="/center/centre-courses" className="rounded-md border border-border p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
           <div>
             <h1 className="text-2xl font-black font-display text-foreground">{course.title}</h1>
             <p className="text-sm text-muted-foreground">{chapters.length} chapters · {lessons.length} lectures</p>
