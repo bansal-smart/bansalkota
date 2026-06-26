@@ -30,6 +30,12 @@ const AdminCourseHierarchyPage = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Node | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [addingSubject, setAddingSubject] = useState(false);
+  const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null);
+  const [addingSubtopicFor, setAddingSubtopicFor] = useState<string | null>(null);
+  const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const load = async () => {
     if (!courseId) return;
@@ -59,42 +65,51 @@ const AdminCourseHierarchyPage = () => {
     });
   };
 
-  const addSubject = async () => {
-    const name = window.prompt("Subject name (e.g. Physics)")?.trim();
-    if (!name || !courseId) return;
-    const { error } = await supabase.from("course_subjects" as any).insert({ course_id: courseId, name, position: subjects.length });
+  const createSubject = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || !courseId) { setAddingSubject(false); return; }
+    const { error } = await supabase.from("course_subjects" as any).insert({ course_id: courseId, name: trimmed, position: subjects.length });
+    setAddingSubject(false);
     if (error) return toast.error(error.message);
     toast.success("Subject added"); load();
   };
-  const addTopic = async (subject: CourseSubject) => {
-    const name = window.prompt("Topic name")?.trim();
-    if (!name) return;
+  const createTopic = async (subject: CourseSubject, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) { setAddingTopicFor(null); return; }
     const { error } = await supabase.from("course_topics" as any).insert({
-      course_id: courseId, subject_id: subject.id, name, position: (subject.topics ?? []).length,
+      course_id: courseId, subject_id: subject.id, name: trimmed, position: (subject.topics ?? []).length,
     });
+    setAddingTopicFor(null);
     if (error) return toast.error(error.message);
     toast.success("Topic added"); load();
   };
-  const addSubtopic = async (topic: CourseTopic) => {
-    const name = window.prompt("Subtopic name")?.trim();
-    if (!name) return;
+  const createSubtopic = async (topic: CourseTopic, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) { setAddingSubtopicFor(null); return; }
     const { error } = await supabase.from("course_subtopics" as any).insert({
-      course_id: courseId, topic_id: topic.id, name, position: (topic.subtopics ?? []).length,
+      course_id: courseId, topic_id: topic.id, name: trimmed, position: (topic.subtopics ?? []).length,
     });
+    setAddingSubtopicFor(null);
     if (error) return toast.error(error.message);
     toast.success("Subtopic added"); load();
   };
 
-  const rename = async (table: string, id: string, current: string) => {
-    const name = window.prompt("New name", current)?.trim();
-    if (!name || name === current) return;
-    const { error } = await supabase.from(table as any).update({ name }).eq("id", id);
+  const openRename = (table: string, id: string, current: string, label: string) => {
+    setRenameTarget({ table, id, current, label });
+    setRenameValue(current);
+  };
+  const submitRename = async () => {
+    if (!renameTarget) return;
+    const name = renameValue.trim();
+    if (!name || name === renameTarget.current) { setRenameTarget(null); return; }
+    const { error } = await supabase.from(renameTarget.table as any).update({ name }).eq("id", renameTarget.id);
+    setRenameTarget(null);
     if (error) return toast.error(error.message);
     toast.success("Renamed"); load();
   };
 
   const remove = async (table: string, id: string, label: string) => {
-    const ok = window.confirm(`Delete ${label}?`);
+    const ok = await confirm({ title: `Delete ${label}?`, description: "This will permanently remove it and its contents.", confirmLabel: "Delete" });
     if (!ok) return;
     const { error } = await supabase.from(table as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
