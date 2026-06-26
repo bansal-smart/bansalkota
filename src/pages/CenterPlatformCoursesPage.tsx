@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Search, Eye, Loader2 } from "lucide-react";
+import { Search, Eye, Loader2, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePagination } from "@/hooks/usePagination";
+import CenterCourseStudentsDialog from "@/components/CenterCourseStudentsDialog";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import TablePagination from "@/components/TablePagination";
 
 type PlatformCourse = {
@@ -20,9 +22,11 @@ type PlatformCourse = {
 };
 
 const CenterPlatformCoursesPage = () => {
+  const { primaryCenterId } = useCenterAdmin();
   const [courses, setCourses] = useState<PlatformCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [manageCourse, setManageCourse] = useState<{ id: string; name: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -128,9 +132,19 @@ const CenterPlatformCoursesPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
-                        <Eye className="h-3.5 w-3.5" />
-                      </a>
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => setManageCourse({ id: c.id, name: c.name })}
+                          className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+                          title="Manage Students"
+                        >
+                          <Users className="h-3 w-3" />
+                          Manage Students
+                        </button>
+                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
+                          <Eye className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -140,6 +154,14 @@ const CenterPlatformCoursesPage = () => {
           </div>
         )}
       </div>
+
+      <CenterCourseStudentsDialog
+        open={!!manageCourse}
+        onClose={() => setManageCourse(null)}
+        courseId={manageCourse?.id ?? null}
+        courseName={manageCourse?.name ?? ""}
+        centreId={primaryCenterId}
+      />
     </div>
   );
 };
