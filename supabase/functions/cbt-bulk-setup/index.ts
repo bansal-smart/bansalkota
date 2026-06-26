@@ -199,12 +199,14 @@ Deno.serve(async (req) => {
         );
 
         // Profile
-        await admin.from("profiles").upsert({
+        const { error: pErr } = await admin.from("profiles").upsert({
           user_id: userId,
           full_name: r.full_name,
           phone: r.phone,
           roll_number: r.roll_number,
+          dob: r.dob,
           batch_id: batchId,
+          batch_label: r.batch_code,
           centre_id: centerId,
           target_exam: r.stream,
           class_level: r.class_level,
@@ -212,7 +214,10 @@ Deno.serve(async (req) => {
           state: "Rajasthan",
           country: "India",
           is_bansal_offline_student: true,
+          onboarding_completed: true,
+          phone_verified: true,
         }, { onConflict: "user_id" });
+        if (pErr) throw pErr;
 
         // Enrollment
         await admin.from("enrollments").upsert(
