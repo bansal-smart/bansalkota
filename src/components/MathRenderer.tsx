@@ -39,7 +39,7 @@ const extractSafeImages = (raw: string) => {
   const text = raw
     .replace(/<img\b[^>]*>/gi, (tag) => {
       const src = tag.match(/\bsrc\s*=\s*(["'])(.*?)\1/i)?.[2] ?? "";
-      if (!/^https?:\/\//i.test(src) && !/^data:image\//i.test(src)) return "";
+      if (!/^https?:\/\//i.test(src) && !/^data:image\//i.test(src) && !/^blob:/i.test(src)) return "";
       const alt = tag.match(/\balt\s*=\s*(["'])(.*?)\1/i)?.[2] ?? "Question image";
       const key = `__MATH_RENDERER_IMG_${Object.keys(images).length}__`;
       images[key] = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" class="my-2 inline-block max-w-full rounded-md border border-border align-middle" />`;
