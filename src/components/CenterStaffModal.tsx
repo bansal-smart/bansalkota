@@ -25,7 +25,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
 
   // existing-user form
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"manager" | "owner">("manager");
+  const [role, setRole] = useState<"admin" | "manager" | "supervisor" | "executive">("manager");
   const [adding, setAdding] = useState(false);
 
   // create-login form
@@ -154,8 +154,10 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
             <div className="grid grid-cols-2 gap-2">
               <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="login email" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
               <select value={role} onChange={(e) => setRole(e.target.value as any)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option value="manager">Manager</option>
-                <option value="owner">Owner</option>
+                <option value="admin">Admin (Centre Level)</option>
+                <option value="manager">Manager (Centre Level)</option>
+                <option value="supervisor">Supervisor (Centre Level)</option>
+                <option value="executive">Executive (Centre Level)</option>
               </select>
             </div>
             <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="text" placeholder="Initial password (≥ 8 chars)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-mono" />
@@ -172,8 +174,10 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
             <div className="flex gap-2">
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@email.com" className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm" />
               <select value={role} onChange={(e) => setRole(e.target.value as any)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option value="manager">Manager</option>
-                <option value="owner">Owner</option>
+                <option value="admin">Admin (Centre Level)</option>
+                <option value="manager">Manager (Centre Level)</option>
+                <option value="supervisor">Supervisor (Centre Level)</option>
+                <option value="executive">Executive (Centre Level)</option>
               </select>
               <button onClick={addExisting} disabled={adding} className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">
                 {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
