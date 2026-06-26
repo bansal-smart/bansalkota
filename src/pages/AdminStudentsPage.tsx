@@ -416,7 +416,6 @@ const AdminStudentsPage = () => {
                 { k: "dob", l: "DOB", ph: "", type: "date" },
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS },
-                { k: "batch", l: "Course", ph: "Select course", type: "select", options: courses.map((c) => c.name) },
                 { k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) },
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -443,7 +442,16 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <div className="sm:col-span-2">
+                <CoursesMultiSelect
+                  label="Courses (assign one or more)"
+                  courses={courses}
+                  value={addCourseIds}
+                  onChange={setAddCourseIds}
+                />
+              </div>
             </div>
+
 
             <div className="flex items-center justify-end gap-2 border-t border-border p-4">
               <button
