@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Phone, Search, Star, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalBadge from "@/components/bansal/BansalBadge";
-import { STATE_COUNT } from "@/data/centres";
+
 import centersHeroAsset from "@/assets/centers-hero.webp.asset.json";
 const centersHero = centersHeroAsset.url;
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
@@ -18,6 +18,10 @@ export default function CentersPage() {
   const { centers: CENTERS } = useCenters();
   const { banner } = useSiteBanner("centres");
   const CENTER_COUNT = CENTERS.length;
+  const STATE_COUNT = useMemo(
+    () => new Set(CENTERS.map((c) => c.state)).size,
+    [CENTERS],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -68,7 +72,7 @@ export default function CentersPage() {
           </h1>
           <p className="text-white/85 text-base md:text-lg max-w-2xl mx-auto">
             {banner?.subheading ||
-              `From the legendary Kota headquarters to ${CENTER_COUNT - 1}+ centres across India — walk in to a Bansal centre near you for counselling, demo classes & admissions.`}
+              `From the legendary Kota headquarters to ${CENTER_COUNT}+ centres across India — walk in to a Bansal centre near you for counselling, demo classes & admissions.`}
           </p>
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto">
             <div className="rounded-2xl bg-white/10 backdrop-blur p-4">
