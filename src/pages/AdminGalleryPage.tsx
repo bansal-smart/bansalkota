@@ -1,7 +1,64 @@
 import { useEffect, useState } from "react";
-import { Image as ImageIcon, Video as VideoIcon, Loader2, Plus, Save, Trash2, Upload, X, Film } from "lucide-react";
+import { Image as ImageIcon, Video as VideoIcon, Loader2, Plus, Save, Trash2, Upload, X, Film, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+type SortableImageProps = {
+  id: string;
+  url: string;
+  onRemove: () => void;
+};
+
+const SortableImage = ({ id, url, onRemove }: SortableImageProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative group rounded-lg overflow-hidden border border-border bg-card"
+    >
+      <img src={url} alt="" className="aspect-square object-cover w-full" />
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute top-1 left-1 rounded-full bg-black/70 p-1 text-white cursor-grab active:cursor-grabbing"
+        title="Drag to reorder"
+      >
+        <GripVertical className="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white opacity-0 group-hover:opacity-100"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+};
 
 type Album = {
   id: string;
