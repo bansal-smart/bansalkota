@@ -132,12 +132,14 @@ const AdminStudentsPage = () => {
 
   useEffect(() => {
     (async () => {
-      const [{ data: cs }, { data: bs }] = await Promise.all([
+      const [{ data: cs }, { data: bs }, { data: crs }] = await Promise.all([
         (supabase as any).from("centres").select("id, city, area, slug").order("city"),
         (supabase as any).from("course_batches").select("id, name, code").order("name"),
+        (supabase as any).from("courses").select("id, name").order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
       setBatches((bs as BatchLite[]) ?? []);
+      setCourses((crs as CourseLite[]) ?? []);
     })();
   }, []);
 
