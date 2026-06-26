@@ -281,6 +281,32 @@ const AdminStudentsPage = () => {
     exportCsv(target);
   };
 
+  const doBulkDelete = async () => {
+    if (!selected.length) return;
+    setBulkDeleting(true);
+    setBulkProgress({ done: 0, total: selected.length });
+    let ok = 0;
+    let fail = 0;
+    for (const user_id of selected) {
+      try {
+        const { error } = await supabase.functions.invoke("manage-student", {
+          body: { action: "delete", user_id },
+        });
+        if (error) throw error;
+        ok++;
+      } catch {
+        fail++;
+      }
+      setBulkProgress((p) => ({ done: p.done + 1, total: p.total }));
+    }
+    setBulkDeleting(false);
+    setConfirmBulkDelete(false);
+    setSelected([]);
+    toast.success(`Deleted ${ok} student${ok === 1 ? "" : "s"}${fail ? ` · ${fail} failed` : ""}`);
+    load();
+  };
+
+
   return (
     <div className="p-4 lg:p-6 space-y-4 pb-24 lg:pb-6">
       <div className="flex items-center justify-between flex-wrap gap-3 animate-fade-in-up">
