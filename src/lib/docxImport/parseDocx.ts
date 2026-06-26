@@ -624,8 +624,18 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const looksLikeNumberOnly = (text: string) =>
     /^\s*\d{1,3}\s*[.)]\s*$/.test(text);
 
+  let numericOptionHits = 0;
+  let alphaOptionHits = 0;
+  const tallyOptionKeys = () => {
+    for (const o of buf.options) {
+      if (/^[1-4]$/.test(o.key)) numericOptionHits += 1;
+      else if (/^[A-Da-d]$/.test(o.key)) alphaOptionHits += 1;
+    }
+  };
+
   const flushAndReset = () => {
     ordinal += 1;
+    tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
     buf = newBuffer(null, currentSection);
     if (pendingTopic) {
