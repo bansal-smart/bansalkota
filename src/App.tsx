@@ -142,6 +142,7 @@ const CenterContentPage = lazy(() => import("./pages/CenterContentPage"));
 const CenterGalleryPage = lazy(() => import("./pages/CenterGalleryPage"));
 const CenterUpdatesPage = lazy(() => import("./pages/CenterUpdatesPage"));
 const CenterCoursesPage = lazy(() => import("./pages/CenterCoursesPage"));
+const CenterPlatformCoursesPage = lazy(() => import("./pages/CenterPlatformCoursesPage"));
 const CenterLiveClassesPage = lazy(() => import("./pages/CenterLiveClassesPage"));
 const CenterTestsPage = lazy(() => import("./pages/CenterTestsPage"));
 const CenterTestResultsPage = lazy(() => import("./pages/CenterTestResultsPage"));
