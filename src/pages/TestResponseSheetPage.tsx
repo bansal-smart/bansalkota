@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Printer, Sparkles, XCirc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TestImage } from "@/components/test/TestImage";
+import { optionLabel, resolveOptionStyle, type OptionLabelStyle } from "@/lib/optionLabel";
 
 type ResponseQuestion = {
   id: string;
