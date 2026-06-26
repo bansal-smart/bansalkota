@@ -41,14 +41,11 @@ const schema = z.object({
     .trim()
     .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone")
     .optional(),
-  class_level: z.string().min(1, "Select class"),
   city: z.string().trim().min(1, "Enter city").max(80),
   state: z.string().trim().min(1, "Enter state").max(80),
   preferred_centre_id: z.string().optional(),
   message: z.string().max(1000).optional(),
 });
-
-const CLASS_OPTIONS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
 
 const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   const { user } = useAuth();
