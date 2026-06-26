@@ -74,6 +74,69 @@ const exportCsv = (rows: StudentRow[]) => {
 
 const PLAN_OPTIONS = ["Free", "Pro", "Elite"];
 
+function CoursesMultiSelect({
+  label,
+  courses,
+  value,
+  onChange,
+}: {
+  label: string;
+  courses: CourseLite[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const selectedSet = new Set(value);
+  const filtered = courses.filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const toggle = (id: string) => {
+    if (selectedSet.has(id)) onChange(value.filter((v) => v !== id));
+    else onChange([...value, id]);
+  };
+  const selectedNames = courses.filter((c) => selectedSet.has(c.id)).map((c) => c.name);
+  return (
+    <div className="text-xs font-semibold text-muted-foreground space-y-1">
+      <div className="flex items-center justify-between">
+        <span>{label}</span>
+        <span className="text-[10px] text-muted-foreground">{value.length} selected</span>
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full text-left rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary hover:bg-muted/40"
+      >
+        {selectedNames.length
+          ? selectedNames.slice(0, 3).join(", ") + (selectedNames.length > 3 ? ` +${selectedNames.length - 3} more` : "")
+          : "Select courses..."}
+      </button>
+      {open && (
+        <div className="rounded-lg border border-border bg-background p-2 max-h-56 overflow-y-auto space-y-1">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search courses..."
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+          {filtered.length === 0 && (
+            <div className="text-[11px] text-muted-foreground px-2 py-1">No courses found</div>
+          )}
+          {filtered.map((c) => (
+            <label key={c.id} className="flex items-center gap-2 text-xs font-medium text-foreground px-2 py-1 rounded hover:bg-muted/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedSet.has(c.id)}
+                onChange={() => toggle(c.id)}
+              />
+              <span className="truncate">{c.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 const AdminStudentsPage = () => {
 
   const [search, setSearch] = useState("");
