@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { calcPercent } from "@/lib/progress";
 import MathRenderer from "@/components/MathRenderer";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
+import { optionLabel, resolveOptionStyle, type OptionLabelStyle } from "@/lib/optionLabel";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
