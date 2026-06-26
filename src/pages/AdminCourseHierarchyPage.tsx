@@ -214,7 +214,7 @@ const AdminCourseHierarchyPage = () => {
                                     selected={selected?.id === subtopic.id}
                                     onSelect={() => setSelected({ kind: "subtopic", id: subtopic.id, data: subtopic, topic, subject })}
                                     label={subtopic.name}
-                                    badge={`${subtopic.videos?.length ?? 0}📹 ${subtopic.pdfs?.length ?? 0}📄${subtopic.quiz ? " ✓Q" : ""}`}
+                                    badge={`${subtopic.videos?.length ?? 0}📹 ${subtopic.pdfs?.length ?? 0}📄`}
                                     onUp={() => move("course_subtopics", topic.subtopics ?? [], sti, -1)}
                                     onDown={() => move("course_subtopics", topic.subtopics ?? [], sti, 1)}
                                     onRename={() => openRename("course_subtopics", subtopic.id, subtopic.name, "subtopic")}
