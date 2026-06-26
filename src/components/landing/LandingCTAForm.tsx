@@ -7,8 +7,10 @@ import { toast } from "sonner";
 import { postSubmission } from "@/content/postSubmissionMessages";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 
+import { CLASS_LEVELS } from "@/lib/constants";
+
 const exams = ["JEE", "NEET", "Foundation", "Olympiad", "Not sure yet"];
-const classes = ["Class 6-8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+const classes = [...CLASS_LEVELS];
 
 const LandingCTAForm = () => {
   const [submitting, setSubmitting] = useState(false);

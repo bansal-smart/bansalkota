@@ -27,8 +27,8 @@ const schema = z.object({
   exam_slot: z.string().min(1, "Choose an exam slot"),
 });
 
-const CLASS_LEVELS = ["Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
-const EXAMS = ["JEE", "NEET", "NTSE", "Olympiad", "Foundation / School"];
+const CLASS_LEVELS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+const EXAMS = ["JEE", "NEET", "Olympiad", "Foundation / School"];
 
 const SLOT_TIMES: { label: string; mode: "Online" | "Offline" }[] = [
   { label: "10:00 AM", mode: "Online" },

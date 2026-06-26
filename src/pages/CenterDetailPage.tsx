@@ -41,7 +41,7 @@ const PROGRAMS = [
   {
     icon: BookOpen,
     title: "Foundation (Class 8–10)",
-    desc: "Build a strong base for NTSE, KVPY, Olympiads & Boards. Conceptual depth + competitive aptitude.",
+    desc: "Build a strong base for KVPY, Olympiads & Boards. Conceptual depth + competitive aptitude.",
     tag: "Foundation",
   },
 ];
