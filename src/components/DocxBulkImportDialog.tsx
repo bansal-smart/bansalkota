@@ -35,6 +35,9 @@ type Props = {
   testId?: string;
   /** Force a subject for all rows when importing from the bank entry-point. */
   defaultSubject?: string;
+  /** Parent test option-label setting. Auto means exam pattern / detected style decides. */
+  optionLabelStyle?: "auto" | "numeric" | "alpha";
+  examPattern?: string;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -50,6 +53,8 @@ const DocxBulkImportDialog = ({
   onImported,
   testId,
   defaultSubject,
+  optionLabelStyle = "auto",
+  examPattern,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -65,6 +70,10 @@ const DocxBulkImportDialog = ({
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
   const [showInstructions, setShowInstructions] = useState(false);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
+  const effectiveOptionStyle: "numeric" | "alpha" =
+    optionLabelStyle === "numeric" || optionLabelStyle === "alpha"
+      ? optionLabelStyle
+      : detectedOptionStyle ?? ((examPattern ?? "").toLowerCase().includes("neet") ? "numeric" : "alpha");
 
   // Test picker (only when launched without a fixed testId)
   const [alsoPushToTest, setAlsoPushToTest] = useState(false);
@@ -97,6 +106,7 @@ const DocxBulkImportDialog = ({
     setErrorMsg(null);
     setImported({ ok: 0, failed: 0 });
     setAlsoPushToTest(false);
+    setDetectedOptionStyle(null);
     if (!testId) setSelectedTestId(null);
     setTestSearch("");
     if (fileRef.current) fileRef.current.value = "";
@@ -388,13 +398,11 @@ const DocxBulkImportDialog = ({
 
         okCount = Math.max(okCount, testRows.length);
         toast.success(`Pushed ${testRows.length} question${testRows.length === 1 ? "" : "s"} into the test.`);
-        // Persist the detected option label style if the test hasn't been pinned yet.
-        if (detectedOptionStyle) {
-          await supabase
-            .from("tests")
-            .update({ option_label_style: detectedOptionStyle } as any)
-            .eq("id", selectedTestId);
-        }
+        // Persist the resolved option label style so NEET + Auto renders 1/2/3/4.
+        await supabase
+          .from("tests")
+          .update({ option_label_style: effectiveOptionStyle } as any)
+          .eq("id", selectedTestId);
         await syncTestStats(selectedTestId);
       } catch (err: any) {
         failCount = questions.length;
