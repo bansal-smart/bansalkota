@@ -15,6 +15,7 @@ type TestRow = {
   title: string;
   slug: string;
   exam_pattern: string;
+  option_label_style?: string | null;
   subjects: string[] | null;
   total_marks: number;
   duration_minutes: number;
