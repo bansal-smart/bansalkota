@@ -224,15 +224,18 @@ const AdminStudentsPage = () => {
   const openDrawer = (u: StudentRow) => {
     setDrawer(u);
     setEdit({
+      roll_number: u.roll_number ?? "",
       full_name: u.full_name ?? "",
+      father_name: u.father_name ?? "",
       phone: u.phone ?? "",
       parent_phone: u.parent_phone ?? "",
+      dob: u.dob ?? "",
       target_exam: u.target_exam ?? "",
       class_level: u.class_level ?? "",
+      batch_id: u.batch_id ?? "",
+      centre_id: u.centre_id ?? "",
       city: u.city ?? "",
       country: u.country ?? "",
-      goal: u.goal ?? "",
-      plan: u.plan,
     });
   };
 
