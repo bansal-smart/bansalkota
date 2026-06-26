@@ -60,6 +60,7 @@ export default function CenterDetailPage() {
   const { centers: DB_CENTERS } = useCenters();
   const dbCenter = slug ? DB_CENTERS.find((c) => c.slug === slug) : undefined;
   const center = dbCenter ?? (slug ? findCenter(slug) : undefined);
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
 
   const nearby = useMemo(() => {
     if (!center) return [];
