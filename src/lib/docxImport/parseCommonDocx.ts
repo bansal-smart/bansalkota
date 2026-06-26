@@ -203,8 +203,8 @@ export const parseCommonDocxQuestions = async (
     alphaHits += (stem.match(/\(\s*[A-Da-d]\s*\)/g) || []).length;
   }
   let detectedOptionStyle: "numeric" | "alpha" | null = null;
-  if (numericHits + alphaHits >= 4) {
-    detectedOptionStyle = numericHits > alphaHits ? "numeric" : "alpha";
+  if (numericHits + alphaHits >= 2) {
+    detectedOptionStyle = numericHits >= alphaHits ? "numeric" : "alpha";
   }
   return { questions: out, warnings, totalImages, detectedOptionStyle };
 };
