@@ -38,8 +38,18 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
     if (!centerId) return;
     (async () => {
       const [cRes, bRes] = await Promise.all([
-        (supabase as any).from("centre_courses").select("*").eq("centre_id", centerId).eq("is_published", true).order("sort_order"),
-        (supabase as any).from("centre_banners").select("*").eq("centre_id", centerId).eq("is_active", true).order("sort_order"),
+        (supabase as any)
+          .from("centre_courses")
+          .select("*")
+          .eq("centre_id", centerId)
+          .eq("is_published", true)
+          .order("sort_order"),
+        (supabase as any)
+          .from("centre_banners")
+          .select("*")
+          .eq("centre_id", centerId)
+          .eq("is_active", true)
+          .order("sort_order"),
       ]);
       setCourses(cRes.data ?? []);
       setBanners(bRes.data ?? []);
@@ -58,12 +68,18 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
                   href={b.cta_url || "#"}
                   className="group relative block overflow-hidden rounded-2xl border border-border"
                 >
-                  <img src={b.image_url} alt={b.title ?? ""} className="h-56 w-full object-cover transition-transform group-hover:scale-105" />
+                  <img
+                    src={b.image_url}
+                    alt={b.title ?? ""}
+                    className="h-56 w-full object-cover transition-transform group-hover:scale-105"
+                  />
                   {(b.title || b.subtitle) && (
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-bansal-blue/95 to-transparent p-5">
                       {b.title && <p className="font-display font-bold text-white text-lg">{b.title}</p>}
                       {b.subtitle && <p className="text-sm text-white/85">{b.subtitle}</p>}
-                      {b.cta_label && <span className="mt-2 inline-block text-xs font-bold text-bansal-orange">{b.cta_label} →</span>}
+                      {b.cta_label && (
+                        <span className="mt-2 inline-block text-xs font-bold text-bansal-orange">{b.cta_label} →</span>
+                      )}
                     </div>
                   )}
                 </a>
@@ -78,7 +94,9 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
           <div className="container mx-auto px-4 max-w-5xl">
             <div className="mb-6">
               <h2 className="font-display text-2xl font-bold text-bansal-black">Offline programs at {centerCity}</h2>
-              <p className="text-sm text-muted-foreground">Programs running at this centre. Enquire for fees & schedule.</p>
+              <p className="text-sm text-muted-foreground">
+                Programs running at this centre. Enquire for fees & schedule.
+              </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {courses.map((c) => (
@@ -91,16 +109,27 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
                     </div>
                   )}
                   <div className="p-4 flex-1 flex flex-col">
-                    <p className="text-xs font-bold uppercase text-bansal-orange">{c.target_exam} · {c.class_level}</p>
+                    <p className="text-xs font-bold uppercase text-bansal-orange">
+                      {c.target_exam} · {c.class_level}
+                    </p>
                     <h3 className="mt-1 font-display text-lg font-bold text-bansal-black">{c.title}</h3>
-                    {c.description && <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{c.description}</p>}
+                    {c.description && (
+                      <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{c.description}</p>
+                    )}
                     <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                      {c.start_date && <p className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Starts {new Date(c.start_date).toLocaleDateString()}</p>}
+                      {c.start_date && (
+                        <p className="inline-flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Starts {new Date(c.start_date).toLocaleDateString()}
+                        </p>
+                      )}
                       {c.duration && <p>Duration: {c.duration}</p>}
                       {c.schedule && <p>Schedule: {c.schedule}</p>}
                     </div>
                     <div className="mt-4 flex items-center justify-between">
-                      <p className="text-sm font-bold text-bansal-black">{c.fees ? `${c.currency} ${c.fees}` : "Fees on enquiry"}</p>
+                      <p className="text-sm font-bold text-bansal-black">
+                        {c.fees ? `${c.currency} ${c.fees}` : "Fees on enquiry"}
+                      </p>
                       <button
                         onClick={() => setEnquireCourse(c)}
                         className="rounded-md bg-bansal-orange px-3 py-2 text-xs font-bold text-white hover:opacity-90"
@@ -120,7 +149,9 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
         <div className="container mx-auto px-4 max-w-3xl">
           <div className="rounded-2xl border border-border bg-bansal-cream p-6 md:p-8">
             <h2 className="font-display text-2xl font-bold text-bansal-black">Admission Enquiry — {centerCity}</h2>
-            <p className="text-sm text-muted-foreground mt-1">Share your details and the centre team will reach out within 24 hours.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share your details and the centre team will reach out within 24 hours.
+            </p>
             <button
               onClick={() => setAdmissionOpen(true)}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-bansal-orange px-5 py-3 text-sm font-bold text-white hover:opacity-90"
@@ -132,11 +163,7 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
       </section>
 
       {enquireCourse && (
-        <CourseEnquiryModal
-          course={enquireCourse}
-          centerId={centerId}
-          onClose={() => setEnquireCourse(null)}
-        />
+        <CourseEnquiryModal course={enquireCourse} centerId={centerId} onClose={() => setEnquireCourse(null)} />
       )}
       {admissionOpen && (
         <AdmissionEnquiryModal centerId={centerId} centerCity={centerCity} onClose={() => setAdmissionOpen(false)} />
@@ -145,8 +172,22 @@ export const CenterOfflineSections = ({ centerId, centerCity }: { centerId: stri
   );
 };
 
-const CourseEnquiryModal = ({ course, centerId, onClose }: { course: Course; centerId: string; onClose: () => void }) => {
-  const [form, setForm] = useState({ name: "", phone: "", email: "", class_level: course.class_level ?? "", message: "" });
+const CourseEnquiryModal = ({
+  course,
+  centerId,
+  onClose,
+}: {
+  course: Course;
+  centerId: string;
+  onClose: () => void;
+}) => {
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    class_level: course.class_level ?? "",
+    message: "",
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
@@ -185,14 +226,46 @@ const CourseEnquiryModal = ({ course, centerId, onClose }: { course: Course; cen
             <p className="text-xs font-bold uppercase text-bansal-orange">Enquire about</p>
             <h3 className="font-display text-lg font-bold text-bansal-black">{course.title}</h3>
           </div>
-          <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
+          <button onClick={onClose}>
+            <X className="h-5 w-5 text-muted-foreground" />
+          </button>
         </div>
-        <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email (optional)" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <input value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })} placeholder="Class / Year" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Anything you'd like to share?" rows={3} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <button onClick={submit} disabled={submitting} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-bansal-orange py-2.5 text-sm font-bold text-white disabled:opacity-60">
+        <input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="Full name"
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <input
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          placeholder="Phone"
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <input
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          placeholder="Email (optional)"
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <input
+          value={form.class_level}
+          onChange={(e) => setForm({ ...form, class_level: e.target.value })}
+          placeholder="Class / Year"
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <textarea
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          placeholder="Anything you'd like to share?"
+          rows={3}
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <button
+          onClick={submit}
+          disabled={submitting}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-bansal-orange py-2.5 text-sm font-bold text-white disabled:opacity-60"
+        >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send enquiry
         </button>
       </div>
@@ -208,7 +281,15 @@ const ENQUIRY_TYPES = [
 import { CLASS_LEVELS } from "@/lib/constants";
 const CLASS_LEVELS_OPTIONS = [...CLASS_LEVELS];
 
-const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: string; centerCity: string; onClose: () => void }) => {
+const AdmissionEnquiryModal = ({
+  centerId,
+  centerCity,
+  onClose,
+}: {
+  centerId: string;
+  centerCity: string;
+  onClose: () => void;
+}) => {
   const [form, setForm] = useState({ name: "", phone: "", enquiry_type: "admission", class_level: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
 
@@ -229,7 +310,7 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success("Enquiry sent! The centre will reach out within 24 hours.");
+    toast.success("Enquiry sent! The centre will reach out soon.");
     onClose();
   };
 
@@ -238,26 +319,63 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
       <div className="w-full max-w-md rounded-2xl bg-white p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <h3 className="font-display text-lg font-bold text-bansal-black">Admission Enquiry — {centerCity}</h3>
-          <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
+          <button onClick={onClose}>
+            <X className="h-5 w-5 text-muted-foreground" />
+          </button>
         </div>
-        <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone number" className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <select value={form.enquiry_type} onChange={(e) => setForm({ ...form, enquiry_type: e.target.value })} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm">
+        <input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="Full name"
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <input
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          placeholder="Phone number"
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <select
+          value={form.enquiry_type}
+          onChange={(e) => setForm({ ...form, enquiry_type: e.target.value })}
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        >
           <option value="">Enquiry type</option>
-          {ENQUIRY_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          {ENQUIRY_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
         </select>
-        <select value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm">
+        <select
+          value={form.class_level}
+          onChange={(e) => setForm({ ...form, class_level: e.target.value })}
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        >
           <option value="">Class</option>
-          {CLASS_LEVELS_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+          {CLASS_LEVELS_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
         </select>
-        <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us about your goal (e.g. JEE 2026, Class 11)" rows={4} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
-        <button onClick={submit} disabled={submitting} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-bansal-orange py-2.5 text-sm font-bold text-white disabled:opacity-60">
+        <textarea
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          placeholder="Tell us about your goal (e.g. JEE 2026, Class 11)"
+          rows={4}
+          className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
+        />
+        <button
+          onClick={submit}
+          disabled={submitting}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-bansal-orange py-2.5 text-sm font-bold text-white disabled:opacity-60"
+        >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send enquiry
         </button>
       </div>
     </div>
   );
 };
-
 
 export default CenterOfflineSections;
