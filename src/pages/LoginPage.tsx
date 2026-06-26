@@ -21,12 +21,29 @@ const LoginPage = () => {
     if (isTeacher) return navigate("/teacher/dashboard", { replace: true });
     if (isMentor) return navigate("/mentor/dashboard", { replace: true });
     if (isCenterAdmin) return navigate("/center", { replace: true });
-    // If profile is missing a name, ask for it once.
-    if (!user?.user_metadata?.full_name && !user?.user_metadata?.name) {
-      setStep("name");
-      return;
-    }
-    navigate(redirectTo || "/dashboard", { replace: true });
+    // Check the profile (source of truth) before forcing the name step —
+    // admin-created students have a profile name even without user_metadata.
+    let cancelled = false;
+    (async () => {
+      if (!user?.id) return;
+      const metaName = user.user_metadata?.full_name || user.user_metadata?.name;
+      if (metaName) {
+        navigate(redirectTo || "/dashboard", { replace: true });
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.full_name && data.full_name.trim().length > 0) {
+        navigate(redirectTo || "/dashboard", { replace: true });
+      } else {
+        setStep("name");
+      }
+    })();
+    return () => { cancelled = true; };
   }, [loading, session, user, roleReady, isStaff, isTeacher, isMentor, isCenterAdmin, navigate, redirectTo]);
 
   const [step, setStep] = useState<Step>("phone");
