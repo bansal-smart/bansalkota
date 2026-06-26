@@ -83,6 +83,9 @@ const AdminStudentsPage = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<StudentRow | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [centres, setCentres] = useState<CentreLite[]>([]);
   const [batches, setBatches] = useState<BatchLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
