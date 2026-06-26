@@ -60,7 +60,6 @@ const pattern = [
   },
 ];
 
-
 const faqs = [
   {
     q: "Who can appear for BOOST?",
@@ -113,7 +112,8 @@ export default function BoostPage() {
             </h1>
             <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl leading-relaxed">
               Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most trusted
-              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹{boost.priceInr}</span> to register.
+              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹{boost.priceInr}</span> to
+              register.
             </p>
             <div className="flex flex-wrap gap-3">
               <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
@@ -145,9 +145,7 @@ export default function BoostPage() {
                     );
                   })}
                 </div>
-                {boost.applyBeforeLabel && (
-                  <p className="text-xs text-white/70">{boost.applyBeforeLabel}</p>
-                )}
+                {boost.applyBeforeLabel && <p className="text-xs text-white/70">{boost.applyBeforeLabel}</p>}
               </div>
             )}
             <div className="mt-10 grid grid-cols-3 gap-6 max-w-xl">
@@ -206,7 +204,7 @@ export default function BoostPage() {
               </p>
               <ul className="space-y-3">
                 {[
-                  "Open to Class 5 through Class 12 + droppers",
+                  "Open to Class 6 through Class 12 + droppers",
                   "Both online and offline modes available",
                   `Single ₹${boost.priceInr} fee — no hidden charges`,
                   "Test material kit shipped to every registrant",
@@ -333,7 +331,9 @@ export default function BoostPage() {
       <section className="py-16 md:py-20 bg-bansal-blue text-white">
         <div className="container mx-auto px-4 text-center max-w-2xl">
           <IndianRupee className="h-12 w-12 text-bansal-orange mx-auto mb-4" />
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Your future called — at just ₹{boost.priceInr}.</h2>
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">
+            Your future called — at just ₹{boost.priceInr}.
+          </h2>
           <p className="text-white/80 mb-7">
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>
