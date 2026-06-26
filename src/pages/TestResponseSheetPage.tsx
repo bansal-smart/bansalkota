@@ -67,6 +67,8 @@ const TestResponseSheetPage = () => {
   const [data, setData] = useState<SheetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "unattempted">("all");
+  const [optStyle, setOptStyle] = useState<OptionLabelStyle>("alpha");
+  const optionLetter = (i: number) => optionLabel(i, optStyle);
 
   useEffect(() => {
     let alive = true;
