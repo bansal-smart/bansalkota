@@ -1,39 +1,39 @@
-## Problem
-
-In the admin Add/Edit Student modal, the "Course" dropdown actually writes the selected course ID into `profiles.batch_id` (a `course_batches` foreign key). No row is ever created in `enrollments`, so the student's "My Courses" page (which reads from `enrollments`) shows nothing. Only one value can be selected today.
-
 ## Goal
-
-- Admin can assign **one or many courses** to a student (when adding or editing).
-- Assigned courses appear immediately on the student's panel (`/my-courses`, course detail, lecture player, etc.).
-- Assignment is a real `enrollments` row (`user_id`, `course_id`, `is_active=true`), which is what the rest of the app already reads.
-- Batch (`course_batches`) stays as a separate optional field — not conflated with course.
+Wire up real PRPSMS-based OTP login/signup for students using the approved `CodeRed` template and sender ID `VBANSL`, replacing the current `PaymentGateway_OTP` flow and dev bypass.
 
 ## Changes
 
-### 1. Admin Students UI (`src/pages/AdminStudentsPage.tsx`)
-- Replace the single "Course" `<select>` (currently bound to `batch_id`) with a **multi-select courses control** (checkbox list / chip picker) bound to a new `course_ids: string[]` field.
-- Add an optional "Batch" `<select>` (real `course_batches` list) so `batch_id` can still be set independently.
-- For the Edit modal, pre-load the student's existing active enrollments and seed `course_ids` from them.
-- Show a small "Courses" chip list in the student row/edit header so admins can see what's assigned.
-- Send `course_ids` to the edge function on both Add and Edit.
+### 1. PRPSMS sender ID
+- Update `PRPSMS_SENDER_DEFAULT` in `supabase/functions/_shared/prpsms.ts` from `20190332` → `VBANSL`.
+- Keep `PRPSMS_SENDER` env override support (so production can still override without a redeploy).
 
-### 2. Edge function: `supabase/functions/manage-student/index.ts` (update action)
-- Accept `course_ids: string[]` in the payload (not in the profile `allowed` list).
-- After profile update, **sync enrollments**:
-  - Upsert `{ user_id, course_id, is_active: true, enrolled_at: now() }` for every id in `course_ids` (onConflict `user_id,course_id`).
-  - Set `is_active=false` for any existing active enrollment whose course is not in `course_ids` (soft-remove; keeps progress intact).
+### 2. OTP template switch
+- In `supabase/functions/prpsms-send-otp/index.ts`, switch the rendered template from `PaymentGateway_OTP` to `CodeRed` (same single `{otp}` variable, same body text — DLT-approved under the new sender).
+- Update the `sms_send_log` insert to record `template_name: "CodeRed"`.
+- Keep the existing 1/min and 5/hour rate-limits and the 5-minute expiry.
 
-### 3. Edge function: `supabase/functions/bulk-import/index.ts` (students kind)
-- Accept `course_ids: string[]` (and also a comma-separated `course_slugs` / `course_names` fallback for CSVs).
-- After creating/updating the profile, upsert the same enrollment rows for the resolved user.
-- Leave the existing `enrollments` kind untouched.
+### 3. Remove dev OTP bypass
+- In `supabase/functions/prpsms-verify-otp/index.ts`, remove the `STATIC_OTP = "123456"` shortcut so only real OTPs verify. Fix the existing bug where the `signup` branch references `record` outside the verification block by moving the `record` lookup to function scope.
 
-### 4. Data display
-- In the students table list, fetch active enrollments for the visible page and render assigned course names (truncated) in a new "Courses" column or inside the existing row, so admins can verify assignment.
+### 4. Student signup via phone OTP
+- Add a `Sign up` tab/toggle on `src/pages/LoginPage.tsx` (or a new `SignupPage` if cleaner) that:
+  1. Collects phone → calls `prpsms-send-otp` with `purpose: "signup"`.
+  2. Collects OTP + minimal profile (full name, class, target exam) → calls `prpsms-verify-otp` with `purpose: "signup"` to get a `verification_token`.
+  3. Calls a new edge function `prpsms-create-student` (service-role) that:
+     - Validates the `verification_token` against the latest verified `phone_otps` row for that phone.
+     - Creates the auth user (placeholder email `phone-<10digit>@phone.bansalkota.local`, `email_confirm: true`).
+     - Inserts/updates `profiles` with `phone_e164`, `phone_verified: true`, `onboarding_completed: true`, `full_name`, `class_level`, `target_exam`, role = student.
+     - Returns `{ user_id, email, token_hash }` (magic link) so the client can sign the user in immediately, same pattern as the login branch.
+- Login tab keeps the existing OTP flow (already calls `prpsms-verify-otp` with `purpose: "login"` and exchanges the magic link).
 
-## Out of scope
+### 5. Config
+- Confirm `prpsms-send-otp`, `prpsms-verify-otp`, and the new `prpsms-create-student` are callable anonymously (verify_jwt = false) in `supabase/config.toml`.
+- Required secrets already configured: `PRPSMS_UNAME`, `PRPSMS_PASS`. Optional: `PRPSMS_SENDER` (defaults to `VBANSL` after this change).
 
-- No schema migrations — `enrollments` already has the needed columns and unique `(user_id, course_id)` index used elsewhere in the codebase.
-- Student panel code is unchanged; it already reads `enrollments` and will light up automatically once rows exist.
-- Payments / orders flow is untouched — admin assignment is a free grant, just like the existing `bulk-import "enrollments"` kind.
+### 6. Verification
+- Send a real OTP to a test number, confirm SMS arrives with `CodeRed` wording from `VBANSL`.
+- Confirm wrong OTP → "Incorrect OTP", correct OTP → student lands on dashboard with `onboarding_completed = true`.
+- Confirm existing admin-created students can still log in (phone fallback lookup in verify is preserved).
+
+## Open question
+Do you want a separate **Sign Up** form for brand-new students (collecting name/class/exam during signup), or should the login screen auto-create a bare student record on first OTP and push them through onboarding afterwards (current behaviour for unknown phones)?
