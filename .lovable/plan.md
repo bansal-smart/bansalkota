@@ -1,83 +1,90 @@
-# Course Content Restructure: Subject → Topic → Subtopic → Videos
+## Migration Plan: Lovable Cloud → Personal Supabase
 
-Replace the current `Chapter → Lesson` model with a 4-level hierarchy nested under each course. Stream stays on `courses.target_exam` — no schema change to `courses`.
+**Target project:** `ebkcnepzzvpbyrnroxjh.supabase.co`
+**Scope:** Schema + table data + edge functions. **No** auth users, **no** storage files, **no** cutover of the live app.
 
-## Scope
+---
 
-**New tables** (10): `course_subjects`, `course_topics`, `course_subtopics`, `subtopic_videos`, `subtopic_pdfs`, `subtopic_quizzes`, `subtopic_quiz_questions`, `subtopic_quiz_attempts`, `subtopic_video_progress`, `subtopic_video_notes`. Plus `course_resources.subtopic_id`.
+### Phase 1 — Schema export (this project → SQL bundle)
 
-**Kept untouched**: `courses`, `course_batches`, `enrollments`, `course_reviews`, `course_enquiries`, `module_packs`, `module_pack_items`, `lecture_bucket`.
+1. Generate a single consolidated SQL file `migration/01_schema.sql` containing, in order:
+   - Extensions used (`pgcrypto`, `pgmq`, etc.)
+   - Enums (`app_role`, etc.)
+   - All ~95 `public` tables with full column definitions
+   - All sequences (e.g. `boost_admit_seq`)
+   - All ~60+ functions (`has_role`, `score_test_attempt`, `admin_test_result_sheet`, scoring, notification triggers, etc.)
+   - All triggers
+   - All `GRANT` statements (anon / authenticated / service_role per the project's pattern)
+   - All RLS `ENABLE` + `CREATE POLICY` statements
+   - Storage bucket *definitions* only (no objects) — so signed-URL code paths don't break
 
-**Legacy kept for now** (NOT dropped): `chapters`, `lessons`, `lesson_progress`, `lesson_notes`, `chapter_quizzes*`, `course_pdfs`. Drop SQL is added as a commented block to run after data migration.
+2. Skip everything in `auth`, `storage`, `realtime`, `supabase_functions`, `vault` schemas — those are managed.
 
-## Step 1 — Database migration
+3. You run `01_schema.sql` in your new project's SQL editor (or via psql). I'll include a verification query at the end that counts tables/functions.
 
-One migration with the full schema from your spec, adapted to project conventions:
+---
 
-- `CREATE TABLE` → `GRANT SELECT,INSERT,UPDATE,DELETE … TO authenticated; GRANT ALL … TO service_role` → `ENABLE RLS` → policies.
-- Role checks use this project's pattern (`public.has_role(auth.uid(),'admin'::app_role)` / `'super_admin'` / `'teacher'`), not the `profiles.role` shorthand in the spec.
-- Content SELECT policy: enrolled in course (active enrollment) OR admin/super_admin/teacher; videos additionally allow `is_preview = true`.
-- Content write policy: admin/super_admin/teacher only.
-- User tables (`subtopic_video_progress`, `subtopic_video_notes`, `subtopic_quiz_attempts`): `user_id = auth.uid()` for ALL.
-- Add `updated_at` triggers using existing `public.update_updated_at_column()` on the 3 hierarchy tables.
-- Indexes per spec.
+### Phase 2 — Data export (per-table CSV)
 
-## Step 2 — Types & utilities
+1. I'll script CSV exports for every public table that has data, written to `/mnt/documents/migration/data/<table>.csv` using the project's `COPY ... TO STDOUT` access.
 
-- `src/types/course-content.ts` — all interfaces from the spec.
-- `src/lib/youtube.ts` — `extractYouTubeId`, `getYouTubeThumbnail`, `getYouTubeEmbedUrl`.
-- `src/lib/course-progress.ts` — `calcProgress`, `rollupCourseProgress`.
-- `src/lib/api/course-content.ts` — `fetchCourseContentTree`, `upsertVideoProgress`, plus CRUD helpers for subjects/topics/subtopics/videos/pdfs/quizzes and a `reorderSiblings` batch-position updater.
+2. Tables that reference `auth.users(id)` (profiles, enrollments, user_roles, test_attempts, etc.) will be exported **with their user_id columns intact**. They will fail to import until those auth users exist — so on the new project I'll generate `02_data.sql` that:
+   - Drops FK constraints to `auth.users` temporarily,
+   - `\copy`s each CSV in,
+   - Re-adds the FKs as `NOT VALID` (so existing orphan rows don't block; new inserts still validate).
 
-## Step 3 — Admin: Content Manager
+3. Skipped tables (regenerated at runtime / sensitive / ephemeral):
+   `active_sessions`, `phone_otps`, `phone_verifications`, `email_send_log`, `email_send_state`, `sms_send_log`, `test_leaderboard_cache`, `test_attempt_answer_snapshots` (optional), `study_sessions` (optional). You can override this list.
 
-New route `/admin/courses/:courseId/content` (page `src/pages/AdminCourseContentPage.tsx` is repurposed; old chapter UI removed).
+4. Output: a zip at `/mnt/documents/migration/bansal-data-export.zip` you download and import.
 
-Components under `src/components/admin/content/`:
-- `ContentTree.tsx` — `@dnd-kit/sortable` tree with expand/collapse, inline rename, ⋮ menu (rename / move up-down / delete with confirm), localStorage state `admin_tree_[courseId]`.
-- `ContentEditor.tsx` — switches on selected node type.
-- `SubjectEditor.tsx`, `TopicEditor.tsx`, `SubtopicEditor.tsx` with breadcrumbs & stats.
-- `VideoTab.tsx` — list + add-via-YouTube-URL dialog (auto thumbnail from `extractYouTubeId`, oEmbed title best-effort, `is_preview` toggle), drag reorder.
-- `PdfTab.tsx` — list + add dialog (URL or Supabase Storage upload using existing pattern).
-- `QuizTab.tsx` — single-quiz-per-subtopic; create/edit/delete + `Manage Questions` sheet reusing the existing MCQ editor pattern against `subtopic_quiz_questions`.
-- Admin sidebar link "Chapters" → "Content"; old chapter routes removed.
-- "Preview as Student" button opens `/learn/:courseId` in a new tab.
+---
 
-## Step 4 — Student: Learning Interface
+### Phase 3 — Edge functions redeploy script
 
-Route `/learn/:courseId?video=:videoId` (replaces old lesson-based route). Page `src/pages/CourseLearnPage.tsx`.
+1. Generate `migration/deploy-functions.sh` that loops every directory in `supabase/functions/` and runs:
+   ```
+   supabase functions deploy <name> --project-ref ebkcnepzzvpbyrnroxjh --no-verify-jwt
+   ```
+   (with per-function `verify_jwt` overrides matching the current `config.toml`).
 
-- Access guard: must have active `enrollments` row OR target video has `is_preview=true` OR admin/teacher; otherwise redirect to course detail.
-- Desktop layout: 280px sticky `ContentSidebar.tsx` (progress bar + nested tree with ○/◑/● indicators, auto-scroll to active video, localStorage `learn_tree_[courseId]_[userId]`) + main area.
-- Mobile (<768px): hamburger opens tree in a bottom Sheet (85vh).
-- Main area:
-  - No video: course hero + Continue Learning (queries `subtopic_video_progress` ordered by `last_accessed_at desc`).
-  - With video: breadcrumb, YouTube nocookie iframe (16:9), title/duration, Mark Complete toggle, auto-complete on YouTube `onStateChange === 0` via postMessage listener, upsert `last_accessed_at` on load.
-- Tabs: Notes (debounced 1.5s autosave to `subtopic_video_notes`), PDFs (from `subtopic_pdfs`), Quiz (fullscreen NTA-style modal writing to `subtopic_quiz_attempts`), About.
+2. Generate `migration/secrets-checklist.md` listing every secret currently used by these functions (PRPSMS_*, CASHFREE_*, RESEND_*, LOVABLE_API_KEY, etc.) so you set them in your new project's Edge Function secrets before deploying.
 
-## Step 5 — Terminology pass
+3. You run the script locally with `supabase login` + your access token. I won't have your service role token in the sandbox so I can't execute it for you.
 
-Across new admin + student UI strings: "Chapter" → "Topic", "Lesson" → "Video", "Chapter Quiz" → "Subtopic Quiz". Legacy pages that still reference old tables are left as-is until data migration runs.
+---
 
-## Out of scope (call out)
+### Phase 4 — Frontend rewire instructions (NOT applied)
 
-- No automatic data migration from `chapters/lessons` → new tables. Spec keeps old tables alive; a future migration script can backfill.
-- `courses.total_lessons` and `sync_enrollment_progress()` continue to use the legacy lesson tables; enrollment % on the new model will be added later (rolled up client-side in the new UI for now).
-- `course_pdfs` admin UI continues to work against the old table until migration.
+Since you chose "just copy the data — don't touch the app," I will only **document** the env changes needed if you later want to cut over:
 
-## Technical details
+- `.env`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `src/integrations/supabase/types.ts` regen via `supabase gen types`
+- Image/PDF URLs in DB still point at `zmkgboiqubtowmionplq.supabase.co` storage (you chose to keep storage on old project — they'll keep working as long as the old project lives).
 
-- Postgres: all FKs `ON DELETE CASCADE` per spec. `subtopic_quizzes` has `UNIQUE(subtopic_id)`. `subtopic_quiz_questions.correct_option` CHECK in ('a','b','c','d').
-- RLS rewrite of spec example: replace `EXISTS (SELECT 1 FROM profiles WHERE id=auth.uid() AND role IN ('admin','teacher'))` with `public.has_role(auth.uid(),'admin'::app_role) OR public.has_role(auth.uid(),'super_admin'::app_role) OR public.has_role(auth.uid(),'teacher'::app_role)`.
-- GRANTs: every new public table gets `GRANT SELECT,INSERT,UPDATE,DELETE TO authenticated` and `GRANT ALL TO service_role`. No `anon` grants (all access is authenticated).
-- `subtopic_videos` SELECT policy adds the `is_preview = true` branch.
-- DnD: existing `@dnd-kit` usage in `AdminCoursesPage`/`AdminBooksPage` is the reference; reorder writes batch update via RPC-less `upsert` of `{id, position}`.
-- YouTube oEmbed call from admin client is best-effort; failure leaves title blank for manual entry — no server proxy added.
+I will **not** edit `.env` or the generated client now.
 
-## Confirmations before I start
+---
 
-1. Keep old `chapters/lessons/...` tables and their admin pages alive (read-only-ish) until you separately ask to drop them — correct?
-2. Pricing/enrollment unaffected — students still buy the `course`, and the new content unlocks for active enrollments. OK?
-3. Quiz scoring: MCQ-single only with marks/negative marks per question, computed client-side on submit (matches spec). OK?
+### Deliverables you'll get in `/mnt/documents/migration/`
 
-If yes to all three, I'll implement Steps 1-5 in that order, starting with the migration.
+```
+01_schema.sql              ~consolidated DDL
+02_data.sql                wrapper that \copy's all CSVs with FK toggles
+data/*.csv                 one per public table
+deploy-functions.sh        edge function deploy loop
+secrets-checklist.md       env vars to set in the new project
+README.md                  step-by-step run order
+bansal-data-export.zip     everything above, zipped
+```
+
+---
+
+### What's explicitly NOT in scope
+
+- Auth users (you skipped) — every login on the new project will fail until you re-create users.
+- Storage objects — file URLs continue to resolve against `zmkgboiqubtowmionplq` until that project is deleted.
+- Switching the live app over — `.env` stays pointed at Lovable Cloud.
+- Cron / scheduled function setup on the new project (I'll list them in README; you wire them up).
+
+Approve to switch into build mode and I'll generate the bundle.
