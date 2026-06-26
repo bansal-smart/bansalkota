@@ -385,14 +385,7 @@ const DocxCommonImportDialog = ({
       if (target === "test" && targetTestId) {
         // Mark the test as common-method; also pin the detected option label style if not set yet.
         const update: Record<string, unknown> = { import_method: "common" };
-        if (detectedOptionStyle) {
-          const { data: tRow } = await supabase
-            .from("tests")
-            .select("option_label_style")
-            .eq("id", targetTestId)
-            .maybeSingle();
-          if (!(tRow as any)?.option_label_style) update.option_label_style = detectedOptionStyle;
-        }
+        if (detectedOptionStyle) update.option_label_style = detectedOptionStyle;
         await supabase.from("tests").update(update as any).eq("id", targetTestId);
 
 
