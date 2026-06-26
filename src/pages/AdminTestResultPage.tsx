@@ -101,7 +101,7 @@ const AdminTestResultPage = () => {
     setError(null);
     const { data: t, error: tErr } = await supabase
       .from("tests")
-      .select("id, title, slug, exam_pattern, subjects, total_marks, duration_minutes, starts_at, ends_at, results_released_at, auto_release, cbt_allowed_batch_ids")
+      .select("id, title, slug, exam_pattern, option_label_style, subjects, total_marks, duration_minutes, starts_at, ends_at, results_released_at, auto_release, cbt_allowed_batch_ids")
       .eq("slug", slug)
       .maybeSingle();
     if (tErr || !t) {
