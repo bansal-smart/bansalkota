@@ -814,11 +814,14 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   // Flush final question
   if (seenFirstNumber) {
     ordinal += 1;
+    tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
   }
 
-
-
   const totalImages = out.reduce((s, q) => s + q.images.length, 0);
-  return { questions: out, warnings, totalImages };
+  let detectedOptionStyle: "numeric" | "alpha" | null = null;
+  if (numericOptionHits + alphaOptionHits >= 2) {
+    detectedOptionStyle = numericOptionHits > alphaOptionHits ? "numeric" : "alpha";
+  }
+  return { questions: out, warnings, totalImages, detectedOptionStyle };
 };
