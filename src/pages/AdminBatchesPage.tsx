@@ -184,7 +184,20 @@ const AdminBatchesPage = () => {
       const { data, error } = await supabase.functions.invoke("cbt-bulk-setup", {
         body: { rows: parsedRows },
       });
-      if (error) throw error;
+      if (error) {
+        // Try to read the actual response body for a useful error message
+        let detail = error.message;
+        try {
+          const ctx = (error as unknown as { context?: Response }).context;
+          if (ctx && typeof ctx.text === "function") {
+            const txt = await ctx.text();
+            if (txt) {
+              try { detail = (JSON.parse(txt).error ?? txt) as string; } catch { detail = txt; }
+            }
+          }
+        } catch { /* ignore */ }
+        throw new Error(detail);
+      }
       const payload = data as {
         summary?: { total: number; created: number; updated: number; errors: number };
         results?: Array<{ roll_number: string; status: string; error?: string }>;
