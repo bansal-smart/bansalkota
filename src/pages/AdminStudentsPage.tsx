@@ -225,7 +225,7 @@ const AdminStudentsPage = () => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const allSelected = useMemo(() => rows.length > 0 && rows.every((r) => selected.includes(r.user_id)), [rows, selected]);
 
-  const openDrawer = (u: StudentRow) => {
+  const openDrawer = async (u: StudentRow) => {
     setDrawer(u);
     setEdit({
       roll_number: u.roll_number ?? "",
@@ -241,6 +241,13 @@ const AdminStudentsPage = () => {
       city: u.city ?? "",
       country: u.country ?? "",
     });
+    setEditCourseIds([]);
+    const { data: er } = await (supabase as any)
+      .from("enrollments")
+      .select("course_id")
+      .eq("user_id", u.user_id)
+      .eq("is_active", true);
+    setEditCourseIds(((er ?? []) as Array<{ course_id: string }>).map((r) => r.course_id));
   };
 
   const saveEdit = async () => {
@@ -251,6 +258,7 @@ const AdminStudentsPage = () => {
       Object.entries(edit).forEach(([k, v]) => {
         payload[k] = typeof v === "string" && v.trim() === "" ? null : v;
       });
+      payload.course_ids = editCourseIds;
       const { error } = await supabase.functions.invoke("manage-student", { body: payload });
       if (error) throw error;
       toast.success("Student updated");
