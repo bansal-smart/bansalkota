@@ -37,7 +37,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CourseReviews } from "@/components/CourseReviews";
 import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
 import { Sparkles } from "lucide-react";
 
