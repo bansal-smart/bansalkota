@@ -926,9 +926,10 @@ const DocxCommonImportDialog = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[11px] font-bold text-foreground">Answer:</span>
                       {q.type === "mcq-single" &&
-                        ["A", "B", "C", "D"].map((L) => {
+                        ["A", "B", "C", "D"].map((L, i) => {
                           const v = L.charCodeAt(0) - 65;
                           const active = q.correctAnswer === v;
+                          const display = detectedOptionStyle === "numeric" ? String(i + 1) : L;
                           return (
                             <button
                               key={L}
@@ -939,14 +940,15 @@ const DocxCommonImportDialog = ({
                                   : "bg-background text-foreground border-border hover:bg-muted"
                               }`}
                             >
-                              {L}
+                              {display}
                             </button>
                           );
                         })}
                       {q.type === "mcq-multi" &&
-                        ["A", "B", "C", "D"].map((L) => {
+                        ["A", "B", "C", "D"].map((L, i) => {
                           const v = L.charCodeAt(0) - 65;
                           const sel = Array.isArray(q.correctAnswer) && (q.correctAnswer as number[]).includes(v);
+                          const display = detectedOptionStyle === "numeric" ? String(i + 1) : L;
                           return (
                             <button
                               key={L}
@@ -957,7 +959,7 @@ const DocxCommonImportDialog = ({
                                   : "bg-background text-foreground border-border hover:bg-muted"
                               }`}
                             >
-                              {L}
+                              {display}
                             </button>
                           );
                         })}
