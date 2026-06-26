@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Play,
   CheckCircle2,
-  Star,
-  Users,
   Clock,
   ShieldCheck,
   ChevronDown,
@@ -39,7 +37,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CourseReviews } from "@/components/CourseReviews";
 import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
 import { Sparkles } from "lucide-react";
 
@@ -260,17 +257,6 @@ const CourseDetailPage = () => {
               </p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                <strong className="text-foreground">{Number(course.rating || 4.8).toFixed(1)}</strong>
-                <span>({(course.total_enrolled || 2100).toLocaleString("en-IN")} reviews)</span>
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-primary" /> {(course.total_enrolled || 12400).toLocaleString("en-IN")}{" "}
-                enrolled
-              </span>
-            </div>
           </div>
 
           {/* Subjects Covered */}
@@ -513,7 +499,7 @@ const CourseDetailPage = () => {
             </section>
           )}
 
-          <CourseReviews courseId={course.id} enrolled={enrolled} />
+          
         </div>
 
         {/* RIGHT COLUMN */}
