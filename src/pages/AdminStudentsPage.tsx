@@ -34,6 +34,10 @@ type StudentRow = {
 
 type CentreLite = { id: string; city: string; area: string | null; slug: string };
 type BatchLite = { id: string; name: string; code: string | null };
+type CourseLite = { id: string; name: string };
+
+const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
+const CLASS_OPTIONS = ["VI", "VII", "VIII", "IX", "X", "XI", "XII", "Dropper"];
 
 const PAGE_SIZE = 25;
 
