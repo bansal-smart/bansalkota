@@ -355,9 +355,9 @@ export default function CenterDetailPage() {
                 <Phone className="h-4 w-4" /> Call {center.phone}
               </BansalButton>
             </a>
-            <a href="/contact">
-              <BansalButton variant="outline">Enquire online</BansalButton>
-            </a>
+            <BansalButton variant="outline" onClick={() => setEnquiryOpen(true)}>
+              Enquire online
+            </BansalButton>
           </div>
         </div>
       </section>
