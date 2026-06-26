@@ -764,13 +764,14 @@ const AdminTestResultPage = () => {
         drawFooter();
         const answers = (att.answers ?? {}) as Record<string, { selected: any }>;
         const perQ: any[] = ((att as any)?.metadata?.questions as any[]) ?? [];
+        const labelStyle = resolveOptionStyle(test);
         const fmtOptionLabel = (val: any, opts: any): string => {
           if (Array.isArray(opts) && typeof val === "number" && opts[val] != null) {
             const o = opts[val];
             const txt = typeof o === "string" ? o : (o?.text ?? "");
-            return `${String.fromCharCode(65 + val)}${txt ? ". " + String(txt).slice(0, 60) : ""}`;
+            return `${optionLabel(val, labelStyle)}${txt ? ". " + String(txt).slice(0, 60) : ""}`;
           }
-          return `${String.fromCharCode(65 + Number(val))}`;
+          return `${optionLabel(Number(val), labelStyle)}`;
         };
         const fmtAns = (val: any, opts: any, qType: string): string => {
           if (val === null || val === undefined || val === "") return "—";
@@ -782,7 +783,7 @@ const AdminTestResultPage = () => {
           // mcq-multi (array of indices)
           if (Array.isArray(val)) {
             return [...val]
-              .map((v) => (typeof v === "number" ? String.fromCharCode(65 + v) : String(v)))
+              .map((v) => (typeof v === "number" ? optionLabel(v, labelStyle) : String(v)))
               .sort()
               .join(", ");
           }
