@@ -56,7 +56,6 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     email: "",
     phone: "",
     parent_phone: "",
-    class_level: "",
     city: "",
     state: "",
     preferred_centre_id: "",
