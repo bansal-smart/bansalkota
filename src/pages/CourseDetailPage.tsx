@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Play,
   CheckCircle2,
-  Star,
-  Users,
   Clock,
   ShieldCheck,
   ChevronDown,
