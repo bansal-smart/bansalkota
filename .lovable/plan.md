@@ -1,31 +1,63 @@
+## 1. Remove "NTSE" globally
 
-## Root cause
+Strip the word "NTSE" (and "NTSE / Olympiads" / "NTSE, KVPY, ...") from all user-facing copy:
 
-Looking at the PRPSMS template screenshot you shared:
+- `src/pages/CenterDetailPage.tsx` — Foundation program desc.
+- `src/pages/BoostPage.tsx` — target row + FAQ answer.
+- `src/components/BoostRegistrationModal.tsx` — `EXAMS` list (drop "NTSE").
+- `src/pages/AdminBooksPage.tsx` — `TARGET_EXAMS` list (replace "NTSE / Olympiads" → "Olympiads").
+- `src/pages/AdminToppersPage.tsx` — placeholder text.
 
-| Field | Value |
-|---|---|
-| Type | Transactional |
-| Body | `Dear Applicant, {#var#} is your verification code for Online Application at Bansal Classes. Team Bansal` |
-| Sender ID | **20190332** |
-| Status | Approved |
-| Template name | **CodeRed** |
+Replacements keep surrounding items intact (e.g. "Olympiads, JEE, NEET").
 
-The approved sender ID for this template is `20190332`, **not** `VBANSL`. Earlier I changed the default sender to `VBANSL` based on your instruction, but the DLT-approved binding for the `CodeRed` template is to sender `20190332`. When PRPSMS receives the SMS with a sender ID that doesn't match the template's DLT binding, the operator silently drops it — exactly what you're seeing (PRPSMS returns a "sent" msg id, but the SMS never reaches the phone).
+## 2. Centres count "Showing 85 of 78"
 
-## Plan
+`src/pages/CentersPage.tsx` line 71 still uses a static `CENTER_COUNT - 1` from `@/data/centres` (the legacy 88-entry file). Fix:
 
-Single small change — revert the default sender and confirm the template+sender combination is what's registered.
+- Drive the hero stat (`{CENTER_COUNT}+ Centres`) and the subheading number from `CENTERS.length` (already done for the chip).
+- Replace `STATE_COUNT` import with a derived unique-state count from the live `CENTERS` array so deleting centres updates state count too.
+- Line 121 "Showing X of Y" already uses live count — verify no stale source remains.
 
-### 1. `supabase/functions/_shared/prpsms.ts`
-- Change `PRPSMS_SENDER_DEFAULT` from `"VBANSL"` back to `"20190332"`.
-- (Template body for `CodeRed` is already correct and matches the screenshot exactly.)
+## 3. Remove floating "S" dropcap
 
-### 2. Verify after deploy
-- Trigger an OTP from the login page.
-- Confirm in `sms_send_log` that the row records `template_name: "CodeRed"` and a `provider_msg_id`.
-- The SMS should land on the phone within seconds since the sender+template now match the DLT-approved binding.
+`src/pages/LeadershipDetailPage.tsx` line 211 uses Tailwind `first-letter:*` utilities to render the oversized orange "S". Remove those utility classes so the paragraph is plain body text.
 
-### Notes
-- If you later want a branded alpha sender like `VBANSL`, that sender ID has to be approved on the PRPSMS portal **and** the `CodeRed` template re-bound to it. Until then, `20190332` is the only sender that will actually deliver this template.
-- No other code changes needed — `prpsms-send-otp`, `prpsms-verify-otp`, and the LoginPage flow are already correctly wired.
+## 4. Globalize Class dropdown (Class 6 → Dropper)
+
+Create a shared constant `CLASS_LEVELS = ["Class 6", … "Class 12", "Dropper"]` in `src/lib/constants.ts` and use it everywhere a class picker exists:
+
+- `src/components/CourseEnquiryDialog.tsx` (already 6→Dropper, switch to shared constant)
+- `src/components/CenterOfflineSections.tsx` (currently starts at Class 8 — this is the Admission Enquiry modal in the screenshot)
+- `src/components/landing/LandingCTAForm.tsx` (currently "Class 6-8" grouped — replace with individual 6..Dropper)
+- `src/components/landing/LeadForm.tsx` (uses Dropper variants — normalize to shared list)
+- `src/components/BoostRegistrationModal.tsx`, `src/components/ProfileCompletionDialog.tsx`, `src/pages/SignupPage.tsx`, `src/pages/ProfilePage.tsx`, `src/pages/AdmissionsPage.tsx`, `src/pages/AdminStudentsPage.tsx`, `src/pages/AdminBatchesPage.tsx`, `src/pages/CenterStudentsPage.tsx` — audit each and align to the shared list where the field represents the student's class.
+
+## 5. Editable centre facilities + stat cards
+
+Currently `FACILITIES` array and the two stat cards ("Students mentored", "Selections (2024)") are hard-coded in `CenterDetailPage.tsx`. Make them per-centre and editable from admin.
+
+### Schema (migration)
+
+Add to `public.centres`:
+- `facilities text[] not null default '{}'` — chips shown under Centre details.
+- `students_mentored text` — e.g. "10,000+".
+- `students_mentored_note text` — e.g. "Across Bansal network".
+- `selections_count text` — e.g. "2,500+".
+- `selections_year integer` — e.g. 2024 (drives card title "Selections (2024)").
+- `selections_note text` — e.g. "JEE & NEET combined".
+
+### Admin (`src/pages/AdminCentersPage.tsx`)
+
+In the create/edit centre modal add:
+- A chip input (or comma-separated text → array) for `facilities` with suggestions: AC classrooms, Doubt clinics, Library & reading hall, Mock test infrastructure, Mentor support, Parent-teacher meets, In-house CBT.
+- Inputs for `students_mentored`, `students_mentored_note`, `selections_count`, `selections_year`, `selections_note`.
+
+### Frontend (`src/pages/CenterDetailPage.tsx`)
+
+- Read the new fields from the centre row (extend `DBCenter` in `src/hooks/useCenters.ts`).
+- Render facility chips from `center.facilities`; hide the section if the array is empty.
+- Stat cards use the centre's own numbers; fall back to current defaults only when unset.
+
+## Out of scope
+
+No changes to courses, books storefront, or other admin pages beyond the small NTSE label tweaks listed above.
