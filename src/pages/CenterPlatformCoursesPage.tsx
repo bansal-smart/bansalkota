@@ -132,9 +132,19 @@ const CenterPlatformCoursesPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
-                        <Eye className="h-3.5 w-3.5" />
-                      </a>
+                      <div className="inline-flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => setManageCourse({ id: c.id, name: c.name })}
+                          className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+                          title="Manage Students"
+                        >
+                          <Users className="h-3 w-3" />
+                          Manage Students
+                        </button>
+                        <a href={`/courses/${c.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
+                          <Eye className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
                     </td>
                   </tr>
                 ))}
