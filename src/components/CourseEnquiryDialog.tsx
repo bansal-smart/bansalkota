@@ -41,14 +41,11 @@ const schema = z.object({
     .trim()
     .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone")
     .optional(),
-  class_level: z.string().min(1, "Select class"),
   city: z.string().trim().min(1, "Enter city").max(80),
   state: z.string().trim().min(1, "Enter state").max(80),
   preferred_centre_id: z.string().optional(),
   message: z.string().max(1000).optional(),
 });
-
-const CLASS_OPTIONS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
 
 const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   const { user } = useAuth();
@@ -59,7 +56,6 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     email: "",
     phone: "",
     parent_phone: "",
-    class_level: "",
     city: "",
     state: "",
     preferred_centre_id: "",
@@ -121,7 +117,6 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           email: parsed.data.email,
           phone: parsed.data.phone,
           parent_phone: parsed.data.parent_phone || null,
-          class_level: parsed.data.class_level,
           city: parsed.data.city,
           state: parsed.data.state,
           preferred_centre_id: parsed.data.preferred_centre_id || null,
@@ -182,37 +177,20 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             <Label htmlFor="ce-parent-phone">Parent's phone</Label>
             <Input id="ce-parent-phone" value={form.parent_phone} onChange={(e) => update("parent_phone", e.target.value)} placeholder="Parent's phone number" />
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div>
-              <Label>Class *</Label>
-              <Select value={form.class_level} onValueChange={(v) => update("class_level", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CLASS_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Preferred centre</Label>
-              <Select value={form.preferred_centre_id} onValueChange={(v) => update("preferred_centre_id", v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Any centre" />
-                </SelectTrigger>
-                <SelectContent>
-                  {centres.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Preferred centre</Label>
+            <Select value={form.preferred_centre_id} onValueChange={(v) => update("preferred_centre_id", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Any centre" />
+              </SelectTrigger>
+              <SelectContent>
+                {centres.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
