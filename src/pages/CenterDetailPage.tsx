@@ -24,6 +24,7 @@ import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centres";
 import { useCenters } from "@/hooks/useCenters";
 import CenterOfflineSections, { AdmissionEnquiryModal } from "@/components/CenterOfflineSections";
 import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
+import CentreCarousel from "@/components/CentreCarousel";
 
 const PROGRAMS = [
   {
