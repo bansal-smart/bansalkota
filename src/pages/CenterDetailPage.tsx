@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -22,7 +22,7 @@ import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { CENTERS, THEME_IMAGE, findCenter } from "@/data/centres";
 import { useCenters } from "@/hooks/useCenters";
-import CenterOfflineSections from "@/components/CenterOfflineSections";
+import CenterOfflineSections, { AdmissionEnquiryModal } from "@/components/CenterOfflineSections";
 import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
 
 const PROGRAMS = [
@@ -60,6 +60,7 @@ export default function CenterDetailPage() {
   const { centers: DB_CENTERS } = useCenters();
   const dbCenter = slug ? DB_CENTERS.find((c) => c.slug === slug) : undefined;
   const center = dbCenter ?? (slug ? findCenter(slug) : undefined);
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
 
   const nearby = useMemo(() => {
     if (!center) return [];
@@ -354,12 +355,19 @@ export default function CenterDetailPage() {
                 <Phone className="h-4 w-4" /> Call {center.phone}
               </BansalButton>
             </a>
-            <a href="/contact">
-              <BansalButton variant="outline">Enquire online</BansalButton>
-            </a>
+            <BansalButton variant="outline" onClick={() => setEnquiryOpen(true)}>
+              Enquire online
+            </BansalButton>
           </div>
         </div>
       </section>
+      {dbCenter?.id && enquiryOpen && (
+        <AdmissionEnquiryModal
+          centerId={dbCenter.id}
+          centerCity={displayName}
+          onClose={() => setEnquiryOpen(false)}
+        />
+      )}
     </div>
   );
 }
