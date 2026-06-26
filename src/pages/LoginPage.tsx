@@ -76,12 +76,22 @@ const LoginPage = () => {
       return;
     }
     setSubmitting(true);
-    // Static dev OTP — SMS sending disabled. Use 123456 to log in.
-    await new Promise((r) => setTimeout(r, 400));
-    setStep("otp");
-    startTimer();
-    toast.success("Use OTP 123456 to continue (dev mode).");
-    setSubmitting(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("prpsms-send-otp", {
+        body: { phone: `+91${mobile}`, purpose: "login" },
+      });
+      if (error || !data?.ok) {
+        const msg = (data as { error?: string } | null)?.error || error?.message || "Could not send OTP";
+        throw new Error(msg);
+      }
+      setStep("otp");
+      startTimer();
+      toast.success(`OTP sent to +91 ${mobile}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not send OTP");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
 
