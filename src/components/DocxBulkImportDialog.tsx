@@ -64,6 +64,7 @@ const DocxBulkImportDialog = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
   const [showInstructions, setShowInstructions] = useState(false);
+  const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
 
   // Test picker (only when launched without a fixed testId)
   const [alsoPushToTest, setAlsoPushToTest] = useState(false);
