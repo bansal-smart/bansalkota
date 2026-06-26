@@ -242,6 +242,7 @@ const LoginPage = () => {
                     maxLength={1}
                     value={d}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
                     className="h-14 w-12 rounded-lg border-2 border-border bg-white text-center font-display text-xl font-bold text-bansal-black focus:border-bansal-blue outline-none"
                   />
                 ))}
