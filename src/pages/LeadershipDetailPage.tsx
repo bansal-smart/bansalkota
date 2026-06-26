@@ -208,7 +208,7 @@ export default function LeadershipDetailPage() {
                 </blockquote>
               )}
               {profile.intro && (
-                <p className="text-base md:text-lg text-bansal-gray leading-relaxed first-letter:font-display first-letter:text-5xl md:first-letter:text-6xl first-letter:font-bold first-letter:text-bansal-orange first-letter:float-left first-letter:mr-3 first-letter:leading-none first-letter:mt-1">
+                <p className="text-base md:text-lg text-bansal-gray leading-relaxed">
                   {slug === "vk-bansal"
                     ? profile.intro.replace(/V\s*K\.?\s*Bansal/g, "Bansal Sir")
                     : slug === "sameer-bansal"

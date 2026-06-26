@@ -205,7 +205,8 @@ const ENQUIRY_TYPES = [
   { value: "admission", label: "Admission" },
   { value: "general", label: "General" },
 ];
-const CLASS_LEVELS = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+import { CLASS_LEVELS } from "@/lib/constants";
+const CLASS_LEVELS_OPTIONS = [...CLASS_LEVELS];
 
 const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: string; centerCity: string; onClose: () => void }) => {
   const [form, setForm] = useState({ name: "", phone: "", enquiry_type: "admission", class_level: "", message: "" });
@@ -247,7 +248,7 @@ const AdmissionEnquiryModal = ({ centerId, centerCity, onClose }: { centerId: st
         </select>
         <select value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm">
           <option value="">Class</option>
-          {CLASS_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+          {CLASS_LEVELS_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us about your goal (e.g. JEE 2026, Class 11)" rows={4} className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm" />
         <button onClick={submit} disabled={submitting} className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-bansal-orange py-2.5 text-sm font-bold text-white disabled:opacity-60">

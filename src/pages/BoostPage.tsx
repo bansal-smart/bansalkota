@@ -38,7 +38,7 @@ const benefits = [
 ];
 
 const eligibility = [
-  { category: "Class 5–9", target: "Pre-Foundation (NTSE, Olympiads)" },
+  { category: "Class 5–9", target: "Pre-Foundation (Olympiads)" },
   { category: "Class 10", target: "Foundation + JEE/NEET Prep" },
   { category: "Class 11", target: "JEE Main, JEE Advanced, NEET" },
   { category: "Class 12", target: "JEE Main, JEE Advanced, NEET" },
@@ -64,7 +64,7 @@ const pattern = [
 const faqs = [
   {
     q: "Who can appear for BOOST?",
-    a: "Any student from Class 5 to Class 12 (and droppers) preparing for school, NTSE, Olympiads, JEE, or NEET can register.",
+    a: "Any student from Class 5 to Class 12 (and droppers) preparing for school, Olympiads, JEE, or NEET can register.",
   },
   {
     q: "Is BOOST really only ₹99?",

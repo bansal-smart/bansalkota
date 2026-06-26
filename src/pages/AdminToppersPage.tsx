@@ -228,7 +228,7 @@ const AdminToppersPage = () => {
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Name *" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Exam (JEE / NEET / NTSE)" value={form.exam ?? ""} onChange={(e) => setForm({ ...form, exam: e.target.value })} />
+          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Exam (JEE / NEET / Olympiad)" value={form.exam ?? ""} onChange={(e) => setForm({ ...form, exam: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Rank (AIR 1, Top 100…)" value={form.rank_label ?? ""} onChange={(e) => setForm({ ...form, rank_label: e.target.value })} />
           <input type="number" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Year" value={form.year ?? ("" as any)} onChange={(e) => setForm({ ...form, year: e.target.value ? Number(e.target.value) : (null as any) })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Score (e.g. 360/360)" value={form.score ?? ""} onChange={(e) => setForm({ ...form, score: e.target.value })} />

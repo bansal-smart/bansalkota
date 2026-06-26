@@ -875,6 +875,7 @@ export type Database = {
           created_by: string | null
           email: string | null
           established: number | null
+          facilities: string[]
           featured_rank: number | null
           id: string
           image_url: string | null
@@ -884,9 +885,14 @@ export type Database = {
           is_published: boolean
           phone: string
           region: string
+          selections_count: string | null
+          selections_note: string | null
+          selections_year: number | null
           slug: string
           sort_order: number
           state: string
+          students_mentored: string | null
+          students_mentored_note: string | null
           theme: string
           updated_at: string
           verified: boolean
@@ -899,6 +905,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           established?: number | null
+          facilities?: string[]
           featured_rank?: number | null
           id?: string
           image_url?: string | null
@@ -908,9 +915,14 @@ export type Database = {
           is_published?: boolean
           phone?: string
           region?: string
+          selections_count?: string | null
+          selections_note?: string | null
+          selections_year?: number | null
           slug: string
           sort_order?: number
           state: string
+          students_mentored?: string | null
+          students_mentored_note?: string | null
           theme?: string
           updated_at?: string
           verified?: boolean
@@ -923,6 +935,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           established?: number | null
+          facilities?: string[]
           featured_rank?: number | null
           id?: string
           image_url?: string | null
@@ -932,9 +945,14 @@ export type Database = {
           is_published?: boolean
           phone?: string
           region?: string
+          selections_count?: string | null
+          selections_note?: string | null
+          selections_year?: number | null
           slug?: string
           sort_order?: number
           state?: string
+          students_mentored?: string | null
+          students_mentored_note?: string | null
           theme?: string
           updated_at?: string
           verified?: boolean
