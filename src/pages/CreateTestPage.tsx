@@ -587,6 +587,10 @@ const CreateTestPage = () => {
         .eq("id", tid)
         .maybeSingle();
       const slug = t?.slug ?? createdDraftSlug;
+      const resolvedStyle = optionLabelStyle === "auto"
+        ? (examPattern.toLowerCase().includes("neet") ? "numeric" : "alpha")
+        : optionLabelStyle;
+      setOptionLabelStyle(resolvedStyle);
       if (slug && (!isEditMode || tid !== resolvedTestId)) {
         navigate(`/admin/tests/${slug}/edit`, { replace: true });
         return;
@@ -1629,6 +1633,8 @@ const CreateTestPage = () => {
         onClose={() => setDocxImportOpen(false)}
         onImported={afterImport}
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
+        examPattern={examPattern}
+        optionLabelStyle={optionLabelStyle}
       />
       <DocxCommonImportDialog
         open={commonImportOpen}
@@ -1636,6 +1642,7 @@ const CreateTestPage = () => {
         onImported={afterImport}
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
         examPattern={examPattern}
+        optionLabelStyle={optionLabelStyle}
       />
       <MasterImportInstructions open={masterInstructionsOpen} onClose={() => setMasterInstructionsOpen(false)} />
     </DndContext>

@@ -35,6 +35,8 @@ type Props = {
   target?: "test" | "bank";
   /** Exam pattern of the target test, used to restrict subject choices (e.g. jee-main → no Biology). */
   examPattern?: string;
+  /** Parent test option-label setting. Auto means exam pattern / detected style decides. */
+  optionLabelStyle?: "auto" | "numeric" | "alpha";
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -68,6 +70,7 @@ const DocxCommonImportDialog = ({
   defaultSubject,
   target = "test",
   examPattern,
+  optionLabelStyle = "auto",
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -102,6 +105,13 @@ const DocxCommonImportDialog = ({
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
+  const isNeetPattern = (examPattern ?? "").toLowerCase().includes("neet");
+  const effectiveOptionStyle: "numeric" | "alpha" =
+    optionLabelStyle === "numeric" || optionLabelStyle === "alpha"
+      ? optionLabelStyle
+      : isNeetPattern
+        ? "numeric"
+        : detectedOptionStyle ?? "alpha";
 
   const subjectForNumber = (n: number): string => {
     // Iterate in reverse so the most-recently-added (typically narrower / more
@@ -151,6 +161,7 @@ const DocxCommonImportDialog = ({
     setErrorMsg(null);
     setImported({ ok: 0, failed: 0 });
     setSubjectRanges([]);
+      setDetectedOptionStyle(null);
     if (!testId) setSelectedTestId(null);
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -383,9 +394,11 @@ const DocxCommonImportDialog = ({
 
     try {
       if (target === "test" && targetTestId) {
-        // Mark the test as common-method; also pin the detected option label style if not set yet.
-        const update: Record<string, unknown> = { import_method: "common" };
-        if (detectedOptionStyle) update.option_label_style = detectedOptionStyle;
+        // Mark the test as common-method; pin the resolved option label style so NEET + Auto renders 1/2/3/4.
+        const update: Record<string, unknown> = {
+          import_method: "common",
+          option_label_style: effectiveOptionStyle,
+        };
         await supabase.from("tests").update(update as any).eq("id", targetTestId);
 
 
@@ -922,7 +935,7 @@ const DocxCommonImportDialog = ({
                         ["A", "B", "C", "D"].map((L, i) => {
                           const v = L.charCodeAt(0) - 65;
                           const active = q.correctAnswer === v;
-                          const display = detectedOptionStyle === "numeric" ? String(i + 1) : L;
+                          const display = effectiveOptionStyle === "numeric" ? String(i + 1) : L;
                           return (
                             <button
                               key={L}
@@ -941,7 +954,7 @@ const DocxCommonImportDialog = ({
                         ["A", "B", "C", "D"].map((L, i) => {
                           const v = L.charCodeAt(0) - 65;
                           const sel = Array.isArray(q.correctAnswer) && (q.correctAnswer as number[]).includes(v);
-                          const display = detectedOptionStyle === "numeric" ? String(i + 1) : L;
+                          const display = effectiveOptionStyle === "numeric" ? String(i + 1) : L;
                           return (
                             <button
                               key={L}
