@@ -628,6 +628,7 @@ const CreateTestPage = () => {
           instructions_image_url: stableInstructionsUrl(instructionsImageUrl),
           test_type: testType,
           exam_pattern: examPattern,
+          option_label_style: optionLabelStyle === "auto" ? null : optionLabelStyle,
           duration_minutes: duration,
           correct_marks: correctMarks,
           wrong_marks: wrongMarks,
