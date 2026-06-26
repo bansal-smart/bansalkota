@@ -721,7 +721,50 @@ const AdminStudentsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Confirm bulk delete */}
+      {confirmBulkDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !bulkDeleting && setConfirmBulkDelete(false)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 shrink-0">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-foreground">Delete {selected.length} student{selected.length === 1 ? "" : "s"}?</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This will permanently delete the selected students and all their data (profiles, progress, attempts, enrollments). This action cannot be undone.
+                </p>
+                {bulkDeleting && (
+                  <p className="mt-2 text-[11px] font-medium text-foreground">
+                    Deleting {bulkProgress.done} / {bulkProgress.total}…
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                disabled={bulkDeleting}
+                onClick={() => setConfirmBulkDelete(false)}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={bulkDeleting}
+                onClick={doBulkDelete}
+                className="rounded-lg bg-destructive px-4 py-2 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+              >
+                {bulkDeleting && <Loader2 className="h-3 w-3 animate-spin" />}
+                Delete {selected.length} forever
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 };
 
