@@ -281,7 +281,7 @@ const ENQUIRY_TYPES = [
 import { CLASS_LEVELS } from "@/lib/constants";
 const CLASS_LEVELS_OPTIONS = [...CLASS_LEVELS];
 
-const AdmissionEnquiryModal = ({
+export const AdmissionEnquiryModal = ({
   centerId,
   centerCity,
   onClose,
