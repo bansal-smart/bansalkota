@@ -109,7 +109,6 @@ const CenterPlatformCoursesPage = () => {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Lectures</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Students</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
                 </tr>
@@ -123,7 +122,6 @@ const CenterPlatformCoursesPage = () => {
                     <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{c.test_count ?? 0}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{(c.total_enrolled ?? 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_published ? "bg-secondary/20 text-secondary" : "bg-amber-500/20 text-amber-600"}`}>
                         {c.is_published ? "Published" : "Draft"}
