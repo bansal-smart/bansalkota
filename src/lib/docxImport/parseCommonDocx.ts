@@ -193,5 +193,18 @@ export const parseCommonDocxQuestions = async (
   }
 
   const totalImages = out.reduce((s, q) => s + q.images.length, 0);
-  return { questions: out, warnings, totalImages };
+
+  // Detect option label style by scanning stems for (1)(2)(3)(4) vs (A)(B)(C)(D) markers.
+  let numericHits = 0;
+  let alphaHits = 0;
+  for (const q of out) {
+    const stem = q.stemText || "";
+    numericHits += (stem.match(/\(\s*[1-4]\s*\)/g) || []).length;
+    alphaHits += (stem.match(/\(\s*[A-Da-d]\s*\)/g) || []).length;
+  }
+  let detectedOptionStyle: "numeric" | "alpha" | null = null;
+  if (numericHits + alphaHits >= 4) {
+    detectedOptionStyle = numericHits > alphaHits ? "numeric" : "alpha";
+  }
+  return { questions: out, warnings, totalImages, detectedOptionStyle };
 };
