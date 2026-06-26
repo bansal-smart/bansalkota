@@ -499,7 +499,7 @@ const CourseDetailPage = () => {
             </section>
           )}
 
-          <CourseReviews courseId={course.id} enrolled={enrolled} />
+          
         </div>
 
         {/* RIGHT COLUMN */}
