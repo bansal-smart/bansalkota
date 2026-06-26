@@ -291,10 +291,12 @@ Deno.serve(async (req) => {
           payload.is_bansal_offline_student = true;
           payload.onboarding_completed = true;
 
+          let resolvedUid: string | null = null;
           if (target) {
             if (dryRun) { results.push({ row: i + 1, ok: true, id: target.id }); continue; }
             const { error } = await admin.from("profiles").update(payload).eq("id", target.id);
             if (error) throw error;
+            resolvedUid = target.user_id;
             results.push({ row: i + 1, ok: true, id: target.id });
           } else {
             // Create new student (admins only)
@@ -336,7 +338,40 @@ Deno.serve(async (req) => {
               { onConflict: "user_id,role" },
             );
 
+            resolvedUid = newUid;
             results.push({ row: i + 1, ok: true, id: newUid });
+          }
+
+          // Course enrollments — accepts course_ids array (or comma string) and course_slugs (comma string)
+          if (resolvedUid) {
+            const idList: string[] = [];
+            const rawIds = r.course_ids ?? r.course_id;
+            if (Array.isArray(rawIds)) {
+              for (const x of rawIds) {
+                const s = String(x ?? "").trim();
+                if (s) idList.push(s);
+              }
+            } else if (rawIds != null && String(rawIds).trim() !== "") {
+              String(rawIds).split(",").map((s) => s.trim()).filter(Boolean).forEach((s) => idList.push(s));
+            }
+            const slugList: string[] = [];
+            if (r.course_slugs != null && String(r.course_slugs).trim() !== "") {
+              String(r.course_slugs).split(",").map((s) => s.trim()).filter(Boolean).forEach((s) => slugList.push(s));
+            } else if (r.course_slug != null && String(r.course_slug).trim() !== "") {
+              slugList.push(String(r.course_slug).trim());
+            }
+            if (slugList.length) {
+              const { data: cs } = await admin.from("courses").select("id").in("slug", slugList);
+              (cs ?? []).forEach((c: any) => { if (c?.id) idList.push(String(c.id)); });
+            }
+            const uniqIds = Array.from(new Set(idList));
+            if (uniqIds.length) {
+              const rowsIns = uniqIds.map((course_id) => ({ user_id: resolvedUid!, course_id, is_active: true }));
+              const { error: eErr } = await admin
+                .from("enrollments")
+                .upsert(rowsIns, { onConflict: "user_id,course_id" });
+              if (eErr) throw eErr;
+            }
           }
         } catch (e: any) {
           results.push({ row: i + 1, ok: false, error: e.message ?? String(e) });
