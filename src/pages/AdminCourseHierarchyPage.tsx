@@ -286,6 +286,8 @@ const AdminCourseHierarchyPage = () => {
         </DialogContent>
       </Dialog>
       {ConfirmDialog}
+      <BulkCourseVideosDialog open={bulkOpen} onOpenChange={setBulkOpen} courseId={courseId!} onDone={load} />
+
     </div>
   );
 };
