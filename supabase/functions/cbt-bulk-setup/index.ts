@@ -140,10 +140,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Cache existing auth users by email
-    const { data: usersList } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    // 4. Cache existing auth users by email (paginate up to 10k; fall back to per-row create-or-update on error)
     const emailToId = new Map<string, string>();
-    (usersList?.users ?? []).forEach((u) => { if (u.email) emailToId.set(u.email.toLowerCase(), u.id); });
+    try {
+      for (let page = 1; page <= 10; page++) {
+        const { data: usersList, error: luErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+        if (luErr) break;
+        const users = usersList?.users ?? [];
+        users.forEach((u) => { if (u.email) emailToId.set(u.email.toLowerCase(), u.id); });
+        if (users.length < 1000) break;
+      }
+    } catch (_) { /* fall back to per-row handling */ }
 
     const results: Array<Record<string, unknown>> = [];
 
@@ -159,15 +166,28 @@ Deno.serve(async (req) => {
         if (!userId) {
           const { data: created, error: cErr } = await admin.auth.admin.createUser({
             email,
-            password: r.phone,
+            password: r.phone || "bansal@123",
             email_confirm: true,
             user_metadata: { full_name: r.full_name },
           });
-          if (cErr || !created.user) throw cErr ?? new Error("createUser failed");
-          userId = created.user.id;
-          emailToId.set(email, userId);
-          createdNew = true;
-        } else {
+          if (cErr || !created?.user) {
+            // Possibly already exists but not in our cache — try to find via getUserByEmail-style query
+            const { data: existing } = await admin
+              .from("profiles")
+              .select("user_id")
+              .eq("roll_number", r.roll_number)
+              .maybeSingle();
+            if (existing?.user_id) {
+              userId = existing.user_id as string;
+            } else {
+              throw cErr ?? new Error("createUser failed");
+            }
+          } else {
+            userId = created.user.id;
+            emailToId.set(email, userId);
+            createdNew = true;
+          }
+        } else if (r.phone) {
           // Make sure password matches current phone (in case phone changed)
           await admin.auth.admin.updateUserById(userId, { password: r.phone });
         }
@@ -179,12 +199,14 @@ Deno.serve(async (req) => {
         );
 
         // Profile
-        await admin.from("profiles").upsert({
+        const { error: pErr } = await admin.from("profiles").upsert({
           user_id: userId,
           full_name: r.full_name,
           phone: r.phone,
           roll_number: r.roll_number,
+          dob: r.dob,
           batch_id: batchId,
+          batch_label: r.batch_code,
           centre_id: centerId,
           target_exam: r.stream,
           class_level: r.class_level,
@@ -192,7 +214,10 @@ Deno.serve(async (req) => {
           state: "Rajasthan",
           country: "India",
           is_bansal_offline_student: true,
+          onboarding_completed: true,
+          phone_verified: true,
         }, { onConflict: "user_id" });
+        if (pErr) throw pErr;
 
         // Enrollment
         await admin.from("enrollments").upsert(
