@@ -46,7 +46,7 @@ const PROGRAMS = [
   },
 ];
 
-const FACILITIES = [
+const DEFAULT_FACILITIES = [
   "AC classrooms",
   "Doubt clinics",
   "Library & reading hall",
@@ -254,19 +254,25 @@ export default function CenterDetailPage() {
                 </li>
               </ul>
 
-              <div className="mt-6 pt-6 border-t border-border">
-                <p className="font-semibold text-bansal-black mb-3 text-sm">Centre facilities</p>
-                <div className="flex flex-wrap gap-2">
-                  {FACILITIES.map((f) => (
-                    <span
-                      key={f}
-                      className="rounded-full bg-bansal-blue-light text-bansal-blue px-3 py-1 text-xs font-semibold"
-                    >
-                      {f}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              {(() => {
+                const facs = dbCenter?.facilities?.length ? dbCenter.facilities : [];
+                if (!facs.length) return null;
+                return (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <p className="font-semibold text-bansal-black mb-3 text-sm">Centre facilities</p>
+                    <div className="flex flex-wrap gap-2">
+                      {facs.map((f) => (
+                        <span
+                          key={f}
+                          className="rounded-full bg-bansal-blue-light text-bansal-blue px-3 py-1 text-xs font-semibold"
+                        >
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </BansalCard>
 
             <div className="space-y-4">
@@ -275,18 +281,26 @@ export default function CenterDetailPage() {
                   <Users className="h-5 w-5 text-bansal-blue" />
                   <p className="font-semibold text-bansal-black text-sm">Students mentored</p>
                 </div>
-                <p className="font-display text-2xl font-bold text-bansal-blue">{center.isHQ ? "1L+" : "10,000+"}</p>
+                <p className="font-display text-2xl font-bold text-bansal-blue">
+                  {dbCenter?.students_mentored || (center.isHQ ? "1L+" : "10,000+")}
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {center.isHQ ? "Since 1991" : "Across Bansal network"}
+                  {dbCenter?.students_mentored_note || (center.isHQ ? "Since 1991" : "Across Bansal network")}
                 </p>
               </BansalCard>
               <BansalCard>
                 <div className="flex items-center gap-3 mb-2">
                   <GraduationCap className="h-5 w-5 text-bansal-blue" />
-                  <p className="font-semibold text-bansal-black text-sm">Selections (2024)</p>
+                  <p className="font-semibold text-bansal-black text-sm">
+                    Selections ({dbCenter?.selections_year || 2024})
+                  </p>
                 </div>
-                <p className="font-display text-2xl font-bold text-bansal-blue">2,500+</p>
-                <p className="text-xs text-muted-foreground mt-1">JEE & NEET combined</p>
+                <p className="font-display text-2xl font-bold text-bansal-blue">
+                  {dbCenter?.selections_count || "2,500+"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {dbCenter?.selections_note || "JEE & NEET combined"}
+                </p>
               </BansalCard>
               {center.established && (
                 <BansalCard className="bg-bansal-orange-light/40 border-bansal-orange/30">
