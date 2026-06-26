@@ -150,6 +150,7 @@ const CreateTestPage = () => {
   const [uploadingInstructions, setUploadingInstructions] = useState(false);
   const [testType, setTestType] = useState("mock");
   const [examPattern, setExamPattern] = useState("jee-main");
+  const [optionLabelStyle, setOptionLabelStyle] = useState<"auto" | "numeric" | "alpha">("auto");
   const [duration, setDuration] = useState(180);
   const [correctMarks, setCorrectMarks] = useState(4);
   const [wrongMarks, setWrongMarks] = useState(-1);
