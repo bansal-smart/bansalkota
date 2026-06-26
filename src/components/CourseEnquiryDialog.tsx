@@ -48,7 +48,7 @@ const schema = z.object({
   message: z.string().max(1000).optional(),
 });
 
-const CLASS_OPTIONS = ["Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
+const CLASS_OPTIONS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
 
 const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   const { user } = useAuth();
