@@ -84,6 +84,15 @@ const TestResponseSheetPage = () => {
         return;
       }
       setData(res as SheetData);
+      const testId = (res as SheetData | null)?.test_id;
+      if (testId) {
+        const { data: tRow } = await supabase
+          .from("tests")
+          .select("option_label_style, exam_pattern")
+          .eq("id", testId)
+          .maybeSingle();
+        setOptStyle(resolveOptionStyle(tRow as any));
+      }
       setLoading(false);
     })();
     return () => { alive = false; };
