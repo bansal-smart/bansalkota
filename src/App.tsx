@@ -82,6 +82,8 @@ const StaffDashboardPage = lazy(() => import("./pages/StaffDashboardPage"));
 const AdminEnquiriesPage = lazy(() => import("./pages/AdminEnquiriesPage"));
 const AdminCourseEnquiriesPage = lazy(() => import("./pages/AdminCourseEnquiriesPage"));
 const AdminCourseContentPage = lazy(() => import("./pages/AdminCourseContentPage"));
+const AdminCourseHierarchyPage = lazy(() => import("./pages/AdminCourseHierarchyPage"));
+const CourseLearnPage = lazy(() => import("./pages/CourseLearnPage"));
 const AdminReportsPage = lazy(() => import("./pages/AdminReportsPage"));
 const AdminProfilePage = lazy(() => import("./pages/AdminProfilePage"));
 const TestsLandingPage = lazy(() => import("./pages/TestsLandingPage"));
@@ -207,6 +209,7 @@ const App = () => (
             <Route element={<ProtectedRoute allow={["student"]} />}>
               <Route path="/tests/:slug/take" element={<TestTakingPage />} />
               <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
+              <Route path="/learn/:courseId" element={<CourseLearnPage />} />
             </Route>
 
             {/* Public marketing pages (PublicLayout: own navbar + footer) */}
@@ -344,7 +347,8 @@ const App = () => (
               <Route path="/admin/batches" element={<AdminBatchesPage />} />
               <Route path="/admin/courses/new" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
-              <Route path="/admin/courses/:courseId/content" element={<AdminCourseContentPage />} />
+              <Route path="/admin/courses/:courseId/content" element={<AdminCourseHierarchyPage />} />
+              <Route path="/admin/courses/:courseId/chapters" element={<AdminCourseContentPage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               {/* Unified Test Platform hub (tabs: overview, all, upcoming, series, bank, attempts, imports) */}
               <Route path="/admin/tests-hub" element={<AdminTestPlatformHub />} />

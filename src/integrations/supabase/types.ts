@@ -1343,6 +1343,7 @@ export type Database = {
           mime_type: string | null
           position: number
           resource_type: string
+          subtopic_id: string | null
           title: string
           updated_at: string
           uploaded_by: string | null
@@ -1359,6 +1360,7 @@ export type Database = {
           mime_type?: string | null
           position?: number
           resource_type?: string
+          subtopic_id?: string | null
           title: string
           updated_at?: string
           uploaded_by?: string | null
@@ -1375,11 +1377,20 @@ export type Database = {
           mime_type?: string | null
           position?: number
           resource_type?: string
+          subtopic_id?: string | null
           title?: string
           updated_at?: string
           uploaded_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "course_resources_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_reviews: {
         Row: {
@@ -1415,6 +1426,140 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_subjects: {
+        Row: {
+          color: string | null
+          course_id: string
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          course_id: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          course_id?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_subjects_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_subtopics: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          position: number
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          position?: number
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          position?: number
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_subtopics_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_subtopics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_topics: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          name: string
+          position: number
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_topics_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "course_subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -3756,6 +3901,392 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      subtopic_pdfs: {
+        Row: {
+          course_id: string
+          created_at: string
+          file_size_kb: number | null
+          file_url: string
+          id: string
+          position: number
+          subtopic_id: string
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          file_size_kb?: number | null
+          file_url: string
+          id?: string
+          position?: number
+          subtopic_id: string
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          file_size_kb?: number | null
+          file_url?: string
+          id?: string
+          position?: number
+          subtopic_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_pdfs_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_pdfs_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_quiz_attempts: {
+        Row: {
+          answers: Json | null
+          course_id: string | null
+          id: string
+          passed: boolean | null
+          quiz_id: string
+          score: number | null
+          submitted_at: string
+          subtopic_id: string | null
+          time_taken_seconds: number | null
+          total_marks: number | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          course_id?: string | null
+          id?: string
+          passed?: boolean | null
+          quiz_id: string
+          score?: number | null
+          submitted_at?: string
+          subtopic_id?: string | null
+          time_taken_seconds?: number | null
+          total_marks?: number | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          course_id?: string | null
+          id?: string
+          passed?: boolean | null
+          quiz_id?: string
+          score?: number | null
+          submitted_at?: string
+          subtopic_id?: string | null
+          time_taken_seconds?: number | null
+          total_marks?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_quiz_attempts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "subtopic_quizzes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_quiz_attempts_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_quiz_questions: {
+        Row: {
+          correct_option: string
+          explanation: string | null
+          id: string
+          marks: number
+          negative_marks: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          position: number
+          question_text: string
+          quiz_id: string
+        }
+        Insert: {
+          correct_option: string
+          explanation?: string | null
+          id?: string
+          marks?: number
+          negative_marks?: number
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          position?: number
+          question_text: string
+          quiz_id: string
+        }
+        Update: {
+          correct_option?: string
+          explanation?: string | null
+          id?: string
+          marks?: number
+          negative_marks?: number
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          position?: number
+          question_text?: string
+          quiz_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_quiz_questions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "subtopic_quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_quizzes: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          pass_percentage: number
+          subtopic_id: string
+          time_limit_minutes: number | null
+          title: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          pass_percentage?: number
+          subtopic_id: string
+          time_limit_minutes?: number | null
+          title: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          pass_percentage?: number
+          subtopic_id?: string
+          time_limit_minutes?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_quizzes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_quizzes_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: true
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_video_notes: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          id: string
+          note_text: string
+          subtopic_id: string | null
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          note_text: string
+          subtopic_id?: string | null
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          note_text?: string
+          subtopic_id?: string | null
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_video_notes_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_video_notes_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_video_notes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "subtopic_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_video_progress: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          last_accessed_at: string
+          subtopic_id: string | null
+          user_id: string
+          video_id: string
+          watch_time_seconds: number
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          last_accessed_at?: string
+          subtopic_id?: string | null
+          user_id: string
+          video_id: string
+          watch_time_seconds?: number
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          last_accessed_at?: string
+          subtopic_id?: string | null
+          user_id?: string
+          video_id?: string
+          watch_time_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_video_progress_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_video_progress_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_video_progress_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "subtopic_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subtopic_videos: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          duration_label: string | null
+          id: string
+          is_preview: boolean
+          position: number
+          subtopic_id: string
+          thumbnail_url: string | null
+          title: string
+          youtube_url: string
+          youtube_video_id: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          duration_label?: string | null
+          id?: string
+          is_preview?: boolean
+          position?: number
+          subtopic_id: string
+          thumbnail_url?: string | null
+          title: string
+          youtube_url: string
+          youtube_video_id?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          duration_label?: string | null
+          id?: string
+          is_preview?: boolean
+          position?: number
+          subtopic_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          youtube_url?: string
+          youtube_video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subtopic_videos_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_videos_subtopic_id_fkey"
+            columns: ["subtopic_id"]
+            isOneToOne: false
+            referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppressed_emails: {
         Row: {
