@@ -155,7 +155,18 @@ const AdminCentersPage = () => {
 
   const startEdit = (c: Center) => {
     setEditingId(c.id);
-    setForm({ ...c, area: c.area ?? "", email: c.email ?? "", image_url: c.image_url ?? "" });
+    setForm({
+      ...c,
+      area: c.area ?? "",
+      email: c.email ?? "",
+      image_url: c.image_url ?? "",
+      facilities: Array.isArray(c.facilities) ? c.facilities : [],
+      students_mentored: c.students_mentored ?? "",
+      students_mentored_note: c.students_mentored_note ?? "",
+      selections_count: c.selections_count ?? "",
+      selections_year: c.selections_year ?? null,
+      selections_note: c.selections_note ?? "",
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -203,6 +214,17 @@ const AdminCentersPage = () => {
       is_featured: !!form.is_featured,
       featured_rank: form.featured_rank == null || (form.featured_rank as any) === "" ? null : Number(form.featured_rank),
       is_pinned: !!form.is_pinned,
+      facilities: Array.isArray(form.facilities)
+        ? (form.facilities as string[]).map((s) => s.trim()).filter(Boolean)
+        : [],
+      students_mentored: (form.students_mentored as string)?.trim() || null,
+      students_mentored_note: (form.students_mentored_note as string)?.trim() || null,
+      selections_count: (form.selections_count as string)?.trim() || null,
+      selections_year:
+        form.selections_year == null || (form.selections_year as any) === ""
+          ? null
+          : Number(form.selections_year),
+      selections_note: (form.selections_note as string)?.trim() || null,
     };
     const { error } = editingId
       ? await supabase.from("centres").update(payload).eq("id", editingId)
