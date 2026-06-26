@@ -1,0 +1,1 @@
+CREATE POLICY "Centre staff can create enrollments for their students" ON public.enrollments FOR INSERT TO authenticated WITH CHECK (public.is_centre_staff_for_student(auth.uid(), user_id));
