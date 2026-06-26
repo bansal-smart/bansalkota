@@ -105,10 +105,13 @@ const DocxCommonImportDialog = ({
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
+  const isNeetPattern = (examPattern ?? "").toLowerCase().includes("neet");
   const effectiveOptionStyle: "numeric" | "alpha" =
     optionLabelStyle === "numeric" || optionLabelStyle === "alpha"
       ? optionLabelStyle
-      : detectedOptionStyle ?? ((examPattern ?? "").toLowerCase().includes("neet") ? "numeric" : "alpha");
+      : isNeetPattern
+        ? "numeric"
+        : detectedOptionStyle ?? "alpha";
 
   const subjectForNumber = (n: number): string => {
     // Iterate in reverse so the most-recently-added (typically narrower / more

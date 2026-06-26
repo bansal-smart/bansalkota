@@ -70,10 +70,13 @@ const DocxBulkImportDialog = ({
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
   const [showInstructions, setShowInstructions] = useState(false);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
+  const isNeetPattern = (examPattern ?? "").toLowerCase().includes("neet");
   const effectiveOptionStyle: "numeric" | "alpha" =
     optionLabelStyle === "numeric" || optionLabelStyle === "alpha"
       ? optionLabelStyle
-      : detectedOptionStyle ?? ((examPattern ?? "").toLowerCase().includes("neet") ? "numeric" : "alpha");
+      : isNeetPattern
+        ? "numeric"
+        : detectedOptionStyle ?? "alpha";
 
   // Test picker (only when launched without a fixed testId)
   const [alsoPushToTest, setAlsoPushToTest] = useState(false);
