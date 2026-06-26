@@ -147,9 +147,15 @@ const AdminCourseHierarchyPage = () => {
               <p className="text-xs text-muted-foreground">Content Manager · {totalVideos} videos</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <a href={`/learn/${course.id}`} target="_blank" rel="noreferrer"><Eye className="h-4 w-4 mr-1" /> Preview as Student <ExternalLink className="h-3 w-3 ml-1" /></a>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Bulk Upload Videos
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href={`/learn/${course.id}`} target="_blank" rel="noreferrer"><Eye className="h-4 w-4 mr-1" /> Preview as Student <ExternalLink className="h-3 w-3 ml-1" /></a>
+            </Button>
+          </div>
+
         </div>
       </div>
 
