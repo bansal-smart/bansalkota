@@ -62,12 +62,12 @@ Deno.serve(async (req) => {
     });
     if (insErr) throw insErr;
 
-    const rendered = renderTemplate("PaymentGateway_OTP", { otp });
+    const rendered = renderTemplate("CodeRed", { otp });
     const sendRes = await prpsmsSend({ to: dest, body: rendered });
 
     await supabase.from("sms_send_log").insert({
       to_phone: e164,
-      template_name: "PaymentGateway_OTP",
+      template_name: "CodeRed",
       vars: { otp: "******" },
       rendered_body: rendered.replace(otp, "******"),
       purpose: `otp:${purpose}`,
