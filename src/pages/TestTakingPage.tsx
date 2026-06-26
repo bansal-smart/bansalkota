@@ -1034,7 +1034,7 @@ const TestTakingPage = () => {
                           {selected && <CheckCircle2 className="h-3 w-3" />}
                         </span>
                         <div className="flex-1">
-                          <span className="font-bold mr-1">{String.fromCharCode(65 + opt.id)}.</span>
+                          <span className="font-bold mr-1">{optionLabel(opt.id, resolveOptionStyle(test))}.</span>
                           <MathRenderer content={opt.text} inline />
                           {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
                         </div>
