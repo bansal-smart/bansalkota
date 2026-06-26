@@ -154,6 +154,14 @@ const CenterPlatformCoursesPage = () => {
           </div>
         )}
       </div>
+
+      <CenterCourseStudentsDialog
+        open={!!manageCourse}
+        onClose={() => setManageCourse(null)}
+        courseId={manageCourse?.id ?? null}
+        courseName={manageCourse?.name ?? ""}
+        centreId={primaryCenterId}
+      />
     </div>
   );
 };
