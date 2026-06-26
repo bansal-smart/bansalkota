@@ -655,7 +655,7 @@ const AdminStudentsPage = () => {
                 { k: "dob", l: "DOB", ph: "", type: "date" },
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
-                { k: "batch_id", l: "Course", ph: "Select course", type: "select", options: courses.map((c) => ({ value: c.id, label: c.name })) },
+                { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
                 { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -682,7 +682,16 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <div className="sm:col-span-2">
+                <CoursesMultiSelect
+                  label="Courses (assigned)"
+                  courses={courses}
+                  value={editCourseIds}
+                  onChange={setEditCourseIds}
+                />
+              </div>
             </div>
+
 
             <div className="px-5 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-lg">
               <div className="rounded-lg border border-border bg-background/50 p-2">
