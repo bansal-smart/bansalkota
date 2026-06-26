@@ -253,20 +253,19 @@ function VideoView({ entry, courseId, onProgressChange }: { entry: { v: Subtopic
         <TabsList>
           <TabsTrigger value="notes">📝 Notes</TabsTrigger>
           <TabsTrigger value="pdfs">📄 PDFs ({subtopic.pdfs?.length ?? 0})</TabsTrigger>
-          <TabsTrigger value="quiz">📝 Quiz</TabsTrigger>
           <TabsTrigger value="about">ℹ️ About</TabsTrigger>
         </TabsList>
         <TabsContent value="notes"><NotesTab video={v} subtopicId={subtopic.id} courseId={courseId} /></TabsContent>
         <TabsContent value="pdfs"><PdfsTab subtopic={subtopic} /></TabsContent>
-        <TabsContent value="quiz"><QuizTab subtopic={subtopic} courseId={courseId} /></TabsContent>
         <TabsContent value="about">
           <div className="text-sm space-y-2">
             <p>📍 {subject.name} › {topic.name} › {subtopic.name}</p>
             {subtopic.description && <p className="text-muted-foreground">{subtopic.description}</p>}
-            <p className="text-xs text-muted-foreground">{subtopic.videos?.length ?? 0} videos · {subtopic.pdfs?.length ?? 0} PDFs · {subtopic.quiz ? "1 quiz" : "no quiz"}</p>
+            <p className="text-xs text-muted-foreground">{subtopic.videos?.length ?? 0} videos · {subtopic.pdfs?.length ?? 0} PDFs</p>
           </div>
         </TabsContent>
       </Tabs>
+
     </div>
   );
 }
