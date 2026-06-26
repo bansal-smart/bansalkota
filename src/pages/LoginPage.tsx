@@ -90,7 +90,26 @@ const LoginPage = () => {
     const next = [...otp];
     next[i] = v.replace(/\D/g, "");
     setOtp(next);
-    if (v && i < 5) document.getElementById(`otp-${i + 1}`)?.focus();
+    if (next[i] && i < 5) document.getElementById(`otp-${i + 1}`)?.focus();
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      const next = [...otp];
+      if (otp[i]) {
+        next[i] = "";
+        setOtp(next);
+      } else if (i > 0) {
+        next[i - 1] = "";
+        setOtp(next);
+        document.getElementById(`otp-${i - 1}`)?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && i > 0) {
+      document.getElementById(`otp-${i - 1}`)?.focus();
+    } else if (e.key === "ArrowRight" && i < 5) {
+      document.getElementById(`otp-${i + 1}`)?.focus();
+    }
   };
 
   const verifyOtp = async () => {
