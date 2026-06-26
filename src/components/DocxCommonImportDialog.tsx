@@ -101,6 +101,7 @@ const DocxCommonImportDialog = ({
 
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
   const [tests, setTests] = useState<TestRow[]>([]);
+  const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
 
   const subjectForNumber = (n: number): string => {
     // Iterate in reverse so the most-recently-added (typically narrower / more
