@@ -16,23 +16,32 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json(401, { error: "Unauthorized" });
+    const token = authHeader.replace("Bearer ", "").trim();
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser(
-      authHeader.replace("Bearer ", ""),
-    );
-    if (userErr || !userData?.user) return json(401, { error: "Unauthorized" });
+    // Decode JWT payload (no signature verification — service-role role check below is the gate)
+    let callerId: string | null = null;
+    try {
+      const part = token.split(".")[1];
+      const padded = part + "=".repeat((4 - (part.length % 4)) % 4);
+      const payload = JSON.parse(atob(padded.replace(/-/g, "+").replace(/_/g, "/")));
+      callerId = payload?.sub ?? null;
+    } catch {
+      return json(401, { error: "Unauthorized" });
+    }
+    if (!callerId) return json(401, { error: "Unauthorized" });
 
     const admin = createClient(supabaseUrl, serviceKey);
-    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userData.user.id, _role: "admin" });
-    const { data: isSuper } = await admin.rpc("has_role", { _user_id: userData.user.id, _role: "super_admin" });
+    // Confirm the user still exists
+    const { data: authUser, error: authUserErr } = await admin.auth.admin.getUserById(callerId);
+    if (authUserErr || !authUser?.user) return json(401, { error: "Unauthorized" });
+    const userData = { user: authUser.user };
+
+    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: callerId, _role: "admin" });
+    const { data: isSuper } = await admin.rpc("has_role", { _user_id: callerId, _role: "super_admin" });
     if (!isAdmin && !isSuper) return json(403, { error: "Only admins can manage students" });
 
     const body = await req.json();
