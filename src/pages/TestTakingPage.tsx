@@ -129,7 +129,7 @@ const TestTakingPage = () => {
       setLoading(true);
       const { data: t } = await supabase
         .from("tests")
-        .select("id, title, duration_minutes, total_questions, instructions_image_url")
+        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       // Legacy instruction images were saved as `/object/public/question-images/...`
