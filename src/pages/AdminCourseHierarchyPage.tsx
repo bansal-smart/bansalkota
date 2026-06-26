@@ -13,7 +13,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCourseContentTree, reorderSiblings } from "@/lib/api/course-content";
 import { extractYouTubeId, getYouTubeThumbnail, fetchYouTubeTitle } from "@/lib/youtube";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { CourseSubject, CourseTopic, CourseSubtopic, SubtopicVideo, SubtopicPdf, SubtopicQuiz, SubtopicQuizQuestion } from "@/types/course-content";
+
+type RenameTarget = { table: string; id: string; current: string; label: string };
 
 type Node =
   | { kind: "subject"; id: string; data: CourseSubject }
