@@ -61,13 +61,15 @@ const TestSubjectBreakdownPage = () => {
       setTestName(att.test_name ?? "");
       setAnswers((att.answers ?? {}) as Record<string, { selected: any }>);
 
-      const [qsRes, ansRes] = await Promise.all([
+      const [qsRes, ansRes, testRes] = await Promise.all([
         supabase
           .from("test_questions")
           .select("id, subject, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong")
           .eq("test_id", att.test_id),
         supabase.rpc("get_test_question_answers", { _test_id: att.test_id }),
+        supabase.from("tests").select("option_label_style, exam_pattern").eq("id", att.test_id).maybeSingle(),
       ]);
+      setOptStyle(resolveOptionStyle(testRes.data as any));
       if (cancelled) return;
       const ansMap = new Map<string, { correct_answer: any; explanation: string | null }>(
         ((ansRes.data ?? []) as any[]).map((a) => [a.id, { correct_answer: a.correct_answer, explanation: a.explanation }]),
