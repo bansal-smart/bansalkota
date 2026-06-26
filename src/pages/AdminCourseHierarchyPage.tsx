@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useConfirm } from "@/components/ConfirmDialog";
 import { fetchCourseContentTree, reorderSiblings } from "@/lib/api/course-content";
 import { extractYouTubeId, getYouTubeThumbnail, fetchYouTubeTitle } from "@/lib/youtube";
 import type { CourseSubject, CourseTopic, CourseSubtopic, SubtopicVideo, SubtopicPdf, SubtopicQuiz, SubtopicQuizQuestion } from "@/types/course-content";
@@ -23,7 +22,6 @@ type Node =
 
 const AdminCourseHierarchyPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { confirm, ConfirmDialog } = useConfirm();
   const [course, setCourse] = useState<{ id: string; name: string; slug: string } | null>(null);
   const [subjects, setSubjects] = useState<CourseSubject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +91,7 @@ const AdminCourseHierarchyPage = () => {
   };
 
   const remove = async (table: string, id: string, label: string) => {
-    const ok = await confirm({ title: `Delete ${label}?`, description: "This will also delete all child content.", confirmLabel: "Delete" });
+    const ok = window.confirm(`Delete ${label}?`);
     if (!ok) return;
     const { error } = await supabase.from(table as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -367,9 +365,8 @@ function SubtopicEditor({ subtopic, topic, subject, courseId, onSaved }: {
 function VideoTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; courseId: string; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SubtopicVideo | null>(null);
-  const { confirm, ConfirmDialog } = useConfirm();
   const del = async (v: SubtopicVideo) => {
-    if (!(await confirm({ title: `Delete "${v.title}"?`, confirmLabel: "Delete" }))) return;
+    if (!(window.confirm(`Delete "${v.title}"?`))) return;
     await supabase.from("subtopic_videos" as any).delete().eq("id", v.id);
     toast.success("Video deleted"); onSaved();
   };
@@ -475,7 +472,6 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [fileUrl, setFileUrl] = useState("");
-  const { confirm, ConfirmDialog } = useConfirm();
   const save = async () => {
     if (!title || !fileUrl) return toast.error("Title and URL required");
     const { error } = await supabase.from("subtopic_pdfs" as any).insert({
@@ -485,7 +481,7 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
     setTitle(""); setFileUrl(""); setOpen(false); toast.success("PDF added"); onSaved();
   };
   const del = async (p: SubtopicPdf) => {
-    if (!(await confirm({ title: `Delete "${p.title}"?`, confirmLabel: "Delete" }))) return;
+    if (!(window.confirm(`Delete "${p.title}"?`))) return;
     await supabase.from("subtopic_pdfs" as any).delete().eq("id", p.id);
     toast.success("Deleted"); onSaved();
   };
@@ -517,7 +513,6 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
 function QuizTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; courseId: string; onSaved: () => void }) {
   const [questions, setQuestions] = useState<SubtopicQuizQuestion[]>([]);
   const [open, setOpen] = useState(false);
-  const { confirm, ConfirmDialog } = useConfirm();
   const [meta, setMeta] = useState({ title: "Practice Test", description: "", time_limit_minutes: 30, pass_percentage: 60 });
 
   useEffect(() => {
@@ -538,7 +533,7 @@ function QuizTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; co
   };
   const deleteQuiz = async () => {
     if (!subtopic.quiz?.id) return;
-    if (!(await confirm({ title: "Delete quiz and all questions?", confirmLabel: "Delete" }))) return;
+    if (!(window.confirm("Delete quiz and all questions?"))) return;
     await supabase.from("subtopic_quizzes" as any).delete().eq("id", subtopic.quiz.id);
     toast.success("Deleted"); onSaved();
   };
