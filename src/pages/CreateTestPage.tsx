@@ -256,6 +256,8 @@ const CreateTestPage = () => {
       }
       setTestType(test.test_type ?? "mock");
       setExamPattern(test.exam_pattern ?? "jee-main");
+      const styleRaw = (test as { option_label_style?: string | null }).option_label_style;
+      setOptionLabelStyle(styleRaw === "numeric" || styleRaw === "alpha" ? styleRaw : "auto");
       setDuration(test.duration_minutes ?? 180);
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
