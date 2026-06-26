@@ -155,7 +155,7 @@ const CenterOnlineCoursesPage = () => {
               <p className="text-xs text-muted-foreground">{[c.subject, c.target_exam, c.class_level].filter(Boolean).join(" · ")}</p>
               {c.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
               <div className="flex items-center gap-2 pt-1">
-                <Link to={`/center/online-courses/${c.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
+                <Link to={`/center/centre-courses/${c.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
                   Manage Content <ArrowRight className="h-3 w-3" />
                 </Link>
                 <button onClick={() => openEditor(c)} className="rounded-md border border-border px-3 py-1 text-xs">Edit</button>
