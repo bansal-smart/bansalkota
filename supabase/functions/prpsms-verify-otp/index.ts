@@ -71,17 +71,30 @@ Deno.serve(async (req) => {
     }
 
     if (purpose === "login") {
-      // Find or create user by phone, return a magic-link session.
-      const { data: existingProfile } = await supabase
-        .from("profiles").select("user_id").eq("phone_e164", e164).maybeSingle();
+      const bare = e164.replace(/^\+91/, "");
+
+      // 1) Match by phone_e164
+      let { data: existingProfile } = await supabase
+        .from("profiles").select("user_id, phone_e164").eq("phone_e164", e164).maybeSingle();
+
+      // 2) Fallback: match by profiles.phone (raw 10-digit or e164)
+      if (!existingProfile) {
+        const { data: byPhone } = await supabase
+          .from("profiles")
+          .select("user_id, phone_e164")
+          .or(`phone.eq.${bare},phone.eq.${e164}`)
+          .limit(1)
+          .maybeSingle();
+        existingProfile = byPhone ?? null;
+      }
 
       let userId = existingProfile?.user_id as string | undefined;
       let userEmail: string | undefined;
 
-      // Fallback: search auth users for this phone (handles half-created accounts).
+      // 3) Fallback: search auth users by phone (half-created accounts)
       if (!userId) {
         const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
-        const match = list?.users?.find((u) => u.phone === e164.replace(/^\+/, "") || u.phone === e164);
+        const match = list?.users?.find((u) => u.phone === bare || u.phone === e164);
         if (match) {
           userId = match.id;
           userEmail = match.email ?? undefined;
@@ -94,7 +107,7 @@ Deno.serve(async (req) => {
       }
 
       if (!userId) {
-        const placeholderEmail = `phone-${e164.replace(/\D/g, "")}@phone.bansalkota.local`;
+        const placeholderEmail = `phone-${bare}@phone.bansalkota.local`;
         const { data: created, error: cErr } = await supabase.auth.admin.createUser({
           email: placeholderEmail,
           email_confirm: true,
@@ -103,9 +116,10 @@ Deno.serve(async (req) => {
         if (cErr) throw cErr;
         userId = created.user!.id;
         userEmail = placeholderEmail;
-        await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true, phone: e164 }).eq("user_id", userId);
+        await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true, phone: bare }).eq("user_id", userId);
       } else {
-        await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true, phone: e164 }).eq("user_id", userId);
+        // Backfill phone_e164 for existing accounts so future lookups are O(1)
+        await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true }).eq("user_id", userId);
       }
 
 
