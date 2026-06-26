@@ -24,6 +24,7 @@ const nav = [
   { label: "Overview", icon: LayoutDashboard, path: "/center" },
   { label: "Centre Content", icon: Building2, path: "/center/content" },
   { label: "Page Banners", icon: ImageIcon, path: "/center/banners" },
+  { label: "Centre Banner", icon: ImageIcon, path: "/center/carousel-banners" },
   { label: "Gallery", icon: ImageIcon, path: "/center/gallery" },
   { label: "Online Courses", icon: Video, path: "/center/online-courses" },
   { label: "Offline Courses", icon: BookOpen, path: "/center/courses" },
