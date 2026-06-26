@@ -9,6 +9,7 @@ import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape
 import CandidateCard from "@/components/test/CandidateCard";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 import ReportQuestionButton from "@/components/test/ReportQuestionButton";
+import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 
 type QuestionType =
   | "mcq-single"
