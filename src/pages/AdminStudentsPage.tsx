@@ -92,6 +92,7 @@ const AdminStudentsPage = () => {
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [centres, setCentres] = useState<CentreLite[]>([]);
   const [batches, setBatches] = useState<BatchLite[]>([]);
+  const [courses, setCourses] = useState<CourseLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
