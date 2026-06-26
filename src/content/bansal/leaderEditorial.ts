@@ -146,7 +146,7 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
       },
       {
         year: "Mentor",
-        title: "Mentor to All India Rank 1 and single-digit ranks — repeatedly",
+        title: "Mentor of All India Rank 1 and single-digit ranks — repeatedly",
         body: "Personally mentors top JEE Advanced ranks year after year, including AIR 1 and multiple single-digit AIRs.",
       },
       {
