@@ -69,7 +69,7 @@ const CenterDashboardPage = () => {
     { label: "Gallery", value: "Photos", icon: ImageIcon, to: "/center/gallery" },
     { label: "Online Courses", value: "Videos", icon: Video, to: "/center/online-courses" },
     { label: "Updates & Feed", value: "Posts", icon: Megaphone, to: "/center/updates" },
-    { label: "Offline Courses", value: counts.courses, icon: BookOpen, to: "/center/courses" },
+    { label: "Centre Courses", value: counts.courses, icon: BookOpen, to: "/center/centre-courses" },
     { label: "Live Classes", value: "Sessions", icon: Video, to: "/center/live-classes" },
     { label: "Test Platform", value: "Tests", icon: ClipboardList, to: "/center/tests" },
     { label: "Website Enquiries", value: counts.websiteEnquiries, icon: Inbox, to: "/center/enquiries" },

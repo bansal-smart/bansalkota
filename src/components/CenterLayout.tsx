@@ -27,7 +27,7 @@ const nav = [
   { label: "Centre Banner", icon: ImageIcon, path: "/center/carousel-banners" },
   { label: "Gallery", icon: ImageIcon, path: "/center/gallery" },
   { label: "Online Courses", icon: Video, path: "/center/online-courses" },
-  { label: "Offline Courses", icon: BookOpen, path: "/center/courses" },
+  { label: "Centre Courses", icon: BookOpen, path: "/center/centre-courses" },
   { label: "Live Classes", icon: Video, path: "/center/live-classes" },
   { label: "Test Platform", icon: ClipboardList, path: "/center/tests" },
   { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries" },
