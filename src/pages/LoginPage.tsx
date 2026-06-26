@@ -90,7 +90,26 @@ const LoginPage = () => {
     const next = [...otp];
     next[i] = v.replace(/\D/g, "");
     setOtp(next);
-    if (v && i < 5) document.getElementById(`otp-${i + 1}`)?.focus();
+    if (next[i] && i < 5) document.getElementById(`otp-${i + 1}`)?.focus();
+  };
+
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      e.preventDefault();
+      const next = [...otp];
+      if (otp[i]) {
+        next[i] = "";
+        setOtp(next);
+      } else if (i > 0) {
+        next[i - 1] = "";
+        setOtp(next);
+        document.getElementById(`otp-${i - 1}`)?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && i > 0) {
+      document.getElementById(`otp-${i - 1}`)?.focus();
+    } else if (e.key === "ArrowRight" && i < 5) {
+      document.getElementById(`otp-${i + 1}`)?.focus();
+    }
   };
 
   const verifyOtp = async () => {
@@ -223,6 +242,7 @@ const LoginPage = () => {
                     maxLength={1}
                     value={d}
                     onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
                     className="h-14 w-12 rounded-lg border-2 border-border bg-white text-center font-display text-xl font-bold text-bansal-black focus:border-bansal-blue outline-none"
                   />
                 ))}
