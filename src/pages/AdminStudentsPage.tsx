@@ -74,6 +74,69 @@ const exportCsv = (rows: StudentRow[]) => {
 
 const PLAN_OPTIONS = ["Free", "Pro", "Elite"];
 
+function CoursesMultiSelect({
+  label,
+  courses,
+  value,
+  onChange,
+}: {
+  label: string;
+  courses: CourseLite[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const selectedSet = new Set(value);
+  const filtered = courses.filter((c) => c.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const toggle = (id: string) => {
+    if (selectedSet.has(id)) onChange(value.filter((v) => v !== id));
+    else onChange([...value, id]);
+  };
+  const selectedNames = courses.filter((c) => selectedSet.has(c.id)).map((c) => c.name);
+  return (
+    <div className="text-xs font-semibold text-muted-foreground space-y-1">
+      <div className="flex items-center justify-between">
+        <span>{label}</span>
+        <span className="text-[10px] text-muted-foreground">{value.length} selected</span>
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full text-left rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary hover:bg-muted/40"
+      >
+        {selectedNames.length
+          ? selectedNames.slice(0, 3).join(", ") + (selectedNames.length > 3 ? ` +${selectedNames.length - 3} more` : "")
+          : "Select courses..."}
+      </button>
+      {open && (
+        <div className="rounded-lg border border-border bg-background p-2 max-h-56 overflow-y-auto space-y-1">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search courses..."
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+          {filtered.length === 0 && (
+            <div className="text-[11px] text-muted-foreground px-2 py-1">No courses found</div>
+          )}
+          {filtered.map((c) => (
+            <label key={c.id} className="flex items-center gap-2 text-xs font-medium text-foreground px-2 py-1 rounded hover:bg-muted/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedSet.has(c.id)}
+                onChange={() => toggle(c.id)}
+              />
+              <span className="truncate">{c.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 const AdminStudentsPage = () => {
 
   const [search, setSearch] = useState("");
@@ -102,6 +165,8 @@ const AdminStudentsPage = () => {
     dob: "", target_exam: "", class_level: "", batch: "", centre: "",
   };
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
+  const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
+  const [editCourseIds, setEditCourseIds] = useState<string[]>([]);
 
   const submitAddStudent = async () => {
     if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !addForm.centre.trim()) {
@@ -111,6 +176,7 @@ const AdminStudentsPage = () => {
     try {
       const row: Record<string, any> = {};
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
+      if (addCourseIds.length) row.course_ids = addCourseIds;
       const { data, error } = await supabase.functions.invoke("bulk-import", {
         body: { kind: "students", rows: [row], dry_run: false },
       });
@@ -122,6 +188,7 @@ const AdminStudentsPage = () => {
       toast.success("Student added");
       setAddOpen(false);
       setAddForm(emptyAdd);
+      setAddCourseIds([]);
       load();
     } catch (e: any) {
       toast.error("Add failed", { description: e.message });
@@ -221,7 +288,7 @@ const AdminStudentsPage = () => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const allSelected = useMemo(() => rows.length > 0 && rows.every((r) => selected.includes(r.user_id)), [rows, selected]);
 
-  const openDrawer = (u: StudentRow) => {
+  const openDrawer = async (u: StudentRow) => {
     setDrawer(u);
     setEdit({
       roll_number: u.roll_number ?? "",
@@ -237,6 +304,13 @@ const AdminStudentsPage = () => {
       city: u.city ?? "",
       country: u.country ?? "",
     });
+    setEditCourseIds([]);
+    const { data: er } = await (supabase as any)
+      .from("enrollments")
+      .select("course_id")
+      .eq("user_id", u.user_id)
+      .eq("is_active", true);
+    setEditCourseIds(((er ?? []) as Array<{ course_id: string }>).map((r) => r.course_id));
   };
 
   const saveEdit = async () => {
@@ -247,6 +321,7 @@ const AdminStudentsPage = () => {
       Object.entries(edit).forEach(([k, v]) => {
         payload[k] = typeof v === "string" && v.trim() === "" ? null : v;
       });
+      payload.course_ids = editCourseIds;
       const { error } = await supabase.functions.invoke("manage-student", { body: payload });
       if (error) throw error;
       toast.success("Student updated");
@@ -404,7 +479,6 @@ const AdminStudentsPage = () => {
                 { k: "dob", l: "DOB", ph: "", type: "date" },
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS },
-                { k: "batch", l: "Course", ph: "Select course", type: "select", options: courses.map((c) => c.name) },
                 { k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) },
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -431,7 +505,16 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <div className="sm:col-span-2">
+                <CoursesMultiSelect
+                  label="Courses (assign one or more)"
+                  courses={courses}
+                  value={addCourseIds}
+                  onChange={setAddCourseIds}
+                />
+              </div>
             </div>
+
 
             <div className="flex items-center justify-end gap-2 border-t border-border p-4">
               <button
@@ -635,7 +718,7 @@ const AdminStudentsPage = () => {
                 { k: "dob", l: "DOB", ph: "", type: "date" },
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
-                { k: "batch_id", l: "Course", ph: "Select course", type: "select", options: courses.map((c) => ({ value: c.id, label: c.name })) },
+                { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
                 { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -662,7 +745,16 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <div className="sm:col-span-2">
+                <CoursesMultiSelect
+                  label="Courses (assigned)"
+                  courses={courses}
+                  value={editCourseIds}
+                  onChange={setEditCourseIds}
+                />
+              </div>
             </div>
+
 
             <div className="px-5 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-lg">
               <div className="rounded-lg border border-border bg-background/50 p-2">

@@ -83,6 +83,34 @@ Deno.serve(async (req) => {
           .upsert(update, { onConflict: "user_id" });
         if (pErr) throw pErr;
       }
+
+      // Sync course enrollments if provided
+      if (Array.isArray(body?.course_ids)) {
+        const courseIds: string[] = (body.course_ids as unknown[])
+          .map((x) => String(x ?? "").trim())
+          .filter((x) => x.length > 0);
+
+        if (courseIds.length > 0) {
+          const rows = courseIds.map((course_id) => ({ user_id, course_id, is_active: true }));
+          const { error: eErr } = await admin
+            .from("enrollments")
+            .upsert(rows, { onConflict: "user_id,course_id" });
+          if (eErr) throw eErr;
+        }
+
+        // Deactivate any active enrollments not in the new set
+        let q = admin
+          .from("enrollments")
+          .update({ is_active: false })
+          .eq("user_id", user_id)
+          .eq("is_active", true);
+        if (courseIds.length > 0) {
+          q = q.not("course_id", "in", `(${courseIds.join(",")})`);
+        }
+        const { error: dErr } = await q;
+        if (dErr) throw dErr;
+      }
+
       return json(200, { success: true });
     }
 
