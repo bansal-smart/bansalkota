@@ -37,7 +37,7 @@ type SheetData = {
   questions: ResponseQuestion[];
 };
 
-const optionLetter = (i: number) => String.fromCharCode(65 + i);
+// Per-test option labelling style is resolved in the component once the test row loads.
 
 const stringifyAnswer = (val: any): string => {
   if (val == null) return "—";
