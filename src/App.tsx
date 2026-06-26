@@ -411,6 +411,7 @@ const App = () => (
               <Route path="/center" element={<CenterDashboardPage />} />
               <Route path="/center/content" element={<CenterContentPage />} />
               <Route path="/center/banners" element={<CenterBannersPage />} />
+              <Route path="/center/carousel-banners" element={<CenterCarouselBannersPage />} />
               <Route path="/center/courses" element={<CenterCoursesPage />} />
               <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
               <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
