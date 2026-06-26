@@ -18,3 +18,16 @@ export const SUBJECTS_COMPETE = ["Physics", "Chemistry", "Math", "Biology"] as c
 export const SUBJECTS_VALID_ANY = ["Physics", "Chemistry", "Math", "Mathematics", "Biology"] as const;
 
 export type Subject = (typeof SUBJECTS)[number];
+
+// Canonical student class levels used in every enquiry/admission form.
+export const CLASS_LEVELS = [
+  "Class 6",
+  "Class 7",
+  "Class 8",
+  "Class 9",
+  "Class 10",
+  "Class 11",
+  "Class 12",
+  "Dropper",
+] as const;
+export type ClassLevel = (typeof CLASS_LEVELS)[number];
