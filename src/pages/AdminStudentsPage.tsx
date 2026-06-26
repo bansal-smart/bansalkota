@@ -459,11 +459,18 @@ const AdminStudentsPage = () => {
             <Download className="h-3 w-3" /> Export CSV
           </button>
           <button
+            onClick={() => setConfirmBulkDelete(true)}
+            className="rounded-lg bg-destructive px-3 py-1 text-[10px] font-bold text-destructive-foreground flex items-center gap-1 hover:bg-destructive/90"
+          >
+            <Trash2 className="h-3 w-3" /> Delete selected
+          </button>
+          <button
             onClick={() => setSelected([])}
             className="rounded-lg bg-background border border-border px-3 py-1 text-[10px] font-medium text-muted-foreground"
           >
             Clear
           </button>
+
         </div>
       )}
 
