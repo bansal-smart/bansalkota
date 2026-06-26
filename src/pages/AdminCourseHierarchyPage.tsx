@@ -157,10 +157,13 @@ const AdminCourseHierarchyPage = () => {
         <div className="bg-card border rounded-lg p-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-sm">Content Tree</h2>
-            <Button size="sm" variant="ghost" onClick={addSubject}><Plus className="h-3 w-3 mr-1" /> Subject</Button>
+            <Button size="sm" variant="ghost" onClick={() => setAddingSubject(true)}><Plus className="h-3 w-3 mr-1" /> Subject</Button>
           </div>
-          {subjects.length === 0 && <p className="text-xs text-muted-foreground">No subjects yet. Add one to start.</p>}
+          {subjects.length === 0 && !addingSubject && <p className="text-xs text-muted-foreground">No subjects yet. Add one to start.</p>}
           <div className="space-y-1">
+            {addingSubject && (
+              <InlineAddInput placeholder="Subject name" onSubmit={createSubject} onCancel={() => setAddingSubject(false)} indent={0} />
+            )}
             {subjects.map((subject, si) => {
               const sOpen = expanded.has(subject.id);
               const subjVideos = (subject.topics ?? []).reduce((a, t) => a + (t.subtopics ?? []).reduce((b, st) => b + (st.videos?.length ?? 0), 0), 0);
@@ -176,7 +179,7 @@ const AdminCourseHierarchyPage = () => {
                     badge={`${subjVideos} videos`}
                     onUp={() => move("course_subjects", subjects, si, -1)}
                     onDown={() => move("course_subjects", subjects, si, 1)}
-                    onRename={() => rename("course_subjects", subject.id, subject.name)}
+                    onRename={() => openRename("course_subjects", subject.id, subject.name, "subject")}
                     onDelete={() => remove("course_subjects", subject.id, "subject")}
                     depth={0}
                   />
@@ -196,7 +199,7 @@ const AdminCourseHierarchyPage = () => {
                               badge={`${tVideos} videos`}
                               onUp={() => move("course_topics", subject.topics ?? [], ti, -1)}
                               onDown={() => move("course_topics", subject.topics ?? [], ti, 1)}
-                              onRename={() => rename("course_topics", topic.id, topic.name)}
+                              onRename={() => openRename("course_topics", topic.id, topic.name, "topic")}
                               onDelete={() => remove("course_topics", topic.id, "topic")}
                               depth={1}
                             />
@@ -213,19 +216,27 @@ const AdminCourseHierarchyPage = () => {
                                     badge={`${subtopic.videos?.length ?? 0}📹 ${subtopic.pdfs?.length ?? 0}📄${subtopic.quiz ? " ✓Q" : ""}`}
                                     onUp={() => move("course_subtopics", topic.subtopics ?? [], sti, -1)}
                                     onDown={() => move("course_subtopics", topic.subtopics ?? [], sti, 1)}
-                                    onRename={() => rename("course_subtopics", subtopic.id, subtopic.name)}
+                                    onRename={() => openRename("course_subtopics", subtopic.id, subtopic.name, "subtopic")}
                                     onDelete={() => remove("course_subtopics", subtopic.id, "subtopic")}
                                     depth={2}
                                     leaf
                                   />
                                 ))}
-                                <button onClick={() => addSubtopic(topic)} className="ml-6 text-xs text-primary hover:underline py-1">+ Add Subtopic</button>
+                                {addingSubtopicFor === topic.id ? (
+                                  <InlineAddInput placeholder="Subtopic name" onSubmit={(n) => createSubtopic(topic, n)} onCancel={() => setAddingSubtopicFor(null)} indent={6} />
+                                ) : (
+                                  <button onClick={() => setAddingSubtopicFor(topic.id)} className="ml-6 text-xs text-primary hover:underline py-1">+ Add Subtopic</button>
+                                )}
                               </div>
                             )}
                           </div>
                         );
                       })}
-                      <button onClick={() => addTopic(subject)} className="ml-2 text-xs text-primary hover:underline py-1">+ Add Topic</button>
+                      {addingTopicFor === subject.id ? (
+                        <InlineAddInput placeholder="Topic name" onSubmit={(n) => createTopic(subject, n)} onCancel={() => setAddingTopicFor(null)} indent={2} />
+                      ) : (
+                        <button onClick={() => setAddingTopicFor(subject.id)} className="ml-2 text-xs text-primary hover:underline py-1">+ Add Topic</button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -250,9 +261,50 @@ const AdminCourseHierarchyPage = () => {
           )}
         </div>
       </div>
+
+      <Dialog open={!!renameTarget} onOpenChange={(o) => { if (!o) setRenameTarget(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Rename {renameTarget?.label}</DialogTitle></DialogHeader>
+          <Input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submitRename(); }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameTarget(null)}>Cancel</Button>
+            <Button onClick={submitRename}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {ConfirmDialog}
     </div>
   );
 };
+
+function InlineAddInput({ placeholder, onSubmit, onCancel, indent }: {
+  placeholder: string; onSubmit: (name: string) => void; onCancel: () => void; indent: number;
+}) {
+  const [value, setValue] = useState("");
+  return (
+    <div className="flex items-center gap-1 py-1" style={{ paddingLeft: indent * 8 }}>
+      <Input
+        autoFocus
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit(value);
+          else if (e.key === "Escape") onCancel();
+        }}
+        onBlur={() => { if (!value.trim()) onCancel(); }}
+        className="h-7 text-sm"
+      />
+      <Button size="sm" className="h-7" onClick={() => onSubmit(value)}>Add</Button>
+      <Button size="sm" variant="ghost" className="h-7" onClick={onCancel}>✕</Button>
+    </div>
+  );
+}
 
 function NodeRow(props: {
   open: boolean; onToggle: () => void; selected: boolean; onSelect: () => void;
