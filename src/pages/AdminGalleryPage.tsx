@@ -452,24 +452,34 @@ const AdminGalleryPage = () => {
                       />
                     </label>
                   </div>
-                  <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {editingImages.map((im) => (
-                      <div key={im.id} className="relative group rounded-lg overflow-hidden border border-border">
-                        <img src={im.image_url} alt="" className="aspect-square object-cover w-full" />
-                        <button
-                          onClick={() => removeImage(im.id)}
-                          className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleImageDragEnd}
+                  >
+                    <SortableContext items={editingImages.map((i) => i.id)} strategy={rectSortingStrategy}>
+                      <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {editingImages.map((im) => (
+                          <SortableImage
+                            key={im.id}
+                            id={im.id}
+                            url={im.image_url}
+                            onRemove={() => removeImage(im.id)}
+                          />
+                        ))}
+                        {editingImages.length === 0 && (
+                          <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                            No images yet. Upload one or more.
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    {editingImages.length === 0 && (
-                      <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                        No images yet. Upload one or more.
-                      </div>
-                    )}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
+                  {editingImages.length > 1 && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Drag the handle on each image to reorder. The order here is how they appear on the website.
+                    </p>
+                  )}
                 </div>
               )}
 
