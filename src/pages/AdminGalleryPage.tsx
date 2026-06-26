@@ -1,7 +1,64 @@
 import { useEffect, useState } from "react";
-import { Image as ImageIcon, Video as VideoIcon, Loader2, Plus, Save, Trash2, Upload, X, Film } from "lucide-react";
+import { Image as ImageIcon, Video as VideoIcon, Loader2, Plus, Save, Trash2, Upload, X, Film, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+type SortableImageProps = {
+  id: string;
+  url: string;
+  onRemove: () => void;
+};
+
+const SortableImage = ({ id, url, onRemove }: SortableImageProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative group rounded-lg overflow-hidden border border-border bg-card"
+    >
+      <img src={url} alt="" className="aspect-square object-cover w-full" />
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute top-1 left-1 rounded-full bg-black/70 p-1 text-white cursor-grab active:cursor-grabbing"
+        title="Drag to reorder"
+      >
+        <GripVertical className="h-3 w-3" />
+      </button>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white opacity-0 group-hover:opacity-100"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+};
 
 type Album = {
   id: string;
@@ -209,8 +266,25 @@ const AdminGalleryPage = () => {
     load();
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleImageDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setEditingImages((items) => {
+      const oldIndex = items.findIndex((i) => i.id === active.id);
+      const newIndex = items.findIndex((i) => i.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return items;
+      return arrayMove(items, oldIndex, newIndex).map((im, idx) => ({ ...im, sort_order: idx }));
+    });
+  };
+
   return (
     <div className="space-y-6 p-4 lg:p-6">
+
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <ImageIcon className="h-7 w-7 text-primary" />
@@ -395,24 +469,34 @@ const AdminGalleryPage = () => {
                       />
                     </label>
                   </div>
-                  <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    {editingImages.map((im) => (
-                      <div key={im.id} className="relative group rounded-lg overflow-hidden border border-border">
-                        <img src={im.image_url} alt="" className="aspect-square object-cover w-full" />
-                        <button
-                          onClick={() => removeImage(im.id)}
-                          className="absolute top-1 right-1 rounded-full bg-black/70 p-1 text-white opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleImageDragEnd}
+                  >
+                    <SortableContext items={editingImages.map((i) => i.id)} strategy={rectSortingStrategy}>
+                      <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {editingImages.map((im) => (
+                          <SortableImage
+                            key={im.id}
+                            id={im.id}
+                            url={im.image_url}
+                            onRemove={() => removeImage(im.id)}
+                          />
+                        ))}
+                        {editingImages.length === 0 && (
+                          <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                            No images yet. Upload one or more.
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    {editingImages.length === 0 && (
-                      <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                        No images yet. Upload one or more.
-                      </div>
-                    )}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
+                  {editingImages.length > 1 && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Drag the handle on each image to reorder. The order here is how they appear on the website.
+                    </p>
+                  )}
                 </div>
               )}
 
