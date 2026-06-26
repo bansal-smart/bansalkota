@@ -28,7 +28,7 @@ const coursesHero = coursesHeroAsset.url;
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
-const courseTypeFilters = ["All", "Online", "Offline", "Residential"] as const;
+const courseTypeFilters = ["All", "Online", "Offline"] as const;
 
 const matchesGoal = (c: CourseRow, goal: string) => {
   if (goal === "All") return true;
