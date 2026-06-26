@@ -102,6 +102,8 @@ const AdminStudentsPage = () => {
     dob: "", target_exam: "", class_level: "", batch: "", centre: "",
   };
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
+  const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
+  const [editCourseIds, setEditCourseIds] = useState<string[]>([]);
 
   const submitAddStudent = async () => {
     if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !addForm.centre.trim()) {
@@ -111,6 +113,7 @@ const AdminStudentsPage = () => {
     try {
       const row: Record<string, any> = {};
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
+      if (addCourseIds.length) row.course_ids = addCourseIds;
       const { data, error } = await supabase.functions.invoke("bulk-import", {
         body: { kind: "students", rows: [row], dry_run: false },
       });
@@ -122,6 +125,7 @@ const AdminStudentsPage = () => {
       toast.success("Student added");
       setAddOpen(false);
       setAddForm(emptyAdd);
+      setAddCourseIds([]);
       load();
     } catch (e: any) {
       toast.error("Add failed", { description: e.message });
