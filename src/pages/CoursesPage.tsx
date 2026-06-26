@@ -46,6 +46,10 @@ const matchesType = (c: CourseRow, type: string) => {
 };
 
 const detectMode = (c: CourseRow): "Online" | "Offline" | "Residential" => {
+  const m = ((c as any).mode ?? "").toString().toLowerCase();
+  if (m === "residential") return "Residential";
+  if (m === "offline") return "Offline";
+  if (m === "online") return "Online";
   const h = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
   if (h.includes("residential")) return "Residential";
   if (h.includes("offline")) return "Offline";
