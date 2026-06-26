@@ -9,6 +9,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import bansalLogoAsset from "@/assets/bansal-logo.webp.asset.json";
 const bansalLogo = bansalLogoAsset.url;
+import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 
 type TestRow = {
   id: string;
