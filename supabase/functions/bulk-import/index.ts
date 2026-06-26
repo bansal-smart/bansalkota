@@ -256,10 +256,25 @@ Deno.serve(async (req) => {
             target = data as any;
           }
 
+          const toE164In = (p: string | null): string | null => {
+            if (!p) return null;
+            const digits = p.replace(/\D/g, "");
+            if (/^[6-9]\d{9}$/.test(digits)) return `+91${digits}`;
+            if (/^91[6-9]\d{9}$/.test(digits)) return `+${digits}`;
+            return null;
+          };
+
           const payload: Record<string, any> = {};
           if (fullName) payload.full_name = fullName;
           if (trimOrNull(r.father_name ?? r.fathers_name)) payload.father_name = trimOrNull(r.father_name ?? r.fathers_name);
-          if (phone) payload.phone = phone;
+          if (phone) {
+            payload.phone = phone;
+            const e164 = toE164In(phone);
+            if (e164) {
+              payload.phone_e164 = e164;
+              payload.phone_verified = true;
+            }
+          }
           if (trimOrNull(r.parent_phone ?? r.parent_no)) payload.parent_phone = trimOrNull(r.parent_phone ?? r.parent_no);
           const dob = parseDob(r.dob);
           if (dob) payload.dob = dob;
@@ -274,6 +289,7 @@ Deno.serve(async (req) => {
           if (trimOrNull(r.city)) payload.city = trimOrNull(r.city);
           if (status) payload.student_status = status;
           payload.is_bansal_offline_student = true;
+          payload.onboarding_completed = true;
 
           if (target) {
             if (dryRun) { results.push({ row: i + 1, ok: true, id: target.id }); continue; }
