@@ -25,7 +25,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
 
   // existing-user form
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"manager" | "owner">("manager");
+  const [role, setRole] = useState<"admin" | "manager" | "supervisor" | "executive">("manager");
   const [adding, setAdding] = useState(false);
 
   // create-login form
