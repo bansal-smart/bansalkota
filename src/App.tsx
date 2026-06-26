@@ -209,6 +209,7 @@ const App = () => (
             <Route element={<ProtectedRoute allow={["student"]} />}>
               <Route path="/tests/:slug/take" element={<TestTakingPage />} />
               <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
+              <Route path="/learn/:courseId" element={<CourseLearnPage />} />
             </Route>
 
             {/* Public marketing pages (PublicLayout: own navbar + footer) */}
