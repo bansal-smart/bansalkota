@@ -43,6 +43,7 @@ const TestSubjectBreakdownPage = () => {
   const [answers, setAnswers] = useState<Record<string, { selected: any }>>({});
   const [subjectName, setSubjectName] = useState<string>(subject ?? "");
   const [testName, setTestName] = useState<string>("");
+  const [optStyle, setOptStyle] = useState<OptionLabelStyle>("alpha");
 
   useEffect(() => {
     if (!attemptId || !subject) return;
