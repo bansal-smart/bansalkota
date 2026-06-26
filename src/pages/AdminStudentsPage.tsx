@@ -598,20 +598,13 @@ const AdminStudentsPage = () => {
         onPageChange={(p) => setPage(p - 1)}
       />
 
-      {/* Drawer */}
+      {/* Edit Modal */}
       {drawer && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setDrawer(null)} />
-          <div className="relative w-full max-w-md bg-card shadow-xl border-l border-border overflow-y-auto animate-slide-in-right">
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <h2 className="text-sm font-bold text-foreground">Student Details</h2>
-              <button onClick={() => setDrawer(null)}>
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-lg font-bold text-primary overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !saving && setDrawer(null)}>
+          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-xs font-bold text-primary overflow-hidden shrink-0">
                   {drawer.avatar_url ? (
                     <img src={drawer.avatar_url} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -619,96 +612,116 @@ const AdminStudentsPage = () => {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-foreground truncate">{drawer.full_name || "Unnamed"}</p>
-                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                  <h2 className="font-bold text-foreground truncate">{drawer.full_name || "Edit Student"}</h2>
+                  <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
                     <Mail className="h-3 w-3" /> {drawer.email || "No email"}
                   </p>
                 </div>
               </div>
+              <button onClick={() => !saving && setDrawer(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-              <div className="space-y-3">
-                {[
-                  { key: "full_name", label: "Full name" },
-                  { key: "phone", label: "Phone" },
-                  { key: "parent_phone", label: "Parent phone" },
-                  { key: "target_exam", label: "Target exam" },
-                  { key: "class_level", label: "Class level" },
-                  { key: "city", label: "City" },
-                  { key: "country", label: "Country" },
-                  { key: "goal", label: "Goal" },
-                ].map((f) => (
-                  <div key={f.key}>
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase">{f.label}</label>
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                { k: "roll_number", l: "Roll No", ph: "1001", type: "text" },
+                { k: "full_name", l: "Student Name", ph: "Aviral Singh", type: "text" },
+                { k: "father_name", l: "Father's Name", ph: "Ashok Kumar Singh", type: "text" },
+                { k: "phone", l: "Contact No.", ph: "7857852344", type: "text" },
+                { k: "parent_phone", l: "Parent No.", ph: "7909075201", type: "text" },
+                { k: "dob", l: "DOB", ph: "", type: "date" },
+                { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS.map((o) => ({ value: o, label: o })) },
+                { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
+                { k: "batch_id", l: "Course", ph: "Select course", type: "select", options: courses.map((c) => ({ value: c.id, label: c.name })) },
+                { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
+              ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
+                <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
+                  <span>{f.l}</span>
+                  {f.type === "select" ? (
+                    <select
+                      value={((edit as any)[f.k] as string) ?? ""}
+                      onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                    >
+                      <option value="">{f.ph}</option>
+                      {(f.options ?? []).map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  ) : (
                     <input
-                      value={(edit as any)[f.key] ?? ""}
-                      onChange={(e) => setEdit((s) => ({ ...s, [f.key]: e.target.value }))}
-                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
+                      type={f.type}
+                      value={((edit as any)[f.k] as string) ?? ""}
+                      onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
+                      placeholder={f.ph}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                     />
-                  </div>
-                ))}
-                <div>
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase">Plan</label>
-                  <select
-                    value={edit.plan ?? "Free"}
-                    onChange={(e) => setEdit((s) => ({ ...s, plan: e.target.value }))}
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
-                  >
-                    {PLAN_OPTIONS.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  )}
+                </label>
+              ))}
+            </div>
 
-              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-background/50 p-3">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase">Joined</p>
-                  <p className="text-xs font-medium text-foreground">{new Date(drawer.created_at).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase">Onboarding</p>
-                  <p className="text-xs font-medium text-foreground">{drawer.onboarding_completed ? "Done" : "Pending"}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase">Doubt routing</p>
-                  <p className="text-xs font-medium text-foreground capitalize">{drawer.doubt_preference}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase">Status</p>
-                  <p className={`text-xs font-medium ${drawer.is_suspended ? "text-destructive" : "text-secondary"}`}>
-                    {drawer.is_suspended ? "Suspended" : "Active"}
-                  </p>
-                </div>
+            <div className="px-5 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-lg">
+              <div className="rounded-lg border border-border bg-background/50 p-2">
+                <p className="text-[10px] text-muted-foreground uppercase">Joined</p>
+                <p className="text-xs font-medium text-foreground">{new Date(drawer.created_at).toLocaleDateString()}</p>
               </div>
+              <div className="rounded-lg border border-border bg-background/50 p-2">
+                <p className="text-[10px] text-muted-foreground uppercase">Onboarding</p>
+                <p className="text-xs font-medium text-foreground">{drawer.onboarding_completed ? "Done" : "Pending"}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 p-2">
+                <p className="text-[10px] text-muted-foreground uppercase">Doubt routing</p>
+                <p className="text-xs font-medium text-foreground capitalize">{drawer.doubt_preference}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 p-2">
+                <p className="text-[10px] text-muted-foreground uppercase">Status</p>
+                <p className={`text-xs font-medium ${drawer.is_suspended ? "text-destructive" : "text-secondary"}`}>
+                  {drawer.is_suspended ? "Suspended" : "Active"}
+                </p>
+              </div>
+            </div>
 
-              <div className="flex flex-col gap-2 pt-2">
-                <button
-                  onClick={saveEdit}
-                  disabled={saving}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-60"
-                >
-                  {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                  Save changes
-                </button>
+            <div className="flex items-center justify-between gap-2 border-t border-border p-4 flex-wrap">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => toggleSuspend(drawer)}
-                  className={`w-full rounded-lg border px-3 py-2 text-xs font-medium ${
+                  className={`rounded-lg border px-3 py-2 text-xs font-medium ${
                     drawer.is_suspended ? "border-secondary/30 text-secondary" : "border-destructive/30 text-destructive"
                   }`}
                 >
-                  {drawer.is_suspended ? "Unsuspend student" : "Suspend student"}
+                  {drawer.is_suspended ? "Unsuspend" : "Suspend"}
                 </button>
                 <button
                   onClick={() => setConfirmDelete(drawer)}
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
                 >
-                  <Trash2 className="h-3 w-3" /> Delete student
+                  <Trash2 className="h-3 w-3" /> Delete
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => !saving && setDrawer(null)}
+                  disabled={saving}
+                  className="rounded-lg border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEdit}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  {saving ? "Saving..." : "Save changes"}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
 
       {/* Confirm delete */}
       {confirmDelete && (
