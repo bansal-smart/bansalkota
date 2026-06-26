@@ -423,12 +423,11 @@ function SubtopicEditor({ subtopic, topic, subject, courseId, onSaved }: {
         <TabsList>
           <TabsTrigger value="videos"><Video className="h-3 w-3 mr-1" /> Videos ({subtopic.videos?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="pdfs"><FileText className="h-3 w-3 mr-1" /> PDFs ({subtopic.pdfs?.length ?? 0})</TabsTrigger>
-          <TabsTrigger value="quiz"><ClipboardList className="h-3 w-3 mr-1" /> Quiz</TabsTrigger>
         </TabsList>
         <TabsContent value="videos"><VideoTab subtopic={subtopic} courseId={courseId} onSaved={onSaved} /></TabsContent>
         <TabsContent value="pdfs"><PdfTab subtopic={subtopic} courseId={courseId} onSaved={onSaved} /></TabsContent>
-        <TabsContent value="quiz"><QuizTab subtopic={subtopic} courseId={courseId} onSaved={onSaved} /></TabsContent>
       </Tabs>
+
     </div>
   );
 }
