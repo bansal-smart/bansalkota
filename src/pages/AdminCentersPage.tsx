@@ -25,7 +25,24 @@ type Center = {
   is_featured: boolean;
   featured_rank: number | null;
   is_pinned: boolean;
+  facilities: string[] | null;
+  students_mentored: string | null;
+  students_mentored_note: string | null;
+  selections_count: string | null;
+  selections_year: number | null;
+  selections_note: string | null;
 };
+
+const FACILITY_SUGGESTIONS = [
+  "AC classrooms",
+  "Doubt clinics",
+  "Library & reading hall",
+  "Mock test infrastructure",
+  "Mentor support",
+  "Parent-teacher meets",
+  "In-house CBT infrastructure",
+  "Hostel / Residential",
+];
 
 const REGIONS = ["North", "South", "East", "West", "Central"];
 const THEMES = ["metro", "hills", "heritage", "coastal", "temple", "plains", "east", "tier2"];
@@ -49,6 +66,12 @@ const blank: Partial<Center> = {
   is_featured: false,
   featured_rank: null,
   is_pinned: false,
+  facilities: [],
+  students_mentored: "",
+  students_mentored_note: "",
+  selections_count: "",
+  selections_year: null,
+  selections_note: "",
 };
 
 const slugify = (s: string) =>
