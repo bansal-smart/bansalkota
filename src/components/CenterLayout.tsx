@@ -30,6 +30,7 @@ const nav = [
   { label: "Centre Courses", icon: BookOpen, path: "/center/centre-courses" },
   { label: "Live Classes", icon: Video, path: "/center/live-classes" },
   { label: "Test Platform", icon: ClipboardList, path: "/center/tests" },
+  { label: "Test Series", icon: ClipboardList, path: "/center/test-series" },
   { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries" },
   { label: "Course Enquiries", icon: ClipboardList, path: "/center/course-enquiries" },
   { label: "My Students", icon: Users, path: "/center/students" },
