@@ -8,6 +8,12 @@ export type DBCenter = Center & {
   is_published: boolean;
   sort_order: number;
   is_pinned?: boolean;
+  facilities: string[];
+  students_mentored: string | null;
+  students_mentored_note: string | null;
+  selections_count: string | null;
+  selections_year: number | null;
+  selections_note: string | null;
 };
 
 const mapRow = (r: any): DBCenter => ({
@@ -28,6 +34,12 @@ const mapRow = (r: any): DBCenter => ({
   is_published: r.is_published,
   sort_order: r.sort_order ?? 0,
   is_pinned: !!r.is_pinned,
+  facilities: Array.isArray(r.facilities) ? r.facilities : [],
+  students_mentored: r.students_mentored ?? null,
+  students_mentored_note: r.students_mentored_note ?? null,
+  selections_count: r.selections_count ?? null,
+  selections_year: r.selections_year ?? null,
+  selections_note: r.selections_note ?? null,
 });
 
 const sortCentres = (list: DBCenter[]): DBCenter[] => {
@@ -43,7 +55,19 @@ const sortCentres = (list: DBCenter[]): DBCenter[] => {
 };
 
 const FALLBACK = sortCentres(
-  STATIC_CENTERS.map((c, i) => ({ ...c, id: c.slug, image_url: null, is_published: true, sort_order: i })),
+  STATIC_CENTERS.map((c, i) => ({
+    ...c,
+    id: c.slug,
+    image_url: null,
+    is_published: true,
+    sort_order: i,
+    facilities: [],
+    students_mentored: null,
+    students_mentored_note: null,
+    selections_count: null,
+    selections_year: null,
+    selections_note: null,
+  })),
 );
 
 export const useCenters = () => {
