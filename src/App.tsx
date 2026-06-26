@@ -346,7 +346,8 @@ const App = () => (
               <Route path="/admin/batches" element={<AdminBatchesPage />} />
               <Route path="/admin/courses/new" element={<CreateCoursePage />} />
               <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
-              <Route path="/admin/courses/:courseId/content" element={<AdminCourseContentPage />} />
+              <Route path="/admin/courses/:courseId/content" element={<AdminCourseHierarchyPage />} />
+              <Route path="/admin/courses/:courseId/chapters" element={<AdminCourseContentPage />} />
               <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
               {/* Unified Test Platform hub (tabs: overview, all, upcoming, series, bank, attempts, imports) */}
               <Route path="/admin/tests-hub" element={<AdminTestPlatformHub />} />
