@@ -976,6 +976,22 @@ const CreateTestPage = () => {
             </select>
           </div>
         </div>
+        <div>
+          <label className={labelCls}>Option Label Style</label>
+          <select
+            value={optionLabelStyle}
+            onChange={(e) => setOptionLabelStyle(e.target.value as "auto" | "numeric" | "alpha")}
+            className={inputCls}
+          >
+            <option value="auto">Auto (NEET → 1,2,3,4 · others → A,B,C,D)</option>
+            <option value="numeric">Numeric (1, 2, 3, 4)</option>
+            <option value="alpha">Alphabetic (A, B, C, D)</option>
+          </select>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Controls how MCQ options are labelled to students. When you bulk-import a .docx whose options are written as (1)(2)(3)(4) this is detected automatically.
+          </p>
+        </div>
+
 
         <div>
           <label className={labelCls}>Associate with Course</label>
