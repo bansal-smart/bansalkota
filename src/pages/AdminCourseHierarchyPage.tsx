@@ -36,6 +36,7 @@ const AdminCourseHierarchyPage = () => {
   const [addingSubtopicFor, setAddingSubtopicFor] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [bulkOpen, setBulkOpen] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
   const load = async () => {
