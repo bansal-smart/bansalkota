@@ -184,6 +184,7 @@ const DocxCommonImportDialog = ({
       }
       setQuestions(result.questions);
       setWarnings(result.warnings);
+      setDetectedOptionStyle(result.detectedOptionStyle);
       const nums = result.questions.map((q) => q.number).filter((n) => Number.isFinite(n));
       const minN = nums.length ? Math.min(...nums) : 1;
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
