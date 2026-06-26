@@ -243,9 +243,11 @@ const AdminStudentsPage = () => {
     if (!drawer) return;
     setSaving(true);
     try {
-      const { error } = await supabase.functions.invoke("manage-student", {
-        body: { action: "update", user_id: drawer.user_id, ...edit },
+      const payload: Record<string, any> = { action: "update", user_id: drawer.user_id };
+      Object.entries(edit).forEach(([k, v]) => {
+        payload[k] = typeof v === "string" && v.trim() === "" ? null : v;
       });
+      const { error } = await supabase.functions.invoke("manage-student", { body: payload });
       if (error) throw error;
       toast.success("Student updated");
       setDrawer(null);
