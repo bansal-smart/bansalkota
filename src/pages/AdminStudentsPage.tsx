@@ -390,29 +390,44 @@ const AdminStudentsPage = () => {
               </button>
             </div>
             <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                { k: "roll_number", l: "Roll No *", ph: "1001" },
-                { k: "full_name", l: "Student Name *", ph: "Aviral Singh" },
-                { k: "father_name", l: "Father's Name", ph: "Ashok Kumar Singh" },
-                { k: "phone", l: "Contact No.", ph: "7857852344" },
-                { k: "parent_phone", l: "Parent No.", ph: "7909075201" },
-                { k: "dob", l: "DOB", ph: "2008-05-12" },
-                { k: "target_exam", l: "Stream", ph: "JEE / NEET" },
-                { k: "class_level", l: "Class", ph: "XI" },
-                { k: "batch", l: "Batch", ph: "Bull's Eye" },
-                { k: "centre", l: "Centre *", ph: "Jamshedpur" },
-              ].map((f) => (
+              {([
+                { k: "roll_number", l: "Roll No *", ph: "1001", type: "text" },
+                { k: "full_name", l: "Student Name *", ph: "Aviral Singh", type: "text" },
+                { k: "father_name", l: "Father's Name", ph: "Ashok Kumar Singh", type: "text" },
+                { k: "phone", l: "Contact No.", ph: "7857852344", type: "text" },
+                { k: "parent_phone", l: "Parent No.", ph: "7909075201", type: "text" },
+                { k: "dob", l: "DOB", ph: "", type: "date" },
+                { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
+                { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS },
+                { k: "batch", l: "Course", ph: "Select course", type: "select", options: courses.map((c) => c.name) },
+                { k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) },
+              ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
-                  <input
-                    value={addForm[f.k] ?? ""}
-                    onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
-                    placeholder={f.ph}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                  />
+                  {f.type === "select" ? (
+                    <select
+                      value={addForm[f.k] ?? ""}
+                      onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                    >
+                      <option value="">{f.ph}</option>
+                      {(f.options ?? []).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={f.type}
+                      value={addForm[f.k] ?? ""}
+                      onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
+                      placeholder={f.ph}
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                    />
+                  )}
                 </label>
               ))}
             </div>
+
             <div className="flex items-center justify-end gap-2 border-t border-border p-4">
               <button
                 onClick={() => setAddOpen(false)}
