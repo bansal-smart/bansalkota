@@ -13,7 +13,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { fetchCourseContentTree, reorderSiblings } from "@/lib/api/course-content";
 import { extractYouTubeId, getYouTubeThumbnail, fetchYouTubeTitle } from "@/lib/youtube";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { CourseSubject, CourseTopic, CourseSubtopic, SubtopicVideo, SubtopicPdf, SubtopicQuiz, SubtopicQuizQuestion } from "@/types/course-content";
+
+type RenameTarget = { table: string; id: string; current: string; label: string };
 
 type Node =
   | { kind: "subject"; id: string; data: CourseSubject }
@@ -27,6 +30,12 @@ const AdminCourseHierarchyPage = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Node | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [addingSubject, setAddingSubject] = useState(false);
+  const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null);
+  const [addingSubtopicFor, setAddingSubtopicFor] = useState<string | null>(null);
+  const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const load = async () => {
     if (!courseId) return;
@@ -56,42 +65,51 @@ const AdminCourseHierarchyPage = () => {
     });
   };
 
-  const addSubject = async () => {
-    const name = window.prompt("Subject name (e.g. Physics)")?.trim();
-    if (!name || !courseId) return;
-    const { error } = await supabase.from("course_subjects" as any).insert({ course_id: courseId, name, position: subjects.length });
+  const createSubject = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || !courseId) { setAddingSubject(false); return; }
+    const { error } = await supabase.from("course_subjects" as any).insert({ course_id: courseId, name: trimmed, position: subjects.length });
+    setAddingSubject(false);
     if (error) return toast.error(error.message);
     toast.success("Subject added"); load();
   };
-  const addTopic = async (subject: CourseSubject) => {
-    const name = window.prompt("Topic name")?.trim();
-    if (!name) return;
+  const createTopic = async (subject: CourseSubject, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) { setAddingTopicFor(null); return; }
     const { error } = await supabase.from("course_topics" as any).insert({
-      course_id: courseId, subject_id: subject.id, name, position: (subject.topics ?? []).length,
+      course_id: courseId, subject_id: subject.id, name: trimmed, position: (subject.topics ?? []).length,
     });
+    setAddingTopicFor(null);
     if (error) return toast.error(error.message);
     toast.success("Topic added"); load();
   };
-  const addSubtopic = async (topic: CourseTopic) => {
-    const name = window.prompt("Subtopic name")?.trim();
-    if (!name) return;
+  const createSubtopic = async (topic: CourseTopic, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) { setAddingSubtopicFor(null); return; }
     const { error } = await supabase.from("course_subtopics" as any).insert({
-      course_id: courseId, topic_id: topic.id, name, position: (topic.subtopics ?? []).length,
+      course_id: courseId, topic_id: topic.id, name: trimmed, position: (topic.subtopics ?? []).length,
     });
+    setAddingSubtopicFor(null);
     if (error) return toast.error(error.message);
     toast.success("Subtopic added"); load();
   };
 
-  const rename = async (table: string, id: string, current: string) => {
-    const name = window.prompt("New name", current)?.trim();
-    if (!name || name === current) return;
-    const { error } = await supabase.from(table as any).update({ name }).eq("id", id);
+  const openRename = (table: string, id: string, current: string, label: string) => {
+    setRenameTarget({ table, id, current, label });
+    setRenameValue(current);
+  };
+  const submitRename = async () => {
+    if (!renameTarget) return;
+    const name = renameValue.trim();
+    if (!name || name === renameTarget.current) { setRenameTarget(null); return; }
+    const { error } = await supabase.from(renameTarget.table as any).update({ name }).eq("id", renameTarget.id);
+    setRenameTarget(null);
     if (error) return toast.error(error.message);
     toast.success("Renamed"); load();
   };
 
   const remove = async (table: string, id: string, label: string) => {
-    const ok = window.confirm(`Delete ${label}?`);
+    const ok = await confirm({ title: `Delete ${label}?`, description: "This will permanently remove it and its contents.", confirmLabel: "Delete" });
     if (!ok) return;
     const { error } = await supabase.from(table as any).delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -139,10 +157,13 @@ const AdminCourseHierarchyPage = () => {
         <div className="bg-card border rounded-lg p-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-sm">Content Tree</h2>
-            <Button size="sm" variant="ghost" onClick={addSubject}><Plus className="h-3 w-3 mr-1" /> Subject</Button>
+            <Button size="sm" variant="ghost" onClick={() => setAddingSubject(true)}><Plus className="h-3 w-3 mr-1" /> Subject</Button>
           </div>
-          {subjects.length === 0 && <p className="text-xs text-muted-foreground">No subjects yet. Add one to start.</p>}
+          {subjects.length === 0 && !addingSubject && <p className="text-xs text-muted-foreground">No subjects yet. Add one to start.</p>}
           <div className="space-y-1">
+            {addingSubject && (
+              <InlineAddInput placeholder="Subject name" onSubmit={createSubject} onCancel={() => setAddingSubject(false)} indent={0} />
+            )}
             {subjects.map((subject, si) => {
               const sOpen = expanded.has(subject.id);
               const subjVideos = (subject.topics ?? []).reduce((a, t) => a + (t.subtopics ?? []).reduce((b, st) => b + (st.videos?.length ?? 0), 0), 0);
@@ -158,7 +179,7 @@ const AdminCourseHierarchyPage = () => {
                     badge={`${subjVideos} videos`}
                     onUp={() => move("course_subjects", subjects, si, -1)}
                     onDown={() => move("course_subjects", subjects, si, 1)}
-                    onRename={() => rename("course_subjects", subject.id, subject.name)}
+                    onRename={() => openRename("course_subjects", subject.id, subject.name, "subject")}
                     onDelete={() => remove("course_subjects", subject.id, "subject")}
                     depth={0}
                   />
@@ -178,7 +199,7 @@ const AdminCourseHierarchyPage = () => {
                               badge={`${tVideos} videos`}
                               onUp={() => move("course_topics", subject.topics ?? [], ti, -1)}
                               onDown={() => move("course_topics", subject.topics ?? [], ti, 1)}
-                              onRename={() => rename("course_topics", topic.id, topic.name)}
+                              onRename={() => openRename("course_topics", topic.id, topic.name, "topic")}
                               onDelete={() => remove("course_topics", topic.id, "topic")}
                               depth={1}
                             />
@@ -195,19 +216,27 @@ const AdminCourseHierarchyPage = () => {
                                     badge={`${subtopic.videos?.length ?? 0}📹 ${subtopic.pdfs?.length ?? 0}📄${subtopic.quiz ? " ✓Q" : ""}`}
                                     onUp={() => move("course_subtopics", topic.subtopics ?? [], sti, -1)}
                                     onDown={() => move("course_subtopics", topic.subtopics ?? [], sti, 1)}
-                                    onRename={() => rename("course_subtopics", subtopic.id, subtopic.name)}
+                                    onRename={() => openRename("course_subtopics", subtopic.id, subtopic.name, "subtopic")}
                                     onDelete={() => remove("course_subtopics", subtopic.id, "subtopic")}
                                     depth={2}
                                     leaf
                                   />
                                 ))}
-                                <button onClick={() => addSubtopic(topic)} className="ml-6 text-xs text-primary hover:underline py-1">+ Add Subtopic</button>
+                                {addingSubtopicFor === topic.id ? (
+                                  <InlineAddInput placeholder="Subtopic name" onSubmit={(n) => createSubtopic(topic, n)} onCancel={() => setAddingSubtopicFor(null)} indent={6} />
+                                ) : (
+                                  <button onClick={() => setAddingSubtopicFor(topic.id)} className="ml-6 text-xs text-primary hover:underline py-1">+ Add Subtopic</button>
+                                )}
                               </div>
                             )}
                           </div>
                         );
                       })}
-                      <button onClick={() => addTopic(subject)} className="ml-2 text-xs text-primary hover:underline py-1">+ Add Topic</button>
+                      {addingTopicFor === subject.id ? (
+                        <InlineAddInput placeholder="Topic name" onSubmit={(n) => createTopic(subject, n)} onCancel={() => setAddingTopicFor(null)} indent={2} />
+                      ) : (
+                        <button onClick={() => setAddingTopicFor(subject.id)} className="ml-2 text-xs text-primary hover:underline py-1">+ Add Topic</button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -232,9 +261,50 @@ const AdminCourseHierarchyPage = () => {
           )}
         </div>
       </div>
+
+      <Dialog open={!!renameTarget} onOpenChange={(o) => { if (!o) setRenameTarget(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Rename {renameTarget?.label}</DialogTitle></DialogHeader>
+          <Input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submitRename(); }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameTarget(null)}>Cancel</Button>
+            <Button onClick={submitRename}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {ConfirmDialog}
     </div>
   );
 };
+
+function InlineAddInput({ placeholder, onSubmit, onCancel, indent }: {
+  placeholder: string; onSubmit: (name: string) => void; onCancel: () => void; indent: number;
+}) {
+  const [value, setValue] = useState("");
+  return (
+    <div className="flex items-center gap-1 py-1" style={{ paddingLeft: indent * 8 }}>
+      <Input
+        autoFocus
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit(value);
+          else if (e.key === "Escape") onCancel();
+        }}
+        onBlur={() => { if (!value.trim()) onCancel(); }}
+        className="h-7 text-sm"
+      />
+      <Button size="sm" className="h-7" onClick={() => onSubmit(value)}>Add</Button>
+      <Button size="sm" variant="ghost" className="h-7" onClick={onCancel}>✕</Button>
+    </div>
+  );
+}
 
 function NodeRow(props: {
   open: boolean; onToggle: () => void; selected: boolean; onSelect: () => void;
