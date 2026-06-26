@@ -23,7 +23,7 @@ type Node =
 
 const AdminCourseHierarchyPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { confirm } = useConfirm();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [course, setCourse] = useState<{ id: string; name: string; slug: string } | null>(null);
   const [subjects, setSubjects] = useState<CourseSubject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -367,7 +367,7 @@ function SubtopicEditor({ subtopic, topic, subject, courseId, onSaved }: {
 function VideoTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; courseId: string; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SubtopicVideo | null>(null);
-  const { confirm } = useConfirm();
+  const { confirm, ConfirmDialog } = useConfirm();
   const del = async (v: SubtopicVideo) => {
     if (!(await confirm({ title: `Delete "${v.title}"?`, confirmLabel: "Delete" }))) return;
     await supabase.from("subtopic_videos" as any).delete().eq("id", v.id);
@@ -475,7 +475,7 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [fileUrl, setFileUrl] = useState("");
-  const { confirm } = useConfirm();
+  const { confirm, ConfirmDialog } = useConfirm();
   const save = async () => {
     if (!title || !fileUrl) return toast.error("Title and URL required");
     const { error } = await supabase.from("subtopic_pdfs" as any).insert({
@@ -517,7 +517,7 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
 function QuizTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; courseId: string; onSaved: () => void }) {
   const [questions, setQuestions] = useState<SubtopicQuizQuestion[]>([]);
   const [open, setOpen] = useState(false);
-  const { confirm } = useConfirm();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [meta, setMeta] = useState({ title: "Practice Test", description: "", time_limit_minutes: 30, pass_percentage: 60 });
 
   useEffect(() => {
