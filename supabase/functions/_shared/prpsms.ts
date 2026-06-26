@@ -3,7 +3,7 @@
 
 const PRPSMS_BASE = "http://164.52.195.161/API";
 
-export const PRPSMS_SENDER_DEFAULT = "VBANSL";
+export const PRPSMS_SENDER_DEFAULT = "20190332";
 
 export type TemplateName =
   | "PaymentGateway_OTP"
