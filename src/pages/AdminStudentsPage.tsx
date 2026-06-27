@@ -362,10 +362,72 @@ const AdminStudentsPage = () => {
     }
   };
 
-  const exportSelected = () => {
-    const target = selected.length ? rows.filter((r) => selected.includes(r.user_id)) : rows;
-    if (!target.length) return toast.error("Nothing to export");
-    exportCsv(target);
+  const exportSelected = async () => {
+    if (selected.length) {
+      const target = rows.filter((r) => selected.includes(r.user_id));
+      if (!target.length) return toast.error("Nothing to export");
+      return exportCsv(target);
+    }
+    const tId = toast.loading("Preparing export…");
+    try {
+      const { data: roleRows, error: rErr } = await supabase
+        .from("user_roles").select("user_id").eq("role", "student");
+      if (rErr) throw rErr;
+      const studentIds = Array.from(new Set((roleRows ?? []).map((r) => r.user_id)));
+      if (!studentIds.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
+
+      const all: StudentRow[] = [];
+      const BATCH = 1000;
+      for (let i = 0; i < studentIds.length; i += BATCH) {
+        const slice = studentIds.slice(i, i + BATCH);
+        let q = (supabase as any)
+          .from("profiles")
+          .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label")
+          .in("user_id", slice)
+          .order("created_at", { ascending: false });
+        if (search.trim()) {
+          const s = search.trim();
+          q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
+        }
+        if (centreFilter === "none") q = q.is("centre_id", null);
+        else if (centreFilter) q = q.eq("centre_id", centreFilter);
+
+        let from = 0;
+        while (true) {
+          const { data, error } = await q.range(from, from + 999);
+          if (error) throw error;
+          const chunk = (data ?? []) as StudentRow[];
+          all.push(...chunk);
+          if (chunk.length < 1000) break;
+          from += 1000;
+        }
+      }
+
+      const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
+      const batchMap = new Map(batches.map((b) => [b.id, b.name]));
+      all.forEach((r) => {
+        r.centre_name = r.centre_id ? centreMap.get(r.centre_id) ?? null : null;
+        r.batch_name = r.batch_id ? batchMap.get(r.batch_id) ?? null : null;
+      });
+
+      // Fetch emails in batches
+      const emails: Record<string, string | null> = {};
+      for (let i = 0; i < all.length; i += 200) {
+        const ids = all.slice(i, i + 200).map((r) => r.user_id);
+        const { data: emailData } = await supabase.functions.invoke("manage-student", {
+          body: { action: "get_emails", user_ids: ids },
+        });
+        Object.assign(emails, emailData?.emails ?? {});
+      }
+      const withEmails = all.map((r) => ({ ...r, email: emails[r.user_id] ?? null }));
+      toast.dismiss(tId);
+      if (!withEmails.length) return toast.error("Nothing to export");
+      exportCsv(withEmails);
+      toast.success(`Exported ${withEmails.length} students`);
+    } catch (e: any) {
+      toast.dismiss(tId);
+      toast.error("Export failed", { description: e.message });
+    }
   };
 
   const doBulkDelete = async () => {
