@@ -333,8 +333,11 @@ export const AdmissionEnquiryModal = ({
           className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
         />
         <input
+          type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
           placeholder="Phone number"
           className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
         />
