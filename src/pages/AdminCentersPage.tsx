@@ -474,12 +474,12 @@ const AdminCentersPage = () => {
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
-            <label className="text-xs font-bold text-muted-foreground">Centre image</label>
+            <label className="text-xs font-bold text-muted-foreground">Centre image <span className="font-normal text-muted-foreground/80">(16:9 — recommended 1600×900)</span></label>
             <div className="mt-1 flex items-center gap-3">
               {form.image_url ? (
-                <img src={form.image_url} alt="" className="h-16 w-24 rounded-lg object-cover border border-border" />
+                <img src={form.image_url} alt="" className="aspect-[16/9] w-40 rounded-lg object-cover object-center border border-border" />
               ) : (
-                <div className="h-16 w-24 rounded-lg border border-dashed border-border bg-muted/40 flex items-center justify-center text-[10px] text-muted-foreground">No image</div>
+                <div className="aspect-[16/9] w-40 rounded-lg border border-dashed border-border bg-muted/40 flex items-center justify-center text-[10px] text-muted-foreground">No image</div>
               )}
               <label className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold cursor-pointer hover:bg-muted">
                 {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Upload
