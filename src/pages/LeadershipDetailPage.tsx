@@ -134,7 +134,10 @@ export default function LeadershipDetailPage() {
               {firstName && <span className="text-white">{firstName} </span>}
                   <span className="text-bansal-orange">{lastName}</span>
                   {honorific && (
-                    <span className="ml-3 text-white/85 font-bold">
+                    <span
+                      className="ml-3 text-white/85 font-bold align-baseline"
+                      style={{ fontSize: "0.6em" }}
+                    >
                       {honorific}
                     </span>
                   )}
