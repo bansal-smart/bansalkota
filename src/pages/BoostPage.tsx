@@ -66,8 +66,8 @@ const faqs = [
     a: "Any student from Class 5 to Class 12 (and droppers) preparing for school, Olympiads, JEE, or NEET can register.",
   },
   {
-    q: "Is BOOST really only ₹99?",
-    a: "Yes. The registration fee is ₹99 — non-refundable, covers test administration and study material kit.",
+    q: "What subjects are covered in BOOST?",
+    a: "The test includes Math, Science, and Mental Ability / Logical Reasoning. For higher classes, it may include Physics, Chemistry, and Biology, depending on the student's stream and class.",
   },
   {
     q: "Can I take the test from home?",
