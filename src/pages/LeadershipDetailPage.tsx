@@ -131,10 +131,10 @@ export default function LeadershipDetailPage() {
                 </>
               ) : (
                 <>
-                  {firstName && <span className="text-white">{firstName} </span>}
+              {firstName && <span className="text-white">{firstName} </span>}
                   <span className="text-bansal-orange">{lastName}</span>
                   {honorific && (
-                    <span className="ml-3 align-baseline text-white/85 font-bold" style={{ fontSize: "0.55em" }}>
+                    <span className="ml-3 text-white/85 font-bold">
                       {honorific}
                     </span>
                   )}
