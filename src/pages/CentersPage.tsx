@@ -35,7 +35,7 @@ export default function CentersPage() {
         (c.area ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, region]);
+  }, [query, region, CENTERS]);
 
   const displayName = (c: DBCenter) => (c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city);
 
