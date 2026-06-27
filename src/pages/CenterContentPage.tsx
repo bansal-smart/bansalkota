@@ -191,12 +191,12 @@ const CenterContentPage = () => {
           <ImageIcon className="h-5 w-5 text-primary" />
           <h2 className="text-base font-bold text-foreground">Centre hero image</h2>
         </div>
-        <p className="text-xs text-muted-foreground">Use a wide banner image where the face or key building detail stays visible. Recommended minimum size: 1600 × 900.</p>
+        <p className="text-xs text-muted-foreground">Use a 16:9 wide image where the key building/face stays centred. Recommended size: 1600 × 900.</p>
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           {form.image_url ? (
-            <img src={form.image_url} alt={`${centerName} centre`} className="h-40 w-full md:w-[320px] rounded-xl border border-border object-cover object-center" />
+            <img src={form.image_url} alt={`${centerName} centre`} className="aspect-[16/9] w-full md:w-[320px] rounded-xl border border-border object-cover object-center" />
           ) : (
-            <div className="h-40 w-full md:w-[320px] rounded-xl border border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">No hero image uploaded</div>
+            <div className="aspect-[16/9] w-full md:w-[320px] rounded-xl border border-dashed border-border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">No hero image uploaded</div>
           )}
           <div className="space-y-3">
             <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground cursor-pointer hover:bg-muted">
