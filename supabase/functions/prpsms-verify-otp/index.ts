@@ -110,6 +110,16 @@ Deno.serve(async (req) => {
       }
 
       if (!userId) {
+        // Enforce platform_settings.open_registrations: if disabled, new
+        // phone-OTP signups are blocked. Existing users continue to log in.
+        const { data: settings } = await supabase
+          .from("platform_settings")
+          .select("open_registrations")
+          .eq("id", 1)
+          .maybeSingle();
+        if (settings && settings.open_registrations === false) {
+          return new Response(JSON.stringify({ error: "Registrations are currently closed. Please contact support." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
         const placeholderEmail = `phone-${bare}@phone.bansalkota.local`;
         const { data: created, error: cErr } = await supabase.auth.admin.createUser({
           email: placeholderEmail,

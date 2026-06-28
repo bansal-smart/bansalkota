@@ -4,9 +4,7 @@ import BansalLogo from "@/components/bansal/BansalLogo";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import {
   LayoutDashboard,
-  Flame,
   CircleDot,
-  Briefcase,
   Inbox,
   FileText,
   Flag,
@@ -15,23 +13,17 @@ import {
   Video,
   ClipboardCheck,
   CreditCard,
-  Bell,
   Settings,
   ShieldCheck,
-  Library,
-  School,
   FileBarChart,
   BookOpen,
-  Trophy,
   MapPin,
   Image as ImageIcon,
   Award,
-  Youtube,
   Quote,
   BarChart3,
   LifeBuoy,
   Megaphone,
-  MessageSquare,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -41,42 +33,74 @@ import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 
 type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
+type NavGroup = { label: string; items: NavItem[] };
 
-// Items every admin (and super-admin) sees.
-const baseNav: NavItem[] = [
-  { label: "Overview", icon: LayoutDashboard, path: "/admin/dashboard" },
-  { label: "Users", icon: Users, path: "/admin/users" },
-  { label: "Students", icon: GraduationCap, path: "/admin/students" },
-  { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
-  { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
-  { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
-  { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
-  { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
-  { label: "E-Store Orders", icon: BookOpen, path: "/admin/orders" },
-  { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
-  { label: "Centres", icon: MapPin, path: "/admin/centres" },
-  { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
-  { label: "Topper Students", icon: Award, path: "/admin/toppers" },
-  { label: "Achievement Posters", icon: ImageIcon, path: "/admin/achievement-posters" },
-  { label: "Gallery", icon: ImageIcon, path: "/admin/gallery" },
-
-  { label: "Alumni Submissions", icon: GraduationCap, path: "/admin/alumni-submissions" },
-  { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
-  { label: "Testimonials", icon: Quote, path: "/admin/testimonials" },
-  { label: "Homepage Stats", icon: BarChart3, path: "/admin/stats" },
-  { label: "Leadership", icon: Users, path: "/admin/leadership" },
-  { label: "Lecture Bucket", icon: Youtube, path: "/admin/lecture-bucket" },
-  { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
-  
-  { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
-  { label: "Course Enquiries", icon: Inbox, path: "/admin/course-enquiries" },
-  { label: "Campaign Landing", icon: Megaphone, path: "/admin/landing-page" },
-  { label: "Campaign Leads", icon: Inbox, path: "/admin/landing-leads" },
-  { label: "Course Content", icon: FileText, path: "/admin/course-content" },
-  { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
-  { label: "Reports", icon: Flag, path: "/admin/reports" },
-  { label: "Notifications", icon: Bell, path: "/admin/notifications" },
-  { label: "SMS Broadcasts", icon: MessageSquare, path: "/admin/sms-broadcasts" },
+// MAIN — categorised for easier navigation. Lecture Bucket, SMS Broadcasts
+// and Notifications have been removed.
+const mainGroups: NavGroup[] = [
+  {
+    label: "Overview",
+    items: [
+      { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+      { label: "Reports", icon: Flag, path: "/admin/reports" },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { label: "Users", icon: Users, path: "/admin/users" },
+      { label: "Students", icon: GraduationCap, path: "/admin/students" },
+      { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
+      { label: "Alumni Submissions", icon: GraduationCap, path: "/admin/alumni-submissions" },
+      { label: "Topper Students", icon: Award, path: "/admin/toppers" },
+    ],
+  },
+  {
+    label: "Academics",
+    items: [
+      { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
+      { label: "Course Content", icon: FileText, path: "/admin/course-content" },
+      { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
+      { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
+      { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
+      { label: "Exam Management", icon: GraduationCap, path: "/admin/exams" },
+    ],
+  },
+  {
+    label: "Commerce",
+    items: [
+      { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
+      { label: "E-Store Orders", icon: BookOpen, path: "/admin/orders" },
+      { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
+    ],
+  },
+  {
+    label: "Centres",
+    items: [
+      { label: "Centres", icon: MapPin, path: "/admin/centres" },
+      { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
+    ],
+  },
+  {
+    label: "Content & Media",
+    items: [
+      { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
+      { label: "Gallery", icon: ImageIcon, path: "/admin/gallery" },
+      { label: "Achievement Posters", icon: ImageIcon, path: "/admin/achievement-posters" },
+      { label: "Testimonials", icon: Quote, path: "/admin/testimonials" },
+      { label: "Homepage Stats", icon: BarChart3, path: "/admin/stats" },
+      { label: "Leadership", icon: Users, path: "/admin/leadership" },
+    ],
+  },
+  {
+    label: "Leads & Campaigns",
+    items: [
+      { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
+      { label: "Course Enquiries", icon: Inbox, path: "/admin/course-enquiries" },
+      { label: "Campaign Landing", icon: Megaphone, path: "/admin/landing-page" },
+      { label: "Campaign Leads", icon: Inbox, path: "/admin/landing-leads" },
+    ],
+  },
 ];
 
 // Items only super-admin sees: revenue, settings, moderation.
@@ -127,21 +151,28 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
 
       <nav className="flex-1 px-3 space-y-1">
         <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Main</p>
-        {baseNav.map((item) => {
-          const active = pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
-              }`}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+        {mainGroups.map((group) => (
+          <div key={group.label} className="pt-2">
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/30">
+              {group.label}
+            </p>
+            {group.items.map((item) => {
+              const active = pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
 
         <p className="px-3 pt-4 pb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Site Pages</p>
         {sitePagesNav.map((item) => {

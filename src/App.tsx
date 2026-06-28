@@ -17,6 +17,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import PublicLayout from "./components/PublicLayout";
 import Spinner from "./components/Spinner";
 import { AuthProvider } from "./context/AuthContext";
+import MaintenanceGate from "./components/MaintenanceGate";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -191,6 +192,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <MaintenanceGate>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -437,6 +439,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </MaintenanceGate>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
