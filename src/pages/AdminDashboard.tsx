@@ -182,7 +182,7 @@ const AdminDashboard = () => {
     { label: "New Test", to: "/admin/tests/new", Icon: ClipboardCheck, tone: "bg-indigo-600 text-white" },
     { label: "Bulk Q Import", to: "/admin/tests-hub?tab=imports", Icon: Upload, tone: "bg-cyan-600 text-white" },
     { label: "New Course", to: "/admin/courses", Icon: BookOpen, tone: "bg-bansal-blue text-white" },
-    { label: "Lecture Bucket", to: "/admin/lecture-bucket", Icon: Youtube, tone: "bg-rose-500 text-white" },
+    
     { label: "Add Centre", to: "/admin/centres", Icon: Building2, tone: "bg-emerald-600 text-white" },
     { label: "New Banner", to: "/admin/banners", Icon: ImageIcon, tone: "bg-bansal-orange text-white" },
     { label: "Add Topper", to: "/admin/toppers", Icon: Trophy, tone: "bg-amber-500 text-white" },
