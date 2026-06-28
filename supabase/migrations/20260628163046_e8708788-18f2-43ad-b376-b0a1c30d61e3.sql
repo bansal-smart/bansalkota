@@ -1,0 +1,1 @@
+DELETE FROM public.phone_otps WHERE phone='+919352443837' AND created_at > now() - interval '2 hours';

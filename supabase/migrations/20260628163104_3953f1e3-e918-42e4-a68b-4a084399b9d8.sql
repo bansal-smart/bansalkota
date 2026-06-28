@@ -1,0 +1,1 @@
+DELETE FROM public.phone_otps WHERE phone='+919352443837';
