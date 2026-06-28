@@ -381,6 +381,12 @@ const AdminCoursesPage = () => {
           </div>
         )}
       </div>
+      <AdminCourseStudentsDialog
+        open={!!studentsDialog}
+        onClose={() => setStudentsDialog(null)}
+        courseId={studentsDialog?.id ?? null}
+        courseName={studentsDialog?.name ?? ""}
+      />
     </div>
   );
 };
