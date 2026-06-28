@@ -25,10 +25,23 @@ Deno.serve(async (req) => {
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData, error: userErr } = await userClient.auth.getUser(
-      authHeader.replace("Bearer ", ""),
-    );
-    if (userErr || !userData?.user) return json(401, { error: "Unauthorized" });
+    const token = authHeader.replace("Bearer ", "");
+    let userId: string | null = null;
+    let userEmail: string | null = null;
+    try {
+      const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+      if (!claimsErr && claimsData?.claims?.sub) {
+        userId = claimsData.claims.sub as string;
+        userEmail = (claimsData.claims.email as string) ?? null;
+      }
+    } catch (_) { /* fall through */ }
+    if (!userId) {
+      const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+      if (userErr || !userData?.user) return json(401, { error: "Unauthorized" });
+      userId = userData.user.id;
+      userEmail = userData.user.email ?? null;
+    }
+    const userData = { user: { id: userId, email: userEmail } };
 
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: isSuper } = await admin.rpc("has_role", {
