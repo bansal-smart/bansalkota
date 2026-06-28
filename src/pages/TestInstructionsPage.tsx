@@ -95,7 +95,7 @@ const TestInstructionsPage = () => {
       : null;
   const notYetOpen = startsAt !== null && now < startsAt - ACTIVATION_LEAD_MS;
   const closed = endsAt !== null && now > endsAt;
-  const entryClosed = !hasExistingAttempt && entryDeadline !== null && now > entryDeadline;
+  const entryClosed = !hasInProgressAttempt && entryDeadline !== null && now > entryDeadline;
 
   const countdown = useMemo(() => {
     if (!startsAt || !notYetOpen) return null;
