@@ -68,6 +68,7 @@ const TestResponseSheetPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "unattempted">("all");
   const [optStyle, setOptStyle] = useState<OptionLabelStyle>("alpha");
+  const [solution, setSolution] = useState<{ path: string | null; released: boolean }>({ path: null, released: false });
   const optionLetter = (i: number) => optionLabel(i, optStyle);
 
   useEffect(() => {
@@ -88,10 +89,11 @@ const TestResponseSheetPage = () => {
       if (testId) {
         const { data: tRow } = await supabase
           .from("tests")
-          .select("option_label_style, exam_pattern")
+          .select("option_label_style, exam_pattern, solution_pdf_path, results_released_at")
           .eq("id", testId)
           .maybeSingle();
         setOptStyle(resolveOptionStyle(tRow as any));
+        setSolution({ path: (tRow as any)?.solution_pdf_path ?? null, released: !!(tRow as any)?.results_released_at });
       }
       setLoading(false);
     })();
@@ -170,6 +172,18 @@ const TestResponseSheetPage = () => {
             >
               <Printer className="h-3.5 w-3.5" /> Print / PDF
             </button>
+            {solution.released && solution.path && (
+              <button
+                onClick={async () => {
+                  const { data: sig, error } = await supabase.storage.from("test-solutions").createSignedUrl(solution.path as string, 60 * 10);
+                  if (error || !sig?.signedUrl) { toast.error(error?.message ?? "Could not open"); return; }
+                  window.open(sig.signedUrl, "_blank");
+                }}
+                className="inline-flex items-center gap-1 rounded-full border border-secondary bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground hover:opacity-90"
+              >
+                Solution PDF
+              </button>
+            )}
           </div>
         </div>
       </div>

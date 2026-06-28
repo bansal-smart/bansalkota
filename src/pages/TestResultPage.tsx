@@ -35,6 +35,7 @@ type TestRow = {
   auto_release: boolean | null;
   results_released_at: string | null;
   total_marks: number | null;
+  solution_pdf_path: string | null;
 };
 
 type RankInfo = {
@@ -147,7 +148,10 @@ const TestResultPage = () => {
       const rank = (bundle as any).rank;
 
       setAttempt(att as unknown as Attempt);
-      if (t) setTest(t as TestRow);
+      if (t) {
+        const { data: extra } = await (supabase as any).from("tests").select("solution_pdf_path").eq("id", t.id).maybeSingle();
+        setTest({ ...(t as TestRow), solution_pdf_path: extra?.solution_pdf_path ?? null });
+      }
       if (rank) setRankInfo(rank as RankInfo);
 
       const breakdown: Record<string, SubjectStat> = {};
@@ -308,6 +312,26 @@ const TestResultPage = () => {
           <StatTile icon={MinusCircle} label="Unattempted" value={unattempted} tone="muted" />
           <StatTile icon={Target} label="Total" value={total} tone="primary" />
         </div>
+
+        {test?.results_released_at && test?.solution_pdf_path && (
+          <div className="rounded-2xl border border-secondary/40 bg-secondary/5 p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">Official Solution PDF</p>
+              <p className="text-xs text-muted-foreground">Detailed solutions are now available.</p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                const { data, error } = await supabase.storage.from("test-solutions").createSignedUrl(test.solution_pdf_path as string, 60 * 10);
+                if (error || !data?.signedUrl) return;
+                window.open(data.signedUrl, "_blank");
+              }}
+              className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
+            >
+              Download Solution PDF
+            </button>
+          </div>
+        )}
 
         {/* Charts */}
         <div className="grid gap-4 lg:grid-cols-2">
