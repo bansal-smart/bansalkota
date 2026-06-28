@@ -245,14 +245,14 @@ const PublicLayout = () => {
                 <Link to="/career" className="block text-white/75 hover:text-bansal-orange">
                   Careers
                 </Link>
-                <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">
-                  Achievements
-                </Link>
                 <Link to="/blog" className="block text-white/75 hover:text-bansal-orange">
                   Blogs
                 </Link>
                 <Link to="/contact" className="block text-white/75 hover:text-bansal-orange">
                   Contact
+                </Link>
+                <Link to="/centres" className="block text-white/75 hover:text-bansal-orange">
+                  Offline Centres
                 </Link>
               </div>
             </div>
@@ -260,6 +260,9 @@ const PublicLayout = () => {
             <div>
               <h4 className="text-sm font-bold mb-4 uppercase tracking-wide">Quick Links</h4>
               <div className="space-y-2 text-sm">
+                <Link to="/alumni" className="block text-white/75 hover:text-bansal-orange">
+                  Bansal Alumni Network
+                </Link>
                 <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">
                   Achievements
                 </Link>
