@@ -385,7 +385,7 @@ const App = () => (
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
-              <Route path="/admin/lecture-bucket" element={<AdminLectureBucketPage />} />
+              
               {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
               <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/mentor-assignments" element={<Navigate to="/admin/dashboard" replace />} />
