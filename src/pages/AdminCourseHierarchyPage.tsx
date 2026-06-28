@@ -28,6 +28,21 @@ import { extractYouTubeId, getYouTubeThumbnail, fetchYouTubeTitle } from "@/lib/
 import { useConfirm } from "@/components/ConfirmDialog";
 import BulkCourseVideosDialog from "@/components/BulkCourseVideosDialog";
 import type { CourseSubject, CourseTopic, SubtopicVideo, SubtopicPdf } from "@/types/course-content";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type RenameTarget = { table: string; id: string; current: string; label: string };
 
