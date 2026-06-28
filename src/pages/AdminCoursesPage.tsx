@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, GripVertical } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, GripVertical, Users } from "lucide-react";
+import AdminCourseStudentsDialog from "@/components/AdminCourseStudentsDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
