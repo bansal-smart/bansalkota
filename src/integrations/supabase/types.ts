@@ -4986,6 +4986,9 @@ export type Database = {
           results_released_at: string | null
           section_instructions: Json | null
           slug: string
+          solution_pdf_path: string | null
+          solution_pdf_uploaded_at: string | null
+          solution_pdf_url: string | null
           starts_at: string | null
           subjects: string[] | null
           test_mode: string
@@ -5022,6 +5025,9 @@ export type Database = {
           results_released_at?: string | null
           section_instructions?: Json | null
           slug: string
+          solution_pdf_path?: string | null
+          solution_pdf_uploaded_at?: string | null
+          solution_pdf_url?: string | null
           starts_at?: string | null
           subjects?: string[] | null
           test_mode?: string
@@ -5058,6 +5064,9 @@ export type Database = {
           results_released_at?: string | null
           section_instructions?: Json | null
           slug?: string
+          solution_pdf_path?: string | null
+          solution_pdf_uploaded_at?: string | null
+          solution_pdf_url?: string | null
           starts_at?: string | null
           subjects?: string[] | null
           test_mode?: string
@@ -5290,6 +5299,16 @@ export type Database = {
           _user_id: string
         }
         Returns: undefined
+      }
+      admin_test_not_attempted: {
+        Args: { _test_id: string }
+        Returns: {
+          batch_id: string
+          batch_name: string
+          full_name: string
+          roll_number: string
+          user_id: string
+        }[]
       }
       admin_test_result_sheet: {
         Args: { _test_id: string }
