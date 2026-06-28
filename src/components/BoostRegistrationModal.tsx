@@ -87,19 +87,19 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     }
     const regId = (data as any).id as string;
     const admit = (data as any).admit_card_number as string;
-    // Send confirmation email (non-blocking)
-    void sendConfirmation({
-      templateName: "boost-confirmation",
-      recipientEmail: parsed.data.email,
-      idempotencyKey: `boost-${admit}`,
-      templateData: {
-        name: parsed.data.full_name,
-        admitCardNumber: admit,
-        classLevel: parsed.data.class_level,
-        targetExam: parsed.data.target_exam,
-        preferredCentre: payload.preferred_centre_label,
-      },
-    });
+    // Email temporarily disabled per admin request
+    // void sendConfirmation({
+    //   templateName: "boost-confirmation",
+    //   recipientEmail: parsed.data.email,
+    //   idempotencyKey: `boost-${admit}`,
+    //   templateData: {
+    //     name: parsed.data.full_name,
+    //     admitCardNumber: admit,
+    //     classLevel: parsed.data.class_level,
+    //     targetExam: parsed.data.target_exam,
+    //     preferredCentre: payload.preferred_centre_label,
+    //   },
+    // });
     // Redirect to Cashfree hosted checkout
     try {
       toast.success("Redirecting to secure payment…");
