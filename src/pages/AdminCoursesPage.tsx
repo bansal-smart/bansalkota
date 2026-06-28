@@ -163,6 +163,7 @@ const AdminCoursesPage = () => {
   const [search, setSearch] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
+  const [studentsDialog, setStudentsDialog] = useState<{ id: string; name: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
