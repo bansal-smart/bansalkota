@@ -172,6 +172,8 @@ const CreateTestPage = () => {
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+  const [solutionPdfPath, setSolutionPdfPath] = useState<string | null>(null);
+  const [solutionPdfUploading, setSolutionPdfUploading] = useState(false);
   // Scheduling — controls when test opens, closes, and results auto-release
   const [testDate, setTestDate] = useState<string>(""); // YYYY-MM-DD
   const [startTime, setStartTime] = useState<string>(""); // HH:mm
