@@ -1,31 +1,55 @@
-## Problem
+## Goal
+Remove subtopic folders from the course content hierarchy. Videos and PDFs sit directly under a topic. The subtopic value (if any) is shown as a small text label beneath each video's title — a dash `—` when absent.
 
-`Open window (entry closes at)` = `starts_at + open_window_minutes`. After this moment, the **Start Test** button must disappear/disable for every student who has not already started. Today it still appears because:
+New hierarchy: **Subject → Topic → Video / PDF** (with optional `subtopic_label` text on each).
 
-1. **`TestInstructionsPage.tsx`** computes `entryClosed` as `!hasExistingAttempt && now > entryDeadline`. The `!hasExistingAttempt` bypass means anyone who ever opened/started the test can keep clicking Start. Combined with the way attempts may get created on visit, this effectively never blocks. The check should be purely time-based — entry window is about *starting a new attempt*, not about whether a row exists.
-2. **`CbtLiveTestsPage.tsx`** (kiosk listing) never checks `open_window_minutes` at all. It only gates on `starts_at` / `ends_at`, so the Start button stays enabled past the entry deadline.
-3. Server side: `tests/{slug}/take` (the page that actually creates the attempt) does not re-validate the entry window, so a stale tab can still POST a new attempt after the cutoff.
+## Database changes (migration)
+1. Add `topic_id uuid` (nullable initially) and `subtopic_label text` to:
+   - `subtopic_videos`
+   - `subtopic_pdfs`
+   - `subtopic_quizzes`
+   - `subtopic_video_progress`, `subtopic_video_notes`, `subtopic_quiz_attempts` (topic_id only, for scoping)
+2. Backfill:
+   - `topic_id` ← parent subtopic's `topic_id`
+   - `subtopic_label` ← parent subtopic's `name` (skip if name is `.`, `-`, blank)
+3. Make `topic_id` NOT NULL; make `subtopic_id` nullable (keep column for now, ignored by UI).
+4. Add FK `topic_id → course_topics(id) ON DELETE CASCADE` and indexes.
+5. Update RLS policies referencing subtopics to use topic-based scoping.
+6. Rename is cosmetic only — keep table names (`subtopic_videos` etc.) to avoid breakage; treat them as "topic content" in code.
 
-## Fix
+## Admin Content Manager (`AdminCourseHierarchyPage.tsx`)
+- Tree becomes 3-level: Subject → Topic → (no subtopic node).
+- Selecting a topic shows: Topic name/description editor, tabs `Videos / PDFs / Quiz`, list of videos/PDFs.
+- Add/Edit Video modal: add **Subtopic (optional)** text input, alongside title, YouTube ID, duration, preview flag.
+- Bulk CSV upload (`BulkCourseVideosDialog` + template + `course-videos-template.csv`): replace `subtopic` folder column with `subtopic_label` text column; CSV maps row to `topic` + optional `subtopic_label`. Update parser accordingly.
+- Drag-reorder still works within topic.
+- Remove "+ Add Subtopic" buttons and subtopic CRUD UI.
 
-1. **`src/pages/TestInstructionsPage.tsx`**
-   - Remove the `hasExistingAttempt` lookup and the `!hasExistingAttempt` guard.
-   - `entryClosed = entryDeadline !== null && now > entryDeadline`.
-   - Keep the existing "Entry window closed" banner and disabled-button copy, but allow students who already have an in-progress attempt to *resume* via a separate "Resume Test" path (detect existing non-submitted attempt and, if found, show Resume instead of Start — Resume bypasses entryClosed but still respects `ends_at`). This preserves the original intent of not locking out a student mid-exam.
+## Student Learn page (`CourseLearnPage.tsx` + `course-content.ts`)
+- `fetchCourseContentTree` returns Subjects → Topics → { videos, pdfs, quiz } (no subtopics array).
+- Sidebar `ContentTree`: 3 levels. Videos render directly under topic with `subtopic_label || "—"` shown as caption.
+- Video view breadcrumb: `Subject › Topic › {subtopic_label || "—"}`.
+- Notes/quiz/progress keyed by `topic_id` instead of `subtopic_id`.
+- "About" tab shows topic info; subtopic label appears as a small line under the title.
 
-2. **`src/pages/CbtLiveTestsPage.tsx`**
-   - Include `open_window_minutes` in the `LiveTest` type and RPC selection (or fetch alongside).
-   - Compute `entryDeadline` the same way and add `entryClosed` to the per-card state.
-   - When `entryClosed`, show a "Entry closed" badge and disable Start. Same Resume-if-existing-attempt carve-out as above.
-   - If `cbt_live_tests_for_batch` does not already return `open_window_minutes`, fetch the needed fields from `tests` for the returned IDs in a single follow-up query (no SQL/RPC change needed).
+## Types
+Update `src/types/course-content.ts`: remove `CourseSubtopic`; add `subtopic_label?: string | null` and `topic_id` to video/pdf/quiz types.
 
-3. **`src/pages/TestTakePage.tsx`** (server-of-truth for attempt creation)
-   - Before inserting a brand-new `test_attempts` row, re-check `starts_at - 60s ≤ now ≤ min(ends_at, starts_at + open_window_minutes*60s)`. If outside, redirect back to the instructions page with a toast. Resuming an existing attempt is still allowed up to `ends_at`.
+## Files to touch
+- `supabase/migrations/<new>.sql`
+- `src/types/course-content.ts`
+- `src/lib/api/course-content.ts`
+- `src/lib/course-progress.ts` (rollup at topic level)
+- `src/pages/AdminCourseHierarchyPage.tsx`
+- `src/pages/CourseLearnPage.tsx`
+- `src/components/BulkCourseVideosDialog.tsx`
+- `public/templates/course-videos-template.csv`
 
-No DB/schema changes. No edge-function changes. Strictly presentation + client-side guard logic on three files.
+## Out of scope
+- Renaming DB tables (`subtopic_*`) — stays as-is to limit blast radius.
+- Deleting the `course_subtopics` table — kept for now, no longer used; can be dropped in a later cleanup once verified.
 
-## Acceptance
-
-- A test with `starts_at = T`, `open_window_minutes = 10`: at `T+11min` a fresh student sees a disabled Start button + "Entry window closed" message on both `/tests/:slug` and the CBT kiosk list.
-- A student who already started before `T+10min` still sees a working **Resume Test** button until `ends_at`.
-- Attempting to hit `/tests/:slug/take` directly after the entry window without an existing attempt bounces back to instructions.
+## Validation
+- Run admin tree on the Nucleus JEE Class XII course: confirm 3 levels, videos show subtopic label or `—`.
+- Open student learn page for the same course: sidebar collapses to topic→video, captions match.
+- Re-upload a CSV with and without `subtopic_label` column.

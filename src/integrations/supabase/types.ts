@@ -3910,8 +3910,10 @@ export type Database = {
           file_url: string
           id: string
           position: number
-          subtopic_id: string
+          subtopic_id: string | null
+          subtopic_label: string | null
           title: string
+          topic_id: string | null
         }
         Insert: {
           course_id: string
@@ -3920,8 +3922,10 @@ export type Database = {
           file_url: string
           id?: string
           position?: number
-          subtopic_id: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           title: string
+          topic_id?: string | null
         }
         Update: {
           course_id?: string
@@ -3930,8 +3934,10 @@ export type Database = {
           file_url?: string
           id?: string
           position?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           title?: string
+          topic_id?: string | null
         }
         Relationships: [
           {
@@ -3946,6 +3952,13 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: false
             referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_pdfs_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
             referencedColumns: ["id"]
           },
         ]
@@ -4074,9 +4087,11 @@ export type Database = {
           description: string | null
           id: string
           pass_percentage: number
-          subtopic_id: string
+          subtopic_id: string | null
+          subtopic_label: string | null
           time_limit_minutes: number | null
           title: string
+          topic_id: string | null
         }
         Insert: {
           course_id: string
@@ -4084,9 +4099,11 @@ export type Database = {
           description?: string | null
           id?: string
           pass_percentage?: number
-          subtopic_id: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           time_limit_minutes?: number | null
           title: string
+          topic_id?: string | null
         }
         Update: {
           course_id?: string
@@ -4094,9 +4111,11 @@ export type Database = {
           description?: string | null
           id?: string
           pass_percentage?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           time_limit_minutes?: number | null
           title?: string
+          topic_id?: string | null
         }
         Relationships: [
           {
@@ -4111,6 +4130,13 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: true
             referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_quizzes_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
             referencedColumns: ["id"]
           },
         ]
@@ -4237,9 +4263,11 @@ export type Database = {
           id: string
           is_preview: boolean
           position: number
-          subtopic_id: string
+          subtopic_id: string | null
+          subtopic_label: string | null
           thumbnail_url: string | null
           title: string
+          topic_id: string | null
           youtube_url: string
           youtube_video_id: string | null
         }
@@ -4251,9 +4279,11 @@ export type Database = {
           id?: string
           is_preview?: boolean
           position?: number
-          subtopic_id: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           thumbnail_url?: string | null
           title: string
+          topic_id?: string | null
           youtube_url: string
           youtube_video_id?: string | null
         }
@@ -4265,9 +4295,11 @@ export type Database = {
           id?: string
           is_preview?: boolean
           position?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           thumbnail_url?: string | null
           title?: string
+          topic_id?: string | null
           youtube_url?: string
           youtube_video_id?: string | null
         }
@@ -4284,6 +4316,13 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: false
             referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_videos_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
             referencedColumns: ["id"]
           },
         ]

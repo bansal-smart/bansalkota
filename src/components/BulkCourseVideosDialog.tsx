@@ -9,7 +9,7 @@ import { extractYouTubeId, getYouTubeThumbnail } from "@/lib/youtube";
 import { Download, Upload } from "lucide-react";
 
 type Row = {
-  subject: string; topic: string; subtopic: string;
+  subject: string; topic: string; subtopic_label?: string; subtopic?: string;
   video_title: string; youtube_url: string; duration?: string; is_preview?: string;
 };
 
@@ -52,15 +52,12 @@ export default function BulkCourseVideosDialog({
       const rows = parseCsv(text);
       if (!rows.length) { toast.error("No rows found"); setBusy(false); return; }
 
-      // Preload existing tree
-      const [subjRes, topRes, subRes] = await Promise.all([
+      const [subjRes, topRes] = await Promise.all([
         supabase.from("course_subjects" as any).select("id,name,position").eq("course_id", courseId),
         supabase.from("course_topics" as any).select("id,name,subject_id,position").eq("course_id", courseId),
-        supabase.from("course_subtopics" as any).select("id,name,topic_id,position").eq("course_id", courseId),
       ]);
       const subjects = (subjRes.data as any[]) ?? [];
       const topics = (topRes.data as any[]) ?? [];
-      const subtopics = (subRes.data as any[]) ?? [];
 
       const findOrCreateSubject = async (name: string) => {
         const key = name.trim().toLowerCase();
@@ -83,35 +80,27 @@ export default function BulkCourseVideosDialog({
         if (error) throw error;
         topics.push(data); return (data as any).id as string;
       };
-      const findOrCreateSubtopic = async (topicId: string, name: string) => {
-        const key = name.trim().toLowerCase();
-        let s = subtopics.find((x) => x.topic_id === topicId && x.name.trim().toLowerCase() === key);
-        if (s) return s.id as string;
-        const siblings = subtopics.filter((x) => x.topic_id === topicId);
-        const { data, error } = await supabase.from("course_subtopics" as any).insert({
-          course_id: courseId, topic_id: topicId, name: name.trim(), position: siblings.length,
-        }).select().single();
-        if (error) throw error;
-        subtopics.push(data); return (data as any).id as string;
-      };
 
       let ok = 0, fail = 0;
-      const subVideoCounts = new Map<string, number>();
+      const topicVideoCounts = new Map<string, number>();
       for (let i = 0; i < rows.length; i++) {
         const r = rows[i];
         setProgress(`Importing ${i + 1} / ${rows.length}…`);
         try {
-          if (!r.subject || !r.topic || !r.subtopic || !r.video_title || !r.youtube_url) {
-            throw new Error("Missing required column");
+          if (!r.subject || !r.topic || !r.video_title || !r.youtube_url) {
+            throw new Error("Missing required column (subject, topic, video_title, youtube_url)");
           }
           const subjectId = await findOrCreateSubject(r.subject);
           const topicId = await findOrCreateTopic(subjectId, r.topic);
-          const subtopicId = await findOrCreateSubtopic(topicId, r.subtopic);
           const ytId = extractYouTubeId(r.youtube_url);
-          const pos = subVideoCounts.get(subtopicId) ?? 0;
+          const pos = topicVideoCounts.get(topicId) ?? 0;
+          // Accept either `subtopic_label` (new) or legacy `subtopic` header; treat ".", "-" as empty.
+          const rawLabel = (r.subtopic_label ?? r.subtopic ?? "").trim();
+          const subtopicLabel = rawLabel && !['.', '-', '—'].includes(rawLabel) ? rawLabel : null;
           const { error } = await supabase.from("subtopic_videos" as any).insert({
             course_id: courseId,
-            subtopic_id: subtopicId,
+            topic_id: topicId,
+            subtopic_label: subtopicLabel,
             title: r.video_title.trim(),
             youtube_url: r.youtube_url.trim(),
             youtube_video_id: ytId,
@@ -121,7 +110,7 @@ export default function BulkCourseVideosDialog({
             position: 9000 + pos,
           });
           if (error) throw error;
-          subVideoCounts.set(subtopicId, pos + 1);
+          topicVideoCounts.set(topicId, pos + 1);
           ok++;
         } catch (e: any) {
           console.error("Row failed", r, e);
@@ -143,8 +132,9 @@ export default function BulkCourseVideosDialog({
         <DialogHeader><DialogTitle>Bulk Upload Course Videos</DialogTitle></DialogHeader>
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">
-            Upload a CSV with columns: <code>subject, topic, subtopic, video_title, youtube_url, duration, is_preview</code>.
-            Subjects / topics / subtopics are matched by name (case-insensitive) and auto-created when missing.
+            Upload a CSV with columns: <code>subject, topic, subtopic_label, video_title, youtube_url, duration, is_preview</code>.
+            Subjects / topics are matched by name (case-insensitive) and auto-created when missing.
+            <code>subtopic_label</code> is optional — leave blank or use <code>-</code> for none; it appears as a small label under the video title.
           </p>
           <a href="/templates/course-videos-template.csv" download className="inline-flex items-center gap-1 text-primary hover:underline">
             <Download className="h-4 w-4" /> Download sample template

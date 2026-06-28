@@ -27,14 +27,13 @@ import { fetchCourseContentTree, reorderSiblings } from "@/lib/api/course-conten
 import { extractYouTubeId, getYouTubeThumbnail, fetchYouTubeTitle } from "@/lib/youtube";
 import { useConfirm } from "@/components/ConfirmDialog";
 import BulkCourseVideosDialog from "@/components/BulkCourseVideosDialog";
-import type { CourseSubject, CourseTopic, CourseSubtopic, SubtopicVideo, SubtopicPdf } from "@/types/course-content";
+import type { CourseSubject, CourseTopic, SubtopicVideo, SubtopicPdf } from "@/types/course-content";
 
 type RenameTarget = { table: string; id: string; current: string; label: string };
 
 type Node =
   | { kind: "subject"; id: string; data: CourseSubject }
-  | { kind: "topic"; id: string; data: CourseTopic; subject: CourseSubject }
-  | { kind: "subtopic"; id: string; data: CourseSubtopic; topic: CourseTopic; subject: CourseSubject };
+  | { kind: "topic"; id: string; data: CourseTopic; subject: CourseSubject };
 
 const AdminCourseHierarchyPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -45,7 +44,6 @@ const AdminCourseHierarchyPage = () => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [addingSubject, setAddingSubject] = useState(false);
   const [addingTopicFor, setAddingTopicFor] = useState<string | null>(null);
-  const [addingSubtopicFor, setAddingSubtopicFor] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -58,6 +56,19 @@ const AdminCourseHierarchyPage = () => {
     setCourse(c as any);
     const tree = await fetchCourseContentTree(courseId, null);
     setSubjects(tree);
+    // Refresh selected node from new tree
+    setSelected((prev) => {
+      if (!prev) return prev;
+      if (prev.kind === "subject") {
+        const s = tree.find((x) => x.id === prev.id);
+        return s ? { kind: "subject", id: s.id, data: s } : null;
+      }
+      for (const s of tree) {
+        const t = (s.topics ?? []).find((tp) => tp.id === prev.id);
+        if (t) return { kind: "topic", id: t.id, data: t, subject: s };
+      }
+      return null;
+    });
     setLoading(false);
   };
 
@@ -112,23 +123,6 @@ const AdminCourseHierarchyPage = () => {
     toast.success("Topic added");
     load();
   };
-  const createSubtopic = async (topic: CourseTopic, name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setAddingSubtopicFor(null);
-      return;
-    }
-    const { error } = await supabase.from("course_subtopics" as any).insert({
-      course_id: courseId,
-      topic_id: topic.id,
-      name: trimmed,
-      position: (topic.subtopics ?? []).length,
-    });
-    setAddingSubtopicFor(null);
-    if (error) return toast.error(error.message);
-    toast.success("Subtopic added");
-    load();
-  };
 
   const openRename = (table: string, id: string, current: string, label: string) => {
     setRenameTarget({ table, id, current, label });
@@ -179,8 +173,7 @@ const AdminCourseHierarchyPage = () => {
 
   const totalVideos = useMemo(() => {
     let n = 0;
-    for (const s of subjects)
-      for (const t of s.topics ?? []) for (const st of t.subtopics ?? []) n += st.videos?.length ?? 0;
+    for (const s of subjects) for (const t of s.topics ?? []) n += t.videos?.length ?? 0;
     return n;
   }, [subjects]);
 
@@ -238,10 +231,7 @@ const AdminCourseHierarchyPage = () => {
             )}
             {subjects.map((subject, si) => {
               const sOpen = expanded.has(subject.id);
-              const subjVideos = (subject.topics ?? []).reduce(
-                (a, t) => a + (t.subtopics ?? []).reduce((b, st) => b + (st.videos?.length ?? 0), 0),
-                0,
-              );
+              const subjVideos = (subject.topics ?? []).reduce((a, t) => a + (t.videos?.length ?? 0), 0);
               return (
                 <div key={subject.id}>
                   <NodeRow
@@ -260,67 +250,23 @@ const AdminCourseHierarchyPage = () => {
                   />
                   {sOpen && (
                     <div className="ml-4">
-                      {(subject.topics ?? []).map((topic, ti) => {
-                        const tOpen = expanded.has(topic.id);
-                        const tVideos = (topic.subtopics ?? []).reduce((b, st) => b + (st.videos?.length ?? 0), 0);
-                        return (
-                          <div key={topic.id}>
-                            <NodeRow
-                              open={tOpen}
-                              onToggle={() => toggle(topic.id)}
-                              selected={selected?.id === topic.id}
-                              onSelect={() => setSelected({ kind: "topic", id: topic.id, data: topic, subject })}
-                              label={topic.name}
-                              badge={`${tVideos} videos`}
-                              onUp={() => move("course_topics", subject.topics ?? [], ti, -1)}
-                              onDown={() => move("course_topics", subject.topics ?? [], ti, 1)}
-                              onRename={() => openRename("course_topics", topic.id, topic.name, "topic")}
-                              onDelete={() => remove("course_topics", topic.id, "topic")}
-                              depth={1}
-                            />
-                            {tOpen && (
-                              <div className="ml-4">
-                                {(topic.subtopics ?? []).map((subtopic, sti) => (
-                                  <NodeRow
-                                    key={subtopic.id}
-                                    open={false}
-                                    onToggle={() => {}}
-                                    selected={selected?.id === subtopic.id}
-                                    onSelect={() =>
-                                      setSelected({ kind: "subtopic", id: subtopic.id, data: subtopic, topic, subject })
-                                    }
-                                    label={subtopic.name}
-                                    badge={`${subtopic.videos?.length ?? 0}📹 ${subtopic.pdfs?.length ?? 0}📄`}
-                                    onUp={() => move("course_subtopics", topic.subtopics ?? [], sti, -1)}
-                                    onDown={() => move("course_subtopics", topic.subtopics ?? [], sti, 1)}
-                                    onRename={() =>
-                                      openRename("course_subtopics", subtopic.id, subtopic.name, "subtopic")
-                                    }
-                                    onDelete={() => remove("course_subtopics", subtopic.id, "subtopic")}
-                                    depth={2}
-                                    leaf
-                                  />
-                                ))}
-                                {addingSubtopicFor === topic.id ? (
-                                  <InlineAddInput
-                                    placeholder="Subtopic name"
-                                    onSubmit={(n) => createSubtopic(topic, n)}
-                                    onCancel={() => setAddingSubtopicFor(null)}
-                                    indent={6}
-                                  />
-                                ) : (
-                                  <button
-                                    onClick={() => setAddingSubtopicFor(topic.id)}
-                                    className="ml-6 text-xs text-primary hover:underline py-1"
-                                  >
-                                    + Add Subtopic
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {(subject.topics ?? []).map((topic, ti) => (
+                        <NodeRow
+                          key={topic.id}
+                          open={false}
+                          onToggle={() => {}}
+                          selected={selected?.id === topic.id}
+                          onSelect={() => setSelected({ kind: "topic", id: topic.id, data: topic, subject })}
+                          label={topic.name}
+                          badge={`${topic.videos?.length ?? 0}📹 ${topic.pdfs?.length ?? 0}📄`}
+                          onUp={() => move("course_topics", subject.topics ?? [], ti, -1)}
+                          onDown={() => move("course_topics", subject.topics ?? [], ti, 1)}
+                          onRename={() => openRename("course_topics", topic.id, topic.name, "topic")}
+                          onDelete={() => remove("course_topics", topic.id, "topic")}
+                          depth={1}
+                          leaf
+                        />
+                      ))}
                       {addingTopicFor === subject.id ? (
                         <InlineAddInput
                           placeholder="Topic name"
@@ -349,16 +295,7 @@ const AdminCourseHierarchyPage = () => {
           {!selected && <EmptyEditor />}
           {selected?.kind === "subject" && <SubjectEditor subject={selected.data} onSaved={load} />}
           {selected?.kind === "topic" && (
-            <TopicEditor topic={selected.data} subject={selected.subject} onSaved={load} />
-          )}
-          {selected?.kind === "subtopic" && (
-            <SubtopicEditor
-              subtopic={selected.data}
-              topic={selected.topic}
-              subject={selected.subject}
-              courseId={courseId!}
-              onSaved={load}
-            />
+            <TopicEditor topic={selected.data} subject={selected.subject} courseId={courseId!} onSaved={load} />
           )}
         </div>
       </div>
@@ -466,12 +403,8 @@ function NodeRow(props: {
       </button>
       {props.badge && <span className="text-[10px] text-muted-foreground">{props.badge}</span>}
       <div className="opacity-0 group-hover:opacity-100 flex gap-0.5">
-        <button onClick={props.onUp} title="Move up" className="text-xs px-1">
-          ↑
-        </button>
-        <button onClick={props.onDown} title="Move down" className="text-xs px-1">
-          ↓
-        </button>
+        <button onClick={props.onUp} title="Move up" className="text-xs px-1">↑</button>
+        <button onClick={props.onDown} title="Move down" className="text-xs px-1">↓</button>
         <button onClick={props.onRename} title="Rename" className="text-xs px-1">
           <Pencil className="h-3 w-3" />
         </button>
@@ -488,7 +421,7 @@ function EmptyEditor() {
     <div className="flex items-center justify-center h-full text-center text-sm text-muted-foreground">
       <div>
         <p className="mb-2">Select a node on the left to edit it.</p>
-        <p className="text-xs">Hierarchy: Subject → Topic → Subtopic → Videos / PDFs </p>
+        <p className="text-xs">Hierarchy: Subject → Topic → Videos / PDFs</p>
       </div>
     </div>
   );
@@ -513,17 +446,12 @@ function SubjectEditor({ subject, onSaved }: { subject: CourseSubject; onSaved: 
     onSaved();
   };
   const totals = useMemo(() => {
-    let t = 0,
-      v = 0,
-      p = 0;
+    let v = 0, p = 0;
     for (const topic of subject.topics ?? []) {
-      for (const st of topic.subtopics ?? []) {
-        t++;
-        v += st.videos?.length ?? 0;
-        p += st.pdfs?.length ?? 0;
-      }
+      v += topic.videos?.length ?? 0;
+      p += topic.pdfs?.length ?? 0;
     }
-    return { topics: subject.topics?.length ?? 0, subtopics: t, videos: v, pdfs: p };
+    return { topics: subject.topics?.length ?? 0, videos: v, pdfs: p };
   }, [subject]);
   return (
     <div className="max-w-xl space-y-3">
@@ -544,13 +472,23 @@ function SubjectEditor({ subject, onSaved }: { subject: CourseSubject; onSaved: 
       </div>
       <Button onClick={save}>Save</Button>
       <div className="pt-3 text-xs text-muted-foreground">
-        📊 {totals.topics} topics · {totals.subtopics} subtopics · {totals.videos} videos · {totals.pdfs} PDFs
+        📊 {totals.topics} topics · {totals.videos} videos · {totals.pdfs} PDFs
       </div>
     </div>
   );
 }
 
-function TopicEditor({ topic, subject, onSaved }: { topic: CourseTopic; subject: CourseSubject; onSaved: () => void }) {
+function TopicEditor({
+  topic,
+  subject,
+  courseId,
+  onSaved,
+}: {
+  topic: CourseTopic;
+  subject: CourseSubject;
+  courseId: string;
+  onSaved: () => void;
+}) {
   const [name, setName] = useState(topic.name);
   useEffect(() => {
     setName(topic.name);
@@ -564,73 +502,16 @@ function TopicEditor({ topic, subject, onSaved }: { topic: CourseTopic; subject:
     toast.success("Saved");
     onSaved();
   };
-  const totals = useMemo(() => {
-    let v = 0;
-    for (const st of topic.subtopics ?? []) v += st.videos?.length ?? 0;
-    return { subtopics: topic.subtopics?.length ?? 0, videos: v };
-  }, [topic]);
-  return (
-    <div className="max-w-xl space-y-3">
-      <div className="text-xs text-muted-foreground">
-        {subject.name} › {topic.name}
-      </div>
-      <h2 className="font-semibold">Topic</h2>
-      <div>
-        <Label>Name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-      <Button onClick={save}>Save</Button>
-      <div className="pt-3 text-xs text-muted-foreground">
-        📊 {totals.subtopics} subtopics · {totals.videos} videos
-      </div>
-    </div>
-  );
-}
-
-function SubtopicEditor({
-  subtopic,
-  topic,
-  subject,
-  courseId,
-  onSaved,
-}: {
-  subtopic: CourseSubtopic;
-  topic: CourseTopic;
-  subject: CourseSubject;
-  courseId: string;
-  onSaved: () => void;
-}) {
-  const [name, setName] = useState(subtopic.name);
-  const [desc, setDesc] = useState(subtopic.description ?? "");
-  useEffect(() => {
-    setName(subtopic.name);
-    setDesc(subtopic.description ?? "");
-  }, [subtopic.id]);
-  const save = async () => {
-    const { error } = await supabase
-      .from("course_subtopics" as any)
-      .update({ name, description: desc || null })
-      .eq("id", subtopic.id);
-    if (error) return toast.error(error.message);
-    toast.success("Saved");
-    onSaved();
-  };
 
   return (
     <div className="space-y-4">
       <div className="text-xs text-muted-foreground">
-        {subject.name} › {topic.name} › {subtopic.name}
+        {subject.name} › {topic.name}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 max-w-2xl">
-        <div className="space-y-2">
-          <div>
-            <Label>Subtopic name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} />
-          </div>
+        <div>
+          <Label>Topic name</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <Button onClick={save} className="self-end">
           Save
@@ -640,17 +521,17 @@ function SubtopicEditor({
       <Tabs defaultValue="videos">
         <TabsList>
           <TabsTrigger value="videos">
-            <Video className="h-3 w-3 mr-1" /> Videos ({subtopic.videos?.length ?? 0})
+            <Video className="h-3 w-3 mr-1" /> Videos ({topic.videos?.length ?? 0})
           </TabsTrigger>
           <TabsTrigger value="pdfs">
-            <FileText className="h-3 w-3 mr-1" /> PDFs ({subtopic.pdfs?.length ?? 0})
+            <FileText className="h-3 w-3 mr-1" /> PDFs ({topic.pdfs?.length ?? 0})
           </TabsTrigger>
         </TabsList>
         <TabsContent value="videos">
-          <VideoTab subtopic={subtopic} courseId={courseId} onSaved={onSaved} />
+          <VideoTab topic={topic} courseId={courseId} onSaved={onSaved} />
         </TabsContent>
         <TabsContent value="pdfs">
-          <PdfTab subtopic={subtopic} courseId={courseId} onSaved={onSaved} />
+          <PdfTab topic={topic} courseId={courseId} onSaved={onSaved} />
         </TabsContent>
       </Tabs>
     </div>
@@ -658,11 +539,11 @@ function SubtopicEditor({
 }
 
 function VideoTab({
-  subtopic,
+  topic,
   courseId,
   onSaved,
 }: {
-  subtopic: CourseSubtopic;
+  topic: CourseTopic;
   courseId: string;
   onSaved: () => void;
 }) {
@@ -670,22 +551,16 @@ function VideoTab({
   const [editing, setEditing] = useState<SubtopicVideo | null>(null);
   const del = async (v: SubtopicVideo) => {
     if (!window.confirm(`Delete "${v.title}"?`)) return;
-    await supabase
-      .from("subtopic_videos" as any)
-      .delete()
-      .eq("id", v.id);
+    await supabase.from("subtopic_videos" as any).delete().eq("id", v.id);
     toast.success("Video deleted");
     onSaved();
   };
   const move = async (idx: number, dir: -1 | 1) => {
-    const arr = [...(subtopic.videos ?? [])];
+    const arr = [...(topic.videos ?? [])];
     const ni = idx + dir;
     if (ni < 0 || ni >= arr.length) return;
     [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
-    await reorderSiblings(
-      "subtopic_videos",
-      arr.map((v) => v.id),
-    );
+    await reorderSiblings("subtopic_videos", arr.map((v) => v.id));
     onSaved();
   };
   return (
@@ -702,7 +577,7 @@ function VideoTab({
         </Button>
       </div>
       <div className="space-y-2">
-        {(subtopic.videos ?? []).map((v, i) => (
+        {(topic.videos ?? []).map((v, i) => (
           <div key={v.id} className="flex items-center gap-3 p-2 border rounded">
             <img
               src={v.thumbnail_url || (v.youtube_video_id ? getYouTubeThumbnail(v.youtube_video_id) : "")}
@@ -712,15 +587,11 @@ function VideoTab({
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate">{v.title}</div>
               <div className="text-xs text-muted-foreground">
-                {v.duration_label || "—"} · {v.is_preview ? "🔓 Preview" : "🔒 Enrolled"}
+                {v.subtopic_label?.trim() || "—"} · {v.is_preview ? "🔓 Preview" : "🔒 Enrolled"}
               </div>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => move(i, -1)}>
-              ↑
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => move(i, 1)}>
-              ↓
-            </Button>
+            <Button size="sm" variant="ghost" onClick={() => move(i, -1)}>↑</Button>
+            <Button size="sm" variant="ghost" onClick={() => move(i, 1)}>↓</Button>
             <Button
               size="sm"
               variant="ghost"
@@ -736,14 +607,14 @@ function VideoTab({
             </Button>
           </div>
         ))}
-        {(subtopic.videos ?? []).length === 0 && (
+        {(topic.videos ?? []).length === 0 && (
           <p className="text-xs text-muted-foreground py-4 text-center">No videos yet.</p>
         )}
       </div>
       <VideoDialog
         open={open}
         onOpenChange={setOpen}
-        subtopicId={subtopic.id}
+        topicId={topic.id}
         courseId={courseId}
         video={editing}
         onSaved={() => {
@@ -758,20 +629,21 @@ function VideoTab({
 function VideoDialog({
   open,
   onOpenChange,
-  subtopicId,
+  topicId,
   courseId,
   video,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
-  subtopicId: string;
+  topicId: string;
   courseId: string;
   video: SubtopicVideo | null;
   onSaved: () => void;
 }) {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
+  const [subtopicLabel, setSubtopicLabel] = useState("");
   const [duration, setDuration] = useState("");
   const [desc, setDesc] = useState("");
   const [preview, setPreview] = useState(false);
@@ -782,6 +654,7 @@ function VideoDialog({
     if (open) {
       setUrl(video?.youtube_url ?? "");
       setTitle(video?.title ?? "");
+      setSubtopicLabel(video?.subtopic_label ?? "");
       setDuration(video?.duration_label ?? "");
       setDesc(video?.description ?? "");
       setPreview(video?.is_preview ?? false);
@@ -802,10 +675,11 @@ function VideoDialog({
   const save = async () => {
     if (!url || !title) return toast.error("URL and title required");
     setSaving(true);
-    const payload = {
+    const payload: any = {
       course_id: courseId,
-      subtopic_id: subtopicId,
+      topic_id: topicId,
       title,
+      subtopic_label: subtopicLabel.trim() || null,
       youtube_url: url,
       youtube_video_id: ytId,
       thumbnail_url: ytId ? getYouTubeThumbnail(ytId) : null,
@@ -814,10 +688,7 @@ function VideoDialog({
       is_preview: preview,
     };
     const { error } = video
-      ? await supabase
-          .from("subtopic_videos" as any)
-          .update(payload)
-          .eq("id", video.id)
+      ? await supabase.from("subtopic_videos" as any).update(payload).eq("id", video.id)
       : await supabase.from("subtopic_videos" as any).insert({ ...payload, position: 9999 });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -840,6 +711,17 @@ function VideoDialog({
           <div>
             <Label>Title *</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+          <div>
+            <Label>Subtopic (optional)</Label>
+            <Input
+              value={subtopicLabel}
+              onChange={(e) => setSubtopicLabel(e.target.value)}
+              placeholder="e.g. Motion in a Straight Line"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Shown as a small label under the video title. Leave blank for a dash (—).
+            </p>
           </div>
           <div>
             <Label>Duration label</Label>
@@ -867,7 +749,7 @@ function VideoDialog({
   );
 }
 
-function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; courseId: string; onSaved: () => void }) {
+function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: string; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [fileUrl, setFileUrl] = useState("");
@@ -875,10 +757,10 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
     if (!title || !fileUrl) return toast.error("Title and URL required");
     const { error } = await supabase.from("subtopic_pdfs" as any).insert({
       course_id: courseId,
-      subtopic_id: subtopic.id,
+      topic_id: topic.id,
       title,
       file_url: fileUrl,
-      position: subtopic.pdfs?.length ?? 0,
+      position: topic.pdfs?.length ?? 0,
     });
     if (error) return toast.error(error.message);
     setTitle("");
@@ -889,10 +771,7 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
   };
   const del = async (p: SubtopicPdf) => {
     if (!window.confirm(`Delete "${p.title}"?`)) return;
-    await supabase
-      .from("subtopic_pdfs" as any)
-      .delete()
-      .eq("id", p.id);
+    await supabase.from("subtopic_pdfs" as any).delete().eq("id", p.id);
     toast.success("Deleted");
     onSaved();
   };
@@ -903,7 +782,7 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
           <Plus className="h-3 w-3 mr-1" /> Add PDF
         </Button>
       </div>
-      {(subtopic.pdfs ?? []).map((p) => (
+      {(topic.pdfs ?? []).map((p) => (
         <div key={p.id} className="flex items-center gap-3 p-2 border rounded">
           <FileText className="h-4 w-4" />
           <a href={p.file_url} target="_blank" rel="noreferrer" className="flex-1 text-sm truncate hover:underline">
@@ -914,7 +793,7 @@ function PdfTab({ subtopic, courseId, onSaved }: { subtopic: CourseSubtopic; cou
           </Button>
         </div>
       ))}
-      {(subtopic.pdfs ?? []).length === 0 && (
+      {(topic.pdfs ?? []).length === 0 && (
         <p className="text-xs text-muted-foreground py-4 text-center">No PDFs yet.</p>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
