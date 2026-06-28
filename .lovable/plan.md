@@ -1,55 +1,52 @@
-## Goal
-Remove subtopic folders from the course content hierarchy. Videos and PDFs sit directly under a topic. The subtopic value (if any) is shown as a small text label beneath each video's title — a dash `—` when absent.
+## 1. Realtime Attempts tab with "Not Attempted"
 
-New hierarchy: **Subject → Topic → Video / PDF** (with optional `subtopic_label` text on each).
+**Scope:** When viewing attempts for a specific test, also show students who are mapped to the test's `course_batches` but have no `test_attempts` row — labelled **Not Attempted**. Statuses update live during the exam.
 
-## Database changes (migration)
-1. Add `topic_id uuid` (nullable initially) and `subtopic_label text` to:
-   - `subtopic_videos`
-   - `subtopic_pdfs`
-   - `subtopic_quizzes`
-   - `subtopic_video_progress`, `subtopic_video_notes`, `subtopic_quiz_attempts` (topic_id only, for scoping)
-2. Backfill:
-   - `topic_id` ← parent subtopic's `topic_id`
-   - `subtopic_label` ← parent subtopic's `name` (skip if name is `.`, `-`, blank)
-3. Make `topic_id` NOT NULL; make `subtopic_id` nullable (keep column for now, ignored by UI).
-4. Add FK `topic_id → course_topics(id) ON DELETE CASCADE` and indexes.
-5. Update RLS policies referencing subtopics to use topic-based scoping.
-6. Rename is cosmetic only — keep table names (`subtopic_videos` etc.) to avoid breakage; treat them as "topic content" in code.
+### Eligible-pool logic (per test)
+- Read `tests.batch_ids` (or join table linking tests ↔ batches).
+- Fetch all `profiles` whose `batch_label` / batch mapping matches any of those batches.
+- Diff against current `test_attempts` rows for that test → unmatched students render as **Not Attempted**.
+- For unrestricted tests (no batches), the Not Attempted section is hidden (only real attempts shown).
 
-## Admin Content Manager (`AdminCourseHierarchyPage.tsx`)
-- Tree becomes 3-level: Subject → Topic → (no subtopic node).
-- Selecting a topic shows: Topic name/description editor, tabs `Videos / PDFs / Quiz`, list of videos/PDFs.
-- Add/Edit Video modal: add **Subtopic (optional)** text input, alongside title, YouTube ID, duration, preview flag.
-- Bulk CSV upload (`BulkCourseVideosDialog` + template + `course-videos-template.csv`): replace `subtopic` folder column with `subtopic_label` text column; CSV maps row to `topic` + optional `subtopic_label`. Update parser accordingly.
-- Drag-reorder still works within topic.
-- Remove "+ Add Subtopic" buttons and subtopic CRUD UI.
+### Realtime
+- In `AdminTestAttemptsPage.tsx`, subscribe to `postgres_changes` on `test_attempts` filtered by `test_id` (when a `testId` is provided) inside a `useEffect`, with proper cleanup.
+- On INSERT → add row (status flips Not Attempted → In progress).
+- On UPDATE → patch row in state (In progress → Submitted / Auto-submitted).
+- On DELETE → remove row (returns to Not Attempted).
+- Enable realtime on `test_attempts` via `ALTER PUBLICATION supabase_realtime ADD TABLE public.test_attempts`.
 
-## Student Learn page (`CourseLearnPage.tsx` + `course-content.ts`)
-- `fetchCourseContentTree` returns Subjects → Topics → { videos, pdfs, quiz } (no subtopics array).
-- Sidebar `ContentTree`: 3 levels. Videos render directly under topic with `subtopic_label || "—"` shown as caption.
-- Video view breadcrumb: `Subject › Topic › {subtopic_label || "—"}`.
-- Notes/quiz/progress keyed by `topic_id` instead of `subtopic_id`.
-- "About" tab shows topic info; subtopic label appears as a small line under the title.
+### UI changes (`AdminTestAttemptsPage.tsx`)
+- New status pill **Not Attempted** (muted grey).
+- Status filter dropdown gains "Not Attempted" option.
+- A small "● Live" indicator next to the table title when subscribed.
+- Counters at top: Not Attempted / In progress / Submitted / Auto-submitted.
+- CSV export includes Not Attempted rows.
+- "Not Attempted" rows only render when a specific test is selected (compact mode in Tests Hub) — global view stays attempts-only to avoid a huge cross-join.
 
-## Types
-Update `src/types/course-content.ts`: remove `CourseSubtopic`; add `subtopic_label?: string | null` and `topic_id` to video/pdf/quiz types.
+## 2. Solution PDF (admin upload, release-gated)
 
-## Files to touch
-- `supabase/migrations/<new>.sql`
-- `src/types/course-content.ts`
-- `src/lib/api/course-content.ts`
-- `src/lib/course-progress.ts` (rollup at topic level)
-- `src/pages/AdminCourseHierarchyPage.tsx`
-- `src/pages/CourseLearnPage.tsx`
-- `src/components/BulkCourseVideosDialog.tsx`
-- `public/templates/course-videos-template.csv`
+### Schema
+- Add `solution_pdf_url text` and `solution_pdf_uploaded_at timestamptz` to `public.tests`.
+- Create a private storage bucket `test-solutions` with RLS:
+  - Admins/teachers: full access.
+  - Authenticated students: read only when the parent test has `results_released_at IS NOT NULL`.
+- Update `get_test_result` / response-sheet RPCs to also return `solution_pdf_url` only when `v_released = true`.
 
-## Out of scope
-- Renaming DB tables (`subtopic_*`) — stays as-is to limit blast radius.
-- Deleting the `course_subtopics` table — kept for now, no longer used; can be dropped in a later cleanup once verified.
+### Admin (`CreateTestPage.tsx` or test edit form)
+- New "Solution PDF" field: upload to `test-solutions/{test_id}.pdf`, store public path on `tests.solution_pdf_url`. Replace / remove supported.
+- Visible badge in test list when a solution is attached.
 
-## Validation
-- Run admin tree on the Nucleus JEE Class XII course: confirm 3 levels, videos show subtopic label or `—`.
-- Open student learn page for the same course: sidebar collapses to topic→video, captions match.
-- Re-upload a CSV with and without `subtopic_label` column.
+### Student
+- `TestResultPage.tsx`: when `released && solution_pdf_url`, show a "Download Solution PDF" button in the header card.
+- `TestResponseSheetPage.tsx`: same button in the toolbar (hidden until released).
+
+## Files touched
+
+- `src/pages/AdminTestAttemptsPage.tsx` — realtime subscription, Not Attempted rows, filter + counters.
+- `src/pages/CreateTestPage.tsx` (and edit flow) — Solution PDF upload control.
+- `src/pages/TestResultPage.tsx`, `src/pages/TestResponseSheetPage.tsx` — gated download button.
+- `supabase/migrations/*` — columns on `tests`, realtime publication, storage bucket + policies, RPC patch.
+
+## Open assumptions
+- "Batch mapping" uses `profiles.batch_label` ↔ `course_batches.name` (current pattern). If a different join exists I'll adapt during build.
+- Solution PDF is a single file ≤ 20 MB; private bucket served via signed URL on click.
