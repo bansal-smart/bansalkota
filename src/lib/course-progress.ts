@@ -1,4 +1,4 @@
-import type { CourseSubject } from "@/types/course-content";
+import type { CourseSubject, CourseTopic } from "@/types/course-content";
 
 export function calcProgress(completed: number, total: number) {
   return {
@@ -14,11 +14,9 @@ export function rollupCourseProgress(subjects: CourseSubject[]) {
   let completedVideos = 0;
   for (const subject of subjects) {
     for (const topic of subject.topics ?? []) {
-      for (const subtopic of topic.subtopics ?? []) {
-        for (const video of subtopic.videos ?? []) {
-          totalVideos++;
-          if (video.progress?.is_completed) completedVideos++;
-        }
+      for (const video of topic.videos ?? []) {
+        totalVideos++;
+        if (video.progress?.is_completed) completedVideos++;
       }
     }
   }
@@ -28,12 +26,19 @@ export function rollupCourseProgress(subjects: CourseSubject[]) {
 export function rollupSubject(subject: CourseSubject) {
   let total = 0, done = 0;
   for (const topic of subject.topics ?? []) {
-    for (const subtopic of topic.subtopics ?? []) {
-      for (const v of subtopic.videos ?? []) {
-        total++;
-        if (v.progress?.is_completed) done++;
-      }
+    for (const v of topic.videos ?? []) {
+      total++;
+      if (v.progress?.is_completed) done++;
     }
+  }
+  return { total, done };
+}
+
+export function rollupTopic(topic: CourseTopic) {
+  let total = 0, done = 0;
+  for (const v of topic.videos ?? []) {
+    total++;
+    if (v.progress?.is_completed) done++;
   }
   return { total, done };
 }

@@ -1,5 +1,5 @@
-subject,topic,subtopic,video_title,youtube_url,duration,is_preview
+subject,topic,subtopic_label,video_title,youtube_url,duration,is_preview
 Physics,Kinematics,Motion in a Straight Line,Introduction to Motion,https://youtu.be/dQw4w9WgXcQ,12:30,true
 Physics,Kinematics,Motion in a Straight Line,Velocity and Acceleration,https://youtu.be/dQw4w9WgXcQ,18:45,false
-Physics,Kinematics,Motion in a Plane,Projectile Motion,https://youtu.be/dQw4w9WgXcQ,22:10,false
+Physics,Kinematics,,Projectile Motion,https://youtu.be/dQw4w9WgXcQ,22:10,false
 Chemistry,Atomic Structure,Bohr Model,Bohr's Postulates,https://youtu.be/dQw4w9WgXcQ,15:00,true
