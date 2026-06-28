@@ -4,9 +4,7 @@ import BansalLogo from "@/components/bansal/BansalLogo";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import {
   LayoutDashboard,
-  Flame,
   CircleDot,
-  Briefcase,
   Inbox,
   FileText,
   Flag,
@@ -15,23 +13,17 @@ import {
   Video,
   ClipboardCheck,
   CreditCard,
-  Bell,
   Settings,
   ShieldCheck,
-  Library,
-  School,
   FileBarChart,
   BookOpen,
-  Trophy,
   MapPin,
   Image as ImageIcon,
   Award,
-  Youtube,
   Quote,
   BarChart3,
   LifeBuoy,
   Megaphone,
-  MessageSquare,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
