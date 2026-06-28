@@ -157,7 +157,7 @@ const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
-const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
+
 const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
 const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 const GalleryImagesPage = lazy(() => import("./pages/GalleryImagesPage"));
