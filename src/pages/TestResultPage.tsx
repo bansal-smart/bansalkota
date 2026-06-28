@@ -35,6 +35,7 @@ type TestRow = {
   auto_release: boolean | null;
   results_released_at: string | null;
   total_marks: number | null;
+  solution_pdf_path: string | null;
 };
 
 type RankInfo = {
