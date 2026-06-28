@@ -83,9 +83,20 @@ export default function BulkCourseVideosDialog({
 
       let ok = 0, fail = 0;
       const topicVideoCounts = new Map<string, number>();
-      for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-        setProgress(`Importing ${i + 1} / ${rows.length}…`);
+      // Sort rows so that within each (subject, topic), videos go in by natural title order
+      // (Lec-01, Lec-02, … Lec-53) regardless of CSV row order.
+      const sortedRows = [...rows].sort((a, b) => {
+        const ka = `${(a.subject ?? "").toLowerCase()}|${(a.topic ?? "").toLowerCase()}`;
+        const kb = `${(b.subject ?? "").toLowerCase()}|${(b.topic ?? "").toLowerCase()}`;
+        if (ka !== kb) return ka.localeCompare(kb);
+        return (a.video_title ?? "").localeCompare(b.video_title ?? "", undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+      for (let i = 0; i < sortedRows.length; i++) {
+        const r = sortedRows[i];
+        setProgress(`Importing ${i + 1} / ${sortedRows.length}…`);
         try {
           if (!r.subject || !r.topic || !r.video_title || !r.youtube_url) {
             throw new Error("Missing required column (subject, topic, video_title, youtube_url)");
@@ -93,7 +104,19 @@ export default function BulkCourseVideosDialog({
           const subjectId = await findOrCreateSubject(r.subject);
           const topicId = await findOrCreateTopic(subjectId, r.topic);
           const ytId = extractYouTubeId(r.youtube_url);
-          const pos = topicVideoCounts.get(topicId) ?? 0;
+          // Find current max position in this topic so we append after existing videos.
+          if (!topicVideoCounts.has(topicId)) {
+            const { data: existing } = await supabase
+              .from("subtopic_videos" as any)
+              .select("position")
+              .eq("course_id", courseId)
+              .eq("topic_id", topicId)
+              .order("position", { ascending: false })
+              .limit(1);
+            const maxPos = (existing?.[0] as any)?.position ?? -1;
+            topicVideoCounts.set(topicId, maxPos + 1);
+          }
+          const pos = topicVideoCounts.get(topicId)!;
           // Accept either `subtopic_label` (new) or legacy `subtopic` header; treat ".", "-" as empty.
           const rawLabel = (r.subtopic_label ?? r.subtopic ?? "").trim();
           const subtopicLabel = rawLabel && !['.', '-', '—'].includes(rawLabel) ? rawLabel : null;
@@ -107,7 +130,7 @@ export default function BulkCourseVideosDialog({
             thumbnail_url: ytId ? getYouTubeThumbnail(ytId) : null,
             duration_label: r.duration?.trim() || null,
             is_preview: String(r.is_preview ?? "").toLowerCase() === "true",
-            position: 9000 + pos,
+            position: pos,
           });
           if (error) throw error;
           topicVideoCounts.set(topicId, pos + 1);
