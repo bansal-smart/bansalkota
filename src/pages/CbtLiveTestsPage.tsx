@@ -138,16 +138,25 @@ const CbtLiveTestsPage = () => {
             {tests.map((t) => {
               const startMs = t.starts_at ? new Date(t.starts_at).getTime() : null;
               const endMs = t.ends_at ? new Date(t.ends_at).getTime() : null;
+              const entryDeadlineMs =
+                startMs !== null && t.open_window_minutes != null && t.open_window_minutes > 0
+                  ? startMs + t.open_window_minutes * 60_000
+                  : null;
               const notYetOpen = startMs !== null && now < startMs - ACTIVATION_LEAD_MS;
               const closed = endMs !== null && now > endMs;
-              const canStart = !notYetOpen && !closed;
+              const entryClosed =
+                !t.has_in_progress_attempt && entryDeadlineMs !== null && now > entryDeadlineMs;
+              const canStart = !notYetOpen && !closed && !entryClosed;
 
-              let statusLabel = "Active now";
+              let statusLabel = t.has_in_progress_attempt ? "Resume" : "Active now";
               let statusClass = "bg-emerald-100 text-emerald-700";
               let countdown: string | null = null;
               if (closed) {
                 statusLabel = "Closed";
                 statusClass = "bg-muted text-muted-foreground";
+              } else if (entryClosed) {
+                statusLabel = "Entry closed";
+                statusClass = "bg-red-100 text-red-700";
               } else if (notYetOpen && startMs) {
                 statusLabel = `Starts ${formatTestDateTime(new Date(startMs).toISOString())}`;
                 statusClass = "bg-amber-100 text-amber-800";
