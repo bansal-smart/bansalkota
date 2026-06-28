@@ -63,7 +63,30 @@ const CbtLiveTestsPage = () => {
         _batch_id: prof?.batch_id ?? null,
       });
       if (error) toast.error(error.message);
-      setTests((data ?? []) as LiveTest[]);
+      const baseTests = (data ?? []) as LiveTest[];
+
+      // Enrich with open_window_minutes (entry-window cutoff) and in-progress attempt flag.
+      if (baseTests.length) {
+        const ids = baseTests.map((t) => t.id);
+        const [{ data: meta }, { data: attempts }] = await Promise.all([
+          supabase.from("tests").select("id, open_window_minutes").in("id", ids),
+          supabase
+            .from("test_attempts")
+            .select("test_id")
+            .eq("user_id", user.id)
+            .eq("status", "in_progress")
+            .in("test_id", ids),
+        ]);
+        const owmMap = new Map<string, number | null>(
+          (meta ?? []).map((m: { id: string; open_window_minutes: number | null }) => [m.id, m.open_window_minutes]),
+        );
+        const inProgressSet = new Set<string>((attempts ?? []).map((a: { test_id: string }) => a.test_id));
+        baseTests.forEach((t) => {
+          t.open_window_minutes = owmMap.get(t.id) ?? null;
+          t.has_in_progress_attempt = inProgressSet.has(t.id);
+        });
+      }
+      setTests(baseTests);
       setLoading(false);
     })();
   }, [navigate]);
