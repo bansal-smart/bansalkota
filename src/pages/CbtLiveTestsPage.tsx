@@ -16,6 +16,8 @@ type LiveTest = {
   starts_at: string | null;
   ends_at: string | null;
   subjects: string[] | null;
+  open_window_minutes?: number | null;
+  has_in_progress_attempt?: boolean;
 };
 
 const ACTIVATION_LEAD_MS = 60_000;
