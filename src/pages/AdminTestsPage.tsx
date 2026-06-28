@@ -18,22 +18,53 @@ type AdminTest = {
   duration_minutes: number;
   is_published: boolean;
   created_at: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  cbt_allowed_batch_ids: string[] | null;
+};
+
+type BatchOpt = { id: string; name: string };
+type StatusFilter = "all" | "upcoming" | "active" | "previous" | "untimed";
+
+const computeStatus = (t: AdminTest, now: number): Exclude<StatusFilter, "all"> => {
+  const s = t.starts_at ? new Date(t.starts_at).getTime() : null;
+  const e = t.ends_at ? new Date(t.ends_at).getTime() : null;
+  if (s === null && e === null) return "untimed";
+  if (s !== null && s > now) return "upcoming";
+  if (e !== null && e < now) return "previous";
+  return "active";
+};
+
+const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
+  upcoming: "Upcoming",
+  active: "Active",
+  previous: "Previous",
+  untimed: "Untimed",
 };
 
 const AdminTestsPage = () => {
   const { isSuperAdmin } = useAuth();
   const { confirm, ConfirmDialog } = useConfirm();
   const [tests, setTests] = useState<AdminTest[]>([]);
+  const [batches, setBatches] = useState<BatchOpt[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | "unrestricted" | batchId
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("tests")
-      .select("id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at")
-      .order("created_at", { ascending: false });
-    setTests((data ?? []) as AdminTest[]);
+    const [{ data: testRows }, { data: batchRows }] = await Promise.all([
+      supabase
+        .from("tests")
+        .select(
+          "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
+        )
+        .order("created_at", { ascending: false }),
+      supabase.from("course_batches").select("id, name").order("name"),
+    ]);
+    setTests((testRows ?? []) as AdminTest[]);
+    setBatches((batchRows ?? []) as BatchOpt[]);
     setLoading(false);
   };
 
@@ -62,8 +93,27 @@ const AdminTestsPage = () => {
     load();
   };
 
-  const filtered = tests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()));
+  const now = Date.now();
+  const filtered = tests.filter((t) => {
+    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== "all" && computeStatus(t, now) !== statusFilter) return false;
+    if (batchFilter !== "all") {
+      const ids = t.cbt_allowed_batch_ids ?? [];
+      if (batchFilter === "unrestricted") {
+        if (ids.length > 0) return false;
+      } else if (!ids.includes(batchFilter)) {
+        return false;
+      }
+    }
+    return true;
+  });
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, batchFilter]);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
