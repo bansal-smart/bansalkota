@@ -313,6 +313,26 @@ const TestResultPage = () => {
           <StatTile icon={Target} label="Total" value={total} tone="primary" />
         </div>
 
+        {test?.results_released_at && test?.solution_pdf_path && (
+          <div className="rounded-2xl border border-secondary/40 bg-secondary/5 p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">Official Solution PDF</p>
+              <p className="text-xs text-muted-foreground">Detailed solutions are now available.</p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                const { data, error } = await supabase.storage.from("test-solutions").createSignedUrl(test.solution_pdf_path as string, 60 * 10);
+                if (error || !data?.signedUrl) return;
+                window.open(data.signedUrl, "_blank");
+              }}
+              className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
+            >
+              Download Solution PDF
+            </button>
+          </div>
+        )}
+
         {/* Charts */}
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card p-5">
