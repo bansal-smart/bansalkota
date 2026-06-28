@@ -72,7 +72,7 @@ const AdminTestSupportPage = lazy(() => import("./pages/AdminTestSupportPage"));
 const AdminTestDetailPage = lazy(() => import("./pages/AdminTestDetailPage"));
 const AdminTestResultPage = lazy(() => import("./pages/AdminTestResultPage"));
 const AdminCombinedResultPage = lazy(() => import("./pages/AdminCombinedResultPage"));
-const AdminLectureBucketPage = lazy(() => import("./pages/AdminLectureBucketPage"));
+
 const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
 const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
