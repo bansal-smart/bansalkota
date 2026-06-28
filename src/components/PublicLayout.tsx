@@ -245,14 +245,14 @@ const PublicLayout = () => {
                 <Link to="/career" className="block text-white/75 hover:text-bansal-orange">
                   Careers
                 </Link>
-                <Link to="/achievements" className="block text-white/75 hover:text-bansal-orange">
-                  Achievements
-                </Link>
                 <Link to="/blog" className="block text-white/75 hover:text-bansal-orange">
                   Blogs
                 </Link>
                 <Link to="/contact" className="block text-white/75 hover:text-bansal-orange">
                   Contact
+                </Link>
+                <Link to="/centres" className="block text-white/75 hover:text-bansal-orange">
+                  Offline Centres
                 </Link>
               </div>
             </div>
