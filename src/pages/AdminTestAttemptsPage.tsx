@@ -166,8 +166,86 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
   useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId]);
 
+  // Realtime: live status updates on test_attempts (per-test when scoped, else global)
+  useEffect(() => {
+    const channelName = testId ? `admin-attempts-${testId}` : `admin-attempts-all`;
+    const filter = testId ? `test_id=eq.${testId}` : undefined;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "test_attempts", ...(filter ? { filter } : {}) },
+        (payload: any) => {
+          setAttempts((prev) => {
+            if (payload.eventType === "DELETE") {
+              const id = payload.old?.id;
+              return prev.filter((a) => a.id !== id);
+            }
+            const next = payload.new as Attempt;
+            if (!next?.id) return prev;
+            const idx = prev.findIndex((a) => a.id === next.id);
+            if (idx === -1) {
+              // INSERT — remove from notAttempted if present
+              setNotAttempted((na) => na.filter((s) => s.user_id !== next.user_id));
+              return [next, ...prev];
+            }
+            const copy = prev.slice();
+            copy[idx] = { ...copy[idx], ...next };
+            return copy;
+          });
+          // Make sure we have profile name for any new user
+          const uid = (payload.new as any)?.user_id;
+          if (uid && !profiles.has(uid)) {
+            supabase.from("profiles").select("user_id, full_name").eq("user_id", uid).maybeSingle()
+              .then(({ data }) => {
+                if (data) setProfiles((m) => new Map(m).set(data.user_id, data.full_name ?? "Student"));
+              });
+          }
+        }
+      )
+      .subscribe((status) => {
+        setLiveConnected(status === "SUBSCRIBED");
+      });
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testId]);
+
+  type Row = (Attempt & { __na?: false }) | { __na: true; id: string; user_id: string; test_id: string; status: "not_attempted"; score: null; percentile: null; correct_answers: null; total_questions: null; started_at: null; submitted_at: null; created_at: string; time_spent_seconds: null; batch_name: string | null };
+
+  const combined: Row[] = useMemo(() => {
+    const attemptedUserIds = new Set(attempts.map((a) => a.user_id));
+    const naRows: Row[] = testId
+      ? notAttempted
+          .filter((s) => !attemptedUserIds.has(s.user_id))
+          .map((s) => ({
+            __na: true as const,
+            id: `na-${s.user_id}`,
+            user_id: s.user_id,
+            test_id: testId,
+            status: "not_attempted" as const,
+            score: null, percentile: null, correct_answers: null, total_questions: null,
+            started_at: null, submitted_at: null, created_at: "",
+            time_spent_seconds: null,
+            batch_name: s.batch_name,
+          }))
+      : [];
+    // Inject names into profiles map for NA students
+    if (testId && notAttempted.length) {
+      setProfiles((prev) => {
+        let changed = false;
+        const next = new Map(prev);
+        for (const s of notAttempted) {
+          if (!next.has(s.user_id)) { next.set(s.user_id, s.full_name ?? "Student"); changed = true; }
+        }
+        return changed ? next : prev;
+      });
+    }
+    return [...attempts.map((a) => a as Row), ...naRows];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempts, notAttempted, testId]);
+
   const filtered = useMemo(() => {
-    return attempts.filter((a) => {
+    return combined.filter((a) => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
       if (!testId && testFilter !== "all" && a.test_id !== testFilter) return false;
       if (search) {
@@ -177,7 +255,18 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       }
       return true;
     });
-  }, [attempts, search, statusFilter, testFilter, profiles, tests, testId]);
+  }, [combined, search, statusFilter, testFilter, profiles, tests, testId]);
+
+  const counts = useMemo(() => {
+    const c = { not_attempted: 0, in_progress: 0, submitted: 0, auto_submitted: 0 };
+    for (const r of combined) {
+      if (r.status === "not_attempted") c.not_attempted++;
+      else if (r.status === "in_progress") c.in_progress++;
+      else if (r.status === "submitted") c.submitted++;
+      else if (r.status === "auto_submitted") c.auto_submitted++;
+    }
+    return c;
+  }, [combined]);
 
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
