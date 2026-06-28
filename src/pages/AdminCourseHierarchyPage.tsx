@@ -211,6 +211,37 @@ const AdminCourseHierarchyPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "Sort all videos A → Z?",
+                  description:
+                    "Re-positions every topic's videos by natural title order (Lec-01, Lec-02 …). Existing manual ordering will be overwritten.",
+                  confirmLabel: "Sort all",
+                });
+                if (!ok) return;
+                let touched = 0;
+                for (const s of subjects) {
+                  for (const t of s.topics ?? []) {
+                    const vids = t.videos ?? [];
+                    if (vids.length < 2) continue;
+                    const sorted = [...vids].sort((a, b) =>
+                      a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }),
+                    );
+                    const changed = sorted.some((v, i) => v.id !== vids[i].id);
+                    if (!changed) continue;
+                    await reorderSiblings("subtopic_videos", sorted.map((v) => v.id));
+                    touched++;
+                  }
+                }
+                toast.success(`Sorted ${touched} topic${touched === 1 ? "" : "s"}`);
+                load();
+              }}
+            >
+              Sort All A → Z
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
               <Upload className="h-4 w-4 mr-1" /> Bulk Upload Videos
             </Button>

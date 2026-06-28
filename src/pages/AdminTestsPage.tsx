@@ -18,22 +18,53 @@ type AdminTest = {
   duration_minutes: number;
   is_published: boolean;
   created_at: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  cbt_allowed_batch_ids: string[] | null;
+};
+
+type BatchOpt = { id: string; name: string };
+type StatusFilter = "all" | "upcoming" | "active" | "previous" | "untimed";
+
+const computeStatus = (t: AdminTest, now: number): Exclude<StatusFilter, "all"> => {
+  const s = t.starts_at ? new Date(t.starts_at).getTime() : null;
+  const e = t.ends_at ? new Date(t.ends_at).getTime() : null;
+  if (s === null && e === null) return "untimed";
+  if (s !== null && s > now) return "upcoming";
+  if (e !== null && e < now) return "previous";
+  return "active";
+};
+
+const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
+  upcoming: "Upcoming",
+  active: "Active",
+  previous: "Previous",
+  untimed: "Untimed",
 };
 
 const AdminTestsPage = () => {
   const { isSuperAdmin } = useAuth();
   const { confirm, ConfirmDialog } = useConfirm();
   const [tests, setTests] = useState<AdminTest[]>([]);
+  const [batches, setBatches] = useState<BatchOpt[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | "unrestricted" | batchId
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("tests")
-      .select("id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at")
-      .order("created_at", { ascending: false });
-    setTests((data ?? []) as AdminTest[]);
+    const [{ data: testRows }, { data: batchRows }] = await Promise.all([
+      supabase
+        .from("tests")
+        .select(
+          "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
+        )
+        .order("created_at", { ascending: false }),
+      supabase.from("course_batches").select("id, name").order("name"),
+    ]);
+    setTests((testRows ?? []) as AdminTest[]);
+    setBatches((batchRows ?? []) as BatchOpt[]);
     setLoading(false);
   };
 
@@ -62,8 +93,27 @@ const AdminTestsPage = () => {
     load();
   };
 
-  const filtered = tests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()));
+  const now = Date.now();
+  const filtered = tests.filter((t) => {
+    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (statusFilter !== "all" && computeStatus(t, now) !== statusFilter) return false;
+    if (batchFilter !== "all") {
+      const ids = t.cbt_allowed_batch_ids ?? [];
+      if (batchFilter === "unrestricted") {
+        if (ids.length > 0) return false;
+      } else if (!ids.includes(batchFilter)) {
+        return false;
+      }
+    }
+    return true;
+  });
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, batchFilter]);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -78,14 +128,42 @@ const AdminTestsPage = () => {
         </Link>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search tests..."
-          className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tests..."
+            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+          title="Filter by status"
+        >
+          <option value="all">All exams</option>
+          <option value="upcoming">{STATUS_LABEL.upcoming}</option>
+          <option value="active">{STATUS_LABEL.active}</option>
+          <option value="previous">{STATUS_LABEL.previous}</option>
+          <option value="untimed">{STATUS_LABEL.untimed}</option>
+        </select>
+        <select
+          value={batchFilter}
+          onChange={(e) => setBatchFilter(e.target.value)}
+          className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none max-w-[260px]"
+          title="Filter by batch"
+        >
+          <option value="all">All batches</option>
+          <option value="unrestricted">Unrestricted (no batch)</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
