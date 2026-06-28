@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Loader2, Search, Trophy, Building2, GraduationCap, Sparkles,
-  Quote, ArrowRight, Send,
-} from "lucide-react";
+import { Loader2, Search, Trophy, Building2, GraduationCap, Sparkles, Quote, ArrowRight, Send } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +35,13 @@ type Alumnus = {
 };
 
 const initialsOf = (name: string) =>
-  name.split(" ").map((n) => n[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  name
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
 const decadeOf = (y: number) => Math.floor(y / 10) * 10;
 const decadeLabel = (d: number) => `${d}s`;
@@ -42,7 +50,12 @@ const submissionSchema = z.object({
   full_name: z.string().trim().min(2, "Name is required").max(100),
   email: z.string().trim().email("Valid email required").max(255),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
-  batch_year: z.string().trim().regex(/^\d{4}$/, "4-digit year").optional().or(z.literal("")),
+  batch_year: z
+    .string()
+    .trim()
+    .regex(/^\d{4}$/, "4-digit year")
+    .optional()
+    .or(z.literal("")),
   exam: z.string().trim().max(40).optional().or(z.literal("")),
   rank_label: z.string().trim().max(80).optional().or(z.literal("")),
   current_position: z.string().trim().max(120).optional().or(z.literal("")),
@@ -75,9 +88,7 @@ export default function AlumniPage() {
           .limit(500),
         supabase
           .from("public_alumni_submissions" as any)
-          .select(
-            "id,full_name,rank_label,exam,selection_year,batch_year,photo_url,story,current_position,company",
-          )
+          .select("id,full_name,rank_label,exam,selection_year,batch_year,photo_url,story,current_position,company")
           .order("batch_year", { ascending: false, nullsFirst: false })
           .order("selection_year", { ascending: false, nullsFirst: false })
           .limit(500),
@@ -101,25 +112,17 @@ export default function AlumniPage() {
       }));
 
       // De-dupe by name+batch_year so a submission that's already promoted to toppers doesn't double-show
-      const seen = new Set(
-        fromToppers.map((a) => `${a.name?.toLowerCase()}|${a.batch_year ?? a.year ?? ""}`),
-      );
+      const seen = new Set(fromToppers.map((a) => `${a.name?.toLowerCase()}|${a.batch_year ?? a.year ?? ""}`));
       const merged = [
         ...fromToppers,
-        ...fromSubs.filter(
-          (a) => !seen.has(`${a.name?.toLowerCase()}|${a.batch_year ?? a.year ?? ""}`),
-        ),
+        ...fromSubs.filter((a) => !seen.has(`${a.name?.toLowerCase()}|${a.batch_year ?? a.year ?? ""}`)),
       ];
       setItems(merged);
       setLoading(false);
     })();
   }, []);
 
-
-  const featured = useMemo(
-    () => items.filter((a) => a.is_featured).slice(0, 6),
-    [items],
-  );
+  const featured = useMemo(() => items.filter((a) => a.is_featured).slice(0, 6), [items]);
 
   const years = useMemo(() => {
     const set = new Set<number>();
@@ -184,8 +187,8 @@ export default function AlumniPage() {
                 </h2>
               </div>
               <p className="text-sm text-bansal-gray max-w-md">
-                A handful of alumni whose work, in classrooms and boardrooms, in labs and launchpads,
-                still echoes back to Kota.
+                A handful of alumni whose work, in classrooms and boardrooms, in labs and launchpads, still echoes back
+                to Kota.
               </p>
             </div>
 
@@ -200,12 +203,11 @@ export default function AlumniPage() {
                   <div className="relative">
                     {a.rank_label && (
                       <div className="inline-flex items-center gap-1 rounded-full bg-bansal-orange text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
-                        {a.rank_label}{a.exam ? ` · ${a.exam}` : ""}
+                        {a.rank_label}
+                        {a.exam ? ` · ${a.exam}` : ""}
                       </div>
                     )}
-                    <h3 className="mt-3 font-display text-xl font-extrabold text-bansal-blue">
-                      {a.name}
-                    </h3>
+                    <h3 className="mt-3 font-display text-xl font-extrabold text-bansal-blue">{a.name}</h3>
 
                     {(a.current_position || a.company) && (
                       <div className="mt-2 flex items-center gap-1.5 text-xs text-bansal-gray">
@@ -218,15 +220,11 @@ export default function AlumniPage() {
                       </div>
                     )}
                     {(a.story || a.quote) && (
-                      <p className="mt-4 text-sm text-bansal-gray leading-relaxed line-clamp-5">
-                        {a.story || a.quote}
-                      </p>
+                      <p className="mt-4 text-sm text-bansal-gray leading-relaxed line-clamp-5">{a.story || a.quote}</p>
                     )}
                     <div className="mt-5 flex items-center justify-between text-[11px] text-bansal-gray">
                       <span>Batch {a.batch_year ?? a.year ?? "—"}</span>
-                      <span className="font-semibold text-bansal-blue/60 uppercase tracking-wide">
-                        Bansalite
-                      </span>
+                      <span className="font-semibold text-bansal-blue/60 uppercase tracking-wide">Bansalite</span>
                     </div>
                   </div>
                 </article>
@@ -268,7 +266,9 @@ export default function AlumniPage() {
                   return (
                     <li key={decade} className="md:grid md:grid-cols-2 md:gap-0 relative">
                       <div className={`relative md:w-full ${idx % 2 === 0 ? "" : "md:col-start-2"} ${side}`}>
-                        <div className={`hidden md:block absolute top-6 ${dot} h-3.5 w-3.5 rounded-full bg-bansal-orange ring-4 ring-bansal-cream`} />
+                        <div
+                          className={`hidden md:block absolute top-6 ${dot} h-3.5 w-3.5 rounded-full bg-bansal-orange ring-4 ring-bansal-cream`}
+                        />
                         <div className="bg-white rounded-3xl border border-border p-6 md:p-7 shadow-sm hover:shadow-xl hover:border-bansal-orange/40 transition-all">
                           <div className="flex items-baseline gap-3 flex-wrap">
                             <span className="font-display text-3xl md:text-4xl font-extrabold text-bansal-orange">
@@ -299,9 +299,7 @@ export default function AlumniPage() {
                                 title={`${p.name}${p.rank_label ? ` · ${p.rank_label}` : ""}`}
                               >
                                 <span className="font-semibold">{p.name}</span>
-                                {p.rank_label && (
-                                  <span className="text-bansal-orange font-bold">· {p.rank_label}</span>
-                                )}
+                                {p.rank_label && <span className="text-bansal-orange font-bold">· {p.rank_label}</span>}
                               </button>
                             ))}
                             {people.length > 8 && (
@@ -349,7 +347,9 @@ export default function AlumniPage() {
           >
             <option value="all">All decades</option>
             {decades.map((d) => (
-              <option key={d} value={d}>{decadeLabel(d)}</option>
+              <option key={d} value={d}>
+                {decadeLabel(d)}
+              </option>
             ))}
           </select>
           <select
@@ -359,7 +359,9 @@ export default function AlumniPage() {
           >
             <option value="all">All batches</option>
             {years.map((y) => (
-              <option key={y} value={y}>Batch {y}</option>
+              <option key={y} value={y}>
+                Batch {y}
+              </option>
             ))}
           </select>
           <span className="text-xs text-bansal-gray">{filtered.length} alumni</span>
@@ -388,12 +390,11 @@ export default function AlumniPage() {
                   <div>
                     {a.rank_label && (
                       <div className="inline-flex items-center gap-1 rounded-full bg-bansal-orange/10 text-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider mb-2">
-                        {a.rank_label}{a.exam ? ` · ${a.exam}` : ""}
+                        {a.rank_label}
+                        {a.exam ? ` · ${a.exam}` : ""}
                       </div>
                     )}
-                    <h3 className="font-display text-lg font-extrabold text-bansal-blue">
-                      {a.name}
-                    </h3>
+                    <h3 className="font-display text-lg font-extrabold text-bansal-blue">{a.name}</h3>
                     {(a.current_position || a.company) && (
                       <div className="mt-1.5 flex items-center gap-1.5 text-xs text-bansal-gray">
                         <Building2 className="h-3 w-3 text-bansal-blue/60 shrink-0" />
@@ -413,9 +414,7 @@ export default function AlumniPage() {
                   )}
                   <div className="mt-4 flex items-center justify-between text-[11px] text-bansal-gray">
                     <span>Batch {a.batch_year ?? a.year ?? "—"}</span>
-                    <span className="font-semibold text-bansal-blue/60 uppercase tracking-wide">
-                      Bansalite
-                    </span>
+                    <span className="font-semibold text-bansal-blue/60 uppercase tracking-wide">Bansalite</span>
                   </div>
                 </article>
               ))}
@@ -431,8 +430,8 @@ export default function AlumniPage() {
             Are you a <span className="text-bansal-orange">Bansalite</span>?
           </h2>
           <p className="mt-3 text-bansal-gray">
-            Share your story, mentor a current student, or return as guest faculty.
-            Every story you send goes straight to our alumni desk.
+            Share your story, mentor a current student, or return as guest faculty. Every story you send goes straight
+            to our alumni desk.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 justify-center">
             <BansalButton variant="cta" onClick={() => setSubmitOpen(true)}>
@@ -467,12 +466,12 @@ function AlumniHero({ onSubmit }: { onSubmit: () => void }) {
           <br className="hidden md:block" /> the people who learned here, and then changed the world.
         </h1>
         <p className="mt-5 max-w-2xl text-white/85 text-base md:text-lg">
-          IIT graduates, AIIMS doctors, founders, professors, ISRO engineers. Every story below
-          began in a Bansal classroom.
+          IIT graduates, AIIMS doctors, founders, professors, ISRO engineers. Every story below began in a Bansal
+          classroom.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <BansalBadge tone="orange">
-            <Trophy className="h-3 w-3 mr-1" /> 1,200+ IIT selections
+            <Trophy className="h-3 w-3 mr-1" /> 25,000+ IIT selections
           </BansalBadge>
           <BansalBadge tone="orange">
             <Sparkles className="h-3 w-3 mr-1" /> Legacy since 1981
@@ -500,16 +499,19 @@ function AlumniHero({ onSubmit }: { onSubmit: () => void }) {
   );
 }
 
-function SubmitStoryDialog({
-  open, onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
+function SubmitStoryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const [form, setForm] = useState({
-    full_name: "", email: "", phone: "", batch_year: "", exam: "",
-    rank_label: "", current_position: "", company: "", city: "",
-    linkedin_url: "", story: "",
+    full_name: "",
+    email: "",
+    phone: "",
+    batch_year: "",
+    exam: "",
+    rank_label: "",
+    current_position: "",
+    company: "",
+    city: "",
+    linkedin_url: "",
+    story: "",
   });
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -542,9 +544,17 @@ function SubmitStoryDialog({
     }
     toast.success("Thank you! Your story has been sent to the alumni desk.");
     setForm({
-      full_name: "", email: "", phone: "", batch_year: "", exam: "",
-      rank_label: "", current_position: "", company: "", city: "",
-      linkedin_url: "", story: "",
+      full_name: "",
+      email: "",
+      phone: "",
+      batch_year: "",
+      exam: "",
+      rank_label: "",
+      current_position: "",
+      company: "",
+      city: "",
+      linkedin_url: "",
+      story: "",
     });
     onOpenChange(false);
   };
@@ -553,9 +563,7 @@ function SubmitStoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-bansal-blue">
-            Submit your alumni story
-          </DialogTitle>
+          <DialogTitle className="font-display text-2xl text-bansal-blue">Submit your alumni story</DialogTitle>
           <DialogDescription>
             Your story is reviewed by our alumni desk before being added to the wall.
           </DialogDescription>
@@ -565,13 +573,28 @@ function SubmitStoryDialog({
           <Field label="Full name *" value={form.full_name} onChange={(v) => set("full_name", v)} />
           <Field label="Email *" value={form.email} onChange={(v) => set("email", v)} type="email" />
           <Field label="Phone" value={form.phone} onChange={(v) => set("phone", v)} />
-          <Field label="Batch year" value={form.batch_year} onChange={(v) => set("batch_year", v)} placeholder="e.g. 2008" />
+          <Field
+            label="Batch year"
+            value={form.batch_year}
+            onChange={(v) => set("batch_year", v)}
+            placeholder="e.g. 2008"
+          />
           <Field label="Exam" value={form.exam} onChange={(v) => set("exam", v)} placeholder="JEE / NEET" />
-          <Field label="Rank / Score" value={form.rank_label} onChange={(v) => set("rank_label", v)} placeholder="AIR 47" />
+          <Field
+            label="Rank / Score"
+            value={form.rank_label}
+            onChange={(v) => set("rank_label", v)}
+            placeholder="AIR 47"
+          />
           <Field label="Current role" value={form.current_position} onChange={(v) => set("current_position", v)} />
           <Field label="Company / Institute" value={form.company} onChange={(v) => set("company", v)} />
           <Field label="City" value={form.city} onChange={(v) => set("city", v)} />
-          <Field label="LinkedIn URL" value={form.linkedin_url} onChange={(v) => set("linkedin_url", v)} placeholder="https://…" />
+          <Field
+            label="LinkedIn URL"
+            value={form.linkedin_url}
+            onChange={(v) => set("linkedin_url", v)}
+            placeholder="https://…"
+          />
         </div>
 
         <div className="mt-4">
@@ -601,10 +624,17 @@ function SubmitStoryDialog({
 }
 
 function Field({
-  label, value, onChange, type = "text", placeholder,
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
 }: {
-  label: string; value: string; onChange: (v: string) => void;
-  type?: string; placeholder?: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
 }) {
   return (
     <div>
