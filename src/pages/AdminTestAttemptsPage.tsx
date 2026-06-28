@@ -43,6 +43,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [tests, setTests] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+  const [notAttempted, setNotAttempted] = useState<{ user_id: string; full_name: string | null; batch_name: string | null }[]>([]);
+  const [liveConnected, setLiveConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
