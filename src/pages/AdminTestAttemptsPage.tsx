@@ -122,6 +122,15 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     ]);
     setProfiles(new Map(((pRes as any).data ?? []).map((p: any) => [p.user_id, p.full_name ?? "Student"])));
     setTests(((tRes as any).data ?? []) as any);
+
+    // Not Attempted: only meaningful for a specific test
+    if (testId) {
+      const { data: naRows, error: naErr } = await (supabase as any)
+        .rpc("admin_test_not_attempted", { _test_id: testId });
+      if (!naErr) setNotAttempted((naRows ?? []) as any);
+    } else {
+      setNotAttempted([]);
+    }
     setLoading(false);
   };
 
