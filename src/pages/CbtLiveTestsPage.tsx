@@ -191,7 +191,7 @@ const CbtLiveTestsPage = () => {
                       disabled={!canStart}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <PlayCircle className="h-4 w-4" /> Start Test
+                      <PlayCircle className="h-4 w-4" /> {t.has_in_progress_attempt ? "Resume Test" : "Start Test"}
                     </button>
                   </div>
                 </div>
