@@ -192,6 +192,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <MaintenanceGate>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
             <Route path="/login" element={<LoginPage />} />
