@@ -159,21 +159,28 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout 
 
       <nav className="flex-1 px-3 space-y-1">
         <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Main</p>
-        {baseNav.map((item) => {
-          const active = pathname === item.path;
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
-              }`}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+        {mainGroups.map((group) => (
+          <div key={group.label} className="pt-2">
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/30">
+              {group.label}
+            </p>
+            {group.items.map((item) => {
+              const active = pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                  }`}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        ))}
 
         <p className="px-3 pt-4 pb-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Site Pages</p>
         {sitePagesNav.map((item) => {
