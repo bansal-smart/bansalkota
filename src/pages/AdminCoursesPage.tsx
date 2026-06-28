@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, GripVertical } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, BookOpen, Trash2, GripVertical, Users } from "lucide-react";
+import AdminCourseStudentsDialog from "@/components/AdminCourseStudentsDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +47,7 @@ const SortableRow = ({
   navigate,
   togglePublish,
   deleteCourse,
+  manageStudents,
   draggable,
 }: {
   c: AdminCourse;
@@ -53,6 +55,7 @@ const SortableRow = ({
   navigate: (path: string) => void;
   togglePublish: (c: AdminCourse, publish: boolean) => void;
   deleteCourse: (c: AdminCourse) => void;
+  manageStudents: (c: AdminCourse) => void;
   draggable: boolean;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -120,6 +123,13 @@ const SortableRow = ({
           >
             <BookOpen className="h-3.5 w-3.5" />
           </button>
+          <button
+            onClick={() => manageStudents(c)}
+            className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
+            title="Manage students (suspend / resume access)"
+          >
+            <Users className="h-3.5 w-3.5" />
+          </button>
           {!c.is_published ? (
             <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
               <Check className="h-3.5 w-3.5" />
@@ -153,6 +163,7 @@ const AdminCoursesPage = () => {
   const [search, setSearch] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
+  const [studentsDialog, setStudentsDialog] = useState<{ id: string; name: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -356,6 +367,7 @@ const AdminCoursesPage = () => {
                         navigate={navigate}
                         togglePublish={togglePublish}
                         deleteCourse={deleteCourse}
+                        manageStudents={(course) => setStudentsDialog({ id: course.id, name: course.name })}
                         draggable={draggable}
                       />
                     ))}
@@ -369,6 +381,12 @@ const AdminCoursesPage = () => {
           </div>
         )}
       </div>
+      <AdminCourseStudentsDialog
+        open={!!studentsDialog}
+        onClose={() => setStudentsDialog(null)}
+        courseId={studentsDialog?.id ?? null}
+        courseName={studentsDialog?.name ?? ""}
+      />
     </div>
   );
 };
