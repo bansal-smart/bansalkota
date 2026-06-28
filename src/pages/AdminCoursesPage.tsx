@@ -367,6 +367,7 @@ const AdminCoursesPage = () => {
                         navigate={navigate}
                         togglePublish={togglePublish}
                         deleteCourse={deleteCourse}
+                        manageStudents={(course) => setStudentsDialog({ id: course.id, name: course.name })}
                         draggable={draggable}
                       />
                     ))}
