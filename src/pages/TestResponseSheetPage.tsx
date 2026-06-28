@@ -89,10 +89,11 @@ const TestResponseSheetPage = () => {
       if (testId) {
         const { data: tRow } = await supabase
           .from("tests")
-          .select("option_label_style, exam_pattern")
+          .select("option_label_style, exam_pattern, solution_pdf_path, results_released_at")
           .eq("id", testId)
           .maybeSingle();
         setOptStyle(resolveOptionStyle(tRow as any));
+        setSolution({ path: (tRow as any)?.solution_pdf_path ?? null, released: !!(tRow as any)?.results_released_at });
       }
       setLoading(false);
     })();
