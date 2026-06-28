@@ -47,6 +47,7 @@ const SortableRow = ({
   navigate,
   togglePublish,
   deleteCourse,
+  manageStudents,
   draggable,
 }: {
   c: AdminCourse;
@@ -54,6 +55,7 @@ const SortableRow = ({
   navigate: (path: string) => void;
   togglePublish: (c: AdminCourse, publish: boolean) => void;
   deleteCourse: (c: AdminCourse) => void;
+  manageStudents: (c: AdminCourse) => void;
   draggable: boolean;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
