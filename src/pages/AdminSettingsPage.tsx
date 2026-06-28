@@ -1,4 +1,4 @@
-import { Settings, Globe, Bell, Database, Loader2, Save } from "lucide-react";
+import { Settings, Globe, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
