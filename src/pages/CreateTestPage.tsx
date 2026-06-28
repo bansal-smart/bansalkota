@@ -268,6 +268,7 @@ const CreateTestPage = () => {
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
+      setSolutionPdfPath((test as { solution_pdf_path?: string | null }).solution_pdf_path ?? null);
       // Load schedule (starts_at / ends_at) into date + time inputs (local TZ).
       const sAt = (test as any).starts_at ? new Date((test as any).starts_at) : null;
       const eAt = (test as any).ends_at ? new Date((test as any).ends_at) : null;
