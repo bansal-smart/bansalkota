@@ -400,7 +400,7 @@ const App = () => (
               <Route path="/admin/overview" element={<AdminDashboard />} />
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
               <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
-              <Route path="/admin/sms-broadcasts" element={<AdminSmsBroadcastsPage />} />
+              
               <Route path="/admin/site-pages/achievements" element={<AdminSitePageEditorPage slug="achievements" heading="Achievements" />} />
               <Route path="/admin/site-pages/disclaimer" element={<AdminSitePageEditorPage slug="disclaimer" heading="Disclaimer" />} />
               <Route path="/admin/site-pages/terms" element={<AdminSitePageEditorPage slug="terms" heading="Terms & Conditions" />} />
