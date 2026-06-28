@@ -148,7 +148,10 @@ const TestResultPage = () => {
       const rank = (bundle as any).rank;
 
       setAttempt(att as unknown as Attempt);
-      if (t) setTest(t as TestRow);
+      if (t) {
+        const { data: extra } = await (supabase as any).from("tests").select("solution_pdf_path").eq("id", t.id).maybeSingle();
+        setTest({ ...(t as TestRow), solution_pdf_path: extra?.solution_pdf_path ?? null });
+      }
       if (rank) setRankInfo(rank as RankInfo);
 
       const breakdown: Record<string, SubjectStat> = {};
