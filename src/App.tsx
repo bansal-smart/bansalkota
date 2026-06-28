@@ -72,7 +72,7 @@ const AdminTestSupportPage = lazy(() => import("./pages/AdminTestSupportPage"));
 const AdminTestDetailPage = lazy(() => import("./pages/AdminTestDetailPage"));
 const AdminTestResultPage = lazy(() => import("./pages/AdminTestResultPage"));
 const AdminCombinedResultPage = lazy(() => import("./pages/AdminCombinedResultPage"));
-const AdminLectureBucketPage = lazy(() => import("./pages/AdminLectureBucketPage"));
+
 const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
 const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
@@ -157,7 +157,7 @@ const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
-const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
+
 const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
 const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 const GalleryImagesPage = lazy(() => import("./pages/GalleryImagesPage"));
@@ -385,7 +385,7 @@ const App = () => (
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
-              <Route path="/admin/lecture-bucket" element={<AdminLectureBucketPage />} />
+              
               {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
               <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/mentor-assignments" element={<Navigate to="/admin/dashboard" replace />} />
@@ -400,7 +400,7 @@ const App = () => (
               <Route path="/admin/overview" element={<AdminDashboard />} />
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
               <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
-              <Route path="/admin/sms-broadcasts" element={<AdminSmsBroadcastsPage />} />
+              
               <Route path="/admin/site-pages/achievements" element={<AdminSitePageEditorPage slug="achievements" heading="Achievements" />} />
               <Route path="/admin/site-pages/disclaimer" element={<AdminSitePageEditorPage slug="disclaimer" heading="Disclaimer" />} />
               <Route path="/admin/site-pages/terms" element={<AdminSitePageEditorPage slug="terms" heading="Terms & Conditions" />} />
