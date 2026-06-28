@@ -965,7 +965,7 @@ const CreateTestPage = () => {
                   <button
                     type="button"
                     onClick={async () => {
-                      if (!confirm("Remove the uploaded solution PDF?")) return;
+                      if (!window.confirm("Remove the uploaded solution PDF?")) return;
                       await supabase.storage.from("test-solutions").remove([solutionPdfPath]);
                       await (supabase as any).from("tests").update({ solution_pdf_path: null, solution_pdf_url: null, solution_pdf_uploaded_at: null }).eq("id", resolvedTestId);
                       setSolutionPdfPath(null);
