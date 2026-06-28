@@ -172,6 +172,18 @@ const TestResponseSheetPage = () => {
             >
               <Printer className="h-3.5 w-3.5" /> Print / PDF
             </button>
+            {solution.released && solution.path && (
+              <button
+                onClick={async () => {
+                  const { data: sig, error } = await supabase.storage.from("test-solutions").createSignedUrl(solution.path as string, 60 * 10);
+                  if (error || !sig?.signedUrl) { toast.error(error?.message ?? "Could not open"); return; }
+                  window.open(sig.signedUrl, "_blank");
+                }}
+                className="inline-flex items-center gap-1 rounded-full border border-secondary bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground hover:opacity-90"
+              >
+                Solution PDF
+              </button>
+            )}
           </div>
         </div>
       </div>
