@@ -371,10 +371,14 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
           <option value="all">All statuses</option>
+          {testId && <option value="not_attempted">Not attempted</option>}
           <option value="in_progress">In progress</option>
           <option value="submitted">Submitted</option>
           <option value="auto_submitted">Auto-submitted</option>
         </select>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${liveConnected ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`} title={liveConnected ? "Realtime connected" : "Realtime offline"}>
+          <Radio className={`h-3 w-3 ${liveConnected ? "animate-pulse" : ""}`} /> {liveConnected ? "Live" : "Offline"}
+        </span>
         {!testId && (
           <select value={testFilter} onChange={(e) => setTestFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm max-w-[220px]">
             <option value="all">All tests</option>
