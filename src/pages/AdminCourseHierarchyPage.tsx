@@ -28,6 +28,21 @@ import { extractYouTubeId, getYouTubeThumbnail, fetchYouTubeTitle } from "@/lib/
 import { useConfirm } from "@/components/ConfirmDialog";
 import BulkCourseVideosDialog from "@/components/BulkCourseVideosDialog";
 import type { CourseSubject, CourseTopic, SubtopicVideo, SubtopicPdf } from "@/types/course-content";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type RenameTarget = { table: string; id: string; current: string; label: string };
 
@@ -538,6 +553,60 @@ function TopicEditor({
   );
 }
 
+function naturalSortVideos<T extends { title: string }>(arr: T[]): T[] {
+  return [...arr].sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }),
+  );
+}
+
+function SortableVideoRow({
+  v,
+  onEdit,
+  onDelete,
+}: {
+  v: SubtopicVideo;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: v.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-2 border rounded bg-card">
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary p-1"
+        title="Drag to reorder"
+        type="button"
+        aria-label="Drag handle"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <img
+        src={v.thumbnail_url || (v.youtube_video_id ? getYouTubeThumbnail(v.youtube_video_id) : "")}
+        alt=""
+        className="w-24 h-14 object-cover rounded bg-muted"
+      />
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm truncate">{v.title}</div>
+        <div className="text-xs text-muted-foreground">
+          {v.subtopic_label?.trim() || "—"} · {v.is_preview ? "🔓 Preview" : "🔒 Enrolled"}
+        </div>
+      </div>
+      <Button size="sm" variant="ghost" onClick={onEdit}>
+        <Pencil className="h-3 w-3" />
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onDelete}>
+        <Trash2 className="h-3 w-3 text-destructive" />
+      </Button>
+    </div>
+  );
+}
+
 function VideoTab({
   topic,
   courseId,
@@ -549,23 +618,41 @@ function VideoTab({
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SubtopicVideo | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const videos = topic.videos ?? [];
+
   const del = async (v: SubtopicVideo) => {
     if (!window.confirm(`Delete "${v.title}"?`)) return;
     await supabase.from("subtopic_videos" as any).delete().eq("id", v.id);
     toast.success("Video deleted");
     onSaved();
   };
-  const move = async (idx: number, dir: -1 | 1) => {
-    const arr = [...(topic.videos ?? [])];
-    const ni = idx + dir;
-    if (ni < 0 || ni >= arr.length) return;
-    [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
-    await reorderSiblings("subtopic_videos", arr.map((v) => v.id));
+
+  const onDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = videos.findIndex((v) => v.id === active.id);
+    const newIdx = videos.findIndex((v) => v.id === over.id);
+    if (oldIdx < 0 || newIdx < 0) return;
+    const reordered = arrayMove(videos, oldIdx, newIdx);
+    await reorderSiblings("subtopic_videos", reordered.map((v) => v.id));
     onSaved();
   };
+
+  const sortAZ = async () => {
+    if (videos.length < 2) return;
+    const sorted = naturalSortVideos(videos);
+    await reorderSiblings("subtopic_videos", sorted.map((v) => v.id));
+    toast.success("Sorted A → Z");
+    onSaved();
+  };
+
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button size="sm" variant="outline" onClick={sortAZ} disabled={videos.length < 2}>
+          Sort A → Z
+        </Button>
         <Button
           size="sm"
           onClick={() => {
@@ -576,41 +663,26 @@ function VideoTab({
           <Plus className="h-3 w-3 mr-1" /> Add Video
         </Button>
       </div>
-      <div className="space-y-2">
-        {(topic.videos ?? []).map((v, i) => (
-          <div key={v.id} className="flex items-center gap-3 p-2 border rounded">
-            <img
-              src={v.thumbnail_url || (v.youtube_video_id ? getYouTubeThumbnail(v.youtube_video_id) : "")}
-              alt=""
-              className="w-24 h-14 object-cover rounded bg-muted"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-sm truncate">{v.title}</div>
-              <div className="text-xs text-muted-foreground">
-                {v.subtopic_label?.trim() || "—"} · {v.is_preview ? "🔓 Preview" : "🔒 Enrolled"}
-              </div>
-            </div>
-            <Button size="sm" variant="ghost" onClick={() => move(i, -1)}>↑</Button>
-            <Button size="sm" variant="ghost" onClick={() => move(i, 1)}>↓</Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditing(v);
-                setOpen(true);
-              }}
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => del(v)}>
-              <Trash2 className="h-3 w-3 text-destructive" />
-            </Button>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={videos.map((v) => v.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {videos.map((v) => (
+              <SortableVideoRow
+                key={v.id}
+                v={v}
+                onEdit={() => {
+                  setEditing(v);
+                  setOpen(true);
+                }}
+                onDelete={() => del(v)}
+              />
+            ))}
+            {videos.length === 0 && (
+              <p className="text-xs text-muted-foreground py-4 text-center">No videos yet.</p>
+            )}
           </div>
-        ))}
-        {(topic.videos ?? []).length === 0 && (
-          <p className="text-xs text-muted-foreground py-4 text-center">No videos yet.</p>
-        )}
-      </div>
+        </SortableContext>
+      </DndContext>
       <VideoDialog
         open={open}
         onOpenChange={setOpen}
