@@ -38,7 +38,7 @@ const TestInstructionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [agreed, setAgreed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [hasExistingAttempt, setHasExistingAttempt] = useState(false);
+  const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -59,7 +59,7 @@ const TestInstructionsPage = () => {
         }
       }
       setTest(row);
-      // Check if current user already has an attempt — if so, entry-window restriction does not apply.
+      // Only an in-progress attempt should let a student bypass the entry window (Resume).
       if (row) {
         const { data: userData } = await supabase.auth.getUser();
         const uid = userData?.user?.id;
@@ -69,9 +69,10 @@ const TestInstructionsPage = () => {
             .select("id")
             .eq("test_id", row.id)
             .eq("user_id", uid)
+            .eq("status", "in_progress")
             .limit(1)
             .maybeSingle();
-          if (active) setHasExistingAttempt(!!att);
+          if (active) setHasInProgressAttempt(!!att);
         }
       }
       setLoading(false);
@@ -94,7 +95,7 @@ const TestInstructionsPage = () => {
       : null;
   const notYetOpen = startsAt !== null && now < startsAt - ACTIVATION_LEAD_MS;
   const closed = endsAt !== null && now > endsAt;
-  const entryClosed = !hasExistingAttempt && entryDeadline !== null && now > entryDeadline;
+  const entryClosed = !hasInProgressAttempt && entryDeadline !== null && now > entryDeadline;
 
   const countdown = useMemo(() => {
     if (!startsAt || !notYetOpen) return null;
@@ -298,7 +299,7 @@ const TestInstructionsPage = () => {
             onClick={() => navigate(`/tests/${test.slug}/take`)}
             className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : entryClosed ? "Entry window closed" : "Start Test"}
+            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : entryClosed ? "Entry window closed" : hasInProgressAttempt ? "Resume Test" : "Start Test"}
           </button>
         </div>
       </section>
