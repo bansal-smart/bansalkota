@@ -123,6 +123,13 @@ const SortableRow = ({
           >
             <BookOpen className="h-3.5 w-3.5" />
           </button>
+          <button
+            onClick={() => manageStudents(c)}
+            className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
+            title="Manage students (suspend / resume access)"
+          >
+            <Users className="h-3.5 w-3.5" />
+          </button>
           {!c.is_published ? (
             <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
               <Check className="h-3.5 w-3.5" />
