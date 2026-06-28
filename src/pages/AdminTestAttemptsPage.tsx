@@ -432,8 +432,9 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           a.status === "submitted" ? "bg-secondary/20 text-secondary" :
                           a.status === "auto_submitted" ? "bg-amber-500/20 text-amber-600" :
-                          "bg-primary/10 text-primary"
-                        }`}>{a.status?.replace("_", " ")}</span>
+                          a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
+                          "bg-primary/10 text-primary animate-pulse"
+                        }`}>{a.status === "not_attempted" ? "not attempted" : a.status?.replace("_", " ")}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>
@@ -441,26 +442,31 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{submitted}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
-                          {t?.slug && a.status !== "in_progress" && (
-                            <Link to={`/tests/${t.slug}/result/${a.id}`} target="_blank" className="rounded-md p-1.5 text-foreground hover:bg-muted" title="View result">
-                              <Eye className="h-3.5 w-3.5" />
-                            </Link>
-                          )}
-                          {a.status !== "in_progress" && (
+                          {a.status === "not_attempted" ? (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          ) : (
                             <>
-                              <button onClick={() => quickResume(a)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-100" title="Quick resume (keep answers, give remaining time)">
-                                <Play className="h-3.5 w-3.5" />
-                              </button>
-                              <button onClick={() => openReopen(a)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with custom time">
-                                <Clock className="h-3.5 w-3.5" />
-                              </button>
+                              {t?.slug && a.status !== "in_progress" && (
+                                <Link to={`/tests/${t.slug}/result/${a.id}`} target="_blank" className="rounded-md p-1.5 text-foreground hover:bg-muted" title="View result">
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Link>
+                              )}
+                              {a.status !== "in_progress" && (
+                                <>
+                                  <button onClick={() => quickResume(a as Attempt)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-100" title="Quick resume (keep answers, give remaining time)">
+                                    <Play className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button onClick={() => openReopen(a as Attempt)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with custom time">
+                                    <Clock className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              )}
+                              {isSuperAdmin && (
+                                <button onClick={() => resetAttempt(a as Attempt)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
+                                  {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                </button>
+                              )}
                             </>
-                          )}
-
-                          {isSuperAdmin && (
-                            <button onClick={() => resetAttempt(a)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
-                              {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
-                            </button>
                           )}
                         </div>
                       </td>
@@ -473,6 +479,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           </div>
         )}
       </div>
+
 
       {reopenFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !reopening && setReopenFor(null)}>
