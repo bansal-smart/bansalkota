@@ -435,6 +435,7 @@ const AdminGalleryPage = () => {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground">Thumbnail (optional)</label>
+                    <AspectRatioHint ratio="16:9" size="1280×720" note="video card thumbnail" />
                     <div className="mt-1 flex items-center gap-3">
                       {form.cover_url ? (
                         <img src={form.cover_url} alt="" className="h-24 w-32 rounded-lg object-cover border border-border" />
