@@ -228,7 +228,8 @@ const extractImages = (
     const src = img.getAttribute("src") || "";
     const parsed = dataUrlToBytes(src);
     if (!parsed) {
-      img.remove();
+      // Non-data URL (already an uploaded https:// asset from the server-side
+      // master-import edge function). Leave it untouched so it renders directly.
       return;
     }
     const id = `${idPrefix}-${slot}-${i}-${collected.length}`;
@@ -714,7 +715,10 @@ const flushBuffer = (
 // Public API
 // ---------------------------------------------------------------------------
 
-export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
+/** Convert a .docx file to mammoth HTML (data-URL images). Client-only path. */
+export const docxFileToHtml = async (
+  file: File,
+): Promise<{ html: string; warnings: string[] }> => {
   const warnings: string[] = [];
   const rawBuffer = await file.arrayBuffer();
   const buffer = await preprocessDocxBuffer(rawBuffer);
@@ -722,7 +726,6 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const result = await mammoth.convertToHtml(
     { arrayBuffer: buffer },
     {
-      // Preserve our custom paragraph styles so the parser can rely on them.
       styleMap: [
         "p[style-name='Q-Number'] => p.q-number",
         "p[style-name='Q-Stem']   => p.q-stem",
@@ -744,10 +747,19 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       if (msg.type === "error") warnings.push(`Mammoth: ${msg.message}`);
     }
   }
+  return { html: result.value, warnings };
+};
 
+/** State-machine parser: takes mammoth-style HTML and emits questions. */
+export const parseDocxQuestionsFromHtml = (
+  html: string,
+  seedWarnings: string[] = [],
+): ParseResult => {
+  const warnings: string[] = [...seedWarnings];
   const parser = new DOMParser();
-  const doc = parser.parseFromString(`<div id="root">${result.value}</div>`, "text/html");
+  const doc = parser.parseFromString(`<div id="root">${html}</div>`, "text/html");
   const root = doc.getElementById("root")!;
+
 
   const blocks = flattenBlocks(root);
   const out: ParsedDocxQuestion[] = [];
@@ -1062,3 +1074,33 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   }
   return { questions: out, warnings, totalImages, detectedOptionStyle };
 };
+
+/** Client-side full pipeline (legacy / Common Import). */
+export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
+  const { html, warnings } = await docxFileToHtml(file);
+  return parseDocxQuestionsFromHtml(html, warnings);
+};
+
+/**
+ * Master Import remote pipeline. Posts the .docx to the `master-import-docx`
+ * edge function which runs JSZip + OMML→LaTeX + mammoth on the server and
+ * uploads every image to Supabase Storage. The returned HTML already contains
+ * `<img src="https://…">` tags pointing at signed URLs, so no client-side
+ * image upload pass is needed afterwards.
+ */
+export const parseDocxQuestionsRemote = async (
+  file: File,
+  supabaseClient: { functions: { invoke: (name: string, opts: any) => Promise<{ data: any; error: any }> } },
+): Promise<ParseResult> => {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  const { data, error } = await supabaseClient.functions.invoke("master-import-docx", {
+    body: form,
+  });
+  if (error) throw new Error(error.message || "Master import failed on the server");
+  if (!data || typeof data.html !== "string") {
+    throw new Error("Master import returned an unexpected response");
+  }
+  return parseDocxQuestionsFromHtml(data.html, Array.isArray(data.warnings) ? data.warnings : []);
+};
+
