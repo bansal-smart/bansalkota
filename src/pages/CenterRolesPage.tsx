@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Loader2, Pencil, Trash2, Shield, Users } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Shield, Users, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
@@ -30,6 +30,39 @@ const CenterRolesPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+
+  // Create login state
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newCustomRoleId, setNewCustomRoleId] = useState<string>("");
+  const [creating, setCreating] = useState(false);
+
+  const createLogin = async () => {
+    if (!primaryCenterId) return;
+    if (!newEmail.trim() || !newPassword) return toast.error("Email and password required");
+    if (newPassword.length < 8) return toast.error("Password must be at least 8 characters");
+    if (!newCustomRoleId) return toast.error("Pick a role to assign");
+    setCreating(true);
+    const { data, error } = await supabase.functions.invoke("admin-create-center-user", {
+      body: {
+        action: "create",
+        email: newEmail.trim(),
+        password: newPassword,
+        full_name: newName.trim(),
+        centre_id: primaryCenterId,
+        role: "manager",
+        custom_role_id: newCustomRoleId,
+      },
+    });
+    setCreating(false);
+    if (error || (data as any)?.error) {
+      return toast.error(((data as any)?.error ?? error?.message) || "Could not create login");
+    }
+    toast.success(`Login created. Share credentials with ${newEmail}.`);
+    setNewName(""); setNewEmail(""); setNewPassword(""); setNewCustomRoleId("");
+    load();
+  };
 
   const load = async () => {
     if (!primaryCenterId) return;
@@ -169,8 +202,48 @@ const CenterRolesPage = () => {
         )}
       </div>
 
+
+
+
+      {/* Create login for a custom role */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-sm font-bold text-foreground inline-flex items-center gap-1.5">
+            <UserPlus className="h-4 w-4 text-primary" /> Create login for a role
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Add a new staff login and assign one of your custom roles. They will only see the tabs/actions you allowed.
+          </p>
+        </div>
+        <div className="p-4 space-y-2">
+          <div className="grid gap-2 md:grid-cols-2">
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Full name (optional)" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            <select value={newCustomRoleId} onChange={(e) => setNewCustomRoleId(e.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <option value="">— Assign a custom role —</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="login email" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="text" placeholder="Initial password (≥ 8 chars)" className="rounded-md border border-border bg-background px-3 py-2 text-sm font-mono" />
+          </div>
+          <button
+            onClick={createLogin}
+            disabled={creating || roles.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+            Create login
+          </button>
+          {roles.length === 0 && (
+            <p className="text-[11px] text-muted-foreground">Create a role first, then add staff logins for it.</p>
+          )}
+        </div>
+      </div>
+
       {/* Assign roles to staff */}
       <div className="rounded-xl border border-border bg-card">
+
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-bold text-foreground">Assign roles to staff</p>
           <p className="text-[11px] text-muted-foreground">
