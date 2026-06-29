@@ -279,6 +279,15 @@ const AdminEnquiriesPage = () => {
                       {r.phone && <div>{r.phone}</div>}
                       {!r.email && !r.phone && "—"}
                     </td>
+                    <td className="px-4 py-3 text-xs">
+                      {r.centre ? (
+                        <Badge variant="outline" className="text-[10px] capitalize border-primary/30 text-primary">
+                          {r.centre.city}{r.centre.area ? ` · ${r.centre.area}` : ""}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-xs capitalize">{r.category || "—"}</td>
                     <td className="px-4 py-3 text-xs">{r.class_level || "—"}</td>
                     <td className="px-4 py-3 text-xs">
