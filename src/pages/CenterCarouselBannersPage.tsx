@@ -168,6 +168,7 @@ const CenterCarouselBannersPage = () => {
             </h2>
             <div className="space-y-2">
               <label className="text-xs font-medium text-foreground">Banner image</label>
+              <AspectRatioHint ratio="2:1" size="1600×800" note="centre hero carousel slide" />
               {editing.image_url && (
                 <img
                   src={editing.image_url}
