@@ -148,6 +148,7 @@ const LandingHeroBannersEditor = () => {
             These images rotate in the home page hero carousel. Drag order with the arrows. Toggle Active to hide a
             banner without deleting it.
           </p>
+          <AspectRatioHint ratio="16:9" size="1920×1080" note="hero carousel slide" />
         </div>
         <button
           onClick={addRow}
