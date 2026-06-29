@@ -65,20 +65,27 @@ const CenterDashboardPage = () => {
     );
   }
 
-  const tiles = [
-    { label: "Centre Detail", value: "Page", icon: Building2, to: "/center/content" },
-    { label: "Page Banners", value: counts.banners, icon: ImageIcon, to: "/center/banners" },
-    { label: "Gallery", value: "Photos", icon: ImageIcon, to: "/center/gallery" },
-    { label: "Online Courses", value: "Videos", icon: Video, to: "/center/online-courses" },
-    { label: "Updates & Feed", value: "Posts", icon: Megaphone, to: "/center/updates" },
-    { label: "Centre Courses", value: counts.courses, icon: BookOpen, to: "/center/centre-courses" },
-    { label: "Live Classes", value: "Sessions", icon: Video, to: "/center/live-classes" },
-    { label: "Test Platform", value: "Tests", icon: ClipboardList, to: "/center/tests" },
-    { label: "Website Enquiries", value: counts.websiteEnquiries, icon: Inbox, to: "/center/enquiries" },
-    { label: "New Course Enquiries", value: counts.courseEnquiries, icon: ClipboardList, to: "/center/course-enquiries" },
-    { label: "Mapped Students", value: counts.students, icon: Users, to: "/center/students" },
-    { label: "Open Support Tickets", value: counts.openSupport, icon: LifeBuoy, to: "/center/support" },
+  const allTiles: Array<{ label: string; value: any; icon: any; to: string; moduleKey: string; adminOnly?: boolean }> = [
+    { label: "Centre Detail", value: "Page", icon: Building2, to: "/center/content", moduleKey: "centre_detail" },
+    { label: "Page Banners", value: counts.banners, icon: ImageIcon, to: "/center/banners", moduleKey: "page_banners" },
+    { label: "Gallery", value: "Photos", icon: ImageIcon, to: "/center/gallery", moduleKey: "gallery" },
+    { label: "Online Courses", value: "Videos", icon: Video, to: "/center/online-courses", moduleKey: "online_courses" },
+    { label: "Updates & Feed", value: "Posts", icon: Megaphone, to: "/center/updates", moduleKey: "centre_detail" },
+    { label: "Centre Courses", value: counts.courses, icon: BookOpen, to: "/center/centre-courses", moduleKey: "centre_courses" },
+    { label: "Live Classes", value: "Sessions", icon: Video, to: "/center/live-classes", moduleKey: "live_classes" },
+    { label: "Test Platform", value: "Tests", icon: ClipboardList, to: "/center/tests", moduleKey: "test_platform" },
+    { label: "Website Enquiries", value: counts.websiteEnquiries, icon: Inbox, to: "/center/enquiries", moduleKey: "website_enquiries" },
+    { label: "New Course Enquiries", value: counts.courseEnquiries, icon: ClipboardList, to: "/center/course-enquiries", moduleKey: "course_enquiries" },
+    { label: "Mapped Students", value: counts.students, icon: Users, to: "/center/students", moduleKey: "students" },
+    { label: "Open Support Tickets", value: counts.openSupport, icon: LifeBuoy, to: "/center/support", moduleKey: "support" },
+    { label: "Role Management", value: "Roles", icon: Shield, to: "/center/roles", moduleKey: "__admin_only__", adminOnly: true },
   ];
+
+  const tiles = allTiles.filter((t) => {
+    if (t.adminOnly) return isAdmin;
+    if (isAdmin) return true;
+    return can(t.moduleKey, "view");
+  });
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
