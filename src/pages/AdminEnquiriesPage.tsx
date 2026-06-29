@@ -63,14 +63,21 @@ const AdminEnquiriesPage = () => {
   const [active, setActive] = useState<Enquiry | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
+  const [centres, setCentres] = useState<CentreOpt[]>([]);
+  const [centreFilter, setCentreFilter] = useState<string>("all");
+
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("enquiries")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { data: cData }] = await Promise.all([
+      supabase
+        .from("enquiries")
+        .select("*, centre:centres(id, city, area, slug)")
+        .order("created_at", { ascending: false }),
+      supabase.from("centres").select("id, city, area, slug").order("city"),
+    ]);
     if (error) toast.error(error.message);
-    setRows((data as Enquiry[]) ?? []);
+    setRows((data as any) ?? []);
+    setCentres((cData as any) ?? []);
     setLoading(false);
   };
 
