@@ -222,10 +222,17 @@ const extractTypeTag = (text: string): ParsedQuestionType | null => {
   return null;
 };
 
-// Extract `Answer: ...` payload. Returns raw string after the colon, or null.
+// Extract `Answer: ...` / `Ans. (A)` / `Ans 18` payload. Separator is optional
+// (the JEE master papers use just a space after `Ans.`). Returns raw value or null.
 const extractAnswerLine = (text: string): string | null => {
-  const m = text.match(/^\s*(?:answer|ans\.?|correct)\s*[:\-–]\s*(.+?)\s*$/i);
-  return m ? m[1].trim() : null;
+  const m = text.match(/^\s*(?:answer|ans|correct)\s*\.?\s*[:\-–]?\s*(.+?)\s*$/i);
+  if (!m) return null;
+  // Require the keyword to be followed by SOMETHING (not just a heading line).
+  const val = m[1].trim();
+  if (!val) return null;
+  // Avoid matching things like "Answer the following:" with no actual answer body.
+  if (/^the\b/i.test(val)) return null;
+  return val;
 };
 
 // Determine question type + parsed answer from a raw answer string.
@@ -234,7 +241,33 @@ const parseAnswer = (raw: string): {
   correctAnswer: number | number[] | { value: number } | { min: number; max: number } | null;
   correctMap?: Record<string, string>;
 } => {
-  const trimmed = raw.trim();
+  let trimmed = raw.trim();
+  // Strip a single wrapping (...) or [...] around the entire value.
+  const wrap = trimmed.match(/^[\(\[]\s*(.+?)\s*[\)\]]$/);
+  if (wrap) trimmed = wrap[1].trim();
+
+  // Match-the-column (JEE): "(A) q (B) p, r (C) p, s (D) q, s"
+  //   → groups keyed by A/B/C/D, each value is the list of lowercase row keys.
+  const mcGroups = Array.from(
+    raw.matchAll(/\(\s*([A-Da-d])\s*\)\s*([^()]+?)(?=\s*\(\s*[A-Da-d]\s*\)|\s*$)/g),
+  );
+  if (mcGroups.length >= 2) {
+    const map: Record<string, string> = {};
+    for (const g of mcGroups) {
+      const key = g[1].toUpperCase();
+      const val = g[2]
+        .toUpperCase()
+        .split(/[,;\s]+/)
+        .map((s) => s.replace(/[^A-Z0-9]/g, ""))
+        .filter(Boolean)
+        .join(",");
+      if (val) map[key] = val;
+    }
+    if (Object.keys(map).length >= 2) {
+      return { type: "match-following", correctAnswer: null, correctMap: map };
+    }
+  }
+
   // Match-the-following: A-Q,B-S,C-P,D-R  (also A→Q, A:Q allowed)
   const mfPairs = trimmed.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
   if (mfPairs && mfPairs.length >= 2) {
@@ -260,8 +293,8 @@ const parseAnswer = (raw: string): {
       };
     }
   }
-  const cleaned = trimmed.replace(/[()\s]/g, "");
-  // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"
+  const cleaned = trimmed.replace(/[()\[\]\s]/g, "");
+  // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"  or  "A,C"
   if (/[,;|]/.test(cleaned) || /^[A-D]{2,4}$/i.test(cleaned)) {
     const tokens = cleaned.split(/[,;|]/).filter(Boolean);
     const idxs: number[] = [];
@@ -284,7 +317,7 @@ const parseAnswer = (raw: string): {
     const idx = /^[1-4]$/.test(ch) ? parseInt(ch, 10) - 1 : ch.toUpperCase().charCodeAt(0) - 65;
     return { type: "mcq-single", correctAnswer: idx };
   }
-  // Integer / numerical single value
+  // Integer / numerical single value (also handles "04.25", "25000")
   const num = cleaned.match(/^-?\d+(?:\.\d+)?$/);
   if (num) {
     const v = Number(num[0]);
@@ -293,17 +326,39 @@ const parseAnswer = (raw: string): {
   return { type: "mcq-single", correctAnswer: null };
 };
 
-// Map a "SECTION I (Single Correct Choice)" style heading to a question type.
+// Map a section heading to a question type. Supports both classic
+// "SECTION I (Single Correct Choice)" labels and JEE exam-paper bracket
+// headings like "[SINGLE CORRECT CHOICE TYPE]", "[MULTIPLE CORRECT CHOICE TYPE]",
+// "[MATCHING LIST TYPE]", "MATCH THE COLUMN", "PARAGRAPH TYPE",
+// "Integer answer Type", "Numerical answer Type", "[True and False TYPE]".
 const sectionType = (text: string): ParsedQuestionType | null => {
-  if (!/section\b/i.test(text)) return null;
   const t = text.toLowerCase();
+  const isSection =
+    /section\b/.test(t) ||
+    /^\s*\[.*type.*\]/.test(t) ||
+    /\btype\s*\]/.test(t) ||
+    /^\s*paragraph\s+type/.test(t) ||
+    /^\s*match\s+the\s+column/.test(t) ||
+    /^\s*\[?\s*matching\s+(list|type)/.test(t) ||
+    /\b(integer|numerical)\s+answer\s+type/.test(t) ||
+    /\btrue\s+(and|or|\/)\s+false/.test(t);
+  if (!isSection) return null;
+  if (/true\s+(and|or|\/)\s+false/.test(t)) return "mcq-single"; // synthesized later
+  if (/match.*column/.test(t)) return "match-following";
   if (/match.*following/.test(t)) return "match-following";
+  if (/matching\s+(list|type)/.test(t)) return "match-following";
   if (/multiple\s+correct/.test(t)) return "mcq-multi";
   if (/single\s+correct/.test(t)) return "mcq-single";
+  if (/reasoning|assertion|statement/.test(t)) return "mcq-single";
+  if (/paragraph|comprehension/.test(t)) return "mcq-single";
   if (/numerical/.test(t)) return "numerical";
   if (/integer/.test(t)) return "integer";
   return null;
 };
+
+// True/False section detector — kept separate so we can synthesize options.
+const isTrueFalseSection = (text: string): boolean =>
+  /true\s+(and|or|\/)\s+false/i.test(text);
 
 
 type Block =
@@ -399,9 +454,18 @@ type Buffer = {
   forcedType: ParsedQuestionType | null;
   // raw blocks captured so we can extract images per slot later
   optionBlocks: { key: string; html: string }[];
+  /** Shared paragraph/comprehension passage prepended to the stem. */
+  passage: string | null;
+  /** True when we should synthesize "True"/"False" options if none exist. */
+  synthesizeTrueFalse: boolean;
 };
 
-const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType | null): Buffer => ({
+const newBuffer = (
+  carryTopic?: string | null,
+  carrySection?: ParsedQuestionType | null,
+  carryPassage?: string | null,
+  carryTrueFalse?: boolean,
+): Buffer => ({
   number: null,
   stem: [],
   options: [],
@@ -412,6 +476,8 @@ const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType
   sectionType: carrySection ?? null,
   forcedType: null,
   optionBlocks: [],
+  passage: carryPassage ?? null,
+  synthesizeTrueFalse: !!carryTrueFalse,
 });
 
 
@@ -445,10 +511,25 @@ const flushBuffer = (
   const idPrefix = `q${number}`;
   const collected: DocxImage[] = [];
 
-  // 1) Stem
-  const rawStemHtml = buf.stem.join("<br/>");
+  // 1) Stem (prefix shared paragraph passage if present)
+  const stemParts: string[] = [];
+  if (buf.passage) {
+    stemParts.push(
+      `<div class="passage" style="background:hsl(var(--muted));padding:8px;border-radius:6px;margin-bottom:8px;"><b>Passage:</b><br/>${buf.passage}</div>`,
+    );
+  }
+  stemParts.push(buf.stem.join("<br/>"));
+  const rawStemHtml = stemParts.join("");
   const stemHtml = extractImages(rawStemHtml, "stem", collected, idPrefix);
   const stemText = stripTags(stemHtml).replace(/\s+/g, " ").trim();
+
+  // 1b) Synthesize True/False options for true-false sections.
+  if (buf.synthesizeTrueFalse && buf.options.length === 0) {
+    buf.options = [
+      { key: "A", html: "True" },
+      { key: "B", html: "False" },
+    ];
+  }
 
   // 2) Match table (if any) → matchLeft + options
   let matchLeft: ParsedMatchItem[] | undefined;
@@ -604,25 +685,45 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   let pendingTopic: string | null = null;
   let pendingType: ParsedQuestionType | null = null;
   let currentSection: ParsedQuestionType | null = null;
+  let currentTrueFalse = false;
+  let currentIsMatchSection = false;
+  let currentPassage: string | null = null;
+  let collectingPassage = false; // true between a Paragraph section header and its first Q.N
 
+  // Accept "1.", "1)", "Q.1", "Q. 35", "Q1."
+  const NUM_RE = /^\s*(?:q\s*\.?\s*)?(\d{1,3})\s*[.)]?\s*(.*)$/i;
   const startsNewQuestionAtAny = (text: string) =>
-    /^\s*\d{1,3}\s*[.)]\s*/.test(text);
+    /^\s*(?:q\s*\.?\s*)?\d{1,3}\s*[.)]\s*/i.test(text) ||
+    /^\s*q\s*\.?\s*\d{1,3}\b/i.test(text);
 
-  const isSectionHeader = (text: string) => /^\s*section\b/i.test(text);
+  const isSectionHeader = (text: string) => {
+    const t = text.trim();
+    if (/^section\b/i.test(t)) return true;
+    if (/^\[.*\]\s*$/.test(t) && /type|paragraph|matching|reasoning|true.*false|integer|numerical|single|multiple/i.test(t)) return true;
+    if (/^match\s+the\s+column/i.test(t)) return true;
+    if (/^paragraph\s+type/i.test(t)) return true;
+    if (/\b(integer|numerical)\s+answer\s+type/i.test(t)) return true;
+    if (/^\(?\s*(single|multiple)\s+correct\s+choice\s+type\s*\)?$/i.test(t)) return true;
+    return false;
+  };
 
   const tryTopic = (text: string) => extractTopic(text);
   const tryType = (text: string) => extractTypeTag(text);
   const tryAnswer = (text: string) => extractAnswerLine(text);
   const trySolution = (text: string) => {
-    const m = text.match(/^\s*solution\s*[:\-–]\s*(.*)$/i);
-    return m ? m[1] : null;
+    // "Solution:", "Sol.", "Sol:", "Sol —", "Sol"
+    const m = text.match(/^\s*sol(?:ution)?\s*[.:\-–]?\s*(.*)$/i);
+    if (!m) return null;
+    // Don't accidentally swallow a "Sole" or "Solid" etc — require word boundary
+    if (!/^\s*sol(?:ution)?\b/i.test(text)) return null;
+    return m[1];
   };
 
   const isOptionLine = (text: string) =>
     /^\s*\(\s*[A-D1-4]\s*\)\s+\S/.test(text);
 
   const looksLikeNumberOnly = (text: string) =>
-    /^\s*\d{1,3}\s*[.)]\s*$/.test(text);
+    /^\s*(?:q\s*\.?\s*)?\d{1,3}\s*[.)]?\s*$/i.test(text.trim()) && /\d/.test(text);
 
   let numericOptionHits = 0;
   let alphaOptionHits = 0;
@@ -637,7 +738,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     ordinal += 1;
     tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
-    buf = newBuffer(null, currentSection);
+    buf = newBuffer(null, currentSection, currentPassage, currentTrueFalse);
     if (pendingTopic) {
       buf.topic = pendingTopic;
       pendingTopic = null;
@@ -652,16 +753,18 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     const b = blocks[i];
 
     if (b.kind === "table") {
-      // Match-the-following table — only meaningful inside a question.
-      if (!seenFirstNumber) continue;
+      // Match-the-following table. Accept either:
+      //   - explicit "Column A | Column B" header, OR
+      //   - any 2-column table seen INSIDE a matching/match-column section.
+      if (!seenFirstNumber && !collectingPassage) continue;
       const headerCells = Array.from(b.el.querySelectorAll("tr")[0]?.children ?? []).map(
         (c) => (c.textContent || "").trim().toLowerCase(),
       );
-      if (
+      const hasExplicitHeader =
         headerCells.length >= 2 &&
         headerCells[0].includes("column a") &&
-        headerCells[1].includes("column b")
-      ) {
+        headerCells[1].includes("column b");
+      if (hasExplicitHeader || currentIsMatchSection) {
         buf.matchTable = b.el;
       }
       continue;
@@ -673,9 +776,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     // SECTION heading → set current section type (header wins over auto-detect)
     if (isSectionHeader(text)) {
       const st = sectionType(text);
+      currentTrueFalse = isTrueFalseSection(text);
+      currentIsMatchSection = /match|matching/i.test(text);
+      // Reset passage collection mode whenever a new section starts.
+      collectingPassage = /paragraph|comprehension/i.test(text);
+      currentPassage = collectingPassage ? "" : null;
       if (st) {
         currentSection = st;
-        if (!buf.answer && buf.number == null) buf.sectionType = st;
+        if (!buf.answer && buf.number == null) {
+          buf.sectionType = st;
+          buf.synthesizeTrueFalse = currentTrueFalse;
+        }
       }
       continue;
     }
@@ -685,9 +796,6 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       const t = tryTopic(text) ?? text.replace(/^q-?topic\s*[:\-–]?\s*/i, "");
       const topic = t.trim();
       if (!topic) continue;
-      // Topic always belongs to the NEXT question (or current one if it has no
-      // number yet). Once a question has answer/options, a new Topic line marks
-      // the start of the next question's metadata.
       if (buf.number == null) {
         buf.topic = topic;
       } else {
@@ -695,7 +803,6 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       }
       continue;
     }
-
 
     // Type tag (Type: SCQ | MCQ | Integer | Numerical | Decimal | Match)
     const typeTag = tryType(text);
@@ -708,14 +815,18 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // Question number marker (styled "q-number" paragraph OR "N." line OR "N. rest...")
+    // Question number marker
     const isNumberLine = style === "q-number" || looksLikeNumberOnly(text) ||
       (startsNewQuestionAtAny(text) && !isOptionLine(text));
     if (isNumberLine) {
-      // Flush prior if it had content
+      // Once we hit the first Q.N inside a paragraph section, freeze the passage.
+      if (collectingPassage) collectingPassage = false;
+
       if (seenFirstNumber) flushAndReset();
       seenFirstNumber = true;
       buf.sectionType = currentSection;
+      buf.passage = currentPassage || null;
+      buf.synthesizeTrueFalse = currentTrueFalse;
       if (pendingTopic) {
         buf.topic = pendingTopic;
         pendingTopic = null;
@@ -724,12 +835,12 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
         buf.forcedType = pendingType;
         pendingType = null;
       }
-      const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
+      const m = text.match(NUM_RE);
       if (m) {
         buf.number = parseInt(m[1], 10);
-        const rest = m[2].trim();
+        const rest = (m[2] || "").trim();
         if (rest) {
-          // Strip prefix from html
+          // Strip prefix from html using the underlying text positions.
           const tmp = document.createElement("div");
           tmp.innerHTML = html;
           const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT);
@@ -748,15 +859,19 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
           }
           buf.stem.push(tmp.innerHTML);
         }
-      } else {
-        const numOnly = text.match(/^\s*(\d{1,3})/);
-        if (numOnly) buf.number = parseInt(numOnly[1], 10);
       }
       continue;
     }
 
-    // Anything before the very first question number is decorative — skip.
-    if (!seenFirstNumber) continue;
+    // Before the first question number:
+    //   - if we're inside a Paragraph section, accumulate as shared passage
+    //   - otherwise skip decorative cover text
+    if (!seenFirstNumber) {
+      if (collectingPassage) {
+        currentPassage = (currentPassage ? currentPassage + "<br/>" : "") + html;
+      }
+      continue;
+    }
 
     // Answer line
     if (style === "q-answer" || tryAnswer(text)) {
@@ -765,10 +880,9 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // Solution paragraph — requires explicit "Solution:" prefix (or Q-Solution style)
+    // Solution paragraph — accepts "Solution:" or "Sol." / "Sol:" prefix
     const solBody = trySolution(text);
     if (style === "q-solution" || solBody != null) {
-      // Strip "Solution:" prefix from the html so the body keeps formatting/math
       if (solBody != null) {
         const tmp = document.createElement("div");
         tmp.innerHTML = html;
@@ -793,8 +907,15 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // After the answer line, ignore non-Solution paragraphs (decorative footer text).
-    if (buf.answer) continue;
+    // If we already have an answer, capture additional paragraphs as solution
+    // continuation (the JEE format has Sol. followed by many equations/images
+    // without re-stating "Sol." on each line).
+    if (buf.answer) {
+      if (buf.solution.length > 0 || /<img\b/i.test(html)) {
+        buf.solution.push(html);
+      }
+      continue;
+    }
 
     // Option line
     if (style === "q-option" || isOptionLine(text)) {
