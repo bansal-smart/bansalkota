@@ -5686,6 +5686,10 @@ export type Database = {
         Args: { _center_id: string; _user_id: string }
         Returns: boolean
       }
+      is_centre_admin_of: {
+        Args: { _centre_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_centre_staff: {
         Args: { _centre_id: string; _user_id: string }
         Returns: boolean
