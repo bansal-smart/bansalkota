@@ -117,7 +117,7 @@ const AdminAdvantagesPage = () => {
         <div className="grid gap-4 sm:grid-cols-2">
           {items.map((p) => (
             <div key={p.id} className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
-              <img src={p.image_url} alt={p.alt_text ?? ""} className="w-full aspect-[16/9] object-cover bg-muted" />
+              <img src={p.image_url} alt={p.alt_text ?? ""} className="w-full aspect-square object-cover bg-muted" />
               <div className="p-3 space-y-2">
                 <p className="text-sm font-bold">{p.title || "(no title)"}</p>
                 <p className="text-xs text-muted-foreground truncate">→ {p.link_url}</p>
@@ -147,7 +147,7 @@ const AdminAdvantagesPage = () => {
             <div className="p-5 space-y-4">
               <div>
                 <label className="text-xs font-bold text-muted-foreground">Tile image</label>
-                <AspectRatioHint ratio="16:9 (landscape)" size="1280×720" note="advantage card on homepage" />
+                <AspectRatioHint ratio="1:1 (square)" size="1024×1024" note="rendered as a square tile on the homepage" />
                 <div className="mt-1 flex items-center gap-3">
                   {form.image_url ? (
                     <img src={form.image_url} alt="" className="h-24 w-40 rounded-lg object-cover border border-border" />
