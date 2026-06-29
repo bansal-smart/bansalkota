@@ -985,6 +985,7 @@ const CreateTestPage = () => {
 
         <div>
           <label className={labelCls}>Instructions Image (optional)</label>
+          <AspectRatioHint ratio="Free / portrait A4 (≈ 1:1.41)" note="full instructions sheet, shown at original ratio" />
           <p className="text-xs text-muted-foreground mb-2">
             Shown to students on the pre-test instructions page and inside the in-test "View Instructions" popup. Recommended: a scanned/printed exam instructions sheet. Max 5MB.
           </p>
