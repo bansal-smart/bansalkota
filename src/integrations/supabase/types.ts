@@ -920,10 +920,96 @@ export type Database = {
           },
         ]
       }
+      centre_role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_export: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "centre_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centre_roles: {
+        Row: {
+          centre_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          centre_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          centre_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_roles_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centre_staff: {
         Row: {
           centre_id: string
           created_at: string
+          custom_role_id: string | null
           id: string
           role: string
           updated_at: string
@@ -932,6 +1018,7 @@ export type Database = {
         Insert: {
           centre_id: string
           created_at?: string
+          custom_role_id?: string | null
           id?: string
           role?: string
           updated_at?: string
@@ -940,6 +1027,7 @@ export type Database = {
         Update: {
           centre_id?: string
           created_at?: string
+          custom_role_id?: string | null
           id?: string
           role?: string
           updated_at?: string
@@ -951,6 +1039,13 @@ export type Database = {
             columns: ["centre_id"]
             isOneToOne: false
             referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "centre_staff_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "centre_roles"
             referencedColumns: ["id"]
           },
         ]
