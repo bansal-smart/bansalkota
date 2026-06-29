@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
-  parseDocxQuestions,
+  parseDocxQuestionsRemote,
   type ParsedDocxQuestion,
   type DocxImage,
 } from "@/lib/docxImport/parseDocx";
