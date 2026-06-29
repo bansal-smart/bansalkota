@@ -118,6 +118,7 @@ const CenterLayout = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { primaryCenter, loading } = useCenterAdmin();
+  const { isAdmin, can } = useCenterPermissions();
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -134,9 +135,17 @@ const CenterLayout = () => {
     ? `${primaryCenter.city}${primaryCenter.area && primaryCenter.area !== primaryCenter.city ? " — " + primaryCenter.area : ""}`
     : loading ? "Loading…" : "No centre assigned";
 
+  const visibleNav = useMemo(() => {
+    return nav.filter((item) => {
+      if (item.moduleKey === "__admin_only__") return isAdmin;
+      if (isAdmin) return true;
+      return can(item.moduleKey, "view");
+    });
+  }, [isAdmin, can]);
+
   return (
     <div className="flex min-h-screen bg-background">
-      <CenterSidebar email={email} initials={initials} avatarUrl={avatarUrl} centerLabel={centerLabel} onLogout={handleLogout} />
+      <CenterSidebar email={email} initials={initials} avatarUrl={avatarUrl} centerLabel={centerLabel} onLogout={handleLogout} items={visibleNav} />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
           <div className="flex items-center gap-3">
