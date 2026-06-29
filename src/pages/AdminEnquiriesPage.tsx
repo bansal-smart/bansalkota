@@ -90,15 +90,21 @@ const AdminEnquiriesPage = () => {
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (sourceFilter !== "all" && r.source !== sourceFilter) return false;
+      if (centreFilter !== "all") {
+        if (centreFilter === "__none__") {
+          if (r.centre_id) return false;
+        } else if (r.centre_id !== centreFilter) return false;
+      }
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q) ||
+        (r.email ?? "").toLowerCase().includes(q) ||
         (r.phone ?? "").toLowerCase().includes(q) ||
-        r.message.toLowerCase().includes(q)
+        r.message.toLowerCase().includes(q) ||
+        (r.centre?.city ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, statusFilter, sourceFilter]);
+  }, [rows, search, statusFilter, sourceFilter, centreFilter]);
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
   const stats = useMemo(() => {
