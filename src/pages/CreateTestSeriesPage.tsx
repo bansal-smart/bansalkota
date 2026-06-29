@@ -152,7 +152,8 @@ const CreateTestSeriesPage = () => {
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Test Series" : "Create New Test Series"}</h1>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
-        <h2 className="text-sm font-bold text-foreground">Cover Image <span className="text-xs font-normal text-muted-foreground">(4:3 recommended)</span></h2>
+        <h2 className="text-sm font-bold text-foreground">Cover Image</h2>
+        <AspectRatioHint ratio="4:3" size="1200×900" note="test series card cover" />
         {existingThumbnail && !thumbnailFile && (
           <div className="w-48 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
             <img src={existingThumbnail} alt="Current thumbnail" className="h-full w-full object-cover" />
