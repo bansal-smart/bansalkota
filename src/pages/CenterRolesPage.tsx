@@ -200,6 +200,9 @@ const CenterRolesPage = () => {
             ))}
           </ul>
         )}
+      </div>
+
+
 
 
       {/* Create login for a custom role */}
