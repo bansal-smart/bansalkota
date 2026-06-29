@@ -28,7 +28,11 @@ type Enquiry = {
   created_at: string;
   category: string | null;
   class_level: string | null;
+  centre_id: string | null;
+  centre?: { id: string; city: string; area: string | null; slug: string } | null;
 };
+
+type CentreOpt = { id: string; city: string; area: string | null; slug: string };
 
 
 const statusStyle: Record<string, string> = {
