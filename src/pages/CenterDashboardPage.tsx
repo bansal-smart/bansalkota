@@ -14,7 +14,8 @@ type Counts = {
   openSupport: number;
 };
 
-const { isAdmin, can } = useCenterPermissions();
+const CenterDashboardPage = () => {
+  const { isAdmin, can } = useCenterPermissions();
   const { primaryCenterId, primaryCenter, loading } = useCenterAdmin();
   const [counts, setCounts] = useState<Counts>({
     banners: 0,
