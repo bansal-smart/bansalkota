@@ -1044,6 +1044,9 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
 
   // Flush final question
   if (seenFirstNumber) {
+    if (currentIsReasoning && buf.options.length === 0 && currentStandardOptions.length > 0) {
+      buf.options = currentStandardOptions.map((o) => ({ ...o }));
+    }
     ordinal += 1;
     tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
