@@ -685,25 +685,45 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   let pendingTopic: string | null = null;
   let pendingType: ParsedQuestionType | null = null;
   let currentSection: ParsedQuestionType | null = null;
+  let currentTrueFalse = false;
+  let currentIsMatchSection = false;
+  let currentPassage: string | null = null;
+  let collectingPassage = false; // true between a Paragraph section header and its first Q.N
 
+  // Accept "1.", "1)", "Q.1", "Q. 35", "Q1."
+  const NUM_RE = /^\s*(?:q\s*\.?\s*)?(\d{1,3})\s*[.)]?\s*(.*)$/i;
   const startsNewQuestionAtAny = (text: string) =>
-    /^\s*\d{1,3}\s*[.)]\s*/.test(text);
+    /^\s*(?:q\s*\.?\s*)?\d{1,3}\s*[.)]\s*/i.test(text) ||
+    /^\s*q\s*\.?\s*\d{1,3}\b/i.test(text);
 
-  const isSectionHeader = (text: string) => /^\s*section\b/i.test(text);
+  const isSectionHeader = (text: string) => {
+    const t = text.trim();
+    if (/^section\b/i.test(t)) return true;
+    if (/^\[.*\]\s*$/.test(t) && /type|paragraph|matching|reasoning|true.*false|integer|numerical|single|multiple/i.test(t)) return true;
+    if (/^match\s+the\s+column/i.test(t)) return true;
+    if (/^paragraph\s+type/i.test(t)) return true;
+    if (/\b(integer|numerical)\s+answer\s+type/i.test(t)) return true;
+    if (/^\(?\s*(single|multiple)\s+correct\s+choice\s+type\s*\)?$/i.test(t)) return true;
+    return false;
+  };
 
   const tryTopic = (text: string) => extractTopic(text);
   const tryType = (text: string) => extractTypeTag(text);
   const tryAnswer = (text: string) => extractAnswerLine(text);
   const trySolution = (text: string) => {
-    const m = text.match(/^\s*solution\s*[:\-–]\s*(.*)$/i);
-    return m ? m[1] : null;
+    // "Solution:", "Sol.", "Sol:", "Sol —", "Sol"
+    const m = text.match(/^\s*sol(?:ution)?\s*[.:\-–]?\s*(.*)$/i);
+    if (!m) return null;
+    // Don't accidentally swallow a "Sole" or "Solid" etc — require word boundary
+    if (!/^\s*sol(?:ution)?\b/i.test(text)) return null;
+    return m[1];
   };
 
   const isOptionLine = (text: string) =>
     /^\s*\(\s*[A-D1-4]\s*\)\s+\S/.test(text);
 
   const looksLikeNumberOnly = (text: string) =>
-    /^\s*\d{1,3}\s*[.)]\s*$/.test(text);
+    /^\s*(?:q\s*\.?\s*)?\d{1,3}\s*[.)]?\s*$/i.test(text.trim()) && /\d/.test(text);
 
   let numericOptionHits = 0;
   let alphaOptionHits = 0;
@@ -718,7 +738,7 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     ordinal += 1;
     tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
-    buf = newBuffer(null, currentSection);
+    buf = newBuffer(null, currentSection, currentPassage, currentTrueFalse);
     if (pendingTopic) {
       buf.topic = pendingTopic;
       pendingTopic = null;
@@ -733,16 +753,18 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     const b = blocks[i];
 
     if (b.kind === "table") {
-      // Match-the-following table — only meaningful inside a question.
-      if (!seenFirstNumber) continue;
+      // Match-the-following table. Accept either:
+      //   - explicit "Column A | Column B" header, OR
+      //   - any 2-column table seen INSIDE a matching/match-column section.
+      if (!seenFirstNumber && !collectingPassage) continue;
       const headerCells = Array.from(b.el.querySelectorAll("tr")[0]?.children ?? []).map(
         (c) => (c.textContent || "").trim().toLowerCase(),
       );
-      if (
+      const hasExplicitHeader =
         headerCells.length >= 2 &&
         headerCells[0].includes("column a") &&
-        headerCells[1].includes("column b")
-      ) {
+        headerCells[1].includes("column b");
+      if (hasExplicitHeader || currentIsMatchSection) {
         buf.matchTable = b.el;
       }
       continue;
@@ -754,9 +776,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     // SECTION heading → set current section type (header wins over auto-detect)
     if (isSectionHeader(text)) {
       const st = sectionType(text);
+      currentTrueFalse = isTrueFalseSection(text);
+      currentIsMatchSection = /match|matching/i.test(text);
+      // Reset passage collection mode whenever a new section starts.
+      collectingPassage = /paragraph|comprehension/i.test(text);
+      currentPassage = collectingPassage ? "" : null;
       if (st) {
         currentSection = st;
-        if (!buf.answer && buf.number == null) buf.sectionType = st;
+        if (!buf.answer && buf.number == null) {
+          buf.sectionType = st;
+          buf.synthesizeTrueFalse = currentTrueFalse;
+        }
       }
       continue;
     }
@@ -766,9 +796,6 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       const t = tryTopic(text) ?? text.replace(/^q-?topic\s*[:\-–]?\s*/i, "");
       const topic = t.trim();
       if (!topic) continue;
-      // Topic always belongs to the NEXT question (or current one if it has no
-      // number yet). Once a question has answer/options, a new Topic line marks
-      // the start of the next question's metadata.
       if (buf.number == null) {
         buf.topic = topic;
       } else {
@@ -776,7 +803,6 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       }
       continue;
     }
-
 
     // Type tag (Type: SCQ | MCQ | Integer | Numerical | Decimal | Match)
     const typeTag = tryType(text);
@@ -789,14 +815,18 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // Question number marker (styled "q-number" paragraph OR "N." line OR "N. rest...")
+    // Question number marker
     const isNumberLine = style === "q-number" || looksLikeNumberOnly(text) ||
       (startsNewQuestionAtAny(text) && !isOptionLine(text));
     if (isNumberLine) {
-      // Flush prior if it had content
+      // Once we hit the first Q.N inside a paragraph section, freeze the passage.
+      if (collectingPassage) collectingPassage = false;
+
       if (seenFirstNumber) flushAndReset();
       seenFirstNumber = true;
       buf.sectionType = currentSection;
+      buf.passage = currentPassage || null;
+      buf.synthesizeTrueFalse = currentTrueFalse;
       if (pendingTopic) {
         buf.topic = pendingTopic;
         pendingTopic = null;
@@ -805,12 +835,12 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
         buf.forcedType = pendingType;
         pendingType = null;
       }
-      const m = text.match(/^\s*(\d{1,3})\s*[.)]\s*(.*)$/);
+      const m = text.match(NUM_RE);
       if (m) {
         buf.number = parseInt(m[1], 10);
-        const rest = m[2].trim();
+        const rest = (m[2] || "").trim();
         if (rest) {
-          // Strip prefix from html
+          // Strip prefix from html using the underlying text positions.
           const tmp = document.createElement("div");
           tmp.innerHTML = html;
           const walker = document.createTreeWalker(tmp, NodeFilter.SHOW_TEXT);
@@ -829,15 +859,19 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
           }
           buf.stem.push(tmp.innerHTML);
         }
-      } else {
-        const numOnly = text.match(/^\s*(\d{1,3})/);
-        if (numOnly) buf.number = parseInt(numOnly[1], 10);
       }
       continue;
     }
 
-    // Anything before the very first question number is decorative — skip.
-    if (!seenFirstNumber) continue;
+    // Before the first question number:
+    //   - if we're inside a Paragraph section, accumulate as shared passage
+    //   - otherwise skip decorative cover text
+    if (!seenFirstNumber) {
+      if (collectingPassage) {
+        currentPassage = (currentPassage ? currentPassage + "<br/>" : "") + html;
+      }
+      continue;
+    }
 
     // Answer line
     if (style === "q-answer" || tryAnswer(text)) {
@@ -846,10 +880,9 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // Solution paragraph — requires explicit "Solution:" prefix (or Q-Solution style)
+    // Solution paragraph — accepts "Solution:" or "Sol." / "Sol:" prefix
     const solBody = trySolution(text);
     if (style === "q-solution" || solBody != null) {
-      // Strip "Solution:" prefix from the html so the body keeps formatting/math
       if (solBody != null) {
         const tmp = document.createElement("div");
         tmp.innerHTML = html;
@@ -874,8 +907,15 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       continue;
     }
 
-    // After the answer line, ignore non-Solution paragraphs (decorative footer text).
-    if (buf.answer) continue;
+    // If we already have an answer, capture additional paragraphs as solution
+    // continuation (the JEE format has Sol. followed by many equations/images
+    // without re-stating "Sol." on each line).
+    if (buf.answer) {
+      if (buf.solution.length > 0 || /<img\b/i.test(html)) {
+        buf.solution.push(html);
+      }
+      continue;
+    }
 
     // Option line
     if (style === "q-option" || isOptionLine(text)) {
