@@ -3,6 +3,7 @@ import { BookOpen, X, Loader2, Send, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sendConfirmation } from "@/lib/sendConfirmation";
+import { isValidIndianPhone } from "@/lib/validators";
 
 type Course = {
   id: string;
@@ -192,6 +193,7 @@ const CourseEnquiryModal = ({
 
   const submit = async () => {
     if (!form.name.trim() || !form.phone.trim()) return toast.error("Name and phone are required");
+    if (!isValidIndianPhone(form.phone)) return toast.error("Enter a valid 10-digit mobile number");
     setSubmitting(true);
     const { error } = await (supabase as any).from("centre_course_enquiries").insert({
       centre_id: centerId,
@@ -239,10 +241,11 @@ const CourseEnquiryModal = ({
         <input
           type="tel"
           inputMode="numeric"
-          pattern="[0-9]*"
+          pattern="[6-9][0-9]{9}"
+          maxLength={10}
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
-          placeholder="Phone"
+          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+          placeholder="10-digit mobile"
           className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
         />
         <input
@@ -298,6 +301,7 @@ export const AdmissionEnquiryModal = ({
 
   const submit = async () => {
     if (!form.name.trim() || !form.phone.trim()) return toast.error("Name and phone are required");
+    if (!isValidIndianPhone(form.phone)) return toast.error("Enter a valid 10-digit mobile number");
     if (!form.enquiry_type) return toast.error("Please choose an enquiry type");
     setSubmitting(true);
     const { error } = await (supabase as any).from("enquiries").insert({
@@ -335,10 +339,11 @@ export const AdmissionEnquiryModal = ({
         <input
           type="tel"
           inputMode="numeric"
-          pattern="[0-9]*"
+          pattern="[6-9][0-9]{9}"
+          maxLength={10}
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })}
-          placeholder="Phone number"
+          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+          placeholder="10-digit mobile"
           className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm"
         />
         <select

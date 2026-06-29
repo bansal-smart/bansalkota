@@ -35,11 +35,13 @@ const schema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone"),
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
   parent_phone: z
     .string()
     .trim()
-    .regex(/^\+?[0-9\s-]{7,15}$/, "Enter a valid phone")
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^$|^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"))
     .optional(),
   city: z.string().trim().min(1, "Enter city").max(80),
   state: z.string().trim().min(1, "Enter state").max(80),
@@ -166,7 +168,16 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             </div>
             <div>
               <Label htmlFor="ce-phone">Phone *</Label>
-              <Input id="ce-phone" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+              <Input
+                id="ce-phone"
+                type="tel"
+                inputMode="numeric"
+                pattern="[6-9][0-9]{9}"
+                maxLength={10}
+                placeholder="10-digit mobile"
+                value={form.phone}
+                onChange={(e) => update("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+              />
             </div>
           </div>
           <div>
@@ -175,7 +186,16 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           </div>
           <div>
             <Label htmlFor="ce-parent-phone">Parent's phone</Label>
-            <Input id="ce-parent-phone" value={form.parent_phone} onChange={(e) => update("parent_phone", e.target.value)} placeholder="Parent's phone number" />
+            <Input
+              id="ce-parent-phone"
+              type="tel"
+              inputMode="numeric"
+              pattern="[6-9][0-9]{9}"
+              maxLength={10}
+              placeholder="10-digit mobile (optional)"
+              value={form.parent_phone}
+              onChange={(e) => update("parent_phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+            />
           </div>
           <div>
             <Label>Preferred centre</Label>

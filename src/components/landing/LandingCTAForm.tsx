@@ -6,6 +6,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import { toast } from "sonner";
 import { postSubmission } from "@/content/postSubmissionMessages";
 import { sendConfirmation } from "@/lib/sendConfirmation";
+import { isValidIndianPhone, normalisePhone } from "@/lib/validators";
 
 import { CLASS_LEVELS } from "@/lib/constants";
 
@@ -17,12 +18,20 @@ const LandingCTAForm = () => {
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "", classLevel: "Class 11", exam: "JEE", message: "" });
 
-  const update = (k: keyof typeof form) => (e: any) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const update = (k: keyof typeof form) => (e: any) => {
+    const raw = e.target.value;
+    const value = k === "phone" ? normalisePhone(raw).slice(0, 10) : raw;
+    setForm((p) => ({ ...p, [k]: value }));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.email) {
       toast.error("Please fill name, phone and email");
+      return;
+    }
+    if (!isValidIndianPhone(form.phone)) {
+      toast.error("Enter a valid 10-digit mobile number");
       return;
     }
     setSubmitting(true);
@@ -98,7 +107,7 @@ const LandingCTAForm = () => {
             <form onSubmit={submit} className="space-y-3">
               <h3 className="font-display text-lg font-bold mb-2">Book your free 15-min call</h3>
               <Field icon={<User className="h-4 w-4" />} placeholder="Student / Parent name" value={form.name} onChange={update("name")} />
-              <Field icon={<Phone className="h-4 w-4" />} placeholder="Phone (WhatsApp)" type="tel" value={form.phone} onChange={update("phone")} />
+              <Field icon={<Phone className="h-4 w-4" />} placeholder="10-digit mobile (WhatsApp)" type="tel" inputMode="numeric" pattern="[6-9][0-9]{9}" maxLength={10} value={form.phone} onChange={update("phone")} />
               <Field icon={<Mail className="h-4 w-4" />} placeholder="Email address" type="email" value={form.email} onChange={update("email")} />
               <div className="grid grid-cols-2 gap-3">
                 <Select icon={<GraduationCap className="h-4 w-4" />} value={form.classLevel} onChange={update("classLevel")} options={classes} />

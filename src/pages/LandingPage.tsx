@@ -42,6 +42,7 @@ import LandingCTAForm from "@/components/landing/LandingCTAForm";
 import WelcomeEnquiryPopup from "@/components/landing/WelcomeEnquiryPopup";
 import { useLandingHeroBanners } from "@/hooks/useLandingHeroBanners";
 import HeroBannerCarousel from "@/components/landing/HeroBannerCarousel";
+import AdvantagesGrid from "@/components/landing/AdvantagesGrid";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
 
 const iconMap: Record<string, any> = {
@@ -486,24 +487,10 @@ const LandingPage = () => {
               Built for Every Learner's Journey
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-            <Link to="/mentorship" className="block rounded-3xl overflow-hidden shadow-lg hover-lift bg-white">
-              <img
-                src={featureMentorship}
-                alt="Personal Mentorship — One-to-one attention, stronger concepts, better results"
-                className="w-full h-auto object-cover"
-                loading="lazy"
-              />
-            </Link>
-            <Link to="/dashboard" className="block rounded-3xl overflow-hidden shadow-lg hover-lift bg-white">
-              <img
-                src={featureTrackProgress}
-                alt="Track Progress. Improve Faster — Real-time academic insights"
-                className="w-full h-auto object-cover"
-                loading="lazy"
-              />
-            </Link>
-          </div>
+          <AdvantagesGrid fallback={[
+            { image_url: featureMentorship, link_url: "#lead-form", alt_text: "Personal Mentorship — One-to-one attention, stronger concepts, better results" },
+            { image_url: featureTrackProgress, link_url: "/dashboard", alt_text: "Track Progress. Improve Faster — Real-time academic insights" },
+          ]} />
         </div>
       </section>
 

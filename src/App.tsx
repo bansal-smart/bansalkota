@@ -135,6 +135,10 @@ const AdminOrdersPage = lazy(() => import("./pages/AdminOrdersPage"));
 const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage"));
 const AdminStatsPage = lazy(() => import("./pages/AdminStatsPage"));
 const AdminLeadershipPage = lazy(() => import("./pages/AdminLeadershipPage"));
+const AdminAdvantagesPage = lazy(() => import("./pages/AdminAdvantagesPage"));
+const AdminBlogsPage = lazy(() => import("./pages/AdminBlogsPage"));
+const BlogsListPage = lazy(() => import("./pages/BlogsListPage"));
+const BlogDetailPage = lazy(() => import("./pages/BlogDetailPage"));
 const AdminCenterSupportPage = lazy(() => import("./pages/AdminCenterSupportPage"));
 const CenterDashboardPage = lazy(() => import("./pages/CenterDashboardPage"));
 const CenterOnlineCoursesPage = lazy(() => import("./pages/CenterOnlineCoursesPage"));
@@ -385,6 +389,10 @@ const App = () => (
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
+              <Route path="/admin/advantages" element={<AdminAdvantagesPage />} />
+              <Route path="/admin/blogs" element={<AdminBlogsPage />} />
+              <Route path="/blog" element={<BlogsListPage />} />
+              <Route path="/blog/:slug" element={<BlogDetailPage />} />
               
               {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
               <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />

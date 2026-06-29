@@ -38,12 +38,7 @@ const LEADER_PROFILE_PHOTO: Record<string, string> = {
   "mahima-bansal": mahimaProfilePhoto.url,
 };
 
-const HONORIFIC: Record<string, string> = {
-  "vk-bansal": "Sir",
-  "sameer-bansal": "Sir",
-  "mahima-bansal": "Ma'am",
-  "neelam-bansal": "Ma'am",
-};
+// Honorific (Sir / Ma'am) is now stored on leadership_profiles.honorific and managed from admin panel.
 
 const SECTION = "py-16 md:py-24";
 const CONTAINER = "container mx-auto px-4 sm:px-6 lg:px-8";
@@ -78,7 +73,7 @@ export default function LeadershipDetailPage() {
   const nameParts = profile.name.split(" ");
   const firstName = nameParts.slice(0, -1).join(" ");
   const lastName = nameParts[nameParts.length - 1];
-  const honorific = HONORIFIC[slug] ?? "";
+  const honorific = ((profile as { honorific?: string }).honorific ?? "").trim();
   const displayFirst = honorific ? `${firstName || profile.name} ${honorific}` : (firstName || profile.name);
 
   return (
@@ -124,22 +119,15 @@ export default function LeadershipDetailPage() {
               className="font-display font-extrabold text-white leading-[1.05] tracking-tight whitespace-nowrap"
               style={{ fontSize: "clamp(1.75rem, 5.2vw, 4.5rem)" }}
             >
-              {slug === "vk-bansal" ? (
-                <>
-                  <span className="text-bansal-orange">Bansal</span>{" "}
-                  <span className="text-white">Sir</span>
-                </>
-              ) : (
-                <>
-              {firstName && <span className="text-white">{firstName} </span>}
-                  <span className="text-bansal-orange">{lastName}</span>
-                  {honorific && (
-                    <span className="ml-3 text-white/85 font-bold align-baseline">
-                      {honorific}
-                    </span>
-                  )}
-                </>
-              )}
+              <>
+                {firstName && <span className="text-white">{firstName} </span>}
+                <span className="text-bansal-orange">{lastName}</span>
+                {honorific && (
+                  <span className="ml-3 text-white/85 font-bold align-baseline">
+                    {honorific}
+                  </span>
+                )}
+              </>
             </h1>
             {profile.headline && (
               <p className="mt-6 text-base md:text-lg text-white/85 font-medium leading-relaxed">
@@ -195,7 +183,7 @@ export default function LeadershipDetailPage() {
 
             {/* Text */}
             <div className="md:col-span-7">
-              <Eyebrow>About {slug === "vk-bansal" ? "Bansal Sir" : slug === "sameer-bansal" ? "Sameer Bansal Sir" : slug === "neelam-bansal" ? "Neelam Bansal Ma'am" : slug === "mahima-bansal" ? "Mahima Bansal Ma'am" : displayFirst}</Eyebrow>
+              <Eyebrow>About {displayFirst} {lastName}</Eyebrow>
               {profile.pull_quote && (
                 <blockquote className="relative font-display italic text-xl md:text-3xl font-semibold text-bansal-blue leading-[1.25] tracking-tight mb-6">
                   <Quote

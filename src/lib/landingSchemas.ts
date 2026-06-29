@@ -5,9 +5,8 @@ export const leadFormSchema = z.object({
   phone: z
     .string()
     .trim()
-    .min(6, "Enter a valid phone")
-    .max(20)
-    .regex(/^[+\d\s-]+$/, "Digits, spaces, + and - only"),
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
   email: z
     .string()
     .trim()
