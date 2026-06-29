@@ -53,7 +53,7 @@ const labelStyle: React.CSSProperties = {
   fontFamily: 'Arial, sans-serif',
 }
 
-const TeacherCredentialsEmail = ({ name, email, tempPassword, loginUrl = 'https://arke.pro/login' }: Props) => (
+const TeacherCredentialsEmail = ({ name, email, tempPassword, loginUrl = 'https://bansalclasses.com/login' }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>Your {SITE_NAME} teacher account is ready</Preview>
@@ -104,6 +104,6 @@ export const template = {
     name: 'Garima Kanwar',
     email: 'teacher@example.com',
     tempPassword: 'TempPass123!',
-    loginUrl: 'https://arke.pro/login',
+    loginUrl: 'https://bansalclasses.com/login',
   },
 } satisfies TemplateEntry

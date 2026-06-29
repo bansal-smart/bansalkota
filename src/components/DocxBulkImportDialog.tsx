@@ -137,7 +137,7 @@ const DocxBulkImportDialog = ({
       const result = await parseDocxQuestionsRemote(file, supabase);
       if (result.questions.length === 0) {
         setErrorMsg(
-          "No questions detected. Use the Arke template: numbered questions, (1)–(4) options, and an 'Answer: ...' line under each.",
+          "No questions detected. Use the Bansal template: numbered questions, (1)–(4) options, and an 'Answer: ...' line under each.",
         );
         setStep("upload");
         return;
@@ -472,7 +472,7 @@ const DocxBulkImportDialog = ({
               </h2>
               <p className="text-xs text-muted-foreground">
                 {step === "upload" &&
-                  "Arke format — parses numbered questions with (1)–(4) options, Answer line, MCQ/Integer/Numerical/Match"}
+                  "Bansal format — parses numbered questions with (1)–(4) options, Answer line, MCQ/Integer/Numerical/Match"}
                 {step === "preview" && `Preview · ${fileName}`}
                 {step === "uploading" &&
                   `Uploading images… ${imgProgress.done}/${imgProgress.total}`}

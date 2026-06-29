@@ -273,11 +273,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                 href="/templates/question-bank-template.txt"
                 download
                 className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
-                title="Open the Arke .docx format guide (copy this layout into your Word file)"
+                title="Open the Bansal .docx format guide (copy this layout into your Word file)"
               >
                 <Download className="h-3 w-3" /> .docx format guide
               </a>
-              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Master method — Arke .docx with numbered questions + Answer line">
+              <button onClick={() => setDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted" title="Master method — Bansal .docx with numbered questions + Answer line">
                 <FileText className="h-3 w-3" /> Word import
               </button>
               <button onClick={() => setCommonDocxOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/5 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10" title="Common method — cropped 3-column .docx (question + options as one printed block)">

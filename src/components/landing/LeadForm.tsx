@@ -97,7 +97,15 @@ export default function LeadForm({ config = {}, compact = false }: Props) {
         </div>
         <div>
           <Label htmlFor="phone">Phone *</Label>
-          <Input id="phone" inputMode="tel" value={values.phone} onChange={(e) => setField("phone", e.target.value)} />
+          <Input
+            id="phone"
+            inputMode="numeric"
+            pattern="[6-9][0-9]{9}"
+            maxLength={10}
+            placeholder="10-digit mobile"
+            value={values.phone}
+            onChange={(e) => setField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+          />
           {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone}</p>}
         </div>
         <div>

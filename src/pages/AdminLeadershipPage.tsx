@@ -7,6 +7,7 @@ type Profile = {
   id?: string;
   slug: string;
   name: string;
+  honorific: string | null;
   title: string | null;
   hero_photo_url: string | null;
   headline: string | null;
@@ -28,7 +29,7 @@ type Section = {
 };
 
 const blankProfile = (): Profile => ({
-  slug: "", name: "", title: "", hero_photo_url: "", headline: "", pull_quote: "",
+  slug: "", name: "", honorific: "", title: "", hero_photo_url: "", headline: "", pull_quote: "",
   intro: "", recognition_text: "", tags: [], sort_order: 0, is_active: true,
 });
 
@@ -64,12 +65,12 @@ const AdminLeadershipPage = () => {
     const p = profiles[idx];
     if (!p.slug.trim() || !p.name.trim()) { toast.error("Slug and name required"); return; }
     setSaving(`p-${idx}`);
-    const payload = { ...p, tags: p.tags ?? [] };
+    const payload: Record<string, unknown> = { ...p, tags: p.tags ?? [], honorific: (p.honorific ?? "").trim() };
     if (p.id) {
-      const { error } = await supabase.from("leadership_profiles").update(payload).eq("id", p.id);
+      const { error } = await (supabase.from("leadership_profiles") as any).update(payload).eq("id", p.id);
       if (error) toast.error(error.message); else toast.success("Profile saved");
     } else {
-      const { data, error } = await supabase.from("leadership_profiles").insert(payload).select().single();
+      const { data, error } = await (supabase.from("leadership_profiles") as any).insert(payload).select().single();
       if (error) toast.error(error.message);
       else { toast.success("Created"); setProfiles((cur) => cur.map((x, i) => (i === idx ? (data as Profile) : x))); }
     }
@@ -162,8 +163,19 @@ const AdminLeadershipPage = () => {
                   <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Name"
                     value={p.name} onChange={(e) => updateProfile(idx, { name: e.target.value })} />
                 </div>
-                <input className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="Title (e.g. Founder, Bansal Classes)"
-                  value={p.title ?? ""} onChange={(e) => updateProfile(idx, { title: e.target.value })} />
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <select
+                    className="rounded-lg border px-3 py-2 text-sm bg-white"
+                    value={p.honorific ?? ""}
+                    onChange={(e) => updateProfile(idx, { honorific: e.target.value })}
+                  >
+                    <option value="">Honorific (none)</option>
+                    <option value="Sir">Sir</option>
+                    <option value="Ma'am">Ma'am</option>
+                  </select>
+                  <input className="sm:col-span-2 rounded-lg border px-3 py-2 text-sm" placeholder="Title (e.g. Founder, Bansal Classes)"
+                    value={p.title ?? ""} onChange={(e) => updateProfile(idx, { title: e.target.value })} />
+                </div>
                 <input className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="Hero photo URL"
                   value={p.hero_photo_url ?? ""} onChange={(e) => updateProfile(idx, { hero_photo_url: e.target.value })} />
                 <input className="w-full rounded-lg border px-3 py-2 text-sm" placeholder="Headline"

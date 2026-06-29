@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
               educatorName: row.educator_name,
               subject: row.subject,
               startsAt: `${startsAt} IST`,
-              joinUrl: 'https://arke.pro/live-classes',
+              joinUrl: 'https://bansalclasses.com/live-classes',
             },
           },
         })

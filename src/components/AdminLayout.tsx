@@ -85,8 +85,10 @@ const mainGroups: NavGroup[] = [
     label: "Content & Media",
     items: [
       { label: "Page Banners", icon: ImageIcon, path: "/admin/banners" },
+      { label: "Built-In Advantages", icon: ImageIcon, path: "/admin/advantages" },
       { label: "Gallery", icon: ImageIcon, path: "/admin/gallery" },
       { label: "Achievement Posters", icon: ImageIcon, path: "/admin/achievement-posters" },
+      { label: "Blogs", icon: Megaphone, path: "/admin/blogs" },
       { label: "Testimonials", icon: Quote, path: "/admin/testimonials" },
       { label: "Homepage Stats", icon: BarChart3, path: "/admin/stats" },
       { label: "Leadership", icon: Users, path: "/admin/leadership" },

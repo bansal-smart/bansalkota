@@ -15,7 +15,11 @@ import { sendConfirmation } from "@/lib/sendConfirmation";
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
   email: z.string().trim().email("Invalid email").max(255),
-  phone: z.string().trim().min(7, "Phone is required").max(20),
+  phone: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
   subject: z.string().trim().max(150).optional().or(z.literal("")),
   message: z.string().trim().min(10, "Please share a few details").max(2000),
 });
@@ -151,10 +155,12 @@ export default function ContactPage() {
                         </label>
                         <input
                           type="tel"
+                          inputMode="numeric"
+                          pattern="[6-9][0-9]{9}"
+                          maxLength={10}
                           value={form.phone}
-                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                          placeholder="+91 98765 43210"
-                          maxLength={20}
+                          onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                          placeholder="10-digit mobile"
                           required
                           className="mt-1 w-full rounded-lg border border-border bg-white px-4 py-3 text-sm text-bansal-black focus:outline-none focus:ring-2 focus:ring-bansal-orange"
                         />

@@ -1,4 +1,4 @@
-// Arke unified .docx question importer
+// Bansal unified .docx question importer
 // =====================================
 // Supports a SINGLE Word format that accepts every question type the
 // platform uses, with LaTeX in stem + options, embedded images per slot,
