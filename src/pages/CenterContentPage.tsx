@@ -132,7 +132,7 @@ const CenterContentPage = () => {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-black font-display text-foreground">Centre Page Content</h1>
+        <h1 className="text-2xl font-black font-display text-foreground">Centre Detail</h1>
         <p className="text-sm text-muted-foreground">Manage the public details shown on {centerName}'s centre page.</p>
       </div>
 
