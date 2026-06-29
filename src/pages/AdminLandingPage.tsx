@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { LandingConfig, FeaturedItem, FeaturedKind, UspItem } from "@/lib/landingSchemas";
 import { useProductOptions, useFeaturedProducts } from "@/hooks/useFeaturedProducts";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 const EMPTY: LandingConfig = {
   id: "default",
