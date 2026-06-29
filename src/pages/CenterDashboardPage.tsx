@@ -64,7 +64,7 @@ const CenterDashboardPage = () => {
   }
 
   const tiles = [
-    { label: "Centre Content", value: "Page", icon: Building2, to: "/center/content" },
+    { label: "Centre Detail", value: "Page", icon: Building2, to: "/center/content" },
     { label: "Page Banners", value: counts.banners, icon: ImageIcon, to: "/center/banners" },
     { label: "Gallery", value: "Photos", icon: ImageIcon, to: "/center/gallery" },
     { label: "Online Courses", value: "Videos", icon: Video, to: "/center/online-courses" },
