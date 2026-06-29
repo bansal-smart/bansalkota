@@ -170,6 +170,7 @@ const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: str
   return (
     <div className="space-y-2">
       <Label>Cover image</Label>
+      <AspectRatioHint ratio="4:3" size="1200×900" note="book cover card" />
       <div className="flex items-start gap-3">
         <div className="flex w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted aspect-[4/3]">
           {value ? (
