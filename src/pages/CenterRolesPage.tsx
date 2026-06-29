@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Loader2, Pencil, Trash2, Shield, Users } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Shield, Users, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
