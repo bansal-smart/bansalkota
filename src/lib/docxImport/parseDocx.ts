@@ -961,9 +961,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     }
 
     // Before the first question number:
+    //   - Reasoning sections list the 4 standard STATEMENT-1/STATEMENT-2
+    //     options ONCE before any Q.N; capture them as section-level standard
+    //     options to be cloned into every reasoning question.
     //   - if we're inside a Paragraph section, accumulate as shared passage
     //   - otherwise skip decorative cover text
     if (!seenFirstNumber) {
+      if (currentIsReasoning && isOptionLine(text)) {
+        const stripped = stripOptionPrefix(html);
+        if (stripped) currentStandardOptions.push({ key: stripped.key, html: stripped.html });
+        continue;
+      }
       if (collectingPassage) {
         currentPassage = (currentPassage ? currentPassage + "<br/>" : "") + html;
       }
