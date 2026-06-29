@@ -162,6 +162,7 @@ const CenterCoursesPage = () => {
             <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit" : "New"} Offline Course</h2>
             <div>
               <label className="text-xs font-medium text-foreground">Banner</label>
+              <AspectRatioHint ratio="16:9" size="1600×900" note="course banner shown on card" />
               {editing.banner_url && <img src={editing.banner_url} alt="" className="h-28 w-full object-cover rounded-md mt-1" />}
               <label className="mt-2 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer">
                 <Upload className="h-3 w-3" /> {uploading ? "Uploading…" : "Upload banner"}
