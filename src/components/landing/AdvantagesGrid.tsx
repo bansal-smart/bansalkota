@@ -42,7 +42,7 @@ export default function AdvantagesGrid({ fallback }: { fallback: Fallback[] }) {
           />
         );
         const className = "block rounded-3xl overflow-hidden shadow-lg hover-lift bg-white";
-        if (isHash) {
+        if (hashPart && !isExternal) {
           return (
             <a key={i} href={t.link_url} onClick={onClick} className={className}>{inner}</a>
           );
