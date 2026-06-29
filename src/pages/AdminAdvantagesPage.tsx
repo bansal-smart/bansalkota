@@ -117,7 +117,7 @@ const AdminAdvantagesPage = () => {
         <div className="grid gap-4 sm:grid-cols-2">
           {items.map((p) => (
             <div key={p.id} className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
-              <img src={p.image_url} alt={p.alt_text ?? ""} className="w-full aspect-[16/9] object-cover bg-muted" />
+              <img src={p.image_url} alt={p.alt_text ?? ""} className="w-full aspect-square object-cover bg-muted" />
               <div className="p-3 space-y-2">
                 <p className="text-sm font-bold">{p.title || "(no title)"}</p>
                 <p className="text-xs text-muted-foreground truncate">→ {p.link_url}</p>
