@@ -1074,3 +1074,33 @@ export const parseDocxQuestionsFromHtml = (
   }
   return { questions: out, warnings, totalImages, detectedOptionStyle };
 };
+
+/** Client-side full pipeline (legacy / Common Import). */
+export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
+  const { html, warnings } = await docxFileToHtml(file);
+  return parseDocxQuestionsFromHtml(html, warnings);
+};
+
+/**
+ * Master Import remote pipeline. Posts the .docx to the `master-import-docx`
+ * edge function which runs JSZip + OMML→LaTeX + mammoth on the server and
+ * uploads every image to Supabase Storage. The returned HTML already contains
+ * `<img src="https://…">` tags pointing at signed URLs, so no client-side
+ * image upload pass is needed afterwards.
+ */
+export const parseDocxQuestionsRemote = async (
+  file: File,
+  supabaseClient: { functions: { invoke: (name: string, opts: any) => Promise<{ data: any; error: any }> } },
+): Promise<ParseResult> => {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  const { data, error } = await supabaseClient.functions.invoke("master-import-docx", {
+    body: form,
+  });
+  if (error) throw new Error(error.message || "Master import failed on the server");
+  if (!data || typeof data.html !== "string") {
+    throw new Error("Master import returned an unexpected response");
+  }
+  return parseDocxQuestionsFromHtml(data.html, Array.isArray(data.warnings) ? data.warnings : []);
+};
+
