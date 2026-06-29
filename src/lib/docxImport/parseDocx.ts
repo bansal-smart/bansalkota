@@ -786,11 +786,14 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const isSectionHeader = (text: string) => {
     const t = text.trim();
     if (/^section\b/i.test(t)) return true;
-    if (/^\[.*\]\s*$/.test(t) && /type|paragraph|matching|reasoning|true.*false|integer|numerical|single|multiple/i.test(t)) return true;
+    if (/^\[.*\]\s*$/.test(t) && /type|paragraph|matching|reasoning|true.*false|integer|numerical|single|multiple|stem/i.test(t)) return true;
     if (/^match\s+the\s+column/i.test(t)) return true;
     if (/^paragraph\s+type/i.test(t)) return true;
     if (/\b(integer|numerical)\s+answer\s+type/i.test(t)) return true;
-    if (/^\(?\s*(single|multiple)\s+correct\s+choice\s+type\s*\)?$/i.test(t)) return true;
+    if (/^single\s+digit\s+integer\b/i.test(t)) return true;
+    if (/^non[-\s]*negative\s+integer\s+type/i.test(t)) return true;
+    if (/^\(?\s*(single|multiple)\s+correct\s+choice\s+type\s*\)?\]?$/i.test(t)) return true;
+    if (/^\(?\s*numerical\s+value\s+type\s+answer\s*\)?\]?$/i.test(t)) return true;
     return false;
   };
 
