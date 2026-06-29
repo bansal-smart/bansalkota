@@ -393,6 +393,7 @@ export default function AdminLandingPage() {
           </div>
           <div>
             <Label>Background image (optional)</Label>
+            <AspectRatioHint ratio="21:9" size="1920×820" note="CTA section background" />
             <div className="mt-2 flex items-center gap-3">
               {cfg.cta.background_image_url && <img src={cfg.cta.background_image_url} className="h-20 w-32 rounded-md object-cover" />}
               <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-semibold hover:bg-muted">
