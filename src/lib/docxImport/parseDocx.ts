@@ -715,7 +715,10 @@ const flushBuffer = (
 // Public API
 // ---------------------------------------------------------------------------
 
-export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
+/** Convert a .docx file to mammoth HTML (data-URL images). Client-only path. */
+export const docxFileToHtml = async (
+  file: File,
+): Promise<{ html: string; warnings: string[] }> => {
   const warnings: string[] = [];
   const rawBuffer = await file.arrayBuffer();
   const buffer = await preprocessDocxBuffer(rawBuffer);
@@ -723,7 +726,6 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const result = await mammoth.convertToHtml(
     { arrayBuffer: buffer },
     {
-      // Preserve our custom paragraph styles so the parser can rely on them.
       styleMap: [
         "p[style-name='Q-Number'] => p.q-number",
         "p[style-name='Q-Stem']   => p.q-stem",
@@ -745,10 +747,19 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
       if (msg.type === "error") warnings.push(`Mammoth: ${msg.message}`);
     }
   }
+  return { html: result.value, warnings };
+};
 
+/** State-machine parser: takes mammoth-style HTML and emits questions. */
+export const parseDocxQuestionsFromHtml = (
+  html: string,
+  seedWarnings: string[] = [],
+): ParseResult => {
+  const warnings: string[] = [...seedWarnings];
   const parser = new DOMParser();
-  const doc = parser.parseFromString(`<div id="root">${result.value}</div>`, "text/html");
+  const doc = parser.parseFromString(`<div id="root">${html}</div>`, "text/html");
   const root = doc.getElementById("root")!;
+
 
   const blocks = flattenBlocks(root);
   const out: ParsedDocxQuestion[] = [];
