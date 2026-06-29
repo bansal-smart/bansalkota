@@ -31,6 +31,39 @@ const CenterRolesPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Create login state
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newCustomRoleId, setNewCustomRoleId] = useState<string>("");
+  const [creating, setCreating] = useState(false);
+
+  const createLogin = async () => {
+    if (!primaryCenterId) return;
+    if (!newEmail.trim() || !newPassword) return toast.error("Email and password required");
+    if (newPassword.length < 8) return toast.error("Password must be at least 8 characters");
+    if (!newCustomRoleId) return toast.error("Pick a role to assign");
+    setCreating(true);
+    const { data, error } = await supabase.functions.invoke("admin-create-center-user", {
+      body: {
+        action: "create",
+        email: newEmail.trim(),
+        password: newPassword,
+        full_name: newName.trim(),
+        centre_id: primaryCenterId,
+        role: "manager",
+        custom_role_id: newCustomRoleId,
+      },
+    });
+    setCreating(false);
+    if (error || (data as any)?.error) {
+      return toast.error(((data as any)?.error ?? error?.message) || "Could not create login");
+    }
+    toast.success(`Login created. Share credentials with ${newEmail}.`);
+    setNewName(""); setNewEmail(""); setNewPassword(""); setNewCustomRoleId("");
+    load();
+  };
+
   const load = async () => {
     if (!primaryCenterId) return;
     setLoading(true);
