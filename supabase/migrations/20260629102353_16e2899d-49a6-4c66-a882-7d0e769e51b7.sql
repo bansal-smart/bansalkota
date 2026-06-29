@@ -1,0 +1,1 @@
+UPDATE public.landing_advantages SET link_url = '#lead-form' WHERE link_url = '#free-counseling';
