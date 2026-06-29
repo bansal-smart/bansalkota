@@ -222,10 +222,17 @@ const extractTypeTag = (text: string): ParsedQuestionType | null => {
   return null;
 };
 
-// Extract `Answer: ...` payload. Returns raw string after the colon, or null.
+// Extract `Answer: ...` / `Ans. (A)` / `Ans 18` payload. Separator is optional
+// (the JEE master papers use just a space after `Ans.`). Returns raw value or null.
 const extractAnswerLine = (text: string): string | null => {
-  const m = text.match(/^\s*(?:answer|ans\.?|correct)\s*[:\-–]\s*(.+?)\s*$/i);
-  return m ? m[1].trim() : null;
+  const m = text.match(/^\s*(?:answer|ans|correct)\s*\.?\s*[:\-–]?\s*(.+?)\s*$/i);
+  if (!m) return null;
+  // Require the keyword to be followed by SOMETHING (not just a heading line).
+  const val = m[1].trim();
+  if (!val) return null;
+  // Avoid matching things like "Answer the following:" with no actual answer body.
+  if (/^the\b/i.test(val)) return null;
+  return val;
 };
 
 // Determine question type + parsed answer from a raw answer string.
@@ -234,7 +241,33 @@ const parseAnswer = (raw: string): {
   correctAnswer: number | number[] | { value: number } | { min: number; max: number } | null;
   correctMap?: Record<string, string>;
 } => {
-  const trimmed = raw.trim();
+  let trimmed = raw.trim();
+  // Strip a single wrapping (...) or [...] around the entire value.
+  const wrap = trimmed.match(/^[\(\[]\s*(.+?)\s*[\)\]]$/);
+  if (wrap) trimmed = wrap[1].trim();
+
+  // Match-the-column (JEE): "(A) q (B) p, r (C) p, s (D) q, s"
+  //   → groups keyed by A/B/C/D, each value is the list of lowercase row keys.
+  const mcGroups = Array.from(
+    raw.matchAll(/\(\s*([A-Da-d])\s*\)\s*([^()]+?)(?=\s*\(\s*[A-Da-d]\s*\)|\s*$)/g),
+  );
+  if (mcGroups.length >= 2) {
+    const map: Record<string, string> = {};
+    for (const g of mcGroups) {
+      const key = g[1].toUpperCase();
+      const val = g[2]
+        .toUpperCase()
+        .split(/[,;\s]+/)
+        .map((s) => s.replace(/[^A-Z0-9]/g, ""))
+        .filter(Boolean)
+        .join(",");
+      if (val) map[key] = val;
+    }
+    if (Object.keys(map).length >= 2) {
+      return { type: "match-following", correctAnswer: null, correctMap: map };
+    }
+  }
+
   // Match-the-following: A-Q,B-S,C-P,D-R  (also A→Q, A:Q allowed)
   const mfPairs = trimmed.match(/[A-Da-d]\s*[-→:>]\s*[P-Sp-s1-4]/g);
   if (mfPairs && mfPairs.length >= 2) {
@@ -260,8 +293,8 @@ const parseAnswer = (raw: string): {
       };
     }
   }
-  const cleaned = trimmed.replace(/[()\s]/g, "");
-  // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"
+  const cleaned = trimmed.replace(/[()\[\]\s]/g, "");
+  // MCQ multi: "1,2,4"  or  "(1),(2),(4)"  or  "A,B,D"  or  "A,C"
   if (/[,;|]/.test(cleaned) || /^[A-D]{2,4}$/i.test(cleaned)) {
     const tokens = cleaned.split(/[,;|]/).filter(Boolean);
     const idxs: number[] = [];
@@ -284,7 +317,7 @@ const parseAnswer = (raw: string): {
     const idx = /^[1-4]$/.test(ch) ? parseInt(ch, 10) - 1 : ch.toUpperCase().charCodeAt(0) - 65;
     return { type: "mcq-single", correctAnswer: idx };
   }
-  // Integer / numerical single value
+  // Integer / numerical single value (also handles "04.25", "25000")
   const num = cleaned.match(/^-?\d+(?:\.\d+)?$/);
   if (num) {
     const v = Number(num[0]);
@@ -293,17 +326,39 @@ const parseAnswer = (raw: string): {
   return { type: "mcq-single", correctAnswer: null };
 };
 
-// Map a "SECTION I (Single Correct Choice)" style heading to a question type.
+// Map a section heading to a question type. Supports both classic
+// "SECTION I (Single Correct Choice)" labels and JEE exam-paper bracket
+// headings like "[SINGLE CORRECT CHOICE TYPE]", "[MULTIPLE CORRECT CHOICE TYPE]",
+// "[MATCHING LIST TYPE]", "MATCH THE COLUMN", "PARAGRAPH TYPE",
+// "Integer answer Type", "Numerical answer Type", "[True and False TYPE]".
 const sectionType = (text: string): ParsedQuestionType | null => {
-  if (!/section\b/i.test(text)) return null;
   const t = text.toLowerCase();
+  const isSection =
+    /section\b/.test(t) ||
+    /^\s*\[.*type.*\]/.test(t) ||
+    /\btype\s*\]/.test(t) ||
+    /^\s*paragraph\s+type/.test(t) ||
+    /^\s*match\s+the\s+column/.test(t) ||
+    /^\s*\[?\s*matching\s+(list|type)/.test(t) ||
+    /\b(integer|numerical)\s+answer\s+type/.test(t) ||
+    /\btrue\s+(and|or|\/)\s+false/.test(t);
+  if (!isSection) return null;
+  if (/true\s+(and|or|\/)\s+false/.test(t)) return "mcq-single"; // synthesized later
+  if (/match.*column/.test(t)) return "match-following";
   if (/match.*following/.test(t)) return "match-following";
+  if (/matching\s+(list|type)/.test(t)) return "match-following";
   if (/multiple\s+correct/.test(t)) return "mcq-multi";
   if (/single\s+correct/.test(t)) return "mcq-single";
+  if (/reasoning|assertion|statement/.test(t)) return "mcq-single";
+  if (/paragraph|comprehension/.test(t)) return "mcq-single";
   if (/numerical/.test(t)) return "numerical";
   if (/integer/.test(t)) return "integer";
   return null;
 };
+
+// True/False section detector — kept separate so we can synthesize options.
+const isTrueFalseSection = (text: string): boolean =>
+  /true\s+(and|or|\/)\s+false/i.test(text);
 
 
 type Block =
