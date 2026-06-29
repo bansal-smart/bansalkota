@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, Upload, Trash2, ArrowUp, ArrowDown, Plus, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Row = {
   id?: string;
