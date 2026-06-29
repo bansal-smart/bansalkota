@@ -106,7 +106,7 @@ const preprocessDocxBuffer = async (buffer: ArrayBuffer): Promise<ArrayBuffer> =
     if (!/<m:oMath\b/.test(xml)) return buffer;
     const rewritten = rewriteOmmlInXml(xml);
     zip.file("word/document.xml", rewritten);
-    return await zip.generateAsync({ type: "arraybuffer" });
+    return await zip.generateAsync({ type: "arraybuffer", compression: "STORE" });
   } catch {
     return buffer;
   }
