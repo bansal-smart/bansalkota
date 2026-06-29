@@ -94,11 +94,11 @@ Deno.serve(async (req) => {
       if (updErr) return json(400, { error: updErr.message });
     }
 
-    // Attach to centre (idempotent)
+    // Attach to centre (idempotent) with optional custom role
     const { error: linkErr } = await admin
       .from("centre_staff")
       .upsert(
-        { user_id: userId, centre_id: centerId, role },
+        { user_id: userId, centre_id: centerId, role, custom_role_id: customRoleId },
         { onConflict: "user_id,centre_id" },
       );
     if (linkErr) return json(400, { error: linkErr.message });
