@@ -44,6 +44,7 @@ const statusStyle: Record<string, string> = {
 
 const sourceLabel: Record<string, string> = {
   landing_page: "Landing CTA",
+  "Free Counselling": "Free Counselling",
   contact: "Contact",
   admission: "Admission",
   mentorship: "Mentorship",
