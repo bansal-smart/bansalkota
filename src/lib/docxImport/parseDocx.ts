@@ -822,6 +822,11 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   };
 
   const flushAndReset = () => {
+    // Reasoning sections: clone the section-level standard options into any
+    // question that didn't ship its own options.
+    if (currentIsReasoning && buf.options.length === 0 && currentStandardOptions.length > 0) {
+      buf.options = currentStandardOptions.map((o) => ({ ...o }));
+    }
     ordinal += 1;
     tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
