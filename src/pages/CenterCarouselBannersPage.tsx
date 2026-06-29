@@ -3,6 +3,7 @@ import { Plus, Trash2, Save, Loader2, Upload, GripVertical } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Banner = {
   id: string;
