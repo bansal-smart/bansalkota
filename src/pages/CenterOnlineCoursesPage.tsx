@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type OnlineCourse = {
   id: string;
