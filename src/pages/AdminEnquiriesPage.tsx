@@ -257,6 +257,7 @@ const AdminEnquiriesPage = () => {
                 <tr>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Centre</th>
                   <th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3">Class</th>
                   <th className="px-4 py-3">Source</th>
