@@ -511,16 +511,25 @@ const flushBuffer = (
   const idPrefix = `q${number}`;
   const collected: DocxImage[] = [];
 
-  // 1) Stem
-  const rawStemHtml = buf.stem.join("<br/>");
+  // 1) Stem (prefix shared paragraph passage if present)
+  const stemParts: string[] = [];
+  if (buf.passage) {
+    stemParts.push(
+      `<div class="passage" style="background:hsl(var(--muted));padding:8px;border-radius:6px;margin-bottom:8px;"><b>Passage:</b><br/>${buf.passage}</div>`,
+    );
+  }
+  stemParts.push(buf.stem.join("<br/>"));
+  const rawStemHtml = stemParts.join("");
   const stemHtml = extractImages(rawStemHtml, "stem", collected, idPrefix);
   const stemText = stripTags(stemHtml).replace(/\s+/g, " ").trim();
 
-  // 2) Match table (if any) → matchLeft + options
-  let matchLeft: ParsedMatchItem[] | undefined;
-  let matchOptions: { id: number; text: string }[] | undefined;
-  let isMatch = false;
-  if (buf.matchTable) {
+  // 1b) Synthesize True/False options for true-false sections.
+  if (buf.synthesizeTrueFalse && buf.options.length === 0) {
+    buf.options = [
+      { key: "A", html: "True" },
+      { key: "B", html: "False" },
+    ];
+  }
     const parsed = parseMatchTable(buf.matchTable, collected, idPrefix);
     if (parsed) {
       matchLeft = parsed.left;
