@@ -759,8 +759,23 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   let currentSection: ParsedQuestionType | null = null;
   let currentTrueFalse = false;
   let currentIsMatchSection = false;
+  let currentIsReasoning = false;
+  let currentStandardOptions: { key: string; html: string }[] = [];
   let currentPassage: string | null = null;
   let collectingPassage = false; // true between a Paragraph section header and its first Q.N
+
+  const isInstructionBullet = (text: string) => {
+    const t = text.trim();
+    if (/^[•·\u2022\u00b7]/.test(t)) return true;
+    if (/^(full|zero|negative|partial)\s+marks?\b/i.test(t)) return true;
+    if (/^this\s+section\s+contains\b/i.test(t)) return true;
+    if (/^based\s+on\s+each\s+paragraph\b/i.test(t)) return true;
+    if (/^the\s+answer\s+to\s+each\s+question\s+is\b/i.test(t)) return true;
+    if (/^if\s+the\s+numerical\s+value\b/i.test(t)) return true;
+    if (/^one\s+or\s+more\s+entries\b/i.test(t)) return true;
+    if (/^match\s+the\s+entries\b/i.test(t)) return true;
+    return false;
+  };
 
   // Accept "1.", "1)", "Q.1", "Q. 35", "Q1."
   const NUM_RE = /^\s*(?:q\s*\.?\s*)?(\d{1,3})\s*[.)]?\s*(.*)$/i;
