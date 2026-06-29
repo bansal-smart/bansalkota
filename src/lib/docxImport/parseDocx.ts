@@ -40,6 +40,77 @@
 // DocxBulkImportDialog consume.
 
 import mammoth from "mammoth";
+import JSZip from "jszip";
+
+// ---------------------------------------------------------------------------
+// OMML → LaTeX preprocessor
+// ---------------------------------------------------------------------------
+// Word's native equation editor stores formulas as OMML (<m:oMath>). mammoth
+// drops these entirely. In the JEE master files the OMML <m:t> text nodes
+// already hold raw LaTeX source (`\frac`, `\sqrt`, `\left(`, `_0`, …), so we
+// concatenate every <m:t> inside each <m:oMath> / <m:oMathPara>, wrap with
+// `$…$` (inline) or `$$…$$` (display), and rewrite the docx XML in place
+// before handing it to mammoth. MathRenderer (KaTeX) renders it downstream.
+
+const decodeXmlEntities = (s: string) =>
+  s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/&amp;/g, "&");
+
+const ommlInnerToLatex = (innerXml: string): string => {
+  const parts: string[] = [];
+  const re = /<m:t\b[^>]*>([\s\S]*?)<\/m:t>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(innerXml)) !== null) {
+    parts.push(decodeXmlEntities(m[1]));
+  }
+  return parts.join("").trim();
+};
+
+const escapeXmlText = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const rewriteOmmlInXml = (xml: string): string => {
+  // Display equations first (oMathPara wraps oMath).
+  xml = xml.replace(
+    /<m:oMathPara\b[^>]*>([\s\S]*?)<\/m:oMathPara>/g,
+    (_full, inner) => {
+      const latex = ommlInnerToLatex(inner);
+      if (!latex) return "";
+      return `<w:r><w:t xml:space="preserve"> $$${escapeXmlText(latex)}$$ </w:t></w:r>`;
+    },
+  );
+  // Remaining inline equations.
+  xml = xml.replace(
+    /<m:oMath\b[^>]*>([\s\S]*?)<\/m:oMath>/g,
+    (_full, inner) => {
+      const latex = ommlInnerToLatex(inner);
+      if (!latex) return "";
+      return `<w:r><w:t xml:space="preserve"> $${escapeXmlText(latex)}$ </w:t></w:r>`;
+    },
+  );
+  return xml;
+};
+
+const preprocessDocxBuffer = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  try {
+    const zip = await JSZip.loadAsync(buffer);
+    const docFile = zip.file("word/document.xml");
+    if (!docFile) return buffer;
+    const xml = await docFile.async("string");
+    if (!/<m:oMath\b/.test(xml)) return buffer;
+    const rewritten = rewriteOmmlInXml(xml);
+    zip.file("word/document.xml", rewritten);
+    return await zip.generateAsync({ type: "arraybuffer" });
+  } catch {
+    return buffer;
+  }
+};
 
 export type DocxImageSlot =
   | "stem"
