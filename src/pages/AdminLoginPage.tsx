@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Flame, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Flame, Loader2, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
