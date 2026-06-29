@@ -139,6 +139,7 @@ const AdminAchievementPostersPage = () => {
             <div className="p-5 space-y-4">
               <div>
                 <label className="text-xs font-bold text-muted-foreground">Poster image</label>
+                <AspectRatioHint ratio="3:4 (portrait)" size="900×1200" note="achievement poster card" />
                 <div className="mt-1 flex items-center gap-3">
                   {form.image_url ? (
                     <img src={form.image_url} alt="" className="h-32 w-24 rounded-lg object-cover border border-border" />
