@@ -44,7 +44,7 @@ const PaymentReceiptEmail = ({
   paymentMethod,
   transactionId,
   paidAt,
-  appUrl = 'https://arke.pro',
+  appUrl = 'https://bansalclasses.com',
 }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
