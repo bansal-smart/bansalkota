@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
 import { X } from "lucide-react";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 const EDUCATION_LEVELS = [
   "Class 6",
