@@ -3,6 +3,7 @@ import { FileSpreadsheet, Loader2, Plus, Save, Trash2, Trophy, Upload, X, Gradua
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Topper = {
   id: string;
