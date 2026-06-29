@@ -165,6 +165,7 @@ const AdminEnquiriesPage = () => {
               { key: "email", label: "Email" },
               { key: "phone", label: "Phone" },
               { key: "source", label: "Source" },
+              { key: "centre", label: "Centre", value: (r) => r.centre?.city ?? "" },
               { key: "region", label: "Region" },
               { key: "status", label: "Status" },
               { key: "message", label: "Message" },
