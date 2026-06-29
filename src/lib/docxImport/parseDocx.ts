@@ -454,9 +454,18 @@ type Buffer = {
   forcedType: ParsedQuestionType | null;
   // raw blocks captured so we can extract images per slot later
   optionBlocks: { key: string; html: string }[];
+  /** Shared paragraph/comprehension passage prepended to the stem. */
+  passage: string | null;
+  /** True when we should synthesize "True"/"False" options if none exist. */
+  synthesizeTrueFalse: boolean;
 };
 
-const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType | null): Buffer => ({
+const newBuffer = (
+  carryTopic?: string | null,
+  carrySection?: ParsedQuestionType | null,
+  carryPassage?: string | null,
+  carryTrueFalse?: boolean,
+): Buffer => ({
   number: null,
   stem: [],
   options: [],
@@ -467,6 +476,8 @@ const newBuffer = (carryTopic?: string | null, carrySection?: ParsedQuestionType
   sectionType: carrySection ?? null,
   forcedType: null,
   optionBlocks: [],
+  passage: carryPassage ?? null,
+  synthesizeTrueFalse: !!carryTrueFalse,
 });
 
 
