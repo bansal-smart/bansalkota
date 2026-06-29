@@ -263,6 +263,7 @@ const CenterOnlineCoursesPage = () => {
             {/* Thumbnail */}
             <section className="rounded-lg border border-border p-5 space-y-3">
               <h3 className="text-base font-bold text-foreground">Thumbnail</h3>
+              <AspectRatioHint ratio="4:3" size="1200×900" note="course card thumbnail" />
               {editing.thumbnail_url ? (
                 <div className="space-y-2">
                   <img src={editing.thumbnail_url} alt="" className="h-40 w-full object-cover rounded-md" />
