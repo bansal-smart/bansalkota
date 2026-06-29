@@ -273,8 +273,8 @@ const CoursesPage = () => {
                         {c.name}
                       </p>
                     </Link>
-                    {c.description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>
+                    {(c.short_description || c.description) && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.short_description || c.description}</p>
                     )}
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
                       {c.original_price && c.original_price > c.price && (

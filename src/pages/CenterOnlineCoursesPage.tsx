@@ -154,7 +154,7 @@ const CenterOnlineCoursesPage = () => {
             <div className="p-4 space-y-2">
               <p className="text-sm font-bold text-foreground">{c.title}</p>
               <p className="text-xs text-muted-foreground">{[c.subject, c.target_exam, c.class_level].filter(Boolean).join(" · ")}</p>
-              {c.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
+              {(c.short_description || c.description) && <p className="text-xs text-muted-foreground line-clamp-2">{c.short_description || c.description}</p>}
               <div className="flex items-center gap-2 pt-1">
                 <Link to={`/center/centre-courses/${c.id}`} className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-3 py-1 text-xs font-bold hover:bg-primary/20">
                   Manage Content <ArrowRight className="h-3 w-3" />
