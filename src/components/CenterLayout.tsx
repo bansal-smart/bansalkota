@@ -22,7 +22,7 @@ import { toast } from "sonner";
 
 const nav = [
   { label: "Overview", icon: LayoutDashboard, path: "/center" },
-  { label: "Centre Content", icon: Building2, path: "/center/content" },
+  { label: "Centre Detail", icon: Building2, path: "/center/content" },
   { label: "Page Banners", icon: ImageIcon, path: "/center/banners" },
   { label: "Centre Banner", icon: ImageIcon, path: "/center/carousel-banners" },
   { label: "Gallery", icon: ImageIcon, path: "/center/gallery" },
