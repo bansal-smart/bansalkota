@@ -475,7 +475,8 @@ const AdminCentersPage = () => {
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
-            <label className="text-xs font-bold text-muted-foreground">Centre image <span className="font-normal text-muted-foreground/80">(16:9 — recommended 1600×900)</span></label>
+            <label className="text-xs font-bold text-muted-foreground">Centre image</label>
+            <AspectRatioHint ratio="16:9" size="1600×900" note="centre cover photo" />
             <div className="mt-1 flex items-center gap-3">
               {form.image_url ? (
                 <img src={form.image_url} alt="" className="aspect-[16/9] w-40 rounded-lg object-cover object-center border border-border" />
