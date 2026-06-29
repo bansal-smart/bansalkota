@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Inbox, ClipboardList, Users, LifeBuoy, Image as ImageIcon, ArrowRight, Building2, Megaphone, Video } from "lucide-react";
+import { BookOpen, Inbox, ClipboardList, Users, LifeBuoy, Image as ImageIcon, ArrowRight, Building2, Megaphone, Video, Shield } from "lucide-react";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { useCenterPermissions } from "@/hooks/useCenterPermissions";
 import { supabase } from "@/integrations/supabase/client";
 
 type Counts = {
