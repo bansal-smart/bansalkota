@@ -5,6 +5,7 @@ import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type CenterCourse = {
   id: string;
