@@ -28,7 +28,11 @@ type Enquiry = {
   created_at: string;
   category: string | null;
   class_level: string | null;
+  centre_id: string | null;
+  centre?: { id: string; city: string; area: string | null; slug: string } | null;
 };
+
+type CentreOpt = { id: string; city: string; area: string | null; slug: string };
 
 
 const statusStyle: Record<string, string> = {
@@ -59,14 +63,21 @@ const AdminEnquiriesPage = () => {
   const [active, setActive] = useState<Enquiry | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
+  const [centres, setCentres] = useState<CentreOpt[]>([]);
+  const [centreFilter, setCentreFilter] = useState<string>("all");
+
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("enquiries")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { data: cData }] = await Promise.all([
+      supabase
+        .from("enquiries")
+        .select("*, centre:centres(id, city, area, slug)")
+        .order("created_at", { ascending: false }),
+      supabase.from("centres").select("id, city, area, slug").order("city"),
+    ]);
     if (error) toast.error(error.message);
-    setRows((data as Enquiry[]) ?? []);
+    setRows((data as any) ?? []);
+    setCentres((cData as any) ?? []);
     setLoading(false);
   };
 
@@ -79,15 +90,21 @@ const AdminEnquiriesPage = () => {
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (sourceFilter !== "all" && r.source !== sourceFilter) return false;
+      if (centreFilter !== "all") {
+        if (centreFilter === "__none__") {
+          if (r.centre_id) return false;
+        } else if (r.centre_id !== centreFilter) return false;
+      }
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q) ||
+        (r.email ?? "").toLowerCase().includes(q) ||
         (r.phone ?? "").toLowerCase().includes(q) ||
-        r.message.toLowerCase().includes(q)
+        r.message.toLowerCase().includes(q) ||
+        (r.centre?.city ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, statusFilter, sourceFilter]);
+  }, [rows, search, statusFilter, sourceFilter, centreFilter]);
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
   const stats = useMemo(() => {
@@ -102,7 +119,8 @@ const AdminEnquiriesPage = () => {
 
   const updateEnquiry = async (id: string, patch: Partial<Enquiry>) => {
     setSavingId(id);
-    const { error } = await supabase.from("enquiries").update(patch).eq("id", id);
+    const { centre, ...dbPatch } = patch as any;
+    const { error } = await supabase.from("enquiries").update(dbPatch).eq("id", id);
     setSavingId(null);
     if (error) {
       toast.error(error.message);
@@ -147,6 +165,7 @@ const AdminEnquiriesPage = () => {
               { key: "email", label: "Email" },
               { key: "phone", label: "Phone" },
               { key: "source", label: "Source" },
+              { key: "centre", label: "Centre", value: (r) => r.centre?.city ?? "" },
               { key: "region", label: "Region" },
               { key: "status", label: "Status" },
               { key: "message", label: "Message" },
@@ -208,6 +227,18 @@ const AdminEnquiriesPage = () => {
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={centreFilter} onValueChange={setCentreFilter}>
+            <SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="All centres" /></SelectTrigger>
+            <SelectContent className="max-h-80">
+              <SelectItem value="all">All centres</SelectItem>
+              <SelectItem value="__none__">No centre (general)</SelectItem>
+              {centres.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.city}{c.area ? ` · ${c.area}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
@@ -226,6 +257,7 @@ const AdminEnquiriesPage = () => {
                 <tr>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Contact</th>
+                  <th className="px-4 py-3">Centre</th>
                   <th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3">Class</th>
                   <th className="px-4 py-3">Source</th>
@@ -246,6 +278,15 @@ const AdminEnquiriesPage = () => {
                       {r.email && <div className="truncate max-w-[180px]">{r.email}</div>}
                       {r.phone && <div>{r.phone}</div>}
                       {!r.email && !r.phone && "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {r.centre ? (
+                        <Badge variant="outline" className="text-[10px] capitalize border-primary/30 text-primary">
+                          {r.centre.city}{r.centre.area ? ` · ${r.centre.area}` : ""}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs capitalize">{r.category || "—"}</td>
                     <td className="px-4 py-3 text-xs">{r.class_level || "—"}</td>
@@ -301,6 +342,12 @@ const AdminEnquiriesPage = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">Region</p>
                     <p className="font-medium text-foreground capitalize">{active.region || "—"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Centre</p>
+                    <p className="font-medium text-foreground capitalize">
+                      {active.centre ? `${active.centre.city}${active.centre.area ? ` · ${active.centre.area}` : ""}` : "Not centre-specific"}
+                    </p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Submitted</p>
