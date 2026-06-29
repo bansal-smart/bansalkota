@@ -864,9 +864,14 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     if (isSectionHeader(text)) {
       const st = sectionType(text);
       currentTrueFalse = isTrueFalseSection(text);
-      currentIsMatchSection = /match|matching/i.test(text);
+      // Matching List is SCQ where each option lists a mapping — NOT a match table.
+      const isMatchingList = /matching\s+list/i.test(text);
+      currentIsMatchSection = !isMatchingList && /(match\s+the\s+column|matching\s+type|match\s+the\s+following)/i.test(text);
+      currentIsReasoning = /reasoning|assertion/i.test(text);
+      // Reset standard options when entering a new section.
+      currentStandardOptions = [];
       // Reset passage collection mode whenever a new section starts.
-      collectingPassage = /paragraph|comprehension/i.test(text);
+      collectingPassage = /paragraph|comprehension/i.test(text) && !currentIsReasoning;
       currentPassage = collectingPassage ? "" : null;
       if (st) {
         currentSection = st;
@@ -875,6 +880,11 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
           buf.synthesizeTrueFalse = currentTrueFalse;
         }
       }
+      continue;
+    }
+
+    // Drop instruction-bullet boilerplate ("• This section contains FOUR…").
+    if (isInstructionBullet(text) && !/^\s*\(\s*[A-D1-4]\s*\)/.test(text)) {
       continue;
     }
 
