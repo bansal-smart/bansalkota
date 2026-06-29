@@ -134,7 +134,7 @@ const DocxBulkImportDialog = ({
     setFileName(file.name);
     setErrorMsg(null);
     try {
-      const result = await parseDocxQuestions(file);
+      const result = await parseDocxQuestionsRemote(file, supabase);
       if (result.questions.length === 0) {
         setErrorMsg(
           "No questions detected. Use the Arke template: numbered questions, (1)–(4) options, and an 'Answer: ...' line under each.",
