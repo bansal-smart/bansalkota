@@ -716,7 +716,8 @@ const flushBuffer = (
 
 export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const warnings: string[] = [];
-  const buffer = await file.arrayBuffer();
+  const rawBuffer = await file.arrayBuffer();
+  const buffer = await preprocessDocxBuffer(rawBuffer);
 
   const result = await mammoth.convertToHtml(
     { arrayBuffer: buffer },
