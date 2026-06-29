@@ -29,7 +29,7 @@ export default function AdvantagesGrid({ fallback }: { fallback: Fallback[] }) {
           <img
             src={t.image_url}
             alt={t.alt_text || ""}
-            className="w-full h-auto object-cover"
+            className="w-full aspect-square object-cover"
             loading="lazy"
           />
         );
