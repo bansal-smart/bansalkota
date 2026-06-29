@@ -40,6 +40,77 @@
 // DocxBulkImportDialog consume.
 
 import mammoth from "mammoth";
+import JSZip from "jszip";
+
+// ---------------------------------------------------------------------------
+// OMML → LaTeX preprocessor
+// ---------------------------------------------------------------------------
+// Word's native equation editor stores formulas as OMML (<m:oMath>). mammoth
+// drops these entirely. In the JEE master files the OMML <m:t> text nodes
+// already hold raw LaTeX source (`\frac`, `\sqrt`, `\left(`, `_0`, …), so we
+// concatenate every <m:t> inside each <m:oMath> / <m:oMathPara>, wrap with
+// `$…$` (inline) or `$$…$$` (display), and rewrite the docx XML in place
+// before handing it to mammoth. MathRenderer (KaTeX) renders it downstream.
+
+const decodeXmlEntities = (s: string) =>
+  s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(parseInt(d, 10)))
+    .replace(/&amp;/g, "&");
+
+const ommlInnerToLatex = (innerXml: string): string => {
+  const parts: string[] = [];
+  const re = /<m:t\b[^>]*>([\s\S]*?)<\/m:t>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(innerXml)) !== null) {
+    parts.push(decodeXmlEntities(m[1]));
+  }
+  return parts.join("").trim();
+};
+
+const escapeXmlText = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const rewriteOmmlInXml = (xml: string): string => {
+  // Display equations first (oMathPara wraps oMath).
+  xml = xml.replace(
+    /<m:oMathPara\b[^>]*>([\s\S]*?)<\/m:oMathPara>/g,
+    (_full, inner) => {
+      const latex = ommlInnerToLatex(inner);
+      if (!latex) return "";
+      return `<w:r><w:t xml:space="preserve"> $$${escapeXmlText(latex)}$$ </w:t></w:r>`;
+    },
+  );
+  // Remaining inline equations.
+  xml = xml.replace(
+    /<m:oMath\b[^>]*>([\s\S]*?)<\/m:oMath>/g,
+    (_full, inner) => {
+      const latex = ommlInnerToLatex(inner);
+      if (!latex) return "";
+      return `<w:r><w:t xml:space="preserve"> $${escapeXmlText(latex)}$ </w:t></w:r>`;
+    },
+  );
+  return xml;
+};
+
+const preprocessDocxBuffer = async (buffer: ArrayBuffer): Promise<ArrayBuffer> => {
+  try {
+    const zip = await JSZip.loadAsync(buffer);
+    const docFile = zip.file("word/document.xml");
+    if (!docFile) return buffer;
+    const xml = await docFile.async("string");
+    if (!/<m:oMath\b/.test(xml)) return buffer;
+    const rewritten = rewriteOmmlInXml(xml);
+    zip.file("word/document.xml", rewritten);
+    return await zip.generateAsync({ type: "arraybuffer" });
+  } catch {
+    return buffer;
+  }
+};
 
 export type DocxImageSlot =
   | "stem"
@@ -645,7 +716,8 @@ const flushBuffer = (
 
 export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const warnings: string[] = [];
-  const buffer = await file.arrayBuffer();
+  const rawBuffer = await file.arrayBuffer();
+  const buffer = await preprocessDocxBuffer(rawBuffer);
 
   const result = await mammoth.convertToHtml(
     { arrayBuffer: buffer },
@@ -687,8 +759,23 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   let currentSection: ParsedQuestionType | null = null;
   let currentTrueFalse = false;
   let currentIsMatchSection = false;
+  let currentIsReasoning = false;
+  let currentStandardOptions: { key: string; html: string }[] = [];
   let currentPassage: string | null = null;
   let collectingPassage = false; // true between a Paragraph section header and its first Q.N
+
+  const isInstructionBullet = (text: string) => {
+    const t = text.trim();
+    if (/^[•·\u2022\u00b7]/.test(t)) return true;
+    if (/^(full|zero|negative|partial)\s+marks?\b/i.test(t)) return true;
+    if (/^this\s+section\s+contains\b/i.test(t)) return true;
+    if (/^based\s+on\s+each\s+paragraph\b/i.test(t)) return true;
+    if (/^the\s+answer\s+to\s+each\s+question\s+is\b/i.test(t)) return true;
+    if (/^if\s+the\s+numerical\s+value\b/i.test(t)) return true;
+    if (/^one\s+or\s+more\s+entries\b/i.test(t)) return true;
+    if (/^match\s+the\s+entries\b/i.test(t)) return true;
+    return false;
+  };
 
   // Accept "1.", "1)", "Q.1", "Q. 35", "Q1."
   const NUM_RE = /^\s*(?:q\s*\.?\s*)?(\d{1,3})\s*[.)]?\s*(.*)$/i;
@@ -699,11 +786,14 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   const isSectionHeader = (text: string) => {
     const t = text.trim();
     if (/^section\b/i.test(t)) return true;
-    if (/^\[.*\]\s*$/.test(t) && /type|paragraph|matching|reasoning|true.*false|integer|numerical|single|multiple/i.test(t)) return true;
+    if (/^\[.*\]\s*$/.test(t) && /type|paragraph|matching|reasoning|true.*false|integer|numerical|single|multiple|stem/i.test(t)) return true;
     if (/^match\s+the\s+column/i.test(t)) return true;
     if (/^paragraph\s+type/i.test(t)) return true;
     if (/\b(integer|numerical)\s+answer\s+type/i.test(t)) return true;
-    if (/^\(?\s*(single|multiple)\s+correct\s+choice\s+type\s*\)?$/i.test(t)) return true;
+    if (/^single\s+digit\s+integer\b/i.test(t)) return true;
+    if (/^non[-\s]*negative\s+integer\s+type/i.test(t)) return true;
+    if (/^\(?\s*(single|multiple)\s+correct\s+choice\s+type\s*\)?\]?$/i.test(t)) return true;
+    if (/^\(?\s*numerical\s+value\s+type\s+answer\s*\)?\]?$/i.test(t)) return true;
     return false;
   };
 
@@ -735,6 +825,11 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
   };
 
   const flushAndReset = () => {
+    // Reasoning sections: clone the section-level standard options into any
+    // question that didn't ship its own options.
+    if (currentIsReasoning && buf.options.length === 0 && currentStandardOptions.length > 0) {
+      buf.options = currentStandardOptions.map((o) => ({ ...o }));
+    }
     ordinal += 1;
     tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);
@@ -777,9 +872,14 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     if (isSectionHeader(text)) {
       const st = sectionType(text);
       currentTrueFalse = isTrueFalseSection(text);
-      currentIsMatchSection = /match|matching/i.test(text);
+      // Matching List is SCQ where each option lists a mapping — NOT a match table.
+      const isMatchingList = /matching\s+list/i.test(text);
+      currentIsMatchSection = !isMatchingList && /(match\s+the\s+column|matching\s+type|match\s+the\s+following)/i.test(text);
+      currentIsReasoning = /reasoning|assertion/i.test(text);
+      // Reset standard options when entering a new section.
+      currentStandardOptions = [];
       // Reset passage collection mode whenever a new section starts.
-      collectingPassage = /paragraph|comprehension/i.test(text);
+      collectingPassage = /paragraph|comprehension/i.test(text) && !currentIsReasoning;
       currentPassage = collectingPassage ? "" : null;
       if (st) {
         currentSection = st;
@@ -788,6 +888,11 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
           buf.synthesizeTrueFalse = currentTrueFalse;
         }
       }
+      continue;
+    }
+
+    // Drop instruction-bullet boilerplate ("• This section contains FOUR…").
+    if (isInstructionBullet(text) && !/^\s*\(\s*[A-D1-4]\s*\)/.test(text)) {
       continue;
     }
 
@@ -864,9 +969,17 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
     }
 
     // Before the first question number:
+    //   - Reasoning sections list the 4 standard STATEMENT-1/STATEMENT-2
+    //     options ONCE before any Q.N; capture them as section-level standard
+    //     options to be cloned into every reasoning question.
     //   - if we're inside a Paragraph section, accumulate as shared passage
     //   - otherwise skip decorative cover text
     if (!seenFirstNumber) {
+      if (currentIsReasoning && isOptionLine(text)) {
+        const stripped = stripOptionPrefix(html);
+        if (stripped) currentStandardOptions.push({ key: stripped.key, html: stripped.html });
+        continue;
+      }
       if (collectingPassage) {
         currentPassage = (currentPassage ? currentPassage + "<br/>" : "") + html;
       }
@@ -934,6 +1047,9 @@ export const parseDocxQuestions = async (file: File): Promise<ParseResult> => {
 
   // Flush final question
   if (seenFirstNumber) {
+    if (currentIsReasoning && buf.options.length === 0 && currentStandardOptions.length > 0) {
+      buf.options = currentStandardOptions.map((o) => ({ ...o }));
+    }
     ordinal += 1;
     tallyOptionKeys();
     flushBuffer(buf, out, warnings, ordinal);

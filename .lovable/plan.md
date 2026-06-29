@@ -1,120 +1,80 @@
 ## Goal
 
-Make the **Master Import** button on the test creation page parse the actual `Master File for JEE Advanced & JEE Main.docx` format (and any paper that follows the same conventions) with 100% question coverage — every section type, equations, embedded images, and answer notations. The existing strict "Topic: / Type: / Answer:" template stays supported; we add a second "exam-paper" mode and auto-route between them.
+Make the Master Import handle the uploaded `Master_File_for_JEE_Advanced_JEE_Main.docx` end-to-end:
+1. Render LaTeX equations in the import preview (they're currently dropped).
+2. Use the bracketed section headers as the source of truth for question type, options count, and structure.
+3. Show parsed math live inside the import modal cards.
 
-## What the uploaded file actually contains
+## Why equations are missing today
 
-Section headers in brackets, e.g.:
+The file uses Word's native OMML equations (`<m:oMath>`). `mammoth.convertToHtml` strips OMML entirely, so the HTML the parser sees has gaps where every equation used to be — which is why those questions look "blank" in the preview.
 
-```text
-[True and False TYPE]
-[SINGLE CORRECT CHOICE TYPE]
-[REASONING TYPE] / (SINGLE CORRECT CHOICE TYPE)
-PARAGRAPH TYPE  →  PARAGRAPH "X"  →  Q.N ...
-[MULTIPLE CORRECT CHOICE TYPE]
-Integer answer Type / Numerical answer Type  (Ans. 18 / Ans. [25000] / Ans. (04.25))
-[MATCHING TYPE PARAGRAPH] / [MATCHING LIST TYPE]
-MATCH THE COLUMN  (multi-row answer like "Ans. (A) q (B) p, r (C) p, s (D) q, s")
-```
-
-Per-question markers used:
-
-- Numbering: `Q.1`, `Q. 35`, `Q.16` (number after `Q`, optional space).
-- Options: `(A)` / `(B)` / `(C)` / `(D)` on their own lines OR inline.
-- Answer: `Ans. (A)`, `Ans. (A, C)`, `Ans. (A, B, C, D)`, `Ans. 18`, `Ans. [25000]`, `Ans. (04.25)`, `Ans. (A) q (B) p, r (C) p, s (D) q, s`.
-- Solution: `Sol.` (not `Solution:`) followed by paragraphs / display LaTeX / images until next `Q.` or section.
-- LaTeX: `$...$` inline, `$$...$$` display, also Word OMML equations (mammoth already passes them through).
-- Images: pasted inline anywhere (stem / option / solution / match cell).
+Lucky shortcut: in this file the OMML `<m:t>` text nodes already hold raw LaTeX source (`\sqrt`, `\frac`, `\left(`, `_0`, etc.). Concatenating each `<m:oMath>`'s `<m:t>` content and wrapping it in `$…$` yields a valid LaTeX string that `MathRenderer` (KaTeX) can already render.
 
 ## Changes
 
-### 1. `src/lib/docxImport/parseDocx.ts` — new "exam-paper" parser path
+### 1. `src/lib/docxImport/parseDocx.ts` — pre-process docx XML before mammoth
 
-Add a second pass detector + parser, kept inside the same `parseDocxQuestions` entry point so the existing template still works:
+Add a JSZip step that runs *before* `mammoth.convertToHtml`:
 
-1. **Section header detection** — expand `sectionType()` to match bracketed headers:
-   - `True and False` → new type `true-false` (mcq-single with locked options `True` / `False`).
-   - `Single Correct Choice` → `mcq-single`.
-   - `Multiple Correct Choice` → `mcq-multi`.
-   - `Reasoning` / `Statement` / `Assertion` → `mcq-single` (standard A/B/C/D explanation options).
-   - `Paragraph` / `Comprehension` → `mcq-single` by default, but track a shared `passage` stem (the text between the section header and the first `Q.N`) and prepend it to every question's stem in that paragraph block.
-   - `Integer answer` → `integer`.
-   - `Numerical answer` / `Decimal` → `numerical`.
-   - `Matching List` / `Match the Column` / `Matching Type` → new type `match-column` (see §3).
+- Unzip the uploaded `.docx`, read `word/document.xml`.
+- For each `<m:oMathPara>…</m:oMathPara>` (display) and `<m:oMath>…</m:oMath>` (inline):
+  - Concatenate inner `<m:t>…</m:t>` text in document order.
+  - Normalize: collapse whitespace, fix common OMML→LaTeX glitches (`\\sqrt` → `\sqrt`, ensure space after `\frac` etc., balance `{}` if obviously unbalanced — best-effort).
+  - Replace the whole `<m:oMathPara>` / `<m:oMath>` element with a plain `<w:r><w:t xml:space="preserve"> $$LATEX$$ </w:t></w:r>` (display) or `<w:r><w:t xml:space="preserve"> $LATEX$ </w:t></w:r>` (inline).
+- Re-zip and pass the patched ArrayBuffer to mammoth.
 
-2. **Question number regex** — accept `Q\.?\s*(\d+)` in addition to `1.` / `1)`.
+Fallback: if JSZip fails (corrupt zip), skip the rewrite and parse the original buffer — same behaviour as today.
 
-3. **Answer line parser** — extend `parseAnswer()`:
-   - Strip leading `Ans` / `Ans.` (already handled by `extractAnswerLine`, just confirm `\.` allowed after the keyword).
-   - Strip wrapping `(...)` and `[...]` from the value before classification.
-   - `(A, C)` / `A,B,C,D` → multi.
-   - Bare integer like `18`, `25000` → integer.
-   - Decimal like `04.25`, `3.10-3.18` → numerical (existing range logic already handles `-` / `–`).
-   - **Match-column pattern** `(A) q (B) p, r (C) p, s (D) q, s` → new branch returning `type: "match-column"`, `correctMap = { A:["q"], B:["p","r"], C:["p","s"], D:["q","s"] }` (values are lower-case row keys → array because multi-select per row is required by JEE matching).
+Dependency: `jszip` (already used elsewhere in the project; if not present we'll add it via `bun add jszip`).
 
-4. **Solution marker** — accept `Sol.` / `Sol:` / `Sol —` in addition to `Solution:`. Capture everything until the next `Q.N` / section header / next `Topic:` (same buffer model as today; just widen `trySolution` regex).
+### 2. `MathRenderer` — already handles `$…$` and `$$…$$`
 
-5. **True/False** — when section type is `true-false` and no `(A)/(B)` options were found, synthesize two options `True` and `False` in `flushBuffer`. Answer `(A)` maps to True, `(B)` to False.
+No change needed. The dialog already renders option/stem HTML through `MathRenderer`, so the injected LaTeX will appear correctly the moment the parser stops dropping it.
 
-6. **Paragraph passages** — buffer the passage text under a `currentPassage` variable while inside a `[PARAGRAPH …]` section; on each `flushBuffer` for that section, prepend `<div class="passage">…</div>` to the stem. Reset `currentPassage` when a new section header arrives.
+### 3. `parseDocx.ts` — section-header aware routing
 
-7. **Match-the-column tables** — these papers use a 2-column or multi-column Word table without the `Column A | Column B` header. Detect by section header (`MATCH THE COLUMN` / `MATCHING LIST` already set `currentSection`) and treat the table as the match content. First column = left key (A, B, C, D), remaining columns = right items (P/Q/R/S or 1/2/3/4). Reuse the existing `parseMatchTable()` but loosen the header check when we're inside a matching-section.
+Extend the existing `sectionType` / header-detection state machine. Each header sets a typed `currentSection` that controls the rest of the block until the next header:
 
-### 2. New `ParsedQuestionType` values
+| Header text (case-insensitive)                                            | Type             | Options                                                                                                                |
+|---------------------------------------------------------------------------|------------------|------------------------------------------------------------------------------------------------------------------------|
+| `[True and False TYPE]`                                                   | `mcq-single`     | synthesize 2 options "True" / "False"                                                                                  |
+| `[SINGLE CORRECT CHOICE TYPE]`                                            | `mcq-single`     | require 4 (A–D)                                                                                                        |
+| `[MULTIPLE CORRECT CHOICE TYPE]`                                          | `mcq-multi`      | require 4 (A–D)                                                                                                        |
+| `[REASONING TYPE]` followed by `(SINGLE CORRECT CHOICE TYPE)`             | `mcq-single`     | the 4 standard JEE Statement-1/Statement-2 options are captured once at section level and **auto-attached** to every question in that section that has no own options |
+| `[PARAGRAPH TYPE]` + `(SINGLE CORRECT CHOICE TYPE)`                       | `mcq-single`     | passage prepended to each question stem (already supported, will be verified)                                          |
+| `[PARAGRAPH TYPE]` + `(NUMERICAL VALUE TYPE ANSWER)`                      | `numerical`      | passage prepended; no options                                                                                          |
+| `[STEM TYPE (NUMERICAL VALUE TYPE ANSWER)]`                               | `numerical`      | no options                                                                                                             |
+| `SINGLE DIGIT INTEGER` / `NON-NEGATIVE INTEGER TYPE` / `[INTEGER…]`       | `integer`        | no options                                                                                                             |
+| `[Numerical Value]`                                                       | `numerical`      | no options                                                                                                             |
+| `[MATCHING LIST TYPE]`                                                    | `mcq-single`     | 4 options (each option is itself a list like "P→2, Q→3, R→1, S→4") — treat the question as plain SCQ                  |
+| `[MATCHING TYPE PARAGRAPH]` / `MATCH THE COLUMN`                          | `match-following`| read the 2-column / multi-row table inside the section                                                                 |
 
-Extend the union in `parseDocx.ts`:
+Implementation notes:
+- Replace `sectionType` regex chain with an explicit, ordered match (most specific first) and remember the **secondary** header on the following paragraph (`(SINGLE CORRECT CHOICE TYPE)` / `(NUMERICAL VALUE TYPE ANSWER)`) when the primary is `[PARAGRAPH TYPE]` or `[REASONING TYPE]`.
+- Add a `sectionStandardOptions: { key, html }[] | null` slot on the buffer. Reasoning sections fill it once when the parser sees the 4 `STATEMENT-1 … STATEMENT-2 …` options at section level; `flushBuffer` falls back to those options when a Reasoning-section question has none.
+- For True/False: continue synthesizing exactly 2 options. Enforce 2-option output even if the source accidentally has stray `(A)` / `(B)` lines beyond the True/False text.
+- For Single Correct / Multiple Correct: clamp options to the first 4 and emit a warning if fewer than 4 are detected.
+- For Matching List: do **not** treat the answer as match-mapping; leave as SCQ so the 4 list-style options remain visible.
+- Drop "instruction bullets" (e.g. `•This section contains FOUR (04) questions.`, `Full Marks : +3 …`) — paragraphs that start with `•`, `·`, or `Full Marks` should not be appended to the stem/passage.
+- Question-number regex: keep current `Q.1` / `Q. 35` / `1.` support and additionally accept `Q.1Check if …` (no space between number and stem) by widening `NUM_RE` to `/^\s*(?:q\s*\.?\s*)?(\d{1,3})\s*[.)]?\s*(.*)$/i` — already in place; verify it handles the no-space case by trimming leading whitespace only.
 
-```ts
-export type ParsedQuestionType =
-  | "mcq-single"
-  | "mcq-multi"
-  | "integer"
-  | "numerical"
-  | "match-following"   // existing 1-to-1 mapping
-  | "match-column"      // new: many-to-many mapping
-  | "true-false";       // new: locked True/False MCQ
-```
+### 4. `DocxBulkImportDialog.tsx` — visible math + sanity
 
-Wire those new values through:
+- No structural change needed; it already routes option text and stem through `MathRenderer`. Verify the "Solution" preview block also uses `MathRenderer` (add it if currently rendered as raw HTML).
+- Add a small per-card badge showing the detected section type (helps the user confirm routing): `True/False`, `SCQ`, `MCQ`, `Reasoning`, `Paragraph SCQ`, `Numerical`, `Integer`, `Matching List`, `Match Column`.
 
-- `src/components/DocxBulkImportDialog.tsx` (preview rendering + payload).
-- `src/lib/docxImport/uploadImages.ts` (`question_type` mapping written into `test_questions` / `question_bank`).
-- `src/components/QuestionEditorDialog.tsx` (display labels) — minimal: render `match-column` like `match-following` but allow multi-pick per row; render `true-false` as a 2-option MCQ.
+### 5. `MasterImportInstructions.tsx`
 
-If extending the DB enum is risky, store `match-column` as `mcq-multi` with `match_map` JSON on the row instead, and `true-false` as `mcq-single`. **Decision in implementation step 3 below.**
+Append a "Section headers recognized" table that lists every bracket header above with its resulting type and option count, plus a one-liner: *"Word equations are converted to LaTeX automatically — no extra steps."*
 
-### 3. DB strategy for the two new types
+### 6. Validation
 
-Inspect `test_questions.question_type` / `question_bank.question_type` enums via `supabase--read_query`. Two paths:
+After the build, run the current `parseDocxQuestions` against the uploaded master file in a Node-side smoke check:
+- Confirm `questions.length >= 50`.
+- Confirm at least one True/False (2 options), one SCQ (4 options), one MCQ-multi, one Reasoning, one Paragraph, one Numerical, one Integer, one Matching List, one Match-Column.
+- Confirm `stemHtml` for at least 10 questions contains `$…$` (proves LaTeX was preserved).
 
-- **Preferred**: add `match-column` and `true-false` to the enum via a migration (`ALTER TYPE … ADD VALUE`) so we keep semantic accuracy and dedicated UI.
-- **Fallback (no migration)**: persist `match-column` as `match-following` (lossy when answers are multi-pick — log a warning) and `true-false` as `mcq-single` with synthesized True/False options. Pick this if migration is undesirable.
+## Open question
 
-The plan defaults to the migration path; if the user prefers no schema change, we'll switch to fallback during build.
-
-### 4. `src/components/MasterImportInstructions.tsx`
-
-Append a second section "Exam-paper format (also supported)" documenting the new auto-detected layout: section bracket headers, `Q.N`, `Ans.`, `Sol.`, paragraph passages, match-column tables. Keep the existing strict-template docs above it.
-
-### 5. Validation pass
-
-Add a Vitest fixture under `src/lib/docxImport/__tests__/` that loads a trimmed copy of the uploaded Master file and asserts:
-
-- Total question count is non-zero.
-- At least one of each section type appears (`true-false`, `mcq-single`, `mcq-multi`, `integer`, `numerical`, `match-column`).
-- No question has `correctAnswer == null && correctMap == null`.
-- Images get attached to the right slot (spot-check the first stem image and the FBD solution image from Q.1).
-
-### 6. No changes to
-
-- `src/lib/docxImport/parseCommonDocx.ts` (Common import stays as-is).
-- `CreateTestPage.tsx` wiring (still calls `openDocxImport("master")` → `DocxBulkImportDialog`).
-- `parseCommonDocx` flow.
-
-## Open questions before build
-
-1. **DB enum** — okay to add `match-column` and `true-false` to the `question_type` enum, or should we fall back to `match-following` + `mcq-single` and avoid a migration?
-2. **Paragraph passages** — render the shared passage on every question card (prepended block), or render it once as a collapsible context above the group? (The card-prepend route is simpler and matches how JEE PDFs read.)
-3. **True/False answer in source uses `(A)` for True and `(B)` for False** — confirm that's the convention you want us to lock in, since the uploaded file shows `(A) True / (B) False`.
-
-Once those three are answered I'll implement the parser + UI + docs + test.
+The Reasoning section's 4 fixed options (`(A) STATEMENT-1 is True…` etc.) appear once at the top of the section, before any `Q.N`. Confirm this is your intended convention so the parser can clone them into every Reasoning question — otherwise the answer letter on each Q would refer to options that aren't visible in the per-question card. Reply "yes, clone them" or paste the alternative convention.
