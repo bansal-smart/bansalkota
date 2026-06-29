@@ -140,6 +140,7 @@ const CenterUpdatesPage = () => {
             <textarea value={editing.body ?? ""} onChange={(e) => setEditing({ ...editing, body: e.target.value })} placeholder="Write the update…" rows={5} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm resize-none" />
             <div className="space-y-2">
               <label className="text-xs font-medium text-foreground">Image (optional)</label>
+              <AspectRatioHint ratio="16:9" size="1600×900" note="update post header image" />
               {editing.image_url && <img src={editing.image_url} alt="" className="h-24 w-full object-cover rounded-md" />}
               <label className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer">
                 <Upload className="h-3 w-3" /> {uploading ? "Uploading…" : "Upload image"}
