@@ -332,20 +332,20 @@ const AdminGalleryPage = () => {
           {albums.map((a) => {
             const cover = a.cover_url || images[a.id]?.[0]?.image_url;
             return (
-              <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
-                <div className="aspect-video bg-muted relative">
+              <div key={a.id} className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col h-full">
+                <div className="aspect-video w-full bg-muted relative shrink-0">
                   {a.kind === "video" ? (
                     a.cover_url ? (
-                      <img src={a.cover_url} alt={a.title} className="w-full h-full object-cover" />
+                      <img src={a.cover_url} alt={a.title} className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <div className="flex h-full items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center">
                         <Film className="h-10 w-10 text-muted-foreground" />
                       </div>
                     )
                   ) : cover ? (
-                    <img src={cover} alt={a.title} className="w-full h-full object-cover" />
+                    <img src={cover} alt={a.title} className="absolute inset-0 w-full h-full object-cover" />
                   ) : (
-                    <div className="flex h-full items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center">
                       <ImageIcon className="h-10 w-10 text-muted-foreground" />
                     </div>
                   )}
@@ -355,15 +355,15 @@ const AdminGalleryPage = () => {
                     </span>
                   )}
                 </div>
-                <div className="p-3 space-y-2">
-                  <p className="text-sm font-bold line-clamp-2">{a.title}</p>
+                <div className="p-3 space-y-2 flex flex-col flex-1">
+                  <p className="text-sm font-bold line-clamp-2 min-h-[2.5rem]">{a.title}</p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Order: {a.sort_order}</span>
                     <span className={a.is_active ? "text-green-600 font-bold" : ""}>
                       {a.is_active ? "Active" : "Hidden"}
                     </span>
                   </div>
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex gap-2 pt-1 mt-auto">
                     <button
                       onClick={() => openEdit(a)}
                       className="flex-1 rounded-lg border border-border px-2 py-1.5 text-xs font-bold hover:bg-muted"
