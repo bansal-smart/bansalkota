@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import CenterStaffModal from "@/components/CenterStaffModal";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Center = {
   id: string;
