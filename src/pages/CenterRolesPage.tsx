@@ -200,10 +200,47 @@ const CenterRolesPage = () => {
             ))}
           </ul>
         )}
+
+
+      {/* Create login for a custom role */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-sm font-bold text-foreground inline-flex items-center gap-1.5">
+            <UserPlus className="h-4 w-4 text-primary" /> Create login for a role
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Add a new staff login and assign one of your custom roles. They will only see the tabs/actions you allowed.
+          </p>
+        </div>
+        <div className="p-4 space-y-2">
+          <div className="grid gap-2 md:grid-cols-2">
+            <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Full name (optional)" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            <select value={newCustomRoleId} onChange={(e) => setNewCustomRoleId(e.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <option value="">— Assign a custom role —</option>
+              {roles.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="login email" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="text" placeholder="Initial password (≥ 8 chars)" className="rounded-md border border-border bg-background px-3 py-2 text-sm font-mono" />
+          </div>
+          <button
+            onClick={createLogin}
+            disabled={creating || roles.length === 0}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+            Create login
+          </button>
+          {roles.length === 0 && (
+            <p className="text-[11px] text-muted-foreground">Create a role first, then add staff logins for it.</p>
+          )}
+        </div>
       </div>
 
       {/* Assign roles to staff */}
       <div className="rounded-xl border border-border bg-card">
+
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-bold text-foreground">Assign roles to staff</p>
           <p className="text-[11px] text-muted-foreground">
