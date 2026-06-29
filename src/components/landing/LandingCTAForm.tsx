@@ -59,7 +59,7 @@ const LandingCTAForm = () => {
   };
 
   return (
-    <section className="relative py-12 md:py-20 bg-bansal-blue text-white overflow-hidden">
+    <section id="lead-form" className="relative py-12 md:py-20 bg-bansal-blue text-white overflow-hidden">
       <div className="absolute inset-0 grid-texture opacity-50" />
       <div className="free-counseling container mx-auto px-4 grid lg:grid-cols-2 gap-10 items-center relative">
         <div>
