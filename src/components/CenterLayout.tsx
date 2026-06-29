@@ -42,12 +42,15 @@ const nav = [
   { label: "Role Management", icon: Shield, path: "/center/roles", moduleKey: "__admin_only__" },
 ];
 
-const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout }: {
+type NavItem = (typeof nav)[number];
+
+const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout, items }: {
   email: string;
   initials: string;
   avatarUrl?: string;
   centerLabel: string;
   onLogout: () => void;
+  items: NavItem[];
 }) => {
   const { pathname } = useLocation();
   return (
@@ -74,7 +77,7 @@ const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout 
 
       <nav className="flex-1 px-3 space-y-1">
         <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Modules</p>
-        {nav.map((item) => {
+        {items.map((item) => {
           const active = item.path === "/center" ? pathname === "/center" : pathname.startsWith(item.path);
           return (
             <Link
