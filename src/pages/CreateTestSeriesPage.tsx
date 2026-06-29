@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
