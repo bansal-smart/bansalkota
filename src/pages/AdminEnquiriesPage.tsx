@@ -227,6 +227,18 @@ const AdminEnquiriesPage = () => {
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={centreFilter} onValueChange={setCentreFilter}>
+            <SelectTrigger className="w-full md:w-[200px]"><SelectValue placeholder="All centres" /></SelectTrigger>
+            <SelectContent className="max-h-80">
+              <SelectItem value="all">All centres</SelectItem>
+              <SelectItem value="__none__">No centre (general)</SelectItem>
+              {centres.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.city}{c.area ? ` · ${c.area}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
