@@ -530,6 +530,12 @@ const flushBuffer = (
       { key: "B", html: "False" },
     ];
   }
+
+  // 2) Match table (if any) → matchLeft + options
+  let matchLeft: ParsedMatchItem[] | undefined;
+  let matchOptions: { id: number; text: string }[] | undefined;
+  let isMatch = false;
+  if (buf.matchTable) {
     const parsed = parseMatchTable(buf.matchTable, collected, idPrefix);
     if (parsed) {
       matchLeft = parsed.left;
