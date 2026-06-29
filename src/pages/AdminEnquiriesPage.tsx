@@ -106,7 +106,8 @@ const AdminEnquiriesPage = () => {
 
   const updateEnquiry = async (id: string, patch: Partial<Enquiry>) => {
     setSavingId(id);
-    const { error } = await supabase.from("enquiries").update(patch).eq("id", id);
+    const { centre, ...dbPatch } = patch as any;
+    const { error } = await supabase.from("enquiries").update(dbPatch).eq("id", id);
     setSavingId(null);
     if (error) {
       toast.error(error.message);
