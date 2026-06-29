@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   CircleDot,
   Building2,
+  Shield,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -18,31 +19,38 @@ import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { useCenterPermissions } from "@/hooks/useCenterPermissions";
+import { CENTER_MODULES } from "@/lib/centerModules";
 import { toast } from "sonner";
 
 const nav = [
-  { label: "Overview", icon: LayoutDashboard, path: "/center" },
-  { label: "Centre Detail", icon: Building2, path: "/center/content" },
-  { label: "Page Banners", icon: ImageIcon, path: "/center/banners" },
-  { label: "Centre Banner", icon: ImageIcon, path: "/center/carousel-banners" },
-  { label: "Gallery", icon: ImageIcon, path: "/center/gallery" },
-  { label: "Online Courses", icon: Video, path: "/center/online-courses" },
-  { label: "Centre Courses", icon: BookOpen, path: "/center/centre-courses" },
-  { label: "Live Classes", icon: Video, path: "/center/live-classes" },
-  { label: "Test Platform", icon: ClipboardList, path: "/center/tests" },
-  { label: "Test Series", icon: ClipboardList, path: "/center/test-series" },
-  { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries" },
-  { label: "Course Enquiries", icon: ClipboardList, path: "/center/course-enquiries" },
-  { label: "My Students", icon: Users, path: "/center/students" },
-  { label: "Support", icon: LifeBuoy, path: "/center/support" },
+  { label: "Overview", icon: LayoutDashboard, path: "/center", moduleKey: "overview" },
+  { label: "Centre Detail", icon: Building2, path: "/center/content", moduleKey: "centre_detail" },
+  { label: "Page Banners", icon: ImageIcon, path: "/center/banners", moduleKey: "page_banners" },
+  { label: "Centre Banner", icon: ImageIcon, path: "/center/carousel-banners", moduleKey: "centre_banner" },
+  { label: "Gallery", icon: ImageIcon, path: "/center/gallery", moduleKey: "gallery" },
+  { label: "Online Courses", icon: Video, path: "/center/online-courses", moduleKey: "online_courses" },
+  { label: "Centre Courses", icon: BookOpen, path: "/center/centre-courses", moduleKey: "centre_courses" },
+  { label: "Live Classes", icon: Video, path: "/center/live-classes", moduleKey: "live_classes" },
+  { label: "Test Platform", icon: ClipboardList, path: "/center/tests", moduleKey: "test_platform" },
+  { label: "Test Series", icon: ClipboardList, path: "/center/test-series", moduleKey: "test_series" },
+  { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries", moduleKey: "website_enquiries" },
+  { label: "Course Enquiries", icon: ClipboardList, path: "/center/course-enquiries", moduleKey: "course_enquiries" },
+  { label: "My Students", icon: Users, path: "/center/students", moduleKey: "students" },
+  { label: "Support", icon: LifeBuoy, path: "/center/support", moduleKey: "support" },
+  // Admin-only — does not appear for non-admin custom roles.
+  { label: "Role Management", icon: Shield, path: "/center/roles", moduleKey: "__admin_only__" },
 ];
 
-const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout }: {
+type NavItem = (typeof nav)[number];
+
+const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout, items }: {
   email: string;
   initials: string;
   avatarUrl?: string;
   centerLabel: string;
   onLogout: () => void;
+  items: NavItem[];
 }) => {
   const { pathname } = useLocation();
   return (
@@ -69,7 +77,7 @@ const CenterSidebar = memo(({ email, initials, avatarUrl, centerLabel, onLogout 
 
       <nav className="flex-1 px-3 space-y-1">
         <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white/40">Modules</p>
-        {nav.map((item) => {
+        {items.map((item) => {
           const active = item.path === "/center" ? pathname === "/center" : pathname.startsWith(item.path);
           return (
             <Link
@@ -110,6 +118,7 @@ const CenterLayout = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { primaryCenter, loading } = useCenterAdmin();
+  const { isAdmin, can } = useCenterPermissions();
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -126,9 +135,17 @@ const CenterLayout = () => {
     ? `${primaryCenter.city}${primaryCenter.area && primaryCenter.area !== primaryCenter.city ? " — " + primaryCenter.area : ""}`
     : loading ? "Loading…" : "No centre assigned";
 
+  const visibleNav = useMemo(() => {
+    return nav.filter((item) => {
+      if (item.moduleKey === "__admin_only__") return isAdmin;
+      if (isAdmin) return true;
+      return can(item.moduleKey, "view");
+    });
+  }, [isAdmin, can]);
+
   return (
     <div className="flex min-h-screen bg-background">
-      <CenterSidebar email={email} initials={initials} avatarUrl={avatarUrl} centerLabel={centerLabel} onLogout={handleLogout} />
+      <CenterSidebar email={email} initials={initials} avatarUrl={avatarUrl} centerLabel={centerLabel} onLogout={handleLogout} items={visibleNav} />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
           <div className="flex items-center gap-3">
