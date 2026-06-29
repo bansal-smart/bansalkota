@@ -3,6 +3,7 @@ import { Plus, Trash2, Save, Loader2, Upload, Image as ImageIcon } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type GalleryKind = "achievement" | "event" | "activity" | "other";
 
@@ -135,6 +136,7 @@ const CenterGalleryPage = () => {
             <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit" : "Add"} gallery photo</h2>
             <div className="space-y-2">
               <label className="text-xs font-medium text-foreground">Photo</label>
+              <AspectRatioHint ratio="4:3" size="1600×1200" note="gallery grid tile" />
               {editing.image_url && <img src={editing.image_url} alt="" className="h-32 w-full object-cover rounded-md" />}
               <label className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer">
                 <Upload className="h-3 w-3" /> {uploading ? "Uploading…" : "Upload image"}

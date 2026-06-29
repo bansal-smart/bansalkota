@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Image as ImageIcon, Video as VideoIcon, Loader2, Plus, Save, Trash2, Upload, X, Film, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 import {
   DndContext,
   closestCenter,
@@ -434,6 +435,7 @@ const AdminGalleryPage = () => {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground">Thumbnail (optional)</label>
+                    <AspectRatioHint ratio="16:9" size="1280×720" note="video card thumbnail" />
                     <div className="mt-1 flex items-center gap-3">
                       {form.cover_url ? (
                         <img src={form.cover_url} alt="" className="h-24 w-32 rounded-lg object-cover border border-border" />
@@ -457,7 +459,10 @@ const AdminGalleryPage = () => {
               ) : (
                 <div>
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-muted-foreground">Album images</label>
+                    <div>
+                      <label className="text-xs font-bold text-muted-foreground">Album images</label>
+                      <AspectRatioHint ratio="4:3" size="1600×1200" note="square-ish gallery tiles" />
+                    </div>
                     <label className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold cursor-pointer hover:bg-muted">
                       {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Upload images
                       <input

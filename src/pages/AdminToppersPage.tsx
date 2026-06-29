@@ -3,6 +3,7 @@ import { FileSpreadsheet, Loader2, Plus, Save, Trash2, Trophy, Upload, X, Gradua
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Topper = {
   id: string;
@@ -256,6 +257,7 @@ const AdminToppersPage = () => {
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
             <label className="text-xs font-bold text-muted-foreground">Photo</label>
+            <AspectRatioHint ratio="1:1 (square)" size="600×600" note="circular avatar on Wall of Fame" />
             <div className="mt-1 flex items-center gap-3">
               {form.photo_url ? (
                 <img src={form.photo_url} alt="" className="h-16 w-16 rounded-full object-cover border border-border" />

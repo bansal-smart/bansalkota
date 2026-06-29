@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { LandingConfig, FeaturedItem, FeaturedKind, UspItem } from "@/lib/landingSchemas";
 import { useProductOptions, useFeaturedProducts } from "@/hooks/useFeaturedProducts";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 const EMPTY: LandingConfig = {
   id: "default",
@@ -211,7 +212,8 @@ export default function AdminLandingPage() {
             </label>
           </div>
           <div>
-            <Label>Banner image (recommended 1920×600)</Label>
+            <Label>Banner image</Label>
+            <AspectRatioHint ratio="32:10 (≈3.2:1)" size="1920×600" note="full-width promo strip" />
             <div className="mt-2 flex items-center gap-3">
               {cfg.top_banner.image_url && <img src={cfg.top_banner.image_url} alt="banner" className="h-20 w-48 rounded-md object-cover" />}
               <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-semibold hover:bg-muted">
@@ -391,6 +393,7 @@ export default function AdminLandingPage() {
           </div>
           <div>
             <Label>Background image (optional)</Label>
+            <AspectRatioHint ratio="21:9" size="1920×820" note="CTA section background" />
             <div className="mt-2 flex items-center gap-3">
               {cfg.cta.background_image_url && <img src={cfg.cta.background_image_url} className="h-20 w-32 rounded-md object-cover" />}
               <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-semibold hover:bg-muted">

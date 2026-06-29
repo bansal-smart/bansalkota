@@ -3,6 +3,7 @@ import { Image as ImageIcon, Loader2, Save, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import LandingHeroBannersEditor from "@/components/admin/LandingHeroBannersEditor";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Banner = {
   id: string;
@@ -163,6 +164,7 @@ const AdminBannersPage = () => {
 
               <div>
                 <label className="text-xs font-bold text-muted-foreground">Banner image</label>
+                <AspectRatioHint ratio="16:9" size="1920×1080" note="full-width page banner" />
                 <div className="mt-1 flex items-center gap-3">
                   {form.image_url ? (
                     <img src={form.image_url} alt="" className="h-24 w-48 rounded-lg object-cover border border-border" />
