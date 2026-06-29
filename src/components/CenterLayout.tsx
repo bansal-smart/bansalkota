@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   CircleDot,
   Building2,
+  Shield,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -18,6 +19,8 @@ import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { useCenterPermissions } from "@/hooks/useCenterPermissions";
+import { CENTER_MODULES } from "@/lib/centerModules";
 import { toast } from "sonner";
 
 const nav = [
