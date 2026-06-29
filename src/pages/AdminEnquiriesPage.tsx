@@ -344,6 +344,12 @@ const AdminEnquiriesPage = () => {
                     <p className="font-medium text-foreground capitalize">{active.region || "—"}</p>
                   </div>
                   <div className="col-span-2">
+                    <p className="text-xs text-muted-foreground">Centre</p>
+                    <p className="font-medium text-foreground capitalize">
+                      {active.centre ? `${active.centre.city}${active.centre.area ? ` · ${active.centre.area}` : ""}` : "Not centre-specific"}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Submitted</p>
                     <p className="font-medium text-foreground">{format(new Date(active.created_at), "dd MMM yyyy, HH:mm")}</p>
                   </div>
