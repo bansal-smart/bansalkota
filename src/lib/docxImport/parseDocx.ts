@@ -228,7 +228,8 @@ const extractImages = (
     const src = img.getAttribute("src") || "";
     const parsed = dataUrlToBytes(src);
     if (!parsed) {
-      img.remove();
+      // Non-data URL (already an uploaded https:// asset from the server-side
+      // master-import edge function). Leave it untouched so it renders directly.
       return;
     }
     const id = `${idPrefix}-${slot}-${i}-${collected.length}`;
