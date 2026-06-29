@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Loader2, Plus, Save, Trash2, Upload, X, Users, FileSpreadsheet } from "lucide-react";
+import { Building2, Copy, KeyRound, Loader2, Pencil, Plus, Save, Trash2, Upload, X, Users, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import CenterStaffModal from "@/components/CenterStaffModal";
@@ -555,9 +555,10 @@ const AdminCentersPage = () => {
                       {logins.length === 0 ? (
                         <button
                           onClick={() => setStaffCenter(c)}
-                          className="text-xs text-muted-foreground italic hover:text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground italic hover:text-primary"
+                          title="Create login"
                         >
-                          + Create login
+                          <KeyRound className="h-3.5 w-3.5" />
                         </button>
                       ) : (
                         <div className="space-y-0.5">
@@ -569,14 +570,18 @@ const AdminCentersPage = () => {
                                   navigator.clipboard.writeText(em);
                                   toast.success("Email copied");
                                 }}
-                                className="text-[10px] text-primary hover:underline"
+                                className="inline-flex items-center text-primary hover:text-primary/80"
                                 title="Copy email"
-                              >copy</button>
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
                               <button
                                 onClick={() => resetLogin(em)}
-                                className="text-[10px] text-amber-600 hover:underline"
+                                className="inline-flex items-center text-amber-600 hover:text-amber-700"
                                 title="Generate temp password & copy credentials"
-                              >reset</button>
+                              >
+                                <KeyRound className="h-3 w-3" />
+                              </button>
                             </div>
                           ))}
                           {logins.length > 2 && (
@@ -595,14 +600,18 @@ const AdminCentersPage = () => {
                         {c.is_pinned ? "★ Pinned" : "☆ Pin"}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
-                      <button onClick={() => setStaffCenter(c)} className="text-primary hover:underline text-xs font-semibold inline-flex items-center gap-1">
-                        <Users className="h-3 w-3" /> Login & Staff
-                      </button>
-                      <button onClick={() => startEdit(c)} className="text-primary hover:underline text-xs font-semibold">Edit</button>
-                      <button onClick={() => remove(c.id)} className="text-destructive hover:text-destructive/70">
-                        <Trash2 className="h-4 w-4 inline" />
-                      </button>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-2">
+                        <button onClick={() => setStaffCenter(c)} className="inline-flex items-center text-primary hover:text-primary/80" title="Login & Staff">
+                          <Users className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => startEdit(c)} className="inline-flex items-center text-primary hover:text-primary/80" title="Edit">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => remove(c.id)} className="inline-flex items-center text-destructive hover:text-destructive/70" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   );
