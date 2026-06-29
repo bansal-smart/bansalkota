@@ -133,6 +133,7 @@ const CenterBannersPage = () => {
             <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit" : "New"} Banner</h2>
             <div className="space-y-2">
               <label className="text-xs font-medium text-foreground">Banner image</label>
+              <AspectRatioHint ratio="16:9" size="1600×900" note="centre page promo banner" />
               {editing.image_url && <img src={editing.image_url} alt="" className="h-28 w-full object-cover rounded-md" />}
               <label className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer">
                 <Upload className="h-3 w-3" /> {uploading ? "Uploading…" : "Upload image"}
