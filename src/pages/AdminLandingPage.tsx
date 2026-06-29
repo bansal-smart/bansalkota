@@ -212,7 +212,8 @@ export default function AdminLandingPage() {
             </label>
           </div>
           <div>
-            <Label>Banner image (recommended 1920×600)</Label>
+            <Label>Banner image</Label>
+            <AspectRatioHint ratio="32:10 (≈3.2:1)" size="1920×600" note="full-width promo strip" />
             <div className="mt-2 flex items-center gap-3">
               {cfg.top_banner.image_url && <img src={cfg.top_banner.image_url} alt="banner" className="h-20 w-48 rounded-md object-cover" />}
               <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-semibold hover:bg-muted">
