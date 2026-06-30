@@ -632,8 +632,8 @@ const AdminStudentsPage = () => {
         </div>
       )}
 
-      <div className="space-y-2">
-        <div className="relative w-full">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
@@ -642,36 +642,35 @@ const AdminStudentsPage = () => {
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <select
-            value={centreFilter}
-            onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
-            className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
-          >
-            <option value="">All Centres</option>
-            <option value="none">No centre assigned</option>
-            {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
-          </select>
-          <select
-            value={classFilter}
-            onChange={(e) => { setClassFilter(e.target.value); setPage(0); }}
-            className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[140px]"
-          >
-            <option value="">All Classes</option>
-            {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>Class {cls}</option>)}
-          </select>
-          <select
-            value={batchFilter}
-            onChange={(e) => { setBatchFilter(e.target.value); setPage(0); }}
-            className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
-          >
-            <option value="">All Batches</option>
-            {batches.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={centreFilter}
+          onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
+        >
+          <option value="">All Centres</option>
+          <option value="none">No centre assigned</option>
+          {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
+        </select>
+        <select
+          value={classFilter}
+          onChange={(e) => { setClassFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[140px]"
+        >
+          <option value="">All Classes</option>
+          {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>Class {cls}</option>)}
+        </select>
+        <select
+          value={batchFilter}
+          onChange={(e) => { setBatchFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
+        >
+          <option value="">All Batches</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+          ))}
+        </select>
       </div>
+
 
 
       {selected.length > 0 && (
