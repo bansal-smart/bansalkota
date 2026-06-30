@@ -261,20 +261,23 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
             batch_name: s.batch_name,
           }))
       : [];
-    // Inject names into profiles map for NA students
-    if (effectiveTestId && notAttempted.length) {
-      setProfiles((prev) => {
-        let changed = false;
-        const next = new Map(prev);
-        for (const s of notAttempted) {
-          if (!next.has(s.user_id)) { next.set(s.user_id, s.full_name ?? "Student"); changed = true; }
-        }
-        return changed ? next : prev;
-      });
-    }
     return [...attempts.map((a) => a as Row), ...naRows];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempts, notAttempted, effectiveTestId]);
+
+  // Merge not-attempted student names into the profiles map
+  useEffect(() => {
+    if (!notAttempted.length) return;
+    setProfiles((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const s of notAttempted) {
+        const name = s.full_name ?? "Student";
+        if (next.get(s.user_id) !== name) { next.set(s.user_id, name); changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [notAttempted]);
 
 
 
