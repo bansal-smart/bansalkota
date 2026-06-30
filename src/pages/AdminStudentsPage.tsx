@@ -659,6 +659,16 @@ const AdminStudentsPage = () => {
           <option value="">All Classes</option>
           {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
         </select>
+        <select
+          value={batchFilter}
+          onChange={(e) => { setBatchFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="">All Batches</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+          ))}
+        </select>
       </div>
 
 
