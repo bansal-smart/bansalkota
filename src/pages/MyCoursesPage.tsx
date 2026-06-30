@@ -216,7 +216,7 @@ const MyCoursesPage = () => {
               </Link>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
               {allEnrolled.map((e) => {
                 const Icon = subjectIcon[e.course.subject] ?? BookOpen;
                 const gradient = subjectGradient[e.course.subject] ?? "from-primary to-accent";
@@ -232,36 +232,25 @@ const MyCoursesPage = () => {
                         <img src={e.course.thumbnail_url} alt={e.course.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <Icon className="h-12 w-12 text-white/40" />
+                          <Icon className="h-10 w-10 text-white/40" />
                         </div>
                       )}
                       {e.course.badge && (
-                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground">
+                        <span className="absolute left-2 top-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground">
                           {e.course.badge}
                         </span>
                       )}
-                      <div className={`absolute right-3 top-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-sm ${isDone ? "bg-secondary text-secondary-foreground" : "bg-black/40 text-white"}`}>
+                      <div className={`absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold backdrop-blur-sm ${isDone ? "bg-secondary text-secondary-foreground" : "bg-black/40 text-white"}`}>
                         {isDone && <Trophy className="h-3 w-3" />} {e.progress_percent}%
                       </div>
                     </div>
-                    <div className="p-4">
+                    <div className="p-3">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{e.course.subject}</p>
-                      <h3 className="mt-0.5 line-clamp-2 font-display text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                      <h3 className="mt-0.5 line-clamp-1 font-display text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                         {e.course.name}
                       </h3>
-                      <p className="mt-1 text-xs text-muted-foreground">{e.course.educator_name}</p>
-                      <div className="mt-3 flex items-center gap-3 text-[10px] text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-secondary text-secondary" /> {e.course.rating}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {e.course.duration_hours}h
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <BookOpen className="h-3 w-3" /> {e.completed_lessons}/{e.course.total_lessons}
-                        </span>
-                      </div>
-                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{e.course.educator_name}</p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                         <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all" style={{ width: `${e.progress_percent}%` }} />
                       </div>
                     </div>
