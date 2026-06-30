@@ -18,6 +18,8 @@ type TestRow = {
   is_published: boolean;
   course_id: string | null;
   cbt_allowed_batch_ids: string[] | null;
+  test_mode: string | null;
+  results_released_at: string | null;
 };
 
 type EnrolledCourse = { id: string; name: string; subject: string; slug: string };
