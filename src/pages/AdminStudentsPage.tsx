@@ -159,6 +159,7 @@ const AdminStudentsPage = () => {
   const [batches, setBatches] = useState<BatchLite[]>([]);
   const [courses, setCourses] = useState<CourseLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
+  const [classFilter, setClassFilter] = useState<string>(""); // "", or class level
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
