@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { BookOpen, Play, Clock, Star, ArrowRight, Sparkles, GraduationCap, Trophy, Zap, FlaskConical, Compass, Atom, Loader2 } from "lucide-react";
+import { BookOpen, Play, ArrowRight, Sparkles, GraduationCap, Trophy, Zap, FlaskConical, Compass, Atom, Loader2 } from "lucide-react";
 import SectionHeader from "@/components/SectionHeader";
 import { toast } from "sonner";
 
