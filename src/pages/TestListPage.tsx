@@ -168,11 +168,18 @@ const TestListPage = () => {
                   {open && (
                     <div className="border-t border-border divide-y divide-border">
                       {group.tests.map((t) => {
-                        const status = attemptStatus[t.id];
+                        const att = attemptStatus[t.id];
+                        const isSubmitted = att && (att.status === "submitted" || att.status === "auto_submitted");
+                        const isInProgress = att?.status === "in_progress";
+                        const href = isSubmitted
+                          ? `/tests/${att.slug ?? t.slug}/result/${att.id}`
+                          : isInProgress
+                            ? `/tests/${t.slug}/take`
+                            : `/tests/${t.slug}/instructions`;
                         return (
                           <Link
                             key={t.id}
-                            to={status === "in_progress" ? `/tests/${t.slug}/take` : `/tests/${t.slug}/instructions`}
+                            to={href}
                             className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
                           >
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary shrink-0">
@@ -188,10 +195,10 @@ const TestListPage = () => {
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              {status === "submitted" && (
-                                <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-[10px] font-bold text-secondary">Done</span>
+                              {isSubmitted && (
+                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700">View Result</span>
                               )}
-                              {status === "in_progress" && (
+                              {isInProgress && (
                                 <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-600">Resume</span>
                               )}
                               <ChevronRight className="h-4 w-4 text-muted-foreground" />
