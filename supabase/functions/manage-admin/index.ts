@@ -24,33 +24,32 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const admin = createClient(supabaseUrl, serviceKey);
+
+    // Decode JWT payload (gateway already verified the signature when verify_jwt=true,
+    // and we re-check authorization via has_role below using service role).
     let userId: string | null = null;
     let userEmail: string | null = null;
-    let debugMsg = "";
     try {
-      const { data: u, error: uErr } = await admin.auth.getUser(token);
-      if (!uErr && u?.user) {
-        userId = u.user.id;
-        userEmail = u.user.email ?? null;
-      } else if (uErr) {
-        debugMsg = `getUser: ${uErr.message}`;
-      }
-    } catch (e) { debugMsg = `getUser threw: ${(e as Error).message}`; }
+      const payloadB64 = token.split(".")[1];
+      const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+      const json = atob(padded + "===".slice((padded.length + 3) % 4));
+      const claims = JSON.parse(json);
+      userId = claims?.sub ?? null;
+      userEmail = claims?.email ?? null;
+    } catch (_) { /* fall through */ }
+
+    // Fallback to SDK lookup if decoding failed.
     if (!userId) {
       try {
-        const userClient = createClient(supabaseUrl, anonKey, {
-          global: { headers: { Authorization: authHeader } },
-        });
-        const { data: claimsData, error: cErr } = await userClient.auth.getClaims(token);
-        if (claimsData?.claims?.sub) {
-          userId = claimsData.claims.sub as string;
-          userEmail = (claimsData.claims.email as string) ?? null;
-        } else if (cErr) {
-          debugMsg += ` | getClaims: ${cErr.message}`;
+        const { data: u } = await admin.auth.getUser(token);
+        if (u?.user) {
+          userId = u.user.id;
+          userEmail = u.user.email ?? null;
         }
-      } catch (e) { debugMsg += ` | getClaims threw: ${(e as Error).message}`; }
+      } catch (_) { /* ignore */ }
     }
-    if (!userId) return json(401, { error: "Unauthorized", debug: debugMsg });
+
+    if (!userId) return json(401, { error: "Unauthorized" });
     const userData = { user: { id: userId, email: userEmail } };
     const { data: isSuper } = await admin.rpc("has_role", {
       _user_id: userData.user.id,
