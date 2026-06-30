@@ -520,7 +520,7 @@ const AdminStudentsPage = () => {
           { key: "dob", label: "DOB", example: "2008-05-12" },
           { key: "target_exam", label: "Stream", example: "JEE" },
           { key: "class_level", label: "Class", example: "XI" },
-          { key: "batch", label: "Batch", example: "Bull's Eye" },
+          { key: "batch_code", label: "Batch Code", example: "XI-J1" },
           { key: "centre", label: "Centre", required: true, example: "Jamshedpur" },
         ]}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
