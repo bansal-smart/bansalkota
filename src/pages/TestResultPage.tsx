@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
+import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { calcPercent } from "@/lib/progress";
+import { generateScorecardPdf, type ScorecardInput } from "@/lib/tests/generateScorecardPdf";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -223,6 +225,68 @@ const TestResultPage = () => {
     accuracy: calcPercent(st.correct, st.attempted || st.total),
   }));
 
+  const buildScorecardInput = async (): Promise<ScorecardInput | null> => {
+    if (!attempt || !user) return null;
+    const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
+      supabase.from("profiles")
+        .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(name)")
+        .eq("user_id", user.id).maybeSingle(),
+      supabase.from("tests").select("title, exam_pattern, total_marks").eq("id", attempt.test_id!).maybeSingle(),
+      supabase.rpc("get_attempt_response_sheet", { _attempt_id: attempt.id }),
+    ]);
+    const p: any = prof ?? {};
+    const tm: any = testMeta ?? {};
+    const rb: any = respBundle ?? {};
+    const qList: any[] = Array.isArray(rb.questions) ? rb.questions : [];
+    const metaQs: any[] = (attempt as any).metadata?.questions ?? [];
+    const byId: Record<string, any> = {};
+    metaQs.forEach((m) => { if (m?.question_id) byId[m.question_id] = m; });
+    const questions = qList.map((q) => {
+      const m = byId[q.id] ?? {};
+      const isBonus = !!m.is_bonus;
+      const attemptedQ = !!m.attempted;
+      const isCorrect = !!m.is_correct;
+      const status: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
+        ? "Bonus"
+        : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
+      return {
+        position: Number(q.position ?? 0),
+        subject: String(q.subject ?? "—"),
+        status,
+        marks: Number(m.marks ?? 0),
+        max_marks: Number(m.max_marks ?? q.marks_correct ?? 0),
+      };
+    });
+    return {
+      student: {
+        full_name: p.full_name,
+        roll_number: p.roll_number,
+        batch: p.course_batches?.name ?? p.batch_label ?? null,
+        centre: p.centres?.name ?? null,
+        phone: p.phone,
+      },
+      test: {
+        title: tm.title ?? attempt.test_name,
+        exam_pattern: tm.exam_pattern ?? null,
+        total_marks: tm.total_marks ?? test?.total_marks ?? null,
+        submitted_at: (attempt as any).submitted_at ?? null,
+      },
+      attempt: {
+        score, total_questions: total, correct, attempted, wrong, unattempted,
+        time_spent_seconds: seconds,
+        percentile: rankInfo?.percentile ?? attempt.percentile ?? null,
+        rank: rankInfo?.rank ?? null,
+        total_attempts: rankInfo?.total ?? null,
+      },
+      subjects: Object.entries(subjects).map(([s, st]) => ({
+        subject: s, total: st.total, attempted: st.attempted, correct: st.correct,
+        score: st.score, maxScore: st.maxScore,
+      })),
+      questions,
+    };
+  };
+
+
   return (
     <div className="pb-20 lg:pb-0">
       {/* Hero */}
@@ -313,6 +377,29 @@ const TestResultPage = () => {
           <StatTile icon={Target} label="Total" value={total} tone="primary" />
         </div>
 
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Your Scorecard</p>
+            <p className="text-xs text-muted-foreground">Download a printable PDF of your performance.</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const input = await buildScorecardInput();
+                if (!input) { toast.error("Unable to build scorecard"); return; }
+                const pdf = generateScorecardPdf(input);
+                pdf.save(`${(input.student.full_name || "scorecard").replace(/\s+/g, "_")}_${input.test.title.replace(/\s+/g, "_")}.pdf`);
+              } catch (e: any) {
+                toast.error(e?.message ?? "Failed to generate PDF");
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90"
+          >
+            <Download className="h-3.5 w-3.5" /> Download Scorecard PDF
+          </button>
+        </div>
+
         {test?.results_released_at && test?.solution_pdf_path && (
           <div className="rounded-2xl border border-secondary/40 bg-secondary/5 p-4 flex items-center justify-between gap-3">
             <div>
@@ -326,9 +413,9 @@ const TestResultPage = () => {
                 if (error || !data?.signedUrl) return;
                 window.open(data.signedUrl, "_blank");
               }}
-              className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
             >
-              Download Solution PDF
+              <Download className="h-3.5 w-3.5" /> Download Solution PDF
             </button>
           </div>
         )}

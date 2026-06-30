@@ -17,9 +17,11 @@ type TestRow = {
   total_marks: number;
   is_published: boolean;
   course_id: string | null;
+  cbt_allowed_batch_ids: string[] | null;
 };
 
 type EnrolledCourse = { id: string; name: string; subject: string; slug: string };
+type AttemptInfo = { status: string; id: string; slug: string | null };
 
 const GENERAL_KEY = "__general__";
 
@@ -28,7 +30,8 @@ const TestListPage = () => {
   const [search, setSearch] = useState("");
   const [tests, setTests] = useState<TestRow[]>([]);
   const [courses, setCourses] = useState<EnrolledCourse[]>([]);
-  const [attemptStatus, setAttemptStatus] = useState<Record<string, string>>({});
+  const [attemptStatus, setAttemptStatus] = useState<Record<string, AttemptInfo>>({});
+  const [batchId, setBatchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -37,14 +40,20 @@ const TestListPage = () => {
     let active = true;
     (async () => {
       setLoading(true);
-      const [enrollRes, testsRes, attemptsRes] = await Promise.all([
+      const [enrollRes, testsRes, attemptsRes, profileRes] = await Promise.all([
         supabase
           .from("enrollments")
           .select("course:courses(id, name, subject, slug)")
           .eq("user_id", user.id)
           .eq("is_active", true),
-        supabase.from("tests").select("*").eq("is_published", true).order("created_at", { ascending: false }),
-        supabase.from("test_attempts").select("test_id, status").eq("user_id", user.id),
+        supabase
+          .from("tests")
+          .select("id,title,slug,description,test_type,exam_pattern,subjects,duration_minutes,total_questions,total_marks,is_published,course_id,cbt_allowed_batch_ids")
+          .eq("is_published", true)
+          .neq("test_mode", "cbt")
+          .order("created_at", { ascending: false }),
+        supabase.from("test_attempts").select("id, test_id, status, tests(slug)").eq("user_id", user.id),
+        supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
       ]);
       if (!active) return;
       const enrolled = (enrollRes.data ?? [])
@@ -52,9 +61,17 @@ const TestListPage = () => {
         .filter(Boolean) as EnrolledCourse[];
       setCourses(enrolled);
       setTests((testsRes.data ?? []) as TestRow[]);
-      const map: Record<string, string> = {};
-      (attemptsRes.data ?? []).forEach((a: any) => { if (a.test_id) map[a.test_id] = a.status; });
+      const map: Record<string, AttemptInfo> = {};
+      (attemptsRes.data ?? []).forEach((a: any) => {
+        if (!a.test_id) return;
+        const prev = map[a.test_id];
+        // Prefer submitted over in_progress
+        if (!prev || (prev.status === "in_progress" && a.status !== "in_progress")) {
+          map[a.test_id] = { id: a.id, status: a.status, slug: a.tests?.slug ?? null };
+        }
+      });
       setAttemptStatus(map);
+      setBatchId((profileRes.data as any)?.batch_id ?? null);
       // open all by default
       const open: Record<string, boolean> = { [GENERAL_KEY]: true };
       enrolled.forEach((c) => { open[c.id] = true; });
@@ -64,9 +81,23 @@ const TestListPage = () => {
     return () => { active = false; };
   }, [user]);
 
+  const enrolledCourseIds = useMemo(() => new Set(courses.map((c) => c.id)), [courses]);
+
+  const visibleTests = useMemo(() => {
+    return tests.filter((t) => {
+      // Always show tests the student has already attempted
+      if (attemptStatus[t.id]) return true;
+      const allowed = t.cbt_allowed_batch_ids;
+      const isOpen = !allowed || allowed.length === 0;
+      const inBatch = !!(batchId && allowed?.includes(batchId));
+      const inCourse = !!(t.course_id && enrolledCourseIds.has(t.course_id));
+      return isOpen || inBatch || inCourse;
+    });
+  }, [tests, batchId, attemptStatus, enrolledCourseIds]);
+
   const filteredTests = useMemo(
-    () => tests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase())),
-    [tests, search],
+    () => visibleTests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase())),
+    [visibleTests, search],
   );
 
   const grouped = useMemo(() => {
@@ -137,11 +168,18 @@ const TestListPage = () => {
                   {open && (
                     <div className="border-t border-border divide-y divide-border">
                       {group.tests.map((t) => {
-                        const status = attemptStatus[t.id];
+                        const att = attemptStatus[t.id];
+                        const isSubmitted = att && (att.status === "submitted" || att.status === "auto_submitted");
+                        const isInProgress = att?.status === "in_progress";
+                        const href = isSubmitted
+                          ? `/tests/${att.slug ?? t.slug}/result/${att.id}`
+                          : isInProgress
+                            ? `/tests/${t.slug}/take`
+                            : `/tests/${t.slug}/instructions`;
                         return (
                           <Link
                             key={t.id}
-                            to={status === "in_progress" ? `/tests/${t.slug}/take` : `/tests/${t.slug}/instructions`}
+                            to={href}
                             className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
                           >
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary shrink-0">
@@ -157,10 +195,10 @@ const TestListPage = () => {
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              {status === "submitted" && (
-                                <span className="rounded-full bg-secondary/20 px-2 py-0.5 text-[10px] font-bold text-secondary">Done</span>
+                              {isSubmitted && (
+                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700">View Result</span>
                               )}
-                              {status === "in_progress" && (
+                              {isInProgress && (
                                 <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-600">Resume</span>
                               )}
                               <ChevronRight className="h-4 w-4 text-muted-foreground" />

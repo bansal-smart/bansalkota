@@ -1,74 +1,61 @@
-## Goal
-Let the Centre Admin define custom roles for their staff (e.g. "Front Desk", "Counsellor"), pick which Centre Dashboard tabs each role can see, and choose per-tab permissions (View, Create, Edit, Delete, Export). When a staff member with such a role logs into the Centre Dashboard, the sidebar/tiles show only allowed tabs and disallowed actions are blocked.
+## Goals
 
-## Scope of tabs (modules) that can be assigned
-Mirrors the existing Centre sidebar:
-Overview, Centre Detail, Page Banners, Centre Banner, Gallery, Online Courses, Centre Courses, Live Classes, Test Platform, Test Series, Website Enquiries, Course Enquiries, My Students, Support, Role Management (admin only — non-assignable).
+1. Students see only tests relevant to their batch (or genuinely open tests), not every published test.
+2. For each test a student has submitted, they can download both an auto-generated **scorecard PDF** and the admin-uploaded **solution PDF** (when released).
 
-Per-module actions (checkbox grid like reference image):
-view, create, edit, delete, export. Modules that don't support an action just hide it.
+---
 
-## Data model (new tables in `public`)
+## 1. Batch-scoped test visibility
 
-1. `centre_roles`
-   - centre_id (fk centres), name, description, is_system (bool), created_by, created_at, updated_at
-   - unique(centre_id, name)
+**Where:** `src/pages/TestListPage.tsx` (route `/my-tests`) and `src/components/LiveTestsWidget.tsx` (student dashboard widget).
 
-2. `centre_role_permissions`
-   - role_id (fk centre_roles, on delete cascade)
-   - module (text — e.g. "banners", "gallery", "students" …)
-   - can_view, can_create, can_edit, can_delete, can_export (bool)
-   - unique(role_id, module)
+**Logic (lenient mode):** show a published, non-CBT test `t` to the student if any of:
+- `t.cbt_allowed_batch_ids` is `NULL` or empty → open test, visible to all
+- student's `profile.batch_id` is contained in `t.cbt_allowed_batch_ids`
+- student is enrolled in `t.course_id` (already implicit via the "course" grouping)
+- student already has an attempt for `t` (so historical results never disappear)
 
-3. Extend `centre_staff` with `custom_role_id uuid` (nullable, fk centre_roles). Existing `role` text column stays as the coarse label (Admin / Manager / Supervisor / Executive). Only "Admin (Centre Level)" bypasses custom-role checks.
+**Implementation**
+- Fetch the student's `profile.batch_id` once (alongside enrollments).
+- Filter the `tests` list client-side using the rule above (server `tests` SELECT policy stays public-read for simplicity; we just hide irrelevant rows in the UI). Same filter applied in `LiveTestsWidget`.
+- Empty state copy updated to "No tests assigned to your batch yet."
 
-RLS: only users who are centre_staff with role = 'admin' for that centre (or super_admin) can insert/update/delete centre_roles + centre_role_permissions for that centre. All centre_staff of the centre can SELECT (to know their own perms). Add GRANTs accordingly.
+## 2. Result PDFs for attempted tests
 
-## Frontend
+### 2a. Admin-uploaded solution PDF
+Already wired in `TestResultPage.tsx` (storage bucket `test-solutions`, gated by `results_released_at`). We will additionally surface a **"Solution PDF"** button on each submitted row in `TestListPage` / `LiveTestsWidget` "Recent results", linking to the result page where the download lives. No backend change.
 
-### Sidebar
-Add "Role Management" item in `src/components/CenterLayout.tsx` (visible only to centre admins — role === 'admin' or super_admin).
+### 2b. Auto-generated scorecard PDF
+New client-side generator using `jspdf` + `jspdf-autotable` (lightweight, already common; install via `bun add`).
 
-Route: `/center/roles` → new `CenterRolesPage.tsx`.
+**Contents** (one page, Bansal-branded header):
+- Student name, roll number, batch, centre
+- Test title, exam pattern, date submitted, duration used
+- Total score / max, percentage, rank (if released), percentile
+- Subject-wise table: subject, attempted, correct, score / max
+- Per-question status table: Q#, subject, status (Correct / Wrong / Unattempted / Bonus), marks
+- Footer: generated-on timestamp + bansalkota.com
 
-### CenterRolesPage.tsx
-- Lists existing custom roles (cards/table) with member count, edit/delete actions.
-- "Add Role" button opens `CenterRoleModal`.
+**Data source:** the existing `attempt.result` / `attempt.metadata` already produced by `score_test_attempt` — no new RPC needed. Profile info pulled from `profiles` + `course_batches` + `centres` (one query).
 
-### CenterRoleModal.tsx
-- Step 1: name + description.
-- Step 2: Permissions grid. Each module = row with parent checkbox (toggles all in that row) plus 5 action checkboxes (View/Create/Edit/Delete/Export). Layout matches the reference screenshot.
-- Save → upserts role + permissions in a single transaction (rpc or sequential insert).
+**Where the button appears**
+- `TestResultPage.tsx`: primary "Download Scorecard PDF" button next to the existing solution PDF button.
+- `TestListPage.tsx`: on each submitted test row, a small "PDF" icon button that opens the result page (kept simple — generation lives in one place).
 
-### Assign role to staff
-Extend existing `CenterStaffModal.tsx`:
-- After the existing 4 coarse role dropdown, show a "Custom Role" dropdown listing this centre's `centre_roles`. Optional — if blank, only coarse role applies.
-- Persist on centre_staff.custom_role_id.
+**New file:** `src/lib/tests/generateScorecardPdf.ts` — pure function `(attempt, test, profile) => Blob` invoked on click.
 
-### Permission enforcement (client)
-- New hook `useCenterPermissions()` returns `{ isAdmin, can(module, action) }`. Loads current user's `centre_staff` row + joined permissions.
-- `CenterLayout` filters sidebar items by `can(module,'view')`. Admin always sees all.
-- Each module page guards mutating buttons:
-  - Hide/disable "Add", "Edit", "Delete", "Export" controls based on `can()`.
-- Route-level guard in `ProtectedCenterRoute` redirects to /center if module not viewable.
+---
 
-### Server-side defence (light)
-RLS on the existing centre tables already restricts by centre membership. Full per-action RLS using custom roles is out of scope for this iteration; we enforce in UI + the existing role checks. Document this in the modal footer ("Permissions hide UI; the centre admin remains accountable").
+## Files touched
 
-## Files to create
-- `supabase/migrations/...` — tables, grants, RLS.
-- `src/pages/CenterRolesPage.tsx`
-- `src/components/CenterRoleModal.tsx`
-- `src/hooks/useCenterPermissions.ts`
-- Module key constants in `src/lib/centerModules.ts`
+- `src/pages/TestListPage.tsx` — fetch batch_id, apply visibility filter, add "View result" link for submitted attempts.
+- `src/components/LiveTestsWidget.tsx` — same visibility filter.
+- `src/pages/TestResultPage.tsx` — add "Download Scorecard PDF" button calling the new generator.
+- `src/lib/tests/generateScorecardPdf.ts` *(new)* — jsPDF scorecard builder.
+- `package.json` — add `jspdf`, `jspdf-autotable`.
 
-## Files to edit
-- `src/components/CenterLayout.tsx` — add nav item, filter by permissions.
-- `src/App.tsx` — register `/center/roles` route.
-- `src/components/CenterStaffModal.tsx` — custom role dropdown.
-- A handful of centre pages — hide create/edit/delete buttons via `useCenterPermissions`.
+## Non-goals
 
-## Out of scope
-- Editing built-in coarse roles (Admin/Manager/etc.).
-- Per-record RLS based on custom role (UI-level enforcement only for now).
-- Audit log of permission changes.
+- No schema migration. `cbt_allowed_batch_ids` already exists and is the source of truth for batch scoping.
+- No change to admin "Create Test" UI — admins already pick allowed batches there.
+- CBT-mode tests (`test_mode='cbt'`) remain excluded from the student `/my-tests` list (they go through the CBT kiosk flow).
