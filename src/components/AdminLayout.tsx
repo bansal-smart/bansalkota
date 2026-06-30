@@ -30,6 +30,8 @@ import NotificationBell from "@/components/NotificationBell";
 import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { ADMIN_MODULES } from "@/lib/adminModules";
 import { toast } from "sonner";
 
 type NavItem = { label: string; icon: typeof LayoutDashboard; path: string };
