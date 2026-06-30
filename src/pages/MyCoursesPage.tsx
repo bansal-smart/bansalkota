@@ -124,8 +124,14 @@ const MyCoursesPage = () => {
             to={`/my-courses/${recent.course.slug}`}
             className="group relative block w-full overflow-hidden rounded-2xl border border-border bg-card hover-lift animate-fade-in-up sm:max-w-sm lg:max-w-[33%]"
           >
-            <div className={`relative flex h-40 items-center justify-center bg-gradient-to-br ${subjectGradient[recent.course.subject] ?? "from-primary to-accent"}`}>
-              {(() => { const I = subjectIcon[recent.course.subject] ?? BookOpen; return <I className="h-16 w-16 text-white/30" />; })()}
+            <div className={`relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br ${subjectGradient[recent.course.subject] ?? "from-primary to-accent"}`}>
+              {recent.course.thumbnail_url ? (
+                <img src={recent.course.thumbnail_url} alt={recent.course.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {(() => { const I = subjectIcon[recent.course.subject] ?? BookOpen; return <I className="h-16 w-16 text-white/30" />; })()}
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
                 <Zap className="h-3 w-3" /> Resume
@@ -253,8 +259,14 @@ const MyCoursesPage = () => {
                     to={`/my-courses/${e.course.slug}`}
                     className="group overflow-hidden rounded-2xl border border-border bg-card hover-lift"
                   >
-                    <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${gradient}`}>
-                      <Icon className="h-12 w-12 text-white/40" />
+                    <div className={`relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br ${gradient}`}>
+                      {e.course.thumbnail_url ? (
+                        <img src={e.course.thumbnail_url} alt={e.course.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Icon className="h-12 w-12 text-white/40" />
+                        </div>
+                      )}
                       {e.course.badge && (
                         <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground">
                           {e.course.badge}
