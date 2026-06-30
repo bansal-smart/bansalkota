@@ -44,7 +44,13 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [tests, setTests] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
-  const [notAttempted, setNotAttempted] = useState<{ user_id: string; full_name: string | null; batch_name: string | null }[]>([]);
+  const [notAttempted, setNotAttempted] = useState<{
+    user_id: string;
+    full_name: string | null;
+    roll_number: string | null;
+    batch_id: string | null;
+    batch_name: string | null;
+  }[]>([]);
   const [liveConnected, setLiveConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -242,7 +248,24 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveTestId]);
 
-  type Row = (Attempt & { __na?: false }) | { __na: true; id: string; user_id: string; test_id: string; status: "not_attempted"; score: null; percentile: null; correct_answers: null; total_questions: null; started_at: null; submitted_at: null; created_at: string; time_spent_seconds: null; batch_name: string | null };
+  type Row = (Attempt & { __na?: false }) | {
+    __na: true;
+    id: string;
+    user_id: string;
+    test_id: string;
+    status: "not_attempted";
+    score: null;
+    percentile: null;
+    correct_answers: null;
+    total_questions: null;
+    started_at: null;
+    submitted_at: null;
+    created_at: string;
+    time_spent_seconds: null;
+    full_name: string | null;
+    roll_number: string | null;
+    batch_name: string | null;
+  };
 
   const combined: Row[] = useMemo(() => {
     const attemptedUserIds = new Set(attempts.map((a) => a.user_id));
@@ -258,6 +281,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
             score: null, percentile: null, correct_answers: null, total_questions: null,
             started_at: null, submitted_at: null, created_at: "",
             time_spent_seconds: null,
+            full_name: s.full_name,
+            roll_number: s.roll_number,
             batch_name: s.batch_name,
           }))
       : [];
@@ -279,6 +304,11 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     });
   }, [notAttempted]);
 
+  const getStudentName = (row: Row) => {
+    const rosterName = row.__na ? row.full_name?.trim() : "";
+    return rosterName || profiles.get(row.user_id)?.trim() || "Student";
+  };
+
 
 
   const filtered = useMemo(() => {
@@ -286,7 +316,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
       if (!testId && testFilter !== "all" && a.test_id !== testFilter) return false;
       if (debouncedSearch) {
-        const name = (profiles.get(a.user_id) ?? "").toLowerCase();
+        const name = getStudentName(a).toLowerCase();
         const t = tests.find((x) => x.id === a.test_id)?.title?.toLowerCase() ?? "";
         if (!name.includes(debouncedSearch.toLowerCase()) && !t.includes(debouncedSearch.toLowerCase())) return false;
       }
@@ -327,7 +357,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       ...filtered.map((a) => {
         const t = tests.find((x) => x.id === a.test_id);
         return [
-          profiles.get(a.user_id) ?? "",
+          getStudentName(a),
           t?.title ?? "",
           a.status,
           a.score ?? "",
@@ -462,9 +492,10 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                 {paged.map((a) => {
                   const t = tests.find((x) => x.id === a.test_id);
                   const submitted = a.submitted_at ? format(new Date(a.submitted_at), "dd MMM HH:mm") : "—";
+                  const studentName = getStudentName(a);
                   return (
                     <tr key={a.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                      <td className="px-4 py-3 font-medium text-foreground">{profiles.get(a.user_id) ?? "Student"}</td>
+                      <td className="px-4 py-3 font-medium text-foreground">{studentName}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{t?.title ?? "—"}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
