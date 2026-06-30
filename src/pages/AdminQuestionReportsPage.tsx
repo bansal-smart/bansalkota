@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertTriangle, CheckCircle2, Archive, ExternalLink, Filter } from "lucide-react";
 import { toast } from "sonner";
+import MathRenderer from "@/components/MathRenderer";
+
 
 type ReportRow = {
   id: string;
