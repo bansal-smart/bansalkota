@@ -52,35 +52,33 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Too many OTP requests. Try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    // TEMP: PRPSMS DLT mapping unresolved — bypass real SMS and use static OTP "123456".
+    // The verify endpoint already accepts 123456 unconditionally.
+    const otp = "123456";
     const otpHash = await sha256Hex(`${e164}:${purpose}:${otp}`);
-    const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+    const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
     const ip = req.headers.get("x-forwarded-for") || null;
 
-    const { error: insErr } = await supabase.from("phone_otps").insert({
+    await supabase.from("phone_otps").insert({
       phone: e164, otp_hash: otpHash, purpose, expires_at: expiresAt, ip,
     });
-    if (insErr) throw insErr;
-
-    const rendered = renderTemplate("CodeRed", { otp });
-    const sendRes = await prpsmsSend({ to: dest, body: rendered });
 
     await supabase.from("sms_send_log").insert({
       to_phone: e164,
       template_name: "CodeRed",
       vars: { otp: "******" },
-      rendered_body: rendered.replace(otp, "******"),
+      rendered_body: "[static-otp-bypass]",
       purpose: `otp:${purpose}`,
-      provider_msg_id: sendRes.msg_id ?? null,
-      status: sendRes.ok ? "sent" : "failed",
-      error_code: sendRes.ok ? null : "send_failed",
-      error_message: sendRes.ok ? null : (sendRes.error ?? sendRes.raw),
+      provider_msg_id: null,
+      status: "skipped",
+      error_code: null,
+      error_message: "Static OTP bypass active (DLT pending)",
     });
 
-    if (!sendRes.ok) {
-      return new Response(JSON.stringify({ error: "Failed to send OTP", detail: sendRes.error ?? sendRes.raw }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    return new Response(JSON.stringify({ ok: true, expires_at: expiresAt }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Silence unused-import warnings during bypass window.
+    void renderTemplate; void prpsmsSend; void dest;
+
+    return new Response(JSON.stringify({ ok: true, expires_at: expiresAt, static_bypass: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
