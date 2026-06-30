@@ -43,7 +43,7 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const MyCoursesPage = lazy(() => import("./pages/MyCoursesPage"));
-const CourseStudyMaterialPage = lazy(() => import("./pages/CourseStudyMaterialPage"));
+const CourseStudyMaterialPage = lazy(() => import("./pages/CourseLearnPage"));
 const ChapterQuizPage = lazy(() => import("./pages/ChapterQuizPage"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const LecturePlayerPage = lazy(() => import("./pages/LecturePlayerPage"));
