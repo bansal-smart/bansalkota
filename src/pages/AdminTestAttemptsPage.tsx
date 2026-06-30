@@ -5,6 +5,7 @@ import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCir
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
@@ -47,6 +48,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [liveConnected, setLiveConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [testFilter, setTestFilter] = useState<string>(testId ?? "all");
   const [reattempts, setReattempts] = useState<ReattemptReq[]>([]);
@@ -248,14 +250,14 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     return combined.filter((a) => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
       if (!testId && testFilter !== "all" && a.test_id !== testFilter) return false;
-      if (search) {
+      if (debouncedSearch) {
         const name = (profiles.get(a.user_id) ?? "").toLowerCase();
         const t = tests.find((x) => x.id === a.test_id)?.title?.toLowerCase() ?? "";
-        if (!name.includes(search.toLowerCase()) && !t.includes(search.toLowerCase())) return false;
+        if (!name.includes(debouncedSearch.toLowerCase()) && !t.includes(debouncedSearch.toLowerCase())) return false;
       }
       return true;
     });
-  }, [combined, search, statusFilter, testFilter, profiles, tests, testId]);
+  }, [combined, debouncedSearch, statusFilter, testFilter, profiles, tests, testId]);
 
   const counts = useMemo(() => {
     const c = { not_attempted: 0, in_progress: 0, submitted: 0, auto_submitted: 0 };

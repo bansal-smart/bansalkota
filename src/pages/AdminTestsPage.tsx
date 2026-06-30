@@ -3,6 +3,7 @@ import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet }
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
@@ -48,6 +49,7 @@ const AdminTestsPage = () => {
   const [tests, setTests] = useState<AdminTest[]>([]);
   const [batches, setBatches] = useState<BatchOpt[]>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | "unrestricted" | batchId
   const [loading, setLoading] = useState(true);
@@ -95,7 +97,7 @@ const AdminTestsPage = () => {
 
   const now = Date.now();
   const filtered = tests.filter((t) => {
-    if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false;
+    if (debouncedSearch && !t.title.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
     if (statusFilter !== "all" && computeStatus(t, now) !== statusFilter) return false;
     if (batchFilter !== "all") {
       const ids = t.cbt_allowed_batch_ids ?? [];
@@ -113,7 +115,7 @@ const AdminTestsPage = () => {
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, statusFilter, batchFilter]);
+  }, [debouncedSearch, statusFilter, batchFilter]);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">

@@ -4,6 +4,7 @@ import TablePagination from "@/components/TablePagination";
 import { toast } from "sonner";
 import { List, type RowComponentProps } from "react-window";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAdminUsers, type AdminUserRow } from "@/hooks/useAdminUsers";
 
 const roleBadge = (role: string) => {
@@ -172,6 +173,7 @@ const UsersVirtualTable = ({
 const AdminUsersPage = () => {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const [drawerUser, setDrawerUser] = useState<AdminUserRow | null>(null);
@@ -180,7 +182,7 @@ const AdminUsersPage = () => {
   const [pendingRole, setPendingRole] = useState<AdminUserRow["role"] | null>(null);
   const [savingRole, setSavingRole] = useState(false);
 
-  const { rows, total, loading, pageSize, reload } = useAdminUsers(filter, search, page);
+  const { rows, total, loading, pageSize, reload } = useAdminUsers(filter, debouncedSearch, page);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

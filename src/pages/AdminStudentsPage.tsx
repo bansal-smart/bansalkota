@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, Mail, GraduationCap, UserPlus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
 
@@ -140,6 +141,7 @@ function CoursesMultiSelect({
 const AdminStudentsPage = () => {
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -233,8 +235,8 @@ const AdminStudentsPage = () => {
         .in("user_id", studentIds)
         .order("created_at", { ascending: false });
 
-      if (search.trim()) {
-        const s = search.trim();
+      if (debouncedSearch.trim()) {
+        const s = debouncedSearch.trim();
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
       if (centreFilter === "none") query = query.is("centre_id", null);
@@ -269,7 +271,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, page, centreFilter, centres, batches]);
+  }, [debouncedSearch, page, centreFilter, centres, batches]);
 
   useEffect(() => {
     load();
@@ -385,8 +387,8 @@ const AdminStudentsPage = () => {
           .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label")
           .in("user_id", slice)
           .order("created_at", { ascending: false });
-        if (search.trim()) {
-          const s = search.trim();
+        if (debouncedSearch.trim()) {
+          const s = debouncedSearch.trim();
           q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
         }
         if (centreFilter === "none") q = q.is("centre_id", null);
