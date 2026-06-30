@@ -128,7 +128,7 @@ const LiveTestsWidget = () => {
         return sa - sb;
       })
       .slice(0, 4);
-  }, [tests, now]);
+  }, [tests, now, batchId, courseIds, attempts]);
 
   if (visible.length === 0 && recent.length === 0) return null;
 
