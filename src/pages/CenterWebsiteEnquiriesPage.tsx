@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowUpDown } from "lucide-react";
+import { Download } from "lucide-react";
 import { exportCsv } from "@/lib/exportCsv";
 
 
