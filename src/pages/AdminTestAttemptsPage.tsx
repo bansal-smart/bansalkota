@@ -103,6 +103,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
+  const effectiveTestId = testId ?? (testFilter !== "all" ? testFilter : null);
+
   const load = async () => {
 
     setLoading(true);
@@ -124,17 +126,23 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     ]);
     setProfiles(new Map(((pRes as any).data ?? []).map((p: any) => [p.user_id, p.full_name ?? "Student"])));
     setTests(((tRes as any).data ?? []) as any);
-
-    // Not Attempted: only meaningful for a specific test
-    if (testId) {
-      const { data: naRows, error: naErr } = await (supabase as any)
-        .rpc("admin_test_not_attempted", { _test_id: testId });
-      if (!naErr) setNotAttempted((naRows ?? []) as any);
-    } else {
-      setNotAttempted([]);
-    }
     setLoading(false);
   };
+
+  // Load the "absent" (not attempted) roster whenever a single test is in focus
+  // (either via the testId prop or via the test dropdown).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!effectiveTestId) { setNotAttempted([]); return; }
+      const { data: naRows, error: naErr } = await (supabase as any)
+        .rpc("admin_test_not_attempted", { _test_id: effectiveTestId });
+      if (!active) return;
+      if (!naErr) setNotAttempted((naRows ?? []) as any);
+    })();
+    return () => { active = false; };
+  }, [effectiveTestId]);
+
 
   const loadReattempts = async () => {
     let q = supabase
@@ -170,8 +178,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
   // Realtime: live status updates on test_attempts (per-test when scoped, else global)
   useEffect(() => {
-    const channelName = testId ? `admin-attempts-${testId}` : `admin-attempts-all`;
-    const filter = testId ? `test_id=eq.${testId}` : undefined;
+    const channelName = effectiveTestId ? `admin-attempts-${effectiveTestId}` : `admin-attempts-all`;
+    const filter = effectiveTestId ? `test_id=eq.${effectiveTestId}` : undefined;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -210,20 +218,20 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       });
     return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testId]);
+  }, [effectiveTestId]);
 
   type Row = (Attempt & { __na?: false }) | { __na: true; id: string; user_id: string; test_id: string; status: "not_attempted"; score: null; percentile: null; correct_answers: null; total_questions: null; started_at: null; submitted_at: null; created_at: string; time_spent_seconds: null; batch_name: string | null };
 
   const combined: Row[] = useMemo(() => {
     const attemptedUserIds = new Set(attempts.map((a) => a.user_id));
-    const naRows: Row[] = testId
+    const naRows: Row[] = effectiveTestId
       ? notAttempted
           .filter((s) => !attemptedUserIds.has(s.user_id))
           .map((s) => ({
             __na: true as const,
             id: `na-${s.user_id}`,
             user_id: s.user_id,
-            test_id: testId,
+            test_id: effectiveTestId,
             status: "not_attempted" as const,
             score: null, percentile: null, correct_answers: null, total_questions: null,
             started_at: null, submitted_at: null, created_at: "",
@@ -232,7 +240,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           }))
       : [];
     // Inject names into profiles map for NA students
-    if (testId && notAttempted.length) {
+    if (effectiveTestId && notAttempted.length) {
       setProfiles((prev) => {
         let changed = false;
         const next = new Map(prev);
@@ -244,7 +252,9 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     }
     return [...attempts.map((a) => a as Row), ...naRows];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attempts, notAttempted, testId]);
+  }, [attempts, notAttempted, effectiveTestId]);
+
+
 
   const filtered = useMemo(() => {
     return combined.filter((a) => {
@@ -373,7 +383,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
           <option value="all">All statuses</option>
-          {testId && <option value="not_attempted">Not attempted</option>}
+          {effectiveTestId && <option value="not_attempted">Absent</option>}
           <option value="in_progress">In progress</option>
           <option value="submitted">Submitted</option>
           <option value="auto_submitted">Auto-submitted</option>
@@ -393,9 +403,10 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {testId && (
-          <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Not Attempted</p><p className="text-lg font-black text-foreground">{counts.not_attempted}</p></div>
+        {effectiveTestId && (
+          <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Absent</p><p className="text-lg font-black text-foreground">{counts.not_attempted}</p></div>
         )}
+
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Progress</p><p className="text-lg font-black text-primary">{counts.in_progress}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Submitted</p><p className="text-lg font-black text-secondary">{counts.submitted}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Auto-submitted</p><p className="text-lg font-black text-amber-600">{counts.auto_submitted}</p></div>
@@ -436,7 +447,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                           a.status === "auto_submitted" ? "bg-amber-500/20 text-amber-600" :
                           a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
                           "bg-primary/10 text-primary animate-pulse"
-                        }`}>{a.status === "not_attempted" ? "not attempted" : a.status?.replace("_", " ")}</span>
+                        }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>
