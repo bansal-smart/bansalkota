@@ -447,7 +447,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                           a.status === "auto_submitted" ? "bg-amber-500/20 text-amber-600" :
                           a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
                           "bg-primary/10 text-primary animate-pulse"
-                        }`}>{a.status === "not_attempted" ? "not attempted" : a.status?.replace("_", " ")}</span>
+                        }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>
