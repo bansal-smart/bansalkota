@@ -178,8 +178,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
   // Realtime: live status updates on test_attempts (per-test when scoped, else global)
   useEffect(() => {
-    const channelName = testId ? `admin-attempts-${testId}` : `admin-attempts-all`;
-    const filter = testId ? `test_id=eq.${testId}` : undefined;
+    const channelName = effectiveTestId ? `admin-attempts-${effectiveTestId}` : `admin-attempts-all`;
+    const filter = effectiveTestId ? `test_id=eq.${effectiveTestId}` : undefined;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -218,20 +218,42 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       });
     return () => { supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testId]);
+  }, [effectiveTestId]);
 
   type Row = (Attempt & { __na?: false }) | { __na: true; id: string; user_id: string; test_id: string; status: "not_attempted"; score: null; percentile: null; correct_answers: null; total_questions: null; started_at: null; submitted_at: null; created_at: string; time_spent_seconds: null; batch_name: string | null };
 
   const combined: Row[] = useMemo(() => {
     const attemptedUserIds = new Set(attempts.map((a) => a.user_id));
-    const naRows: Row[] = testId
+    const naRows: Row[] = effectiveTestId
       ? notAttempted
           .filter((s) => !attemptedUserIds.has(s.user_id))
           .map((s) => ({
             __na: true as const,
             id: `na-${s.user_id}`,
             user_id: s.user_id,
-            test_id: testId,
+            test_id: effectiveTestId,
+            status: "not_attempted" as const,
+            score: null, percentile: null, correct_answers: null, total_questions: null,
+            started_at: null, submitted_at: null, created_at: "",
+            time_spent_seconds: null,
+            batch_name: s.batch_name,
+          }))
+      : [];
+    // Inject names into profiles map for NA students
+    if (effectiveTestId && notAttempted.length) {
+      setProfiles((prev) => {
+        let changed = false;
+        const next = new Map(prev);
+        for (const s of notAttempted) {
+          if (!next.has(s.user_id)) { next.set(s.user_id, s.full_name ?? "Student"); changed = true; }
+        }
+        return changed ? next : prev;
+      });
+    }
+    return [...attempts.map((a) => a as Row), ...naRows];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempts, notAttempted, effectiveTestId]);
+
             status: "not_attempted" as const,
             score: null, percentile: null, correct_answers: null, total_questions: null,
             started_at: null, submitted_at: null, created_at: "",
