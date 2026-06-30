@@ -164,7 +164,7 @@ const AdminStudentsPage = () => {
   const [addSaving, setAddSaving] = useState(false);
   const emptyAdd = {
     roll_number: "", full_name: "", father_name: "", phone: "", parent_phone: "",
-    dob: "", target_exam: "", class_level: "", batch: "", centre: "",
+    dob: "", target_exam: "", class_level: "", batch_id: "", centre: "",
   };
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
   const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
