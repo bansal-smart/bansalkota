@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 
 type Payment = {
@@ -57,6 +58,7 @@ const AdminPaymentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -77,7 +79,7 @@ const AdminPaymentsPage = () => {
   const dateFiltered = useMemo(() => {
     const fromTs = fromDate ? new Date(fromDate + "T00:00:00").getTime() : null;
     const toTs = toDate ? new Date(toDate + "T23:59:59").getTime() : null;
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return payments.filter((p) => {
       const t = new Date(p.created_at).getTime();
       if (fromTs !== null && t < fromTs) return false;
@@ -88,7 +90,7 @@ const AdminPaymentsPage = () => {
       }
       return true;
     });
-  }, [payments, fromDate, toDate, search]);
+  }, [payments, fromDate, toDate, debouncedSearch]);
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -119,7 +121,7 @@ const AdminPaymentsPage = () => {
 
   const filtered = filter === "all" ? dateFiltered : dateFiltered.filter((t) => t.status === filter);
 
-  const hasActiveFilters = fromDate || toDate || search;
+  const hasActiveFilters = fromDate || toDate || debouncedSearch;
   const clearFilters = () => {
     setFromDate("");
     setToDate("");

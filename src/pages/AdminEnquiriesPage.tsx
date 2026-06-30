@@ -5,6 +5,7 @@ import { exportCsv } from "@/lib/exportCsv";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +60,7 @@ const AdminEnquiriesPage = () => {
   const [rows, setRows] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [active, setActive] = useState<Enquiry | null>(null);
@@ -87,7 +89,7 @@ const AdminEnquiriesPage = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (sourceFilter !== "all" && r.source !== sourceFilter) return false;
@@ -105,7 +107,7 @@ const AdminEnquiriesPage = () => {
         (r.centre?.city ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, statusFilter, sourceFilter, centreFilter]);
+  }, [rows, debouncedSearch, statusFilter, sourceFilter, centreFilter]);
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
   const stats = useMemo(() => {

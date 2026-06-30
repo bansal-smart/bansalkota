@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ShoppingBag, Loader2, Search, Download, X as XIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 
 type Order = {
@@ -39,6 +40,7 @@ const AdminOrdersPage = () => {
   const [items, setItems] = useState<Record<string, OrderItem[]>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 300);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("all");
   const [selected, setSelected] = useState<Order | null>(null);
 
@@ -64,7 +66,7 @@ const AdminOrdersPage = () => {
   };
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+    const needle = debouncedQ.trim().toLowerCase();
     return orders.filter((o) => {
       if (statusFilter !== "all" && o.status !== statusFilter) return false;
       if (!needle) return true;
@@ -76,7 +78,7 @@ const AdminOrdersPage = () => {
         (o.razorpay_payment_id ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [orders, q, statusFilter]);
+  }, [orders, debouncedQ, statusFilter]);
 
   const stats = useMemo(() => {
     const total = orders.length;

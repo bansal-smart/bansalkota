@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Award, Loader2, Search, Download, Check, X as XIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 
@@ -36,6 +37,7 @@ const AdminBoostPage = () => {
   const [rows, setRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 300);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("all");
   const [payFilter, setPayFilter] = useState<(typeof PAYMENT_OPTIONS)[number]>("all");
   const [selected, setSelected] = useState<Registration | null>(null);
@@ -56,7 +58,7 @@ const AdminBoostPage = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
+    const needle = debouncedQ.trim().toLowerCase();
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (payFilter !== "all" && r.payment_status !== payFilter) return false;
@@ -69,7 +71,7 @@ const AdminBoostPage = () => {
         (r.city ?? "").toLowerCase().includes(needle)
       );
     });
-  }, [rows, q, statusFilter, payFilter]);
+  }, [rows, debouncedQ, statusFilter, payFilter]);
 
   const stats = useMemo(() => {
     const total = rows.length;

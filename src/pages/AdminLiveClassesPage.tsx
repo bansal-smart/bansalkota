@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 type AdminLive = {
@@ -116,6 +117,7 @@ const AdminLiveClassesPage = () => {
 
   // Filters & pagination
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [teacherFilter, setTeacherFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
@@ -165,7 +167,7 @@ const AdminLiveClassesPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, teacherFilter]);
+  }, [debouncedSearch, statusFilter, teacherFilter]);
 
   const counts = useMemo(() => {
     const now = new Date();
@@ -179,7 +181,7 @@ const AdminLiveClassesPage = () => {
   const teacherMap = useMemo(() => new Map(teachers.map((t) => [t.user_id, t])), [teachers]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return classes.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (teacherFilter !== "all" && c.created_by !== teacherFilter) return false;
@@ -190,7 +192,7 @@ const AdminLiveClassesPage = () => {
         (c.educator_name ?? "").toLowerCase().includes(q)
       );
     });
-  }, [classes, search, statusFilter, teacherFilter]);
+  }, [classes, debouncedSearch, statusFilter, teacherFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = useMemo(
