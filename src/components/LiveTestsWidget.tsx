@@ -55,13 +55,14 @@ const LiveTestsWidget = () => {
     if (!user) return;
     let active = true;
     const load = async () => {
-      const [tRes, aRes, rRes] = await Promise.all([
+      const [tRes, aRes, rRes, pRes, eRes] = await Promise.all([
         supabase
           .from("tests")
-          .select("id,title,slug,exam_pattern,test_type,duration_minutes,total_questions,total_marks,starts_at,ends_at")
+          .select("id,title,slug,exam_pattern,test_type,duration_minutes,total_questions,total_marks,starts_at,ends_at,cbt_allowed_batch_ids,course_id")
           .eq("is_published", true)
+          .neq("test_mode", "cbt")
           .order("starts_at", { ascending: true, nullsFirst: false })
-          .limit(20),
+          .limit(40),
         supabase.from("test_attempts").select("test_id,status").eq("user_id", user.id),
         supabase
           .from("test_attempts")
@@ -70,12 +71,16 @@ const LiveTestsWidget = () => {
           .in("status", ["submitted", "auto_submitted"])
           .order("submitted_at", { ascending: false })
           .limit(3),
+        supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
+        supabase.from("enrollments").select("course_id").eq("user_id", user.id).eq("is_active", true),
       ]);
       if (!active) return;
       setTests((tRes.data ?? []) as TestRow[]);
       const m: Record<string, string> = {};
       (aRes.data ?? []).forEach((a: any) => { if (a.test_id) m[a.test_id] = a.status; });
       setAttempts(m);
+      setBatchId((pRes.data as any)?.batch_id ?? null);
+      setCourseIds(new Set(((eRes.data ?? []) as any[]).map((e) => e.course_id).filter(Boolean)));
       setRecent(((rRes.data ?? []) as any[]).map((r) => ({
         id: r.id, test_name: r.test_name, score: r.score, submitted_at: r.submitted_at,
         test_id: r.test_id, slug: r.tests?.slug ?? null,
@@ -101,6 +106,13 @@ const LiveTestsWidget = () => {
     return tests
       .map((t) => ({ t, status: statusOf(t, now) }))
       .filter(({ t, status }) => {
+        // Audience scope
+        const allowed = t.cbt_allowed_batch_ids;
+        const isOpen = !allowed || allowed.length === 0;
+        const inBatch = !!(batchId && allowed?.includes(batchId));
+        const inCourse = !!(t.course_id && courseIds.has(t.course_id));
+        const hasAttempt = !!attempts[t.id];
+        if (!(isOpen || inBatch || inCourse || hasAttempt)) return false;
         if (status === "live") return true;
         if (status === "upcoming") {
           const s = new Date(t.starts_at!).getTime();
