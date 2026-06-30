@@ -9,8 +9,7 @@ import { exportCsv } from "@/lib/exportCsv";
 
 
 const STATUSES = ["new", "in_progress", "resolved", "closed"] as const;
-
-type SortDir = "asc" | "desc" | null;
+const TYPES = ["admission", "course", "general"] as const;
 
 const CenterWebsiteEnquiriesPage = () => {
   const { primaryCenterId } = useCenterAdmin();
