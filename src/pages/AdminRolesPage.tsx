@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Loader2, Pencil, Trash2, Shield, Users, UserPlus } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
@@ -37,6 +38,7 @@ const AdminRolesPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const { confirm: askConfirm, ConfirmDialog } = useConfirm();
 
   // Create login state
   const [newName, setNewName] = useState("");
@@ -84,7 +86,14 @@ const AdminRolesPage = () => {
   useEffect(() => { load(); }, [load]);
 
   const removeRole = async (id: string) => {
-    if (!confirm("Delete this role? Admins assigned to it will revert to full admin access.")) return;
+    const ok = await askConfirm({
+      title: "Delete Role?",
+      description: "Admins assigned to it will revert to full admin access.",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from("admin_roles").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Role deleted");
@@ -292,6 +301,7 @@ const AdminRolesPage = () => {
           onSaved={load}
         />
       )}
+      {ConfirmDialog}
     </div>
   );
 };
