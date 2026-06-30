@@ -1,61 +1,33 @@
-## Goals
+## Problem
 
-1. Students see only tests relevant to their batch (or genuinely open tests), not every published test.
-2. For each test a student has submitted, they can download both an auto-generated **scorecard PDF** and the admin-uploaded **solution PDF** (when released).
+On `/admin/tests-hub?tab=attempts`, when admin picks a single test from the **test dropdown** (e.g. "fasd"), only students who actually clicked "Start" appear (status: in progress / submitted / auto-submitted). Students who belong to the test's batch but never opened it are not listed at all — so admin can't see who's **absent**.
 
----
+The "Not Attempted" roster is already implemented via the `admin_test_not_attempted` RPC, but the page only calls it when a `testId` **prop** is passed (i.e. the per-test page). The global Attempts tab leaves it empty.
 
-## 1. Batch-scoped test visibility
+## Fix
 
-**Where:** `src/pages/TestListPage.tsx` (route `/my-tests`) and `src/components/LiveTestsWidget.tsx` (student dashboard widget).
+Make the global Attempts view behave like the per-test view as soon as a test is selected in the dropdown.
 
-**Logic (lenient mode):** show a published, non-CBT test `t` to the student if any of:
-- `t.cbt_allowed_batch_ids` is `NULL` or empty → open test, visible to all
-- student's `profile.batch_id` is contained in `t.cbt_allowed_batch_ids`
-- student is enrolled in `t.course_id` (already implicit via the "course" grouping)
-- student already has an attempt for `t` (so historical results never disappear)
+### `src/pages/AdminTestAttemptsPage.tsx`
 
-**Implementation**
-- Fetch the student's `profile.batch_id` once (alongside enrollments).
-- Filter the `tests` list client-side using the rule above (server `tests` SELECT policy stays public-read for simplicity; we just hide irrelevant rows in the UI). Same filter applied in `LiveTestsWidget`.
-- Empty state copy updated to "No tests assigned to your batch yet."
+1. **Treat dropdown selection like a scoped test.** Compute `effectiveTestId = testId ?? (testFilter !== "all" ? testFilter : null)`.
+2. **Fetch absent roster whenever `effectiveTestId` changes.**
+   - Call `supabase.rpc("admin_test_not_attempted", { _test_id: effectiveTestId })`.
+   - Clear `notAttempted` when `effectiveTestId` is null.
+   - Add `effectiveTestId` to the `useEffect` dependency so switching tests in the dropdown refetches.
+3. **Build the combined rows using `effectiveTestId`** (instead of the prop), so absent rows render in the global view too.
+4. **Realtime subscription**: re-subscribe per `effectiveTestId` so updates filter correctly when a test is chosen in the dropdown. On INSERT for that test, also drop the matching user from `notAttempted` (already done).
+5. **UI polish**
+   - Show the "Not Attempted" stat card whenever `effectiveTestId` is set.
+   - Enable the "Not attempted" status filter option in the same condition.
+   - Render the status pill label as **"Absent"** (instead of "not attempted") for clearer admin wording; keep underlying status value `not_attempted`.
+6. **No schema changes.** The RPC and table already exist; the test "fasd" appearing in the dropdown confirms the data path.
 
-## 2. Result PDFs for attempted tests
+### Out of scope
+- Per-test page (`/admin/tests/:id/attempts`) already works; no change needed.
+- No changes to test-taking, batch assignment, or RLS.
 
-### 2a. Admin-uploaded solution PDF
-Already wired in `TestResultPage.tsx` (storage bucket `test-solutions`, gated by `results_released_at`). We will additionally surface a **"Solution PDF"** button on each submitted row in `TestListPage` / `LiveTestsWidget` "Recent results", linking to the result page where the download lives. No backend change.
-
-### 2b. Auto-generated scorecard PDF
-New client-side generator using `jspdf` + `jspdf-autotable` (lightweight, already common; install via `bun add`).
-
-**Contents** (one page, Bansal-branded header):
-- Student name, roll number, batch, centre
-- Test title, exam pattern, date submitted, duration used
-- Total score / max, percentage, rank (if released), percentile
-- Subject-wise table: subject, attempted, correct, score / max
-- Per-question status table: Q#, subject, status (Correct / Wrong / Unattempted / Bonus), marks
-- Footer: generated-on timestamp + bansalkota.com
-
-**Data source:** the existing `attempt.result` / `attempt.metadata` already produced by `score_test_attempt` — no new RPC needed. Profile info pulled from `profiles` + `course_batches` + `centres` (one query).
-
-**Where the button appears**
-- `TestResultPage.tsx`: primary "Download Scorecard PDF" button next to the existing solution PDF button.
-- `TestListPage.tsx`: on each submitted test row, a small "PDF" icon button that opens the result page (kept simple — generation lives in one place).
-
-**New file:** `src/lib/tests/generateScorecardPdf.ts` — pure function `(attempt, test, profile) => Blob` invoked on click.
-
----
-
-## Files touched
-
-- `src/pages/TestListPage.tsx` — fetch batch_id, apply visibility filter, add "View result" link for submitted attempts.
-- `src/components/LiveTestsWidget.tsx` — same visibility filter.
-- `src/pages/TestResultPage.tsx` — add "Download Scorecard PDF" button calling the new generator.
-- `src/lib/tests/generateScorecardPdf.ts` *(new)* — jsPDF scorecard builder.
-- `package.json` — add `jspdf`, `jspdf-autotable`.
-
-## Non-goals
-
-- No schema migration. `cbt_allowed_batch_ids` already exists and is the source of truth for batch scoping.
-- No change to admin "Create Test" UI — admins already pick allowed batches there.
-- CBT-mode tests (`test_mode='cbt'`) remain excluded from the student `/my-tests` list (they go through the CBT kiosk flow).
+## Verification
+- Open Attempts tab, select "fasd" in the test dropdown → all batch students appear with status "Absent" except Mayank ("In progress"). Counts card shows "Not Attempted: N".
+- When a student starts the test, their row flips from Absent → In progress in real-time, and the Not Attempted count decreases.
+- Setting dropdown back to "All tests" hides the absent rows (since absence is per-test).

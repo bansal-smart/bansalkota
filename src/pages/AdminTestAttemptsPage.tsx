@@ -103,6 +103,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
+  const effectiveTestId = testId ?? (testFilter !== "all" ? testFilter : null);
+
   const load = async () => {
 
     setLoading(true);
@@ -124,17 +126,23 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     ]);
     setProfiles(new Map(((pRes as any).data ?? []).map((p: any) => [p.user_id, p.full_name ?? "Student"])));
     setTests(((tRes as any).data ?? []) as any);
-
-    // Not Attempted: only meaningful for a specific test
-    if (testId) {
-      const { data: naRows, error: naErr } = await (supabase as any)
-        .rpc("admin_test_not_attempted", { _test_id: testId });
-      if (!naErr) setNotAttempted((naRows ?? []) as any);
-    } else {
-      setNotAttempted([]);
-    }
     setLoading(false);
   };
+
+  // Load the "absent" (not attempted) roster whenever a single test is in focus
+  // (either via the testId prop or via the test dropdown).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!effectiveTestId) { setNotAttempted([]); return; }
+      const { data: naRows, error: naErr } = await (supabase as any)
+        .rpc("admin_test_not_attempted", { _test_id: effectiveTestId });
+      if (!active) return;
+      if (!naErr) setNotAttempted((naRows ?? []) as any);
+    })();
+    return () => { active = false; };
+  }, [effectiveTestId]);
+
 
   const loadReattempts = async () => {
     let q = supabase
