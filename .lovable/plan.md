@@ -1,27 +1,18 @@
-## 1. Students tab leaking centre_admin users
+## Plan
 
-**Root cause:** the `handle_new_user` trigger assigns the `student` role to every new auth user, including users created by `admin-create-center-user` / `seed-staff-user`. So centre admins carry both `student` + `center_admin` rows in `user_roles`, and `AdminStudentsPage` only filters on `role = 'student'`.
+1. **Fix the roster source**
+   - Update the backend `admin_test_not_attempted` function so it reliably returns each assigned batch student's real `full_name`, `roll_number`, and batch details for the selected test.
+   - Keep the existing auth checks for admin, super admin, teacher, and centre admin.
 
-**Fix (frontend only, no schema change):** in `AdminStudentsPage.tsx` (`load()` around L219 and the CSV export around L375), after fetching the `student` role IDs, fetch all rows from `user_roles` where role IN ('center_admin','admin','super_admin','teacher','mentor') and **exclude** those user_ids from `studentIds` before querying profiles. Realtime subscription already re-runs `load()` on `user_roles` changes, so suspensions/role swaps stay live.
+2. **Make the UI stop falling back incorrectly**
+   - Update `AdminTestAttemptsPage.tsx` so absent rows use the returned `full_name` directly first, then the profile map, and only show `Student` if no name exists at all.
+   - Include roll number/batch as supporting data if useful for distinguishing students.
 
-## 2. Bulk import: add `batch_code` so students get auto-mapped to batches
+3. **Verify with the existing `fasd` test**
+   - Confirm the test has students in `XII-A1` and `XII-A2`.
+   - Verify the attempts page shows the actual names like the Students table, not repeated `Student` labels.
 
-- `bulk-import` already resolves a `batch` column by name **or** code (see `batchByKey`). Make this explicit and user-friendly:
-  - In `AdminStudentsPage.tsx` `BulkCsvDialog.fields`, replace the single `batch` field with `batch_code` (label "Batch Code", example "XI-J1"). Keep backward-compat in the edge function by accepting both `batch_code` and `batch`.
-  - In `supabase/functions/bulk-import/index.ts` (students branch ~L232), read `r.batch_code ?? r.batch`; if not found, return a clear per-row error (`Batch code not found: <code>`) so admins know to create it first.
-- Update `Add Student` modal copy to call the field "Batch Code" too (it already uses a batch dropdown, no behaviour change).
+## Technical notes
 
-## 3. Clean up `AdminBatchesPage` and add edit
-
-- **Remove** the "Run Kota CBT bulk setup" button and the entire "Import students from Excel" card (and unused state: `parsedRows`, `importErrors`, `handleFile`, `submitImport`, the `XLSX`/`roster` imports). Add a small info banner pointing admins to **Students → Bulk Import** with the `batch_code` column.
-- **Course ↔ Batch model:** already enforced — `course_batches.course_id` is required (FK to `courses`), and there is no unique constraint forcing one batch per course, so one course → many batches works today. Surface it in the UI by grouping the batch list by course name.
-- **Edit batch:** add a pencil icon per row that opens a small inline modal/dialog with fields: Course (select), Code, Display name, Class level, Active toggle. On save: `update course_batches set ... where id = ?`. Re-use the existing `createBatch` validation. Keep the existing Delete action.
-- Keep the CBT Kiosk + Secret Admin URL panels and the "Add a new batch" form.
-
-## Files touched
-
-- `src/pages/AdminStudentsPage.tsx` — staff-role exclusion in `load()` and CSV export; rename bulk field to `batch_code`.
-- `supabase/functions/bulk-import/index.ts` — accept `batch_code`, fail clearly when unknown.
-- `src/pages/AdminBatchesPage.tsx` — strip CBT/Excel sections, group by course, add Edit dialog.
-
-No database migration required.
+- The database currently shows `fasd` has `XII-A1` and `XII-A2` students with names present, so the issue is in the absent-roster name handoff/rendering, not missing student data.
+- I will avoid changing unrelated test/result logic.
