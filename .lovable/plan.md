@@ -1,33 +1,27 @@
-## Problem
+## 1. Students tab leaking centre_admin users
 
-On `/admin/tests-hub?tab=attempts`, when admin picks a single test from the **test dropdown** (e.g. "fasd"), only students who actually clicked "Start" appear (status: in progress / submitted / auto-submitted). Students who belong to the test's batch but never opened it are not listed at all — so admin can't see who's **absent**.
+**Root cause:** the `handle_new_user` trigger assigns the `student` role to every new auth user, including users created by `admin-create-center-user` / `seed-staff-user`. So centre admins carry both `student` + `center_admin` rows in `user_roles`, and `AdminStudentsPage` only filters on `role = 'student'`.
 
-The "Not Attempted" roster is already implemented via the `admin_test_not_attempted` RPC, but the page only calls it when a `testId` **prop** is passed (i.e. the per-test page). The global Attempts tab leaves it empty.
+**Fix (frontend only, no schema change):** in `AdminStudentsPage.tsx` (`load()` around L219 and the CSV export around L375), after fetching the `student` role IDs, fetch all rows from `user_roles` where role IN ('center_admin','admin','super_admin','teacher','mentor') and **exclude** those user_ids from `studentIds` before querying profiles. Realtime subscription already re-runs `load()` on `user_roles` changes, so suspensions/role swaps stay live.
 
-## Fix
+## 2. Bulk import: add `batch_code` so students get auto-mapped to batches
 
-Make the global Attempts view behave like the per-test view as soon as a test is selected in the dropdown.
+- `bulk-import` already resolves a `batch` column by name **or** code (see `batchByKey`). Make this explicit and user-friendly:
+  - In `AdminStudentsPage.tsx` `BulkCsvDialog.fields`, replace the single `batch` field with `batch_code` (label "Batch Code", example "XI-J1"). Keep backward-compat in the edge function by accepting both `batch_code` and `batch`.
+  - In `supabase/functions/bulk-import/index.ts` (students branch ~L232), read `r.batch_code ?? r.batch`; if not found, return a clear per-row error (`Batch code not found: <code>`) so admins know to create it first.
+- Update `Add Student` modal copy to call the field "Batch Code" too (it already uses a batch dropdown, no behaviour change).
 
-### `src/pages/AdminTestAttemptsPage.tsx`
+## 3. Clean up `AdminBatchesPage` and add edit
 
-1. **Treat dropdown selection like a scoped test.** Compute `effectiveTestId = testId ?? (testFilter !== "all" ? testFilter : null)`.
-2. **Fetch absent roster whenever `effectiveTestId` changes.**
-   - Call `supabase.rpc("admin_test_not_attempted", { _test_id: effectiveTestId })`.
-   - Clear `notAttempted` when `effectiveTestId` is null.
-   - Add `effectiveTestId` to the `useEffect` dependency so switching tests in the dropdown refetches.
-3. **Build the combined rows using `effectiveTestId`** (instead of the prop), so absent rows render in the global view too.
-4. **Realtime subscription**: re-subscribe per `effectiveTestId` so updates filter correctly when a test is chosen in the dropdown. On INSERT for that test, also drop the matching user from `notAttempted` (already done).
-5. **UI polish**
-   - Show the "Not Attempted" stat card whenever `effectiveTestId` is set.
-   - Enable the "Not attempted" status filter option in the same condition.
-   - Render the status pill label as **"Absent"** (instead of "not attempted") for clearer admin wording; keep underlying status value `not_attempted`.
-6. **No schema changes.** The RPC and table already exist; the test "fasd" appearing in the dropdown confirms the data path.
+- **Remove** the "Run Kota CBT bulk setup" button and the entire "Import students from Excel" card (and unused state: `parsedRows`, `importErrors`, `handleFile`, `submitImport`, the `XLSX`/`roster` imports). Add a small info banner pointing admins to **Students → Bulk Import** with the `batch_code` column.
+- **Course ↔ Batch model:** already enforced — `course_batches.course_id` is required (FK to `courses`), and there is no unique constraint forcing one batch per course, so one course → many batches works today. Surface it in the UI by grouping the batch list by course name.
+- **Edit batch:** add a pencil icon per row that opens a small inline modal/dialog with fields: Course (select), Code, Display name, Class level, Active toggle. On save: `update course_batches set ... where id = ?`. Re-use the existing `createBatch` validation. Keep the existing Delete action.
+- Keep the CBT Kiosk + Secret Admin URL panels and the "Add a new batch" form.
 
-### Out of scope
-- Per-test page (`/admin/tests/:id/attempts`) already works; no change needed.
-- No changes to test-taking, batch assignment, or RLS.
+## Files touched
 
-## Verification
-- Open Attempts tab, select "fasd" in the test dropdown → all batch students appear with status "Absent" except Mayank ("In progress"). Counts card shows "Not Attempted: N".
-- When a student starts the test, their row flips from Absent → In progress in real-time, and the Not Attempted count decreases.
-- Setting dropdown back to "All tests" hides the absent rows (since absence is per-test).
+- `src/pages/AdminStudentsPage.tsx` — staff-role exclusion in `load()` and CSV export; rename bulk field to `batch_code`.
+- `supabase/functions/bulk-import/index.ts` — accept `batch_code`, fail clearly when unknown.
+- `src/pages/AdminBatchesPage.tsx` — strip CBT/Excel sections, group by course, add Edit dialog.
+
+No database migration required.
