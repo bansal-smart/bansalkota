@@ -254,27 +254,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempts, notAttempted, effectiveTestId]);
 
-            status: "not_attempted" as const,
-            score: null, percentile: null, correct_answers: null, total_questions: null,
-            started_at: null, submitted_at: null, created_at: "",
-            time_spent_seconds: null,
-            batch_name: s.batch_name,
-          }))
-      : [];
-    // Inject names into profiles map for NA students
-    if (testId && notAttempted.length) {
-      setProfiles((prev) => {
-        let changed = false;
-        const next = new Map(prev);
-        for (const s of notAttempted) {
-          if (!next.has(s.user_id)) { next.set(s.user_id, s.full_name ?? "Student"); changed = true; }
-        }
-        return changed ? next : prev;
-      });
-    }
-    return [...attempts.map((a) => a as Row), ...naRows];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attempts, notAttempted, testId]);
+
 
   const filtered = useMemo(() => {
     return combined.filter((a) => {
