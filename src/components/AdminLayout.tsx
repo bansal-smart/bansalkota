@@ -108,6 +108,7 @@ const mainGroups: NavGroup[] = [
 // Items only super-admin sees: revenue, settings, moderation.
 const superAdminNav: NavItem[] = [
   { label: "Admin Management", icon: ShieldCheck, path: "/admin/admins" },
+  { label: "Role Management", icon: ShieldCheck, path: "/admin/roles" },
   { label: "Payments & Revenue", icon: CreditCard, path: "/admin/payments" },
   { label: "Moderation", icon: ShieldCheck, path: "/admin/moderation" },
   { label: "Platform Settings", icon: Settings, path: "/admin/settings" },
