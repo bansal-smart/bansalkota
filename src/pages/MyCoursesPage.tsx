@@ -118,47 +118,7 @@ const MyCoursesPage = () => {
           </p>
         </div>
 
-        {/* Resume hero */}
-        {recent && recent.progress_percent < 100 && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Link
-              to={`/my-courses/${recent.course.slug}`}
-              className="group overflow-hidden rounded-2xl border border-border bg-card hover-lift animate-fade-in-up"
-            >
-              <div className={`relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br ${subjectGradient[recent.course.subject] ?? "from-primary to-accent"}`}>
-                {recent.course.thumbnail_url ? (
-                  <img src={recent.course.thumbnail_url} alt={recent.course.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {(() => { const I = subjectIcon[recent.course.subject] ?? BookOpen; return <I className="h-12 w-12 text-white/30" />; })()}
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                  <Zap className="h-3 w-3" /> Resume
-                </span>
-                <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
-                  <div className="min-w-0 text-white">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">{recent.course.subject}</p>
-                    <h2 className="truncate font-display text-sm font-black">{recent.course.name}</h2>
-                  </div>
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform group-hover:scale-110">
-                    <Play className="h-3.5 w-3.5 fill-current" />
-                  </div>
-                </div>
-              </div>
-              <div className="p-3">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-primary">{recent.progress_percent}% complete</span>
-                  <span className="text-muted-foreground">{recent.completed_lessons}/{recent.course.total_lessons} lessons</span>
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${recent.progress_percent}%` }} />
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
+        {/* Resume hero removed — shown in Continue Learning instead */}
 
         {/* Stats strip */}
         {enrollments.length > 0 && (
