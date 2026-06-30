@@ -259,8 +259,14 @@ const MyCoursesPage = () => {
                     to={`/my-courses/${e.course.slug}`}
                     className="group overflow-hidden rounded-2xl border border-border bg-card hover-lift"
                   >
-                    <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${gradient}`}>
-                      <Icon className="h-12 w-12 text-white/40" />
+                    <div className={`relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br ${gradient}`}>
+                      {e.course.thumbnail_url ? (
+                        <img src={e.course.thumbnail_url} alt={e.course.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Icon className="h-12 w-12 text-white/40" />
+                        </div>
+                      )}
                       {e.course.badge && (
                         <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-bold text-foreground">
                           {e.course.badge}
