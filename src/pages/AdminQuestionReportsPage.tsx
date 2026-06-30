@@ -198,9 +198,10 @@ const AdminQuestionReportsPage = () => {
                           <span className="text-xs text-muted-foreground font-normal">· {q.subject}</span>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                        {q?.question_text || "—"}
+                      <div className="text-xs text-muted-foreground mt-1 max-h-40 overflow-auto rounded border border-border bg-muted/20 p-2 [&_img]:max-h-32 [&_img]:inline-block [&_img]:my-1">
+                        {q?.question_text ? <MathRenderer html={q.question_text} /> : "—"}
                       </div>
+
                       {r.details && (
                         <div className="mt-2 rounded-md bg-muted/40 border border-border px-3 py-2 text-xs">
                           <span className="font-semibold">Student note: </span>
