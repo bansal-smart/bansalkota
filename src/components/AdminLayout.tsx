@@ -274,9 +274,17 @@ const AdminHeader = memo(
 );
 AdminHeader.displayName = "AdminHeader";
 
+const PATH_TO_MODULE = new Map(ADMIN_MODULES.map((m) => [m.path, m.key]));
+PATH_TO_MODULE.set("/admin/site-pages/achievements", "site_pages");
+PATH_TO_MODULE.set("/admin/site-pages/disclaimer", "site_pages");
+PATH_TO_MODULE.set("/admin/site-pages/terms", "site_pages");
+PATH_TO_MODULE.set("/admin/site-pages/privacy", "site_pages");
+PATH_TO_MODULE.set("/admin/site-pages/refund-policy", "site_pages");
+
 const AdminLayout = () => {
   const navigate = useNavigate();
   const { user, signOut, isSuperAdmin } = useAuth();
+  const { isSuper, can } = useAdminPermissions();
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -289,9 +297,27 @@ const AdminLayout = () => {
   const storeUser = useAppStore((s) => s.user);
   const avatarUrl = storeUser?.avatar_url;
 
+  const filteredMainGroups = useMemo<NavGroup[]>(() => {
+    if (isSuper) return mainGroups;
+    return mainGroups
+      .map((g) => ({
+        ...g,
+        items: g.items.filter((it) => {
+          const key = PATH_TO_MODULE.get(it.path);
+          return key ? can(key, "view") : false;
+        }),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [isSuper, can]);
+
+  const filteredSitePages = useMemo<NavItem[]>(() => {
+    if (isSuper) return sitePagesNav;
+    return can("site_pages", "view") ? sitePagesNav : [];
+  }, [isSuper, can]);
+
   return (
     <div className="flex min-h-screen bg-background">
-      <AdminSidebar email={email} initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
+      <AdminSidebar email={email} initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} mainGroups={filteredMainGroups} sitePagesNav={filteredSitePages} onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
