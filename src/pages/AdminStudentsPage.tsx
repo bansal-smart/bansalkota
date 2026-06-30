@@ -160,6 +160,7 @@ const AdminStudentsPage = () => {
   const [courses, setCourses] = useState<CourseLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
   const [classFilter, setClassFilter] = useState<string>(""); // "", or class level
+  const [batchFilter, setBatchFilter] = useState<string>(""); // "", or batch id
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
@@ -249,6 +250,7 @@ const AdminStudentsPage = () => {
       if (centreFilter === "none") query = query.is("centre_id", null);
       else if (centreFilter) query = query.eq("centre_id", centreFilter);
       if (classFilter) query = query.eq("class_level", classFilter);
+      if (batchFilter) query = query.eq("batch_id", batchFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -279,7 +281,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page, centreFilter, classFilter, centres, batches]);
+  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches]);
 
   useEffect(() => {
     load();
@@ -408,6 +410,7 @@ const AdminStudentsPage = () => {
         if (centreFilter === "none") q = q.is("centre_id", null);
         else if (centreFilter) q = q.eq("centre_id", centreFilter);
         if (classFilter) q = q.eq("class_level", classFilter);
+        if (batchFilter) q = q.eq("batch_id", batchFilter);
 
         let from = 0;
         while (true) {
@@ -655,6 +658,16 @@ const AdminStudentsPage = () => {
         >
           <option value="">All Classes</option>
           {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
+        </select>
+        <select
+          value={batchFilter}
+          onChange={(e) => { setBatchFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="">All Batches</option>
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+          ))}
         </select>
       </div>
 
