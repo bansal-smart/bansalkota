@@ -250,6 +250,7 @@ const AdminStudentsPage = () => {
       if (centreFilter === "none") query = query.is("centre_id", null);
       else if (centreFilter) query = query.eq("centre_id", centreFilter);
       if (classFilter) query = query.eq("class_level", classFilter);
+      if (batchFilter) query = query.eq("batch_id", batchFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -280,7 +281,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page, centreFilter, classFilter, centres, batches]);
+  }, [debouncedSearch, page, centreFilter, classFilter, butchFilter, centres, batches]);
 
   useEffect(() => {
     load();
