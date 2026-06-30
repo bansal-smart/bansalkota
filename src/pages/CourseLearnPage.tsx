@@ -15,31 +15,37 @@ import { rollupCourseProgress, rollupTopic } from "@/lib/course-progress";
 import type { CourseSubject, SubtopicVideo, CourseTopic } from "@/types/course-content";
 
 const CourseLearnPage = () => {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId: courseIdParam, slug } = useParams<{ courseId?: string; slug?: string }>();
   const [params, setParams] = useSearchParams();
   const videoIdParam = params.get("video");
   const navigate = useNavigate();
   const { user } = useAuth();
   const [course, setCourse] = useState<any>(null);
+  const [courseId, setCourseId] = useState<string | null>(courseIdParam ?? null);
   const [subjects, setSubjects] = useState<CourseSubject[]>([]);
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState(false);
 
   const load = async () => {
-    if (!courseId) return;
     setLoading(true);
-    const { data: c } = await supabase.from("courses").select("id,name,slug,thumbnail_url,educator_name").eq("id", courseId).maybeSingle();
+    let cQuery: any = supabase.from("courses").select("id,name,slug,thumbnail_url,educator_name");
+    if (courseIdParam) cQuery = cQuery.eq("id", courseIdParam);
+    else if (slug) cQuery = cQuery.eq("slug", slug);
+    else { setLoading(false); return; }
+    const { data: c } = await cQuery.maybeSingle();
     setCourse(c);
-    const tree = await fetchCourseContentTree(courseId, user?.id ?? null);
+    if (!c) { setLoading(false); return; }
+    setCourseId(c.id);
+    const tree = await fetchCourseContentTree(c.id, user?.id ?? null);
     setSubjects(tree);
 
     if (user) {
-      const { data: enr } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("course_id", courseId).eq("is_active", true).maybeSingle();
+      const { data: enr } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("course_id", c.id).eq("is_active", true).maybeSingle();
       setAllowed(!!enr);
     }
     setLoading(false);
   };
-  useEffect(() => { load(); }, [courseId, user?.id]);
+  useEffect(() => { load(); }, [courseIdParam, slug, user?.id]);
 
   const flatVideos = useMemo(() => {
     const list: { v: SubtopicVideo; topic: CourseTopic; subject: CourseSubject }[] = [];
