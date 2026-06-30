@@ -103,7 +103,7 @@ const MyCoursesPage = () => {
   const inProgress = enrollments.filter((e) => e.progress_percent > 0 && e.progress_percent < 100);
   const completed = enrollments.filter((e) => e.progress_percent >= 100);
   const avgProgress = Math.round(enrollments.reduce((s, e) => s + e.progress_percent, 0) / Math.max(enrollments.length, 1));
-  const recent = enrollments[0];
+  
 
   return (
     <div className="pb-20 lg:pb-0">
