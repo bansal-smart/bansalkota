@@ -18,6 +18,8 @@ type TestRow = {
   is_published: boolean;
   course_id: string | null;
   cbt_allowed_batch_ids: string[] | null;
+  test_mode: string | null;
+  results_released_at: string | null;
 };
 
 type EnrolledCourse = { id: string; name: string; subject: string; slug: string };
@@ -48,9 +50,8 @@ const TestListPage = () => {
           .eq("is_active", true),
         supabase
           .from("tests")
-          .select("id,title,slug,description,test_type,exam_pattern,subjects,duration_minutes,total_questions,total_marks,is_published,course_id,cbt_allowed_batch_ids")
+          .select("id,title,slug,description,test_type,exam_pattern,subjects,duration_minutes,total_questions,total_marks,is_published,course_id,cbt_allowed_batch_ids,test_mode,results_released_at")
           .eq("is_published", true)
-          .neq("test_mode", "cbt")
           .order("created_at", { ascending: false }),
         supabase.from("test_attempts").select("id, test_id, status, tests(slug)").eq("user_id", user.id),
         supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
@@ -88,8 +89,12 @@ const TestListPage = () => {
       // Always show tests the student has already attempted
       if (attemptStatus[t.id]) return true;
       const allowed = t.cbt_allowed_batch_ids;
-      const isOpen = !allowed || allowed.length === 0;
       const inBatch = !!(batchId && allowed?.includes(batchId));
+      // CBT tests: only show after results are released to mapped batch students
+      if (t.test_mode === "cbt") {
+        return !!t.results_released_at && inBatch;
+      }
+      const isOpen = !allowed || allowed.length === 0;
       const inCourse = !!(t.course_id && enrolledCourseIds.has(t.course_id));
       return isOpen || inBatch || inCourse;
     });
