@@ -75,6 +75,7 @@ const AdminCombinedResultPage = lazy(() => import("./pages/AdminCombinedResultPa
 
 const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
 const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
+const AdminRolesPage = lazy(() => import("./pages/AdminRolesPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 
