@@ -4,6 +4,7 @@ import AdminCourseStudentsDialog from "@/components/AdminCourseStudentsDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { usePagination } from "@/hooks/usePagination";
@@ -161,6 +162,7 @@ const AdminCoursesPage = () => {
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [savingOrder, setSavingOrder] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
   const [studentsDialog, setStudentsDialog] = useState<{ id: string; name: string } | null>(null);
@@ -271,7 +273,7 @@ const AdminCoursesPage = () => {
   };
 
   const filtered = courses.filter(
-    (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.educator_name.toLowerCase().includes(search.toLowerCase()),
+    (c) => c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || c.educator_name.toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
   const draggable = reorderMode && !search;
