@@ -248,6 +248,7 @@ const AdminStudentsPage = () => {
       }
       if (centreFilter === "none") query = query.is("centre_id", null);
       else if (centreFilter) query = query.eq("centre_id", centreFilter);
+      if (classFilter) query = query.eq("class_level", classFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
