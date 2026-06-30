@@ -89,8 +89,12 @@ const TestListPage = () => {
       // Always show tests the student has already attempted
       if (attemptStatus[t.id]) return true;
       const allowed = t.cbt_allowed_batch_ids;
-      const isOpen = !allowed || allowed.length === 0;
       const inBatch = !!(batchId && allowed?.includes(batchId));
+      // CBT tests: only show after results are released to mapped batch students
+      if (t.test_mode === "cbt") {
+        return !!t.results_released_at && inBatch;
+      }
+      const isOpen = !allowed || allowed.length === 0;
       const inCourse = !!(t.course_id && enrolledCourseIds.has(t.course_id));
       return isOpen || inBatch || inCourse;
     });
