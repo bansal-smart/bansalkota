@@ -281,7 +281,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page, centreFilter, classFilter, butchFilter, centres, batches]);
+  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches]);
 
   useEffect(() => {
     load();
