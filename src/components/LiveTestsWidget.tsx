@@ -15,6 +15,8 @@ type TestRow = {
   total_marks: number;
   starts_at: string | null;
   ends_at: string | null;
+  cbt_allowed_batch_ids: string[] | null;
+  course_id: string | null;
 };
 
 type Status = "live" | "upcoming" | "ended" | "anytime";
@@ -44,6 +46,8 @@ const LiveTestsWidget = () => {
   const { user } = useAuth();
   const [tests, setTests] = useState<TestRow[]>([]);
   const [attempts, setAttempts] = useState<Record<string, string>>({});
+  const [batchId, setBatchId] = useState<string | null>(null);
+  const [courseIds, setCourseIds] = useState<Set<string>>(new Set());
   const [recent, setRecent] = useState<Array<{ id: string; test_name: string; score: number | null; submitted_at: string; slug: string | null; test_id: string | null }>>([]);
   const [now, setNow] = useState(() => Date.now());
 
