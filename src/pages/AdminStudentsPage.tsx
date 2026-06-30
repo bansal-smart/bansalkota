@@ -407,6 +407,7 @@ const AdminStudentsPage = () => {
         }
         if (centreFilter === "none") q = q.is("centre_id", null);
         else if (centreFilter) q = q.eq("centre_id", centreFilter);
+        if (classFilter) q = q.eq("class_level", classFilter);
 
         let from = 0;
         while (true) {
