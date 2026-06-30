@@ -367,6 +367,11 @@ Deno.serve(async (req) => {
               const { data: cs } = await admin.from("courses").select("id").in("slug", slugList);
               (cs ?? []).forEach((c: any) => { if (c?.id) idList.push(String(c.id)); });
             }
+            // Auto-enroll into the course linked to the resolved batch
+            if (batchId) {
+              const linkedCourseId = batchCourseById.get(batchId);
+              if (linkedCourseId) idList.push(String(linkedCourseId));
+            }
             const uniqIds = Array.from(new Set(idList));
             if (uniqIds.length) {
               const rowsIns = uniqIds.map((course_id) => ({ user_id: resolvedUid!, course_id, is_active: true }));
