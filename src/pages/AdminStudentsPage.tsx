@@ -646,7 +646,15 @@ const AdminStudentsPage = () => {
         >
           <option value="">All Centres</option>
           <option value="none">No centre assigned</option>
-          {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
+        {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
+        </select>
+        <select
+          value={classFilter}
+          onChange={(e) => { setClassFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
+        >
+          <option value="">All Classes</option>
+          {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>{cls}</option>)}
         </select>
       </div>
 
