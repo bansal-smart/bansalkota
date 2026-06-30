@@ -26,26 +26,31 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, serviceKey);
     let userId: string | null = null;
     let userEmail: string | null = null;
+    let debugMsg = "";
     try {
       const { data: u, error: uErr } = await admin.auth.getUser(token);
       if (!uErr && u?.user) {
         userId = u.user.id;
         userEmail = u.user.email ?? null;
+      } else if (uErr) {
+        debugMsg = `getUser: ${uErr.message}`;
       }
-    } catch (_) { /* fall through */ }
+    } catch (e) { debugMsg = `getUser threw: ${(e as Error).message}`; }
     if (!userId) {
       try {
         const userClient = createClient(supabaseUrl, anonKey, {
           global: { headers: { Authorization: authHeader } },
         });
-        const { data: claimsData } = await userClient.auth.getClaims(token);
+        const { data: claimsData, error: cErr } = await userClient.auth.getClaims(token);
         if (claimsData?.claims?.sub) {
           userId = claimsData.claims.sub as string;
           userEmail = (claimsData.claims.email as string) ?? null;
+        } else if (cErr) {
+          debugMsg += ` | getClaims: ${cErr.message}`;
         }
-      } catch (_) { /* ignore */ }
+      } catch (e) { debugMsg += ` | getClaims threw: ${(e as Error).message}`; }
     }
-    if (!userId) return json(401, { error: "Unauthorized" });
+    if (!userId) return json(401, { error: "Unauthorized", debug: debugMsg });
     const userData = { user: { id: userId, email: userEmail } };
     const { data: isSuper } = await admin.rpc("has_role", {
       _user_id: userData.user.id,
