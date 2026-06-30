@@ -403,9 +403,10 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {testId && (
-          <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Not Attempted</p><p className="text-lg font-black text-foreground">{counts.not_attempted}</p></div>
+        {effectiveTestId && (
+          <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Absent</p><p className="text-lg font-black text-foreground">{counts.not_attempted}</p></div>
         )}
+
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Progress</p><p className="text-lg font-black text-primary">{counts.in_progress}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Submitted</p><p className="text-lg font-black text-secondary">{counts.submitted}</p></div>
         <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Auto-submitted</p><p className="text-lg font-black text-amber-600">{counts.auto_submitted}</p></div>
