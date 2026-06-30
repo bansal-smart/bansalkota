@@ -105,7 +105,7 @@ const CenterWebsiteEnquiriesPage = () => {
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {loading ? (
           <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-        ) : sortedItems.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">No enquiries.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -122,7 +122,7 @@ const CenterWebsiteEnquiriesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedItems.map((e) => (
+                {filteredItems.map((e) => (
                   <tr key={e.id} className="border-t border-border align-top hover:bg-muted/30">
                     <td className="px-4 py-3 font-semibold text-foreground">{e.name}</td>
                     <td className="px-4 py-3 text-xs">{e.phone || "—"}</td>
