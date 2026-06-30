@@ -108,24 +108,46 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const load = async () => {
 
     setLoading(true);
-    let q = supabase
-      .from("test_attempts")
-      .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (testId) q = q.eq("test_id", testId);
-    const { data } = await q;
-    const rows = (data ?? []) as Attempt[];
-    setAttempts(rows);
+    // Always load the test list for the dropdown
+    const testsRes = await supabase.from("tests").select("id, title, slug").order("created_at", { ascending: false });
+    setTests(((testsRes as any).data ?? []) as any);
 
-    const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
-    const tIds = Array.from(new Set(rows.map((r) => r.test_id).filter(Boolean)));
-    const [pRes, tRes] = await Promise.all([
-      userIds.length ? supabase.from("profiles").select("user_id, full_name").in("user_id", userIds) : Promise.resolve({ data: [] }),
-      tIds.length ? supabase.from("tests").select("id, title, slug").in("id", tIds) : Promise.resolve({ data: [] }),
-    ]);
-    setProfiles(new Map(((pRes as any).data ?? []).map((p: any) => [p.user_id, p.full_name ?? "Student"])));
-    setTests(((tRes as any).data ?? []) as any);
+    // Fetch attempts in pages so a single test with many students is fully covered.
+    const PAGE = 1000;
+    const allRows: Attempt[] = [];
+    let from = 0;
+    // Cap at 10k rows defensively
+    while (allRows.length < 10000) {
+      let q = supabase
+        .from("test_attempts")
+        .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds")
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (effectiveTestId) q = q.eq("test_id", effectiveTestId);
+      const { data, error } = await q;
+      if (error) break;
+      const chunk = (data ?? []) as Attempt[];
+      allRows.push(...chunk);
+      if (chunk.length < PAGE) break;
+      from += PAGE;
+      // When unscoped, one page (1k latest) is enough for the global view
+      if (!effectiveTestId) break;
+    }
+    setAttempts(allRows);
+
+    const userIds = Array.from(new Set(allRows.map((r) => r.user_id)));
+    if (userIds.length) {
+      // Paginate profile lookups too
+      const map = new Map<string, string>();
+      for (let i = 0; i < userIds.length; i += 500) {
+        const slice = userIds.slice(i, i + 500);
+        const { data: pRows } = await supabase.from("profiles").select("user_id, full_name").in("user_id", slice);
+        for (const p of (pRows ?? []) as any[]) map.set(p.user_id, p.full_name ?? "Student");
+      }
+      setProfiles(map);
+    } else {
+      setProfiles(new Map());
+    }
     setLoading(false);
   };
 
