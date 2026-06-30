@@ -16,7 +16,7 @@ const CenterWebsiteEnquiriesPage = () => {
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const load = async () => {
     if (!primaryCenterId) return;
