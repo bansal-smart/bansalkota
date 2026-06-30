@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Save, Upload, Plus, Trash2, ExternalLink, Megaphone, ArrowUp, ArrowDown, Search, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,8 @@ function MultiProductPicker({
   kind, selectedIds, onToggle,
 }: { kind: FeaturedKind; selectedIds: Set<string>; onToggle: (id: string) => void }) {
   const [search, setSearch] = useState("");
-  const { data: options = [], isLoading } = useProductOptions(kind, search);
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const { data: options = [], isLoading } = useProductOptions(kind, debouncedSearch);
   return (
     <div className="space-y-2">
       <div className="relative">

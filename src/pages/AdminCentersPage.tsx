@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Building2, Copy, KeyRound, Loader2, Pencil, Plus, Save, Trash2, Upload, X, Users, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import CenterStaffModal from "@/components/CenterStaffModal";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
@@ -82,6 +83,7 @@ const AdminCentersPage = () => {
   const [items, setItems] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [region, setRegion] = useState("All");
   const [form, setForm] = useState<Partial<Center>>(blank);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -141,7 +143,7 @@ const AdminCentersPage = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return items.filter((c) => {
       if (region !== "All" && c.region !== region) return false;
       if (!q) return true;
@@ -152,7 +154,7 @@ const AdminCentersPage = () => {
         c.slug.includes(q)
       );
     });
-  }, [items, search, region]);
+  }, [items, debouncedSearch, region]);
 
   const startEdit = (c: Center) => {
     setEditingId(c.id);

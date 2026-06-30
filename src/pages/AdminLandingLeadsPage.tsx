@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Inbox, Loader2, Download, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ export default function AdminLandingLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const debouncedQ = useDebouncedValue(q, 300);
   const [status, setStatus] = useState("all");
   const [open, setOpen] = useState<Lead | null>(null);
   const [draftStatus, setDraftStatus] = useState("");
@@ -60,7 +62,7 @@ export default function AdminLandingLeadsPage() {
   }, [open]);
 
   const filtered = useMemo(() => {
-    const lq = q.trim().toLowerCase();
+    const lq = debouncedQ.trim().toLowerCase();
     return leads.filter((l) => {
       if (status !== "all" && l.status !== status) return false;
       if (!lq) return true;
@@ -72,7 +74,7 @@ export default function AdminLandingLeadsPage() {
         (l.utm_campaign || "").toLowerCase().includes(lq)
       );
     });
-  }, [leads, q, status]);
+  }, [leads, debouncedQ, status]);
 
   const saveRow = async () => {
     if (!open) return;
