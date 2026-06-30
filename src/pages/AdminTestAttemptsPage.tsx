@@ -196,7 +196,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
-  useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId]);
+  useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId, testFilter]);
 
   // Realtime: live status updates on test_attempts (per-test when scoped, else global)
   useEffect(() => {
