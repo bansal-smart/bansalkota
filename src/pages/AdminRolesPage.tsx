@@ -301,6 +301,7 @@ const AdminRolesPage = () => {
           onSaved={load}
         />
       )}
+      {ConfirmDialog}
     </div>
   );
 };
