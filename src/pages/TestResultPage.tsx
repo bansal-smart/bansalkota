@@ -225,6 +225,68 @@ const TestResultPage = () => {
     accuracy: calcPercent(st.correct, st.attempted || st.total),
   }));
 
+  const buildScorecardInput = async (): Promise<ScorecardInput | null> => {
+    if (!attempt || !user) return null;
+    const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
+      supabase.from("profiles")
+        .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(name)")
+        .eq("user_id", user.id).maybeSingle(),
+      supabase.from("tests").select("title, exam_pattern, total_marks").eq("id", attempt.test_id!).maybeSingle(),
+      supabase.rpc("get_attempt_response_sheet", { _attempt_id: attempt.id }),
+    ]);
+    const p: any = prof ?? {};
+    const tm: any = testMeta ?? {};
+    const rb: any = respBundle ?? {};
+    const qList: any[] = Array.isArray(rb.questions) ? rb.questions : [];
+    const metaQs: any[] = (attempt as any).metadata?.questions ?? [];
+    const byId: Record<string, any> = {};
+    metaQs.forEach((m) => { if (m?.question_id) byId[m.question_id] = m; });
+    const questions = qList.map((q) => {
+      const m = byId[q.id] ?? {};
+      const isBonus = !!m.is_bonus;
+      const attemptedQ = !!m.attempted;
+      const isCorrect = !!m.is_correct;
+      const status: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
+        ? "Bonus"
+        : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
+      return {
+        position: Number(q.position ?? 0),
+        subject: String(q.subject ?? "—"),
+        status,
+        marks: Number(m.marks ?? 0),
+        max_marks: Number(m.max_marks ?? q.marks_correct ?? 0),
+      };
+    });
+    return {
+      student: {
+        full_name: p.full_name,
+        roll_number: p.roll_number,
+        batch: p.course_batches?.name ?? p.batch_label ?? null,
+        centre: p.centres?.name ?? null,
+        phone: p.phone,
+      },
+      test: {
+        title: tm.title ?? attempt.test_name,
+        exam_pattern: tm.exam_pattern ?? null,
+        total_marks: tm.total_marks ?? test?.total_marks ?? null,
+        submitted_at: (attempt as any).submitted_at ?? null,
+      },
+      attempt: {
+        score, total_questions: total, correct, attempted, wrong, unattempted,
+        time_spent_seconds: seconds,
+        percentile: rankInfo?.percentile ?? attempt.percentile ?? null,
+        rank: rankInfo?.rank ?? null,
+        total_attempts: rankInfo?.total ?? null,
+      },
+      subjects: Object.entries(subjects).map(([s, st]) => ({
+        subject: s, total: st.total, attempted: st.attempted, correct: st.correct,
+        score: st.score, maxScore: st.maxScore,
+      })),
+      questions,
+    };
+  };
+
+
   return (
     <div className="pb-20 lg:pb-0">
       {/* Hero */}
