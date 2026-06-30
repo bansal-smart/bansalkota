@@ -215,13 +215,19 @@ const AdminStudentsPage = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Get only student user_ids first
+      // Get user_ids that have the student role, excluding anyone who also holds a staff role
+      // (handle_new_user auto-grants 'student' to every new auth user, including centre/teacher/admin staff).
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
-        .select("user_id")
-        .eq("role", "student");
+        .select("user_id, role");
       if (rErr) throw rErr;
-      const studentIds = Array.from(new Set((roleRows ?? []).map((r) => r.user_id)));
+      const studentSet = new Set<string>();
+      const staffSet = new Set<string>();
+      (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
+        if (r.role === "student") studentSet.add(r.user_id);
+        else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+      });
+      const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
       if (!studentIds.length) {
         setRows([]); setTotal(0); setLoading(false); return;
       }
