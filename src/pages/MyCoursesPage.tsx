@@ -195,10 +195,10 @@ const MyCoursesPage = () => {
         )}
 
         {/* Continue Learning row */}
-        {continueLearning.length > 1 && (
+        {continueLearning.length > 0 && (
           <section className="animate-fade-in-up">
             <SectionHeader title="Continue Learning" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {continueLearning.map((e) => {
                 const Icon = subjectIcon[e.course.subject] ?? BookOpen;
                 const gradient = subjectGradient[e.course.subject] ?? "from-primary to-accent";
@@ -206,25 +206,34 @@ const MyCoursesPage = () => {
                   <Link
                     key={e.id}
                     to={`/my-courses/${e.course.slug}`}
-                    className="group flex gap-3 overflow-hidden rounded-2xl border border-border bg-card p-3 hover-lift"
+                    className="group overflow-hidden rounded-2xl border border-border bg-card hover-lift"
                   >
-                    <div className={`relative flex h-20 w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient}`}>
-                      <Icon className="h-8 w-8 text-white/40" />
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-primary shadow-lg">
-                          <Play className="h-4 w-4 fill-current" />
+                    <div className={`relative aspect-[4/3] w-full overflow-hidden bg-gradient-to-br ${gradient}`}>
+                      {e.course.thumbnail_url ? (
+                        <img src={e.course.thumbnail_url} alt={e.course.name} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Icon className="h-12 w-12 text-white/40" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
+                        <div className="min-w-0 text-white">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">{e.course.subject}</p>
+                          <h2 className="truncate font-display text-sm font-black">{e.course.name}</h2>
+                        </div>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-lg transition-transform group-hover:scale-110">
+                          <Play className="h-3.5 w-3.5 fill-current" />
                         </div>
                       </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{e.course.subject}</p>
-                      <p className="truncate font-display text-sm font-bold text-foreground group-hover:text-primary transition-colors">{e.course.name}</p>
-                      <div className="mt-2 flex items-center justify-between text-[10px]">
-                        <span className="font-bold text-primary">{e.progress_percent}%</span>
-                        <span className="text-muted-foreground">{e.completed_lessons}/{e.course.total_lessons}</span>
+                    <div className="p-3">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-primary">{e.progress_percent}% complete</span>
+                        <span className="text-muted-foreground">{e.completed_lessons}/{e.course.total_lessons} lessons</span>
                       </div>
-                      <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-primary" style={{ width: `${e.progress_percent}%` }} />
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${e.progress_percent}%` }} />
                       </div>
                     </div>
                   </Link>
