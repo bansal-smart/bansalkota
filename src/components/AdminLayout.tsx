@@ -130,10 +130,12 @@ type SidebarProps = {
   initials: string;
   avatarUrl?: string;
   isSuperAdmin: boolean;
+  mainGroups: NavGroup[];
+  sitePagesNav: NavItem[];
   onLogout: () => void;
 };
 
-const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, onLogout }: SidebarProps) => {
+const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, mainGroups, sitePagesNav, onLogout }: SidebarProps) => {
   const { pathname } = useLocation();
   const panelLabel = isSuperAdmin ? "Super Admin Panel" : "Admin Panel";
   const roleLabel = isSuperAdmin ? "Super Admin" : "Admin";
