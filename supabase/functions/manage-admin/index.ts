@@ -12,6 +12,7 @@ const json = (status: number, body: unknown) =>
   });
 
 Deno.serve(async (req) => {
+  console.log("manage-admin hit", req.method);
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
