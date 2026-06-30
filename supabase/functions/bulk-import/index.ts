@@ -228,13 +228,14 @@ Deno.serve(async (req) => {
             if (!centreId) throw new Error(`Centre not found: ${r.centre}`);
           }
 
-          // Resolve batch
+          // Resolve batch — accept batch_code (preferred), batch_id, or batch (legacy name lookup)
           let batchId: string | null = null;
-          const batchRaw = trimOrNull(r.batch);
+          const batchRaw = trimOrNull(r.batch_code ?? r.batch);
           if (r.batch_id) batchId = String(r.batch_id);
           else if (batchRaw) {
             const key = batchRaw.toLowerCase();
             batchId = batchByKey.get(key) ?? null;
+            if (!batchId) throw new Error(`Batch code not found: ${batchRaw}. Create it under Batches & CBT Setup first.`);
           }
 
           // Find existing profile
