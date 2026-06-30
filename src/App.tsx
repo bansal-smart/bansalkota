@@ -405,6 +405,7 @@ const App = () => (
               <Route path="/admin/moderation" element={<AdminModerationPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/admins" element={<AdminAdminsPage />} />
+              <Route path="/admin/roles" element={<AdminRolesPage />} />
               <Route path="/admin/profile" element={<AdminProfilePage />} />
               <Route path="/admin/overview" element={<AdminDashboard />} />
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
