@@ -379,9 +379,15 @@ const AdminStudentsPage = () => {
     const tId = toast.loading("Preparing export…");
     try {
       const { data: roleRows, error: rErr } = await supabase
-        .from("user_roles").select("user_id").eq("role", "student");
+        .from("user_roles").select("user_id, role");
       if (rErr) throw rErr;
-      const studentIds = Array.from(new Set((roleRows ?? []).map((r) => r.user_id)));
+      const studentSet = new Set<string>();
+      const staffSet = new Set<string>();
+      (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
+        if (r.role === "student") studentSet.add(r.user_id);
+        else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+      });
+      const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
       if (!studentIds.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
 
       const all: StudentRow[] = [];
