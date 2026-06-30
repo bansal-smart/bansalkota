@@ -86,7 +86,14 @@ const AdminRolesPage = () => {
   useEffect(() => { load(); }, [load]);
 
   const removeRole = async (id: string) => {
-    if (!confirm("Delete this role? Admins assigned to it will revert to full admin access.")) return;
+    const ok = await askConfirm({
+      title: "Delete Role?",
+      description: "Admins assigned to it will revert to full admin access.",
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      variant: "destructive",
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from("admin_roles").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Role deleted");
