@@ -3,21 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowUpDown } from "lucide-react";
+import { Download } from "lucide-react";
 import { exportCsv } from "@/lib/exportCsv";
 
 
 
 const STATUSES = ["new", "in_progress", "resolved", "closed"] as const;
-
-type SortDir = "asc" | "desc" | null;
+const TYPES = ["admission", "course", "general"] as const;
 
 const CenterWebsiteEnquiriesPage = () => {
   const { primaryCenterId } = useCenterAdmin();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const load = async () => {
     if (!primaryCenterId) return;
@@ -58,24 +57,10 @@ const CenterWebsiteEnquiriesPage = () => {
     ]);
   };
 
-  const toggleSortByType = () => {
-    setSortDir((prev) => (prev === null ? "asc" : prev === "asc" ? "desc" : null));
-  };
-
-  const sortedItems = useMemo(() => {
-    if (!sortDir) return items;
-    const sorted = [...items];
-    sorted.sort((a, b) => {
-      const aVal = (a.category || "").toLowerCase();
-      const bVal = (b.category || "").toLowerCase();
-      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return sorted;
-  }, [items, sortDir]);
-
-  const sortLabel = sortDir === null ? "Sort by Type" : sortDir === "asc" ? "Type: A → Z" : "Type: Z → A";
+  const filteredItems = useMemo(() => {
+    if (typeFilter === "all") return items;
+    return items.filter((it) => (it.category || "").toLowerCase() === typeFilter);
+  }, [items, typeFilter]);
 
   if (!primaryCenterId) return <div className="p-8 text-sm text-muted-foreground">No centre assigned.</div>;
 
@@ -102,19 +87,25 @@ const CenterWebsiteEnquiriesPage = () => {
             {s.replace("_", " ")}
           </button>
         ))}
-        <button
-          onClick={toggleSortByType}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium border ${sortDir ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"}`}
-        >
-          <ArrowUpDown className="h-3 w-3" />
-          {sortLabel}
-        </button>
+        <div className="ml-2 flex items-center gap-2">
+          <label className="text-xs text-muted-foreground">Type:</label>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs capitalize"
+          >
+            <option value="all">All types</option>
+            {TYPES.map((t) => (
+              <option key={t} value={t} className="capitalize">{t}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {loading ? (
           <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-        ) : sortedItems.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">No enquiries.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -131,7 +122,7 @@ const CenterWebsiteEnquiriesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {sortedItems.map((e) => (
+                {filteredItems.map((e) => (
                   <tr key={e.id} className="border-t border-border align-top hover:bg-muted/30">
                     <td className="px-4 py-3 font-semibold text-foreground">{e.name}</td>
                     <td className="px-4 py-3 text-xs">{e.phone || "—"}</td>
