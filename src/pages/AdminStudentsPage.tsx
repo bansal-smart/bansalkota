@@ -137,6 +137,65 @@ function CoursesMultiSelect({
   );
 }
 
+function BatchesMultiSelect({
+  batches,
+  value,
+  onChange,
+}: {
+  batches: BatchLite[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const selectedSet = new Set(value);
+  const filtered = batches.filter((b) =>
+    b.name.toLowerCase().includes(q.trim().toLowerCase()) ||
+    (b.code && b.code.toLowerCase().includes(q.trim().toLowerCase()))
+  );
+  const toggle = (id: string) => {
+    if (selectedSet.has(id)) onChange(value.filter((v) => v !== id));
+    else onChange([...value, id]);
+  };
+  const selectedNames = batches.filter((b) => selectedSet.has(b.id)).map((b) => b.name);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-lg border border-border bg-background py-2 px-3 text-sm text-foreground outline-none focus:border-primary hover:bg-muted/40 min-w-[160px] text-left"
+      >
+        {selectedNames.length
+          ? selectedNames.slice(0, 2).join(", ") + (selectedNames.length > 2 ? ` +${selectedNames.length - 2}` : "")
+          : "All Batches"}
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-64 rounded-lg border border-border bg-background p-2 max-h-56 overflow-y-auto space-y-1 shadow-lg">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search batches…"
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+          {filtered.length === 0 && (
+            <div className="text-[11px] text-muted-foreground px-2 py-1">No batches found</div>
+          )}
+          {filtered.map((b) => (
+            <label key={b.id} className="flex items-center gap-2 text-xs font-medium text-foreground px-2 py-1 rounded hover:bg-muted/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedSet.has(b.id)}
+                onChange={() => toggle(b.id)}
+              />
+              <span className="truncate">{b.name}{b.code ? ` (${b.code})` : ""}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 const AdminStudentsPage = () => {
 
@@ -160,7 +219,7 @@ const AdminStudentsPage = () => {
   const [courses, setCourses] = useState<CourseLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
   const [classFilter, setClassFilter] = useState<string>(""); // "", or class level
-  const [batchFilter, setBatchFilter] = useState<string>(""); // "", or batch id
+  const [batchFilter, setBatchFilter] = useState<string[]>([]); // selected batch ids
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
@@ -250,7 +309,7 @@ const AdminStudentsPage = () => {
       if (centreFilter === "none") query = query.is("centre_id", null);
       else if (centreFilter) query = query.eq("centre_id", centreFilter);
       if (classFilter) query = query.eq("class_level", classFilter);
-      if (batchFilter) query = query.eq("batch_id", batchFilter);
+      if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -410,7 +469,7 @@ const AdminStudentsPage = () => {
         if (centreFilter === "none") q = q.is("centre_id", null);
         else if (centreFilter) q = q.eq("centre_id", centreFilter);
         if (classFilter) q = q.eq("class_level", classFilter);
-        if (batchFilter) q = q.eq("batch_id", batchFilter);
+        if (batchFilter.length) q = q.in("batch_id", batchFilter);
 
         let from = 0;
         while (true) {
@@ -659,16 +718,11 @@ const AdminStudentsPage = () => {
           <option value="">All Classes</option>
           {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>Class {cls}</option>)}
         </select>
-        <select
+        <BatchesMultiSelect
+          batches={batches}
           value={batchFilter}
-          onChange={(e) => { setBatchFilter(e.target.value); setPage(0); }}
-          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
-        >
-          <option value="">All Batches</option>
-          {batches.map((b) => (
-            <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
-          ))}
-        </select>
+          onChange={(ids) => { setBatchFilter(ids); setPage(0); }}
+        />
       </div>
 
 
