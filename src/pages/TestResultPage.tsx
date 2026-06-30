@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
+import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { calcPercent } from "@/lib/progress";
+import { generateScorecardPdf, type ScorecardInput } from "@/lib/tests/generateScorecardPdf";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -313,6 +315,29 @@ const TestResultPage = () => {
           <StatTile icon={Target} label="Total" value={total} tone="primary" />
         </div>
 
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Your Scorecard</p>
+            <p className="text-xs text-muted-foreground">Download a printable PDF of your performance.</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const input = await buildScorecardInput();
+                if (!input) { toast.error("Unable to build scorecard"); return; }
+                const pdf = generateScorecardPdf(input);
+                pdf.save(`${(input.student.full_name || "scorecard").replace(/\s+/g, "_")}_${input.test.title.replace(/\s+/g, "_")}.pdf`);
+              } catch (e: any) {
+                toast.error(e?.message ?? "Failed to generate PDF");
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90"
+          >
+            <Download className="h-3.5 w-3.5" /> Download Scorecard PDF
+          </button>
+        </div>
+
         {test?.results_released_at && test?.solution_pdf_path && (
           <div className="rounded-2xl border border-secondary/40 bg-secondary/5 p-4 flex items-center justify-between gap-3">
             <div>
@@ -326,9 +351,9 @@ const TestResultPage = () => {
                 if (error || !data?.signedUrl) return;
                 window.open(data.signedUrl, "_blank");
               }}
-              className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
             >
-              Download Solution PDF
+              <Download className="h-3.5 w-3.5" /> Download Solution PDF
             </button>
           </div>
         )}
