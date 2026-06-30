@@ -164,7 +164,7 @@ const AdminStudentsPage = () => {
   const [addSaving, setAddSaving] = useState(false);
   const emptyAdd = {
     roll_number: "", full_name: "", father_name: "", phone: "", parent_phone: "",
-    dob: "", target_exam: "", class_level: "", batch: "", centre: "",
+    dob: "", target_exam: "", class_level: "", batch_id: "", centre: "",
   };
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
   const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
@@ -581,6 +581,19 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <label className="text-xs font-semibold text-muted-foreground space-y-1">
+                <span>Batch</span>
+                <select
+                  value={addForm.batch_id ?? ""}
+                  onChange={(e) => setAddForm((s) => ({ ...s, batch_id: e.target.value }))}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                >
+                  <option value="">Select batch</option>
+                  {batches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                  ))}
+                </select>
+              </label>
               <div className="sm:col-span-2">
                 <CoursesMultiSelect
                   label="Courses (assign one or more)"
