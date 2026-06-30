@@ -38,6 +38,7 @@ const AdminRolesPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const { confirm: askConfirm, ConfirmDialog } = useConfirm();
 
   // Create login state
   const [newName, setNewName] = useState("");
