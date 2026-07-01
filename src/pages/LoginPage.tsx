@@ -7,7 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 
-type Step = "phone" | "otp" | "name";
+type Step = "phone" | "otp" | "pick" | "name";
+type Candidate = { user_id: string; full_name: string | null; roll_number: string | null };
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const LoginPage = () => {
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const timerRef = useRef<number | null>(null);
 
   const startTimer = () => {
@@ -122,6 +124,37 @@ const LoginPage = () => {
     }
   };
 
+  const invokeVerify = async (preferred_user_id?: string) => {
+    const code = otp.join("");
+    const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
+      body: { phone: `+91${mobile}`, otp: code, purpose: "login", preferred_user_id },
+    });
+    if (error) {
+      let msg = error.message || "Could not verify OTP";
+      const ctx = (error as { context?: Response }).context;
+      if (ctx && typeof ctx.json === "function") {
+        try {
+          const body = await ctx.json();
+          if (body?.error) msg = body.error;
+        } catch { /* ignore */ }
+      }
+      throw new Error(msg);
+    }
+    if (data?.needs_selection && Array.isArray(data.candidates)) {
+      setCandidates(data.candidates as Candidate[]);
+      setStep("pick");
+      return;
+    }
+    if (!data?.token_hash || !data?.email) {
+      throw new Error("Could not verify OTP");
+    }
+    const verify = await supabase.auth.verifyOtp({
+      type: "magiclink", token_hash: data.token_hash,
+    });
+    if (verify.error) throw verify.error;
+    toast.success("Logged in!");
+  };
+
   const verifyOtp = async () => {
     const code = otp.join("");
     if (code.length !== 6) {
@@ -130,32 +163,20 @@ const LoginPage = () => {
     }
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
-        body: { phone: `+91${mobile}`, otp: code, purpose: "login" },
-      });
-      if (error) {
-        let msg = error.message || "Could not verify OTP";
-        const ctx = (error as { context?: Response }).context;
-        if (ctx && typeof ctx.json === "function") {
-          try {
-            const body = await ctx.json();
-            if (body?.error) msg = body.error;
-          } catch { /* ignore parse error */ }
-        }
-        throw new Error(msg);
-      }
-      if (!data?.token_hash || !data?.email) {
-        throw new Error("Could not verify OTP");
-      }
-      const verify = await supabase.auth.verifyOtp({
-        type: "magiclink", token_hash: data.token_hash,
-      });
-      if (verify.error) throw verify.error;
-      toast.success("Logged in!");
-      // Redirect handled by useEffect when session settles.
+      await invokeVerify();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Something went wrong";
-      toast.error(msg);
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const pickCandidate = async (userId: string) => {
+    setSubmitting(true);
+    try {
+      await invokeVerify(userId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setSubmitting(false);
     }
@@ -289,6 +310,35 @@ const LoginPage = () => {
               </button>
             </>
           )}
+
+          {step === "pick" && (
+            <>
+              <h2 className="font-display text-3xl font-extrabold text-bansal-black">Choose your account</h2>
+              <p className="mt-1 text-sm text-bansal-gray">
+                Multiple students share this mobile number. Select which account to sign in as.
+              </p>
+              <div className="mt-6 space-y-2">
+                {candidates.map((c) => (
+                  <button
+                    key={c.user_id}
+                    onClick={() => pickCandidate(c.user_id)}
+                    disabled={submitting}
+                    className="w-full text-left rounded-lg border-2 border-border hover:border-bansal-blue px-4 py-3 transition-colors disabled:opacity-50"
+                  >
+                    <div className="text-sm font-bold text-bansal-black">{c.full_name || "Unnamed student"}</div>
+                    {c.roll_number && <div className="text-xs text-bansal-gray mt-0.5">Roll No. {c.roll_number}</div>}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => { setStep("phone"); setOtp(["", "", "", "", "", ""]); setCandidates([]); }}
+                className="w-full mt-4 text-xs text-bansal-gray hover:text-bansal-blue"
+              >
+                Use a different mobile number
+              </button>
+            </>
+          )}
+
 
           {step === "name" && (
             <>
