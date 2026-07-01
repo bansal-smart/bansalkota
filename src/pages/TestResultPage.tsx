@@ -157,19 +157,37 @@ const TestResultPage = () => {
       if (rank) setRankInfo(rank as RankInfo);
 
       const breakdown: Record<string, SubjectStat> = {};
-      const metaSubjects = att?.metadata?.subjects as
-        | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
-        | undefined;
-      if (metaSubjects && Object.keys(metaSubjects).length) {
-        Object.entries(metaSubjects).forEach(([subj, st]) => {
-          breakdown[subj] = {
-            total: Number(st?.total ?? subjectsMax[subj]?.total ?? 0),
-            correct: Number(st?.correct ?? 0),
-            attempted: Number(st?.attempted ?? 0),
-            score: Number(st?.score ?? 0),
-            maxScore: Number(subjectsMax[subj]?.max_score ?? Number(st?.total ?? 0) * 4),
-          };
+      const metaQuestions = (att?.metadata?.questions ?? []) as Array<{
+        subject?: string; marks?: number; max_marks?: number;
+        attempted?: boolean; is_correct?: boolean; is_bonus?: boolean;
+      }>;
+      if (Array.isArray(metaQuestions) && metaQuestions.length) {
+        metaQuestions.forEach((q) => {
+          const subj = q.subject || "General";
+          const cur = breakdown[subj] ?? { total: 0, correct: 0, attempted: 0, score: 0, maxScore: 0 };
+          cur.total += 1;
+          cur.maxScore += Number(q.max_marks ?? 0);
+          if (q.attempted) cur.attempted += 1;
+          if (q.is_correct) cur.correct += 1;
+          cur.score += Number(q.marks ?? 0);
+          breakdown[subj] = cur;
         });
+      } else {
+        const metaSubjects = att?.metadata?.subjects as
+          | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
+          | undefined;
+        if (metaSubjects && Object.keys(metaSubjects).length) {
+          Object.entries(metaSubjects).forEach(([subj, st]) => {
+            const s: any = st ?? {};
+            breakdown[subj] = {
+              total: Number(s?.total ?? subjectsMax[subj]?.total ?? 0),
+              correct: Number(s?.correct ?? 0),
+              attempted: Number(s?.attempted ?? 0),
+              score: Number(s?.score ?? 0),
+              maxScore: Number(subjectsMax[subj]?.max_score ?? Number(s?.total ?? 0) * 4),
+            };
+          });
+        }
       }
       setSubjects(breakdown);
       setLoading(false);
