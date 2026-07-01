@@ -427,9 +427,21 @@ const TestResultPage = () => {
             <button
               type="button"
               onClick={async () => {
-                const { data, error } = await supabase.storage.from("test-solutions").createSignedUrl(test.solution_pdf_path as string, 60 * 10);
-                if (error || !data?.signedUrl) return;
-                window.open(data.signedUrl, "_blank");
+                try {
+                  const path = test.solution_pdf_path as string;
+                  const { data: blob, error } = await supabase.storage.from("test-solutions").download(path);
+                  if (error || !blob) { toast.error(error?.message ?? "Unable to fetch solution PDF"); return; }
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = path.split("/").pop() || "solution.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 5000);
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Failed to download solution");
+                }
               }}
               className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
             >
