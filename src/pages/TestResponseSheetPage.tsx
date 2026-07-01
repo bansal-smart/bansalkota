@@ -250,7 +250,7 @@ const TestResponseSheetPage = () => {
                   <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: q.question_text }} />
                 )}
                 {q.question_image_url && (
-                  <TestImage src={q.question_image_url} alt={`Question ${q.position}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
+                  <TestImage src={q.question_image_url} alt={`Question ${q.position + 1}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
                 )}
 
                 {isNumerical ? (
