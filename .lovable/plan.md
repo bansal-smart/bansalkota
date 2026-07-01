@@ -1,27 +1,27 @@
-## Fix student result & solution PDF access on `/my-tests`
+## Goal
+Eliminate duplicate student phone numbers by treating same-phone students as siblings: swap so each sibling's `parent_phone` becomes the other sibling's `phone`, and clear the old parent numbers. Result: every student has a unique login phone. Remove the "Choose your account" picker since it's no longer needed.
 
-**Root cause:** `TestListPage.tsx` shows CBT tests to any batch student once results are released — including students who never attempted (were absent). Rows with no attempt fall through to `/tests/:slug/instructions`, which is not applicable to CBT (a centre-run kiosk test).
+## Steps
 
-**Aditya's data confirms:** his 2 attempts are `submitted` / `auto_submitted` with `results_released_at` set. Those should already route to the result page. Other CBT rows in his batch he didn't attempt cause the wrong redirect.
+### 1. Data fix (SQL, one-time via `supabase--read_query` first to audit, then migration/insert to update)
 
-### Changes
+- **Audit**: find all `profiles.phone` values shared by 2+ students. Confirm they're sibling pairs (2 students). Flag any group of 3+ for manual review before running.
+- **Rule for each sibling pair (A, B) sharing the same phone P**:
+  - Keep A's `phone = P_A` (existing), set A's `parent_phone = P_B` (B's current phone — but B's is also P, so we need a different source).
+  
+Since both siblings currently share the **same** `phone` value, we cannot derive a second unique number from existing data. We need a second real phone number to make them unique.
 
-**1. `src/pages/TestListPage.tsx`**
-- For CBT tests without an attempt for this user, render the row as **non-clickable** with an **"Absent — No Result"** badge (grey pill, cursor default) instead of a `<Link>` to `/instructions`.
-- CBT tests with a submitted attempt continue to link to `/tests/:slug/result/:attemptId` with the existing "View Result" badge.
-- Non-CBT tests keep current behavior (instructions → take → result).
+**This is the blocker — please clarify one of the following before I finalize the plan:**
 
-**2. `src/pages/TestResultPage.tsx`** — ensure both PDFs are prominent for the student
-- Keep the existing **Download Scorecard PDF** action (already implemented via `generateScorecardPdf`).
-- The **Download Solution PDF** button already renders when `results_released_at && solution_pdf_path` are set (creates a signed URL on `test-solutions` bucket). Verify it's visible for students — no policy change needed; just group the two buttons together in a clear "Downloads" row near the top of the result summary so it's obvious.
-- No schema or RLS changes.
+### Question for you
+For sibling pairs where both students currently have the **same** `phone` (e.g., Aditya & Adarsh both `8528829703`), where should the second unique phone come from?
 
-### Files touched
-- `src/pages/TestListPage.tsx` — conditional render for CBT-without-attempt rows.
-- `src/pages/TestResultPage.tsx` — small UI grouping so Scorecard + Solution buttons sit side-by-side and are visible above the fold.
+- **Option A** — Use each student's existing `parent_phone` (if present and different) as one sibling's new login `phone`, and set the other sibling's `parent_phone` to that number. Clear the shared number from wherever it conflicts.
+- **Option B** — I provide a CSV/list mapping `roll_number → new unique phone` for the affected siblings, and you apply it.
+- **Option C** — Something else (please describe).
 
-### Verification
-- Log in as Aditya (roll 261108) via Playwright, open `/my-tests`, confirm:
-  - Both attempted CBT tests show "View Result" and open the result page.
-  - Any other CBT rows in his batch show "Absent — No Result" and are not clickable.
-  - On the result page for `ST-01_13th_28-06-2026_JEE [Adv.]` both **Download Scorecard** and **Download Solution PDF** buttons appear and produce files.
+Once you confirm, I'll:
+1. Run the SQL update on `profiles` (values only, no schema change).
+2. Revert `prpsms-verify-otp` to a single-match lookup (remove `needs_selection` / `preferred_user_id` branch).
+3. Remove the `"pick"` step, `Candidate` type, and picker UI from `LoginPage.tsx`.
+4. Verify by re-querying `profiles` to confirm no duplicate `phone` values remain.
