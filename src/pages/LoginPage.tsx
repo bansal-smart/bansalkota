@@ -122,37 +122,6 @@ const LoginPage = () => {
     }
   };
 
-  const invokeVerify = async (preferred_user_id?: string) => {
-    const code = otp.join("");
-    const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
-      body: { phone: `+91${mobile}`, otp: code, purpose: "login", preferred_user_id },
-    });
-    if (error) {
-      let msg = error.message || "Could not verify OTP";
-      const ctx = (error as { context?: Response }).context;
-      if (ctx && typeof ctx.json === "function") {
-        try {
-          const body = await ctx.json();
-          if (body?.error) msg = body.error;
-        } catch { /* ignore */ }
-      }
-      throw new Error(msg);
-    }
-    if (data?.needs_selection && Array.isArray(data.candidates)) {
-      setCandidates(data.candidates as Candidate[]);
-      setStep("pick");
-      return;
-    }
-    if (!data?.token_hash || !data?.email) {
-      throw new Error("Could not verify OTP");
-    }
-    const verify = await supabase.auth.verifyOtp({
-      type: "magiclink", token_hash: data.token_hash,
-    });
-    if (verify.error) throw verify.error;
-    toast.success("Logged in!");
-  };
-
   const verifyOtp = async () => {
     const code = otp.join("");
     if (code.length !== 6) {
@@ -161,18 +130,28 @@ const LoginPage = () => {
     }
     setSubmitting(true);
     try {
-      await invokeVerify();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const pickCandidate = async (userId: string) => {
-    setSubmitting(true);
-    try {
-      await invokeVerify(userId);
+      const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
+        body: { phone: `+91${mobile}`, otp: code, purpose: "login" },
+      });
+      if (error) {
+        let msg = error.message || "Could not verify OTP";
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) msg = body.error;
+          } catch { /* ignore */ }
+        }
+        throw new Error(msg);
+      }
+      if (!data?.token_hash || !data?.email) {
+        throw new Error("Could not verify OTP");
+      }
+      const verify = await supabase.auth.verifyOtp({
+        type: "magiclink", token_hash: data.token_hash,
+      });
+      if (verify.error) throw verify.error;
+      toast.success("Logged in!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
