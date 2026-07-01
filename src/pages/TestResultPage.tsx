@@ -157,19 +157,37 @@ const TestResultPage = () => {
       if (rank) setRankInfo(rank as RankInfo);
 
       const breakdown: Record<string, SubjectStat> = {};
-      const metaSubjects = att?.metadata?.subjects as
-        | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
-        | undefined;
-      if (metaSubjects && Object.keys(metaSubjects).length) {
-        Object.entries(metaSubjects).forEach(([subj, st]) => {
-          breakdown[subj] = {
-            total: Number(st?.total ?? subjectsMax[subj]?.total ?? 0),
-            correct: Number(st?.correct ?? 0),
-            attempted: Number(st?.attempted ?? 0),
-            score: Number(st?.score ?? 0),
-            maxScore: Number(subjectsMax[subj]?.max_score ?? Number(st?.total ?? 0) * 4),
-          };
+      const metaQuestions = (att?.metadata?.questions ?? []) as Array<{
+        subject?: string; marks?: number; max_marks?: number;
+        attempted?: boolean; is_correct?: boolean; is_bonus?: boolean;
+      }>;
+      if (Array.isArray(metaQuestions) && metaQuestions.length) {
+        metaQuestions.forEach((q) => {
+          const subj = q.subject || "General";
+          const cur = breakdown[subj] ?? { total: 0, correct: 0, attempted: 0, score: 0, maxScore: 0 };
+          cur.total += 1;
+          cur.maxScore += Number(q.max_marks ?? 0);
+          if (q.attempted) cur.attempted += 1;
+          if (q.is_correct) cur.correct += 1;
+          cur.score += Number(q.marks ?? 0);
+          breakdown[subj] = cur;
         });
+      } else {
+        const metaSubjects = att?.metadata?.subjects as
+          | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
+          | undefined;
+        if (metaSubjects && Object.keys(metaSubjects).length) {
+          Object.entries(metaSubjects).forEach(([subj, st]) => {
+            const s: any = st ?? {};
+            breakdown[subj] = {
+              total: Number(s?.total ?? subjectsMax[subj]?.total ?? 0),
+              correct: Number(s?.correct ?? 0),
+              attempted: Number(s?.attempted ?? 0),
+              score: Number(s?.score ?? 0),
+              maxScore: Number(subjectsMax[subj]?.max_score ?? Number(s?.total ?? 0) * 4),
+            };
+          });
+        }
       }
       setSubjects(breakdown);
       setLoading(false);
@@ -409,9 +427,21 @@ const TestResultPage = () => {
             <button
               type="button"
               onClick={async () => {
-                const { data, error } = await supabase.storage.from("test-solutions").createSignedUrl(test.solution_pdf_path as string, 60 * 10);
-                if (error || !data?.signedUrl) return;
-                window.open(data.signedUrl, "_blank");
+                try {
+                  const path = test.solution_pdf_path as string;
+                  const { data: blob, error } = await supabase.storage.from("test-solutions").download(path);
+                  if (error || !blob) { toast.error(error?.message ?? "Unable to fetch solution PDF"); return; }
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = path.split("/").pop() || "solution.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 5000);
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Failed to download solution");
+                }
               }}
               className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
             >
@@ -455,27 +485,7 @@ const TestResultPage = () => {
           </div>
         </div>
 
-        {/* Comparison strip */}
-        {released && rankInfo && !rankInfo.excluded && (
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="mb-3 text-sm font-bold text-foreground">You vs Topper vs Average</h2>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[
-                  { name: "You", value: Number(score.toFixed(1)) },
-                  { name: "Topper", value: Number((rankInfo.topper_score ?? 0).toFixed(1)) },
-                  { name: "Average", value: Number((rankInfo.average_score ?? 0).toFixed(1)) },
-                ]} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                  <XAxis type="number" fontSize={11} />
-                  <YAxis type="category" dataKey="name" fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#1E293B" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+        {/* Comparison strip removed */}
 
         {/* Subject breakdown table */}
         <div className="rounded-2xl border border-border bg-card p-5">
