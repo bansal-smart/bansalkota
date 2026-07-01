@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { phone, otp, purpose, preferred_user_id } = body as { phone?: string; otp?: string; purpose?: Purpose; preferred_user_id?: string };
+    const { phone, otp, purpose } = body as { phone?: string; otp?: string; purpose?: Purpose };
     if (!phone || !otp || !PURPOSES.includes(purpose as Purpose)) {
       return new Response(JSON.stringify({ error: "Invalid input. Required: phone, otp, purpose" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -76,28 +76,14 @@ Deno.serve(async (req) => {
     if (purpose === "login") {
       const bare = e164.replace(/^\+91/, "");
 
-      // Collect ALL matching profiles by phone (a single phone can be shared by siblings).
+      // Look up profile by phone (unique per student after sibling de-dup).
       const { data: profRows } = await supabase
         .from("profiles")
-        .select("user_id, full_name, roll_number, phone_e164, phone")
-        .or(`phone_e164.eq.${e164},phone.eq.${bare},phone.eq.${e164}`);
-      const candidates = (profRows ?? []) as Array<{ user_id: string; full_name: string | null; roll_number: string | null }>;
-
-      // If multiple profiles share this phone, require the caller to disambiguate.
-      if (candidates.length > 1 && !preferred_user_id) {
-        return new Response(JSON.stringify({
-          ok: true, purpose, phone: e164, needs_selection: true,
-          candidates: candidates.map((c) => ({ user_id: c.user_id, full_name: c.full_name, roll_number: c.roll_number })),
-        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      let userId: string | undefined;
+        .select("user_id, phone_e164, phone")
+        .or(`phone_e164.eq.${e164},phone.eq.${bare},phone.eq.${e164}`)
+        .limit(1);
+      let userId: string | undefined = profRows?.[0]?.user_id;
       let userEmail: string | undefined;
-      if (preferred_user_id && candidates.find((c) => c.user_id === preferred_user_id)) {
-        userId = preferred_user_id;
-      } else if (candidates.length === 1) {
-        userId = candidates[0].user_id;
-      }
 
       // Fallback: search auth users by phone (half-created accounts)
       if (!userId) {
