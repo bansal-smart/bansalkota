@@ -184,6 +184,7 @@ const TestSubjectBreakdownPage = () => {
                   </span>
                 </div>
               )}
+              {q.question_image_url && (
                 <div className="mt-3">
                   <img src={q.question_image_url} alt="Question figure" className="max-h-72 rounded-lg border border-border" />
                 </div>
