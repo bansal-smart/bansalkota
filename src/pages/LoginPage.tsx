@@ -53,6 +53,7 @@ const LoginPage = () => {
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const timerRef = useRef<number | null>(null);
 
   const startTimer = () => {
