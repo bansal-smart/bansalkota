@@ -174,6 +174,16 @@ const TestSubjectBreakdownPage = () => {
                   <XCircle className="h-4 w-4 shrink-0 text-destructive" />
                 )}
               </div>
+              {!isMatch && (
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                  <span className={`rounded-md px-2 py-1 font-semibold ${isUnattempted ? "bg-muted text-muted-foreground" : isCorrect ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"}`}>
+                    Your answer: {isUnattempted ? "Not attempted" : (typeof sel === "number" ? optionLabel(sel, optStyle) : String(sel))}
+                  </span>
+                  <span className="rounded-md bg-secondary/10 px-2 py-1 font-semibold text-secondary">
+                    Correct answer: {typeof q.correct_answer === "number" ? optionLabel(q.correct_answer, optStyle) : (q.correct_answer != null ? String(q.correct_answer) : "—")}
+                  </span>
+                </div>
+              )}
               {q.question_image_url && (
                 <div className="mt-3">
                   <img src={q.question_image_url} alt="Question figure" className="max-h-72 rounded-lg border border-border" />
