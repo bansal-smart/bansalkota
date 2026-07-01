@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { phone, otp, purpose, preferred_user_id } = body as { phone?: string; otp?: string; purpose?: Purpose; preferred_user_id?: string };
+    const { phone, otp, purpose } = body as { phone?: string; otp?: string; purpose?: Purpose };
     if (!phone || !otp || !PURPOSES.includes(purpose as Purpose)) {
       return new Response(JSON.stringify({ error: "Invalid input. Required: phone, otp, purpose" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
