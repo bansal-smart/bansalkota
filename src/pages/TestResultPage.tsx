@@ -473,27 +473,7 @@ const TestResultPage = () => {
           </div>
         </div>
 
-        {/* Comparison strip */}
-        {released && rankInfo && !rankInfo.excluded && (
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="mb-3 text-sm font-bold text-foreground">You vs Topper vs Average</h2>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[
-                  { name: "You", value: Number(score.toFixed(1)) },
-                  { name: "Topper", value: Number((rankInfo.topper_score ?? 0).toFixed(1)) },
-                  { name: "Average", value: Number((rankInfo.average_score ?? 0).toFixed(1)) },
-                ]} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                  <XAxis type="number" fontSize={11} />
-                  <YAxis type="category" dataKey="name" fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#1E293B" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+        {/* Comparison strip removed */}
 
         {/* Subject breakdown table */}
         <div className="rounded-2xl border border-border bg-card p-5">
