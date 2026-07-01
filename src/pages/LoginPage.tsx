@@ -7,7 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 
-type Step = "phone" | "otp" | "name";
+type Step = "phone" | "otp" | "pick" | "name";
+type Candidate = { user_id: string; full_name: string | null; roll_number: string | null };
 
 const LoginPage = () => {
   const navigate = useNavigate();
