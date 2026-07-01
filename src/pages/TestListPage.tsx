@@ -68,7 +68,7 @@ const TestListPage = () => {
         const prev = map[a.test_id];
         // Prefer submitted over in_progress
         if (!prev || (prev.status === "in_progress" && a.status !== "in_progress")) {
-          map[a.test_id] = { id: a.id, status: a.status, slug: a.tests?.slug ?? null };
+          map[a.test_id] = { id: a.id, status: a.status, slug: null };
         }
       });
       setAttemptStatus(map);
