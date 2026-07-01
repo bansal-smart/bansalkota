@@ -288,33 +288,6 @@ const LoginPage = () => {
             </>
           )}
 
-          {step === "pick" && (
-            <>
-              <h2 className="font-display text-3xl font-extrabold text-bansal-black">Choose your account</h2>
-              <p className="mt-1 text-sm text-bansal-gray">
-                Multiple students share this mobile number. Select which account to sign in as.
-              </p>
-              <div className="mt-6 space-y-2">
-                {candidates.map((c) => (
-                  <button
-                    key={c.user_id}
-                    onClick={() => pickCandidate(c.user_id)}
-                    disabled={submitting}
-                    className="w-full text-left rounded-lg border-2 border-border hover:border-bansal-blue px-4 py-3 transition-colors disabled:opacity-50"
-                  >
-                    <div className="text-sm font-bold text-bansal-black">{c.full_name || "Unnamed student"}</div>
-                    {c.roll_number && <div className="text-xs text-bansal-gray mt-0.5">Roll No. {c.roll_number}</div>}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => { setStep("phone"); setOtp(["", "", "", "", "", ""]); setCandidates([]); }}
-                className="w-full mt-4 text-xs text-bansal-gray hover:text-bansal-blue"
-              >
-                Use a different mobile number
-              </button>
-            </>
-          )}
 
 
           {step === "name" && (
