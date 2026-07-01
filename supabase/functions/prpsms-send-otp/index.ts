@@ -36,21 +36,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Rate-limit: 1 OTP per 60s, max 5 per hour per phone.
-    const sinceMin = new Date(Date.now() - 60_000).toISOString();
-    const sinceHour = new Date(Date.now() - 3600_000).toISOString();
-    const { count: recentMin } = await supabase
-      .from("phone_otps").select("id", { count: "exact", head: true })
-      .eq("phone", e164).gte("created_at", sinceMin);
-    if ((recentMin ?? 0) > 0) {
-      return new Response(JSON.stringify({ error: "Please wait before requesting another OTP." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const { count: recentHour } = await supabase
-      .from("phone_otps").select("id", { count: "exact", head: true })
-      .eq("phone", e164).gte("created_at", sinceHour);
-    if ((recentHour ?? 0) >= 5) {
-      return new Response(JSON.stringify({ error: "Too many OTP requests. Try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
+    // Rate-limiting disabled during static-OTP bypass window.
+
 
     // TEMP: PRPSMS DLT mapping unresolved — bypass real SMS and use static OTP "123456".
     // The verify endpoint already accepts 123456 unconditionally.
