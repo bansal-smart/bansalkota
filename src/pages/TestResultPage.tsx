@@ -247,7 +247,7 @@ const TestResultPage = () => {
     if (!attempt || !user) return null;
     const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
       supabase.from("profiles")
-        .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(name)")
+        .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(city, area)")
         .eq("user_id", user.id).maybeSingle(),
       supabase.from("tests").select("title, exam_pattern, total_marks").eq("id", attempt.test_id!).maybeSingle(),
       supabase.rpc("get_attempt_response_sheet", { _attempt_id: attempt.id }),
@@ -268,21 +268,23 @@ const TestResultPage = () => {
         ? "Bonus"
         : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
       return {
-        position: Number(q.position ?? 0),
+        position: Number(q.position ?? 0) + 1,
         subject: String(q.subject ?? "—"),
         status,
         marks: Number(m.marks ?? 0),
         max_marks: Number(m.max_marks ?? q.marks_correct ?? 0),
       };
     });
+    const centreName = p.centres ? [p.centres.area, p.centres.city].filter(Boolean).join(", ") || null : null;
     return {
       student: {
         full_name: p.full_name,
         roll_number: p.roll_number,
         batch: p.course_batches?.name ?? p.batch_label ?? null,
-        centre: p.centres?.name ?? null,
+        centre: centreName,
         phone: p.phone,
       },
+
       test: {
         title: tm.title ?? attempt.test_name,
         exam_pattern: tm.exam_pattern ?? null,
