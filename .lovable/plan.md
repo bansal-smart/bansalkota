@@ -1,18 +1,27 @@
-## Plan
+## Fix student result & solution PDF access on `/my-tests`
 
-1. **Fix the roster source**
-   - Update the backend `admin_test_not_attempted` function so it reliably returns each assigned batch student's real `full_name`, `roll_number`, and batch details for the selected test.
-   - Keep the existing auth checks for admin, super admin, teacher, and centre admin.
+**Root cause:** `TestListPage.tsx` shows CBT tests to any batch student once results are released — including students who never attempted (were absent). Rows with no attempt fall through to `/tests/:slug/instructions`, which is not applicable to CBT (a centre-run kiosk test).
 
-2. **Make the UI stop falling back incorrectly**
-   - Update `AdminTestAttemptsPage.tsx` so absent rows use the returned `full_name` directly first, then the profile map, and only show `Student` if no name exists at all.
-   - Include roll number/batch as supporting data if useful for distinguishing students.
+**Aditya's data confirms:** his 2 attempts are `submitted` / `auto_submitted` with `results_released_at` set. Those should already route to the result page. Other CBT rows in his batch he didn't attempt cause the wrong redirect.
 
-3. **Verify with the existing `fasd` test**
-   - Confirm the test has students in `XII-A1` and `XII-A2`.
-   - Verify the attempts page shows the actual names like the Students table, not repeated `Student` labels.
+### Changes
 
-## Technical notes
+**1. `src/pages/TestListPage.tsx`**
+- For CBT tests without an attempt for this user, render the row as **non-clickable** with an **"Absent — No Result"** badge (grey pill, cursor default) instead of a `<Link>` to `/instructions`.
+- CBT tests with a submitted attempt continue to link to `/tests/:slug/result/:attemptId` with the existing "View Result" badge.
+- Non-CBT tests keep current behavior (instructions → take → result).
 
-- The database currently shows `fasd` has `XII-A1` and `XII-A2` students with names present, so the issue is in the absent-roster name handoff/rendering, not missing student data.
-- I will avoid changing unrelated test/result logic.
+**2. `src/pages/TestResultPage.tsx`** — ensure both PDFs are prominent for the student
+- Keep the existing **Download Scorecard PDF** action (already implemented via `generateScorecardPdf`).
+- The **Download Solution PDF** button already renders when `results_released_at && solution_pdf_path` are set (creates a signed URL on `test-solutions` bucket). Verify it's visible for students — no policy change needed; just group the two buttons together in a clear "Downloads" row near the top of the result summary so it's obvious.
+- No schema or RLS changes.
+
+### Files touched
+- `src/pages/TestListPage.tsx` — conditional render for CBT-without-attempt rows.
+- `src/pages/TestResultPage.tsx` — small UI grouping so Scorecard + Solution buttons sit side-by-side and are visible above the fold.
+
+### Verification
+- Log in as Aditya (roll 261108) via Playwright, open `/my-tests`, confirm:
+  - Both attempted CBT tests show "View Result" and open the result page.
+  - Any other CBT rows in his batch show "Absent — No Result" and are not clickable.
+  - On the result page for `ST-01_13th_28-06-2026_JEE [Adv.]` both **Download Scorecard** and **Download Solution PDF** buttons appear and produce files.

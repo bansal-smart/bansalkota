@@ -176,17 +176,11 @@ const TestListPage = () => {
                         const att = attemptStatus[t.id];
                         const isSubmitted = att && (att.status === "submitted" || att.status === "auto_submitted");
                         const isInProgress = att?.status === "in_progress";
-                        const href = isSubmitted
-                          ? `/tests/${att.slug ?? t.slug}/result/${att.id}`
-                          : isInProgress
-                            ? `/tests/${t.slug}/take`
-                            : `/tests/${t.slug}/instructions`;
-                        return (
-                          <Link
-                            key={t.id}
-                            to={href}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
-                          >
+                        const isCbt = t.test_mode === "cbt";
+                        const cbtAbsent = isCbt && !att;
+
+                        const rowInner = (
+                          <>
                             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary shrink-0">
                               <FileText className="h-4.5 w-4.5" />
                             </div>
@@ -200,17 +194,44 @@ const TestListPage = () => {
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
+                              {cbtAbsent && (
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">Absent — No Result</span>
+                              )}
                               {isSubmitted && (
                                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700">View Result</span>
                               )}
                               {isInProgress && (
                                 <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-600">Resume</span>
                               )}
-                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              {!cbtAbsent && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                             </div>
+                          </>
+                        );
+
+                        if (cbtAbsent) {
+                          return (
+                            <div key={t.id} className="flex items-start gap-3 px-4 py-3 opacity-70 cursor-not-allowed">
+                              {rowInner}
+                            </div>
+                          );
+                        }
+
+                        const href = isSubmitted
+                          ? `/tests/${att.slug ?? t.slug}/result/${att.id}`
+                          : isInProgress
+                            ? `/tests/${t.slug}/take`
+                            : `/tests/${t.slug}/instructions`;
+                        return (
+                          <Link
+                            key={t.id}
+                            to={href}
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors"
+                          >
+                            {rowInner}
                           </Link>
                         );
                       })}
+
                     </div>
                   )}
                 </section>
