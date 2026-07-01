@@ -53,7 +53,7 @@ const TestListPage = () => {
           .select("id,title,slug,description,test_type,exam_pattern,subjects,duration_minutes,total_questions,total_marks,is_published,course_id,cbt_allowed_batch_ids,test_mode,results_released_at")
           .eq("is_published", true)
           .order("created_at", { ascending: false }),
-        supabase.from("test_attempts").select("id, test_id, status, tests(slug)").eq("user_id", user.id),
+        supabase.from("test_attempts").select("id, test_id, status").eq("user_id", user.id),
         supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
       ]);
       if (!active) return;
@@ -68,7 +68,7 @@ const TestListPage = () => {
         const prev = map[a.test_id];
         // Prefer submitted over in_progress
         if (!prev || (prev.status === "in_progress" && a.status !== "in_progress")) {
-          map[a.test_id] = { id: a.id, status: a.status, slug: a.tests?.slug ?? null };
+          map[a.test_id] = { id: a.id, status: a.status, slug: null };
         }
       });
       setAttemptStatus(map);
