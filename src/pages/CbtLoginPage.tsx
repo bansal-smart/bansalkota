@@ -8,7 +8,8 @@ import BansalLogo from "@/components/bansal/BansalLogo";
 const CbtLoginPage = () => {
   const navigate = useNavigate();
   const [roll, setRoll] = useState("");
-  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
