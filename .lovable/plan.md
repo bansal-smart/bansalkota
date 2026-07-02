@@ -1,62 +1,60 @@
-# Plan
+# Plan: Restore real OTP SMS on Login via PRPSMS
 
-## 1. Bulk CBT passwords for ALL students (not just current page)
+## Goal
+Remove the static-OTP bypass and send real OTPs through the PRPSMS HTTP API using the exact working format the user confirmed.
 
-Today `runBulkGenerate("filtered")` sends only `rows` (the paginated 25 shown on screen), so only 25 get generated.
+## Working reference (confirmed by user)
+```
+GET http://164.52.195.161/API/SendMsg.aspx
+  ?uname=20190320
+  &pass=Bansal@1234
+  &send=VBNSAL
+  &dest=9352443837
+  &msg=Dear Applicant, 1122 is your verification code for Online Application at Bansal Classes. Team Bansal
+```
 
-**Fix in `AdminStudentsPage.tsx`:**
-- Replace the "filtered" path with a full fetch: re-run the same query used by `load()` (same centre / batch / search / role filters) but **without pagination**, selecting only `user_id`. Collect every matching id.
-- Show progress: send to the edge function in **chunks of 200** ids, accumulate `results`, and update a "Processing X / Y…" indicator while running.
-- Keep the current confirm dialog copy but update the count shown to reflect the full filtered total (not `rows.length`).
-- CSV download already iterates `pwdBulkResults`, so it will include everyone automatically.
+Key differences from what's currently stored:
+- `uname` → `20190320` (currently a different value in `PRPSMS_UNAME`)
+- `pass` → `Bansal@1234`
+- `send` (sender ID) → `VBNSAL` (currently `20190332` default)
+- No `priority` / `schtm` params in the working call — keep the call minimal
 
-Edge function (`admin-bulk-cbt-passwords`) already loops server-side and works with any batch size, so no changes needed there.
+## Changes
 
-## 2. Remove "Course Content" from the admin sidebar
+### 1. Update PRPSMS credentials (secrets)
+Update three existing secrets to the confirmed working values:
+- `PRPSMS_UNAME` = `20190320`
+- `PRPSMS_PASS` = `Bansal@1234`
+- `PRPSMS_SENDER` = `VBNSAL`
 
-- `src/components/AdminLayout.tsx` line 64 — remove the `{ label: "Course Content", … }` entry.
-- `src/lib/adminModules.ts` line 27 — remove the `course_content` module entry so it disappears from Role Permissions too.
-- Leave the route + `AdminCourseContentPage` file in place (legacy `/admin/courses/:courseId/chapters` still references it) so nothing else breaks.
+This will use `update_secret` (opens a secure form; the user re-enters/confirms).
 
-## 3. Rebuild the student "My Course" learn page to match the admin content-manager layout
+### 2. `supabase/functions/_shared/prpsms.ts`
+- Simplify `prpsmsSend` to match the working URL exactly: only `uname`, `pass`, `send`, `dest`, `msg` (drop `priority`, drop `schtm` unless explicitly passed).
+- Update the default sender constant `PRPSMS_SENDER_DEFAULT` to `VBNSAL`.
+- Keep `renderTemplate`, `toDestNumber`, `toE164`, response parsing, `prpsmsBalance` unchanged — they already work for the shared use-case (result SMS, etc.).
 
-Rewrite `src/pages/CourseLearnPage.tsx` to mirror `AdminCourseHierarchyPage.tsx`'s two-pane layout (read-only for students):
+### 3. `supabase/functions/prpsms-send-otp/index.ts`
+Remove the static bypass block and restore real send:
+- Generate a random 6-digit OTP (`Math.floor(100000 + Math.random()*900000)`).
+- Render via `renderTemplate("CodeRed", { otp })` → produces the exact "Dear Applicant, {otp} is your verification code..." wording that matches the DLT-approved template used in the working curl.
+- Call `prpsmsSend({ to: dest, body })`.
+- On failure: log to `sms_send_log` with `status: "failed"` and error, return 502 with a user-safe message.
+- On success: hash OTP with `sha256Hex(`${e164}:${purpose}:${otp}`)`, insert into `phone_otps` with 10-min expiry, log to `sms_send_log` with `status: "sent"` and `provider_msg_id`.
+- Re-enable the existing per-phone/per-IP rate limit (currently commented out) to prevent abuse: max 5 sends per phone per hour.
 
-**Left pane — Content Tree**
-- Subjects list with video counts (e.g. `INORGANIC CHEMISTRY · 123 videos`), matching the admin style — same typography, spacing, and hover states.
-- Clicking a subject opens topics inline (`01-Chemical Bonding · 53 videos · 0 PDFs`).
-- Overall progress bar stays at the top.
+### 4. `prpsms-verify-otp` (companion function)
+Currently accepts `123456` unconditionally as part of the bypass. Remove that shortcut so only the real hashed OTP validates. (If exploration shows it doesn't have that shortcut, skip.)
 
-**Right pane — Topic detail**
-- When a topic is selected, show breadcrumb (`SUBJECT › TOPIC`), then tabs `Videos (n)` / `PDFs (n)` — identical to admin.
-- Video rows show the **full title** on one line (no truncation to `…`), thumbnail on the left (YouTube mqdefault), duration/subtopic label under it, completion check on the right. Wide layout so titles are readable at the size shown in image 2.
-- PDF tab lists downloadable PDFs.
+### 5. Login page
+No change needed — `src/pages/LoginPage.tsx` already calls `prpsms-send-otp` with `{ phone, purpose: "login" }`. The restored function will just start returning real OTPs to the user's phone.
 
-**Video playback → modal**
-- Clicking a video row opens a centered **Dialog** (shadcn) containing the custom player (see §4), title, breadcrumb, and a "Mark as Complete / Incomplete" button. Notes textarea moves inside this modal below the player.
-- URL still syncs `?video=<id>` so deep links open the modal on load.
-- Closing the modal returns to the topic list.
+## Verification
+1. After deploy, POST to `prpsms-send-otp` with the user's real number via `supabase--curl_edge_functions`.
+2. Confirm response is `{ ok: true, expires_at }` (no `static_bypass` flag).
+3. Check `sms_send_log` row shows `status: "sent"` with a `provider_msg_id`.
+4. Confirm user receives the SMS and can verify via `prpsms-verify-otp`.
+5. Check `supabase--edge_function_logs` for the outbound URL in case of failure.
 
-**Mobile**
-- Same content tree in a `Sheet` (already exists); topic detail becomes full-width; modal stays centered.
-
-## 4. Branding-free in-app video player (no "Watch on YouTube")
-
-Replace the raw `<iframe src={getYouTubeEmbedUrl(...)}>` with a new component `src/components/YouTubePlayer.tsx`:
-
-- Load the YouTube IFrame API once (`https://www.youtube.com/iframe_api`) with a small loader utility.
-- Instantiate `new YT.Player(el, { videoId, host: "https://www.youtube-nocookie.com", playerVars: { controls: 0, modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1, fs: 0, playsinline: 1 } })`.
-- Render our own control bar (play/pause, seek slider bound to `getCurrentTime` / `seekTo`, current/duration time, mute, volume, fullscreen on the container `requestFullscreen()`).
-- Overlay a transparent, click-swallowing `div` on top of the iframe that only lets pointer events through to our controls. This hides the "Watch on YouTube" and title chip that appear on hover/pause, because the iframe never receives clicks.
-- Expose `onEnded` / `onStateChange` so completion can auto-mark (kept optional — the manual "Mark Complete" button stays).
-- Progress ticker (every 5s) still calls `upsertVideoProgress` so streaks/continue-learning keep working.
-
-Use this component in the new modal in `CourseLearnPage.tsx`. No other pages change.
-
-## Technical notes / files touched
-
-- `src/pages/AdminStudentsPage.tsx` — bulk-generate over all filtered ids in chunks.
-- `src/components/AdminLayout.tsx`, `src/lib/adminModules.ts` — drop Course Content nav item.
-- `src/pages/CourseLearnPage.tsx` — full rewrite of layout; modal-based playback; full titles.
-- `src/components/YouTubePlayer.tsx` — new custom player using YT IFrame API + custom controls + click-blocking overlay.
-- No DB or edge-function changes.
+## Rollback
+If PRPSMS returns errors, re-enable the static bypass block (kept in git history) while credentials/DLT are re-checked.
