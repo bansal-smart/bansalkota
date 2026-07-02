@@ -1,44 +1,62 @@
-## CBT Password-Based Login System
+# Plan
 
-### 1. Database (migration)
-- Add `cbt_password_hash text` and `cbt_password_set_at timestamptz` columns to `profiles`.
-- New RPC `cbt_login_with_password(_roll text, _password text)` — SECURITY DEFINER, uses `pgcrypto` (`crypt`/`gen_salt('bf')`) to verify hashed password. Returns `user_id` on match.
-- New RPC `admin_set_cbt_password(_user_id uuid, _password text)` — restricted to admin/super_admin/center_admin; hashes and stores.
-- New RPC `student_change_cbt_password(_old text, _new text)` — auth.uid()-scoped; verifies old, stores new hash.
-- New RPC `admin_bulk_generate_cbt_passwords(_user_ids uuid[], _overwrite boolean)` — hashes random 8-char alphanumeric passwords for each; returns `[{user_id, roll_number, full_name, password}]` (plaintext returned ONCE for CSV download, never stored).
+## 1. Bulk CBT passwords for ALL students (not just current page)
 
-### 2. Edge function
-- Update `supabase/functions/cbt-login/index.ts`: accept `{roll_number, password}` instead of phone. Call `cbt_login_with_password` RPC. Continue to mint Supabase session via existing email + phone-password fallback? → Replace: use admin API `generateLink` or `signInWithPassword` using the auth user's stored password. Simplest: keep auth password = same student password. So `admin_set_cbt_password` will also update `auth.users.password` via a service-role call from a new edge function `admin-set-cbt-password` (RPC alone can't touch auth). Same for bulk + student-change → route through edge functions:
-  - `admin-set-cbt-password` (single reset, admin only)
-  - `admin-bulk-cbt-passwords` (bulk generate, returns CSV data)
-  - `student-change-cbt-password` (auth.uid())
-- Each edge function: verify caller role, generate/accept password, `supabase.auth.admin.updateUserById(user_id, { password })`, mirror hash into `profiles.cbt_password_hash` for RPC-based login verification, and update `cbt_password_set_at`.
+Today `runBulkGenerate("filtered")` sends only `rows` (the paginated 25 shown on screen), so only 25 get generated.
 
-### 3. Frontend — /cbt login (`CbtLoginPage.tsx`)
-- Replace "Mobile Number" field with "Password" field (text/password, show/hide toggle).
-- Submit calls `cbt-login` with `{roll_number, password}`.
-- Add "Forgot password? Contact your centre" helper text.
+**Fix in `AdminStudentsPage.tsx`:**
+- Replace the "filtered" path with a full fetch: re-run the same query used by `load()` (same centre / batch / search / role filters) but **without pagination**, selecting only `user_id`. Collect every matching id.
+- Show progress: send to the edge function in **chunks of 200** ids, accumulate `results`, and update a "Processing X / Y…" indicator while running.
+- Keep the current confirm dialog copy but update the count shown to reflect the full filtered total (not `rows.length`).
+- CSV download already iterates `pwdBulkResults`, so it will include everyone automatically.
 
-### 4. Admin Students page (`AdminStudentsPage.tsx`)
-- New toolbar buttons next to existing actions:
-  - **Generate CBT Passwords** (bulk): opens dialog — pick "Selected students" or "All filtered students", toggle "Overwrite existing passwords". Calls `admin-bulk-cbt-passwords`, receives list, auto-downloads CSV (`roll_number, full_name, batch, centre, password`) via existing `exportCsv` helper. Shows one-time in-modal table too.
-  - **Reset Password** row action (per student): dialog to enter or auto-generate new password, shown once with copy button.
-- Row column indicator: "CBT password set" badge based on `cbt_password_set_at`.
+Edge function (`admin-bulk-cbt-passwords`) already loops server-side and works with any batch size, so no changes needed there.
 
-### 5. Student dashboard — password change
-- New card/section on Settings page (`SettingsPage.tsx`) "CBT Test Password": current + new + confirm, calls `student-change-cbt-password`. Success toast.
+## 2. Remove "Course Content" from the admin sidebar
 
-### 6. Security
-- Random passwords: 8 chars, alphanumeric excluding ambiguous (0/O/I/l/1), generated in edge function using `crypto.getRandomValues`.
-- Plaintext passwords returned only in the immediate response for admin CSV; never persisted.
-- Rate-limit login attempts via existing pattern (best-effort, not blocking).
+- `src/components/AdminLayout.tsx` line 64 — remove the `{ label: "Course Content", … }` entry.
+- `src/lib/adminModules.ts` line 27 — remove the `course_content` module entry so it disappears from Role Permissions too.
+- Leave the route + `AdminCourseContentPage` file in place (legacy `/admin/courses/:courseId/chapters` still references it) so nothing else breaks.
 
-### Files touched
-- Migration (schema + RPCs + grants)
-- `supabase/functions/cbt-login/index.ts` (replace phone with password)
-- New: `supabase/functions/admin-set-cbt-password/index.ts`, `admin-bulk-cbt-passwords/index.ts`, `student-change-cbt-password/index.ts`
-- `src/pages/CbtLoginPage.tsx`
-- `src/pages/AdminStudentsPage.tsx` (+ small dialog components)
-- `src/pages/SettingsPage.tsx` (password-change card)
+## 3. Rebuild the student "My Course" learn page to match the admin content-manager layout
 
-No forced-change on first login. Admin-set passwords are visible/copyable once by admin.
+Rewrite `src/pages/CourseLearnPage.tsx` to mirror `AdminCourseHierarchyPage.tsx`'s two-pane layout (read-only for students):
+
+**Left pane — Content Tree**
+- Subjects list with video counts (e.g. `INORGANIC CHEMISTRY · 123 videos`), matching the admin style — same typography, spacing, and hover states.
+- Clicking a subject opens topics inline (`01-Chemical Bonding · 53 videos · 0 PDFs`).
+- Overall progress bar stays at the top.
+
+**Right pane — Topic detail**
+- When a topic is selected, show breadcrumb (`SUBJECT › TOPIC`), then tabs `Videos (n)` / `PDFs (n)` — identical to admin.
+- Video rows show the **full title** on one line (no truncation to `…`), thumbnail on the left (YouTube mqdefault), duration/subtopic label under it, completion check on the right. Wide layout so titles are readable at the size shown in image 2.
+- PDF tab lists downloadable PDFs.
+
+**Video playback → modal**
+- Clicking a video row opens a centered **Dialog** (shadcn) containing the custom player (see §4), title, breadcrumb, and a "Mark as Complete / Incomplete" button. Notes textarea moves inside this modal below the player.
+- URL still syncs `?video=<id>` so deep links open the modal on load.
+- Closing the modal returns to the topic list.
+
+**Mobile**
+- Same content tree in a `Sheet` (already exists); topic detail becomes full-width; modal stays centered.
+
+## 4. Branding-free in-app video player (no "Watch on YouTube")
+
+Replace the raw `<iframe src={getYouTubeEmbedUrl(...)}>` with a new component `src/components/YouTubePlayer.tsx`:
+
+- Load the YouTube IFrame API once (`https://www.youtube.com/iframe_api`) with a small loader utility.
+- Instantiate `new YT.Player(el, { videoId, host: "https://www.youtube-nocookie.com", playerVars: { controls: 0, modestbranding: 1, rel: 0, showinfo: 0, iv_load_policy: 3, disablekb: 1, fs: 0, playsinline: 1 } })`.
+- Render our own control bar (play/pause, seek slider bound to `getCurrentTime` / `seekTo`, current/duration time, mute, volume, fullscreen on the container `requestFullscreen()`).
+- Overlay a transparent, click-swallowing `div` on top of the iframe that only lets pointer events through to our controls. This hides the "Watch on YouTube" and title chip that appear on hover/pause, because the iframe never receives clicks.
+- Expose `onEnded` / `onStateChange` so completion can auto-mark (kept optional — the manual "Mark Complete" button stays).
+- Progress ticker (every 5s) still calls `upsertVideoProgress` so streaks/continue-learning keep working.
+
+Use this component in the new modal in `CourseLearnPage.tsx`. No other pages change.
+
+## Technical notes / files touched
+
+- `src/pages/AdminStudentsPage.tsx` — bulk-generate over all filtered ids in chunks.
+- `src/components/AdminLayout.tsx`, `src/lib/adminModules.ts` — drop Course Content nav item.
+- `src/pages/CourseLearnPage.tsx` — full rewrite of layout; modal-based playback; full titles.
+- `src/components/YouTubePlayer.tsx` — new custom player using YT IFrame API + custom controls + click-blocking overlay.
+- No DB or edge-function changes.
