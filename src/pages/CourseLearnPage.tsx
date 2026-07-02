@@ -218,7 +218,7 @@ const CourseLearnPage = () => {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 p-4">
-        <aside className="hidden lg:block sticky top-20 self-start max-h-[85vh] overflow-y-auto bg-card border rounded-lg p-3">
+        <aside className="hidden lg:flex sticky top-16 self-start h-[calc(100vh-5rem)] bg-card border rounded-lg p-3 flex-col">
           {Sidebar}
         </aside>
 
