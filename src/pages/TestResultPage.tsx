@@ -245,20 +245,33 @@ const TestResultPage = () => {
 
   const buildScorecardInput = async (): Promise<ScorecardInput | null> => {
     if (!attempt || !user) return null;
+    const { optionLabel, resolveOptionStyle } = await import("@/lib/optionLabel");
     const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
       supabase.from("profiles")
         .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(city, area)")
         .eq("user_id", user.id).maybeSingle(),
-      supabase.from("tests").select("title, exam_pattern, total_marks").eq("id", attempt.test_id!).maybeSingle(),
+      supabase.from("tests").select("title, exam_pattern, total_marks, option_label_style").eq("id", attempt.test_id!).maybeSingle(),
       supabase.rpc("get_attempt_response_sheet", { _attempt_id: attempt.id }),
     ]);
     const p: any = prof ?? {};
     const tm: any = testMeta ?? {};
     const rb: any = respBundle ?? {};
+    const optStyle = resolveOptionStyle(tm);
     const qList: any[] = Array.isArray(rb.questions) ? rb.questions : [];
     const metaQs: any[] = (attempt as any).metadata?.questions ?? [];
     const byId: Record<string, any> = {};
     metaQs.forEach((m) => { if (m?.question_id) byId[m.question_id] = m; });
+    const formatAns = (q: any, val: any): string => {
+      if (val == null || (typeof val === "object" && !Array.isArray(val) && Object.keys(val || {}).length === 0)) return "—";
+      const qt = q.question_type;
+      if (qt === "match-following" && val && typeof val === "object") {
+        return Object.entries(val).map(([k, v]) => `${k}→${v}`).join(", ");
+      }
+      if (qt === "numerical") return String(val);
+      if (Array.isArray(val)) return val.map((v) => typeof v === "number" ? optionLabel(v, optStyle) : String(v)).join(", ");
+      if (typeof val === "number") return optionLabel(val, optStyle);
+      return String(val);
+    };
     const questions = qList.map((q) => {
       const m = byId[q.id] ?? {};
       const isBonus = !!m.is_bonus;
@@ -267,12 +280,15 @@ const TestResultPage = () => {
       const status: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
         ? "Bonus"
         : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
+      const correctVal = q.question_type === "numerical" ? q.numerical_answer : q.correct_answer;
       return {
         position: Number(q.position ?? 0) + 1,
         subject: String(q.subject ?? "—"),
         status,
         marks: Number(m.marks ?? 0),
         max_marks: Number(m.max_marks ?? q.marks_correct ?? 0),
+        your_answer: attemptedQ ? formatAns(q, q.selected) : "—",
+        correct_answer: formatAns(q, correctVal),
       };
     });
     const centreName = p.centres ? [p.centres.area, p.centres.city].filter(Boolean).join(", ") || null : null;
