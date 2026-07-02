@@ -24,7 +24,7 @@ export const ADMIN_MODULES: AdminModule[] = [
 
   // Academics
   { key: "courses", label: "Courses", path: "/admin/courses", actions: ["view", "create", "edit", "delete"] },
-  { key: "course_content", label: "Course Content", path: "/admin/course-content", actions: ["view", "create", "edit", "delete"] },
+  
   { key: "batches", label: "Batches & CBT Setup", path: "/admin/batches", actions: ["view", "create", "edit", "delete"] },
   { key: "live_classes", label: "Live Classes", path: "/admin/live-classes", actions: ["view", "create", "edit", "delete"] },
   { key: "test_platform", label: "Test Platform", path: "/admin/tests-hub", actions: ["view", "create", "edit", "delete", "export"] },
