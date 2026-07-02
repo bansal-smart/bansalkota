@@ -196,7 +196,7 @@ const CourseLearnPage = () => {
   );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
       <header className="shrink-0 border-b bg-card sticky top-0 z-30">
         <div className="flex items-center justify-between gap-3 p-3">
           <div className="flex items-center gap-2 min-w-0">
