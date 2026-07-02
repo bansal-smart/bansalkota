@@ -1052,6 +1052,12 @@ const AdminStudentsPage = () => {
                   {drawer.is_suspended ? "Unsuspend" : "Suspend"}
                 </button>
                 <button
+                  onClick={() => { setPwdResetValue(""); setPwdResetResult(null); setPwdReset({ user_id: drawer.user_id, full_name: drawer.full_name }); }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10"
+                >
+                  <KeyRound className="h-3 w-3" /> Reset CBT Password
+                </button>
+                <button
                   onClick={() => setConfirmDelete(drawer)}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
                 >
