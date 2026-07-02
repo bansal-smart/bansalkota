@@ -3546,6 +3546,7 @@ export type Database = {
           avatar_url: string | null
           batch_id: string | null
           batch_label: string | null
+          cbt_password_set_at: string | null
           centre_id: string | null
           city: string | null
           class_level: string | null
@@ -3579,6 +3580,7 @@ export type Database = {
           avatar_url?: string | null
           batch_id?: string | null
           batch_label?: string | null
+          cbt_password_set_at?: string | null
           centre_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -3612,6 +3614,7 @@ export type Database = {
           avatar_url?: string | null
           batch_id?: string | null
           batch_label?: string | null
+          cbt_password_set_at?: string | null
           centre_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -5701,6 +5704,14 @@ export type Database = {
           title: string
           total_marks: number
           total_questions: number
+        }[]
+      }
+      cbt_verify_password: {
+        Args: { _password: string; _roll: string }
+        Returns: {
+          batch_id: string
+          full_name: string
+          user_id: string
         }[]
       }
       delete_email: {
