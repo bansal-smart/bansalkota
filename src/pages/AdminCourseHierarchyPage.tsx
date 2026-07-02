@@ -856,8 +856,35 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [fileUrl, setFileUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleFile = async (file: File) => {
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      return toast.error("Please select a PDF file");
+    }
+    if (file.size > 50 * 1024 * 1024) return toast.error("PDF must be under 50 MB");
+    setUploading(true);
+    try {
+      const path = `${courseId}/${topic.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;
+      const { error: upErr } = await supabase.storage
+        .from("course-resources")
+        .upload(path, file, { contentType: "application/pdf", upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("course-resources").getPublicUrl(path);
+      setFileUrl(pub.publicUrl);
+      if (!title) setTitle(file.name.replace(/\.pdf$/i, ""));
+      toast.success("PDF uploaded");
+    } catch (e: any) {
+      toast.error(e.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const save = async () => {
-    if (!title || !fileUrl) return toast.error("Title and URL required");
+    if (!title || !fileUrl) return toast.error("Title and PDF file are required");
+    setSaving(true);
     const { error } = await supabase.from("subtopic_pdfs" as any).insert({
       course_id: courseId,
       topic_id: topic.id,
@@ -865,6 +892,7 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
       file_url: fileUrl,
       position: topic.pdfs?.length ?? 0,
     });
+    setSaving(false);
     if (error) return toast.error(error.message);
     setTitle("");
     setFileUrl("");
@@ -899,7 +927,7 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
       {(topic.pdfs ?? []).length === 0 && (
         <p className="text-xs text-muted-foreground py-4 text-center">No PDFs yet.</p>
       )}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setTitle(""); setFileUrl(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add PDF</DialogTitle>
@@ -910,15 +938,26 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div>
-              <Label>File URL *</Label>
-              <Input value={fileUrl} onChange={(e) => setFileUrl(e.target.value)} placeholder="https://..." />
+              <Label>PDF File *</Label>
+              <Input
+                type="file"
+                accept="application/pdf,.pdf"
+                disabled={uploading}
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
+              {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
+              {fileUrl && !uploading && (
+                <p className="text-xs text-green-600 mt-1 truncate">✓ Uploaded</p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={save}>Add</Button>
+            <Button onClick={save} disabled={saving || uploading || !fileUrl}>
+              {saving ? "Saving…" : "Add"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
