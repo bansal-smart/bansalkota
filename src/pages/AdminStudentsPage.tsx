@@ -245,6 +245,7 @@ const AdminStudentsPage = () => {
   const [pwdResetRunning, setPwdResetRunning] = useState(false);
   const [pwdResetResult, setPwdResetResult] = useState<string | null>(null);
   const [copiedPwd, setCopiedPwd] = useState<string | null>(null);
+  const [pwdBulkProgress, setPwdBulkProgress] = useState({ done: 0, total: 0 });
 
   const copyToClipboard = async (val: string) => {
     try {
@@ -254,21 +255,70 @@ const AdminStudentsPage = () => {
     } catch { /* ignore */ }
   };
 
+  const fetchAllFilteredStudentIds = async (): Promise<string[]> => {
+    const { data: roleRows, error: rErr } = await supabase.from("user_roles").select("user_id, role");
+    if (rErr) throw rErr;
+    const studentSet = new Set<string>();
+    const staffSet = new Set<string>();
+    (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
+      if (r.role === "student") studentSet.add(r.user_id);
+      else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+    });
+    const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
+    if (!studentIds.length) return [];
+
+    const all: string[] = [];
+    const CHUNK = 500;
+    for (let i = 0; i < studentIds.length; i += CHUNK) {
+      const slice = studentIds.slice(i, i + CHUNK);
+      let q: any = (supabase as any).from("profiles").select("user_id").in("user_id", slice);
+      if (debouncedSearch.trim()) {
+        const s = debouncedSearch.trim();
+        q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
+      }
+      if (centreFilter === "none") q = q.is("centre_id", null);
+      else if (centreFilter) q = q.eq("centre_id", centreFilter);
+      if (classFilter) q = q.eq("class_level", classFilter);
+      if (batchFilter.length) q = q.in("batch_id", batchFilter);
+      const { data, error } = await q;
+      if (error) throw error;
+      (data ?? []).forEach((r: { user_id: string }) => all.push(r.user_id));
+    }
+    return all;
+  };
+
   const runBulkGenerate = async (scope: "selected" | "filtered") => {
     let ids: string[] = [];
-    if (scope === "selected") ids = selected.slice();
-    else ids = rows.map((r) => r.user_id);
+    try {
+      if (scope === "selected") ids = selected.slice();
+      else ids = await fetchAllFilteredStudentIds();
+    } catch (e: any) {
+      toast.error("Failed to gather students", { description: e.message });
+      return;
+    }
     if (!ids.length) { toast.error("No students to process"); return; }
     setPwdBulkRunning(true);
     setPwdBulkResults(null);
+    setPwdBulkProgress({ done: 0, total: ids.length });
     try {
-      const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
-        body: { user_ids: ids, overwrite: pwdBulkOverwrite },
-      });
-      if (error) throw error;
-      const res = (data?.results ?? []) as typeof pwdBulkResults;
-      setPwdBulkResults(res);
-      toast.success(`Generated ${data?.generated ?? 0} passwords · Skipped ${data?.skipped ?? 0}`);
+      const CHUNK = 200;
+      const all: NonNullable<typeof pwdBulkResults> = [];
+      let generated = 0;
+      let skipped = 0;
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const slice = ids.slice(i, i + CHUNK);
+        const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
+          body: { user_ids: slice, overwrite: pwdBulkOverwrite },
+        });
+        if (error) throw error;
+        const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
+        all.push(...res);
+        generated += Number(data?.generated ?? 0);
+        skipped += Number(data?.skipped ?? 0);
+        setPwdBulkProgress({ done: Math.min(i + slice.length, ids.length), total: ids.length });
+        setPwdBulkResults(all.slice());
+      }
+      toast.success(`Generated ${generated} passwords · Skipped ${skipped}`);
       load();
     } catch (e: any) {
       toast.error("Bulk generate failed", { description: e.message });
@@ -1188,7 +1238,7 @@ const AdminStudentsPage = () => {
               <div className="p-5 space-y-4">
                 <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground space-y-1">
                   <p><b className="text-foreground">Selected students:</b> {selected.length}</p>
-                  <p><b className="text-foreground">Currently visible (filtered):</b> {rows.length}</p>
+                  <p><b className="text-foreground">Matching current filters:</b> {total}</p>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-foreground">
                   <input
@@ -1199,6 +1249,11 @@ const AdminStudentsPage = () => {
                   />
                   Overwrite existing passwords (otherwise students who already have a CBT password are skipped)
                 </label>
+                {pwdBulkRunning && pwdBulkProgress.total > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Processing {pwdBulkProgress.done} / {pwdBulkProgress.total}…
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border">
                   <button
                     onClick={() => setPwdBulkOpen(false)}
@@ -1216,12 +1271,12 @@ const AdminStudentsPage = () => {
                     Generate for {selected.length} selected
                   </button>
                   <button
-                    disabled={pwdBulkRunning || rows.length === 0}
+                    disabled={pwdBulkRunning || total === 0}
                     onClick={() => runBulkGenerate("filtered")}
                     className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
                     {pwdBulkRunning && <Loader2 className="h-3 w-3 animate-spin" />}
-                    Generate for {rows.length} on this page
+                    Generate for all {total} filtered
                   </button>
                 </div>
               </div>

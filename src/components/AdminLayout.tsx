@@ -61,7 +61,7 @@ const mainGroups: NavGroup[] = [
     label: "Academics",
     items: [
       { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
-      { label: "Course Content", icon: FileText, path: "/admin/course-content" },
+      
       { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
       { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
       { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
