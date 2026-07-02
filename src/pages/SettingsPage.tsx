@@ -1,10 +1,36 @@
-import { Settings, Moon, Globe, Lock, Trash2 } from "lucide-react";
+import { Settings, Moon, Globe, Lock, Trash2, KeyRound, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import NotificationPreferences from "@/components/NotificationPreferences";
+import { supabase } from "@/integrations/supabase/client";
 
 const SettingsPage = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState("en");
+  const [curPwd, setCurPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [changing, setChanging] = useState(false);
+
+  const changePassword = async () => {
+    if (!curPwd || !newPwd) return toast.error("Fill in both passwords");
+    if (newPwd.length < 6) return toast.error("New password must be at least 6 characters");
+    if (newPwd !== confirmPwd) return toast.error("Passwords don't match");
+    setChanging(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("student-change-cbt-password", {
+        body: { current_password: curPwd, new_password: newPwd },
+      });
+      if (error) throw error;
+      if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
+      toast.success("Password updated");
+      setCurPwd(""); setNewPwd(""); setConfirmPwd("");
+    } catch (e: any) {
+      toast.error("Change failed", { description: e.message });
+    } finally {
+      setChanging(false);
+    }
+  };
 
   const Toggle = ({ on, toggle }: { on: boolean; toggle: () => void }) => (
     <button onClick={toggle} className={`relative h-6 w-11 rounded-full transition-colors ${on ? "bg-primary" : "bg-muted"}`}>
@@ -24,6 +50,45 @@ const SettingsPage = () => {
 
       <div className="space-y-4">
         <NotificationPreferences />
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><KeyRound className="h-4 w-4 text-primary" /> CBT Test Password</h3>
+          <p className="text-xs text-muted-foreground mb-3">Used to sign in on test kiosks at your centre with your roll number.</p>
+          <div className="space-y-2">
+            <input
+              type="password"
+              value={curPwd}
+              onChange={(e) => setCurPwd(e.target.value)}
+              placeholder="Current password"
+              autoComplete="current-password"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <input
+              type="password"
+              value={newPwd}
+              onChange={(e) => setNewPwd(e.target.value)}
+              placeholder="New password (min. 6 chars)"
+              autoComplete="new-password"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <input
+              type="password"
+              value={confirmPwd}
+              onChange={(e) => setConfirmPwd(e.target.value)}
+              placeholder="Confirm new password"
+              autoComplete="new-password"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={changePassword}
+              disabled={changing}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              {changing && <Loader2 className="h-3 w-3 animate-spin" />}
+              Update password
+            </button>
+          </div>
+        </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><Moon className="h-4 w-4 text-primary" /> Appearance</h3>

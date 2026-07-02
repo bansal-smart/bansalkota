@@ -1,26 +1,44 @@
-## Root cause
+## CBT Password-Based Login System
 
-The Student Result page calls the `get_test_result_bundle` RPC. That function is declared `STABLE`, so PostgREST runs it in a **read-only** transaction. Internally it calls `get_test_rank`, which — when the leaderboard cache is missing or older than 30s — calls `refresh_test_leaderboard` (INSERT/UPDATE into `test_leaderboard_cache`). That write blows up with:
+### 1. Database (migration)
+- Add `cbt_password_hash text` and `cbt_password_set_at timestamptz` columns to `profiles`.
+- New RPC `cbt_login_with_password(_roll text, _password text)` — SECURITY DEFINER, uses `pgcrypto` (`crypt`/`gen_salt('bf')`) to verify hashed password. Returns `user_id` on match.
+- New RPC `admin_set_cbt_password(_user_id uuid, _password text)` — restricted to admin/super_admin/center_admin; hashes and stores.
+- New RPC `student_change_cbt_password(_old text, _new text)` — auth.uid()-scoped; verifies old, stores new hash.
+- New RPC `admin_bulk_generate_cbt_passwords(_user_ids uuid[], _overwrite boolean)` — hashes random 8-char alphanumeric passwords for each; returns `[{user_id, roll_number, full_name, password}]` (plaintext returned ONCE for CSV download, never stored).
 
-```
-25006: cannot execute INSERT in a read-only transaction
-```
+### 2. Edge function
+- Update `supabase/functions/cbt-login/index.ts`: accept `{roll_number, password}` instead of phone. Call `cbt_login_with_password` RPC. Continue to mint Supabase session via existing email + phone-password fallback? → Replace: use admin API `generateLink` or `signInWithPassword` using the auth user's stored password. Simplest: keep auth password = same student password. So `admin_set_cbt_password` will also update `auth.users.password` via a service-role call from a new edge function `admin-set-cbt-password` (RPC alone can't touch auth). Same for bulk + student-change → route through edge functions:
+  - `admin-set-cbt-password` (single reset, admin only)
+  - `admin-bulk-cbt-passwords` (bulk generate, returns CSV data)
+  - `student-change-cbt-password` (auth.uid())
+- Each edge function: verify caller role, generate/accept password, `supabase.auth.admin.updateUserById(user_id, { password })`, mirror hash into `profiles.cbt_password_hash` for RPC-based login verification, and update `cbt_password_set_at`.
 
-The RPC therefore returns an error, `bundle` is null in `TestResultPage.tsx`, and the UI renders **"Result not found."**
+### 3. Frontend — /cbt login (`CbtLoginPage.tsx`)
+- Replace "Mobile Number" field with "Password" field (text/password, show/hide toggle).
+- Submit calls `cbt-login` with `{roll_number, password}`.
+- Add "Forgot password? Contact your centre" helper text.
 
-Confirmed from the actual failing network request on this route (attempt `fdc7a31e-...`, user Aditya Kumar Yadav — the legitimate owner). Auth is fine; the query is what's failing.
+### 4. Admin Students page (`AdminStudentsPage.tsx`)
+- New toolbar buttons next to existing actions:
+  - **Generate CBT Passwords** (bulk): opens dialog — pick "Selected students" or "All filtered students", toggle "Overwrite existing passwords". Calls `admin-bulk-cbt-passwords`, receives list, auto-downloads CSV (`roll_number, full_name, batch, centre, password`) via existing `exportCsv` helper. Shows one-time in-modal table too.
+  - **Reset Password** row action (per student): dialog to enter or auto-generate new password, shown once with copy button.
+- Row column indicator: "CBT password set" badge based on `cbt_password_set_at`.
 
-## Fix
+### 5. Student dashboard — password change
+- New card/section on Settings page (`SettingsPage.tsx`) "CBT Test Password": current + new + confirm, calls `student-change-cbt-password`. Success toast.
 
-Migration that changes the two RPCs to `VOLATILE` so PostgREST allows the leaderboard cache write:
+### 6. Security
+- Random passwords: 8 chars, alphanumeric excluding ambiguous (0/O/I/l/1), generated in edge function using `crypto.getRandomValues`.
+- Plaintext passwords returned only in the immediate response for admin CSV; never persisted.
+- Rate-limit login attempts via existing pattern (best-effort, not blocking).
 
-- `public.get_test_result_bundle(uuid)` → `VOLATILE` (keep `SECURITY DEFINER`, `search_path=public`, body unchanged).
-- `public.get_test_rank(uuid)` → `VOLATILE` for the same reason (it also transitively writes and is called directly from other pages).
+### Files touched
+- Migration (schema + RPCs + grants)
+- `supabase/functions/cbt-login/index.ts` (replace phone with password)
+- New: `supabase/functions/admin-set-cbt-password/index.ts`, `admin-bulk-cbt-passwords/index.ts`, `student-change-cbt-password/index.ts`
+- `src/pages/CbtLoginPage.tsx`
+- `src/pages/AdminStudentsPage.tsx` (+ small dialog components)
+- `src/pages/SettingsPage.tsx` (password-change card)
 
-No client changes needed — the `TestResultPage` logic already handles the returned bundle correctly.
-
-## Verification
-
-- Reload `/tests/:slug/result/:attemptId` for Aditya's attempt; expect the full scorecard, subject charts, and Scorecard/Solution PDF buttons instead of "Result not found".
-- Confirm the rank panel populates once released (the leaderboard refresh will now succeed).
-- Check network: the RPC call should return `200` with `{ attempt, test, subjects_max, rank }`.
+No forced-change on first login. Admin-set passwords are visible/copyable once by admin.
