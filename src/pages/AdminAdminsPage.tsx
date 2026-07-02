@@ -50,7 +50,7 @@ const AdminAdminsPage = () => {
     setLoading(true);
     try {
       const res = await callFn("list");
-      setRows(res.admins ?? []);
+      setRows((res.admins ?? []).filter((a: AdminRow) => a.role !== "super_admin"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load admins");
     } finally {

@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.cashfree-create-order]
 verify_jwt = false
+
+[functions.export-all-data]
+verify_jwt = false

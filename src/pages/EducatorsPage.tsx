@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import educatorsHeroAsset from "@/assets/educators-hero.webp.asset.json";
-const educatorsHero = educatorsHeroAsset.url;
+import educatorsHero from "@/assets/educators-hero.webp";
 import { useState } from "react";
 import {
   Star,

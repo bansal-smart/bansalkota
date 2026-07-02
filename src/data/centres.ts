@@ -2,12 +2,10 @@ import cityMetro from "@/assets/city-metro.jpg";
 import cityHills from "@/assets/city-hills.jpg";
 import cityHeritage from "@/assets/city-heritage.jpg";
 import cityCoastal from "@/assets/city-coastal.jpg";
-import cityTempleAsset from "@/assets/city-temple.webp.asset.json";
-const cityTemple = cityTempleAsset.url;
+import cityTemple from "@/assets/city-temple.webp";
 import cityPlains from "@/assets/city-plains.jpg";
 import cityEast from "@/assets/city-east.jpg";
-import cityTier2Asset from "@/assets/city-tier2.webp.asset.json";
-const cityTier2 = cityTier2Asset.url;
+import cityTier2 from "@/assets/city-tier2.webp";
 
 export type CenterRegion = "North" | "South" | "East" | "West" | "Central";
 

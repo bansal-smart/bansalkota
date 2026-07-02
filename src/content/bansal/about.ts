@@ -1,11 +1,7 @@
-import vkBansalPhotoAsset from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
-const vkBansalPhoto = vkBansalPhotoAsset.url;
-import sameerBansalPhotoAsset from "@/assets/leader-portraits/sameer-bansal-latest-v2.png.asset.json";
-const sameerBansalPhoto = sameerBansalPhotoAsset.url;
-import mahimaBansalPhotoAsset from "@/assets/leader-portraits/mahima-bansal-latest-v2.png.asset.json";
-const mahimaBansalPhoto = mahimaBansalPhotoAsset.url;
-import neelamBansalPhotoAsset from "@/assets/leader-portraits/neelam-bansal-latest-v2.png.asset.json";
-const neelamBansalPhoto = neelamBansalPhotoAsset.url;
+import vkBansalPhoto from "@/assets/leader-portraits/vk-bansal-latest.png";
+import sameerBansalPhoto from "@/assets/leader-portraits/sameer-bansal-latest-v2.png";
+import mahimaBansalPhoto from "@/assets/leader-portraits/mahima-bansal-latest-v2.png";
+import neelamBansalPhoto from "@/assets/leader-portraits/neelam-bansal-latest-v2.png";
 
 export const bansalStats = [
   { value: "Daily", label: "Live Interactive Sessions" },

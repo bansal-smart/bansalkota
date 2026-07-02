@@ -7,8 +7,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
-import bansalLogoAsset from "@/assets/bansal-logo.webp.asset.json";
-const bansalLogo = bansalLogoAsset.url;
+import bansalLogo from "@/assets/bansal-logo.webp";
 import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 
 type TestRow = {
@@ -169,8 +168,8 @@ const AdminTestResultPage = () => {
     }
     const ok = window.confirm(
       `Force-submit ${pendingCount} pending attempt${pendingCount === 1 ? "" : "s"}?\n\n` +
-        `Each student's most recently saved answers will be graded as their final submission. ` +
-        `This is meant for students who closed the tab without clicking Submit.`,
+      `Each student's most recently saved answers will be graded as their final submission. ` +
+      `This is meant for students who closed the tab without clicking Submit.`,
     );
     if (!ok) return;
     setForceSubmitting(true);

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Building2, Handshake, GraduationCap, Globe2, Award, ArrowRight, Users, Sparkles } from "lucide-react";
-import associationHeroAsset from "@/assets/association-hero.webp.asset.json";
-const associationHero = associationHeroAsset.url;
+import associationHero from "@/assets/association-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const partners = [

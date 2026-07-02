@@ -3,9 +3,9 @@ import { ArrowRight, Eye, Target, BookOpen, Quote } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
-import vkBansalPortraitAsset from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
-import heroBgAsset from "@/assets/about/about-hero-bg.png.asset.json";
-import vkGehlotAsset from "@/assets/about/vk-with-gehlot.jpg.asset.json";
+import vkBansalPortrait from "@/assets/leader-portraits/vk-bansal-latest.png";
+import heroBg from "@/assets/about/about-hero-bg.png";
+import vkGehlot from "@/assets/about/vk-with-gehlot.jpg";
 import {
   bansalStats,
   teachingMethodology,
@@ -15,7 +15,6 @@ import {
 } from "@/content/bansal/about";
 import { useSiteStats } from "@/hooks/useSiteContent";
 
-const vkBansalPortrait = vkBansalPortraitAsset.url;
 
 const SECTION = "py-16 md:py-24";
 const CONTAINER = "container mx-auto px-4 sm:px-6 lg:px-8";

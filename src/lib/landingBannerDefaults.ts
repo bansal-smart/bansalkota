@@ -1,7 +1,5 @@
-import bannerJeeAsset from "@/assets/landing-banners/banner-jee.webp.asset.json";
-const bannerJee = bannerJeeAsset.url;
-import bannerNeetAsset from "@/assets/landing-banners/banner-neet.webp.asset.json";
-const bannerNeet = bannerNeetAsset.url;
+import bannerJee from "@/assets/landing-banners/banner-jee.webp";
+import bannerNeet from "@/assets/landing-banners/banner-neet.webp";
 import bannerPhysics from "@/assets/landing-banners/banner-physics.jpg";
 import bannerChemistry from "@/assets/landing-banners/banner-chemistry.jpg";
 import type { BannerItem } from "@/lib/landingSchemas";

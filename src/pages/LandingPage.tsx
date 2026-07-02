@@ -62,24 +62,15 @@ const iconMap: Record<string, any> = {
 
 
 import toppersImage from "@/assets/bansal-toppers-v2.jpg";
-import indiaMapAsset from "@/assets/bansal-pan-india.webp.asset.json";
-const indiaMap = indiaMapAsset.url;
-import appMockupAsset from "@/assets/bansal-app-v2.webp.asset.json";
-const appMockup = appMockupAsset.url;
-import resultsBannerAsset from "@/assets/bansal-results-banner.webp.asset.json";
-const resultsBanner = resultsBannerAsset.url;
-import legacyBannerAsset from "@/assets/bansal-legacy-banner.webp.asset.json";
-const legacyBanner = legacyBannerAsset.url;
-import featureMentorshipAsset from "@/assets/feature-mentorship.webp.asset.json";
-const featureMentorship = featureMentorshipAsset.url;
-import featureTrackProgressAsset from "@/assets/feature-track-progress.webp.asset.json";
-const featureTrackProgress = featureTrackProgressAsset.url;
-import streamJeeAsset from "@/assets/stream-jee.webp.asset.json";
-const streamJee = streamJeeAsset.url;
-import streamNeetAsset from "@/assets/stream-neet.webp.asset.json";
-const streamNeet = streamNeetAsset.url;
-import streamPreFoundationAsset from "@/assets/stream-prefoundation.webp.asset.json";
-const streamPreFoundation = streamPreFoundationAsset.url;
+import indiaMap from "@/assets/bansal-pan-india.webp";
+import appMockup from "@/assets/bansal-app-v2.webp";
+import resultsBanner from "@/assets/bansal-results-banner.webp";
+import legacyBanner from "@/assets/bansal-legacy-banner.webp";
+import featureMentorship from "@/assets/feature-mentorship.webp";
+import featureTrackProgress from "@/assets/feature-track-progress.webp";
+import streamJee from "@/assets/stream-jee.webp";
+import streamNeet from "@/assets/stream-neet.webp";
+import streamPreFoundation from "@/assets/stream-prefoundation.webp";
 
 const streams = [
   {

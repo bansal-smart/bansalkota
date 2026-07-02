@@ -72,7 +72,6 @@ const baseNav: NavItem[] = [
   { label: "Course Enquiries", icon: Inbox, path: "/admin/course-enquiries" },
   { label: "Campaign Landing", icon: Megaphone, path: "/admin/landing-page" },
   { label: "Campaign Leads", icon: Inbox, path: "/admin/landing-leads" },
-  { label: "Course Content", icon: FileText, path: "/admin/course-content" },
   { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
   { label: "Reports", icon: Flag, path: "/admin/reports" },
   { label: "Notifications", icon: Bell, path: "/admin/notifications" },

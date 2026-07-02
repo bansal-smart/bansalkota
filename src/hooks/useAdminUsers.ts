@@ -62,8 +62,10 @@ const fetchAdminUsers = async (filter: string, search: string, page: number) => 
     role: roleByUser.get(p.user_id) ?? "student",
   }));
 
-  const filtered = filter === "all" ? merged : merged.filter((u) => u.role === filter);
-  return { rows: filtered, total: count ?? 0 };
+  const visibleMerged = merged.filter((u) => u.role !== "super_admin");
+  const filtered = filter === "all" ? visibleMerged : visibleMerged.filter((u) => u.role === filter);
+  const superAdminCount = merged.length - visibleMerged.length;
+  return { rows: filtered, total: Math.max(0, (count ?? 0) - superAdminCount) };
 };
 
 export const useAdminUsers = (filter: string, search: string, page: number) => {

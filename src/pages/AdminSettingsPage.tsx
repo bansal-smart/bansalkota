@@ -1,4 +1,4 @@
-import { Settings, Globe, Bell, Database, Loader2, Save } from "lucide-react";
+import { Settings, Globe, Bell, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -115,15 +115,6 @@ const AdminSettingsPage = () => {
             <div><p className="text-sm text-foreground">Email Alerts</p><p className="text-xs text-muted-foreground">Admin email notifications for critical events</p></div>
             <Toggle on={settings.admin_email_alerts} disabled={readOnly} toggle={() => update({ admin_email_alerts: !settings.admin_email_alerts })} />
           </div>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4"><Database className="h-4 w-4 text-primary" /> Data</h3>
-          <div className="flex gap-3">
-            <button disabled className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground opacity-50">Export All Data</button>
-            <button disabled className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground opacity-50">Clear Cache</button>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">Coming soon.</p>
         </div>
 
         {!readOnly && (

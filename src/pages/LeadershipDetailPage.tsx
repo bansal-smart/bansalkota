@@ -14,28 +14,28 @@ import BansalButton from "@/components/bansal/BansalButton";
 import { leadershipPhotos } from "@/content/bansal/about";
 import { leaderEditorial, sameerBooks } from "@/content/bansal/leaderEditorial";
 import { useLeader } from "@/hooks/useSiteContent";
-import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png.asset.json";
-import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png.asset.json";
-import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png.asset.json";
-import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png.asset.json";
-import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-latest.png.asset.json";
-import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest-v2.png.asset.json";
-import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest-v2.png.asset.json";
-import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest-v2.png.asset.json";
-import wsjFeatureAsset from "@/assets/about/wsj-feature.jpg.asset.json";
+import vkHeroBg from "@/assets/leader-hero/vk-bansal-hero-bg.png";
+import sameerHeroBg from "@/assets/leader-hero/sameer-bansal-hero-bg.png";
+import neelamHeroBg from "@/assets/leader-hero/neelam-bansal-hero-bg.png";
+import mahimaHeroBg from "@/assets/leader-hero/mahima-bansal-hero-bg.png";
+import vkProfilePhoto from "@/assets/leader-portraits/vk-bansal-latest.png";
+import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest-v2.png";
+import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest-v2.png";
+import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest-v2.png";
+import wsjFeature from "@/assets/about/wsj-feature.jpg";
 
 const LEADER_HERO_BG: Record<string, string> = {
-  "vk-bansal": vkHeroBg.url,
-  "sameer-bansal": sameerHeroBg.url,
-  "neelam-bansal": neelamHeroBg.url,
-  "mahima-bansal": mahimaHeroBg.url,
+  "vk-bansal": vkHeroBg,
+  "sameer-bansal": sameerHeroBg,
+  "neelam-bansal": neelamHeroBg,
+  "mahima-bansal": mahimaHeroBg,
 };
 
 const LEADER_PROFILE_PHOTO: Record<string, string> = {
-  "vk-bansal": vkProfilePhoto.url,
-  "sameer-bansal": sameerProfilePhoto.url,
-  "neelam-bansal": neelamProfilePhoto.url,
-  "mahima-bansal": mahimaProfilePhoto.url,
+  "vk-bansal": vkProfilePhoto,
+  "sameer-bansal": sameerProfilePhoto,
+  "neelam-bansal": neelamProfilePhoto,
+  "mahima-bansal": mahimaProfilePhoto,
 };
 
 const HONORIFIC: Record<string, string> = {
@@ -507,7 +507,7 @@ export default function LeadershipDetailPage() {
                 >
                   <div className="h-32 w-32 md:h-40 md:w-40 rounded-2xl overflow-hidden ring-4 ring-bansal-orange/20 shadow-xl">
                     <img
-                      src={vkProfilePhoto.url}
+                      src={vkProfilePhoto}
                       alt="Bansal Sir"
                       className="w-full h-full object-cover"
                       loading="lazy"

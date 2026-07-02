@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import { Check, X, Sparkles, Crown, Rocket, Shield, Zap, HelpCircle, ChevronDown, IndianRupee } from "lucide-react";
 import { useState } from "react";
-import pricingHeroAsset from "@/assets/pricing-hero.webp.asset.json";
-const pricingHero = pricingHeroAsset.url;
+import pricingHero from "@/assets/pricing-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 
 const PricingPage = () => {

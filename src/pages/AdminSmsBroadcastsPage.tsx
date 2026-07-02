@@ -18,7 +18,7 @@ const AdminSmsBroadcastsPage = () => {
   const [audience, setAudience] = useState<{ role?: string; course_id?: string; centre_id?: string; batch_id?: string }>({});
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(false);
-  const [balance, setBalance] = useState<{ balance?: number; error?: string; fetched_at?: string } | null>(null);
+  const [balance, setBalance] = useState<{ balance?: number; error?: string; fetched_at?: string; sender?: string } | null>(null);
 
   const tpl = templates.find((t) => t.name === selected);
   const preview = tpl ? renderPreview(tpl, vars) : "";
@@ -90,7 +90,7 @@ const AdminSmsBroadcastsPage = () => {
           <h1 className="font-display text-3xl font-extrabold text-foreground flex items-center gap-2">
             <MessageSquare className="h-7 w-7 text-primary" /> SMS Broadcasts
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Send DLT-approved SMS via PRPSMS (sender 20190332).</p>
+          <p className="text-sm text-muted-foreground mt-1">Send DLT-approved SMS via PRPSMS{balance?.sender ? ` (sender ${balance.sender})` : ""}.</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 min-w-[220px]">
           <div className="flex items-center justify-between">

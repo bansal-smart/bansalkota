@@ -2,48 +2,48 @@
 // Used as fallbacks / enrichments on top of DB-driven `useLeader()` data
 // so every leader page tells a *different* story with its own gallery,
 // timeline and signature pillars.
-import sameerPortraitDark from "@/assets/sameer-portrait-dark.png.asset.json";
-import sameerBranded from "@/assets/sameer-branded.png.asset.json";
-import sameerHeadshot from "@/assets/sameer-headshot.jpg.asset.json";
-import sameerSpeaking from "@/assets/sameer-speaking.jpg.asset.json";
+import sameerPortraitDark from "@/assets/sameer-portrait-dark.png";
+import sameerBranded from "@/assets/sameer-branded.png";
+import sameerHeadshot from "@/assets/sameer-headshot.jpg";
+import sameerSpeaking from "@/assets/sameer-speaking.jpg";
 // Refreshed primary portraits (v2)
 import sameerPortraitV2 from "@/assets/sameer-portrait-v2.jpg";
 import vkPortraitV2 from "@/assets/vk-bansal-portrait-v2.jpg";
 import mahimaPortraitV2 from "@/assets/mahima-portrait-v2.jpg";
 import neelamPortraitV2 from "@/assets/neelam-portrait-v2.jpg";
-import vkDesk from "@/assets/vk-bansal-desk.jpg.asset.json";
-import vkLibrary from "@/assets/vk-bansal-library.jpg.asset.json";
-import vkStatesman from "@/assets/vk-bansal-statesman.jpg.asset.json";
-import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg.asset.json";
-import bookCalculus from "@/assets/book-calculus.png.asset.json";
-import bookAlgebra from "@/assets/book-algebra.png.asset.json";
-import bookCoordinate from "@/assets/book-coordinate.png.asset.json";
-import bookMathematics from "@/assets/book-mathematics.png.asset.json";
+import vkDesk from "@/assets/vk-bansal-desk.jpg";
+import vkLibrary from "@/assets/vk-bansal-library.jpg";
+import vkStatesman from "@/assets/vk-bansal-chalkboard.jpg";
+import vkChalkboard from "@/assets/vk-bansal-chalkboard.jpg";
+import bookCalculus from "@/assets/book-calculus.png";
+import bookAlgebra from "@/assets/book-algebra.png";
+import bookCoordinate from "@/assets/book-coordinate.png";
+import bookMathematics from "@/assets/book-mathematics.png";
 
 // Sameer Sir's authored books — shown on his About page
 export const sameerBooks = [
   {
     title: "Problems in Calculus",
     subtitle: "JEE Main + Advanced",
-    cover: bookCalculus.url,
+    cover: bookCalculus,
     edition: "G.R. Bathla & Sons",
   },
   {
     title: "Problems in Algebra",
     subtitle: "JEE Main + Advanced",
-    cover: bookAlgebra.url,
+    cover: bookAlgebra,
     edition: "G.R. Bathla & Sons",
   },
   {
     title: "Coordinate Geometry, Trigonometry, Vectors & 3D Geometry",
     subtitle: "JEE Main + Advanced",
-    cover: bookCoordinate.url,
+    cover: bookCoordinate,
     edition: "G.R. Bathla & Sons",
   },
   {
     title: "1000 Challenging Problems in Mathematics",
     subtitle: "JEE Main + Advanced",
-    cover: bookMathematics.url,
+    cover: bookMathematics,
     edition: "G.R. Bathla & Sons",
   },
 ];
@@ -78,10 +78,10 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     galleryCaption: "Since 1981, one classroom philosophy",
     heroPhotoOverride: vkPortraitV2,
     gallery: [
-      { src: vkStatesman.url, alt: "Mr. Bansal Sir — formal statesman portrait", tall: true },
-      { src: vkDesk.url, alt: "Bansal Sir at his founder's desk" },
-      { src: vkChalkboard.url, alt: "Bansal Sir teaching mathematics at the chalkboard" },
-      { src: vkLibrary.url, alt: "Bansal Sir in his study with books" },
+      { src: vkStatesman, alt: "Mr. Bansal Sir — formal statesman portrait", tall: true },
+      { src: vkDesk, alt: "Bansal Sir at his founder's desk" },
+      { src: vkChalkboard, alt: "Bansal Sir teaching mathematics at the chalkboard" },
+      { src: vkLibrary, alt: "Bansal Sir in his study with books" },
     ],
     timelineHeading: "Defining Moments",
     timeline: [
@@ -132,10 +132,10 @@ export const leaderEditorial: Record<string, LeaderEditorial> = {
     galleryCaption: "Inside the chair of the CEO",
     heroPhotoOverride: sameerPortraitV2,
     gallery: [
-      { src: sameerBranded.url, alt: "Sameer Bansal — MD & CEO, Bansal Classes", tall: true },
-      { src: sameerHeadshot.url, alt: "Sameer Bansal portrait" },
-      { src: sameerSpeaking.url, alt: "Sameer Bansal addressing students" },
-      { src: sameerPortraitDark.url, alt: "Sameer Bansal — formal portrait" },
+      { src: sameerBranded, alt: "Sameer Bansal — MD & CEO, Bansal Classes", tall: true },
+      { src: sameerHeadshot, alt: "Sameer Bansal portrait" },
+      { src: sameerSpeaking, alt: "Sameer Bansal addressing students" },
+      { src: sameerPortraitDark, alt: "Sameer Bansal — formal portrait" },
     ],
     timelineHeading: "Chapters of Leadership",
     timeline: [
