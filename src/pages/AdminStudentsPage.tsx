@@ -1238,7 +1238,7 @@ const AdminStudentsPage = () => {
               <div className="p-5 space-y-4">
                 <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground space-y-1">
                   <p><b className="text-foreground">Selected students:</b> {selected.length}</p>
-                  <p><b className="text-foreground">Currently visible (filtered):</b> {rows.length}</p>
+                  <p><b className="text-foreground">Matching current filters:</b> {total}</p>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-foreground">
                   <input
@@ -1249,6 +1249,11 @@ const AdminStudentsPage = () => {
                   />
                   Overwrite existing passwords (otherwise students who already have a CBT password are skipped)
                 </label>
+                {pwdBulkRunning && pwdBulkProgress.total > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Processing {pwdBulkProgress.done} / {pwdBulkProgress.total}…
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border">
                   <button
                     onClick={() => setPwdBulkOpen(false)}
@@ -1266,12 +1271,12 @@ const AdminStudentsPage = () => {
                     Generate for {selected.length} selected
                   </button>
                   <button
-                    disabled={pwdBulkRunning || rows.length === 0}
+                    disabled={pwdBulkRunning || total === 0}
                     onClick={() => runBulkGenerate("filtered")}
                     className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
                     {pwdBulkRunning && <Loader2 className="h-3 w-3 animate-spin" />}
-                    Generate for {rows.length} on this page
+                    Generate for all {total} filtered
                   </button>
                 </div>
               </div>
