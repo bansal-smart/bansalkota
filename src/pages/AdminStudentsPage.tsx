@@ -232,6 +232,89 @@ const AdminStudentsPage = () => {
   const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
   const [editCourseIds, setEditCourseIds] = useState<string[]>([]);
 
+  // CBT password management
+  const [pwdBulkOpen, setPwdBulkOpen] = useState(false);
+  const [pwdBulkOverwrite, setPwdBulkOverwrite] = useState(false);
+  const [pwdBulkRunning, setPwdBulkRunning] = useState(false);
+  const [pwdBulkResults, setPwdBulkResults] = useState<Array<{
+    user_id: string; roll_number: string | null; full_name: string | null;
+    centre: string | null; batch: string | null; password: string | null; status: string;
+  }> | null>(null);
+  const [pwdReset, setPwdReset] = useState<{ user_id: string; full_name: string | null } | null>(null);
+  const [pwdResetValue, setPwdResetValue] = useState("");
+  const [pwdResetRunning, setPwdResetRunning] = useState(false);
+  const [pwdResetResult, setPwdResetResult] = useState<string | null>(null);
+  const [copiedPwd, setCopiedPwd] = useState<string | null>(null);
+
+  const copyToClipboard = async (val: string) => {
+    try {
+      await navigator.clipboard.writeText(val);
+      setCopiedPwd(val);
+      setTimeout(() => setCopiedPwd((c) => (c === val ? null : c)), 1500);
+    } catch { /* ignore */ }
+  };
+
+  const runBulkGenerate = async (scope: "selected" | "filtered") => {
+    let ids: string[] = [];
+    if (scope === "selected") ids = selected.slice();
+    else ids = rows.map((r) => r.user_id);
+    if (!ids.length) { toast.error("No students to process"); return; }
+    setPwdBulkRunning(true);
+    setPwdBulkResults(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
+        body: { user_ids: ids, overwrite: pwdBulkOverwrite },
+      });
+      if (error) throw error;
+      const res = (data?.results ?? []) as typeof pwdBulkResults;
+      setPwdBulkResults(res);
+      toast.success(`Generated ${data?.generated ?? 0} passwords · Skipped ${data?.skipped ?? 0}`);
+      load();
+    } catch (e: any) {
+      toast.error("Bulk generate failed", { description: e.message });
+    } finally {
+      setPwdBulkRunning(false);
+    }
+  };
+
+  const downloadPwdCsv = () => {
+    if (!pwdBulkResults?.length) return;
+    const rowsOut = pwdBulkResults.filter((r) => r.password);
+    const header = ["Roll No", "Student Name", "Centre", "Batch", "Password"];
+    const body = rowsOut.map((r) =>
+      [r.roll_number ?? "", r.full_name ?? "", r.centre ?? "", r.batch ?? "", r.password ?? ""]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+    );
+    const csv = [header.join(","), ...body].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cbt-credentials-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const runResetPassword = async () => {
+    if (!pwdReset) return;
+    setPwdResetRunning(true);
+    setPwdResetResult(null);
+    try {
+      const body: Record<string, unknown> = { user_id: pwdReset.user_id };
+      if (pwdResetValue.trim()) body.password = pwdResetValue.trim();
+      const { data, error } = await supabase.functions.invoke("admin-set-cbt-password", { body });
+      if (error) throw error;
+      setPwdResetResult((data as { password: string }).password);
+      toast.success("Password updated");
+      load();
+    } catch (e: any) {
+      toast.error("Reset failed", { description: e.message });
+    } finally {
+      setPwdResetRunning(false);
+    }
+  };
+
+
   const submitAddStudent = async () => {
     if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !addForm.centre.trim()) {
       return toast.error("Roll No, Student Name and Centre are required");
