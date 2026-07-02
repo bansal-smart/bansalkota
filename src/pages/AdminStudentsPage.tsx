@@ -918,12 +918,18 @@ const AdminStudentsPage = () => {
                     <td className="p-3 hidden lg:table-cell text-muted-foreground truncate max-w-[140px]">{u.batch_name || u.batch_label || "—"}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[140px]">{u.centre_name || "—"}</td>
                     <td className="p-3">
-                      {u.is_suspended ? (
-
-                        <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive uppercase">Suspended</span>
-                      ) : (
-                        <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase">Active</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {u.is_suspended ? (
+                          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive uppercase w-fit">Suspended</span>
+                        ) : (
+                          <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase w-fit">Active</span>
+                        )}
+                        {u.cbt_password_set_at ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase w-fit">
+                            <KeyRound className="h-2.5 w-2.5" /> CBT Pwd
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))
