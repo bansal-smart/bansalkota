@@ -69,7 +69,30 @@ const MyCoursesPage = () => {
         setLoading(false);
         return;
       }
-      setEnrollments((data ?? []) as unknown as Enrollment[]);
+      const rows = (data ?? []) as unknown as Enrollment[];
+      const courseIds = rows.map((r) => r.course_id);
+      if (courseIds.length) {
+        const [{ data: vids }, { data: prog }] = await Promise.all([
+          supabase.from("subtopic_videos" as any).select("id, course_id").in("course_id", courseIds),
+          supabase
+            .from("subtopic_video_progress" as any)
+            .select("video_id, course_id, is_completed")
+            .in("course_id", courseIds)
+            .eq("user_id", user.id),
+        ]);
+        const totals = new Map<string, number>();
+        for (const v of (vids ?? []) as any[]) totals.set(v.course_id, (totals.get(v.course_id) ?? 0) + 1);
+        const dones = new Map<string, number>();
+        for (const p of (prog ?? []) as any[]) if (p.is_completed) dones.set(p.course_id, (dones.get(p.course_id) ?? 0) + 1);
+        for (const r of rows) {
+          const total = totals.get(r.course_id) ?? 0;
+          const done = Math.min(dones.get(r.course_id) ?? 0, total);
+          r.course.total_lessons = total;
+          r.completed_lessons = done;
+          r.progress_percent = total > 0 ? Math.round((done / total) * 100) : r.progress_percent ?? 0;
+        }
+      }
+      setEnrollments(rows);
       setLoading(false);
     };
     load();
