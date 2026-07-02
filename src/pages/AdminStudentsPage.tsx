@@ -31,6 +31,7 @@ type StudentRow = {
   batch_id?: string | null;
   batch_name?: string | null;
   batch_label?: string | null;
+  cbt_password_set_at?: string | null;
 };
 
 type CentreLite = { id: string; city: string; area: string | null; slug: string };
