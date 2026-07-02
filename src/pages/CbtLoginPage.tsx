@@ -120,22 +120,31 @@ const CbtLoginPage = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-bansal-black uppercase tracking-wide">Mobile Number</label>
+                <label className="text-xs font-bold text-bansal-black uppercase tracking-wide">Password</label>
                 <div className="mt-1.5 flex items-stretch rounded-lg border-2 border-border focus-within:border-bansal-blue overflow-hidden transition-colors">
-                  <div className="flex items-center gap-1 px-3 bg-bansal-gray-light border-r border-border text-sm font-bold text-bansal-black">
-                    <Phone className="h-3.5 w-3.5 text-bansal-gray" /> +91
+                  <div className="flex items-center justify-center px-3 bg-bansal-gray-light border-r border-border">
+                    <Lock className="h-4 w-4 text-bansal-gray" />
                   </div>
                   <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    type={showPwd ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="flex-1 px-3 py-3 text-sm font-semibold text-bansal-black placeholder:text-bansal-gray/70 outline-none"
-                    placeholder="10-digit mobile"
+                    placeholder="Enter password"
+                    autoComplete="current-password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPwd((s) => !s)}
+                    className="px-3 text-bansal-gray hover:text-bansal-black"
+                    aria-label={showPwd ? "Hide password" : "Show password"}
+                  >
+                    {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
+                <p className="mt-1.5 text-[11px] text-bansal-gray">Forgot your password? Please contact your centre.</p>
               </div>
+
 
               <button
                 type="submit"
