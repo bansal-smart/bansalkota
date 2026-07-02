@@ -41,6 +41,8 @@ export type ScorecardInput = {
     status: "Correct" | "Wrong" | "Unattempted" | "Bonus";
     marks: number;
     max_marks: number;
+    your_answer: string;
+    correct_answer: string;
   }>;
 };
 
