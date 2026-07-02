@@ -645,6 +645,12 @@ const AdminStudentsPage = () => {
             <Upload className="h-3.5 w-3.5" /> Bulk enrollments
           </button>
           <button
+            onClick={() => { setPwdBulkResults(null); setPwdBulkOverwrite(false); setPwdBulkOpen(true); }}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+          >
+            <KeyRound className="h-3.5 w-3.5" /> CBT Passwords
+          </button>
+          <button
             onClick={exportSelected}
             className="flex items-center gap-1.5 rounded-lg bg-[#0F1729] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F1729]/90 transition-colors"
           >
