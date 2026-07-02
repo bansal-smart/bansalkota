@@ -261,16 +261,24 @@ const TestResultPage = () => {
     const metaQs: any[] = (attempt as any).metadata?.questions ?? [];
     const byId: Record<string, any> = {};
     metaQs.forEach((m) => { if (m?.question_id) byId[m.question_id] = m; });
+    const formatOne = (v: any): string => {
+      if (v == null) return "—";
+      if (typeof v === "number") return optionLabel(v, optStyle);
+      if (typeof v === "string" || typeof v === "boolean") return String(v);
+      if (Array.isArray(v)) return v.map(formatOne).join(", ");
+      if (typeof v === "object") {
+        return Object.entries(v).map(([k, vv]) => `${k}→${formatOne(vv)}`).join(", ");
+      }
+      return String(v);
+    };
     const formatAns = (q: any, val: any): string => {
       if (val == null || (typeof val === "object" && !Array.isArray(val) && Object.keys(val || {}).length === 0)) return "—";
       const qt = q.question_type;
-      if (qt === "match-following" && val && typeof val === "object") {
-        return Object.entries(val).map(([k, v]) => `${k}→${v}`).join(", ");
+      if (qt === "match-following" && val && typeof val === "object" && !Array.isArray(val)) {
+        return Object.entries(val).map(([k, v]) => `${k}→${formatOne(v)}`).join(", ");
       }
       if (qt === "numerical") return String(val);
-      if (Array.isArray(val)) return val.map((v) => typeof v === "number" ? optionLabel(v, optStyle) : String(v)).join(", ");
-      if (typeof val === "number") return optionLabel(val, optStyle);
-      return String(val);
+      return formatOne(val);
     };
     const questions = qList.map((q) => {
       const m = byId[q.id] ?? {};
