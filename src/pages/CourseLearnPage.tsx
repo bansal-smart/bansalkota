@@ -139,7 +139,7 @@ const CourseLearnPage = () => {
 
   const Sidebar = (
     <div className="space-y-3">
-      <div>
+      <div className="sticky top-0 bg-card z-10 pb-2">
         <p className="text-xs text-muted-foreground mb-1">Overall Progress</p>
         <Progress value={overall.percentage} />
         <p className="text-xs mt-1">{overall.label} videos · {overall.percentage}%</p>
