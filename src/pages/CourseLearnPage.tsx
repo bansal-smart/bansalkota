@@ -138,13 +138,13 @@ const CourseLearnPage = () => {
   if (!course) return <div className="p-8">Course not found</div>;
 
   const Sidebar = (
-    <div className="space-y-3">
-      <div className="sticky top-0 bg-card z-10 pb-2">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="bg-card border-b pb-3 mb-2 shrink-0">
         <p className="text-xs text-muted-foreground mb-1">Overall Progress</p>
         <Progress value={overall.percentage} />
         <p className="text-xs mt-1">{overall.label} videos · {overall.percentage}%</p>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1 overflow-y-auto flex-1 min-h-0 pr-1">
         {subjects.map((s) => {
           const totals = (() => {
             let t = 0, d = 0;
@@ -218,7 +218,7 @@ const CourseLearnPage = () => {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 p-4">
-        <aside className="hidden lg:block sticky top-20 self-start max-h-[85vh] overflow-y-auto bg-card border rounded-lg p-3">
+        <aside className="hidden lg:flex sticky top-16 self-start h-[calc(100vh-5rem)] bg-card border rounded-lg p-3 flex-col">
           {Sidebar}
         </aside>
 
