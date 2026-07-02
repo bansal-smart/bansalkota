@@ -1165,6 +1165,210 @@ const AdminStudentsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Bulk generate CBT passwords */}
+      {pwdBulkOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !pwdBulkRunning && setPwdBulkOpen(false)} />
+          <div className="relative w-full max-w-3xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">Bulk generate CBT test passwords</h2>
+                  <p className="text-[11px] text-muted-foreground">Random 8-character passwords. Shown only once — download the CSV.</p>
+                </div>
+              </div>
+              <button onClick={() => !pwdBulkRunning && setPwdBulkOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {!pwdBulkResults ? (
+              <div className="p-5 space-y-4">
+                <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground space-y-1">
+                  <p><b className="text-foreground">Selected students:</b> {selected.length}</p>
+                  <p><b className="text-foreground">Currently visible (filtered):</b> {rows.length}</p>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={pwdBulkOverwrite}
+                    onChange={(e) => setPwdBulkOverwrite(e.target.checked)}
+                    className="rounded"
+                  />
+                  Overwrite existing passwords (otherwise students who already have a CBT password are skipped)
+                </label>
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border">
+                  <button
+                    onClick={() => setPwdBulkOpen(false)}
+                    disabled={pwdBulkRunning}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={pwdBulkRunning || selected.length === 0}
+                    onClick={() => runBulkGenerate("selected")}
+                    className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {pwdBulkRunning && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Generate for {selected.length} selected
+                  </button>
+                  <button
+                    disabled={pwdBulkRunning || rows.length === 0}
+                    onClick={() => runBulkGenerate("filtered")}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {pwdBulkRunning && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Generate for {rows.length} on this page
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {pwdBulkResults.length} students. Copy or download now — passwords are not retrievable later.
+                  </p>
+                  <button
+                    onClick={downloadPwdCsv}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download CSV
+                  </button>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-background text-muted-foreground border-b border-border sticky top-0">
+                      <tr>
+                        <th className="p-3 text-left font-medium">Roll No</th>
+                        <th className="p-3 text-left font-medium">Name</th>
+                        <th className="p-3 text-left font-medium">Batch</th>
+                        <th className="p-3 text-left font-medium">Centre</th>
+                        <th className="p-3 text-left font-medium">Password</th>
+                        <th className="p-3 text-left font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pwdBulkResults.map((r) => (
+                        <tr key={r.user_id} className="border-b border-border">
+                          <td className="p-3 font-mono text-[11px]">{r.roll_number ?? "—"}</td>
+                          <td className="p-3">{r.full_name ?? "—"}</td>
+                          <td className="p-3 text-muted-foreground">{r.batch ?? "—"}</td>
+                          <td className="p-3 text-muted-foreground">{r.centre ?? "—"}</td>
+                          <td className="p-3 font-mono">
+                            {r.password ? (
+                              <button
+                                onClick={() => copyToClipboard(r.password!)}
+                                className="inline-flex items-center gap-1.5 rounded bg-primary/5 border border-primary/20 px-2 py-1 text-primary hover:bg-primary/10"
+                              >
+                                {r.password}
+                                {copiedPwd === r.password ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            ) : <span className="text-muted-foreground">—</span>}
+                          </td>
+                          <td className="p-3 text-[11px]">
+                            {r.status === "generated" ? (
+                              <span className="text-secondary font-semibold">Generated</span>
+                            ) : r.status === "skipped_existing" ? (
+                              <span className="text-muted-foreground">Skipped (existing)</span>
+                            ) : (
+                              <span className="text-destructive">{r.status}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-4 border-t border-border flex justify-end">
+                  <button
+                    onClick={() => { setPwdBulkOpen(false); setPwdBulkResults(null); }}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Reset single password */}
+      {pwdReset && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !pwdResetRunning && setPwdReset(null)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                <KeyRound className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-foreground">Reset CBT password</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  For <span className="font-semibold text-foreground">{pwdReset.full_name || "this student"}</span>.
+                  Leave the field blank to auto-generate a random 8-character password.
+                </p>
+              </div>
+            </div>
+
+            {!pwdResetResult ? (
+              <>
+                <input
+                  type="text"
+                  value={pwdResetValue}
+                  onChange={(e) => setPwdResetValue(e.target.value)}
+                  placeholder="Leave blank to auto-generate"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    disabled={pwdResetRunning}
+                    onClick={() => setPwdReset(null)}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={pwdResetRunning}
+                    onClick={runResetPassword}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+                  >
+                    {pwdResetRunning && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Set password
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">New password (shown once)</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <code className="text-base font-mono font-bold text-foreground">{pwdResetResult}</code>
+                    <button
+                      onClick={() => copyToClipboard(pwdResetResult)}
+                      className="inline-flex items-center gap-1.5 rounded bg-background border border-border px-2 py-1 text-xs text-foreground hover:bg-muted"
+                    >
+                      {copiedPwd === pwdResetResult ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copiedPwd === pwdResetResult ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => { setPwdReset(null); setPwdResetResult(null); }}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
 
   );
