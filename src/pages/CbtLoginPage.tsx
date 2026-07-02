@@ -15,13 +15,13 @@ const CbtLoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const r = roll.trim();
-    const p = phone.trim();
-    if (!/^\d{4,}$/.test(r)) return toast.error("Enter your roll number (registration no).");
-    if (!/^\d{10}$/.test(p)) return toast.error("Enter your 10-digit mobile number.");
+    const pwd = password;
+    if (!/^\d{2,}$/.test(r)) return toast.error("Enter your roll number (registration no).");
+    if (!pwd || pwd.length < 4) return toast.error("Enter your password.");
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("cbt-login", {
-        body: { roll_number: r, phone: p },
+        body: { roll_number: r, password: pwd },
       });
       if (error) throw error;
       const payload = data as {
