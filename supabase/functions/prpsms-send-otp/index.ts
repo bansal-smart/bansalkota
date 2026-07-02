@@ -36,12 +36,38 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Rate-limiting disabled during static-OTP bypass window.
+    // Rate limit: max 5 OTPs per phone per hour.
+    const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("phone_otps")
+      .select("id", { count: "exact", head: true })
+      .eq("phone", e164)
+      .gte("created_at", oneHourAgo);
+    if ((recentCount ?? 0) >= 5) {
+      return new Response(JSON.stringify({ error: "Too many OTP requests. Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
+    // Generate 6-digit OTP and render the DLT-approved template.
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const rendered = renderTemplate("CodeRed", { otp });
 
-    // TEMP: PRPSMS DLT mapping unresolved — bypass real SMS and use static OTP "123456".
-    // The verify endpoint already accepts 123456 unconditionally.
-    const otp = "123456";
+    const sendResult = await prpsmsSend({ to: dest, body: rendered });
+
+    if (!sendResult.ok) {
+      await supabase.from("sms_send_log").insert({
+        to_phone: e164,
+        template_name: "CodeRed",
+        vars: { otp: "******" },
+        rendered_body: rendered,
+        purpose: `otp:${purpose}`,
+        provider_msg_id: null,
+        status: "failed",
+        error_code: null,
+        error_message: sendResult.error ?? sendResult.raw ?? "unknown",
+      });
+      return new Response(JSON.stringify({ error: "Failed to send OTP. Please try again." }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const otpHash = await sha256Hex(`${e164}:${purpose}:${otp}`);
     const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
     const ip = req.headers.get("x-forwarded-for") || null;
@@ -54,18 +80,15 @@ Deno.serve(async (req) => {
       to_phone: e164,
       template_name: "CodeRed",
       vars: { otp: "******" },
-      rendered_body: "[static-otp-bypass]",
+      rendered_body: rendered,
       purpose: `otp:${purpose}`,
-      provider_msg_id: null,
-      status: "skipped",
+      provider_msg_id: sendResult.msg_id ?? null,
+      status: "sent",
       error_code: null,
-      error_message: "Static OTP bypass active (DLT pending)",
+      error_message: null,
     });
 
-    // Silence unused-import warnings during bypass window.
-    void renderTemplate; void prpsmsSend; void dest;
-
-    return new Response(JSON.stringify({ ok: true, expires_at: expiresAt, static_bypass: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, expires_at: expiresAt }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
