@@ -138,13 +138,13 @@ const CourseLearnPage = () => {
   if (!course) return <div className="p-8">Course not found</div>;
 
   const Sidebar = (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="bg-card border-b pb-3 mb-2 shrink-0">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 bg-card border-b pb-3 mb-2">
         <p className="text-xs text-muted-foreground mb-1">Overall Progress</p>
         <Progress value={overall.percentage} />
         <p className="text-xs mt-1">{overall.label} videos · {overall.percentage}%</p>
       </div>
-      <div className="space-y-1 overflow-y-auto flex-1 min-h-0 pr-1">
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1">
         {subjects.map((s) => {
           const totals = (() => {
             let t = 0, d = 0;
@@ -196,8 +196,8 @@ const CourseLearnPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-30">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
+      <header className="shrink-0 border-b bg-card sticky top-0 z-30">
         <div className="flex items-center justify-between gap-3 p-3">
           <div className="flex items-center gap-2 min-w-0">
             <Button variant="ghost" size="sm" asChild>
@@ -209,20 +209,20 @@ const CourseLearnPage = () => {
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="lg:hidden"><Menu className="h-4 w-4" /></Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[85vw] overflow-y-auto">
+            <SheetContent side="left" className="flex h-full w-[85vw] flex-col overflow-hidden">
               <SheetHeader><SheetTitle>Course Content</SheetTitle></SheetHeader>
-              <div className="mt-4">{Sidebar}</div>
+              <div className="mt-4 min-h-0 flex-1 overflow-hidden">{Sidebar}</div>
             </SheetContent>
           </Sheet>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 p-4">
-        <aside className="hidden lg:flex sticky top-16 self-start h-[calc(100vh-5rem)] bg-card border rounded-lg p-3 flex-col">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-[340px_1fr]">
+        <aside className="hidden h-full min-h-0 overflow-hidden bg-card border rounded-lg p-3 lg:flex lg:flex-col">
           {Sidebar}
         </aside>
 
-        <main className="bg-card border rounded-lg p-4 min-h-[60vh]">
+        <main className="min-h-0 overflow-y-auto overscroll-contain bg-card border rounded-lg p-4">
           {!selectedTopic ? (
             <div className="text-center py-12">
               {course.thumbnail_url && (
