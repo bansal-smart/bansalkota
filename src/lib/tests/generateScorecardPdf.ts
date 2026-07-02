@@ -163,13 +163,19 @@ export const generateScorecardPdf = (data: ScorecardInput): jsPDF => {
     autoTable(doc, {
       startY: y,
       theme: "grid",
-      styles: { fontSize: 8, cellPadding: 3 },
+      styles: { fontSize: 8, cellPadding: 3, overflow: "linebreak" },
       headStyles: { fillColor: NAVY, textColor: 255 },
-      head: [["Q#", "Subject", "Status", "Marks", "Max"]],
+      head: [["Q#", "Subject", "Status", "Your Answer", "Correct Answer", "Marks", "Max"]],
+      columnStyles: {
+        3: { cellWidth: 90 },
+        4: { cellWidth: 90 },
+      },
       body: data.questions.map((q) => [
         String(q.position),
         q.subject,
         q.status,
+        q.your_answer,
+        q.correct_answer,
         q.marks.toFixed(2),
         q.max_marks.toFixed(2),
       ]),
