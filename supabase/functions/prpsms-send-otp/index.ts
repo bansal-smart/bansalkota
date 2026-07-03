@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { renderTemplate, prpsmsSend, toDestNumber, toE164, sha256Hex } from "../_shared/prpsms.ts";
+import { prpsmsSend, toDestNumber, toE164, sha256Hex } from "../_shared/prpsms.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,9 +47,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Too many OTP requests. Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Generate 6-digit OTP and render the DLT-approved template.
+    // Generate 6-digit OTP and build the DLT-approved message text directly
+    // (no template-name lookup — the exact wording must match what's
+    // registered with the SMS provider for this sender mask).
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const rendered = renderTemplate("CodeRed", { otp });
+    const rendered = `Dear Applicant, ${otp} is your verification code for Online Application at Bansal Classes. Team Bansal`;
 
     const sendResult = await prpsmsSend({ to: dest, body: rendered });
 

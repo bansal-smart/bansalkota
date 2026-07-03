@@ -1,6 +1,6 @@
 // Primary branded domain shown in all admin-facing copyable links.
 // Never use the Lovable preview origin in shareable URLs.
-export const PRIMARY_DOMAIN = "https://bansal.doctylia.com";
+export const PRIMARY_DOMAIN = "https://bansal.ac.in";
 
 export const CBT_KIOSK_URL = `${PRIMARY_DOMAIN}/cbt`;
 
