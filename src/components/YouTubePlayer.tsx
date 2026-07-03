@@ -25,7 +25,6 @@ type YTPlayer = {
   setOption: (module: string, option: string, value: unknown) => void;
   destroy: () => void;
 };
-
 declare global {
   interface Window {
     YT?: {
@@ -306,9 +305,8 @@ export function YouTubePlayer({
 
       {/* Custom control bar */}
       <div
-        className={`absolute bottom-0 left-0 right-0 z-20 px-2 sm:px-3 pb-2 pt-6 bg-gradient-to-t from-black/80 to-transparent transition-opacity duration-200 ${
-          showControls || !playing ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className={`absolute bottom-0 left-0 right-0 z-20 px-2 sm:px-3 pb-2 pt-6 bg-gradient-to-t from-black/80 to-transparent transition-opacity duration-200 ${showControls || !playing ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Seek bar */}
@@ -382,9 +380,8 @@ export function YouTubePlayer({
                       key={q}
                       type="button"
                       onClick={() => changeQuality(q)}
-                      className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-white/10 ${
-                        quality === q ? "text-red-500" : "text-white"
-                      }`}
+                      className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-white/10 ${quality === q ? "text-red-500" : "text-white"
+                        }`}
                     >
                       {QUALITY_LABELS[q] ?? q}
                     </button>
