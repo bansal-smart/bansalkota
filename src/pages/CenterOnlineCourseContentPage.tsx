@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, Fragment as FragmentWithKey } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Loader2, Pencil, FolderPlus, Upload, FileSpreadsheet, Download, X, CheckCircle2, AlertCircle, Video, ExternalLink, Save } from "lucide-react";
-import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { useAuth } from "@/context/AuthContext";
@@ -549,7 +548,8 @@ const BulkLectureImportDialog = ({ courseId, chapters, lessons, onClose, onDone 
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ chaptersCreated: number; lecturesCreated: number; lecturesUpdated: number; skipped: number } | null>(null);
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.aoa_to_sheet([
       ["subject", "Chapter Name", "Lecture Name", "topic", "Youtube Link"],
       ["INORGANIC CHEMISTRY", "02-Coordination Compound", "02-IOC-XII Lec-01", "Introduction", "https://youtu.be/PO4ygzvSvaQ"],
@@ -560,6 +560,7 @@ const BulkLectureImportDialog = ({ courseId, chapters, lessons, onClose, onDone 
   };
 
   const handleFile = async (file: File) => {
+    const XLSX = await import("xlsx");
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
     const ws = wb.Sheets[wb.SheetNames[0]];

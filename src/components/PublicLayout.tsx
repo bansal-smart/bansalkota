@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Menu, X, Phone, MapPin, Mail, ChevronDown } from "lucide-react";
+import { Menu, X, Phone, MapPin, Mail, ChevronDown, Facebook, Instagram, Linkedin } from "lucide-react";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
@@ -233,6 +233,38 @@ const PublicLayout = () => {
                 India's most trusted JEE &amp; NEET coaching institute. Building foundations for lifelong learning since
                 1981.
               </p>
+              <div className="mt-5">
+                <h4 className="text-sm font-bold mb-3 uppercase tracking-wide">Follow Us</h4>
+                <div className="flex gap-3">
+                  <a
+                    href="https://www.facebook.com/bansalkota/"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label="Bansal Classes on Facebook"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-bansal-orange"
+                  >
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                  <a
+                    href="https://www.instagram.com/bansal.kota"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label="Bansal Classes on Instagram"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-bansal-orange"
+                  >
+                    <Instagram className="h-4 w-4" />
+                  </a>
+                  <a
+                    href="https://www.linkedin.com/company/bansal-classes-pvt-ltd"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label="Bansal Classes on LinkedIn"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-bansal-orange"
+                  >
+                    <Linkedin className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
             </div>
 
             <div>

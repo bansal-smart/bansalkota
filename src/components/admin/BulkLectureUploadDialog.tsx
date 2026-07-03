@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
 import Papa from "papaparse";
 import { Loader2, Upload, Download, CheckCircle2, AlertCircle, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,8 @@ const pick = (row: Record<string, any>, keys: string[]) => {
 
 const TEMPLATE_HEADERS = ["subject", "Chapter Name", "Lecture Name", "topic", "Youtube Link"];
 
-const downloadTemplate = () => {
+const downloadTemplate = async () => {
+  const XLSX = await import("xlsx");
   const sample = [
     TEMPLATE_HEADERS,
     ["INORGANIC CHEMISTRY", "01-Chemical Bonding", "01-IOC-XII-Chemical Bonding Lec-01", "", "https://youtu.be/BOVROvp4YHc"],
@@ -93,6 +93,7 @@ const BulkLectureUploadDialog = ({ open, onOpenChange, courseId, existingChapter
         const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
         rawRows = (parsed.data as Record<string, any>[]) ?? [];
       } else {
+        const XLSX = await import("xlsx");
         const buf = await f.arrayBuffer();
         const wb = XLSX.read(buf, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];

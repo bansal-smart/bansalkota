@@ -12,7 +12,7 @@ import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { calcPercent } from "@/lib/progress";
-import { generateScorecardPdf, type ScorecardInput } from "@/lib/tests/generateScorecardPdf";
+import type { AdminStyleReportInput } from "@/lib/tests/generateAdminStyleReportPdf";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -243,7 +243,7 @@ const TestResultPage = () => {
     accuracy: calcPercent(st.correct, st.attempted || st.total),
   }));
 
-  const buildScorecardInput = async (): Promise<ScorecardInput | null> => {
+  const buildScorecardInput = async (): Promise<AdminStyleReportInput | null> => {
     if (!attempt || !user) return null;
     const { optionLabel, resolveOptionStyle } = await import("@/lib/optionLabel");
     const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
@@ -277,7 +277,7 @@ const TestResultPage = () => {
       if (qt === "match-following" && val && typeof val === "object" && !Array.isArray(val)) {
         return Object.entries(val).map(([k, v]) => `${k}→${formatOne(v)}`).join(", ");
       }
-      if (qt === "numerical") return String(val);
+      if (qt === "numerical" || qt === "integer") return String(val);
       return formatOne(val);
     };
     const questions = qList.map((q) => {
@@ -285,47 +285,48 @@ const TestResultPage = () => {
       const isBonus = !!m.is_bonus;
       const attemptedQ = !!m.attempted;
       const isCorrect = !!m.is_correct;
-      const status: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
+      const result: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
         ? "Bonus"
         : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
-      const correctVal = q.question_type === "numerical" ? q.numerical_answer : q.correct_answer;
+      const correctVal = (q.question_type === "numerical" || q.question_type === "integer") ? q.numerical_answer : q.correct_answer;
+      const marks = Number(m.marks ?? 0);
       return {
         position: Number(q.position ?? 0) + 1,
         subject: String(q.subject ?? "—"),
-        status,
-        marks: Number(m.marks ?? 0),
-        max_marks: Number(m.max_marks ?? q.marks_correct ?? 0),
+        result,
+        marks_str: marks > 0 ? `+${marks}` : String(marks),
         your_answer: attemptedQ ? formatAns(q, q.selected) : "—",
         correct_answer: formatAns(q, correctVal),
       };
     });
-    const centreName = p.centres ? [p.centres.area, p.centres.city].filter(Boolean).join(", ") || null : null;
+    const totalMarks = tm.total_marks ?? test?.total_marks ?? null;
+    const percentage = totalMarks ? (score / totalMarks) * 100 : 0;
+    const dateLabel = (attempt as any).submitted_at
+      ? new Date((attempt as any).submitted_at).toLocaleDateString("en-GB")
+      : test?.ends_at
+        ? new Date(test.ends_at).toLocaleDateString("en-GB")
+        : "—";
+    const comparison = released && !rankInfo?.excluded && rankInfo?.average_score != null && rankInfo?.topper_score != null
+      ? { class_avg: Number(rankInfo.average_score), topper: Number(rankInfo.topper_score) }
+      : null;
     return {
       student: {
         full_name: p.full_name,
         roll_number: p.roll_number,
         batch: p.course_batches?.name ?? p.batch_label ?? null,
-        centre: centreName,
-        phone: p.phone,
       },
-
       test: {
         title: tm.title ?? attempt.test_name,
         exam_pattern: tm.exam_pattern ?? null,
-        total_marks: tm.total_marks ?? test?.total_marks ?? null,
-        submitted_at: (attempt as any).submitted_at ?? null,
+        total_marks: totalMarks,
+        date_label: dateLabel,
       },
-      attempt: {
-        score, total_questions: total, correct, attempted, wrong, unattempted,
-        time_spent_seconds: seconds,
-        percentile: rankInfo?.percentile ?? attempt.percentile ?? null,
-        rank: rankInfo?.rank ?? null,
-        total_attempts: rankInfo?.total ?? null,
-      },
-      subjects: Object.entries(subjects).map(([s, st]) => ({
-        subject: s, total: st.total, attempted: st.attempted, correct: st.correct,
-        score: st.score, maxScore: st.maxScore,
-      })),
+      subjects: Object.keys(subjects),
+      subject_scores: Object.fromEntries(Object.entries(subjects).map(([s, st]) => [s, st.score])),
+      total_score: score,
+      percentage,
+      rank_label: rankInfo?.rank != null ? String(rankInfo.rank) : "—",
+      comparison,
       questions,
     };
   };
@@ -432,7 +433,8 @@ const TestResultPage = () => {
               try {
                 const input = await buildScorecardInput();
                 if (!input) { toast.error("Unable to build scorecard"); return; }
-                const pdf = generateScorecardPdf(input);
+                const { generateAdminStyleReportPdf } = await import("@/lib/tests/generateAdminStyleReportPdf");
+                const pdf = await generateAdminStyleReportPdf(input);
                 pdf.save(`${(input.student.full_name || "scorecard").replace(/\s+/g, "_")}_${input.test.title.replace(/\s+/g, "_")}.pdf`);
               } catch (e: any) {
                 toast.error(e?.message ?? "Failed to generate PDF");

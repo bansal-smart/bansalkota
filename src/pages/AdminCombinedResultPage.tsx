@@ -3,9 +3,6 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Download, FileSpreadsheet, Loader2, User2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 
 type TestRow = {
@@ -277,8 +274,9 @@ const AdminCombinedResultPage = () => {
     return { header: headerTop, body, footer: [footerRow("max"), footerRow("min"), footerRow("avg")] };
   };
 
-  const downloadXLSX = () => {
+  const downloadXLSX = async () => {
     if (!test1 || !test2) return;
+    const XLSX = await import("xlsx");
     const { header, body, footer } = buildSheetData();
     const wsData: any[][] = [
       ["BANSAL CLASSES PVT. LTD. — COMBINED RESULT"],
@@ -297,10 +295,12 @@ const AdminCombinedResultPage = () => {
     XLSX.writeFile(wb, fname);
   };
 
-  const downloadMasterPDF = () => {
+  const downloadMasterPDF = async () => {
     if (!test1 || !test2) return;
+    const { default: JsPdf } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
     const { header, body, footer } = buildSheetData();
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a3" });
+    const doc = new JsPdf({ orientation: "landscape", unit: "pt", format: "a3" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
 

@@ -22,11 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import {
-  downloadStudentReport,
-  fetchStudentReport,
-  monthRange,
-} from "@/lib/studentReport";
+import { fetchStudentReport, monthRange } from "@/lib/studentReport";
 
 type StudentRow = {
   user_id: string;
@@ -108,6 +104,7 @@ const AdminStudentReportsPage = () => {
     setGeneratingId(studentId);
     try {
       const data = await fetchStudentReport(studentId, range);
+      const { downloadStudentReport } = await import("@/lib/studentReportPdf");
       downloadStudentReport(data);
       toast.success("Report downloaded", { description: `${data.student.name} • ${data.period}` });
     } catch (e: any) {

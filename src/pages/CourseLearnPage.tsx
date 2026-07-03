@@ -12,7 +12,6 @@ import {
   Video as VideoIcon,
   Play,
   Lock,
-  X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -253,7 +252,6 @@ const CourseLearnPage = () => {
               entry={activeVideo}
               courseId={courseId!}
               onProgressChange={load}
-              onClose={closeVideo}
             />
           )}
         </DialogContent>
@@ -370,12 +368,10 @@ function VideoModal({
   entry,
   courseId,
   onProgressChange,
-  onClose,
 }: {
   entry: { v: SubtopicVideo; topic: CourseTopic; subject: CourseSubject };
   courseId: string;
   onProgressChange: () => void;
-  onClose: () => void;
 }) {
   const { user } = useAuth();
   const { v, topic, subject } = entry;
@@ -397,21 +393,12 @@ function VideoModal({
 
   return (
     <div className="flex flex-col max-h-[90vh]">
-      <DialogHeader className="p-4 pb-2 flex-row items-start justify-between gap-3 space-y-0">
-        <div className="min-w-0">
-          <DialogTitle className="text-base leading-snug break-words">{v.title}</DialogTitle>
-          <p className="text-xs text-muted-foreground mt-1">
-            {subject.name} › {topic.name} › {subLabel}
-            {v.duration_label ? ` · ${v.duration_label}` : ""}
-          </p>
-        </div>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground p-1 shrink-0"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
+      <DialogHeader className="p-4 pb-2 pr-10 space-y-0">
+        <DialogTitle className="text-base leading-snug break-words">{v.title}</DialogTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          {subject.name} › {topic.name} › {subLabel}
+          {v.duration_label ? ` · ${v.duration_label}` : ""}
+        </p>
       </DialogHeader>
 
       <div className="px-4">

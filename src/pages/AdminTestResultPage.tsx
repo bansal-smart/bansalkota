@@ -3,9 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Download, FileSpreadsheet, Loader2, Lock, Unlock, X, User2, UserX, UserCheck, Send, GitMerge, Search, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type jsPDF from "jspdf";
 import { supabase } from "@/integrations/supabase/client";
 import bansalLogo from "@/assets/bansal-logo.webp";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
@@ -370,8 +368,9 @@ const AdminTestResultPage = () => {
     return { header, body, footer };
   };
 
-  const downloadXLSX = () => {
+  const downloadXLSX = async () => {
     if (!test) return;
+    const XLSX = await import("xlsx");
     const { header, body, footer } = buildSheetRows();
     const wsData: any[][] = [
       ["BANSAL CLASSES PVT. LTD."],
@@ -396,8 +395,10 @@ const AdminTestResultPage = () => {
       toast.error("Results are still locked. Release them first or wait until the scheduled time.");
       return;
     }
+    const { default: JsPdf } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
     const { header, body, footer } = buildSheetRows();
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const doc = new JsPdf({ orientation: "landscape", unit: "pt", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
 
@@ -610,7 +611,9 @@ const AdminTestResultPage = () => {
         .eq("test_id", test.id)
         .in("status", ["submitted", "auto_submitted"]);
 
-      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+      const { default: JsPdf } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+      const doc = new JsPdf({ orientation: "portrait", unit: "pt", format: "a4" });
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
       const logo = await loadLogoDataUrl();
@@ -619,9 +622,9 @@ const AdminTestResultPage = () => {
         if (!logo) return;
         try {
           const anyDoc: any = doc;
-          anyDoc.setGState(new (jsPDF as any).GState({ opacity: 0.05 }));
+          anyDoc.setGState(new (JsPdf as any).GState({ opacity: 0.05 }));
           doc.addImage(logo, "PNG", (pageW - 320) / 2, (pageH - 320) / 2, 320, 320, undefined, "FAST");
-          anyDoc.setGState(new (jsPDF as any).GState({ opacity: 1 }));
+          anyDoc.setGState(new (JsPdf as any).GState({ opacity: 1 }));
         } catch { /* noop */ }
       };
       const drawHeader = () => {

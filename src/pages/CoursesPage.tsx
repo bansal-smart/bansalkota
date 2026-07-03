@@ -25,14 +25,19 @@ import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalD
 const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
 const courseTypeFilters = ["All", "Online", "Offline"] as const;
 
-// target_exam is an exact value from EXAM_OPTIONS ("IIT-JEE" | "NEET" | "Foundation")
-// set on the course itself — trust it over any text scan of name/description,
-// which can mention other exams incidentally (e.g. "suitable for JEE and NEET").
-const goalToExam: Record<string, string> = { "IIT-JEE": "IIT-JEE", "NEET": "NEET", "Pre Foundation": "Foundation" };
+// target_exam is set on the course itself — trust it over any text scan of
+// name/description, which can mention other exams incidentally (e.g.
+// "suitable for JEE and NEET"). Existing courses were saved with "JEE";
+// CreateCoursePage's EXAM_OPTIONS saves new ones as "IIT-JEE" — accept both.
+const goalToExam: Record<string, string[]> = {
+  "IIT-JEE": ["IIT-JEE", "JEE"],
+  "NEET": ["NEET"],
+  "Pre Foundation": ["Foundation"],
+};
 
 const matchesGoal = (c: CourseRow, goal: string) => {
   if (goal === "All") return true;
-  if (c.target_exam) return c.target_exam === goalToExam[goal];
+  if (c.target_exam) return goalToExam[goal]?.includes(c.target_exam) ?? false;
   // Fallback for legacy courses saved before target_exam existed.
   const haystack = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
   if (goal === "IIT-JEE") return /\b(iit|jee)\b/.test(haystack);
@@ -59,7 +64,7 @@ const detectMode = (c: CourseRow): "Online" | "Offline" | "Residential" => {
 };
 
 const examToGoal: Record<string, "IIT-JEE" | "NEET" | "Pre Foundation"> = {
-  "IIT-JEE": "IIT-JEE", "NEET": "NEET", "Foundation": "Pre Foundation",
+  "IIT-JEE": "IIT-JEE", "JEE": "IIT-JEE", "NEET": "NEET", "Foundation": "Pre Foundation",
 };
 
 const detectCategory = (c: CourseRow): "IIT-JEE" | "NEET" | "Pre Foundation" => {

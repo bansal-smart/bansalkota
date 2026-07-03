@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { Download, Upload, X, Loader2, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 export type CsvField = {
@@ -186,6 +185,7 @@ const BulkCsvDialog = ({
     const isXlsx = name.endsWith(".xlsx") || name.endsWith(".xls") || /sheet|excel/.test(file.type);
     try {
       if (isXlsx) {
+        const XLSX = await import("xlsx");
         const buf = await file.arrayBuffer();
         const wb = XLSX.read(buf, { type: "array", cellDates: true });
         const ws = wb.Sheets[wb.SheetNames[0]];

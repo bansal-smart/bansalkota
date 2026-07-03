@@ -24,7 +24,7 @@ const EDUCATION_LEVELS = [
 const DURATION_OPTIONS = ["6 Months", "1 Year", "2 Years", "Up to 12 Months", "Up to 24 Months"];
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid", "Residential"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
-const EXAM_OPTIONS = ["IIT-JEE", "NEET", "Foundation"];
+const EXAM_OPTIONS = ["JEE", "NEET", "Foundation"];
 
 
 const slugify = (s: string) =>
@@ -50,7 +50,7 @@ const CreateCoursePage = () => {
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [exam, setExam] = useState("IIT-JEE");
+  const [exam, setExam] = useState("JEE");
   const [educatorName, setEducatorName] = useState("");
   const [subjectInput, setSubjectInput] = useState("");
   const [price, setPrice] = useState<number>(0);
@@ -94,7 +94,7 @@ const CreateCoursePage = () => {
       setShortDesc((c.short_description as string | null) ?? "");
       setDescription(course.description ?? "");
       setDescriptionHtml((c.description_html as string | null) ?? "");
-      setExam(course.target_exam ?? "IIT-JEE");
+      setExam(course.target_exam ?? "JEE");
       setEducatorName(course.educator_name ?? "");
       setPrice(Number(course.price ?? 0));
       setOriginalPrice(Number(course.original_price ?? 0));
