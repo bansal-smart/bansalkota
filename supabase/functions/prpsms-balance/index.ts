@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const auth = req.headers.get("Authorization");
-    if (!auth) {
+    if (!auth?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const userClient = createClient(
@@ -21,11 +21,20 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: auth } } },
     );
-    const { data: userData, error } = await userClient.auth.getUser();
-    if (error || !userData.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const token = auth.replace("Bearer ", "");
+    let userId: string | null = null;
+    try {
+      const { data: claimsData } = await userClient.auth.getClaims(token);
+      if (claimsData?.claims?.sub) userId = claimsData.claims.sub as string;
+    } catch (_) { /* fall through */ }
+    if (!userId) {
+      const { data: userData, error } = await userClient.auth.getUser(token);
+      if (error || !userData.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      userId = userData.user.id;
     }
-    const { data: ok } = await userClient.rpc("is_admin_or_super", { _user_id: userData.user.id });
+    const { data: ok } = await userClient.rpc("is_admin_or_super", { _user_id: userId });
     if (!ok) {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

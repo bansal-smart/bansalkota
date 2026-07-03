@@ -16,6 +16,8 @@ type LiveTest = {
   starts_at: string | null;
   ends_at: string | null;
   subjects: string[] | null;
+  open_window_minutes?: number | null;
+  has_in_progress_attempt?: boolean;
 };
 
 const ACTIVATION_LEAD_MS = 60_000;
@@ -61,7 +63,30 @@ const CbtLiveTestsPage = () => {
         _batch_id: prof?.batch_id ?? null,
       });
       if (error) toast.error(error.message);
-      setTests((data ?? []) as LiveTest[]);
+      const baseTests = (data ?? []) as LiveTest[];
+
+      // Enrich with open_window_minutes (entry-window cutoff) and in-progress attempt flag.
+      if (baseTests.length) {
+        const ids = baseTests.map((t) => t.id);
+        const [{ data: meta }, { data: attempts }] = await Promise.all([
+          supabase.from("tests").select("id, open_window_minutes").in("id", ids),
+          supabase
+            .from("test_attempts")
+            .select("test_id")
+            .eq("user_id", user.id)
+            .eq("status", "in_progress")
+            .in("test_id", ids),
+        ]);
+        const owmMap = new Map<string, number | null>(
+          (meta ?? []).map((m: { id: string; open_window_minutes: number | null }) => [m.id, m.open_window_minutes]),
+        );
+        const inProgressSet = new Set<string>((attempts ?? []).map((a: { test_id: string }) => a.test_id));
+        baseTests.forEach((t) => {
+          t.open_window_minutes = owmMap.get(t.id) ?? null;
+          t.has_in_progress_attempt = inProgressSet.has(t.id);
+        });
+      }
+      setTests(baseTests);
       setLoading(false);
     })();
   }, [navigate]);
@@ -113,16 +138,25 @@ const CbtLiveTestsPage = () => {
             {tests.map((t) => {
               const startMs = t.starts_at ? new Date(t.starts_at).getTime() : null;
               const endMs = t.ends_at ? new Date(t.ends_at).getTime() : null;
+              const entryDeadlineMs =
+                startMs !== null && t.open_window_minutes != null && t.open_window_minutes > 0
+                  ? startMs + t.open_window_minutes * 60_000
+                  : null;
               const notYetOpen = startMs !== null && now < startMs - ACTIVATION_LEAD_MS;
               const closed = endMs !== null && now > endMs;
-              const canStart = !notYetOpen && !closed;
+              const entryClosed =
+                !t.has_in_progress_attempt && entryDeadlineMs !== null && now > entryDeadlineMs;
+              const canStart = !notYetOpen && !closed && !entryClosed;
 
-              let statusLabel = "Active now";
+              let statusLabel = t.has_in_progress_attempt ? "Resume" : "Active now";
               let statusClass = "bg-emerald-100 text-emerald-700";
               let countdown: string | null = null;
               if (closed) {
                 statusLabel = "Closed";
                 statusClass = "bg-muted text-muted-foreground";
+              } else if (entryClosed) {
+                statusLabel = "Entry closed";
+                statusClass = "bg-red-100 text-red-700";
               } else if (notYetOpen && startMs) {
                 statusLabel = `Starts ${formatTestDateTime(new Date(startMs).toISOString())}`;
                 statusClass = "bg-amber-100 text-amber-800";
@@ -157,7 +191,7 @@ const CbtLiveTestsPage = () => {
                       disabled={!canStart}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <PlayCircle className="h-4 w-4" /> Start Test
+                      <PlayCircle className="h-4 w-4" /> {t.has_in_progress_attempt ? "Resume Test" : "Start Test"}
                     </button>
                   </div>
                 </div>

@@ -40,7 +40,6 @@ Deno.serve(async (req) => {
   const callerId = claimsData.claims.sub as string;
 
   const { data: isAdmin } = await admin.rpc("is_admin_or_super", { _user_id: callerId });
-  if (!isAdmin) return json(403, { error: "Only admins can perform this action" });
 
   let body: any;
   try {
@@ -55,6 +54,20 @@ Deno.serve(async (req) => {
   const centerId = (body.centre_id ?? "").toString();
   const fullName = (body.full_name ?? "").toString().trim();
   const role = (body.role ?? "manager").toString();
+  const customRoleId: string | null = body.custom_role_id ?? null;
+
+  // Non-admins must be a centre admin (centre_staff row with no custom_role_id) for the target centre.
+  if (!isAdmin) {
+    if (!centerId) return json(403, { error: "Only admins can perform this action" });
+    const { data: cs } = await admin
+      .from("centre_staff")
+      .select("id")
+      .eq("user_id", callerId)
+      .eq("centre_id", centerId)
+      .is("custom_role_id", null)
+      .maybeSingle();
+    if (!cs) return json(403, { error: "Only the Centre Admin can perform this action" });
+  }
 
   if (!email || !password) return json(400, { error: "email and password are required" });
   if (password.length < 8) return json(400, { error: "Password must be at least 8 characters" });
@@ -81,11 +94,11 @@ Deno.serve(async (req) => {
       if (updErr) return json(400, { error: updErr.message });
     }
 
-    // Attach to centre (idempotent)
+    // Attach to centre (idempotent) with optional custom role
     const { error: linkErr } = await admin
       .from("centre_staff")
       .upsert(
-        { user_id: userId, centre_id: centerId, role },
+        { user_id: userId, centre_id: centerId, role, custom_role_id: customRoleId },
         { onConflict: "user_id,centre_id" },
       );
     if (linkErr) return json(400, { error: linkErr.message });

@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import defaultBanner1 from "@/assets/centre-banners/centre-banner-1.png.asset.json";
+import defaultBanner2 from "@/assets/centre-banners/centre-banner-2.jpg.asset.json";
 
 type Banner = { id: string; image_url: string; link: string | null };
 
+const DEFAULT_BANNERS: Banner[] = [
+  { id: "default-1", image_url: defaultBanner1.url, link: null },
+  { id: "default-2", image_url: defaultBanner2.url, link: null },
+];
+
 export default function CentreCarousel({ centerId }: { centerId: string }) {
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const [banners, setBanners] = useState<Banner[]>(DEFAULT_BANNERS);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -18,7 +25,9 @@ export default function CentreCarousel({ centerId }: { centerId: string }) {
         .eq("centre_id", centerId)
         .eq("is_active", true)
         .order("sort_order");
-      if (!cancelled) setBanners(((data ?? []) as any) as Banner[]);
+      if (cancelled) return;
+      const rows = ((data ?? []) as any) as Banner[];
+      setBanners(rows.length > 0 ? rows : DEFAULT_BANNERS);
     })();
     return () => {
       cancelled = true;

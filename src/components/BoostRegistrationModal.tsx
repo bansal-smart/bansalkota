@@ -13,8 +13,18 @@ import { startBoostCashfreeCheckout } from "@/lib/cashfree";
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.string().trim().email("Valid email required").max(255),
-  phone: z.string().trim().regex(/^[+\d\s-]{8,15}$/, "Valid phone required"),
-  whatsapp: z.string().trim().max(20).optional().or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number")),
+  whatsapp: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^$|^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"))
+    .optional()
+    .or(z.literal("")),
   date_of_birth: z.string().optional().or(z.literal("")),
   class_level: z.string().min(1, "Select your class"),
   target_exam: z.string().min(1, "Select your target exam"),
@@ -22,7 +32,13 @@ const schema = z.object({
   city: z.string().trim().max(80).optional().or(z.literal("")),
   state: z.string().trim().max(80).optional().or(z.literal("")),
   parent_name: z.string().trim().max(120).optional().or(z.literal("")),
-  parent_phone: z.string().trim().max(20).optional().or(z.literal("")),
+  parent_phone: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^$|^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"))
+    .optional()
+    .or(z.literal("")),
   preferred_centre_id: z.string().optional().or(z.literal("")),
   exam_slot: z.string().min(1, "Choose an exam slot"),
 });
@@ -87,19 +103,19 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     }
     const regId = (data as any).id as string;
     const admit = (data as any).admit_card_number as string;
-    // Send confirmation email (non-blocking)
-    void sendConfirmation({
-      templateName: "boost-confirmation",
-      recipientEmail: parsed.data.email,
-      idempotencyKey: `boost-${admit}`,
-      templateData: {
-        name: parsed.data.full_name,
-        admitCardNumber: admit,
-        classLevel: parsed.data.class_level,
-        targetExam: parsed.data.target_exam,
-        preferredCentre: payload.preferred_centre_label,
-      },
-    });
+    // Email temporarily disabled per admin request
+    // void sendConfirmation({
+    //   templateName: "boost-confirmation",
+    //   recipientEmail: parsed.data.email,
+    //   idempotencyKey: `boost-${admit}`,
+    //   templateData: {
+    //     name: parsed.data.full_name,
+    //     admitCardNumber: admit,
+    //     classLevel: parsed.data.class_level,
+    //     targetExam: parsed.data.target_exam,
+    //     preferredCentre: payload.preferred_centre_label,
+    //   },
+    // });
     // Redirect to Cashfree hosted checkout
     try {
       toast.success("Redirecting to secure payment…");

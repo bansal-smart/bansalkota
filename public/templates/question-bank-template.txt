@@ -1,4 +1,4 @@
-BANSAL CLASSES — QUESTION BANK BULK IMPORT (ARKE FORMAT)
+BANSAL CLASSES — QUESTION BANK BULK IMPORT (BANSAL FORMAT)
 ==========================================================
 
 This file demonstrates the format you should follow in your .docx

@@ -80,14 +80,13 @@ export const useCenters = () => {
         .eq("is_published", true)
         .limit(500);
       if (error) throw error;
-      if (!data || !data.length) return FALLBACK;
+      if (!data || !data.length) return [] as DBCenter[];
       return sortCentres(data.map(mapRow));
     },
     staleTime: 10 * 60 * 1000,
-    placeholderData: FALLBACK,
   });
 
-  return { centers: query.data ?? FALLBACK, loading: query.isPending };
+  return { centers: query.data ?? [], loading: query.isPending };
 };
 
 export const getCenterImage = (c: DBCenter): string => c.image_url || THEME_IMAGE[c.theme];

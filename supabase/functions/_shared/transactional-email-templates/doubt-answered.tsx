@@ -39,7 +39,7 @@ const DoubtAnsweredEmail = ({
   subject = 'your doubt',
   questionPreview,
   answeredBy = 'your teacher',
-  appUrl = 'https://arke.pro',
+  appUrl = 'https://bansalclasses.com',
 }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />

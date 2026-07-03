@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock, Play } from "lucide-react";
+import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock, Play, Radio } from "lucide-react";
 
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
@@ -43,8 +44,17 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [tests, setTests] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+  const [notAttempted, setNotAttempted] = useState<{
+    user_id: string;
+    full_name: string | null;
+    roll_number: string | null;
+    batch_id: string | null;
+    batch_name: string | null;
+  }[]>([]);
+  const [liveConnected, setLiveConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [testFilter, setTestFilter] = useState<string>(testId ?? "all");
   const [reattempts, setReattempts] = useState<ReattemptReq[]>([]);
@@ -99,29 +109,68 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
+  const effectiveTestId = testId ?? (testFilter !== "all" ? testFilter : null);
+
   const load = async () => {
 
     setLoading(true);
-    let q = supabase
-      .from("test_attempts")
-      .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds")
-      .order("created_at", { ascending: false })
-      .limit(500);
-    if (testId) q = q.eq("test_id", testId);
-    const { data } = await q;
-    const rows = (data ?? []) as Attempt[];
-    setAttempts(rows);
+    // Always load the test list for the dropdown
+    const testsRes = await supabase.from("tests").select("id, title, slug").order("created_at", { ascending: false });
+    setTests(((testsRes as any).data ?? []) as any);
 
-    const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
-    const tIds = Array.from(new Set(rows.map((r) => r.test_id).filter(Boolean)));
-    const [pRes, tRes] = await Promise.all([
-      userIds.length ? supabase.from("profiles").select("user_id, full_name").in("user_id", userIds) : Promise.resolve({ data: [] }),
-      tIds.length ? supabase.from("tests").select("id, title, slug").in("id", tIds) : Promise.resolve({ data: [] }),
-    ]);
-    setProfiles(new Map(((pRes as any).data ?? []).map((p: any) => [p.user_id, p.full_name ?? "Student"])));
-    setTests(((tRes as any).data ?? []) as any);
+    // Fetch attempts in pages so a single test with many students is fully covered.
+    const PAGE = 1000;
+    const allRows: Attempt[] = [];
+    let from = 0;
+    // Cap at 10k rows defensively
+    while (allRows.length < 10000) {
+      let q = supabase
+        .from("test_attempts")
+        .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds")
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (effectiveTestId) q = q.eq("test_id", effectiveTestId);
+      const { data, error } = await q;
+      if (error) break;
+      const chunk = (data ?? []) as Attempt[];
+      allRows.push(...chunk);
+      if (chunk.length < PAGE) break;
+      from += PAGE;
+      // When unscoped, one page (1k latest) is enough for the global view
+      if (!effectiveTestId) break;
+    }
+    setAttempts(allRows);
+
+    const userIds = Array.from(new Set(allRows.map((r) => r.user_id)));
+    if (userIds.length) {
+      // Paginate profile lookups too
+      const map = new Map<string, string>();
+      for (let i = 0; i < userIds.length; i += 500) {
+        const slice = userIds.slice(i, i + 500);
+        const { data: pRows } = await supabase.from("profiles").select("user_id, full_name").in("user_id", slice);
+        for (const p of (pRows ?? []) as any[]) map.set(p.user_id, p.full_name ?? "Student");
+      }
+      setProfiles(map);
+    } else {
+      setProfiles(new Map());
+    }
     setLoading(false);
   };
+
+  // Load the "absent" (not attempted) roster whenever a single test is in focus
+  // (either via the testId prop or via the test dropdown).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!effectiveTestId) { setNotAttempted([]); return; }
+      const { data: naRows, error: naErr } = await (supabase as any)
+        .rpc("admin_test_not_attempted", { _test_id: effectiveTestId });
+      if (!active) return;
+      if (!naErr) setNotAttempted((naRows ?? []) as any);
+    })();
+    return () => { active = false; };
+  }, [effectiveTestId]);
+
 
   const loadReattempts = async () => {
     let q = supabase
@@ -153,20 +202,138 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     load();
   };
 
-  useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId]);
+  useEffect(() => { load(); loadReattempts(); /* eslint-disable-next-line */ }, [testId, testFilter]);
+
+  // Realtime: live status updates on test_attempts (per-test when scoped, else global)
+  useEffect(() => {
+    const channelName = effectiveTestId ? `admin-attempts-${effectiveTestId}` : `admin-attempts-all`;
+    const filter = effectiveTestId ? `test_id=eq.${effectiveTestId}` : undefined;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "test_attempts", ...(filter ? { filter } : {}) },
+        (payload: any) => {
+          setAttempts((prev) => {
+            if (payload.eventType === "DELETE") {
+              const id = payload.old?.id;
+              return prev.filter((a) => a.id !== id);
+            }
+            const next = payload.new as Attempt;
+            if (!next?.id) return prev;
+            const idx = prev.findIndex((a) => a.id === next.id);
+            if (idx === -1) {
+              // INSERT — remove from notAttempted if present
+              setNotAttempted((na) => na.filter((s) => s.user_id !== next.user_id));
+              return [next, ...prev];
+            }
+            const copy = prev.slice();
+            copy[idx] = { ...copy[idx], ...next };
+            return copy;
+          });
+          // Make sure we have profile name for any new user
+          const uid = (payload.new as any)?.user_id;
+          if (uid && !profiles.has(uid)) {
+            supabase.from("profiles").select("user_id, full_name").eq("user_id", uid).maybeSingle()
+              .then(({ data }) => {
+                if (data) setProfiles((m) => new Map(m).set(data.user_id, data.full_name ?? "Student"));
+              });
+          }
+        }
+      )
+      .subscribe((status) => {
+        setLiveConnected(status === "SUBSCRIBED");
+      });
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveTestId]);
+
+  type Row = (Attempt & { __na?: false }) | {
+    __na: true;
+    id: string;
+    user_id: string;
+    test_id: string;
+    status: "not_attempted";
+    score: null;
+    percentile: null;
+    correct_answers: null;
+    total_questions: null;
+    started_at: null;
+    submitted_at: null;
+    created_at: string;
+    time_spent_seconds: null;
+    full_name: string | null;
+    roll_number: string | null;
+    batch_name: string | null;
+  };
+
+  const combined: Row[] = useMemo(() => {
+    const attemptedUserIds = new Set(attempts.map((a) => a.user_id));
+    const naRows: Row[] = effectiveTestId
+      ? notAttempted
+          .filter((s) => !attemptedUserIds.has(s.user_id))
+          .map((s) => ({
+            __na: true as const,
+            id: `na-${s.user_id}`,
+            user_id: s.user_id,
+            test_id: effectiveTestId,
+            status: "not_attempted" as const,
+            score: null, percentile: null, correct_answers: null, total_questions: null,
+            started_at: null, submitted_at: null, created_at: "",
+            time_spent_seconds: null,
+            full_name: s.full_name,
+            roll_number: s.roll_number,
+            batch_name: s.batch_name,
+          }))
+      : [];
+    return [...attempts.map((a) => a as Row), ...naRows];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempts, notAttempted, effectiveTestId]);
+
+  // Merge not-attempted student names into the profiles map
+  useEffect(() => {
+    if (!notAttempted.length) return;
+    setProfiles((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const s of notAttempted) {
+        const name = s.full_name ?? "Student";
+        if (next.get(s.user_id) !== name) { next.set(s.user_id, name); changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [notAttempted]);
+
+  const getStudentName = (row: Row) => {
+    const rosterName = row.__na ? row.full_name?.trim() : "";
+    return rosterName || profiles.get(row.user_id)?.trim() || "Student";
+  };
+
+
 
   const filtered = useMemo(() => {
-    return attempts.filter((a) => {
+    return combined.filter((a) => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
       if (!testId && testFilter !== "all" && a.test_id !== testFilter) return false;
-      if (search) {
-        const name = (profiles.get(a.user_id) ?? "").toLowerCase();
+      if (debouncedSearch) {
+        const name = getStudentName(a).toLowerCase();
         const t = tests.find((x) => x.id === a.test_id)?.title?.toLowerCase() ?? "";
-        if (!name.includes(search.toLowerCase()) && !t.includes(search.toLowerCase())) return false;
+        if (!name.includes(debouncedSearch.toLowerCase()) && !t.includes(debouncedSearch.toLowerCase())) return false;
       }
       return true;
     });
-  }, [attempts, search, statusFilter, testFilter, profiles, tests, testId]);
+  }, [combined, debouncedSearch, statusFilter, testFilter, profiles, tests, testId]);
+
+  const counts = useMemo(() => {
+    const c = { not_attempted: 0, in_progress: 0, submitted: 0, auto_submitted: 0 };
+    for (const r of combined) {
+      if (r.status === "not_attempted") c.not_attempted++;
+      else if (r.status === "in_progress") c.in_progress++;
+      else if (r.status === "submitted") c.submitted++;
+      else if (r.status === "auto_submitted") c.auto_submitted++;
+    }
+    return c;
+  }, [combined]);
 
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
@@ -190,7 +357,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       ...filtered.map((a) => {
         const t = tests.find((x) => x.id === a.test_id);
         return [
-          profiles.get(a.user_id) ?? "",
+          getStudentName(a),
           t?.title ?? "",
           a.status,
           a.score ?? "",
@@ -271,10 +438,14 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
           <option value="all">All statuses</option>
+          {effectiveTestId && <option value="not_attempted">Absent</option>}
           <option value="in_progress">In progress</option>
           <option value="submitted">Submitted</option>
           <option value="auto_submitted">Auto-submitted</option>
         </select>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${liveConnected ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`} title={liveConnected ? "Realtime connected" : "Realtime offline"}>
+          <Radio className={`h-3 w-3 ${liveConnected ? "animate-pulse" : ""}`} /> {liveConnected ? "Live" : "Offline"}
+        </span>
         {!testId && (
           <select value={testFilter} onChange={(e) => setTestFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm max-w-[220px]">
             <option value="all">All tests</option>
@@ -285,6 +456,17 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           <Download className="h-4 w-4" /> Export CSV
         </button>
       </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {effectiveTestId && (
+          <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Absent</p><p className="text-lg font-black text-foreground">{counts.not_attempted}</p></div>
+        )}
+
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">In Progress</p><p className="text-lg font-black text-primary">{counts.in_progress}</p></div>
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Submitted</p><p className="text-lg font-black text-secondary">{counts.submitted}</p></div>
+        <div className="rounded-lg border border-border bg-card p-3"><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Auto-submitted</p><p className="text-lg font-black text-amber-600">{counts.auto_submitted}</p></div>
+      </div>
+
 
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         {loading ? (
@@ -310,16 +492,18 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                 {paged.map((a) => {
                   const t = tests.find((x) => x.id === a.test_id);
                   const submitted = a.submitted_at ? format(new Date(a.submitted_at), "dd MMM HH:mm") : "—";
+                  const studentName = getStudentName(a);
                   return (
                     <tr key={a.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                      <td className="px-4 py-3 font-medium text-foreground">{profiles.get(a.user_id) ?? "Student"}</td>
+                      <td className="px-4 py-3 font-medium text-foreground">{studentName}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{t?.title ?? "—"}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           a.status === "submitted" ? "bg-secondary/20 text-secondary" :
                           a.status === "auto_submitted" ? "bg-amber-500/20 text-amber-600" :
-                          "bg-primary/10 text-primary"
-                        }`}>{a.status?.replace("_", " ")}</span>
+                          a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
+                          "bg-primary/10 text-primary animate-pulse"
+                        }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>
@@ -327,26 +511,31 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{submitted}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
-                          {t?.slug && a.status !== "in_progress" && (
-                            <Link to={`/tests/${t.slug}/result/${a.id}`} target="_blank" className="rounded-md p-1.5 text-foreground hover:bg-muted" title="View result">
-                              <Eye className="h-3.5 w-3.5" />
-                            </Link>
-                          )}
-                          {a.status !== "in_progress" && (
+                          {a.status === "not_attempted" ? (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          ) : (
                             <>
-                              <button onClick={() => quickResume(a)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-100" title="Quick resume (keep answers, give remaining time)">
-                                <Play className="h-3.5 w-3.5" />
-                              </button>
-                              <button onClick={() => openReopen(a)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with custom time">
-                                <Clock className="h-3.5 w-3.5" />
-                              </button>
+                              {t?.slug && a.status !== "in_progress" && (
+                                <Link to={`/tests/${t.slug}/result/${a.id}`} target="_blank" className="rounded-md p-1.5 text-foreground hover:bg-muted" title="View result">
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Link>
+                              )}
+                              {a.status !== "in_progress" && (
+                                <>
+                                  <button onClick={() => quickResume(a as Attempt)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-100" title="Quick resume (keep answers, give remaining time)">
+                                    <Play className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button onClick={() => openReopen(a as Attempt)} className="rounded-md p-1.5 text-amber-600 hover:bg-amber-100" title="Re-allow with custom time">
+                                    <Clock className="h-3.5 w-3.5" />
+                                  </button>
+                                </>
+                              )}
+                              {isSuperAdmin && (
+                                <button onClick={() => resetAttempt(a as Attempt)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
+                                  {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                </button>
+                              )}
                             </>
-                          )}
-
-                          {isSuperAdmin && (
-                            <button onClick={() => resetAttempt(a)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10" title="Reset attempt (super admin)">
-                              {a.status === "in_progress" ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
-                            </button>
                           )}
                         </div>
                       </td>
@@ -359,6 +548,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           </div>
         )}
       </div>
+
 
       {reopenFor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !reopening && setReopenFor(null)}>

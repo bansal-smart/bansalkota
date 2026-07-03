@@ -68,6 +68,7 @@ const TestResponseSheetPage = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "unattempted">("all");
   const [optStyle, setOptStyle] = useState<OptionLabelStyle>("alpha");
+  const [solution, setSolution] = useState<{ path: string | null; released: boolean }>({ path: null, released: false });
   const optionLetter = (i: number) => optionLabel(i, optStyle);
 
   useEffect(() => {
@@ -88,10 +89,11 @@ const TestResponseSheetPage = () => {
       if (testId) {
         const { data: tRow } = await supabase
           .from("tests")
-          .select("option_label_style, exam_pattern")
+          .select("option_label_style, exam_pattern, solution_pdf_path, results_released_at")
           .eq("id", testId)
           .maybeSingle();
         setOptStyle(resolveOptionStyle(tRow as any));
+        setSolution({ path: (tRow as any)?.solution_pdf_path ?? null, released: !!(tRow as any)?.results_released_at });
       }
       setLoading(false);
     })();
@@ -170,6 +172,18 @@ const TestResponseSheetPage = () => {
             >
               <Printer className="h-3.5 w-3.5" /> Print / PDF
             </button>
+            {solution.released && solution.path && (
+              <button
+                onClick={async () => {
+                  const { data: sig, error } = await supabase.storage.from("test-solutions").createSignedUrl(solution.path as string, 60 * 10);
+                  if (error || !sig?.signedUrl) { toast.error(error?.message ?? "Could not open"); return; }
+                  window.open(sig.signedUrl, "_blank");
+                }}
+                className="inline-flex items-center gap-1 rounded-full border border-secondary bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground hover:opacity-90"
+              >
+                Solution PDF
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -213,7 +227,7 @@ const TestResponseSheetPage = () => {
               <article key={q.id} className="rounded-2xl border border-border bg-card p-5 print:break-inside-avoid">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-foreground">Q{q.position}</span>
+                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-foreground">Q{q.position + 1}</span>
                     {q.subject && <span className="text-xs font-semibold text-muted-foreground">{q.subject}</span>}
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{q.question_type}</span>
                     {isBonus && (
@@ -236,7 +250,7 @@ const TestResponseSheetPage = () => {
                   <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: q.question_text }} />
                 )}
                 {q.question_image_url && (
-                  <TestImage src={q.question_image_url} alt={`Question ${q.position}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
+                  <TestImage src={q.question_image_url} alt={`Question ${q.position + 1}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
                 )}
 
                 {isNumerical ? (

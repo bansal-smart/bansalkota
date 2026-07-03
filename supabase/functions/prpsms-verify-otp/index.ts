@@ -33,37 +33,30 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // TEMP: static OTP bypass until DLT integration is complete.
-    const STATIC_OTP = "123456";
-    if (otp !== STATIC_OTP) {
-      const { data: rows, error } = await supabase
-        .from("phone_otps")
-        .select("*")
-        .eq("phone", e164).eq("purpose", purpose)
-        .is("verified_at", null)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      if (error) throw error;
-      const record = rows?.[0];
-      if (!record) {
-        return new Response(JSON.stringify({ error: "No OTP requested" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (new Date(record.expires_at).getTime() < Date.now()) {
-        return new Response(JSON.stringify({ error: "OTP expired" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if ((record.attempts ?? 0) >= 5) {
-        return new Response(JSON.stringify({ error: "Too many attempts" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const hash = await sha256Hex(`${e164}:${purpose}:${otp}`);
-      if (hash !== record.otp_hash) {
-        await supabase.from("phone_otps").update({ attempts: (record.attempts ?? 0) + 1 }).eq("id", record.id);
-        return new Response(JSON.stringify({ error: "Incorrect OTP" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      await supabase.from("phone_otps").update({ verified_at: new Date().toISOString() }).eq("id", record.id);
+    const { data: rows, error } = await supabase
+      .from("phone_otps")
+      .select("*")
+      .eq("phone", e164).eq("purpose", purpose)
+      .is("verified_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const record = rows?.[0];
+    if (!record) {
+      return new Response(JSON.stringify({ error: "No OTP requested" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    // Synthetic record reference (only id used downstream for signup token)
-    const record = { id: `static-${e164}-${Date.now()}` } as { id: string };
+    if (new Date(record.expires_at).getTime() < Date.now()) {
+      return new Response(JSON.stringify({ error: "OTP expired" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if ((record.attempts ?? 0) >= 5) {
+      return new Response(JSON.stringify({ error: "Too many attempts" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const hash = await sha256Hex(`${e164}:${purpose}:${otp}`);
+    if (hash !== record.otp_hash) {
+      await supabase.from("phone_otps").update({ attempts: (record.attempts ?? 0) + 1 }).eq("id", record.id);
+      return new Response(JSON.stringify({ error: "Incorrect OTP" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    await supabase.from("phone_otps").update({ verified_at: new Date().toISOString() }).eq("id", record.id);
 
 
     // Purpose-specific outcomes
@@ -76,25 +69,16 @@ Deno.serve(async (req) => {
     if (purpose === "login") {
       const bare = e164.replace(/^\+91/, "");
 
-      // 1) Match by phone_e164
-      let { data: existingProfile } = await supabase
-        .from("profiles").select("user_id, phone_e164").eq("phone_e164", e164).maybeSingle();
-
-      // 2) Fallback: match by profiles.phone (raw 10-digit or e164)
-      if (!existingProfile) {
-        const { data: byPhone } = await supabase
-          .from("profiles")
-          .select("user_id, phone_e164")
-          .or(`phone.eq.${bare},phone.eq.${e164}`)
-          .limit(1)
-          .maybeSingle();
-        existingProfile = byPhone ?? null;
-      }
-
-      let userId = existingProfile?.user_id as string | undefined;
+      // Look up profile by phone (unique per student after sibling de-dup).
+      const { data: profRows } = await supabase
+        .from("profiles")
+        .select("user_id, phone_e164, phone")
+        .or(`phone_e164.eq.${e164},phone.eq.${bare},phone.eq.${e164}`)
+        .limit(1);
+      let userId: string | undefined = profRows?.[0]?.user_id;
       let userEmail: string | undefined;
 
-      // 3) Fallback: search auth users by phone (half-created accounts)
+      // Fallback: search auth users by phone (half-created accounts)
       if (!userId) {
         const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
         const match = list?.users?.find((u) => u.phone === bare || u.phone === e164);
@@ -110,6 +94,16 @@ Deno.serve(async (req) => {
       }
 
       if (!userId) {
+        // Enforce platform_settings.open_registrations: if disabled, new
+        // phone-OTP signups are blocked. Existing users continue to log in.
+        const { data: settings } = await supabase
+          .from("platform_settings")
+          .select("open_registrations")
+          .eq("id", 1)
+          .maybeSingle();
+        if (settings && settings.open_registrations === false) {
+          return new Response(JSON.stringify({ error: "Registrations are currently closed. Please contact support." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
         const placeholderEmail = `phone-${bare}@phone.bansalkota.local`;
         const { data: created, error: cErr } = await supabase.auth.admin.createUser({
           email: placeholderEmail,

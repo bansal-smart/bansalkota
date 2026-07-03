@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Flag, Search, Loader2, AlertTriangle, Clock, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ const AdminReportsPage = () => {
   const [rows, setRows] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [active, setActive] = useState<Report | null>(null);
@@ -73,7 +75,7 @@ const AdminReportsPage = () => {
   }, [active]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (categoryFilter !== "all" && r.category !== categoryFilter) return false;
@@ -84,7 +86,7 @@ const AdminReportsPage = () => {
         r.reported_name.toLowerCase().includes(q)
       );
     });
-  }, [rows, search, statusFilter, categoryFilter]);
+  }, [rows, debouncedSearch, statusFilter, categoryFilter]);
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 
   const stats = useMemo(() => ({

@@ -71,6 +71,103 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_role_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_role_assignments_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "admin_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_export: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module: string
+          role_id: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          role_id: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "admin_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       alumni_submissions: {
         Row: {
           address: string | null
@@ -171,6 +268,101 @@ export type Database = {
             columns: ["published_topper_id"]
             isOneToOne: false
             referencedRelation: "toppers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          category_id: string | null
+          content_html: string
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          sort_order: number
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          category_id?: string | null
+          content_html?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          sort_order?: number
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          category_id?: string | null
+          content_html?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          sort_order?: number
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "blog_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -825,10 +1017,96 @@ export type Database = {
           },
         ]
       }
+      centre_role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_export: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "centre_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centre_roles: {
+        Row: {
+          centre_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          centre_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          centre_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_roles_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centre_staff: {
         Row: {
           centre_id: string
           created_at: string
+          custom_role_id: string | null
           id: string
           role: string
           updated_at: string
@@ -837,6 +1115,7 @@ export type Database = {
         Insert: {
           centre_id: string
           created_at?: string
+          custom_role_id?: string | null
           id?: string
           role?: string
           updated_at?: string
@@ -845,6 +1124,7 @@ export type Database = {
         Update: {
           centre_id?: string
           created_at?: string
+          custom_role_id?: string | null
           id?: string
           role?: string
           updated_at?: string
@@ -856,6 +1136,13 @@ export type Database = {
             columns: ["centre_id"]
             isOneToOne: false
             referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "centre_staff_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "centre_roles"
             referencedColumns: ["id"]
           },
         ]
@@ -2100,6 +2387,42 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_advantages: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string
+          sort_order: number
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string
+          sort_order?: number
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       landing_hero_banners: {
         Row: {
           alt: string | null
@@ -2258,6 +2581,7 @@ export type Database = {
           created_at: string
           headline: string | null
           hero_photo_url: string | null
+          honorific: string | null
           id: string
           intro: string | null
           is_active: boolean
@@ -2274,6 +2598,7 @@ export type Database = {
           created_at?: string
           headline?: string | null
           hero_photo_url?: string | null
+          honorific?: string | null
           id?: string
           intro?: string | null
           is_active?: boolean
@@ -2290,6 +2615,7 @@ export type Database = {
           created_at?: string
           headline?: string | null
           hero_photo_url?: string | null
+          honorific?: string | null
           id?: string
           intro?: string | null
           is_active?: boolean
@@ -3220,6 +3546,7 @@ export type Database = {
           avatar_url: string | null
           batch_id: string | null
           batch_label: string | null
+          cbt_password_set_at: string | null
           centre_id: string | null
           city: string | null
           class_level: string | null
@@ -3253,6 +3580,7 @@ export type Database = {
           avatar_url?: string | null
           batch_id?: string | null
           batch_label?: string | null
+          cbt_password_set_at?: string | null
           centre_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -3286,6 +3614,7 @@ export type Database = {
           avatar_url?: string | null
           batch_id?: string | null
           batch_label?: string | null
+          cbt_password_set_at?: string | null
           centre_id?: string | null
           city?: string | null
           class_level?: string | null
@@ -3910,8 +4239,10 @@ export type Database = {
           file_url: string
           id: string
           position: number
-          subtopic_id: string
+          subtopic_id: string | null
+          subtopic_label: string | null
           title: string
+          topic_id: string | null
         }
         Insert: {
           course_id: string
@@ -3920,8 +4251,10 @@ export type Database = {
           file_url: string
           id?: string
           position?: number
-          subtopic_id: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           title: string
+          topic_id?: string | null
         }
         Update: {
           course_id?: string
@@ -3930,8 +4263,10 @@ export type Database = {
           file_url?: string
           id?: string
           position?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           title?: string
+          topic_id?: string | null
         }
         Relationships: [
           {
@@ -3946,6 +4281,13 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: false
             referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_pdfs_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
             referencedColumns: ["id"]
           },
         ]
@@ -4074,9 +4416,11 @@ export type Database = {
           description: string | null
           id: string
           pass_percentage: number
-          subtopic_id: string
+          subtopic_id: string | null
+          subtopic_label: string | null
           time_limit_minutes: number | null
           title: string
+          topic_id: string | null
         }
         Insert: {
           course_id: string
@@ -4084,9 +4428,11 @@ export type Database = {
           description?: string | null
           id?: string
           pass_percentage?: number
-          subtopic_id: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           time_limit_minutes?: number | null
           title: string
+          topic_id?: string | null
         }
         Update: {
           course_id?: string
@@ -4094,9 +4440,11 @@ export type Database = {
           description?: string | null
           id?: string
           pass_percentage?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           time_limit_minutes?: number | null
           title?: string
+          topic_id?: string | null
         }
         Relationships: [
           {
@@ -4111,6 +4459,13 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: true
             referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_quizzes_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
             referencedColumns: ["id"]
           },
         ]
@@ -4237,9 +4592,11 @@ export type Database = {
           id: string
           is_preview: boolean
           position: number
-          subtopic_id: string
+          subtopic_id: string | null
+          subtopic_label: string | null
           thumbnail_url: string | null
           title: string
+          topic_id: string | null
           youtube_url: string
           youtube_video_id: string | null
         }
@@ -4251,9 +4608,11 @@ export type Database = {
           id?: string
           is_preview?: boolean
           position?: number
-          subtopic_id: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           thumbnail_url?: string | null
           title: string
+          topic_id?: string | null
           youtube_url: string
           youtube_video_id?: string | null
         }
@@ -4265,9 +4624,11 @@ export type Database = {
           id?: string
           is_preview?: boolean
           position?: number
-          subtopic_id?: string
+          subtopic_id?: string | null
+          subtopic_label?: string | null
           thumbnail_url?: string | null
           title?: string
+          topic_id?: string | null
           youtube_url?: string
           youtube_video_id?: string | null
         }
@@ -4284,6 +4645,13 @@ export type Database = {
             columns: ["subtopic_id"]
             isOneToOne: false
             referencedRelation: "course_subtopics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subtopic_videos_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "course_topics"
             referencedColumns: ["id"]
           },
         ]
@@ -4947,6 +5315,9 @@ export type Database = {
           results_released_at: string | null
           section_instructions: Json | null
           slug: string
+          solution_pdf_path: string | null
+          solution_pdf_uploaded_at: string | null
+          solution_pdf_url: string | null
           starts_at: string | null
           subjects: string[] | null
           test_mode: string
@@ -4983,6 +5354,9 @@ export type Database = {
           results_released_at?: string | null
           section_instructions?: Json | null
           slug: string
+          solution_pdf_path?: string | null
+          solution_pdf_uploaded_at?: string | null
+          solution_pdf_url?: string | null
           starts_at?: string | null
           subjects?: string[] | null
           test_mode?: string
@@ -5019,6 +5393,9 @@ export type Database = {
           results_released_at?: string | null
           section_instructions?: Json | null
           slug?: string
+          solution_pdf_path?: string | null
+          solution_pdf_uploaded_at?: string | null
+          solution_pdf_url?: string | null
           starts_at?: string | null
           subjects?: string[] | null
           test_mode?: string
@@ -5252,6 +5629,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_test_not_attempted: {
+        Args: { _test_id: string }
+        Returns: {
+          batch_id: string
+          batch_name: string
+          full_name: string
+          roll_number: string
+          user_id: string
+        }[]
+      }
       admin_test_result_sheet: {
         Args: { _test_id: string }
         Returns: {
@@ -5319,10 +5706,19 @@ export type Database = {
           total_questions: number
         }[]
       }
+      cbt_verify_password: {
+        Args: { _password: string; _roll: string }
+        Returns: {
+          batch_id: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
@@ -5397,6 +5793,10 @@ export type Database = {
       is_any_centre_staff: { Args: { _user_id: string }; Returns: boolean }
       is_center_staff: {
         Args: { _center_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_centre_admin_of: {
+        Args: { _centre_id: string; _user_id: string }
         Returns: boolean
       }
       is_centre_staff: {

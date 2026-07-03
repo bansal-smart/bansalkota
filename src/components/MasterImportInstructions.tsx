@@ -121,14 +121,42 @@ Solution: Optional explanation (supports LaTeX and images).`}
             </ul>
           </section>
 
+          {/* Exam-paper format (auto-detected) */}
+          <section className="space-y-2">
+            <h3 className="font-bold flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> JEE exam-paper format (also auto-detected)</h3>
+            <p className="text-xs text-muted-foreground">
+              Master import also reads real JEE Advanced / JEE Main papers as-is. Use section bracket
+              headers and standard JEE markers — no template required.
+            </p>
+            <pre className="rounded-lg border border-border bg-muted/40 p-3 text-[11px] leading-5 text-foreground overflow-x-auto">
+{`[SINGLE CORRECT CHOICE TYPE]      ← section header (also: MULTIPLE CORRECT, INTEGER, NUMERICAL, MATCH THE COLUMN, MATCHING LIST, PARAGRAPH, TRUE AND FALSE)
+
+Q.1 Question stem with LaTeX $x^2$, $$\\int_0^1 x\\,dx$$ and inline images.
+(A) Option A
+(B) Option B
+(C) Option C
+(D) Option D
+Ans. (C)
+Sol. Explanation paragraphs, equations and images continue here
+     until the next Q. or section.`}
+            </pre>
+            <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1">
+              <li>Answer formats supported: <Code>Ans. (A)</Code>, <Code>Ans. (A, C)</Code>, <Code>Ans. 18</Code>, <Code>Ans. [25000]</Code>, <Code>Ans. (04.25)</Code>, <Code>Ans. (A) q (B) p, r (C) p, s (D) q, s</Code>.</li>
+              <li><b>True and False</b> sections auto-generate the True / False options — answer <Code>(A)</Code> = True, <Code>(B)</Code> = False.</li>
+              <li><b>Paragraph</b> sections: the passage text between the section header and the first <Code>Q.N</Code> is automatically prepended to every question in that block.</li>
+              <li><b>Match the Column / Matching List</b>: the importer reads any 2-column table that appears inside the section.</li>
+              <li><b>Sol.</b>, <b>Sol:</b> or <b>Solution:</b> all work; everything until the next <Code>Q.N</Code> or section header is captured as the solution.</li>
+            </ul>
+          </section>
+
           {/* Pitfalls */}
           <section className="space-y-1.5">
             <h3 className="font-bold flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> Common pitfalls</h3>
             <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1">
-              <li>Missing <Code>Answer:</Code> line → the question is dropped.</li>
+              <li>Missing <Code>Answer:</Code> / <Code>Ans.</Code> line → the question is dropped.</li>
               <li>Using <Code>A.</Code> instead of <Code>(A)</Code> for MCQ options.</li>
               <li>Questions not separated by a blank line — options of question 2 may leak into question 1's stem.</li>
-              <li>Match table without the header row <Code>Column A | Column B</Code>.</li>
+              <li>Match table without the header row <Code>Column A | Column B</Code> AND outside a matching section.</li>
               <li>Numbering restarts mid-document — that's fine; the importer reads them as-is.</li>
             </ul>
           </section>

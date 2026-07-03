@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileBarChart, Download, Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ const AdminStudentReportsPage = () => {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [selectedId, setSelectedId] = useState<string>("");
   const [generatingId, setGeneratingId] = useState<string | null>(null);
 
@@ -85,13 +87,13 @@ const AdminStudentReportsPage = () => {
   const range = useMemo(() => monthRange(year, month), [year, month]);
 
   const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
+    const s = debouncedSearch.trim().toLowerCase();
     if (!s) return students;
     return students.filter((r) =>
       (r.full_name ?? "").toLowerCase().includes(s) ||
       (r.target_exam ?? "").toLowerCase().includes(s),
     );
-  }, [students, search]);
+  }, [students, debouncedSearch]);
 
   const yearOptions = useMemo(() => {
     const y = new Date().getUTCFullYear();

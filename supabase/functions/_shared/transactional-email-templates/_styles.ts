@@ -1,8 +1,8 @@
-// Shared brand styling for Arke Scholars transactional emails.
+// Shared brand styling for Bansal Classes transactional emails.
 // Brand: Primary #F97316 (orange), Navy #1E293B, bg #FFFBF5, font: Plus Jakarta Sans
 // Email body bg MUST be white (#ffffff) per email rules.
 
-export const SITE_NAME = 'Arke Scholars'
+export const SITE_NAME = 'Bansal Classes'
 
 export const main = {
   backgroundColor: '#ffffff',

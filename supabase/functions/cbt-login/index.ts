@@ -1,18 +1,12 @@
-// Public CBT login (kiosk): roll number + phone -> returns Supabase session for student.
-// No per-test token. The kiosk page lists live tests for the student's batch after login.
-
+// Public CBT login (kiosk): roll number + password -> returns Supabase session.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
 const json = (status: number, body: unknown) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -24,23 +18,29 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const roll = String(body?.roll_number ?? "").trim();
-    const phone = String(body?.phone ?? "").trim();
-    if (!roll || !phone) return json(400, { error: "Missing roll number / phone" });
+    const password = String(body?.password ?? "");
+    if (!roll || !password) return json(400, { error: "Missing roll number / password" });
 
     const admin = createClient(url, service);
 
-    const { data: lookup, error: lErr } = await admin.rpc("cbt_lookup_student", { _roll: roll, _phone: phone });
-    if (lErr) return json(500, { error: lErr.message });
-    const student = Array.isArray(lookup) ? lookup[0] : lookup;
-    if (!student) return json(401, { error: "Roll number and mobile number do not match. Contact your centre." });
+    // Verify roll+password (uses auth.users.encrypted_password via pgcrypto).
+    const { data: match, error: mErr } = await admin.rpc("cbt_verify_password", {
+      _roll: roll,
+      _password: password,
+    });
+    if (mErr) return json(500, { error: mErr.message });
+    const student = Array.isArray(match) ? match[0] : match;
+    if (!student) return json(401, { error: "Invalid roll number or password. Contact your centre." });
 
     const { data: u, error: uErr } = await admin.auth.admin.getUserById(student.user_id);
     if (uErr || !u?.user?.email) return json(500, { error: "Account not provisioned" });
-    const email = u.user.email;
 
     const userClient = createClient(url, anon);
-    const { data: sess, error: sErr } = await userClient.auth.signInWithPassword({ email, password: phone });
-    if (sErr || !sess.session) return json(401, { error: "Account password mismatch. Contact admin." });
+    const { data: sess, error: sErr } = await userClient.auth.signInWithPassword({
+      email: u.user.email,
+      password,
+    });
+    if (sErr || !sess.session) return json(401, { error: "Password mismatch. Contact admin." });
 
     return json(200, {
       success: true,

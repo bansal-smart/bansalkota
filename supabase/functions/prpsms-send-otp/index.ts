@@ -36,50 +36,58 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Rate-limit: 1 OTP per 60s, max 5 per hour per phone.
-    const sinceMin = new Date(Date.now() - 60_000).toISOString();
-    const sinceHour = new Date(Date.now() - 3600_000).toISOString();
-    const { count: recentMin } = await supabase
-      .from("phone_otps").select("id", { count: "exact", head: true })
-      .eq("phone", e164).gte("created_at", sinceMin);
-    if ((recentMin ?? 0) > 0) {
-      return new Response(JSON.stringify({ error: "Please wait before requesting another OTP." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const { count: recentHour } = await supabase
-      .from("phone_otps").select("id", { count: "exact", head: true })
-      .eq("phone", e164).gte("created_at", sinceHour);
-    if ((recentHour ?? 0) >= 5) {
-      return new Response(JSON.stringify({ error: "Too many OTP requests. Try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Rate limit: max 5 OTPs per phone per hour.
+    const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+    const { count: recentCount } = await supabase
+      .from("phone_otps")
+      .select("id", { count: "exact", head: true })
+      .eq("phone", e164)
+      .gte("created_at", oneHourAgo);
+    if ((recentCount ?? 0) >= 5) {
+      return new Response(JSON.stringify({ error: "Too many OTP requests. Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Generate 6-digit OTP and render the DLT-approved template.
     const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const rendered = renderTemplate("CodeRed", { otp });
+
+    const sendResult = await prpsmsSend({ to: dest, body: rendered });
+
+    if (!sendResult.ok) {
+      await supabase.from("sms_send_log").insert({
+        to_phone: e164,
+        template_name: "CodeRed",
+        vars: { otp: "******" },
+        rendered_body: rendered,
+        purpose: `otp:${purpose}`,
+        provider_msg_id: null,
+        status: "failed",
+        error_code: null,
+        error_message: sendResult.error ?? sendResult.raw ?? "unknown",
+      });
+      return new Response(JSON.stringify({ error: "Failed to send OTP. Please try again." }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const otpHash = await sha256Hex(`${e164}:${purpose}:${otp}`);
-    const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+    const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
     const ip = req.headers.get("x-forwarded-for") || null;
 
-    const { error: insErr } = await supabase.from("phone_otps").insert({
+    await supabase.from("phone_otps").insert({
       phone: e164, otp_hash: otpHash, purpose, expires_at: expiresAt, ip,
     });
-    if (insErr) throw insErr;
-
-    const rendered = renderTemplate("CodeRed", { otp });
-    const sendRes = await prpsmsSend({ to: dest, body: rendered });
 
     await supabase.from("sms_send_log").insert({
       to_phone: e164,
       template_name: "CodeRed",
       vars: { otp: "******" },
-      rendered_body: rendered.replace(otp, "******"),
+      rendered_body: rendered,
       purpose: `otp:${purpose}`,
-      provider_msg_id: sendRes.msg_id ?? null,
-      status: sendRes.ok ? "sent" : "failed",
-      error_code: sendRes.ok ? null : "send_failed",
-      error_message: sendRes.ok ? null : (sendRes.error ?? sendRes.raw),
+      provider_msg_id: sendResult.msg_id ?? null,
+      status: "sent",
+      error_code: null,
+      error_message: null,
     });
 
-    if (!sendRes.ok) {
-      return new Response(JSON.stringify({ error: "Failed to send OTP", detail: sendRes.error ?? sendRes.raw }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
     return new Response(JSON.stringify({ ok: true, expires_at: expiresAt }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

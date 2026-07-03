@@ -3,7 +3,7 @@
 
 const PRPSMS_BASE = "http://164.52.195.161/API";
 
-export const PRPSMS_SENDER_DEFAULT = "20190332";
+export const PRPSMS_SENDER_DEFAULT = "VBNSAL";
 
 export type TemplateName =
   | "PaymentGateway_OTP"
@@ -201,7 +201,6 @@ export async function prpsmsSend(opts: {
     send,
     dest: opts.to,
     msg: opts.body,
-    priority: "1",
   });
   if (opts.schtm) params.set("schtm", opts.schtm);
   const url = `${PRPSMS_BASE}/SendMsg.aspx?${params.toString()}`;

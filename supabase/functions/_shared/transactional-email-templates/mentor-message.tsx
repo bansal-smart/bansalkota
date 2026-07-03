@@ -37,7 +37,7 @@ const MentorMessageEmail = ({
   recipientName,
   senderName = 'Your mentor',
   messagePreview,
-  chatUrl = 'https://arke.pro/mentor-chat',
+  chatUrl = 'https://bansalclasses.com/mentor-chat',
 }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />

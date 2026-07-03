@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
@@ -9,12 +9,14 @@ import { exportCsv } from "@/lib/exportCsv";
 
 
 const STATUSES = ["new", "in_progress", "resolved", "closed"] as const;
+const TYPES = ["admission", "course", "general"] as const;
 
 const CenterWebsiteEnquiriesPage = () => {
   const { primaryCenterId } = useCenterAdmin();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
 
   const load = async () => {
     if (!primaryCenterId) return;
@@ -55,6 +57,11 @@ const CenterWebsiteEnquiriesPage = () => {
     ]);
   };
 
+  const filteredItems = useMemo(() => {
+    if (typeFilter === "all") return items;
+    return items.filter((it) => (it.category || "").toLowerCase() === typeFilter);
+  }, [items, typeFilter]);
+
   if (!primaryCenterId) return <div className="p-8 text-sm text-muted-foreground">No centre assigned.</div>;
 
   return (
@@ -70,7 +77,7 @@ const CenterWebsiteEnquiriesPage = () => {
       </div>
 
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center">
         {["all", ...STATUSES].map((s) => (
           <button
             key={s}
@@ -80,12 +87,25 @@ const CenterWebsiteEnquiriesPage = () => {
             {s.replace("_", " ")}
           </button>
         ))}
+        <div className="ml-2 flex items-center gap-2">
+          <label className="text-xs text-muted-foreground">Type:</label>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs capitalize"
+          >
+            <option value="all">All types</option>
+            {TYPES.map((t) => (
+              <option key={t} value={t} className="capitalize">{t}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {loading ? (
           <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">No enquiries.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -102,7 +122,7 @@ const CenterWebsiteEnquiriesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((e) => (
+                {filteredItems.map((e) => (
                   <tr key={e.id} className="border-t border-border align-top hover:bg-muted/30">
                     <td className="px-4 py-3 font-semibold text-foreground">{e.name}</td>
                     <td className="px-4 py-3 text-xs">{e.phone || "—"}</td>

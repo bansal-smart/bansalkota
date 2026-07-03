@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.export-all-data]
 verify_jwt = false
+
+[functions.manage-admin]
+verify_jwt = false

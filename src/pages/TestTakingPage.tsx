@@ -130,7 +130,7 @@ const TestTakingPage = () => {
       setLoading(true);
       const { data: t } = await supabase
         .from("tests")
-        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern")
+        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern, starts_at, ends_at, open_window_minutes")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       // Legacy instruction images were saved as `/object/public/question-images/...`
@@ -497,6 +497,30 @@ const TestTakingPage = () => {
     if (!user || !test) return;
     if (questions.length === 0) {
       toast.error("No questions found for this test. Please contact your administrator.");
+      return;
+    }
+    // Re-validate the entry window server-of-truth before creating a fresh attempt.
+    const tAny = test as unknown as { starts_at: string | null; ends_at: string | null; open_window_minutes: number | null };
+    const nowMs = Date.now();
+    const startMs = tAny.starts_at ? new Date(tAny.starts_at).getTime() : null;
+    const endMs = tAny.ends_at ? new Date(tAny.ends_at).getTime() : null;
+    const entryDeadline =
+      startMs !== null && tAny.open_window_minutes != null && tAny.open_window_minutes > 0
+        ? startMs + tAny.open_window_minutes * 60_000
+        : null;
+    if (startMs !== null && nowMs < startMs - 60_000) {
+      toast.error("This test has not opened yet.");
+      navigate(`/tests/${slug}`);
+      return;
+    }
+    if (endMs !== null && nowMs > endMs) {
+      toast.error("This test window has closed.");
+      navigate(`/tests/${slug}`);
+      return;
+    }
+    if (entryDeadline !== null && nowMs > entryDeadline) {
+      toast.error("Entry window for this test has closed.");
+      navigate(`/tests/${slug}`);
       return;
     }
     const { data, error } = await supabase.from("test_attempts").insert({

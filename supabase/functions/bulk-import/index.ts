@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
         .select("id, slug, city, area");
       const { data: batchesList } = await admin
         .from("course_batches")
-        .select("id, name, code");
+        .select("id, name, code, course_id");
       const centreByKey = new Map<string, string>();
       (centresList ?? []).forEach((c: any) => {
         const keys = [c.slug, c.city, c.area, `${c.city} ${c.area ?? ""}`.trim()]
@@ -161,9 +161,11 @@ Deno.serve(async (req) => {
         keys.forEach((k) => centreByKey.set(k, c.id));
       });
       const batchByKey = new Map<string, string>();
+      const batchCourseById = new Map<string, string | null>();
       (batchesList ?? []).forEach((b: any) => {
         if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
         if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
+        batchCourseById.set(b.id, b.course_id ?? null);
       });
 
       const normStream = (v: any): string | null => {
@@ -228,13 +230,14 @@ Deno.serve(async (req) => {
             if (!centreId) throw new Error(`Centre not found: ${r.centre}`);
           }
 
-          // Resolve batch
+          // Resolve batch — accept batch_code (preferred), batch_id, or batch (legacy name lookup)
           let batchId: string | null = null;
-          const batchRaw = trimOrNull(r.batch);
+          const batchRaw = trimOrNull(r.batch_code ?? r.batch);
           if (r.batch_id) batchId = String(r.batch_id);
           else if (batchRaw) {
             const key = batchRaw.toLowerCase();
             batchId = batchByKey.get(key) ?? null;
+            if (!batchId) throw new Error(`Batch code not found: ${batchRaw}. Create it under Batches & CBT Setup first.`);
           }
 
           // Find existing profile
@@ -363,6 +366,11 @@ Deno.serve(async (req) => {
             if (slugList.length) {
               const { data: cs } = await admin.from("courses").select("id").in("slug", slugList);
               (cs ?? []).forEach((c: any) => { if (c?.id) idList.push(String(c.id)); });
+            }
+            // Auto-enroll into the course linked to the resolved batch
+            if (batchId) {
+              const linkedCourseId = batchCourseById.get(batchId);
+              if (linkedCourseId) idList.push(String(linkedCourseId));
             }
             const uniqIds = Array.from(new Set(idList));
             if (uniqIds.length) {

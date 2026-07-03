@@ -29,7 +29,7 @@ interface Props {
   appUrl?: string
 }
 
-const WelcomeEmail = ({ name, appUrl = 'https://arke.pro' }: Props) => (
+const WelcomeEmail = ({ name, appUrl = 'https://bansalclasses.com' }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>Welcome to {SITE_NAME} — let&apos;s start your prep journey</Preview>

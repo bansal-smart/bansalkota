@@ -18,6 +18,7 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from "@dnd-kit/utilities";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,6 +189,7 @@ const AdminCourseContentPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -515,14 +517,14 @@ const AdminCourseContentPage = () => {
 
 
   const filteredCourses = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (!q) return courses;
     return courses.filter((c) =>
       c.name.toLowerCase().includes(q) ||
       c.subject.toLowerCase().includes(q) ||
       c.educator_name.toLowerCase().includes(q)
     );
-  }, [courses, search]);
+  }, [courses, debouncedSearch]);
   const { paged: pagedCourses, page: coursePage, setPage: setCoursePage, totalPages: courseTotalPages, total: courseTotal, pageSize: coursePageSize } = usePagination(filteredCourses, 15);
 
   const visibleResources = useMemo(() => {

@@ -5,6 +5,7 @@ import {
   ExternalLink, GraduationCap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,7 @@ export default function AdminAlumniSubmissionsPage() {
   const [rows, setRows] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [active, setActive] = useState<Submission | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -79,14 +81,14 @@ export default function AdminAlumniSubmissionsPage() {
   }, [active]);
 
   const filtered = useMemo(() => {
-    const k = search.trim().toLowerCase();
+    const k = debouncedSearch.trim().toLowerCase();
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (!k) return true;
       return `${r.full_name} ${r.email} ${r.company ?? ""} ${r.current_position ?? ""}`
         .toLowerCase().includes(k);
     });
-  }, [rows, search, statusFilter]);
+  }, [rows, debouncedSearch, statusFilter]);
 
   const setStatus = async (id: string, status: Submission["status"], extra?: Partial<Submission>) => {
     setBusy(id);

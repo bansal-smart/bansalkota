@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
+import { Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { calcPercent } from "@/lib/progress";
+import { generateScorecardPdf, type ScorecardInput } from "@/lib/tests/generateScorecardPdf";
 
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
@@ -35,6 +37,7 @@ type TestRow = {
   auto_release: boolean | null;
   results_released_at: string | null;
   total_marks: number | null;
+  solution_pdf_path: string | null;
 };
 
 type RankInfo = {
@@ -147,23 +150,44 @@ const TestResultPage = () => {
       const rank = (bundle as any).rank;
 
       setAttempt(att as unknown as Attempt);
-      if (t) setTest(t as TestRow);
+      if (t) {
+        const { data: extra } = await (supabase as any).from("tests").select("solution_pdf_path").eq("id", t.id).maybeSingle();
+        setTest({ ...(t as TestRow), solution_pdf_path: extra?.solution_pdf_path ?? null });
+      }
       if (rank) setRankInfo(rank as RankInfo);
 
       const breakdown: Record<string, SubjectStat> = {};
-      const metaSubjects = att?.metadata?.subjects as
-        | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
-        | undefined;
-      if (metaSubjects && Object.keys(metaSubjects).length) {
-        Object.entries(metaSubjects).forEach(([subj, st]) => {
-          breakdown[subj] = {
-            total: Number(st?.total ?? subjectsMax[subj]?.total ?? 0),
-            correct: Number(st?.correct ?? 0),
-            attempted: Number(st?.attempted ?? 0),
-            score: Number(st?.score ?? 0),
-            maxScore: Number(subjectsMax[subj]?.max_score ?? Number(st?.total ?? 0) * 4),
-          };
+      const metaQuestions = (att?.metadata?.questions ?? []) as Array<{
+        subject?: string; marks?: number; max_marks?: number;
+        attempted?: boolean; is_correct?: boolean; is_bonus?: boolean;
+      }>;
+      if (Array.isArray(metaQuestions) && metaQuestions.length) {
+        metaQuestions.forEach((q) => {
+          const subj = q.subject || "General";
+          const cur = breakdown[subj] ?? { total: 0, correct: 0, attempted: 0, score: 0, maxScore: 0 };
+          cur.total += 1;
+          cur.maxScore += Number(q.max_marks ?? 0);
+          if (q.attempted) cur.attempted += 1;
+          if (q.is_correct) cur.correct += 1;
+          cur.score += Number(q.marks ?? 0);
+          breakdown[subj] = cur;
         });
+      } else {
+        const metaSubjects = att?.metadata?.subjects as
+          | Record<string, { total?: number; correct?: number; attempted?: number; score?: number }>
+          | undefined;
+        if (metaSubjects && Object.keys(metaSubjects).length) {
+          Object.entries(metaSubjects).forEach(([subj, st]) => {
+            const s: any = st ?? {};
+            breakdown[subj] = {
+              total: Number(s?.total ?? subjectsMax[subj]?.total ?? 0),
+              correct: Number(s?.correct ?? 0),
+              attempted: Number(s?.attempted ?? 0),
+              score: Number(s?.score ?? 0),
+              maxScore: Number(subjectsMax[subj]?.max_score ?? Number(s?.total ?? 0) * 4),
+            };
+          });
+        }
       }
       setSubjects(breakdown);
       setLoading(false);
@@ -218,6 +242,94 @@ const TestResultPage = () => {
     max: Number(st.maxScore.toFixed(1)),
     accuracy: calcPercent(st.correct, st.attempted || st.total),
   }));
+
+  const buildScorecardInput = async (): Promise<ScorecardInput | null> => {
+    if (!attempt || !user) return null;
+    const { optionLabel, resolveOptionStyle } = await import("@/lib/optionLabel");
+    const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
+      supabase.from("profiles")
+        .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(city, area)")
+        .eq("user_id", user.id).maybeSingle(),
+      supabase.from("tests").select("title, exam_pattern, total_marks, option_label_style").eq("id", attempt.test_id!).maybeSingle(),
+      supabase.rpc("get_attempt_response_sheet", { _attempt_id: attempt.id }),
+    ]);
+    const p: any = prof ?? {};
+    const tm: any = testMeta ?? {};
+    const rb: any = respBundle ?? {};
+    const optStyle = resolveOptionStyle(tm);
+    const qList: any[] = Array.isArray(rb.questions) ? rb.questions : [];
+    const metaQs: any[] = (attempt as any).metadata?.questions ?? [];
+    const byId: Record<string, any> = {};
+    metaQs.forEach((m) => { if (m?.question_id) byId[m.question_id] = m; });
+    const formatOne = (v: any): string => {
+      if (v == null) return "—";
+      if (typeof v === "number") return optionLabel(v, optStyle);
+      if (typeof v === "string" || typeof v === "boolean") return String(v);
+      if (Array.isArray(v)) return v.map(formatOne).join(", ");
+      if (typeof v === "object") {
+        return Object.entries(v).map(([k, vv]) => `${k}→${formatOne(vv)}`).join(", ");
+      }
+      return String(v);
+    };
+    const formatAns = (q: any, val: any): string => {
+      if (val == null || (typeof val === "object" && !Array.isArray(val) && Object.keys(val || {}).length === 0)) return "—";
+      const qt = q.question_type;
+      if (qt === "match-following" && val && typeof val === "object" && !Array.isArray(val)) {
+        return Object.entries(val).map(([k, v]) => `${k}→${formatOne(v)}`).join(", ");
+      }
+      if (qt === "numerical") return String(val);
+      return formatOne(val);
+    };
+    const questions = qList.map((q) => {
+      const m = byId[q.id] ?? {};
+      const isBonus = !!m.is_bonus;
+      const attemptedQ = !!m.attempted;
+      const isCorrect = !!m.is_correct;
+      const status: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
+        ? "Bonus"
+        : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
+      const correctVal = q.question_type === "numerical" ? q.numerical_answer : q.correct_answer;
+      return {
+        position: Number(q.position ?? 0) + 1,
+        subject: String(q.subject ?? "—"),
+        status,
+        marks: Number(m.marks ?? 0),
+        max_marks: Number(m.max_marks ?? q.marks_correct ?? 0),
+        your_answer: attemptedQ ? formatAns(q, q.selected) : "—",
+        correct_answer: formatAns(q, correctVal),
+      };
+    });
+    const centreName = p.centres ? [p.centres.area, p.centres.city].filter(Boolean).join(", ") || null : null;
+    return {
+      student: {
+        full_name: p.full_name,
+        roll_number: p.roll_number,
+        batch: p.course_batches?.name ?? p.batch_label ?? null,
+        centre: centreName,
+        phone: p.phone,
+      },
+
+      test: {
+        title: tm.title ?? attempt.test_name,
+        exam_pattern: tm.exam_pattern ?? null,
+        total_marks: tm.total_marks ?? test?.total_marks ?? null,
+        submitted_at: (attempt as any).submitted_at ?? null,
+      },
+      attempt: {
+        score, total_questions: total, correct, attempted, wrong, unattempted,
+        time_spent_seconds: seconds,
+        percentile: rankInfo?.percentile ?? attempt.percentile ?? null,
+        rank: rankInfo?.rank ?? null,
+        total_attempts: rankInfo?.total ?? null,
+      },
+      subjects: Object.entries(subjects).map(([s, st]) => ({
+        subject: s, total: st.total, attempted: st.attempted, correct: st.correct,
+        score: st.score, maxScore: st.maxScore,
+      })),
+      questions,
+    };
+  };
+
 
   return (
     <div className="pb-20 lg:pb-0">
@@ -309,6 +421,61 @@ const TestResultPage = () => {
           <StatTile icon={Target} label="Total" value={total} tone="primary" />
         </div>
 
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Your Scorecard</p>
+            <p className="text-xs text-muted-foreground">Download a printable PDF of your performance.</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const input = await buildScorecardInput();
+                if (!input) { toast.error("Unable to build scorecard"); return; }
+                const pdf = generateScorecardPdf(input);
+                pdf.save(`${(input.student.full_name || "scorecard").replace(/\s+/g, "_")}_${input.test.title.replace(/\s+/g, "_")}.pdf`);
+              } catch (e: any) {
+                toast.error(e?.message ?? "Failed to generate PDF");
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90"
+          >
+            <Download className="h-3.5 w-3.5" /> Download Scorecard PDF
+          </button>
+        </div>
+
+        {test?.results_released_at && test?.solution_pdf_path && (
+          <div className="rounded-2xl border border-secondary/40 bg-secondary/5 p-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">Official Solution PDF</p>
+              <p className="text-xs text-muted-foreground">Detailed solutions are now available.</p>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const path = test.solution_pdf_path as string;
+                  const { data: blob, error } = await supabase.storage.from("test-solutions").download(path);
+                  if (error || !blob) { toast.error(error?.message ?? "Unable to fetch solution PDF"); return; }
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = path.split("/").pop() || "solution.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 5000);
+                } catch (e: any) {
+                  toast.error(e?.message ?? "Failed to download solution");
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground hover:opacity-90"
+            >
+              <Download className="h-3.5 w-3.5" /> Download Solution PDF
+            </button>
+          </div>
+        )}
+
         {/* Charts */}
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card p-5">
@@ -344,27 +511,7 @@ const TestResultPage = () => {
           </div>
         </div>
 
-        {/* Comparison strip */}
-        {released && rankInfo && !rankInfo.excluded && (
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="mb-3 text-sm font-bold text-foreground">You vs Topper vs Average</h2>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[
-                  { name: "You", value: Number(score.toFixed(1)) },
-                  { name: "Topper", value: Number((rankInfo.topper_score ?? 0).toFixed(1)) },
-                  { name: "Average", value: Number((rankInfo.average_score ?? 0).toFixed(1)) },
-                ]} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                  <XAxis type="number" fontSize={11} />
-                  <YAxis type="category" dataKey="name" fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#1E293B" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
+        {/* Comparison strip removed */}
 
         {/* Subject breakdown table */}
         <div className="rounded-2xl border border-border bg-card p-5">

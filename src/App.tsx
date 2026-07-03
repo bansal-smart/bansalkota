@@ -17,6 +17,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import PublicLayout from "./components/PublicLayout";
 import Spinner from "./components/Spinner";
 import { AuthProvider } from "./context/AuthContext";
+import MaintenanceGate from "./components/MaintenanceGate";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -42,7 +43,7 @@ const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const MyCoursesPage = lazy(() => import("./pages/MyCoursesPage"));
-const CourseStudyMaterialPage = lazy(() => import("./pages/CourseStudyMaterialPage"));
+const CourseStudyMaterialPage = lazy(() => import("./pages/CourseLearnPage"));
 const ChapterQuizPage = lazy(() => import("./pages/ChapterQuizPage"));
 const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
 const LecturePlayerPage = lazy(() => import("./pages/LecturePlayerPage"));
@@ -71,9 +72,10 @@ const AdminTestSupportPage = lazy(() => import("./pages/AdminTestSupportPage"));
 const AdminTestDetailPage = lazy(() => import("./pages/AdminTestDetailPage"));
 const AdminTestResultPage = lazy(() => import("./pages/AdminTestResultPage"));
 const AdminCombinedResultPage = lazy(() => import("./pages/AdminCombinedResultPage"));
-const AdminLectureBucketPage = lazy(() => import("./pages/AdminLectureBucketPage"));
+
 const AdminExamsPage = lazy(() => import("./pages/AdminExamsPage"));
 const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
+const AdminRolesPage = lazy(() => import("./pages/AdminRolesPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
 
@@ -134,6 +136,10 @@ const AdminOrdersPage = lazy(() => import("./pages/AdminOrdersPage"));
 const AdminTestimonialsPage = lazy(() => import("./pages/AdminTestimonialsPage"));
 const AdminStatsPage = lazy(() => import("./pages/AdminStatsPage"));
 const AdminLeadershipPage = lazy(() => import("./pages/AdminLeadershipPage"));
+const AdminAdvantagesPage = lazy(() => import("./pages/AdminAdvantagesPage"));
+const AdminBlogsPage = lazy(() => import("./pages/AdminBlogsPage"));
+const BlogsListPage = lazy(() => import("./pages/BlogsListPage"));
+const BlogDetailPage = lazy(() => import("./pages/BlogDetailPage"));
 const AdminCenterSupportPage = lazy(() => import("./pages/AdminCenterSupportPage"));
 const CenterDashboardPage = lazy(() => import("./pages/CenterDashboardPage"));
 const CenterOnlineCoursesPage = lazy(() => import("./pages/CenterOnlineCoursesPage"));
@@ -153,10 +159,11 @@ const CenterCourseEnquiriesPage = lazy(() => import("./pages/CenterCourseEnquiri
 const CenterStudentsPage = lazy(() => import("./pages/CenterStudentsPage"));
 const CenterTestSeriesPage = lazy(() => import("./pages/CenterTestSeriesPage"));
 const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
+const CenterRolesPage = lazy(() => import("./pages/CenterRolesPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
-const AdminSmsBroadcastsPage = lazy(() => import("./pages/AdminSmsBroadcastsPage"));
+
 const AdminSitePageEditorPage = lazy(() => import("./pages/AdminSitePageEditorPage"));
 const CreateTestSeriesPage = lazy(() => import("./pages/CreateTestSeriesPage"));
 const GalleryImagesPage = lazy(() => import("./pages/GalleryImagesPage"));
@@ -191,6 +198,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <MaintenanceGate>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -383,7 +391,11 @@ const App = () => (
               <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
               <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
-              <Route path="/admin/lecture-bucket" element={<AdminLectureBucketPage />} />
+              <Route path="/admin/advantages" element={<AdminAdvantagesPage />} />
+              <Route path="/admin/blogs" element={<AdminBlogsPage />} />
+              <Route path="/blog" element={<BlogsListPage />} />
+              <Route path="/blog/:slug" element={<BlogDetailPage />} />
+              
               {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
               <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/mentor-assignments" element={<Navigate to="/admin/dashboard" replace />} />
@@ -394,11 +406,12 @@ const App = () => (
               <Route path="/admin/moderation" element={<AdminModerationPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/admins" element={<AdminAdminsPage />} />
+              <Route path="/admin/roles" element={<AdminRolesPage />} />
               <Route path="/admin/profile" element={<AdminProfilePage />} />
               <Route path="/admin/overview" element={<AdminDashboard />} />
               <Route path="/admin/landing-page" element={<AdminLandingPage />} />
               <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
-              <Route path="/admin/sms-broadcasts" element={<AdminSmsBroadcastsPage />} />
+              
               <Route path="/admin/site-pages/achievements" element={<AdminSitePageEditorPage slug="achievements" heading="Achievements" />} />
               <Route path="/admin/site-pages/disclaimer" element={<AdminSitePageEditorPage slug="disclaimer" heading="Disclaimer" />} />
               <Route path="/admin/site-pages/terms" element={<AdminSitePageEditorPage slug="terms" heading="Terms & Conditions" />} />
@@ -422,6 +435,7 @@ const App = () => (
               <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
               <Route path="/center/students" element={<CenterStudentsPage />} />
               <Route path="/center/support" element={<CenterSupportPage />} />
+              <Route path="/center/roles" element={<CenterRolesPage />} />
               <Route path="/center/gallery" element={<CenterGalleryPage />} />
               <Route path="/center/updates" element={<CenterUpdatesPage />} />
               <Route path="/center/online-courses" element={<CenterPlatformCoursesPage />} />
@@ -437,6 +451,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </MaintenanceGate>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

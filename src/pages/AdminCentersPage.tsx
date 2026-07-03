@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, Loader2, Plus, Save, Trash2, Upload, X, Users, FileSpreadsheet } from "lucide-react";
+import { Building2, Copy, KeyRound, Loader2, Pencil, Plus, Save, Trash2, Upload, X, Users, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import CenterStaffModal from "@/components/CenterStaffModal";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Center = {
   id: string;
@@ -81,6 +83,7 @@ const AdminCentersPage = () => {
   const [items, setItems] = useState<Center[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [region, setRegion] = useState("All");
   const [form, setForm] = useState<Partial<Center>>(blank);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -140,7 +143,7 @@ const AdminCentersPage = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return items.filter((c) => {
       if (region !== "All" && c.region !== region) return false;
       if (!q) return true;
@@ -151,7 +154,7 @@ const AdminCentersPage = () => {
         c.slug.includes(q)
       );
     });
-  }, [items, search, region]);
+  }, [items, debouncedSearch, region]);
 
   const startEdit = (c: Center) => {
     setEditingId(c.id);
@@ -475,11 +478,12 @@ const AdminCentersPage = () => {
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] items-end">
           <div>
             <label className="text-xs font-bold text-muted-foreground">Centre image</label>
+            <AspectRatioHint ratio="16:9" size="1600×900" note="centre cover photo" />
             <div className="mt-1 flex items-center gap-3">
               {form.image_url ? (
-                <img src={form.image_url} alt="" className="h-16 w-24 rounded-lg object-cover border border-border" />
+                <img src={form.image_url} alt="" className="aspect-[16/9] w-40 rounded-lg object-cover object-center border border-border" />
               ) : (
-                <div className="h-16 w-24 rounded-lg border border-dashed border-border bg-muted/40 flex items-center justify-center text-[10px] text-muted-foreground">No image</div>
+                <div className="aspect-[16/9] w-40 rounded-lg border border-dashed border-border bg-muted/40 flex items-center justify-center text-[10px] text-muted-foreground">No image</div>
               )}
               <label className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold cursor-pointer hover:bg-muted">
                 {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Upload
@@ -553,9 +557,10 @@ const AdminCentersPage = () => {
                       {logins.length === 0 ? (
                         <button
                           onClick={() => setStaffCenter(c)}
-                          className="text-xs text-muted-foreground italic hover:text-primary hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-muted-foreground italic hover:text-primary"
+                          title="Create login"
                         >
-                          + Create login
+                          <KeyRound className="h-3.5 w-3.5" />
                         </button>
                       ) : (
                         <div className="space-y-0.5">
@@ -567,14 +572,18 @@ const AdminCentersPage = () => {
                                   navigator.clipboard.writeText(em);
                                   toast.success("Email copied");
                                 }}
-                                className="text-[10px] text-primary hover:underline"
+                                className="inline-flex items-center text-primary hover:text-primary/80"
                                 title="Copy email"
-                              >copy</button>
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
                               <button
                                 onClick={() => resetLogin(em)}
-                                className="text-[10px] text-amber-600 hover:underline"
+                                className="inline-flex items-center text-amber-600 hover:text-amber-700"
                                 title="Generate temp password & copy credentials"
-                              >reset</button>
+                              >
+                                <KeyRound className="h-3 w-3" />
+                              </button>
                             </div>
                           ))}
                           {logins.length > 2 && (
@@ -593,14 +602,18 @@ const AdminCentersPage = () => {
                         {c.is_pinned ? "★ Pinned" : "☆ Pin"}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
-                      <button onClick={() => setStaffCenter(c)} className="text-primary hover:underline text-xs font-semibold inline-flex items-center gap-1">
-                        <Users className="h-3 w-3" /> Login & Staff
-                      </button>
-                      <button onClick={() => startEdit(c)} className="text-primary hover:underline text-xs font-semibold">Edit</button>
-                      <button onClick={() => remove(c.id)} className="text-destructive hover:text-destructive/70">
-                        <Trash2 className="h-4 w-4 inline" />
-                      </button>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-2">
+                        <button onClick={() => setStaffCenter(c)} className="inline-flex items-center text-primary hover:text-primary/80" title="Login & Staff">
+                          <Users className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => startEdit(c)} className="inline-flex items-center text-primary hover:text-primary/80" title="Edit">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => remove(c.id)} className="inline-flex items-center text-destructive hover:text-destructive/70" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   );

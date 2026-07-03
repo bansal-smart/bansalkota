@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Plus, Trash2, Loader2, GripVertical, BookMarked, FileText, Image as ImageIcon, Upload, HelpCircle } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 import {
   DndContext,
   type DragEndEvent,
@@ -172,6 +173,8 @@ const CreateTestPage = () => {
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string }[]>([]);
+  const [solutionPdfPath, setSolutionPdfPath] = useState<string | null>(null);
+  const [solutionPdfUploading, setSolutionPdfUploading] = useState(false);
   // Scheduling — controls when test opens, closes, and results auto-release
   const [testDate, setTestDate] = useState<string>(""); // YYYY-MM-DD
   const [startTime, setStartTime] = useState<string>(""); // HH:mm
@@ -266,6 +269,7 @@ const CreateTestPage = () => {
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
+      setSolutionPdfPath((test as { solution_pdf_path?: string | null }).solution_pdf_path ?? null);
       // Load schedule (starts_at / ends_at) into date + time inputs (local TZ).
       const sAt = (test as any).starts_at ? new Date((test as any).starts_at) : null;
       const eAt = (test as any).ends_at ? new Date((test as any).ends_at) : null;
@@ -917,8 +921,71 @@ const CreateTestPage = () => {
           />
         </div>
 
+        {resolvedTestId && (
+          <div>
+            <label className={labelCls}>Solution PDF <span className="text-muted-foreground font-normal">(visible to students only after results are released)</span></label>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="file"
+                accept="application/pdf"
+                disabled={solutionPdfUploading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 20 * 1024 * 1024) { toast.error("PDF must be ≤ 20 MB"); return; }
+                  setSolutionPdfUploading(true);
+                  const path = `${resolvedTestId}/solution-${Date.now()}.pdf`;
+                  const { error: upErr } = await supabase.storage.from("test-solutions").upload(path, file, { contentType: "application/pdf", upsert: true });
+                  if (upErr) { setSolutionPdfUploading(false); toast.error(upErr.message); return; }
+                  const { error: updErr } = await (supabase as any)
+                    .from("tests")
+                    .update({ solution_pdf_path: path, solution_pdf_url: path, solution_pdf_uploaded_at: new Date().toISOString() })
+                    .eq("id", resolvedTestId);
+                  setSolutionPdfUploading(false);
+                  if (updErr) { toast.error(updErr.message); return; }
+                  setSolutionPdfPath(path);
+                  toast.success("Solution PDF uploaded");
+                  (e.target as HTMLInputElement).value = "";
+                }}
+                className="text-xs"
+              />
+              {solutionPdfUploading && <span className="text-xs text-muted-foreground">Uploading…</span>}
+              {solutionPdfPath && (
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const { data, error } = await supabase.storage.from("test-solutions").createSignedUrl(solutionPdfPath, 60 * 10);
+                      if (error || !data?.signedUrl) { toast.error(error?.message ?? "Could not open"); return; }
+                      window.open(data.signedUrl, "_blank");
+                    }}
+                    className="rounded-md bg-secondary px-2 py-1 text-xs font-bold text-secondary-foreground hover:opacity-90"
+                  >
+                    Preview current PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.confirm("Remove the uploaded solution PDF?")) return;
+                      await supabase.storage.from("test-solutions").remove([solutionPdfPath]);
+                      await (supabase as any).from("tests").update({ solution_pdf_path: null, solution_pdf_url: null, solution_pdf_uploaded_at: null }).eq("id", resolvedTestId);
+                      setSolutionPdfPath(null);
+                      toast.success("Solution PDF removed");
+                    }}
+                    className="rounded-md border border-destructive/40 px-2 py-1 text-xs font-bold text-destructive hover:bg-destructive/10"
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">Max 20 MB. Students will see a download button on the result &amp; response sheet pages once you release results.</p>
+          </div>
+        )}
+
         <div>
           <label className={labelCls}>Instructions Image (optional)</label>
+          <AspectRatioHint ratio="Free / portrait A4 (≈ 1:1.41)" note="full instructions sheet, shown at original ratio" />
           <p className="text-xs text-muted-foreground mb-2">
             Shown to students on the pre-test instructions page and inside the in-test "View Instructions" popup. Recommended: a scanned/printed exam instructions sheet. Max 5MB.
           </p>

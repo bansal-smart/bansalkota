@@ -41,8 +41,8 @@ const PROGRAMS = [
   },
   {
     icon: BookOpen,
-    title: "Foundation (Class 8–10)",
-    desc: "Build a strong base for KVPY, Olympiads & Boards. Conceptual depth + competitive aptitude.",
+    title: "Foundation (Class 5–10)",
+    desc: "Build a strong base for IMO, IJSO, NSEJS & Boards. Conceptual depth + competitive aptitude.",
     tag: "Foundation",
   },
 ];
@@ -365,11 +365,7 @@ export default function CenterDetailPage() {
         </div>
       </section>
       {dbCenter?.id && enquiryOpen && (
-        <AdmissionEnquiryModal
-          centerId={dbCenter.id}
-          centerCity={displayName}
-          onClose={() => setEnquiryOpen(false)}
-        />
+        <AdmissionEnquiryModal centerId={dbCenter.id} centerCity={displayName} onClose={() => setEnquiryOpen(false)} />
       )}
     </div>
   );

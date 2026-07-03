@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, Mail, GraduationCap, UserPlus, Upload } from "lucide-react";
+import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, Mail, GraduationCap, UserPlus, Upload, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
 
@@ -30,6 +31,7 @@ type StudentRow = {
   batch_id?: string | null;
   batch_name?: string | null;
   batch_label?: string | null;
+  cbt_password_set_at?: string | null;
 };
 
 type CentreLite = { id: string; city: string; area: string | null; slug: string };
@@ -136,10 +138,70 @@ function CoursesMultiSelect({
   );
 }
 
+function BatchesMultiSelect({
+  batches,
+  value,
+  onChange,
+}: {
+  batches: BatchLite[];
+  value: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const selectedSet = new Set(value);
+  const filtered = batches.filter((b) =>
+    b.name.toLowerCase().includes(q.trim().toLowerCase()) ||
+    (b.code && b.code.toLowerCase().includes(q.trim().toLowerCase()))
+  );
+  const toggle = (id: string) => {
+    if (selectedSet.has(id)) onChange(value.filter((v) => v !== id));
+    else onChange([...value, id]);
+  };
+  const selectedNames = batches.filter((b) => selectedSet.has(b.id)).map((b) => b.name);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-lg border border-border bg-background py-2 px-3 text-sm text-foreground outline-none focus:border-primary hover:bg-muted/40 min-w-[160px] text-left"
+      >
+        {selectedNames.length
+          ? selectedNames.slice(0, 2).join(", ") + (selectedNames.length > 2 ? ` +${selectedNames.length - 2}` : "")
+          : "All Batches"}
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 w-64 rounded-lg border border-border bg-background p-2 max-h-56 overflow-y-auto space-y-1 shadow-lg">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search batches…"
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+          {filtered.length === 0 && (
+            <div className="text-[11px] text-muted-foreground px-2 py-1">No batches found</div>
+          )}
+          {filtered.map((b) => (
+            <label key={b.id} className="flex items-center gap-2 text-xs font-medium text-foreground px-2 py-1 rounded hover:bg-muted/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedSet.has(b.id)}
+                onChange={() => toggle(b.id)}
+              />
+              <span className="truncate">{b.name}{b.code ? ` (${b.code})` : ""}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 const AdminStudentsPage = () => {
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -157,16 +219,151 @@ const AdminStudentsPage = () => {
   const [batches, setBatches] = useState<BatchLite[]>([]);
   const [courses, setCourses] = useState<CourseLite[]>([]);
   const [centreFilter, setCentreFilter] = useState<string>(""); // "", "none", or centre id
+  const [classFilter, setClassFilter] = useState<string>(""); // "", or class level
+  const [batchFilter, setBatchFilter] = useState<string[]>([]); // selected batch ids
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
   const emptyAdd = {
     roll_number: "", full_name: "", father_name: "", phone: "", parent_phone: "",
-    dob: "", target_exam: "", class_level: "", batch: "", centre: "",
+    dob: "", target_exam: "", class_level: "", batch_id: "", centre: "",
   };
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
   const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
   const [editCourseIds, setEditCourseIds] = useState<string[]>([]);
+
+  // CBT password management
+  const [pwdBulkOpen, setPwdBulkOpen] = useState(false);
+  const [pwdBulkOverwrite, setPwdBulkOverwrite] = useState(false);
+  const [pwdBulkRunning, setPwdBulkRunning] = useState(false);
+  const [pwdBulkResults, setPwdBulkResults] = useState<Array<{
+    user_id: string; roll_number: string | null; full_name: string | null;
+    centre: string | null; batch: string | null; password: string | null; status: string;
+  }> | null>(null);
+  const [pwdReset, setPwdReset] = useState<{ user_id: string; full_name: string | null } | null>(null);
+  const [pwdResetValue, setPwdResetValue] = useState("");
+  const [pwdResetRunning, setPwdResetRunning] = useState(false);
+  const [pwdResetResult, setPwdResetResult] = useState<string | null>(null);
+  const [copiedPwd, setCopiedPwd] = useState<string | null>(null);
+  const [pwdBulkProgress, setPwdBulkProgress] = useState({ done: 0, total: 0 });
+
+  const copyToClipboard = async (val: string) => {
+    try {
+      await navigator.clipboard.writeText(val);
+      setCopiedPwd(val);
+      setTimeout(() => setCopiedPwd((c) => (c === val ? null : c)), 1500);
+    } catch { /* ignore */ }
+  };
+
+  const fetchAllFilteredStudentIds = async (): Promise<string[]> => {
+    const { data: roleRows, error: rErr } = await supabase.from("user_roles").select("user_id, role");
+    if (rErr) throw rErr;
+    const studentSet = new Set<string>();
+    const staffSet = new Set<string>();
+    (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
+      if (r.role === "student") studentSet.add(r.user_id);
+      else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+    });
+    const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
+    if (!studentIds.length) return [];
+
+    const all: string[] = [];
+    const CHUNK = 500;
+    for (let i = 0; i < studentIds.length; i += CHUNK) {
+      const slice = studentIds.slice(i, i + CHUNK);
+      let q: any = (supabase as any).from("profiles").select("user_id").in("user_id", slice);
+      if (debouncedSearch.trim()) {
+        const s = debouncedSearch.trim();
+        q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
+      }
+      if (centreFilter === "none") q = q.is("centre_id", null);
+      else if (centreFilter) q = q.eq("centre_id", centreFilter);
+      if (classFilter) q = q.eq("class_level", classFilter);
+      if (batchFilter.length) q = q.in("batch_id", batchFilter);
+      const { data, error } = await q;
+      if (error) throw error;
+      (data ?? []).forEach((r: { user_id: string }) => all.push(r.user_id));
+    }
+    return all;
+  };
+
+  const runBulkGenerate = async (scope: "selected" | "filtered") => {
+    let ids: string[] = [];
+    try {
+      if (scope === "selected") ids = selected.slice();
+      else ids = await fetchAllFilteredStudentIds();
+    } catch (e: any) {
+      toast.error("Failed to gather students", { description: e.message });
+      return;
+    }
+    if (!ids.length) { toast.error("No students to process"); return; }
+    setPwdBulkRunning(true);
+    setPwdBulkResults(null);
+    setPwdBulkProgress({ done: 0, total: ids.length });
+    try {
+      const CHUNK = 200;
+      const all: NonNullable<typeof pwdBulkResults> = [];
+      let generated = 0;
+      let skipped = 0;
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const slice = ids.slice(i, i + CHUNK);
+        const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
+          body: { user_ids: slice, overwrite: pwdBulkOverwrite },
+        });
+        if (error) throw error;
+        const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
+        all.push(...res);
+        generated += Number(data?.generated ?? 0);
+        skipped += Number(data?.skipped ?? 0);
+        setPwdBulkProgress({ done: Math.min(i + slice.length, ids.length), total: ids.length });
+        setPwdBulkResults(all.slice());
+      }
+      toast.success(`Generated ${generated} passwords · Skipped ${skipped}`);
+      load();
+    } catch (e: any) {
+      toast.error("Bulk generate failed", { description: e.message });
+    } finally {
+      setPwdBulkRunning(false);
+    }
+  };
+
+  const downloadPwdCsv = () => {
+    if (!pwdBulkResults?.length) return;
+    const rowsOut = pwdBulkResults.filter((r) => r.password);
+    const header = ["Roll No", "Student Name", "Centre", "Batch", "Password"];
+    const body = rowsOut.map((r) =>
+      [r.roll_number ?? "", r.full_name ?? "", r.centre ?? "", r.batch ?? "", r.password ?? ""]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+    );
+    const csv = [header.join(","), ...body].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cbt-credentials-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const runResetPassword = async () => {
+    if (!pwdReset) return;
+    setPwdResetRunning(true);
+    setPwdResetResult(null);
+    try {
+      const body: Record<string, unknown> = { user_id: pwdReset.user_id };
+      if (pwdResetValue.trim()) body.password = pwdResetValue.trim();
+      const { data, error } = await supabase.functions.invoke("admin-set-cbt-password", { body });
+      if (error) throw error;
+      setPwdResetResult((data as { password: string }).password);
+      toast.success("Password updated");
+      load();
+    } catch (e: any) {
+      toast.error("Reset failed", { description: e.message });
+    } finally {
+      setPwdResetRunning(false);
+    }
+  };
+
 
   const submitAddStudent = async () => {
     if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !addForm.centre.trim()) {
@@ -213,13 +410,19 @@ const AdminStudentsPage = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      // Get only student user_ids first
+      // Get user_ids that have the student role, excluding anyone who also holds a staff role
+      // (handle_new_user auto-grants 'student' to every new auth user, including centre/teacher/admin staff).
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
-        .select("user_id")
-        .eq("role", "student");
+        .select("user_id, role");
       if (rErr) throw rErr;
-      const studentIds = Array.from(new Set((roleRows ?? []).map((r) => r.user_id)));
+      const studentSet = new Set<string>();
+      const staffSet = new Set<string>();
+      (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
+        if (r.role === "student") studentSet.add(r.user_id);
+        else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+      });
+      const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
       if (!studentIds.length) {
         setRows([]); setTotal(0); setLoading(false); return;
       }
@@ -227,18 +430,20 @@ const AdminStudentsPage = () => {
       let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label",
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
           { count: "exact" },
         )
         .in("user_id", studentIds)
         .order("created_at", { ascending: false });
 
-      if (search.trim()) {
-        const s = search.trim();
+      if (debouncedSearch.trim()) {
+        const s = debouncedSearch.trim();
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
       if (centreFilter === "none") query = query.is("centre_id", null);
       else if (centreFilter) query = query.eq("centre_id", centreFilter);
+      if (classFilter) query = query.eq("class_level", classFilter);
+      if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -269,7 +474,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, page, centreFilter, centres, batches]);
+  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches]);
 
   useEffect(() => {
     load();
@@ -362,10 +567,80 @@ const AdminStudentsPage = () => {
     }
   };
 
-  const exportSelected = () => {
-    const target = selected.length ? rows.filter((r) => selected.includes(r.user_id)) : rows;
-    if (!target.length) return toast.error("Nothing to export");
-    exportCsv(target);
+  const exportSelected = async () => {
+    if (selected.length) {
+      const target = rows.filter((r) => selected.includes(r.user_id));
+      if (!target.length) return toast.error("Nothing to export");
+      return exportCsv(target);
+    }
+    const tId = toast.loading("Preparing export…");
+    try {
+      const { data: roleRows, error: rErr } = await supabase
+        .from("user_roles").select("user_id, role");
+      if (rErr) throw rErr;
+      const studentSet = new Set<string>();
+      const staffSet = new Set<string>();
+      (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
+        if (r.role === "student") studentSet.add(r.user_id);
+        else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+      });
+      const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
+      if (!studentIds.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
+
+      const all: StudentRow[] = [];
+      const BATCH = 1000;
+      for (let i = 0; i < studentIds.length; i += BATCH) {
+        const slice = studentIds.slice(i, i + BATCH);
+        let q = (supabase as any)
+          .from("profiles")
+          .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label")
+          .in("user_id", slice)
+          .order("created_at", { ascending: false });
+        if (debouncedSearch.trim()) {
+          const s = debouncedSearch.trim();
+          q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
+        }
+        if (centreFilter === "none") q = q.is("centre_id", null);
+        else if (centreFilter) q = q.eq("centre_id", centreFilter);
+        if (classFilter) q = q.eq("class_level", classFilter);
+        if (batchFilter.length) q = q.in("batch_id", batchFilter);
+
+        let from = 0;
+        while (true) {
+          const { data, error } = await q.range(from, from + 999);
+          if (error) throw error;
+          const chunk = (data ?? []) as StudentRow[];
+          all.push(...chunk);
+          if (chunk.length < 1000) break;
+          from += 1000;
+        }
+      }
+
+      const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
+      const batchMap = new Map(batches.map((b) => [b.id, b.name]));
+      all.forEach((r) => {
+        r.centre_name = r.centre_id ? centreMap.get(r.centre_id) ?? null : null;
+        r.batch_name = r.batch_id ? batchMap.get(r.batch_id) ?? null : null;
+      });
+
+      // Fetch emails in batches
+      const emails: Record<string, string | null> = {};
+      for (let i = 0; i < all.length; i += 200) {
+        const ids = all.slice(i, i + 200).map((r) => r.user_id);
+        const { data: emailData } = await supabase.functions.invoke("manage-student", {
+          body: { action: "get_emails", user_ids: ids },
+        });
+        Object.assign(emails, emailData?.emails ?? {});
+      }
+      const withEmails = all.map((r) => ({ ...r, email: emails[r.user_id] ?? null }));
+      toast.dismiss(tId);
+      if (!withEmails.length) return toast.error("Nothing to export");
+      exportCsv(withEmails);
+      toast.success(`Exported ${withEmails.length} students`);
+    } catch (e: any) {
+      toast.dismiss(tId);
+      toast.error("Export failed", { description: e.message });
+    }
   };
 
   const doBulkDelete = async () => {
@@ -420,6 +695,12 @@ const AdminStudentsPage = () => {
             <Upload className="h-3.5 w-3.5" /> Bulk enrollments
           </button>
           <button
+            onClick={() => { setPwdBulkResults(null); setPwdBulkOverwrite(false); setPwdBulkOpen(true); }}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
+          >
+            <KeyRound className="h-3.5 w-3.5" /> CBT Passwords
+          </button>
+          <button
             onClick={exportSelected}
             className="flex items-center gap-1.5 rounded-lg bg-[#0F1729] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F1729]/90 transition-colors"
           >
@@ -444,7 +725,7 @@ const AdminStudentsPage = () => {
           { key: "dob", label: "DOB", example: "2008-05-12" },
           { key: "target_exam", label: "Stream", example: "JEE" },
           { key: "class_level", label: "Class", example: "XI" },
-          { key: "batch", label: "Batch", example: "Bull's Eye" },
+          { key: "batch_code", label: "Batch Code", example: "XI-J1" },
           { key: "centre", label: "Centre", required: true, example: "Jamshedpur" },
         ]}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
@@ -505,6 +786,19 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <label className="text-xs font-semibold text-muted-foreground space-y-1">
+                <span>Batch</span>
+                <select
+                  value={addForm.batch_id ?? ""}
+                  onChange={(e) => setAddForm((s) => ({ ...s, batch_id: e.target.value }))}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                >
+                  <option value="">Select batch</option>
+                  {batches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                  ))}
+                </select>
+              </label>
               <div className="sm:col-span-2">
                 <CoursesMultiSelect
                   label="Courses (assign one or more)"
@@ -538,7 +832,7 @@ const AdminStudentsPage = () => {
       )}
 
       <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
@@ -550,13 +844,27 @@ const AdminStudentsPage = () => {
         <select
           value={centreFilter}
           onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
-          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary"
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
         >
           <option value="">All Centres</option>
           <option value="none">No centre assigned</option>
           {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
         </select>
+        <select
+          value={classFilter}
+          onChange={(e) => { setClassFilter(e.target.value); setPage(0); }}
+          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[140px]"
+        >
+          <option value="">All Classes</option>
+          {CLASS_OPTIONS.map((cls) => <option key={cls} value={cls}>Class {cls}</option>)}
+        </select>
+        <BatchesMultiSelect
+          batches={batches}
+          value={batchFilter}
+          onChange={(ids) => { setBatchFilter(ids); setPage(0); }}
+        />
       </div>
+
 
 
       {selected.length > 0 && (
@@ -660,12 +968,18 @@ const AdminStudentsPage = () => {
                     <td className="p-3 hidden lg:table-cell text-muted-foreground truncate max-w-[140px]">{u.batch_name || u.batch_label || "—"}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[140px]">{u.centre_name || "—"}</td>
                     <td className="p-3">
-                      {u.is_suspended ? (
-
-                        <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive uppercase">Suspended</span>
-                      ) : (
-                        <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase">Active</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {u.is_suspended ? (
+                          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive uppercase w-fit">Suspended</span>
+                        ) : (
+                          <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary uppercase w-fit">Active</span>
+                        )}
+                        {u.cbt_password_set_at ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase w-fit">
+                            <KeyRound className="h-2.5 w-2.5" /> CBT Pwd
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -788,6 +1102,12 @@ const AdminStudentsPage = () => {
                   {drawer.is_suspended ? "Unsuspend" : "Suspend"}
                 </button>
                 <button
+                  onClick={() => { setPwdResetValue(""); setPwdResetResult(null); setPwdReset({ user_id: drawer.user_id, full_name: drawer.full_name }); }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10"
+                >
+                  <KeyRound className="h-3 w-3" /> Reset CBT Password
+                </button>
+                <button
                   onClick={() => setConfirmDelete(drawer)}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
                 >
@@ -892,6 +1212,215 @@ const AdminStudentsPage = () => {
                 Delete {selected.length} forever
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk generate CBT passwords */}
+      {pwdBulkOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !pwdBulkRunning && setPwdBulkOpen(false)} />
+          <div className="relative w-full max-w-3xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b border-border p-5">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">Bulk generate CBT test passwords</h2>
+                  <p className="text-[11px] text-muted-foreground">Random 8-character passwords. Shown only once — download the CSV.</p>
+                </div>
+              </div>
+              <button onClick={() => !pwdBulkRunning && setPwdBulkOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {!pwdBulkResults ? (
+              <div className="p-5 space-y-4">
+                <div className="rounded-lg border border-border bg-background/50 p-3 text-xs text-muted-foreground space-y-1">
+                  <p><b className="text-foreground">Selected students:</b> {selected.length}</p>
+                  <p><b className="text-foreground">Matching current filters:</b> {total}</p>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={pwdBulkOverwrite}
+                    onChange={(e) => setPwdBulkOverwrite(e.target.checked)}
+                    className="rounded"
+                  />
+                  Overwrite existing passwords (otherwise students who already have a CBT password are skipped)
+                </label>
+                {pwdBulkRunning && pwdBulkProgress.total > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Processing {pwdBulkProgress.done} / {pwdBulkProgress.total}…
+                  </p>
+                )}
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-border">
+                  <button
+                    onClick={() => setPwdBulkOpen(false)}
+                    disabled={pwdBulkRunning}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={pwdBulkRunning || selected.length === 0}
+                    onClick={() => runBulkGenerate("selected")}
+                    className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10 disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {pwdBulkRunning && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Generate for {selected.length} selected
+                  </button>
+                  <button
+                    disabled={pwdBulkRunning || total === 0}
+                    onClick={() => runBulkGenerate("filtered")}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {pwdBulkRunning && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Generate for all {total} filtered
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {pwdBulkResults.length} students. Copy or download now — passwords are not retrievable later.
+                  </p>
+                  <button
+                    onClick={downloadPwdCsv}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download CSV
+                  </button>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-background text-muted-foreground border-b border-border sticky top-0">
+                      <tr>
+                        <th className="p-3 text-left font-medium">Roll No</th>
+                        <th className="p-3 text-left font-medium">Name</th>
+                        <th className="p-3 text-left font-medium">Batch</th>
+                        <th className="p-3 text-left font-medium">Centre</th>
+                        <th className="p-3 text-left font-medium">Password</th>
+                        <th className="p-3 text-left font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pwdBulkResults.map((r) => (
+                        <tr key={r.user_id} className="border-b border-border">
+                          <td className="p-3 font-mono text-[11px]">{r.roll_number ?? "—"}</td>
+                          <td className="p-3">{r.full_name ?? "—"}</td>
+                          <td className="p-3 text-muted-foreground">{r.batch ?? "—"}</td>
+                          <td className="p-3 text-muted-foreground">{r.centre ?? "—"}</td>
+                          <td className="p-3 font-mono">
+                            {r.password ? (
+                              <button
+                                onClick={() => copyToClipboard(r.password!)}
+                                className="inline-flex items-center gap-1.5 rounded bg-primary/5 border border-primary/20 px-2 py-1 text-primary hover:bg-primary/10"
+                              >
+                                {r.password}
+                                {copiedPwd === r.password ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            ) : <span className="text-muted-foreground">—</span>}
+                          </td>
+                          <td className="p-3 text-[11px]">
+                            {r.status === "generated" ? (
+                              <span className="text-secondary font-semibold">Generated</span>
+                            ) : r.status === "skipped_existing" ? (
+                              <span className="text-muted-foreground">Skipped (existing)</span>
+                            ) : (
+                              <span className="text-destructive">{r.status}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-4 border-t border-border flex justify-end">
+                  <button
+                    onClick={() => { setPwdBulkOpen(false); setPwdBulkResults(null); }}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Reset single password */}
+      {pwdReset && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !pwdResetRunning && setPwdReset(null)} />
+          <div className="relative w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                <KeyRound className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-foreground">Reset CBT password</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  For <span className="font-semibold text-foreground">{pwdReset.full_name || "this student"}</span>.
+                  Leave the field blank to auto-generate a random 8-character password.
+                </p>
+              </div>
+            </div>
+
+            {!pwdResetResult ? (
+              <>
+                <input
+                  type="text"
+                  value={pwdResetValue}
+                  onChange={(e) => setPwdResetValue(e.target.value)}
+                  placeholder="Leave blank to auto-generate"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    disabled={pwdResetRunning}
+                    onClick={() => setPwdReset(null)}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    disabled={pwdResetRunning}
+                    onClick={runResetPassword}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 inline-flex items-center gap-1.5"
+                  >
+                    {pwdResetRunning && <Loader2 className="h-3 w-3 animate-spin" />}
+                    Set password
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">New password (shown once)</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <code className="text-base font-mono font-bold text-foreground">{pwdResetResult}</code>
+                    <button
+                      onClick={() => copyToClipboard(pwdResetResult)}
+                      className="inline-flex items-center gap-1.5 rounded bg-background border border-border px-2 py-1 text-xs text-foreground hover:bg-muted"
+                    >
+                      {copiedPwd === pwdResetResult ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copiedPwd === pwdResetResult ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => { setPwdReset(null); setPwdResetResult(null); }}
+                    className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90"
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

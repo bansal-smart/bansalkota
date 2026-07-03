@@ -8,6 +8,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import bansalLogo from "@/assets/bansal-logo.webp";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 
 type TestRow = {
@@ -90,6 +91,7 @@ const AdminTestResultPage = () => {
   const [forceSubmitting, setForceSubmitting] = useState(false);
   const [combineOpen, setCombineOpen] = useState(false);
   const [partnerQuery, setPartnerQuery] = useState("");
+  const debouncedPartnerQuery = useDebouncedValue(partnerQuery, 300);
   const [partnerCandidates, setPartnerCandidates] = useState<Array<{ id: string; title: string; slug: string; starts_at: string | null; exam_pattern: string }>>([]);
   const [partnerLoading, setPartnerLoading] = useState(false);
   const [sendingResultSms, setSendingResultSms] = useState(false);
@@ -224,14 +226,14 @@ const AdminTestResultPage = () => {
         .neq("id", test.id)
         .order("starts_at", { ascending: false, nullsFirst: false })
         .limit(50);
-      if (partnerQuery.trim()) q = q.ilike("title", `%${partnerQuery.trim()}%`);
+      if (debouncedPartnerQuery.trim()) q = q.ilike("title", `%${debouncedPartnerQuery.trim()}%`);
       const { data } = await q;
       if (!cancelled) setPartnerCandidates((data ?? []) as any);
       setPartnerLoading(false);
     };
     run();
     return () => { cancelled = true; };
-  }, [combineOpen, partnerQuery, test]);
+  }, [combineOpen, debouncedPartnerQuery, test]);
 
   const openCombined = (partnerSlug: string) => {
     if (!test) return;

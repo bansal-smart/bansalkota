@@ -18,11 +18,16 @@ export interface CourseTopic {
   subject_id: string;
   name: string;
   position: number;
+  videos?: SubtopicVideo[];
+  pdfs?: SubtopicPdf[];
+  quiz?: SubtopicQuiz | null;
+  /** @deprecated kept for backwards compatibility; subtopics are no longer rendered as folders */
   subtopics?: CourseSubtopic[];
   total_videos?: number;
   completed_videos?: number;
 }
 
+/** @deprecated retained only for legacy data references */
 export interface CourseSubtopic {
   id: string;
   course_id: string;
@@ -40,7 +45,9 @@ export interface CourseSubtopic {
 export interface SubtopicVideo {
   id: string;
   course_id: string;
-  subtopic_id: string;
+  topic_id: string;
+  subtopic_id?: string | null;
+  subtopic_label?: string | null;
   title: string;
   youtube_url: string;
   youtube_video_id: string | null;
@@ -62,7 +69,9 @@ export interface SubtopicVideoProgress {
 export interface SubtopicPdf {
   id: string;
   course_id: string;
-  subtopic_id: string;
+  topic_id: string;
+  subtopic_id?: string | null;
+  subtopic_label?: string | null;
   title: string;
   file_url: string;
   file_size_kb?: number | null;
@@ -72,7 +81,9 @@ export interface SubtopicPdf {
 export interface SubtopicQuiz {
   id: string;
   course_id: string;
-  subtopic_id: string;
+  topic_id: string;
+  subtopic_id?: string | null;
+  subtopic_label?: string | null;
   title: string;
   description?: string | null;
   time_limit_minutes?: number | null;

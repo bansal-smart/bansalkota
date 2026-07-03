@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Inbox, Search, Loader2, Download, Archive, Trash2, CheckCircle2, CreditCard, Clock, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ const AdminCourseEnquiriesPage = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [active, setActive] = useState<Row | null>(null);
@@ -85,7 +87,7 @@ const AdminCourseEnquiriesPage = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     return rows.filter((r) => {
       if (paymentFilter !== "all" && r.payment_status !== paymentFilter) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
@@ -98,7 +100,7 @@ const AdminCourseEnquiriesPage = () => {
         (r.city ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, paymentFilter, statusFilter]);
+  }, [rows, debouncedSearch, paymentFilter, statusFilter]);
 
   const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
 

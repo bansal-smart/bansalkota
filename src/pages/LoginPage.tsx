@@ -140,7 +140,7 @@ const LoginPage = () => {
           try {
             const body = await ctx.json();
             if (body?.error) msg = body.error;
-          } catch { /* ignore parse error */ }
+          } catch { /* ignore */ }
         }
         throw new Error(msg);
       }
@@ -152,10 +152,8 @@ const LoginPage = () => {
       });
       if (verify.error) throw verify.error;
       toast.success("Logged in!");
-      // Redirect handled by useEffect when session settles.
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Something went wrong";
-      toast.error(msg);
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setSubmitting(false);
     }
@@ -289,6 +287,8 @@ const LoginPage = () => {
               </button>
             </>
           )}
+
+
 
           {step === "name" && (
             <>

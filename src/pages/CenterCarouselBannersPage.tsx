@@ -3,6 +3,7 @@ import { Plus, Trash2, Save, Loader2, Upload, GripVertical } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
+import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Banner = {
   id: string;
@@ -167,6 +168,7 @@ const CenterCarouselBannersPage = () => {
             </h2>
             <div className="space-y-2">
               <label className="text-xs font-medium text-foreground">Banner image</label>
+              <AspectRatioHint ratio="2:1" size="1600×800" note="centre hero carousel slide" />
               {editing.image_url && (
                 <img
                   src={editing.image_url}

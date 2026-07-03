@@ -42,7 +42,7 @@ const LiveClassReminderEmail = ({
   educatorName,
   startsAt,
   subject,
-  joinUrl = 'https://arke.pro/live-classes',
+  joinUrl = 'https://bansalclasses.com/live-classes',
 }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
