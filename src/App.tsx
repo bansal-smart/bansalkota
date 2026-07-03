@@ -121,7 +121,6 @@ const PackDetailPage = lazy(() => import("./pages/PackDetailPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const PaymentReturnPage = lazy(() => import("./pages/PaymentReturnPage"));
 const BoostPaymentReturnPage = lazy(() => import("./pages/BoostPaymentReturnPage"));
-
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const TestSeriesCatalogPage = lazy(() => import("./pages/TestSeriesCatalogPage"));
 const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
@@ -199,258 +198,258 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <MaintenanceGate>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
-            <Route path="/access-denied" element={<AccessDeniedPage />} />
-            <Route path="/unsubscribe" element={<UnsubscribePage />} />
-            <Route path="/cbt" element={<CbtLoginPage />} />
-            <Route path="/cbt/tests" element={<CbtLiveTestsPage />} />
-            <Route path="/cbt/submitted" element={<CbtSubmittedPage />} />
-            <Route path="/new" element={<LandingNewPage />} />
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
+                <Route path="/access-denied" element={<AccessDeniedPage />} />
+                <Route path="/unsubscribe" element={<UnsubscribePage />} />
+                <Route path="/cbt" element={<CbtLoginPage />} />
+                <Route path="/cbt/tests" element={<CbtLiveTestsPage />} />
+                <Route path="/cbt/submitted" element={<CbtSubmittedPage />} />
+                <Route path="/new" element={<LandingNewPage />} />
 
 
-            {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
-            <Route element={<ProtectedRoute allow={["student"]} />}>
-              <Route path="/tests/:slug/take" element={<TestTakingPage />} />
-              <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
-              <Route path="/learn/:courseId" element={<CourseLearnPage />} />
-            </Route>
+                {/* Immersive full-screen pages (no sidebar/bottom nav) — students only */}
+                <Route element={<ProtectedRoute allow={["student"]} />}>
+                  <Route path="/tests/:slug/take" element={<TestTakingPage />} />
+                  <Route path="/courses/:slug/learn" element={<LecturePlayerPage />} />
+                  <Route path="/learn/:courseId" element={<CourseLearnPage />} />
+                </Route>
 
-            {/* Public marketing pages (PublicLayout: own navbar + footer) */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/courses/:slug" element={<CourseDetailPage />} />
-              <Route path="/tests" element={<TestsLandingPage />} />
-              <Route path="/test-series" element={<TestSeriesCatalogPage />} />
-              <Route path="/test-series/:slug" element={<TestSeriesDetailPage />} />
-              <Route path="/live-classes" element={<LiveClassesLandingPage />} />
-              <Route path="/educators" element={<EducatorsPage />} />
-              <Route path="/pricing" element={<PricingPage />} />
-              <Route path="/admissions" element={<AdmissionsPage />} />
-              <Route path="/association" element={<AssociationPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/about/:slug" element={<LeadershipDetailPage />} />
-              <Route path="/career" element={<CareerPage />} />
-              <Route path="/careers" element={<Navigate to="/career" replace />} />
-              {/* Secret super-admin entry — do not link publicly */}
-              <Route path="/bansal-control-room-9F2K" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/privacy" element={<PrivacyPolicyPage />} />
-              <Route path="/terms" element={<TermsOfServicePage />} />
-              <Route path="/boost" element={<BoostPage />} />
-              <Route path="/centres" element={<CentersPage />} />
-              <Route path="/centres/:slug" element={<CenterDetailPage />} />
-              <Route path="/centres/:slug/gallery" element={<CentreGalleryPublicPage />} />
-              <Route path="/centres/:slug/updates" element={<CentreUpdatesPublicPage />} />
-              <Route path="/centres/:slug/updates/:id" element={<CentreUpdateDetailPage />} />
-              <Route path="/achievements" element={<AchievementsPage />} />
-              <Route path="/gallery" element={<Navigate to="/gallery/images" replace />} />
-              <Route path="/gallery/images" element={<GalleryImagesPage />} />
-              <Route path="/gallery/videos" element={<GalleryVideosPage />} />
-              <Route path="/gallery/achievements" element={<GalleryAchievementsPage />} />
-              <Route path="/alumni" element={<AlumniPage />} />
+                {/* Public marketing pages (PublicLayout: own navbar + footer) */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/courses" element={<CoursesPage />} />
+                  <Route path="/courses/:slug" element={<CourseDetailPage />} />
+                  <Route path="/tests" element={<TestsLandingPage />} />
+                  <Route path="/test-series" element={<TestSeriesCatalogPage />} />
+                  <Route path="/test-series/:slug" element={<TestSeriesDetailPage />} />
+                  <Route path="/live-classes" element={<LiveClassesLandingPage />} />
+                  <Route path="/educators" element={<EducatorsPage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/admissions" element={<AdmissionsPage />} />
+                  <Route path="/association" element={<AssociationPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/about/:slug" element={<LeadershipDetailPage />} />
+                  <Route path="/career" element={<CareerPage />} />
+                  <Route path="/careers" element={<Navigate to="/career" replace />} />
+                  {/* Secret super-admin entry — do not link publicly */}
+                  <Route path="/bansal-control-room-9F2K" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms" element={<TermsOfServicePage />} />
+                  <Route path="/boost" element={<BoostPage />} />
+                  <Route path="/centres" element={<CentersPage />} />
+                  <Route path="/centres/:slug" element={<CenterDetailPage />} />
+                  <Route path="/centres/:slug/gallery" element={<CentreGalleryPublicPage />} />
+                  <Route path="/centres/:slug/updates" element={<CentreUpdatesPublicPage />} />
+                  <Route path="/centres/:slug/updates/:id" element={<CentreUpdateDetailPage />} />
+                  <Route path="/achievements" element={<AchievementsPage />} />
+                  <Route path="/gallery" element={<Navigate to="/gallery/images" replace />} />
+                  <Route path="/gallery/images" element={<GalleryImagesPage />} />
+                  <Route path="/gallery/videos" element={<GalleryVideosPage />} />
+                  <Route path="/gallery/achievements" element={<GalleryAchievementsPage />} />
+                  <Route path="/alumni" element={<AlumniPage />} />
 
-              <Route path="/e-store" element={<EStorePage />} />
-              <Route path="/e-store/checkout" element={<CheckoutPage />} />
-              <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
-              <Route path="/payments/return" element={<PaymentReturnPage />} />
-              <Route path="/boost/payment-return" element={<BoostPaymentReturnPage />} />
+                  <Route path="/e-store" element={<EStorePage />} />
+                  <Route path="/e-store/checkout" element={<CheckoutPage />} />
+                  <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
+                  <Route path="/payments/return" element={<PaymentReturnPage />} />
+                  <Route path="/boost/payment-return" element={<BoostPaymentReturnPage />} />
 
-              <Route path="/e-store/:slug" element={<BookDetailPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/refund-policy" element={<RefundPolicyPage />} />
-              <Route path="/disclaimer" element={<DisclaimerPage />} />
-              <Route
-                path="/blog"
-                element={
-                  <BansalPlaceholderPage
-                    title="Bansal Blog"
-                    description="Insights, exam tips, and student stories — coming soon."
+                  <Route path="/e-store/:slug" element={<BookDetailPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
+                  <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                  <Route path="/disclaimer" element={<DisclaimerPage />} />
+                  <Route
+                    path="/blog"
+                    element={
+                      <BansalPlaceholderPage
+                        title="Bansal Blog"
+                        description="Insights, exam tips, and student stories — coming soon."
+                      />
+                    }
                   />
-                }
-              />
-              {/* Removed pages → redirects */}
-              <Route path="/mentorship" element={<Navigate to="/" replace />} />
-            </Route>
+                  {/* Removed pages → redirects */}
+                  <Route path="/mentorship" element={<Navigate to="/" replace />} />
+                </Route>
 
-            {/* Legacy /store redirect */}
-            <Route path="/store" element={<Navigate to="/explore-courses" replace />} />
+                {/* Legacy /store redirect */}
+                <Route path="/store" element={<Navigate to="/explore-courses" replace />} />
 
-            {/* Student layout — students only */}
-            <Route element={<ProtectedRoute allow={["student"]} />}>
-              <Route element={<StudentLayout />}>
-                <Route path="/dashboard" element={<StudentDashboard />} />
-                <Route path="/my-tests" element={<TestListPage />} />
-                <Route path="/tests/:slug/instructions" element={<TestInstructionsPage />} />
-                <Route path="/tests/:slug/result/:attemptId" element={<TestResultPage />} />
-                <Route path="/tests/:slug/result/:attemptId/responses" element={<TestResponseSheetPage />} />
-                <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
-                <Route path="/my-live-classes" element={<LiveClassesListPage />} />
-                <Route path="/live-classes/:slug" element={<LiveClassRoomPage />} />
+                {/* Student layout — students only */}
+                <Route element={<ProtectedRoute allow={["student"]} />}>
+                  <Route element={<StudentLayout />}>
+                    <Route path="/dashboard" element={<StudentDashboard />} />
+                    <Route path="/my-tests" element={<TestListPage />} />
+                    <Route path="/tests/:slug/instructions" element={<TestInstructionsPage />} />
+                    <Route path="/tests/:slug/result/:attemptId" element={<TestResultPage />} />
+                    <Route path="/tests/:slug/result/:attemptId/responses" element={<TestResponseSheetPage />} />
+                    <Route path="/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
+                    <Route path="/my-live-classes" element={<LiveClassesListPage />} />
+                    <Route path="/live-classes/:slug" element={<LiveClassRoomPage />} />
 
-                <Route path="/doubts" element={<DoubtPage />} />
-                <Route path="/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/analytics" element={<AnalyticsPage />} />
-                <Route path="/my-courses" element={<MyCoursesPage />} />
-                <Route path="/my-courses/:slug" element={<CourseStudyMaterialPage />} />
-                <Route path="/my-courses/:slug/chapters/:chapterId/quiz/:quizId" element={<ChapterQuizPage />} />
-                <Route path="/explore-courses" element={<StorePage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                {/* Removed mentor/compete redirects */}
-                <Route path="/compete" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/mentor-chat" element={<Navigate to="/dashboard" replace />} />
-              </Route>
-            </Route>
+                    <Route path="/doubts" element={<DoubtPage />} />
+                    <Route path="/leaderboard" element={<LeaderboardPage />} />
+                    <Route path="/analytics" element={<AnalyticsPage />} />
+                    <Route path="/my-courses" element={<MyCoursesPage />} />
+                    <Route path="/my-courses/:slug" element={<CourseStudyMaterialPage />} />
+                    <Route path="/my-courses/:slug/chapters/:chapterId/quiz/:quizId" element={<ChapterQuizPage />} />
+                    <Route path="/explore-courses" element={<StorePage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    {/* Removed mentor/compete redirects */}
+                    <Route path="/compete" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/mentor-chat" element={<Navigate to="/dashboard" replace />} />
+                  </Route>
+                </Route>
 
-            {/* Teacher layout — teachers only. */}
-            <Route element={<ProtectedRoute allow={["teacher"]} />}>
-              <Route element={<TeacherLayout />}>
-                <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-                <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
-                <Route path="/teacher/live-classes/:slug" element={<TeacherLiveClassRoomPage />} />
-                <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
-                <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
-                <Route path="/teacher/courses" element={<Navigate to="/teacher/dashboard" replace />} />
-                <Route path="/teacher/courses/create" element={<Navigate to="/teacher/dashboard" replace />} />
-                <Route path="/teacher/tests/create" element={<Navigate to="/teacher/dashboard" replace />} />
-                <Route path="/teacher/question-bank" element={<Navigate to="/teacher/dashboard" replace />} />
-                <Route path="/teacher/students" element={<Navigate to="/teacher/dashboard" replace />} />
-                <Route path="/teacher/analytics" element={<Navigate to="/teacher/dashboard" replace />} />
-              </Route>
-            </Route>
+                {/* Teacher layout — teachers only. */}
+                <Route element={<ProtectedRoute allow={["teacher"]} />}>
+                  <Route element={<TeacherLayout />}>
+                    <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+                    <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
+                    <Route path="/teacher/live-classes/:slug" element={<TeacherLiveClassRoomPage />} />
+                    <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
+                    <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
+                    <Route path="/teacher/courses" element={<Navigate to="/teacher/dashboard" replace />} />
+                    <Route path="/teacher/courses/create" element={<Navigate to="/teacher/dashboard" replace />} />
+                    <Route path="/teacher/tests/create" element={<Navigate to="/teacher/dashboard" replace />} />
+                    <Route path="/teacher/question-bank" element={<Navigate to="/teacher/dashboard" replace />} />
+                    <Route path="/teacher/students" element={<Navigate to="/teacher/dashboard" replace />} />
+                    <Route path="/teacher/analytics" element={<Navigate to="/teacher/dashboard" replace />} />
+                  </Route>
+                </Route>
 
-            {/* Mentor routes removed → redirect to home */}
-            <Route path="/mentor/*" element={<Navigate to="/" replace />} />
+                {/* Mentor routes removed → redirect to home */}
+                <Route path="/mentor/*" element={<Navigate to="/" replace />} />
 
-            {/* Staff auth */}
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+                {/* Staff auth */}
+                <Route path="/admin/login" element={<AdminLoginPage />} />
 
-            {/* Protected staff/admin pages */}
-            <Route
-              element={
-                <ProtectedAdminRoute>
-                  <AdminLayout />
-                </ProtectedAdminRoute>
-              }
-            >
-              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
-              
-              <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
-              <Route path="/admin/course-enquiries" element={<AdminCourseEnquiriesPage />} />
-              <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
-              <Route path="/admin/reports" element={<AdminReportsPage />} />
-              <Route path="/admin/users" element={<AdminUsersPage />} />
-              <Route path="/admin/students" element={<AdminStudentsPage />} />
-              <Route path="/admin/student-reports" element={<AdminStudentReportsPage />} />
-              <Route path="/admin/schools" element={<AdminSchoolsPage />} />
-              <Route path="/admin/courses" element={<AdminCoursesPage />} />
-              <Route path="/admin/batches" element={<AdminBatchesPage />} />
-              <Route path="/admin/courses/new" element={<CreateCoursePage />} />
-              <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
-              <Route path="/admin/courses/:courseId/content" element={<AdminCourseHierarchyPage />} />
-              <Route path="/admin/courses/:courseId/chapters" element={<AdminCourseContentPage />} />
-              <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
-              {/* Unified Test Platform hub (tabs: overview, all, upcoming, series, bank, attempts, imports) */}
-              <Route path="/admin/tests-hub" element={<AdminTestPlatformHub />} />
-              <Route path="/admin/test-support" element={<AdminTestSupportPage />} />
-              <Route path="/admin/tests" element={<Navigate to="/admin/tests-hub?tab=all" replace />} />
-              <Route path="/admin/test-attempts" element={<Navigate to="/admin/tests-hub?tab=attempts" replace />} />
-              <Route path="/admin/test-imports" element={<Navigate to="/admin/tests-hub?tab=imports" replace />} />
-              <Route path="/admin/test-series" element={<Navigate to="/admin/tests-hub?tab=series" replace />} />
-              <Route path="/admin/test-series/new" element={<CreateTestSeriesPage />} />
-              <Route path="/admin/test-series/:id/edit" element={<CreateTestSeriesPage />} />
-              <Route path="/admin/question-bank" element={<Navigate to="/admin/tests-hub?tab=bank" replace />} />
-              {/* Editor flows keep their own routes */}
-              <Route path="/admin/tests/new" element={<CreateTestPage />} />
-              <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
-              <Route path="/admin/tests/:slug/result" element={<AdminTestResultPage />} />
-              <Route path="/admin/tests/:slug/combined" element={<AdminCombinedResultPage />} />
-              <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
-              <Route path="/admin/books" element={<AdminBooksPage />} />
-              <Route path="/admin/orders" element={<AdminOrdersPage />} />
-              <Route path="/admin/boost" element={<AdminBoostPage />} />
-              <Route path="/admin/centres" element={<AdminCentersPage />} />
-              <Route path="/admin/centers" element={<Navigate to="/admin/centres" replace />} />
-              <Route path="/admin/centre-support" element={<AdminCenterSupportPage />} />
-              <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
-              <Route path="/admin/toppers" element={<AdminToppersPage />} />
-              <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
-              <Route path="/admin/gallery" element={<AdminGalleryPage />} />
+                {/* Protected staff/admin pages */}
+                <Route
+                  element={
+                    <ProtectedAdminRoute>
+                      <AdminLayout />
+                    </ProtectedAdminRoute>
+                  }
+                >
+                  <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
 
-              <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
-              <Route path="/admin/banners" element={<AdminBannersPage />} />
-              <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
-              <Route path="/admin/stats" element={<AdminStatsPage />} />
-              <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
-              <Route path="/admin/advantages" element={<AdminAdvantagesPage />} />
-              <Route path="/admin/blogs" element={<AdminBlogsPage />} />
-              <Route path="/blog" element={<BlogsListPage />} />
-              <Route path="/blog/:slug" element={<BlogDetailPage />} />
-              
-              {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
-              <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/mentor-assignments" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/mentor-handovers" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/exams" element={<AdminExamsPage />} />
-              <Route path="/admin/payments" element={<AdminPaymentsPage />} />
-              <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
-              <Route path="/admin/moderation" element={<AdminModerationPage />} />
-              <Route path="/admin/settings" element={<AdminSettingsPage />} />
-              <Route path="/admin/admins" element={<AdminAdminsPage />} />
-              <Route path="/admin/roles" element={<AdminRolesPage />} />
-              <Route path="/admin/profile" element={<AdminProfilePage />} />
-              <Route path="/admin/overview" element={<AdminDashboard />} />
-              <Route path="/admin/landing-page" element={<AdminLandingPage />} />
-              <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
-              
-              <Route path="/admin/site-pages/achievements" element={<AdminSitePageEditorPage slug="achievements" heading="Achievements" />} />
-              <Route path="/admin/site-pages/disclaimer" element={<AdminSitePageEditorPage slug="disclaimer" heading="Disclaimer" />} />
-              <Route path="/admin/site-pages/terms" element={<AdminSitePageEditorPage slug="terms" heading="Terms & Conditions" />} />
-              <Route path="/admin/site-pages/privacy" element={<AdminSitePageEditorPage slug="privacy" heading="Privacy Policy" />} />
-              <Route path="/admin/site-pages/refund-policy" element={<AdminSitePageEditorPage slug="refund-policy" heading="Refund Policy" />} />
-            </Route>
+                  <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
+                  <Route path="/admin/course-enquiries" element={<AdminCourseEnquiriesPage />} />
+                  <Route path="/admin/course-content" element={<AdminCourseContentPage />} />
+                  <Route path="/admin/reports" element={<AdminReportsPage />} />
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/students" element={<AdminStudentsPage />} />
+                  <Route path="/admin/student-reports" element={<AdminStudentReportsPage />} />
+                  <Route path="/admin/schools" element={<AdminSchoolsPage />} />
+                  <Route path="/admin/courses" element={<AdminCoursesPage />} />
+                  <Route path="/admin/batches" element={<AdminBatchesPage />} />
+                  <Route path="/admin/courses/new" element={<CreateCoursePage />} />
+                  <Route path="/admin/courses/:courseId/edit" element={<CreateCoursePage />} />
+                  <Route path="/admin/courses/:courseId/content" element={<AdminCourseHierarchyPage />} />
+                  <Route path="/admin/courses/:courseId/chapters" element={<AdminCourseContentPage />} />
+                  <Route path="/admin/live-classes" element={<AdminLiveClassesPage />} />
+                  {/* Unified Test Platform hub (tabs: overview, all, upcoming, series, bank, attempts, imports) */}
+                  <Route path="/admin/tests-hub" element={<AdminTestPlatformHub />} />
+                  <Route path="/admin/test-support" element={<AdminTestSupportPage />} />
+                  <Route path="/admin/tests" element={<Navigate to="/admin/tests-hub?tab=all" replace />} />
+                  <Route path="/admin/test-attempts" element={<Navigate to="/admin/tests-hub?tab=attempts" replace />} />
+                  <Route path="/admin/test-imports" element={<Navigate to="/admin/tests-hub?tab=imports" replace />} />
+                  <Route path="/admin/test-series" element={<Navigate to="/admin/tests-hub?tab=series" replace />} />
+                  <Route path="/admin/test-series/new" element={<CreateTestSeriesPage />} />
+                  <Route path="/admin/test-series/:id/edit" element={<CreateTestSeriesPage />} />
+                  <Route path="/admin/question-bank" element={<Navigate to="/admin/tests-hub?tab=bank" replace />} />
+                  {/* Editor flows keep their own routes */}
+                  <Route path="/admin/tests/new" element={<CreateTestPage />} />
+                  <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
+                  <Route path="/admin/tests/:slug/result" element={<AdminTestResultPage />} />
+                  <Route path="/admin/tests/:slug/combined" element={<AdminCombinedResultPage />} />
+                  <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
+                  <Route path="/admin/books" element={<AdminBooksPage />} />
+                  <Route path="/admin/orders" element={<AdminOrdersPage />} />
+                  <Route path="/admin/boost" element={<AdminBoostPage />} />
+                  <Route path="/admin/centres" element={<AdminCentersPage />} />
+                  <Route path="/admin/centers" element={<Navigate to="/admin/centres" replace />} />
+                  <Route path="/admin/centre-support" element={<AdminCenterSupportPage />} />
+                  <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
+                  <Route path="/admin/toppers" element={<AdminToppersPage />} />
+                  <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
+                  <Route path="/admin/gallery" element={<AdminGalleryPage />} />
 
-            {/* Centre admin portal */}
-            <Route
-              element={
-                <ProtectedCenterRoute>
-                  <CenterLayout />
-                </ProtectedCenterRoute>
-              }
-            >
-              <Route path="/center" element={<CenterDashboardPage />} />
-              <Route path="/center/content" element={<CenterContentPage />} />
-              <Route path="/center/banners" element={<CenterBannersPage />} />
-              <Route path="/center/carousel-banners" element={<CenterCarouselBannersPage />} />
-              <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
-              <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
-              <Route path="/center/students" element={<CenterStudentsPage />} />
-              <Route path="/center/support" element={<CenterSupportPage />} />
-              <Route path="/center/roles" element={<CenterRolesPage />} />
-              <Route path="/center/gallery" element={<CenterGalleryPage />} />
-              <Route path="/center/updates" element={<CenterUpdatesPage />} />
-              <Route path="/center/online-courses" element={<CenterPlatformCoursesPage />} />
-              <Route path="/center/centre-courses" element={<CenterOnlineCoursesPage />} />
-              <Route path="/center/centre-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
-              <Route path="/center/live-classes" element={<CenterLiveClassesPage />} />
-              <Route path="/center/tests" element={<CenterTestsPage />} />
-              <Route path="/center/tests/:testId/results" element={<CenterTestResultsPage />} />
-              <Route path="/center/test-series" element={<CenterTestSeriesPage />} />
-            </Route>
+                  <Route path="/admin/alumni-submissions" element={<AdminAlumniSubmissionsPage />} />
+                  <Route path="/admin/banners" element={<AdminBannersPage />} />
+                  <Route path="/admin/testimonials" element={<AdminTestimonialsPage />} />
+                  <Route path="/admin/stats" element={<AdminStatsPage />} />
+                  <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
+                  <Route path="/admin/advantages" element={<AdminAdvantagesPage />} />
+                  <Route path="/admin/blogs" element={<AdminBlogsPage />} />
+                  <Route path="/blog" element={<BlogsListPage />} />
+                  <Route path="/blog/:slug" element={<BlogDetailPage />} />
+
+                  {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
+                  <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/admin/mentor-assignments" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/admin/mentor-handovers" element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="/admin/exams" element={<AdminExamsPage />} />
+                  <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+                  <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+                  <Route path="/admin/moderation" element={<AdminModerationPage />} />
+                  <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                  <Route path="/admin/admins" element={<AdminAdminsPage />} />
+                  <Route path="/admin/roles" element={<AdminRolesPage />} />
+                  <Route path="/admin/profile" element={<AdminProfilePage />} />
+                  <Route path="/admin/overview" element={<AdminDashboard />} />
+                  <Route path="/admin/landing-page" element={<AdminLandingPage />} />
+                  <Route path="/admin/landing-leads" element={<AdminLandingLeadsPage />} />
+
+                  <Route path="/admin/site-pages/achievements" element={<AdminSitePageEditorPage slug="achievements" heading="Achievements" />} />
+                  <Route path="/admin/site-pages/disclaimer" element={<AdminSitePageEditorPage slug="disclaimer" heading="Disclaimer" />} />
+                  <Route path="/admin/site-pages/terms" element={<AdminSitePageEditorPage slug="terms" heading="Terms & Conditions" />} />
+                  <Route path="/admin/site-pages/privacy" element={<AdminSitePageEditorPage slug="privacy" heading="Privacy Policy" />} />
+                  <Route path="/admin/site-pages/refund-policy" element={<AdminSitePageEditorPage slug="refund-policy" heading="Refund Policy" />} />
+                </Route>
+
+                {/* Centre admin portal */}
+                <Route
+                  element={
+                    <ProtectedCenterRoute>
+                      <CenterLayout />
+                    </ProtectedCenterRoute>
+                  }
+                >
+                  <Route path="/center" element={<CenterDashboardPage />} />
+                  <Route path="/center/content" element={<CenterContentPage />} />
+                  <Route path="/center/banners" element={<CenterBannersPage />} />
+                  <Route path="/center/carousel-banners" element={<CenterCarouselBannersPage />} />
+                  <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
+                  <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
+                  <Route path="/center/students" element={<CenterStudentsPage />} />
+                  <Route path="/center/support" element={<CenterSupportPage />} />
+                  <Route path="/center/roles" element={<CenterRolesPage />} />
+                  <Route path="/center/gallery" element={<CenterGalleryPage />} />
+                  <Route path="/center/updates" element={<CenterUpdatesPage />} />
+                  <Route path="/center/online-courses" element={<CenterPlatformCoursesPage />} />
+                  <Route path="/center/centre-courses" element={<CenterOnlineCoursesPage />} />
+                  <Route path="/center/centre-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
+                  <Route path="/center/live-classes" element={<CenterLiveClassesPage />} />
+                  <Route path="/center/tests" element={<CenterTestsPage />} />
+                  <Route path="/center/tests/:testId/results" element={<CenterTestResultsPage />} />
+                  <Route path="/center/test-series" element={<CenterTestSeriesPage />} />
+                </Route>
 
 
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </MaintenanceGate>
         </AuthProvider>
       </BrowserRouter>
