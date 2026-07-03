@@ -25,9 +25,16 @@ import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalD
 const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
 const courseTypeFilters = ["All", "Online", "Offline"] as const;
 
+// target_exam is an exact value from EXAM_OPTIONS ("IIT-JEE" | "NEET" | "Foundation")
+// set on the course itself — trust it over any text scan of name/description,
+// which can mention other exams incidentally (e.g. "suitable for JEE and NEET").
+const goalToExam: Record<string, string> = { "IIT-JEE": "IIT-JEE", "NEET": "NEET", "Pre Foundation": "Foundation" };
+
 const matchesGoal = (c: CourseRow, goal: string) => {
   if (goal === "All") return true;
-  const haystack = `${c.target_exam ?? ""} ${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (c.target_exam) return c.target_exam === goalToExam[goal];
+  // Fallback for legacy courses saved before target_exam existed.
+  const haystack = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
   if (goal === "IIT-JEE") return /\b(iit|jee)\b/.test(haystack);
   if (goal === "NEET") return /\bneet\b/.test(haystack);
   if (goal === "Pre Foundation") return /(pre[- ]?foundation|foundation)/.test(haystack);
@@ -51,8 +58,14 @@ const detectMode = (c: CourseRow): "Online" | "Offline" | "Residential" => {
   return "Online";
 };
 
+const examToGoal: Record<string, "IIT-JEE" | "NEET" | "Pre Foundation"> = {
+  "IIT-JEE": "IIT-JEE", "NEET": "NEET", "Foundation": "Pre Foundation",
+};
+
 const detectCategory = (c: CourseRow): "IIT-JEE" | "NEET" | "Pre Foundation" => {
-  const h = `${c.target_exam ?? ""} ${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
+  if (c.target_exam && examToGoal[c.target_exam]) return examToGoal[c.target_exam];
+  // Fallback for legacy courses saved before target_exam existed.
+  const h = `${c.name} ${c.badge ?? ""} ${c.description ?? ""}`.toLowerCase();
   if (/neet/.test(h)) return "NEET";
   if (/pre[- ]?foundation|foundation/.test(h)) return "Pre Foundation";
   return "IIT-JEE";

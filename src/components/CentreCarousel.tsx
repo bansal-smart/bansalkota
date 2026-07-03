@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import defaultBanner1 from "@/assets/centre-banners/centre-banner-1.png.asset.json";
-import defaultBanner2 from "@/assets/centre-banners/centre-banner-2.jpg.asset.json";
 
 type Banner = { id: string; image_url: string; link: string | null };
 
 const DEFAULT_BANNERS: Banner[] = [
-  { id: "default-1", image_url: defaultBanner1.url, link: null },
-  { id: "default-2", image_url: defaultBanner2.url, link: null },
+  { id: "default-1", image_url: "/images/banner1.png", link: null },
+  { id: "default-2", image_url: "/images/banner2.jpg", link: null },
 ];
 
 export default function CentreCarousel({ centerId }: { centerId: string }) {
