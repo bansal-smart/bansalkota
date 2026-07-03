@@ -42,12 +42,16 @@ export function YouTubePlayer({
         frameBorder={0}
       />
       {/*
-        Overlay strips that block clicks on the title bar and the
-        "Watch on YouTube" link (top-right when paused). These do NOT
-        cover the main click-to-play area or the bottom controls bar.
+        Overlay strip that blocks clicks on the title bar and the
+        "Watch on YouTube" link (top-right when paused). Taller on narrow
+        viewports because YouTube's own touch UI has no hover state — its
+        title/channel overlay is always visible there (not just on hover
+        like desktop) and often wraps to two lines, extending past a
+        single fixed height. Does NOT cover the main click-to-play area
+        or the bottom controls bar.
       */}
       <div
-        className="absolute top-0 left-0 right-0 h-14 z-10"
+        className="absolute top-0 left-0 right-0 h-24 sm:h-14 z-10"
         style={{ pointerEvents: "auto", background: "transparent" }}
         onClick={(e) => {
           e.preventDefault();
