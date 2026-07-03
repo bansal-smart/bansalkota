@@ -100,7 +100,7 @@ export default function AlumniPage() {
         name: s.full_name,
         rank_label: s.rank_label,
         exam: s.exam,
-        year: s.selection_year ?? null,
+        year: s.selection_year ? Number(s.selection_year) : null,
         photo_url: s.photo_url,
         quote: null,
         story: s.story,

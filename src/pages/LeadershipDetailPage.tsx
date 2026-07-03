@@ -318,7 +318,7 @@ export default function LeadershipDetailPage() {
                 <div className="relative">
                   <div className="absolute -inset-3 bg-bansal-orange/20 rounded-2xl blur-2xl" />
                   <img
-                    src={wsjFeatureAsset.url}
+                    src={wsjFeature}
                     alt="Wall Street Journal feature on Bansal Sir and Kota coaching"
                     className="relative w-full rounded-xl shadow-2xl border-4 border-white/90"
                     loading="lazy"

@@ -44,7 +44,7 @@ const AboutPage = () => {
       {/* ============= HERO ============= */}
       <section className="relative w-full min-h-[70vh] md:min-h-[85vh] flex items-end overflow-hidden bg-bansal-blue-dark">
         <img
-          src={heroBgAsset.url}
+          src={heroBg}
           alt="Bansal Classes campus"
           className="absolute inset-0 w-full h-full object-cover object-center"
           loading="eager"
@@ -209,7 +209,7 @@ const AboutPage = () => {
             <div className="md:col-span-5">
               <figure className="rounded-xl overflow-hidden bg-white shadow-md border border-border">
                 <img
-                  src={vkGehlotAsset.url}
+                  src={vkGehlot}
                   alt="Shri Bansal Sir with Shri Ashok Gehlot, former Chief Minister of Rajasthan"
                   className="w-full h-auto object-cover"
                   loading="lazy"

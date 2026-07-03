@@ -86,7 +86,15 @@ export const useCenters = () => {
     staleTime: 10 * 60 * 1000,
   });
 
-  return { centers: query.data ?? [], loading: query.isPending };
+  return {
+    centers: query.data ?? FALLBACK,
+    loading: query.isPending,
+    // True while `centers` is still the static FALLBACK list (placeholder or
+    // pre-fetch), whose `id` is a slug rather than a real DB uuid. Callers that
+    // pass a centre's `id` into further centre_id-keyed queries should wait for
+    // this to be false, or those queries will 400 on the non-uuid value.
+    isFallback: query.isPlaceholderData || !query.data,
+  };
 };
 
 export const getCenterImage = (c: DBCenter): string => c.image_url || THEME_IMAGE[c.theme];

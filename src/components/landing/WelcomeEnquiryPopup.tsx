@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sparkles, Rocket, Stethoscope, Loader2, CheckCircle2, Phone, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -71,13 +71,17 @@ const WelcomeEnquiryPopup = () => {
               <div className="inline-flex items-center gap-1.5 rounded-full bg-bansal-orange/15 border border-bansal-orange/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-bansal-orange">
                 <Sparkles className="h-3 w-3" /> Free Counselling
               </div>
-              <h3 className="mt-3 font-display text-2xl md:text-[26px] font-extrabold leading-tight">
-                Want to start your <span className="text-bansal-orange">Engineer</span> or{" "}
-                <span className="text-bansal-orange">Doctor</span> journey?
-              </h3>
-              <p className="mt-2 text-sm text-white/85">
-                Let's connect. Drop your name & mobile — a senior Bansal mentor will call you within 24 hours.
-              </p>
+              <DialogTitle asChild>
+                <h3 className="mt-3 font-display text-2xl md:text-[26px] font-extrabold leading-tight">
+                  Want to start your <span className="text-bansal-orange">Engineer</span> or{" "}
+                  <span className="text-bansal-orange">Doctor</span> journey?
+                </h3>
+              </DialogTitle>
+              <DialogDescription asChild>
+                <p className="mt-2 text-sm text-white/85">
+                  Let's connect. Drop your name & mobile — a senior Bansal mentor will call you within 24 hours.
+                </p>
+              </DialogDescription>
             </div>
           </div>
 

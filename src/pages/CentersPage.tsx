@@ -34,7 +34,7 @@ export default function CentersPage() {
         (c.area ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, region, CENTERS]);
+  }, [CENTERS, query, region]);
 
   const displayName = (c: DBCenter) => (c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city);
 
@@ -147,7 +147,7 @@ export default function CentersPage() {
                       src={getCenterImage(c)}
                       alt={`${displayName(c)} city view`}
                       loading="lazy"
-                      className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-bansal-black/85 via-bansal-black/10 to-transparent pointer-events-none" />
                     {c.isHQ && (
@@ -184,14 +184,18 @@ export default function CentersPage() {
                       <span className="line-clamp-2">{c.address}</span>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <a
-                        href={`tel:${c.phone.replace(/\s+/g, "")}`}
-                        onClick={(e) => e.stopPropagation()}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = `tel:${c.phone.replace(/\s+/g, "")}`;
+                        }}
                         className="flex items-center gap-1.5 text-xs font-semibold text-bansal-blue hover:text-bansal-orange"
                       >
                         <Phone className="h-3.5 w-3.5" />
                         Call
-                      </a>
+                      </button>
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-bansal-orange group-hover:gap-2 transition-all">
                         View centre <ArrowRight className="h-3.5 w-3.5" />
                       </span>

@@ -58,8 +58,11 @@ const DEFAULT_FACILITIES = [
 
 export default function CenterDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { centers: DB_CENTERS } = useCenters();
+  const { centers: DB_CENTERS, isFallback: centersIsFallback } = useCenters();
   const dbCenter = slug ? DB_CENTERS.find((c) => c.slug === slug) : undefined;
+  // dbCenter.id is only a real DB uuid once useCenters() has resolved past the
+  // static FALLBACK list — gate id-dependent queries on that, not just on id truthiness.
+  const hasRealCenterId = !centersIsFallback && !!dbCenter?.id;
   const center = dbCenter ?? (slug ? findCenter(slug) : undefined);
   const [enquiryOpen, setEnquiryOpen] = useState(false);
 
@@ -147,7 +150,7 @@ export default function CenterDetailPage() {
 
       <section className="py-12">
         <div className="container mx-auto px-4 max-w-5xl">
-          {dbCenter?.id && (
+          {hasRealCenterId && (
             <div className="mb-10">
               <CentreCarousel centerId={dbCenter.id} />
               <div className="mt-5 flex flex-wrap justify-center gap-3">
@@ -199,8 +202,8 @@ export default function CenterDetailPage() {
         </div>
       </section>
 
-      {dbCenter?.id && <CenterGalleryAndUpdates centerId={dbCenter.id} slug={slug} />}
-      {dbCenter?.id && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
+      {hasRealCenterId && <CenterGalleryAndUpdates centerId={dbCenter.id} slug={slug} />}
+      {hasRealCenterId && <CenterOfflineSections centerId={dbCenter.id} centerCity={displayName} />}
 
       {/* Centre details — moved to the bottom per editorial guideline */}
       <section className="py-12 bg-bansal-cream/40 border-y border-border">
@@ -364,8 +367,12 @@ export default function CenterDetailPage() {
           </div>
         </div>
       </section>
-      {dbCenter?.id && enquiryOpen && (
-        <AdmissionEnquiryModal centerId={dbCenter.id} centerCity={displayName} onClose={() => setEnquiryOpen(false)} />
+      {hasRealCenterId && enquiryOpen && (
+        <AdmissionEnquiryModal
+          centerId={dbCenter.id}
+          centerCity={displayName}
+          onClose={() => setEnquiryOpen(false)}
+        />
       )}
     </div>
   );
