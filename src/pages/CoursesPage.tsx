@@ -11,10 +11,10 @@ import {
   MapPin,
   Home,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
 import { useAppStore } from "@/store/useAppStore";
-import EnrollmentModal from "@/components/EnrollmentModal";
+import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
 import coursePhysics from "@/assets/course-physics.webp";
 import courseChemistry from "@/assets/course-chemistry.webp";
 import courseMaths from "@/assets/course-maths.webp";
@@ -96,17 +96,12 @@ const CoursesPage = () => {
   const [activeType, setActiveType] = useState(0);
   const [enrollFor, setEnrollFor] = useState<CourseRow | null>(null);
   const { user } = useAppStore();
-  const navigate = useNavigate();
   const { courses: allCourses, loading } = useCourses();
   const courses = allCourses.filter(
     (c) => matchesGoal(c, goalFilters[activeGoal]) && matchesType(c, courseTypeFilters[activeType]),
   );
 
   const handleEnroll = (c: CourseRow) => {
-    if (!user) {
-      navigate("/login");
-      return;
-    }
     setEnrollFor(c);
   };
 
@@ -325,13 +320,10 @@ const CoursesPage = () => {
       </section>
 
       {enrollFor && (
-        <EnrollmentModal
+        <CourseEnquiryDialog
           open={!!enrollFor}
-          onClose={() => setEnrollFor(null)}
-          courseId={enrollFor.id}
-          courseName={enrollFor.name}
-          coursePrice={Number(enrollFor.price)}
-          onEnrolled={() => navigate("/my-courses")}
+          onOpenChange={(o) => !o && setEnrollFor(null)}
+          course={{ id: enrollFor.id, name: enrollFor.name, price: enrollFor.price }}
         />
       )}
     </div>

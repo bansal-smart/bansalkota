@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
     const sheetRows = (sheet || []) as Array<{
       user_id: string;
       full_name: string | null;
+      subjects: Record<string, number> | null;
       total_score: number | null;
       rank_label: string | null;
       rank_num: number | null;
@@ -92,10 +93,45 @@ Deno.serve(async (req) => {
     const profMap = new Map<string, any>();
     (profiles || []).forEach((p: any) => profMap.set(p.user_id, p));
 
-    const presentTotal = sheetRows.filter((r) => r.status === "present").length;
+    // Per-subject max marks (sum of marks_correct across that subject's questions),
+    // used as the "/60" denominator in the subject-wise breakdown below.
+    const { data: questionRows, error: qErr } = await supabase
+      .from("test_questions")
+      .select("subject, marks_correct")
+      .eq("test_id", test_id);
+    if (qErr) throw qErr;
+    const subjectMax = new Map<string, number>();
+    (questionRows || []).forEach((q: any) => {
+      const subj = String(q.subject ?? "").trim();
+      if (!subj) return;
+      subjectMax.set(subj, (subjectMax.get(subj) ?? 0) + Number(q.marks_correct ?? 0));
+    });
 
-    const dateStr = new Date(test.starts_at || test.ends_at || Date.now())
-      .toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    // Canonical subject order + short code used in the SMS (P/C/M/B…).
+    const SUBJECT_ORDER = ["Physics", "Chemistry", "Mathematics", "Maths", "Biology"];
+    const subjectsPresent = Array.from(subjectMax.keys()).sort((a, b) => {
+      const ia = SUBJECT_ORDER.indexOf(a);
+      const ib = SUBJECT_ORDER.indexOf(b);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      return a.localeCompare(b);
+    });
+    const subjectCode = (subject: string): string => subject.trim().charAt(0).toUpperCase() || "?";
+
+    const buildResultField = (row: (typeof sheetRows)[number]): string => {
+      if (row.status === "absent") return "Absent";
+      const parts = subjectsPresent
+        .filter((s) => subjectMax.get(s))
+        .map((s) => `${subjectCode(s)}=${Math.round(row.subjects?.[s] ?? 0)}/${subjectMax.get(s)}`);
+      const rank = row.rank_label || row.rank_num || "—";
+      return parts.length ? `${parts.join(", ")}, Rank ${rank}` : `Score ${row.total_score ?? 0}, Rank ${rank}`;
+    };
+
+    const dateStr = (() => {
+      const d = new Date(test.starts_at || test.ends_at || Date.now());
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return `${dd}/${mm}/${d.getFullYear()}`;
+    })();
 
     let sent = 0;
     let failed = 0;
@@ -114,17 +150,13 @@ Deno.serve(async (req) => {
 
       const name = row.full_name || profile.full_name || "Student";
       const isAbsent = row.status === "absent";
-      const scoreField = isAbsent ? "Absent" : `Score ${row.total_score ?? 0}`;
-      const rankField = isAbsent
-        ? "Absent"
-        : `Rank ${row.rank_label || row.rank_num || "—"}/${presentTotal}`;
+      const resultField = buildResultField(row);
 
       const vars = {
         name,
         test_name: test.title,
         date: dateStr,
-        score: scoreField,
-        rank: rankField,
+        result: resultField,
       };
       const body = renderTemplate("Result", vars);
 

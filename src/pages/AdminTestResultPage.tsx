@@ -316,7 +316,10 @@ const AdminTestResultPage = () => {
     } else if (data?.error) {
       toast.error(`Result SMS failed: ${data.error}`);
     } else if (data?.sent !== undefined) {
-      toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed (of ${data.total})`);
+      const parentPart = data.parent_sent || data.parent_failed
+        ? ` · Parents: ${data.parent_sent ?? 0} sent, ${data.parent_failed ?? 0} failed`
+        : "";
+      toast.success(`Result SMS: ${data.sent} sent, ${data.failed} failed (of ${data.total})${parentPart}`);
     } else {
       toast.success("Result SMS dispatched");
     }
@@ -1244,7 +1247,8 @@ const AdminTestResultPage = () => {
                 <div>
                   <h3 className="text-base font-bold text-foreground">Send Result SMS</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Each student will receive their score & rank (or "Absent") for this test.
+                    Each student — and their registered parent contact, if on file — will receive
+                    the score & rank (or "Absent") for this test.
                   </p>
                 </div>
               </div>
@@ -1286,7 +1290,8 @@ const AdminTestResultPage = () => {
               </div>
 
               <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-[11px] text-amber-800">
-                SMS will be delivered via PRPSMS DLT route. Students without a registered mobile number will be skipped.
+                SMS will be delivered via PRPSMS DLT route to both the student and parent number
+                (if registered). Contacts without a mobile number on file will be skipped.
               </div>
             </div>
 

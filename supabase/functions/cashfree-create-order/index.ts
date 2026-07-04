@@ -125,9 +125,12 @@ Deno.serve(async (req) => {
       .insert(items.map((i) => ({ ...i, order_id: order.id })));
     if (itemsErr) return json({ error: "Order items failed: " + itemsErr.message }, 500);
 
-    // Build return URL from referer
+    // Build return URL from referer. Cashfree rejects non-https return_url values
+    // (e.g. http://localhost during local dev), so fall back to the production
+    // domain in that case — the order/payment still completes correctly either way.
     const referer = req.headers.get("origin") || req.headers.get("referer") || "";
-    const origin = (() => { try { return new URL(referer).origin; } catch { return ""; } })();
+    let origin = (() => { try { return new URL(referer).origin; } catch { return ""; } })();
+    if (!origin.startsWith("https://")) origin = "https://bansal.ac.in";
     const returnUrl = `${origin}/payments/return?order_id=${order.id}`;
 
     // Call Cashfree

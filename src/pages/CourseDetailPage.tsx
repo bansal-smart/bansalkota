@@ -155,11 +155,11 @@ const CourseDetailPage = () => {
     course.subjects_covered && course.subjects_covered.length > 0
       ? course.subjects_covered
       : course.subject
-      ? course.subject
+        ? course.subject
           .split(/[,/]/)
           .map((s) => s.trim())
           .filter(Boolean)
-      : ["Physics", "Chemistry", "Mathematics"];
+        : ["Physics", "Chemistry", "Mathematics"];
 
   const educationLevel =
     course.education_level ||
@@ -186,13 +186,13 @@ const CourseDetailPage = () => {
     courseAny.what_youll_learn && courseAny.what_youll_learn.length > 0
       ? courseAny.what_youll_learn
       : [
-          "India's most trusted IIT-JEE coaching institute",
-          "Highly experienced faculty with a proven success record",
-          "Intensive classroom teaching with concept-based learning",
-          "Regular doubt-solving sessions and mentorship support",
-          "Weekly tests with performance analysis and ranking",
-          "Proven study material and structured curriculum",
-        ];
+        "India's most trusted IIT-JEE coaching institute",
+        "Highly experienced faculty with a proven success record",
+        "Intensive classroom teaching with concept-based learning",
+        "Regular doubt-solving sessions and mentorship support",
+        "Weekly tests with performance analysis and ranking",
+        "Proven study material and structured curriculum",
+      ];
 
   const handleEnrollClick = () => {
     if (enrolled) {
@@ -212,7 +212,7 @@ const CourseDetailPage = () => {
   const secondInstallment = price - firstInstallment;
 
   return (
-    <div className="bg-background pb-16">
+    <div className="bg-background pb-24 lg:pb-16">
       {/* Breadcrumb */}
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4 py-3 text-xs text-muted-foreground">
@@ -361,7 +361,7 @@ const CourseDetailPage = () => {
 
             {course.description_html ? (
               <div
-                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-headings:mt-6 prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground [&_p:empty]:block [&_p:empty]:h-4 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1"
+                className="prose prose-sm max-w-none prose-headings:font-display prose-headings:text-foreground prose-headings:mt-6 prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground [&_p:empty]:block [&_p:empty]:h-4 [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1"
                 dangerouslySetInnerHTML={{ __html: course.description_html }}
               />
             ) : (
@@ -499,7 +499,7 @@ const CourseDetailPage = () => {
             </section>
           )}
 
-          
+
         </div>
 
         {/* RIGHT COLUMN */}
@@ -587,6 +587,24 @@ const CourseDetailPage = () => {
         onOpenChange={setEnrollOpen}
         course={{ id: course.id, name: course.name, price: course.price }}
       />
+
+      {/* Sticky mobile enroll bar — desktop already has the sticky right-column CTA */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] text-muted-foreground leading-none">Total Payable</p>
+            <p className="font-display text-lg font-black text-foreground leading-tight">
+              ₹{price.toLocaleString("en-IN")}
+            </p>
+          </div>
+          <button
+            onClick={handleEnrollClick}
+            className="shrink-0 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            {enrolled ? "Continue Learning" : "Enroll Now"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

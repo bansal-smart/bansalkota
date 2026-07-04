@@ -107,10 +107,17 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     }
     setSubmitting(true);
     try {
+      // Generate the row id client-side and skip `.select()` (i.e. no RETURNING).
+      // Students have no SELECT policy on course_enquiries (only admins do), and
+      // requesting the row back via RETURNING fails RLS even though the INSERT
+      // itself is permitted — so we never need the server to hand the id back.
+      const enquiryId = crypto.randomUUID();
+
       // 1) Persist enquiry first so admins always see the lead.
-      const { data: enquiry, error: insErr } = await supabase
+      const { error: insErr } = await supabase
         .from("course_enquiries")
         .insert({
+          id: enquiryId,
           course_id: course.id,
           course_name: course.name,
           course_price: Number(course.price),
@@ -125,9 +132,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           message: parsed.data.message || null,
           payment_status: "pending",
           status: "new",
-        })
-        .select("id")
-        .single();
+        });
       if (insErr) throw insErr;
 
       if (!user) {
@@ -141,7 +146,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
       await startCashfreeCheckout({
         orderType: "course",
         courseId: course.id,
-        enquiryId: enquiry.id,
+        enquiryId,
       } as any);
     } catch (e: any) {
       toast.error(e?.message || "Could not start payment");
@@ -151,7 +156,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100%-2rem)] sm:w-full sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">Enquiry & Enrollment</DialogTitle>
           <DialogDescription>

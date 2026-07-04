@@ -28,8 +28,11 @@ Deno.serve(async (req) => {
     const total = +Number(reg.amount || 0).toFixed(2);
     if (total <= 0) return json({ error: "Invalid amount" }, 400);
 
+    // Cashfree rejects non-https return_url values (e.g. http://localhost during
+    // local dev), so fall back to the production domain in that case.
     const referer = req.headers.get("origin") || req.headers.get("referer") || "";
-    const origin = (() => { try { return new URL(referer).origin; } catch { return ""; } })();
+    let origin = (() => { try { return new URL(referer).origin; } catch { return ""; } })();
+    if (!origin.startsWith("https://")) origin = "https://bansal.ac.in";
     const returnUrl = `${origin}/boost/payment-return?reg_id=${reg.id}`;
 
     // Cashfree order_id: max 50 chars, alphanumeric + _-. Prefix to disambiguate from regular orders.

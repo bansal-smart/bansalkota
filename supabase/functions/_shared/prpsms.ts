@@ -51,8 +51,8 @@ export const TEMPLATES: Record<TemplateName, TemplateDef> = {
     description: "Sent after successful payment",
   },
   "Result": {
-    body: "Dear {#var#}, Result of Test {#var#} dated {#var#} {#var#} {#var#} Team Bansal",
-    vars: ["name", "test_name", "date", "score", "rank"],
+    body: "Dear {#var#}, Result of Test {#var#} dated {#var#} {#var#} Team Bansal",
+    vars: ["name", "test_name", "date", "result"],
     description: "Result + rank declaration",
   },
   "Registration1": {

@@ -63,6 +63,11 @@ function buildSlots(dates: Date[]): string[] {
 
 type Props = { open: boolean; onClose: () => void };
 
+function onlyDigitsInput(e: React.FormEvent<HTMLInputElement>) {
+  const el = e.currentTarget;
+  el.value = el.value.replace(/\D/g, "").slice(0, 10);
+}
+
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
   const { priceInr, examDates } = useBoostSettings();
@@ -161,8 +166,8 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             <Section title="Student details">
               <Input name="full_name" label="Full name *" required />
               <Input name="email" label="Email *" type="email" required />
-              <Input name="phone" label="Mobile *" required />
-              <Input name="whatsapp" label="WhatsApp (if different)" />
+              <Input name="phone" label="Mobile *" type="tel" inputMode="numeric" maxLength={10} onInput={onlyDigitsInput} required />
+              <Input name="whatsapp" label="WhatsApp (if different)" type="tel" inputMode="numeric" maxLength={10} onInput={onlyDigitsInput} />
               <Input name="date_of_birth" label="Date of birth" type="date" />
               <Select name="class_level" label="Class *" options={CLASS_LEVELS} required />
             </Section>
@@ -176,7 +181,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
 
             <Section title="Parent / guardian">
               <Input name="parent_name" label="Parent name" />
-              <Input name="parent_phone" label="Parent phone" />
+              <Input name="parent_phone" label="Parent phone" type="tel" inputMode="numeric" maxLength={10} onInput={onlyDigitsInput} />
             </Section>
 
             <Section title="Exam slot & centre">

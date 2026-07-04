@@ -340,5 +340,5 @@ export function downloadStudentReport(data: StudentReportData) {
   const doc = buildStudentReportPdf(data);
   const safeName = data.student.name.replace(/[^a-z0-9]+/gi, "_");
   const monthSlug = data.period.replace(/\s+/g, "_");
-  doc.save(`Arke_Report_${safeName}_${monthSlug}.pdf`);
+  doc.save(`Bansal_Classes_Report_${safeName}_${monthSlug}.pdf`);
 }
