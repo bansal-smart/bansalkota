@@ -390,8 +390,8 @@ const CenterOnlineCourseContentPage = () => {
       </div>
 
       {liveDialog && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto" onClick={() => setLiveDialog(null)}>
-          <div className="w-full max-w-2xl my-8 rounded-xl bg-card p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl my-8 rounded-xl bg-card p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{liveDialog.id ? "Edit Live Class" : "New Live Class"}</h2>
 
             <div className="space-y-1.5">
@@ -459,8 +459,8 @@ const CenterOnlineCourseContentPage = () => {
 
 
       {chapterDialog.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setChapterDialog({ open: false, title: "", subject: "" })}>
-          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{chapterDialog.id ? "Edit" : "New"} Chapter</h2>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">Chapter Title</label>
@@ -481,8 +481,8 @@ const CenterOnlineCourseContentPage = () => {
       )}
 
       {lectureDialog.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setLectureDialog({ ...lectureDialog, open: false })}>
-          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-card p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{lectureDialog.id ? "Edit" : "New"} Lecture</h2>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-foreground">Chapter</label>
@@ -647,8 +647,8 @@ const BulkLectureImportDialog = ({ courseId, chapters, lessons, onClose, onDone 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-card p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-card p-6 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-foreground">Bulk upload lectures</h2>
           <button onClick={onClose}><X className="h-4 w-4" /></button>

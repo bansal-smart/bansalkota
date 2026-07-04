@@ -131,8 +131,8 @@ const CenterGalleryPage = () => {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-lg rounded-xl bg-card p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-card p-6 space-y-3">
             <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit" : "Add"} gallery photo</h2>
             <div className="space-y-2">
               <label className="text-xs font-medium text-foreground">Photo</label>

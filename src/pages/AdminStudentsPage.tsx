@@ -742,8 +742,8 @@ const AdminStudentsPage = () => {
       />
 
       {addOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !addSaving && setAddOpen(false)}>
-          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border p-5">
               <div className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-primary" />
@@ -1002,8 +1002,8 @@ const AdminStudentsPage = () => {
 
       {/* Edit Modal */}
       {drawer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !saving && setDrawer(null)}>
-          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border p-5">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 text-xs font-bold text-primary overflow-hidden shrink-0">
@@ -1143,7 +1143,7 @@ const AdminStudentsPage = () => {
       {/* Confirm delete */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => !deleting && setConfirmDelete(null)} />
+          <div className="absolute inset-0 bg-black/50" />
           <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-4">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 shrink-0">
@@ -1180,7 +1180,7 @@ const AdminStudentsPage = () => {
       {/* Confirm bulk delete */}
       {confirmBulkDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => !bulkDeleting && setConfirmBulkDelete(false)} />
+          <div className="absolute inset-0 bg-black/50" />
           <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-4">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 shrink-0">
@@ -1222,7 +1222,7 @@ const AdminStudentsPage = () => {
       {/* Bulk generate CBT passwords */}
       {pwdBulkOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => !pwdBulkRunning && setPwdBulkOpen(false)} />
+          <div className="absolute inset-0 bg-black/60" />
           <div className="relative w-full max-w-3xl rounded-2xl bg-card border border-border shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between border-b border-border p-5">
               <div className="flex items-center gap-2">
@@ -1357,7 +1357,7 @@ const AdminStudentsPage = () => {
       {/* Reset single password */}
       {pwdReset && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60" onClick={() => !pwdResetRunning && setPwdReset(null)} />
+          <div className="absolute inset-0 bg-black/60" />
           <div className="relative w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-5 space-y-4">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">

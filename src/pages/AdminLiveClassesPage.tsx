@@ -643,13 +643,9 @@ const AdminLiveClassesPage = () => {
 
       {/* Schedule / Edit dialog */}
       {showForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4"
-          onClick={closeForm}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4">
           <form
             onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
             className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between">
@@ -818,14 +814,8 @@ const AdminLiveClassesPage = () => {
 
       {/* Save template dialog */}
       {showSaveTemplate && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4"
-          onClick={() => setShowSaveTemplate(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl">
             <p className="text-sm font-bold text-foreground">Save as template</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Reuse this title, subject, teacher, meeting link and duration for future classes.
@@ -857,14 +847,8 @@ const AdminLiveClassesPage = () => {
 
       {/* Templates list dialog */}
       {showTemplates && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4"
-          onClick={() => setShowTemplates(false)}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-foreground">Live class templates</p>
               <button onClick={() => setShowTemplates(false)} className="text-muted-foreground hover:text-foreground">
@@ -911,14 +895,8 @@ const AdminLiveClassesPage = () => {
 
       {/* Cancellation reason dialog */}
       {cancelTarget && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4"
-          onClick={() => !cancelSubmitting && setCancelTarget(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl">
             <p className="text-sm font-bold text-foreground">Cancel "{cancelTarget.title}"?</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Provide a reason — students will be able to see this on their schedule.

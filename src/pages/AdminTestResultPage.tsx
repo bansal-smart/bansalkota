@@ -1078,8 +1078,8 @@ const AdminTestResultPage = () => {
 
       {/* Student detail drawer */}
       {activeStudent && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={() => setActiveStudent(null)}>
-          <div className="w-full sm:max-w-2xl max-h-[92vh] overflow-auto rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4">
+          <div className="w-full sm:max-w-2xl max-h-[92vh] overflow-auto rounded-t-2xl sm:rounded-2xl bg-card border border-border shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card">
               <div>
                 <h3 className="text-base font-bold text-foreground">{activeStudent.full_name ?? "Student"}</h3>
@@ -1182,8 +1182,8 @@ const AdminTestResultPage = () => {
 
       {/* Combine-with picker */}
       {combineOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setCombineOpen(false)}>
-          <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div>
                 <h3 className="text-base font-bold text-foreground">Combine with another test</h3>
@@ -1231,10 +1231,7 @@ const AdminTestResultPage = () => {
       )}
 
       {smsConfirmOpen && test && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => !sendingResultSms && setSmsConfirmOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div
             className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl"
             onClick={(e) => e.stopPropagation()}

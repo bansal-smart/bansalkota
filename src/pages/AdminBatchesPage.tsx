@@ -258,8 +258,8 @@ const AdminBatchesPage = () => {
       )}
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !savingEdit && setEditing(null)}>
-          <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl">
             <div className="flex items-center justify-between border-b border-border p-5">
               <div className="flex items-center gap-2">
                 <Pencil className="h-5 w-5 text-primary" />

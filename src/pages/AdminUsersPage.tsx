@@ -308,7 +308,7 @@ const AdminUsersPage = () => {
 
       {drawerUser && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setDrawerUser(null)} />
+          <div className="absolute inset-0 bg-black/30" />
           <div className="relative w-full max-w-sm bg-card shadow-xl border-l border-border overflow-y-auto animate-slide-in-right">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h2 className="text-sm font-bold text-foreground">User Details</h2>
@@ -396,7 +396,7 @@ const AdminUsersPage = () => {
 
       {pendingRole && drawerUser && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => !savingRole && setPendingRole(null)} />
+          <div className="absolute inset-0 bg-black/50" />
           <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-4">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
@@ -443,7 +443,7 @@ const AdminUsersPage = () => {
 
       {showBulk && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowBulk(false)} />
+          <div className="absolute inset-0 bg-black/40" />
           <div className="relative w-full max-w-md rounded-2xl bg-card p-5 border border-border shadow-xl space-y-3">
             <h2 className="text-sm font-bold text-foreground">Send notification to {selected.length} users</h2>
             <textarea

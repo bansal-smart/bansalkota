@@ -133,8 +133,8 @@ const CenterUpdatesPage = () => {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-lg rounded-xl bg-card p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-card p-6 space-y-3">
             <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit" : "New"} update</h2>
             <input value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value })} placeholder="Title (e.g. New JEE batch starts Jul 1)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             <textarea value={editing.body ?? ""} onChange={(e) => setEditing({ ...editing, body: e.target.value })} placeholder="Write the update…" rows={5} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm resize-none" />

@@ -255,8 +255,8 @@ const AdminSchoolsPage = () => {
 
       {/* Edit dialog */}
       {editing && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditing(null)}>
-          <div className="bg-card rounded-xl shadow-xl max-w-lg w-full p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-xl shadow-xl max-w-lg w-full p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">{editing.id ? "Edit School" : "New School"}</h2>
               <button onClick={() => setEditing(null)} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
@@ -327,8 +327,8 @@ const AdminSchoolsPage = () => {
 
       {/* School detail drawer */}
       {selected && (
-        <div className="fixed inset-0 z-40 bg-black/50 flex justify-end" onClick={() => { setSelected(null); setResults(null); setCsvOpen(false); setCsvText(""); setCsvFileName(null); }}>
-          <div className="bg-card w-full max-w-2xl h-full overflow-y-auto p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-40 bg-black/50 flex justify-end">
+          <div className="bg-card w-full max-w-2xl h-full overflow-y-auto p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold">{selected.name}</h2>

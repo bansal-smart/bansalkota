@@ -207,9 +207,9 @@ const AdminOrdersPage = () => {
       )}
 
       {selected && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/50" />
-          <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-md bg-card shadow-2xl overflow-y-auto">
+          <div className="relative w-full max-w-md bg-card shadow-2xl overflow-y-auto">
             <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border bg-card">
               <h2 className="font-bold">Order #{selected.id.slice(0, 8)}</h2>
               <button onClick={() => setSelected(null)} className="p-1 hover:bg-muted rounded"><XIcon className="h-4 w-4" /></button>

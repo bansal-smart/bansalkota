@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { uploadImageToS3 } from "@/lib/s3Upload";
 import type { ParsedDocxQuestion, DocxImage } from "./parseDocx";
 
 const extFromType = (ct: string) => {
@@ -13,8 +13,8 @@ const extFromType = (ct: string) => {
 export type UploadProgress = (done: number, total: number) => void;
 
 /**
- * Upload all images attached to parsed questions to the `question-images`
- * bucket, populating `image.publicUrl` in-place.
+ * Upload all images attached to parsed questions to S3, populating
+ * `image.publicUrl` in-place.
  */
 export const uploadParsedImages = async (
   batchId: string,
@@ -27,32 +27,13 @@ export const uploadParsedImages = async (
   let done = 0;
   let failed = 0;
 
-  // ~100 years — bucket is private (workspace policy blocks public buckets),
-  // so we mint long-lived signed URLs at upload time so <img src> works
-  // anonymously in the test player and review screens.
-  const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 100;
-
   for (const { q, img } of flat) {
     const ext = extFromType(img.contentType);
-    const path = `${batchId}/q${q.number}_${img.slot}_${img.id}.${ext}`;
+    const key = `question-images/${batchId}/q${q.number}_${img.slot}_${img.id}.${ext}`;
     try {
       const ab = img.bytes.buffer.slice(img.bytes.byteOffset, img.bytes.byteOffset + img.bytes.byteLength) as ArrayBuffer;
       const blob = new Blob([ab], { type: img.contentType });
-      const { error: upErr } = await supabase.storage
-        .from("question-images")
-        .upload(path, blob, { contentType: img.contentType, upsert: true });
-      if (upErr) {
-        failed += 1;
-      } else {
-        const { data: signed, error: signErr } = await supabase.storage
-          .from("question-images")
-          .createSignedUrl(path, SIGNED_URL_TTL);
-        if (signErr || !signed?.signedUrl) {
-          failed += 1;
-        } else {
-          img.publicUrl = signed.signedUrl;
-        }
-      }
+      img.publicUrl = await uploadImageToS3(blob, key, img.contentType);
     } catch {
       failed += 1;
     }

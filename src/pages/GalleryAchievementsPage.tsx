@@ -82,10 +82,7 @@ const GalleryAchievementsPage = () => {
 
       {/* Lightbox */}
       {lightbox !== null && posters[lightbox] && (
-        <div
-          className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
-        >
+        <div className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-4">
           <button
             className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full"
             onClick={() => setLightbox(null)}

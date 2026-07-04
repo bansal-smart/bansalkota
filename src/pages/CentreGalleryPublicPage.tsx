@@ -140,7 +140,7 @@ const CentreGalleryPublicPage = () => {
       </div>
 
       {lightbox !== null && filtered[lightbox] && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4" onClick={() => setLightbox(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
           <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 text-white/80 hover:text-white">
             <X className="h-6 w-6" />
           </button>

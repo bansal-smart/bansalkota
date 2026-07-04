@@ -72,10 +72,7 @@ const AlbumCarousel = ({ images, title }: { images: AlbumImage[]; title: string 
       )}
 
       {lightbox !== null && images[lightbox] && (
-        <div
-          className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
-        >
+        <div className="fixed inset-0 z-[80] bg-black/90 flex items-center justify-center p-4">
           <button className="absolute top-4 right-4 text-white p-2" onClick={() => setLightbox(null)}>
             <X className="h-7 w-7" />
           </button>

@@ -3,24 +3,44 @@
 //   1. JSZip unzip
 //   2. OMML → LaTeX rewrite of word/document.xml (in-place)
 //   3. mammoth.convertToHtml with a convertImage hook that uploads each
-//      embedded image to the `question-images` Supabase Storage bucket and
-//      returns a 100-year signed URL inlined as the <img src="..."> attribute.
+//      embedded image straight to S3 (this function already runs
+//      server-side with elevated trust, so no presigning is needed) and
+//      returns its public URL inlined as the <img src="..."> attribute.
 // Returns: { html, warnings }
 //
 // The client takes this HTML and runs the existing state-machine parser
 // (parseDocxQuestionsFromHtml) — no heavy work on the main thread.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import JSZip from "npm:jszip@3.10.1";
 // mammoth is a CommonJS module; npm: specifier handles interop.
 import mammoth from "npm:mammoth@1.8.0";
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const BUCKET = "question-images";
-// 100 years in seconds — effectively permanent for our use.
-const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 100;
+const AWS_REGION = Deno.env.get("AWS_REGION")!;
+const S3_BUCKET_NAME = Deno.env.get("S3_BUCKET_NAME")!;
+const AWS_ACCESS_KEY_ID = Deno.env.get("AWS_ACCESS_KEY_ID")!;
+const AWS_SECRET_ACCESS_KEY = Deno.env.get("AWS_SECRET_ACCESS_KEY")!;
+// Optional override (e.g. a CloudFront domain). Falls back to the bucket's
+// virtual-hosted-style S3 URL if unset.
+const S3_PUBLIC_BASE_URL = Deno.env.get("S3_PUBLIC_BASE_URL");
+
+const s3 = new S3Client({
+  region: AWS_REGION,
+  credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
+});
+
+async function uploadToS3(key: string, bytes: Uint8Array, contentType: string): Promise<string> {
+  await s3.send(new PutObjectCommand({
+    Bucket: S3_BUCKET_NAME,
+    Key: key,
+    Body: bytes,
+    ContentType: contentType,
+  }));
+  return S3_PUBLIC_BASE_URL
+    ? `${S3_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key}`
+    : `https://${S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${key}`;
+}
 
 // ---------------------------------------------------------------------------
 // OMML → LaTeX (port of the existing client preprocessor)
@@ -130,7 +150,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const warnings: string[] = [];
 
     // 1. Parse multipart upload
@@ -185,20 +204,10 @@ Deno.serve(async (req) => {
                 : new Uint8Array(buf?.buffer ?? buf);
             const ext = extFromContentType(image.contentType);
             const idx = imageSeq++;
-            const path = `master-import/${importId}/img_${String(idx).padStart(4, "0")}.${ext}`;
-            const { error: upErr } = await supabase.storage
-              .from(BUCKET)
-              .upload(path, bytes, {
-                contentType: image.contentType || "application/octet-stream",
-                upsert: false,
-              });
-            if (upErr) throw upErr;
-            const { data: signed, error: signErr } = await supabase.storage
-              .from(BUCKET)
-              .createSignedUrl(path, SIGNED_URL_TTL);
-            if (signErr || !signed?.signedUrl) throw signErr ?? new Error("signed url failed");
+            const key = `question-images/master-import/${importId}/img_${String(idx).padStart(4, "0")}.${ext}`;
+            const publicUrl = await uploadToS3(key, bytes, image.contentType || "application/octet-stream");
             uploadedCount += 1;
-            return { src: signed.signedUrl };
+            return { src: publicUrl };
           } catch (e) {
             imageFailures += 1;
             // Fall back to inline data-URL so the client can still upload it later.

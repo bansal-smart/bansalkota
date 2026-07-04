@@ -120,11 +120,8 @@ const CenterRoleModal = ({ centerId, roleId, onClose, onSaved }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-3xl rounded-2xl bg-card p-6 space-y-4 max-h-[92vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-3xl rounded-2xl bg-card p-6 space-y-4 max-h-[92vh] overflow-y-auto">
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-lg font-bold text-foreground">{roleId ? "Edit Role" : "Add Role"}</h3>

@@ -152,8 +152,8 @@ const CenterLiveClassesPage = () => {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-2xl my-8 rounded-xl bg-card p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-2xl my-8 rounded-xl bg-card p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{editing.id ? "Edit Live Class" : "New Live Class"}</h2>
 
             <div className="space-y-1.5">

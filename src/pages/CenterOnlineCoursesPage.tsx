@@ -174,8 +174,8 @@ const CenterOnlineCoursesPage = () => {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto" onClick={() => setEditing(null)}>
-          <div className="w-full max-w-3xl my-8 rounded-xl bg-card p-6 space-y-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-3xl my-8 rounded-xl bg-card p-6 space-y-6">
             <h2 className="text-2xl font-black font-display text-foreground">{editing.id ? "Edit Course" : "Create New Course"}</h2>
 
             {/* Basic Information */}

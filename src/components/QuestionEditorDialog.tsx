@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, X, Sigma, FlaskConical, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadImageToS3 } from "@/lib/s3Upload";
 import { useAuth } from "@/context/AuthContext";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 
@@ -119,13 +120,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("question-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
-      setImageUrl(data.publicUrl);
+      const key = `question-images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const publicUrl = await uploadImageToS3(file, key, file.type);
+      setImageUrl(publicUrl);
       toast.success("Image uploaded");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");
@@ -141,16 +138,12 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
     setUploadingOpt(oi);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const path = `${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("question-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
-      const { data } = supabase.storage.from("question-images").getPublicUrl(path);
+      const key = `question-images/${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const publicUrl = await uploadImageToS3(file, key, file.type);
       setOptionImages((prev) => {
         const next = [...prev];
         while (next.length <= oi) next.push("");
-        next[oi] = data.publicUrl;
+        next[oi] = publicUrl;
         return next;
       });
       toast.success("Option image uploaded");

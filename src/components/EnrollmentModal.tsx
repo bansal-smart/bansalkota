@@ -101,7 +101,7 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={close} />
+      <div className="absolute inset-0 bg-black/40" />
       <div className="relative w-full max-w-md rounded-2xl bg-card shadow-xl border border-border overflow-y-auto max-h-[90vh]">
         <button onClick={close} className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground hover:bg-background z-10">
           <X className="h-4 w-4" />

@@ -551,8 +551,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
 
       {reopenFor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !reopening && setReopenFor(null)}>
-          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-card border border-border p-5 space-y-4">
             <div>
               <h3 className="text-lg font-black font-display">Re-allow attempt</h3>
               <p className="text-xs text-muted-foreground mt-0.5">

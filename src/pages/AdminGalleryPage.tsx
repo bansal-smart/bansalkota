@@ -385,14 +385,8 @@ const AdminGalleryPage = () => {
       )}
 
       {showForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setShowForm(false)}
-        >
-          <div
-            className="bg-card rounded-2xl border border-border w-full max-w-2xl max-h-[92vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-card rounded-2xl border border-border w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card">
               <h2 className="font-bold text-lg">
                 {editing ? "Edit" : "Add"} {form.kind === "image" ? "Image Album" : "Video"}
