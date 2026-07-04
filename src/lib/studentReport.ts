@@ -29,7 +29,6 @@ export type StudentReportData = {
     avgAccuracyPct: number;
     bestPercentile: number;
     bySubject: { subject: string; avgPct: number; attempts: number }[];
-    trend: { date: string; pct: number }[];
     list: TestEntry[];
   };
 };
@@ -208,15 +207,6 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
     attempts: v.attempts,
   }));
 
-  // Test-performance trend — every test actually taken, oldest to newest.
-  const trend = attemptEntries
-    .filter((t) => t.submittedAt)
-    .sort((a, b) => a.sortDate.localeCompare(b.sortDate))
-    .map((t) => ({
-      date: new Date(t.submittedAt as string).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
-      pct: t.totalMarks > 0 ? Math.round((t.score / t.totalMarks) * 100) : 0,
-    }));
-
   return {
     student: {
       name: (profile as any).full_name || "Student",
@@ -224,6 +214,6 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
       classLevel: (profile as any).class_level,
       mentorName,
     },
-    tests: { attempts: attempts.length, avgScorePct, avgAccuracyPct, bestPercentile, bySubject, trend, list },
+    tests: { attempts: attempts.length, avgScorePct, avgAccuracyPct, bestPercentile, bySubject, list },
   };
 }

@@ -6,7 +6,15 @@ const ORANGE: [number, number, number] = [249, 115, 22];
 const NAVY: [number, number, number] = [30, 41, 59];
 const MUTED: [number, number, number] = [100, 116, 139];
 const LIGHT: [number, number, number] = [241, 245, 249];
-const CHART_BAR: [number, number, number] = [148, 190, 224];
+// Lighter, muted palette for per-test bars (avoids the bright brand orange).
+const CHART_PALETTE: [number, number, number][] = [
+  [148, 190, 224], // soft blue
+  [168, 213, 186], // soft green
+  [223, 190, 145], // soft amber
+  [200, 168, 216], // soft purple
+  [224, 168, 168], // soft red
+  [163, 214, 214], // soft teal
+];
 
 export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -80,20 +88,39 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   });
   y += 80;
 
-  // Section: Test performance — percentage scored in every test taken so far.
-  y = sectionHeader(doc, "Test performance", margin, y, W);
-  if (data.tests.trend.length === 0) {
+  // Section: Test performance by subject — one grouped bar chart with
+  // subjects on the X-axis and one distinctly-coloured bar per test within
+  // each subject group (a test's subjects are attempted together, so "Test 1"
+  // lines up across every subject it covered).
+  y = sectionHeader(doc, "Test performance by subject", margin, y, W);
+  const attemptedChron = [...data.tests.list].filter((t) => !t.isAbsent && t.subjects.length).reverse();
+  if (attemptedChron.length === 0) {
     drawEmpty(doc, "No tests attempted yet.", margin, y, W);
     y += 30;
   } else {
+    const CHART_ORDER = ["Physics", "Chemistry", "Mathematics", "Maths", "Biology"];
+    const chartSubjects = Array.from(new Set(attemptedChron.flatMap((t) => t.subjects.map((s) => s.subject))))
+      .sort((a, b) => {
+        const ia = CHART_ORDER.indexOf(a);
+        const ib = CHART_ORDER.indexOf(b);
+        if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        return a.localeCompare(b);
+      });
+    const series = attemptedChron.map((t, i) => ({
+      name: t.submittedAt
+        ? new Date(t.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })
+        : `Test ${i + 1}`,
+      color: CHART_PALETTE[i % CHART_PALETTE.length],
+      values: chartSubjects.map((subj) => {
+        const s = t.subjects.find((x) => x.subject === subj);
+        return s && s.maxScore > 0 ? Math.round((s.score / s.maxScore) * 100) : 0;
+      }),
+    }));
     const chartH = 110;
+    const legendH = Math.ceil(series.length / 8) * 14 + 10;
     const chartW = W - margin * 2;
-    drawBarChart(
-      doc,
-      data.tests.trend.map((t) => ({ label: t.date, pct: t.pct })),
-      margin, y, chartW, chartH,
-    );
-    y += chartH + 16;
+    drawGroupedBarChart(doc, chartSubjects, series, margin, y, chartW, chartH, legendH);
+    y += chartH + legendH + 16;
   }
 
   // New page if needed
@@ -252,42 +279,72 @@ function drawEmpty(doc: jsPDF, text: string, x: number, y: number, W: number) {
   doc.text(text, x, y + 14);
 }
 
-function drawBarChart(
+function drawGroupedBarChart(
   doc: jsPDF,
-  rows: { label: string; pct: number }[],
+  labels: string[],
+  series: { name: string; values: number[]; color: [number, number, number] }[],
   x: number,
   y: number,
   w: number,
   h: number,
+  legendH: number,
 ) {
-  const padL = 30, padB = 24, padT = 8;
-  const innerW = w - padL;
-  const innerH = h - padB - padT;
-  const baseY = y + padT + innerH;
+  const padL = 30, padB = 24, padT = 8, padR = 4;
+  const plotX = x + padL;
+  const plotY = y + padT;
+  const plotW = w - padL - padR;
+  const plotH = h - padB - padT;
+  const baseY = plotY + plotH;
+
   // Y grid (0,50,100)
   doc.setDrawColor(226, 232, 240);
   doc.setTextColor(...MUTED);
   doc.setFontSize(8);
   [0, 50, 100].forEach((v) => {
-    const yy = baseY - (v / 100) * innerH;
-    doc.line(x + padL, yy, x + w, yy);
-    doc.text(`${v}%`, x + 4, yy + 3);
+    const yy = baseY - (v / 100) * plotH;
+    doc.line(plotX, yy, plotX + plotW, yy);
+    doc.text(`${v}%`, x + padL - 4, yy + 3, { align: "right" });
   });
-  const n = rows.length;
-  const slot = innerW / n;
-  const barW = Math.min(28, slot * 0.6);
-  rows.forEach((r, i) => {
-    const cx = x + padL + slot * i + slot / 2;
-    const bh = (r.pct / 100) * innerH;
-    doc.setFillColor(...CHART_BAR);
-    doc.rect(cx - barW / 2, baseY - bh, barW, bh, "F");
-    doc.setTextColor(...NAVY);
-    doc.setFontSize(7);
-    doc.text(`${r.pct}%`, cx, baseY - bh - 3, { align: "center" });
+
+  const groupW = plotW / labels.length;
+  const barW = Math.max(2, Math.min(16, (groupW - 8) / series.length));
+  labels.forEach((label, gi) => {
+    const gx = plotX + groupW * gi + (groupW - barW * series.length) / 2;
+    series.forEach((s, si) => {
+      const v = s.values[gi] ?? 0;
+      const bh = (v / 100) * plotH;
+      doc.setFillColor(...s.color);
+      doc.rect(gx + si * barW, baseY - bh, barW - 1, bh, "F");
+      if (v > 0) {
+        doc.setFontSize(6);
+        doc.setTextColor(...NAVY);
+        doc.text(`${v}`, gx + si * barW + (barW - 1) / 2, baseY - bh - 2, { align: "center" });
+      }
+    });
+    doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    const label = r.label.length > 10 ? r.label.slice(0, 9) + "…" : r.label;
-    doc.text(label, cx, baseY + 12, { align: "center" });
+    const lab = label.length > 10 ? label.slice(0, 9) + "…" : label;
+    doc.text(lab, plotX + groupW * gi + groupW / 2, baseY + 12, { align: "center" });
   });
+
+  // Legend — wraps onto additional rows once it would overflow the chart width.
+  let lx = x;
+  let ly = y + h + 10;
+  const legendTop = ly;
+  series.forEach((s) => {
+    const textW = doc.getTextWidth(s.name);
+    if (lx + 9 + textW > x + w && lx > x) {
+      lx = x;
+      ly += 12;
+    }
+    doc.setFillColor(...s.color);
+    doc.rect(lx, ly - 5, 6, 6, "F");
+    doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    doc.text(s.name, lx + 9, ly);
+    lx += 9 + textW + 12;
+  });
+  return legendTop + legendH;
 }
 
 function buildParentNote(d: StudentReportData): string {
