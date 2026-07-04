@@ -6,6 +6,7 @@ const ORANGE: [number, number, number] = [249, 115, 22];
 const NAVY: [number, number, number] = [30, 41, 59];
 const MUTED: [number, number, number] = [100, 116, 139];
 const LIGHT: [number, number, number] = [241, 245, 249];
+const CHART_BAR: [number, number, number] = [148, 190, 224];
 
 export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -23,9 +24,9 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   doc.text("Bansal Classes", margin, 32);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Monthly Academic Report", margin, 50);
+  doc.text("Academic Performance Report", margin, 50);
   doc.setFontSize(10);
-  doc.text(data.period, W - margin, 50, { align: "right" });
+  doc.text(`${data.tests.attempts} test${data.tests.attempts === 1 ? "" : "s"} recorded`, W - margin, 50, { align: "right" });
 
   let y = 100;
   // Student summary card
@@ -48,7 +49,11 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   doc.text(infoLine || "Bansal Classes student", margin + 14, y + 44);
   doc.setTextColor(...NAVY);
   doc.setFontSize(9);
-  doc.text(`Report period: ${data.period}`, margin + 14, y + 60);
+  doc.text(
+    `Report generated ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} · Overall performance across all tests`,
+    margin + 14,
+    y + 60,
+  );
   y += 86;
 
   // KPI tiles
@@ -75,26 +80,19 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   });
   y += 80;
 
-  // Section: Subject performance (bar chart)
-  y = sectionHeader(doc, "Subject performance", margin, y, W);
-  if (data.tests.bySubject.length === 0) {
-    drawEmpty(doc, "No tests attempted in this period.", margin, y, W);
+  // Section: Test performance — percentage scored in every test taken so far.
+  y = sectionHeader(doc, "Test performance", margin, y, W);
+  if (data.tests.trend.length === 0) {
+    drawEmpty(doc, "No tests attempted yet.", margin, y, W);
     y += 30;
   } else {
     const chartH = 110;
     const chartW = W - margin * 2;
-    drawBarChart(doc, data.tests.bySubject, margin, y, chartW, chartH);
-    y += chartH + 16;
-  }
-
-  // Section: Score trend
-  y = sectionHeader(doc, "Score trend", margin, y, W);
-  if (data.tests.trend.length === 0) {
-    drawEmpty(doc, "No score data to chart.", margin, y, W);
-    y += 30;
-  } else {
-    const chartH = 90;
-    drawLineChart(doc, data.tests.trend, margin, y, W - margin * 2, chartH);
+    drawBarChart(
+      doc,
+      data.tests.trend.map((t) => ({ label: t.date, pct: t.pct })),
+      margin, y, chartW, chartH,
+    );
     y += chartH + 16;
   }
 
@@ -109,7 +107,7 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
   // columns, a totals row, and a cumulative-% footer).
   y = sectionHeader(doc, "Test-wise performance", margin, y, W);
   if (data.tests.list.length === 0) {
-    drawEmpty(doc, "No tests attempted in this period.", margin, y, W);
+    drawEmpty(doc, "No tests attempted yet.", margin, y, W);
     y += 30;
   } else {
     const SUBJECT_ORDER = ["Physics", "Chemistry", "Mathematics", "Maths", "Biology"];
@@ -133,13 +131,16 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
             ...subjectCols.map((s) => ({ content: s, colSpan: 2 })),
             { content: "Total", rowSpan: 2 },
             { content: "%", rowSpan: 2 },
+            { content: "Rank", rowSpan: 2 },
             { content: "Percentile", rowSpan: 2 },
           ],
           subjectCols.flatMap(() => ["MM", "MO"]),
         ]
-      : [["Test Date", "Test", "Total", "%", "Percentile"]];
+      : [["Test Date", "Test", "Total", "%", "Rank", "Percentile"]];
 
-    const body = chronological.map((t) => {
+    const absentRowIndices = new Set<number>();
+    const body = chronological.map((t, i) => {
+      if (t.isAbsent) absentRowIndices.add(i);
       const dateStr = t.submittedAt
         ? new Date(t.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
         : "—";
@@ -152,14 +153,15 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
         dateStr,
         t.testName,
         ...subjCells,
-        num(t.score),
-        t.totalMarks > 0 ? `${Math.round((t.score / t.totalMarks) * 100)}%` : "—",
+        t.isAbsent ? "Absent" : num(t.score),
+        t.isAbsent ? "—" : t.totalMarks > 0 ? `${Math.round((t.score / t.totalMarks) * 100)}%` : "—",
+        t.rank != null ? `${t.rank}${t.rankOf ? `/${t.rankOf}` : ""}` : "—",
         t.percentile != null ? t.percentile.toFixed(2) : "—",
       ];
     });
 
     // Totals row — sum of MM/MO per subject and grand total, mirroring the
-    // "Total :" line on the physical report.
+    // "Total :" line on the physical report. Absent tests contribute 0.
     const totalRow = [
       "Total",
       "",
@@ -169,6 +171,7 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
         return [num(sumMax), num(sumScore)];
       }),
       num(chronological.reduce((acc, t) => acc + t.score, 0)),
+      "",
       "",
       "",
     ];
@@ -186,6 +189,8 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
         if (d.row.index === body.length - 1) {
           d.cell.styles.fontStyle = "bold";
           d.cell.styles.fillColor = LIGHT;
+        } else if (absentRowIndices.has(d.row.index)) {
+          d.cell.styles.textColor = [200, 60, 60];
         }
       },
     });
@@ -249,7 +254,7 @@ function drawEmpty(doc: jsPDF, text: string, x: number, y: number, W: number) {
 
 function drawBarChart(
   doc: jsPDF,
-  rows: { subject: string; avgPct: number }[],
+  rows: { label: string; pct: number }[],
   x: number,
   y: number,
   w: number,
@@ -270,66 +275,18 @@ function drawBarChart(
   });
   const n = rows.length;
   const slot = innerW / n;
-  const barW = Math.min(40, slot * 0.6);
+  const barW = Math.min(28, slot * 0.6);
   rows.forEach((r, i) => {
     const cx = x + padL + slot * i + slot / 2;
-    const bh = (r.avgPct / 100) * innerH;
-    doc.setFillColor(...ORANGE);
+    const bh = (r.pct / 100) * innerH;
+    doc.setFillColor(...CHART_BAR);
     doc.rect(cx - barW / 2, baseY - bh, barW, bh, "F");
     doc.setTextColor(...NAVY);
-    doc.setFontSize(8);
-    doc.text(`${r.avgPct}%`, cx, baseY - bh - 3, { align: "center" });
+    doc.setFontSize(7);
+    doc.text(`${r.pct}%`, cx, baseY - bh - 3, { align: "center" });
     doc.setTextColor(...MUTED);
-    const label = r.subject.length > 10 ? r.subject.slice(0, 9) + "…" : r.subject;
+    const label = r.label.length > 10 ? r.label.slice(0, 9) + "…" : r.label;
     doc.text(label, cx, baseY + 12, { align: "center" });
-  });
-}
-
-function drawLineChart(
-  doc: jsPDF,
-  pts: { date: string; pct: number }[],
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
-  const padL = 30, padB = 18, padT = 8;
-  const innerW = w - padL;
-  const innerH = h - padB - padT;
-  const baseY = y + padT + innerH;
-  doc.setDrawColor(226, 232, 240);
-  doc.setTextColor(...MUTED);
-  doc.setFontSize(8);
-  [0, 50, 100].forEach((v) => {
-    const yy = baseY - (v / 100) * innerH;
-    doc.line(x + padL, yy, x + w, yy);
-    doc.text(`${v}`, x + 4, yy + 3);
-  });
-  if (pts.length === 0) return;
-  const stepX = pts.length > 1 ? innerW / (pts.length - 1) : 0;
-  doc.setDrawColor(...ORANGE);
-  doc.setLineWidth(1.4);
-  let prev: { x: number; y: number } | null = null;
-  pts.forEach((p, i) => {
-    const cx = x + padL + i * stepX + (pts.length === 1 ? innerW / 2 : 0);
-    const cy = baseY - (p.pct / 100) * innerH;
-    if (prev) doc.line(prev.x, prev.y, cx, cy);
-    prev = { x: cx, y: cy };
-  });
-  doc.setFillColor(...ORANGE);
-  pts.forEach((p, i) => {
-    const cx = x + padL + i * stepX + (pts.length === 1 ? innerW / 2 : 0);
-    const cy = baseY - (p.pct / 100) * innerH;
-    doc.circle(cx, cy, 2, "F");
-  });
-  // X labels (sparse)
-  doc.setTextColor(...MUTED);
-  doc.setFontSize(7);
-  const every = Math.ceil(pts.length / 6);
-  pts.forEach((p, i) => {
-    if (i % every !== 0 && i !== pts.length - 1) return;
-    const cx = x + padL + i * stepX + (pts.length === 1 ? innerW / 2 : 0);
-    doc.text(p.date, cx, baseY + 12, { align: "center" });
   });
 }
 
@@ -338,10 +295,10 @@ function buildParentNote(d: StudentReportData): string {
   const first = d.student.name.split(" ")[0] || "Your child";
   if (d.tests.attempts > 0) {
     parts.push(
-      `${first} attempted ${d.tests.attempts} test${d.tests.attempts === 1 ? "" : "s"} this month with an average score of ${d.tests.avgScorePct}% and accuracy of ${d.tests.avgAccuracyPct}%.`,
+      `${first} has attempted ${d.tests.attempts} test${d.tests.attempts === 1 ? "" : "s"} so far, with an average score of ${d.tests.avgScorePct}% and accuracy of ${d.tests.avgAccuracyPct}%.`,
     );
   } else {
-    parts.push(`${first} did not attempt any tests this month — encourage practice tests to build momentum.`);
+    parts.push(`${first} has not attempted any tests yet — encourage practice tests to build momentum.`);
   }
   if (d.tests.bySubject.length > 1) {
     const sorted = [...d.tests.bySubject].sort((a, b) => b.avgPct - a.avgPct);
@@ -357,6 +314,6 @@ function buildParentNote(d: StudentReportData): string {
 export function downloadStudentReport(data: StudentReportData) {
   const doc = buildStudentReportPdf(data);
   const safeName = data.student.name.replace(/[^a-z0-9]+/gi, "_");
-  const monthSlug = data.period.replace(/\s+/g, "_");
-  doc.save(`Bansal_Classes_Report_${safeName}_${monthSlug}.pdf`);
+  const dateSlug = new Date().toISOString().slice(0, 10);
+  doc.save(`Bansal_Classes_Report_${safeName}_${dateSlug}.pdf`);
 }
