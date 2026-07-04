@@ -307,8 +307,11 @@ const AdminStudentsPage = () => {
       let skipped = 0;
       for (let i = 0; i < ids.length; i += CHUNK) {
         const slice = ids.slice(i, i + CHUNK);
+        // Carry forward every password issued so far so uniqueness holds across
+        // the whole run, not just within a single chunk.
+        const excludePasswords = all.map((r) => r.password).filter((p): p is string => !!p);
         const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
-          body: { user_ids: slice, overwrite: pwdBulkOverwrite },
+          body: { user_ids: slice, overwrite: pwdBulkOverwrite, exclude_passwords: excludePasswords },
         });
         if (error) throw error;
         const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
@@ -1226,7 +1229,7 @@ const AdminStudentsPage = () => {
                 <KeyRound className="h-5 w-5 text-primary" />
                 <div>
                   <h2 className="text-sm font-bold text-foreground">Bulk generate CBT test passwords</h2>
-                  <p className="text-[11px] text-muted-foreground">Random 8-character passwords. Shown only once — download the CSV.</p>
+                  <p className="text-[11px] text-muted-foreground">Random unique 8-digit numeric passwords. Shown only once — download the CSV.</p>
                 </div>
               </div>
               <button onClick={() => !pwdBulkRunning && setPwdBulkOpen(false)} className="text-muted-foreground hover:text-foreground">
@@ -1364,7 +1367,7 @@ const AdminStudentsPage = () => {
                 <h2 className="text-sm font-bold text-foreground">Reset CBT password</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   For <span className="font-semibold text-foreground">{pwdReset.full_name || "this student"}</span>.
-                  Leave the field blank to auto-generate a random 8-character password.
+                  Leave the field blank to auto-generate a random 8-digit numeric password.
                 </p>
               </div>
             </div>

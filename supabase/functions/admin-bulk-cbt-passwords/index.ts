@@ -1,5 +1,8 @@
 // Bulk-generate CBT passwords for students. Admin/super_admin/center_admin only.
-// Body: { user_ids: string[], overwrite?: boolean }
+// Body: { user_ids: string[], overwrite?: boolean, exclude_passwords?: string[] }
+// exclude_passwords lets the caller carry forward passwords already issued in earlier
+// chunks of the same bulk run, so uniqueness holds across the whole batch, not just
+// within a single invocation.
 // Returns: { results: [{ user_id, roll_number, full_name, password | null, status }], generated: n }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -10,13 +13,25 @@ const corsHeaders = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-const genPassword = (len = 8) => {
-  const buf = new Uint32Array(len);
+// Numeric-only, 8 digits, first digit never 0 so the value always displays as a
+// full 8-digit number (avoids Excel/Sheets stripping a leading zero on CSV export).
+const genPassword = (): string => {
+  const buf = new Uint32Array(8);
   crypto.getRandomValues(buf);
-  let out = "";
-  for (let i = 0; i < len; i++) out += ALPHABET[buf[i] % ALPHABET.length];
+  let out = String(1 + (buf[0] % 9));
+  for (let i = 1; i < 8; i++) out += String(buf[i] % 10);
   return out;
+};
+
+const genUniquePassword = (used: Set<string>): string => {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const pwd = genPassword();
+    if (!used.has(pwd)) {
+      used.add(pwd);
+      return pwd;
+    }
+  }
+  throw new Error("Could not generate a unique password — try again");
 };
 
 Deno.serve(async (req) => {
@@ -42,6 +57,9 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const userIds: string[] = Array.isArray(body?.user_ids) ? body.user_ids : [];
     const overwrite: boolean = body?.overwrite === true;
+    const usedPasswords = new Set<string>(
+      Array.isArray(body?.exclude_passwords) ? body.exclude_passwords.map(String) : [],
+    );
     if (!userIds.length) return json(400, { error: "No user_ids provided" });
 
     const { data: profs, error: pErr } = await admin
@@ -79,7 +97,21 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const pwd = genPassword(8);
+      let pwd: string;
+      try {
+        pwd = genUniquePassword(usedPasswords);
+      } catch (genErr) {
+        results.push({
+          user_id: p.user_id,
+          roll_number: p.roll_number ?? null,
+          full_name: p.full_name ?? null,
+          centre,
+          batch: p.batch_label ?? null,
+          password: null,
+          status: `error: ${genErr instanceof Error ? genErr.message : String(genErr)}`,
+        });
+        continue;
+      }
       const { error: aErr } = await admin.auth.admin.updateUserById(p.user_id, { password: pwd });
       if (aErr) {
         results.push({

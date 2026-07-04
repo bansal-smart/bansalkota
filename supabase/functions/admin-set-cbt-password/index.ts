@@ -10,12 +10,13 @@ const corsHeaders = {
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-const genPassword = (len = 8) => {
-  const buf = new Uint32Array(len);
+// Numeric-only, 8 digits, first digit never 0 so the value always displays as a
+// full 8-digit number (avoids Excel/Sheets stripping a leading zero on export).
+const genPassword = (): string => {
+  const buf = new Uint32Array(8);
   crypto.getRandomValues(buf);
-  let out = "";
-  for (let i = 0; i < len; i++) out += ALPHABET[buf[i] % ALPHABET.length];
+  let out = String(1 + (buf[0] % 9));
+  for (let i = 1; i < 8; i++) out += String(buf[i] % 10);
   return out;
 };
 
@@ -42,7 +43,7 @@ Deno.serve(async (req) => {
     if (!userId) return json(400, { error: "Missing user_id" });
     let password = String(body?.password ?? "").trim();
     if (password && password.length < 6) return json(400, { error: "Password must be at least 6 characters" });
-    if (!password) password = genPassword(8);
+    if (!password) password = genPassword();
 
     const { error: aErr } = await admin.auth.admin.updateUserById(userId, { password });
     if (aErr) return json(500, { error: aErr.message });
