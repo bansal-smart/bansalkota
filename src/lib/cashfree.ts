@@ -49,7 +49,7 @@ export async function startBoostCashfreeCheckout(registrationId: string) {
 
   await loadSdk();
   const cf = window.Cashfree!({ mode: (data.env === "production" ? "production" : "sandbox") as any });
-  await cf.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: "_self" });
+  await cf.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: "_modal" });
   return data;
 }
 

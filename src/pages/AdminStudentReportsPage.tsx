@@ -58,12 +58,22 @@ const AdminStudentReportsPage = () => {
     (async () => {
       setLoading(true);
       try {
-        const { data: roleRows, error: rErr } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "student");
+        // A "student" role row can be stale: e.g. a user bulk-imported as a
+        // student and later added as centre staff keeps their old student row
+        // forever, since centre-admin access is granted via centre_staff
+        // membership, not user_roles. Exclude anyone with an elevated role or
+        // centre_staff membership so staff never leak into this list.
+        const [{ data: roleRows, error: rErr }, { data: elevatedRows }, { data: staffRows }] = await Promise.all([
+          supabase.from("user_roles").select("user_id").eq("role", "student"),
+          supabase.from("user_roles").select("user_id").neq("role", "student"),
+          (supabase as any).from("centre_staff").select("user_id"),
+        ]);
         if (rErr) throw rErr;
-        const ids = Array.from(new Set((roleRows ?? []).map((r) => r.user_id)));
+        const excluded = new Set<string>([
+          ...(elevatedRows ?? []).map((r) => r.user_id),
+          ...((staffRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id),
+        ]);
+        const ids = Array.from(new Set((roleRows ?? []).map((r) => r.user_id))).filter((id) => !excluded.has(id));
         if (!ids.length) { setStudents([]); return; }
         const { data, error } = await (supabase as any)
           .from("profiles")

@@ -61,6 +61,7 @@ const CenterStudentsPage = () => {
       (supabase as any)
         .from("course_batches")
         .select("id, name, code")
+        .eq("centre_id", primaryCenterId)
         .eq("is_active", true)
         .order("name"),
     ]);
@@ -103,8 +104,21 @@ const CenterStudentsPage = () => {
     toast.success("Updated");
   };
   const updateStatus = (s: Student, next: Status) => updateStudent(s, { student_status: next });
-  const updateBatch = (s: Student, batchId: string) =>
-    updateStudent(s, { batch_id: batchId || null });
+
+  // batch_id is a locked field under RLS (centre staff can't change it via a raw
+  // profiles update) — reassignment has to go through this SECURITY DEFINER RPC,
+  // which validates the caller and that the batch belongs to this centre.
+  const updateBatch = async (s: Student, batchId: string) => {
+    setSavingId(s.id);
+    const { error } = await (supabase as any).rpc("centre_update_student_batch", {
+      _user_id: s.user_id,
+      _batch_id: batchId || null,
+    });
+    setSavingId(null);
+    if (error) return toast.error(error.message);
+    setItems((arr) => arr.map((x) => (x.id === s.id ? { ...x, batch_id: batchId || null } : x)));
+    toast.success("Updated");
+  };
 
   // Bulk CSV fields — import looks students up by phone or roll_number and updates centre/status
   const csvFields: CsvField[] = [

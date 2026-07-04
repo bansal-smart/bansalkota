@@ -9,6 +9,18 @@ export const monthRange = (year: number, monthIndex: number): MonthRange => {
   return { start, end, label };
 };
 
+export type SubjectBreakdown = { subject: string; score: number; maxScore: number };
+
+export type TestEntry = {
+  testName: string;
+  submittedAt: string | null;
+  score: number;
+  totalMarks: number;
+  accuracyPct: number;
+  percentile: number | null;
+  subjects: SubjectBreakdown[];
+};
+
 export type StudentReportData = {
   student: {
     name: string;
@@ -25,18 +37,42 @@ export type StudentReportData = {
     bestPercentile: number;
     bySubject: { subject: string; avgPct: number; attempts: number }[];
     trend: { date: string; pct: number }[];
-  };
-  attendance: { registered: number; attended: number; percent: number };
-  courses: { name: string; progress: number }[];
-  engagement: {
-    doubtsAsked: number;
-    doubtsAnswered: number;
-    activeDays: number;
-    minutesStudied: number;
+    list: TestEntry[];
   };
 };
 
 const safe = <T,>(p: PromiseLike<T>) => Promise.resolve(p).catch(() => null as any);
+
+// Per-question metadata is the most accurate source of subject-wise marks
+// (mirrors the logic on the student's own result page). Falls back to the
+// coarser metadata.subjects map for older attempts that lack it.
+function subjectBreakdownFromAttempt(a: any): SubjectBreakdown[] {
+  const metaQuestions = (a?.metadata?.questions ?? []) as Array<{
+    subject?: string; marks?: number; max_marks?: number;
+  }>;
+  if (Array.isArray(metaQuestions) && metaQuestions.length) {
+    const map = new Map<string, SubjectBreakdown>();
+    metaQuestions.forEach((q) => {
+      const subj = q.subject || "General";
+      const cur = map.get(subj) ?? { subject: subj, score: 0, maxScore: 0 };
+      cur.score += Number(q.marks ?? 0);
+      cur.maxScore += Number(q.max_marks ?? 0);
+      map.set(subj, cur);
+    });
+    return Array.from(map.values());
+  }
+  const metaSubjects = a?.metadata?.subjects as Record<string, unknown> | undefined;
+  if (metaSubjects && Object.keys(metaSubjects).length) {
+    return Object.entries(metaSubjects).map(([subject, v]) => {
+      if (v && typeof v === "object") {
+        const s = v as { score?: number; total?: number };
+        return { subject, score: Number(s.score ?? 0), maxScore: Number(s.total ?? 0) * 4 };
+      }
+      return { subject, score: Number(v ?? 0), maxScore: 0 };
+    });
+  }
+  return [];
+}
 
 export async function fetchStudentReport(
   studentId: string,
@@ -44,59 +80,25 @@ export async function fetchStudentReport(
 ): Promise<StudentReportData> {
   const startIso = range.start.toISOString();
   const endIso = range.end.toISOString();
-  const startDate = range.start.toISOString().slice(0, 10);
-  const endDate = range.end.toISOString().slice(0, 10);
 
-  const [profileRes, attemptsRes, attendanceRes, enrollRes, doubtsRes, sessionsRes] =
-    await Promise.all([
-      safe(
-        supabase
-          .from("profiles")
-          .select("full_name, target_exam, class_level")
-          .eq("user_id", studentId)
-          .maybeSingle(),
-      ),
-      safe(
-        (supabase as any)
-          .from("test_attempts")
-          .select("score, total_questions, correct_answers, percentile, subject, submitted_at, status")
-          .eq("user_id", studentId)
-          .in("status", ["submitted", "auto_submitted"])
-          .gte("submitted_at", startIso)
-          .lt("submitted_at", endIso),
-      ),
-      safe(
-        (supabase as any)
-          .from("live_class_attendance")
-          .select("status, class_id, live_classes!inner(starts_at)")
-          .eq("user_id", studentId)
-          .gte("live_classes.starts_at", startIso)
-          .lt("live_classes.starts_at", endIso),
-      ),
-      safe(
-        (supabase as any)
-          .from("enrollments")
-          .select("progress_percent, courses(name)")
-          .eq("user_id", studentId)
-          .eq("is_active", true),
-      ),
-      safe(
-        (supabase as any)
-          .from("doubts")
-          .select("id, status, created_at")
-          .eq("user_id", studentId)
-          .gte("created_at", startIso)
-          .lt("created_at", endIso),
-      ),
-      safe(
-        (supabase as any)
-          .from("study_sessions")
-          .select("session_date, minutes_studied")
-          .eq("user_id", studentId)
-          .gte("session_date", startDate)
-          .lt("session_date", endDate),
-      ),
-    ]);
+  const [profileRes, attemptsRes] = await Promise.all([
+    safe(
+      supabase
+        .from("profiles")
+        .select("full_name, target_exam, class_level")
+        .eq("user_id", studentId)
+        .maybeSingle(),
+    ),
+    safe(
+      (supabase as any)
+        .from("test_attempts")
+        .select("test_name, score, total_questions, correct_answers, percentile, submitted_at, status, metadata")
+        .eq("user_id", studentId)
+        .in("status", ["submitted", "auto_submitted"])
+        .gte("submitted_at", startIso)
+        .lt("submitted_at", endIso),
+    ),
+  ]);
 
   const profile = (profileRes as any)?.data ?? {};
   const mentorName: string | null = null;
@@ -110,54 +112,47 @@ export async function fetchStudentReport(
   const avgAccuracyPct = totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 0;
   const bestPercentile = attempts.reduce((m, a) => Math.max(m, a.percentile || 0), 0);
 
-  const subjMap = new Map<string, { sumPct: number; n: number }>();
-  attempts.forEach((a) => {
-    const subj = a.subject || "General";
-    const denom = (a.total_questions || 0) * 4;
-    const pct = denom > 0 ? ((a.score || 0) / denom) * 100 : 0;
-    const cur = subjMap.get(subj) || { sumPct: 0, n: 0 };
-    cur.sumPct += pct;
-    cur.n += 1;
-    subjMap.set(subj, cur);
+  const list: TestEntry[] = attempts.map((a) => {
+    const subjects = subjectBreakdownFromAttempt(a);
+    const totalMarks = subjects.length
+      ? subjects.reduce((s, x) => s + x.maxScore, 0)
+      : (a.total_questions || 0) * 4;
+    return {
+      testName: a.test_name || "Test",
+      submittedAt: a.submitted_at ?? null,
+      score: Number(a.score ?? 0),
+      totalMarks,
+      accuracyPct: a.total_questions ? Math.round(((a.correct_answers || 0) / a.total_questions) * 100) : 0,
+      percentile: a.percentile ?? null,
+      subjects,
+    };
+  }).sort((a, b) => (b.submittedAt ?? "").localeCompare(a.submittedAt ?? ""));
+
+  // Aggregate subject performance across every test in the month — summed
+  // score/max (not an average of percentages) so bigger tests weigh correctly.
+  const subjAgg = new Map<string, { score: number; maxScore: number; attempts: number }>();
+  list.forEach((t) => {
+    t.subjects.forEach((s) => {
+      const cur = subjAgg.get(s.subject) ?? { score: 0, maxScore: 0, attempts: 0 };
+      cur.score += s.score;
+      cur.maxScore += s.maxScore;
+      cur.attempts += 1;
+      subjAgg.set(s.subject, cur);
+    });
   });
-  const bySubject = Array.from(subjMap.entries()).map(([subject, v]) => ({
+  const bySubject = Array.from(subjAgg.entries()).map(([subject, v]) => ({
     subject,
-    avgPct: Math.round(v.sumPct / v.n),
-    attempts: v.n,
+    avgPct: v.maxScore > 0 ? Math.round((v.score / v.maxScore) * 100) : 0,
+    attempts: v.attempts,
   }));
 
-  const trend = attempts
-    .filter((a) => a.submitted_at)
-    .sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))
-    .map((a) => {
-      const denom = (a.total_questions || 0) * 4;
-      return {
-        date: new Date(a.submitted_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
-        pct: denom > 0 ? Math.round(((a.score || 0) / denom) * 100) : 0,
-      };
-    });
-
-  const att = ((attendanceRes as any)?.data ?? []) as any[];
-  const registered = att.length;
-  const attended = att.filter((a) => a.status === "attended" || a.status === "joined").length;
-  const attendance = {
-    registered,
-    attended,
-    percent: registered > 0 ? Math.round((attended / registered) * 100) : 0,
-  };
-
-  const courses = (((enrollRes as any)?.data ?? []) as any[])
-    .map((e) => ({ name: e.courses?.name || "Course", progress: e.progress_percent || 0 }))
-    .slice(0, 6);
-
-  const doubts = ((doubtsRes as any)?.data ?? []) as any[];
-  const sessions = ((sessionsRes as any)?.data ?? []) as any[];
-  const engagement = {
-    doubtsAsked: doubts.length,
-    doubtsAnswered: doubts.filter((d) => d.status === "answered").length,
-    activeDays: new Set(sessions.map((s) => s.session_date)).size,
-    minutesStudied: sessions.reduce((s, x) => s + (x.minutes_studied || 0), 0),
-  };
+  const trend = [...list]
+    .filter((t) => t.submittedAt)
+    .sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? ""))
+    .map((t) => ({
+      date: new Date(t.submittedAt as string).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
+      pct: t.totalMarks > 0 ? Math.round((t.score / t.totalMarks) * 100) : 0,
+    }));
 
   return {
     student: {
@@ -167,9 +162,6 @@ export async function fetchStudentReport(
       mentorName,
     },
     period: range.label,
-    tests: { attempts: attempts.length, avgScorePct, avgAccuracyPct, bestPercentile, bySubject, trend },
-    attendance,
-    courses,
-    engagement,
+    tests: { attempts: attempts.length, avgScorePct, avgAccuracyPct, bestPercentile, bySubject, trend, list },
   };
 }

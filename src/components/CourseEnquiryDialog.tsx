@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, CreditCard } from "lucide-react";
 import { z } from "zod";
 import {
@@ -18,6 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { setPendingEnrollment } from "@/lib/pendingEnrollment";
 
 type Centre = { id: string; name: string };
 
@@ -51,6 +54,7 @@ const schema = z.object({
 
 const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [centres, setCentres] = useState<Centre[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -64,8 +68,10 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     message: "",
   });
 
+  // Form is anonymous-only — a logged-in user is already a known lead, so
+  // fetch centres (for the "preferred centre" field) only when it'll render.
   useEffect(() => {
-    if (!open) return;
+    if (!open || user) return;
     supabase
       .from("centres")
       .select("id, city, area")
@@ -77,24 +83,29 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
         }));
         setCentres(rows);
       });
-    if (user) {
-      supabase
-        .from("profiles")
-        .select("full_name, phone, city, state")
-        .eq("user_id", user.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          setForm((f) => ({
-            ...f,
-            full_name: data?.full_name || f.full_name,
-            email: user.email || f.email,
-            phone: data?.phone || f.phone,
-            city: data?.city || f.city,
-            state: data?.state || f.state,
-          }));
-        });
-    }
   }, [open, user]);
+
+  // Logged-in users skip the enquiry form entirely — we already have their
+  // lead via their account — and go straight to Cashfree checkout.
+  useEffect(() => {
+    if (!open || !user) return;
+    let cancelled = false;
+    (async () => {
+      setSubmitting(true);
+      try {
+        await startCashfreeCheckout({ orderType: "course", courseId: course.id });
+      } catch (e: any) {
+        if (!cancelled) toast.error(e?.message || "Could not start payment");
+      } finally {
+        if (!cancelled) {
+          setSubmitting(false);
+          onOpenChange(false);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, user, course.id]);
 
   const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -113,7 +124,8 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
       // itself is permitted — so we never need the server to hand the id back.
       const enquiryId = crypto.randomUUID();
 
-      // 1) Persist enquiry first so admins always see the lead.
+      // Persist the enquiry so admins have the lead (this form only ever runs
+      // for anonymous visitors — logged-in users skip it, see the effect above).
       const { error: insErr } = await supabase
         .from("course_enquiries")
         .insert({
@@ -121,7 +133,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           course_id: course.id,
           course_name: course.name,
           course_price: Number(course.price),
-          user_id: user?.id || null,
+          user_id: null,
           full_name: parsed.data.full_name,
           email: parsed.data.email,
           phone: parsed.data.phone,
@@ -135,24 +147,29 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
         });
       if (insErr) throw insErr;
 
-      if (!user) {
-        toast.success("Enquiry submitted. A counsellor will contact you soon.");
-        onOpenChange(false);
-        setSubmitting(false);
-        return;
-      }
-
-      // 2) Kick off Cashfree checkout — backend links enquiry to order.
-      await startCashfreeCheckout({
-        orderType: "course",
+      // Remember what they were trying to enroll in — once they authenticate
+      // and (if needed) complete their profile, ProfileCompletionDialog picks
+      // this up and resumes straight to Cashfree checkout.
+      setPendingEnrollment({
         courseId: course.id,
         enquiryId,
-      } as any);
+        courseName: course.name,
+        coursePrice: Number(course.price),
+        createdAt: Date.now(),
+      });
+      toast.success("Enquiry saved! Verify your mobile number to continue to payment.");
+      onOpenChange(false);
+      setSubmitting(false);
+      navigate("/login");
     } catch (e: any) {
-      toast.error(e?.message || "Could not start payment");
+      toast.error(e?.message || "Could not save your enquiry");
       setSubmitting(false);
     }
   };
+
+  // Logged-in users never see the form — the effect above sends them
+  // straight to checkout — so render nothing while that's in flight.
+  if (user) return null;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
@@ -161,7 +178,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           <DialogTitle className="font-display">Enquiry & Enrollment</DialogTitle>
           <DialogDescription>
             Confirm your details for <span className="font-semibold text-foreground">{course.name}</span>. We'll save
-            your enquiry, then take you to the secure payment page.
+            your enquiry — you'll just need to verify your mobile number next to continue to payment.
           </DialogDescription>
         </DialogHeader>
 
@@ -220,7 +237,13 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <Label htmlFor="ce-city">City *</Label>
-              <Input id="ce-city" value={form.city} onChange={(e) => update("city", e.target.value)} />
+              <CityAutocompleteInput
+                id="ce-city"
+                value={form.city}
+                onChange={(v) => update("city", v)}
+                onSelectCity={(city, state) => setForm((f) => ({ ...f, city, state }))}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              />
             </div>
             <div>
               <Label htmlFor="ce-state">State *</Label>
@@ -238,7 +261,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             />
           </div>
           <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <CreditCard className="h-3 w-3" /> You'll be redirected to Cashfree to pay ₹
+            <CreditCard className="h-3 w-3" /> After verifying your mobile number, you'll be redirected to Cashfree to pay ₹
             {Number(course.price).toLocaleString()}.
           </p>
         </div>

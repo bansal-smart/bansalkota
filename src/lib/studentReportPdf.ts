@@ -104,80 +104,103 @@ export function buildStudentReportPdf(data: StudentReportData): jsPDF {
     y = 50;
   }
 
-  // Section: Attendance + Engagement (side by side)
-  y = sectionHeader(doc, "Live class attendance & engagement", margin, y, W);
-  const halfW = (W - margin * 2 - 12) / 2;
-  // Attendance card
-  doc.setDrawColor(226, 232, 240);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, y, halfW, 100, 6, 6, "FD");
-  doc.setTextColor(...NAVY);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.text("Live classes", margin + 12, y + 22);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(28);
-  doc.setTextColor(...ORANGE);
-  doc.text(`${data.attendance.percent}%`, margin + 12, y + 60);
-  doc.setFontSize(10);
-  doc.setTextColor(...MUTED);
-  doc.text(
-    `${data.attendance.attended} attended of ${data.attendance.registered} registered`,
-    margin + 12,
-    y + 82,
-  );
-
-  // Engagement card
-  const ex = margin + halfW + 12;
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(ex, y, halfW, 100, 6, 6, "FD");
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...NAVY);
-  doc.setFontSize(11);
-  doc.text("Engagement", ex + 12, y + 22);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...NAVY);
-  const eLines = [
-    `Doubts asked: ${data.engagement.doubtsAsked}`,
-    `Doubts resolved: ${data.engagement.doubtsAnswered}`,
-    `Active study days: ${data.engagement.activeDays}`,
-    `Total study time: ${Math.round(data.engagement.minutesStudied / 60)} hrs ${data.engagement.minutesStudied % 60} min`,
-  ];
-  eLines.forEach((line, i) => doc.text(line, ex + 12, y + 42 + i * 14));
-  y += 116;
-
-  // Section: Course progress
-  y = sectionHeader(doc, "Course progress", margin, y, W);
-  if (data.courses.length === 0) {
-    drawEmpty(doc, "Not enrolled in any active course.", margin, y, W);
+  // Section: Test-wise performance, segregated by subject (Bansal's classic
+  // "Students Performance Report" grid: per-subject Max-Marks/Marks-Obtained
+  // columns, a totals row, and a cumulative-% footer).
+  y = sectionHeader(doc, "Test-wise performance", margin, y, W);
+  if (data.tests.list.length === 0) {
+    drawEmpty(doc, "No tests attempted in this period.", margin, y, W);
     y += 30;
   } else {
+    const SUBJECT_ORDER = ["Physics", "Chemistry", "Mathematics", "Maths", "Biology"];
+    const subjectSet = new Set<string>();
+    data.tests.list.forEach((t) => t.subjects.forEach((s) => subjectSet.add(s.subject)));
+    const subjectCols = Array.from(subjectSet).sort((a, b) => {
+      const ia = SUBJECT_ORDER.indexOf(a);
+      const ib = SUBJECT_ORDER.indexOf(b);
+      if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      return a.localeCompare(b);
+    });
+
+    const chronological = [...data.tests.list].reverse(); // list is newest-first; report reads oldest-first
+    const num = (n: number) => n.toFixed(2);
+
+    const head = subjectCols.length
+      ? [
+          [
+            { content: "Test Date", rowSpan: 2 },
+            { content: "Test", rowSpan: 2 },
+            ...subjectCols.map((s) => ({ content: s, colSpan: 2 })),
+            { content: "Total", rowSpan: 2 },
+            { content: "%", rowSpan: 2 },
+            { content: "Percentile", rowSpan: 2 },
+          ],
+          subjectCols.flatMap(() => ["MM", "MO"]),
+        ]
+      : [["Test Date", "Test", "Total", "%", "Percentile"]];
+
+    const body = chronological.map((t) => {
+      const dateStr = t.submittedAt
+        ? new Date(t.submittedAt).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : "—";
+      const subjMap = new Map(t.subjects.map((s) => [s.subject, s]));
+      const subjCells = subjectCols.flatMap((s) => {
+        const sub = subjMap.get(s);
+        return sub ? [num(sub.maxScore), num(sub.score)] : ["—", "—"];
+      });
+      return [
+        dateStr,
+        t.testName,
+        ...subjCells,
+        num(t.score),
+        t.totalMarks > 0 ? `${Math.round((t.score / t.totalMarks) * 100)}%` : "—",
+        t.percentile != null ? t.percentile.toFixed(2) : "—",
+      ];
+    });
+
+    // Totals row — sum of MM/MO per subject and grand total, mirroring the
+    // "Total :" line on the physical report.
+    const totalRow = [
+      "Total",
+      "",
+      ...subjectCols.flatMap((s) => {
+        const sumMax = chronological.reduce((acc, t) => acc + (t.subjects.find((x) => x.subject === s)?.maxScore ?? 0), 0);
+        const sumScore = chronological.reduce((acc, t) => acc + (t.subjects.find((x) => x.subject === s)?.score ?? 0), 0);
+        return [num(sumMax), num(sumScore)];
+      }),
+      num(chronological.reduce((acc, t) => acc + t.score, 0)),
+      "",
+      "",
+    ];
+    body.push(totalRow);
+
     autoTable(doc, {
       startY: y,
-      head: [["Course", "Progress"]],
-      body: data.courses.map((c) => [c.name, `${c.progress}%`]),
+      head,
+      body,
       margin: { left: margin, right: margin },
-      headStyles: { fillColor: NAVY, textColor: 255 },
-      styles: { fontSize: 10, cellPadding: 6 },
-      didDrawCell: (d) => {
-        if (d.section === "body" && d.column.index === 1) {
-          const pct = data.courses[d.row.index]?.progress ?? 0;
-          const x = d.cell.x + 6;
-          const yy = d.cell.y + d.cell.height / 2 - 4;
-          const barW = d.cell.width - 50;
-          doc.setFillColor(...LIGHT);
-          doc.rect(x, yy, barW, 8, "F");
-          doc.setFillColor(...ORANGE);
-          doc.rect(x, yy, (barW * pct) / 100, 8, "F");
-          doc.setTextColor(...NAVY);
-          doc.setFontSize(9);
-          doc.text(`${pct}%`, x + barW + 6, yy + 7);
+      headStyles: { fillColor: NAVY, textColor: 255, halign: "center", valign: "middle" },
+      styles: { fontSize: 7.5, cellPadding: 4, overflow: "linebreak", halign: "center" },
+      columnStyles: { 1: { halign: "left" } },
+      didParseCell: (d) => {
+        if (d.row.index === body.length - 1) {
+          d.cell.styles.fontStyle = "bold";
+          d.cell.styles.fillColor = LIGHT;
         }
       },
-      columnStyles: { 1: { cellWidth: 240 } },
     });
-    y = (doc as any).lastAutoTable.finalY + 12;
+    y = (doc as any).lastAutoTable.finalY + 10;
+
+    const totalMax = chronological.reduce((acc, t) => acc + t.totalMarks, 0);
+    const totalScore = chronological.reduce((acc, t) => acc + t.score, 0);
+    const cummPct = totalMax > 0 ? ((totalScore / totalMax) * 100).toFixed(2) : "0.00";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...NAVY);
+    doc.text(`Over All :: ${num(totalScore)} / ${num(totalMax)}`, margin, y + 10);
+    doc.text(`Cumm. %age : ${cummPct}`, W - margin, y + 10, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    y += 24;
   }
 
   // Parent note
@@ -320,17 +343,12 @@ function buildParentNote(d: StudentReportData): string {
   } else {
     parts.push(`${first} did not attempt any tests this month — encourage practice tests to build momentum.`);
   }
-  if (d.attendance.registered > 0) {
+  if (d.tests.bySubject.length > 1) {
+    const sorted = [...d.tests.bySubject].sort((a, b) => b.avgPct - a.avgPct);
+    const best = sorted[0];
+    const weak = sorted[sorted.length - 1];
     parts.push(
-      `Live class attendance was ${d.attendance.percent}% (${d.attendance.attended} of ${d.attendance.registered}).`,
-    );
-  }
-  if (d.engagement.activeDays > 0) {
-    parts.push(`Studied on ${d.engagement.activeDays} day${d.engagement.activeDays === 1 ? "" : "s"} this month.`);
-  }
-  if (d.engagement.doubtsAsked > 0) {
-    parts.push(
-      `Raised ${d.engagement.doubtsAsked} doubt${d.engagement.doubtsAsked === 1 ? "" : "s"}, of which ${d.engagement.doubtsAnswered} have been resolved.`,
+      `Strongest in ${best.subject} (${best.avgPct}%); ${weak.subject} (${weak.avgPct}%) could use extra practice.`,
     );
   }
   return parts.join(" ");

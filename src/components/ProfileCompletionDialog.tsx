@@ -6,6 +6,8 @@ import { Loader2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { consumePendingEnrollment } from "@/lib/pendingEnrollment";
+import { startCashfreeCheckout } from "@/lib/cashfree";
 
 const CLASSES = ["8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
@@ -28,6 +30,22 @@ const schema = z.object({
   city: z.string().trim().min(2, "Enter your city").max(100),
   state: z.string().min(1, "Select your state"),
 });
+
+/** If the student had an enrollment in flight before logging in, resume it now. */
+async function resumePendingEnrollment() {
+  const pending = consumePendingEnrollment();
+  if (!pending) return;
+  try {
+    toast.success(`Redirecting you to payment for ${pending.courseName}…`);
+    await startCashfreeCheckout({
+      orderType: "course",
+      courseId: pending.courseId,
+      enquiryId: pending.enquiryId,
+    } as any);
+  } catch (e: any) {
+    toast.error(e?.message || "Could not resume payment. Please try enrolling again.");
+  }
+}
 
 function toE164In(phone: string): string | null {
   const d = phone.replace(/\D/g, "");
@@ -80,6 +98,10 @@ const ProfileCompletionDialog = () => {
           state: p?.state ?? "",
         });
         setOpen(true);
+      } else {
+        // Profile already complete (e.g. returning student) — resume any
+        // enrollment they started before logging in.
+        resumePendingEnrollment();
       }
       setChecking(false);
     })();
@@ -116,6 +138,7 @@ const ProfileCompletionDialog = () => {
     toast.success("Welcome aboard!");
     await refreshProfile();
     setOpen(false);
+    await resumePendingEnrollment();
   };
 
   if (checking || !user) return null;

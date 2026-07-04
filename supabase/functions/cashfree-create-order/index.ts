@@ -170,11 +170,15 @@ Deno.serve(async (req) => {
       cf_payment_session_id: cfJson.payment_session_id,
     }).eq("id", order.id);
 
-    // Link enquiry → order so the webhook can flip its payment_status.
+    // Link enquiry → order so the webhook can flip its payment_status. Also
+    // (re)attach user_id — safe even if it was already set, and backfills it
+    // for enquiries originally submitted anonymously (the caller here is
+    // always the same authenticated user completing the payment).
     if (body.orderType === "course" && (body as any).enquiryId) {
       await admin.from("course_enquiries").update({
         payment_order_id: order.id,
         payment_status: "initiated",
+        user_id: user.id,
       }).eq("id", (body as any).enquiryId);
     }
 

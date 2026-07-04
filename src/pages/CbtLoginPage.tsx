@@ -93,10 +93,10 @@ const CbtLoginPage = () => {
                 <ShieldCheck className="h-3.5 w-3.5" /> Secure Sign-In
               </div>
               <h2 className="mt-2 font-display text-2xl font-black text-bansal-black">
-                Sign in to your test
+                Sign in to yout test
               </h2>
               <p className="mt-1 text-sm text-bansal-gray">
-                Use your <b>registration number</b> and <b>registered mobile</b>.
+                Use your <b>registration number</b> and <b>password</b>.
               </p>
             </div>
 

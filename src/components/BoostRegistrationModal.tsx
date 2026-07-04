@@ -92,25 +92,32 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     }
     setSubmitting(true);
     const centre = centers.find((c) => c.id === parsed.data.preferred_centre_id);
+    // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
+    // Anonymous/guest submitters have no SELECT policy on boost_registrations,
+    // and requesting the row back via RETURNING fails RLS even though the
+    // INSERT itself is permitted. admit_card_number is assigned server-side by
+    // a trigger, so we fetch just that one field back via a narrow RPC after.
+    const regId = crypto.randomUUID();
     const payload = {
       ...parsed.data,
+      id: regId,
       date_of_birth: parsed.data.date_of_birth || null,
       preferred_centre_id: parsed.data.preferred_centre_id || null,
       preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
       amount: priceInr,
       payment_status: "pending",
     };
-    const { data, error } = await supabase
-      .from("boost_registrations")
-      .insert([payload as any])
-      .select("id, admit_card_number")
-      .single();
+    const { error } = await supabase.from("boost_registrations").insert([payload as any]);
     if (error) {
       setSubmitting(false);
       return toast.error(error.message);
     }
-    const regId = (data as any).id as string;
-    const admit = (data as any).admit_card_number as string;
+    const { data: admitData, error: admitErr } = await (supabase as any).rpc("get_boost_admit_card", { _id: regId });
+    if (admitErr) {
+      setSubmitting(false);
+      return toast.error(admitErr.message);
+    }
+    const admit = admitData as string;
     // Email temporarily disabled per admin request
     // void sendConfirmation({
     //   templateName: "boost-confirmation",
@@ -124,11 +131,9 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     //     preferredCentre: payload.preferred_centre_label,
     //   },
     // });
-    // Redirect to Cashfree hosted checkout
+    // Open Cashfree's checkout modal to collect payment
     try {
-      toast.success("Redirecting to secure payment…");
       await startBoostCashfreeCheckout(regId);
-      // browser navigates away
     } catch (e) {
       setSubmitting(false);
       toast.error((e as Error).message || "Could not start payment");
