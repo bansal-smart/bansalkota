@@ -1193,7 +1193,7 @@ const TestTakingPage = () => {
 
       {/* === Image zoom modal === */}
       {zoomImg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setZoomImg(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4">
           <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
             <button onClick={(e) => { e.stopPropagation(); setZoomLevel((z) => Math.max(0.5, z - 0.25)); }} className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"><ZoomOut className="h-5 w-5" /></button>
             <span className="text-white text-xs font-bold tabular-nums w-12 text-center">{Math.round(zoomLevel * 100)}%</span>
@@ -1210,8 +1210,8 @@ const TestTakingPage = () => {
 
       {/* === Instructions modal === */}
       {showInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowInstructions(false)}>
-          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-3 sticky top-0 bg-white pb-2 -mt-2 pt-2 border-b border-neutral-100">
               <h3 className="font-display text-lg font-black text-neutral-900">Test Instructions</h3>
               <button onClick={() => setShowInstructions(false)} className="rounded-full p-1 hover:bg-neutral-100"><X className="h-4 w-4" /></button>

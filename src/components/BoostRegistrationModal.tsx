@@ -8,6 +8,7 @@ import { useCenters } from "@/hooks/useCenters";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 import { startBoostCashfreeCheckout } from "@/lib/cashfree";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 
 const schema = z.object({
@@ -74,6 +75,8 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
   const slots = buildSlots(examDates);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
 
   if (!open) return null;
 
@@ -136,9 +139,9 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
 
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" />
-      <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
           <div>
             <h2 className="font-display text-xl font-bold text-bansal-black">BOOST 2026 Registration</h2>
@@ -175,8 +178,25 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             <Section title="Academic goals">
               <Select name="target_exam" label="Target exam *" options={EXAMS} required />
               <Input name="school_name" label="School name" />
-              <Input name="city" label="City" />
-              <Input name="state" label="State" />
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">City</label>
+                <CityAutocompleteInput
+                  name="city"
+                  value={city}
+                  onChange={setCity}
+                  onSelectCity={(c, s) => { setCity(c); setState(s); }}
+                  className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bansal-orange"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">State</label>
+                <input
+                  name="state"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bansal-orange"
+                />
+              </div>
             </Section>
 
             <Section title="Parent / guardian">

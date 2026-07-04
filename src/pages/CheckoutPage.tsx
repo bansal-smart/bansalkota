@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 const CheckoutPage = () => {
   const { cart, user } = useAppStore();
@@ -82,11 +83,12 @@ const CheckoutPage = () => {
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                 />
-                <input
+                <CityAutocompleteInput
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   placeholder="City"
                   value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  onChange={(city) => setForm({ ...form, city })}
+                  onSelectCity={(city, state) => setForm({ ...form, city, state })}
                 />
                 <input
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm"

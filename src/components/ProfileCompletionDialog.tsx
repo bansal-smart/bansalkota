@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Loader2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 const CLASSES = ["8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
@@ -140,7 +141,16 @@ const ProfileCompletionDialog = () => {
           <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} error={errors.father_name} />
           <Select label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} error={errors.class_level} />
           <Select label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} error={errors.target_exam} />
-          <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} error={errors.city} />
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">City</label>
+            <CityAutocompleteInput
+              value={form.city}
+              onChange={(city) => setForm({ ...form, city })}
+              onSelectCity={(city, state) => setForm({ ...form, city, state })}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            {errors.city && <p className="mt-0.5 text-[10px] text-destructive">{errors.city}</p>}
+          </div>
           <Select label="State" value={form.state} options={STATES} onChange={(v) => setForm({ ...form, state: v })} error={errors.state} />
         </div>
 

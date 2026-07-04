@@ -116,7 +116,7 @@ export default function ContactPage() {
 
       <section className="py-14">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid lg:grid-cols-5 gap-8">
+          <div className="grid lg:grid-cols-5 gap-8 items-start">
             {/* Form */}
             <BansalCard className="lg:col-span-3 p-8">
               {submitted ? (

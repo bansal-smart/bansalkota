@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 const tabItems = ["Personal Info"];
 
@@ -229,7 +230,15 @@ const ProfilePage = () => {
               <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} />
               <SelectField label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} />
               <SelectField label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} />
-              <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+              <div>
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">City</label>
+                <CityAutocompleteInput
+                  value={form.city}
+                  onChange={(city) => setForm({ ...form, city })}
+                  onSelectCity={(city, state) => setForm({ ...form, city, state })}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </div>
               <SelectField label="State" value={form.state} options={STATES} onChange={(v) => setForm({ ...form, state: v })} />
             </div>
             <button

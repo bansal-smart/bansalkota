@@ -3,6 +3,7 @@ import { Save, Loader2, Upload, Image as ImageIcon, Building2, Phone, Mail, MapP
 import { supabase } from "@/integrations/supabase/client";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { toast } from "sonner";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 type CenterForm = {
   city: string;
@@ -145,7 +146,12 @@ const CenterContentPage = () => {
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="text-xs font-semibold text-foreground">City</label>
-            <input value={form.city} onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" />
+            <CityAutocompleteInput
+              value={form.city}
+              onChange={(city) => setForm((p) => ({ ...p, city }))}
+              onSelectCity={(city, state) => setForm((p) => ({ ...p, city, state }))}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+            />
           </div>
           <div>
             <label className="text-xs font-semibold text-foreground">Area</label>

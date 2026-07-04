@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import CenterStaffModal from "@/components/CenterStaffModal";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 type Center = {
   id: string;
@@ -339,7 +340,13 @@ const AdminCentersPage = () => {
           )}
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="City *" value={form.city ?? ""} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+          <CityAutocompleteInput
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="City *"
+            value={form.city ?? ""}
+            onChange={(city) => setForm({ ...form, city })}
+            onSelectCity={(city, state) => setForm({ ...form, city, state })}
+          />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Area (optional)" value={form.area ?? ""} onChange={(e) => setForm({ ...form, area: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="State *" value={form.state ?? ""} onChange={(e) => setForm({ ...form, state: e.target.value })} />
           <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.region ?? "North"} onChange={(e) => setForm({ ...form, region: e.target.value })}>
