@@ -89,6 +89,8 @@ const TestTakingPage = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showSubmit, setShowSubmit] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [submittedSubjects, setSubmittedSubjects] = useState<{ subject: string; score: number; max: number }[] | null>(null);
+  const [submittedTotal, setSubmittedTotal] = useState<{ score: number; max: number } | null>(null);
   const successTargetRef = useRef<string>("/dashboard");
   const [showInstructions, setShowInstructions] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -749,6 +751,43 @@ const TestTakingPage = () => {
     }).eq("id", attemptId);
     const { error } = await supabase.rpc("submit_test_attempt", { _attempt_id: attemptId });
     if (error) toast.error(error.message);
+    else {
+      // Subject-wise marks are computed synchronously by the scoring RPC —
+      // show them immediately rather than making the student wait for the
+      // result page (which may be locked until an admin releases results).
+      const { data: fresh } = await supabase
+        .from("test_attempts")
+        .select("metadata")
+        .eq("id", attemptId)
+        .maybeSingle();
+      const metaQuestions = ((fresh as any)?.metadata?.questions ?? []) as Array<{
+        subject?: string; marks?: number; max_marks?: number;
+      }>;
+      if (metaQuestions.length) {
+        const bySubject = new Map<string, { score: number; max: number }>();
+        metaQuestions.forEach((q) => {
+          const subj = q.subject || "General";
+          const cur = bySubject.get(subj) ?? { score: 0, max: 0 };
+          cur.score += Number(q.marks ?? 0);
+          cur.max += Number(q.max_marks ?? 0);
+          bySubject.set(subj, cur);
+        });
+        const SUBJECT_ORDER = ["Physics", "Chemistry", "Mathematics", "Maths", "Biology"];
+        const subjects = Array.from(bySubject.entries())
+          .map(([subject, v]) => ({ subject, ...v }))
+          .sort((a, b) => {
+            const ia = SUBJECT_ORDER.indexOf(a.subject);
+            const ib = SUBJECT_ORDER.indexOf(b.subject);
+            if (ia !== -1 || ib !== -1) return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+            return a.subject.localeCompare(b.subject);
+          });
+        setSubmittedSubjects(subjects);
+        setSubmittedTotal({
+          score: subjects.reduce((s, x) => s + x.score, 0),
+          max: subjects.reduce((s, x) => s + x.max, 0),
+        });
+      }
+    }
     try {
       localStorage.removeItem(`attempt:${attemptId}:answers`);
       localStorage.removeItem(`attempt:${attemptId}:statuses`);
@@ -1411,15 +1450,42 @@ const TestTakingPage = () => {
 
       {showSuccess && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl border-t-4 border-green-600 text-center animate-in zoom-in-95 fade-in duration-200">
+          <div className={`w-full ${submittedSubjects?.length ? "max-w-lg" : "max-w-md"} rounded-2xl bg-white p-8 shadow-2xl border-t-4 border-green-600 text-center animate-in zoom-in-95 fade-in duration-200`}>
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
               <CheckCircle2 className="h-12 w-12 text-green-600" />
             </div>
             <h3 className="mt-5 font-display text-xl font-black text-neutral-900">
               Your exam has been submitted successfully
             </h3>
-            <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
-              Your result will be announced by the Bansal Team soon.
+
+            {submittedSubjects && submittedSubjects.length > 0 && (
+              <div className="mt-5 text-left">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 text-center mb-2">
+                  Your marks
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {submittedSubjects.map((s) => (
+                    <div key={s.subject} className="rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-center">
+                      <p className="text-[10px] uppercase tracking-wide text-neutral-500 truncate">{s.subject}</p>
+                      <p className="text-base font-black text-neutral-900">
+                        {Math.round(s.score)}<span className="text-neutral-400 font-semibold">/{Math.round(s.max)}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {submittedTotal && (
+                  <div className="mt-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-center">
+                    <p className="text-[10px] uppercase tracking-wide text-green-700 font-bold">Total</p>
+                    <p className="text-lg font-black text-green-700">
+                      {Math.round(submittedTotal.score)}<span className="text-green-500 font-semibold">/{Math.round(submittedTotal.max)}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
+              Your rank and percentile will be announced by the Bansal Team soon.
               <br />
               <span className="font-semibold text-neutral-800">Best of luck, Beta! 🌟</span>
             </p>
