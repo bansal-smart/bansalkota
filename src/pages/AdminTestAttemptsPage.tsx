@@ -484,6 +484,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Score</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Correct</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">%ile</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Started</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Submitted</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
                 </tr>
@@ -491,6 +492,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
               <tbody>
                 {paged.map((a) => {
                   const t = tests.find((x) => x.id === a.test_id);
+                  const started = a.started_at ? format(new Date(a.started_at), "dd MMM HH:mm") : "—";
                   const submitted = a.submitted_at ? format(new Date(a.submitted_at), "dd MMM HH:mm") : "—";
                   const studentName = getStudentName(a);
                   return (
@@ -508,6 +510,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-accent">{a.percentile ?? "—"}</td>
+                      <td className="px-4 py-3 text-right text-xs text-muted-foreground">{started}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{submitted}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">

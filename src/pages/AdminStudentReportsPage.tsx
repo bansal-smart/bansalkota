@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { fetchStudentReport, monthRange } from "@/lib/studentReport";
+import { fetchStudentReport } from "@/lib/studentReport";
 
 type StudentRow = {
   user_id: string;
@@ -31,22 +31,7 @@ type StudentRow = {
   class_level: string | null;
 };
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-function defaultMonth() {
-  // last completed month
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-  return { year: d.getUTCFullYear(), month: d.getUTCMonth() };
-}
-
 const AdminStudentReportsPage = () => {
-  const initial = defaultMonth();
-  const [year, setYear] = useState<number>(initial.year);
-  const [month, setMonth] = useState<number>(initial.month);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -90,8 +75,6 @@ const AdminStudentReportsPage = () => {
     })();
   }, []);
 
-  const range = useMemo(() => monthRange(year, month), [year, month]);
-
   const filtered = useMemo(() => {
     const s = debouncedSearch.trim().toLowerCase();
     if (!s) return students;
@@ -101,11 +84,6 @@ const AdminStudentReportsPage = () => {
     );
   }, [students, debouncedSearch]);
 
-  const yearOptions = useMemo(() => {
-    const y = new Date().getUTCFullYear();
-    return [y, y - 1, y - 2];
-  }, []);
-
   async function generate(studentId: string) {
     if (!studentId) {
       toast.error("Pick a student first");
@@ -113,10 +91,10 @@ const AdminStudentReportsPage = () => {
     }
     setGeneratingId(studentId);
     try {
-      const data = await fetchStudentReport(studentId, range);
+      const data = await fetchStudentReport(studentId);
       const { downloadStudentReport } = await import("@/lib/studentReportPdf");
       downloadStudentReport(data);
-      toast.success("Report downloaded", { description: `${data.student.name} • ${data.period}` });
+      toast.success("Report downloaded", { description: `${data.student.name} • ${data.tests.attempts} tests` });
     } catch (e: any) {
       toast.error("Failed to generate report", { description: e?.message });
     } finally {
@@ -133,7 +111,8 @@ const AdminStudentReportsPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Student Report</h1>
           <p className="text-sm text-muted-foreground">
-            Generate a parent-friendly monthly academic PDF for any student.
+            Generate a parent-friendly, overall academic performance PDF for any student — every test
+            attempted (and any missed), segregated by subject.
           </p>
         </div>
       </div>
@@ -143,7 +122,7 @@ const AdminStudentReportsPage = () => {
         <CardHeader>
           <CardTitle className="text-lg">Quick generate</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-[2fr_1fr_1fr_auto] md:items-end">
+        <CardContent className="grid gap-4 md:grid-cols-[2fr_auto] md:items-end">
           <div>
             <Label className="mb-1 block">Student</Label>
             <Select value={selectedId} onValueChange={setSelectedId}>
@@ -156,28 +135,6 @@ const AdminStudentReportsPage = () => {
                     {s.full_name || "Unnamed"}
                     {s.target_exam ? ` · ${s.target_exam}` : ""}
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="mb-1 block">Month</Label>
-            <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {MONTHS.map((m, i) => (
-                  <SelectItem key={m} value={String(i)}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="mb-1 block">Year</Label>
-            <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {yearOptions.map((y) => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -219,7 +176,7 @@ const AdminStudentReportsPage = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Class</TableHead>
                   <TableHead>Target exam</TableHead>
-                  <TableHead className="text-right">Action ({MONTHS[month]} {year})</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -1,14 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type MonthRange = { start: Date; end: Date; label: string };
-
-export const monthRange = (year: number, monthIndex: number): MonthRange => {
-  const start = new Date(Date.UTC(year, monthIndex, 1));
-  const end = new Date(Date.UTC(year, monthIndex + 1, 1));
-  const label = start.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
-  return { start, end, label };
-};
-
 export type SubjectBreakdown = { subject: string; score: number; maxScore: number };
 
 export type TestEntry = {
@@ -18,7 +9,10 @@ export type TestEntry = {
   totalMarks: number;
   accuracyPct: number;
   percentile: number | null;
+  rank: number | null;
+  rankOf: number | null;
   subjects: SubjectBreakdown[];
+  isAbsent: boolean;
 };
 
 export type StudentReportData = {
@@ -29,14 +23,12 @@ export type StudentReportData = {
     classLevel?: string | null;
     mentorName?: string | null;
   };
-  period: string;
   tests: {
     attempts: number;
     avgScorePct: number;
     avgAccuracyPct: number;
     bestPercentile: number;
     bySubject: { subject: string; avgPct: number; attempts: number }[];
-    trend: { date: string; pct: number }[];
     list: TestEntry[];
   };
 };
@@ -74,36 +66,75 @@ function subjectBreakdownFromAttempt(a: any): SubjectBreakdown[] {
   return [];
 }
 
-export async function fetchStudentReport(
-  studentId: string,
-  range: MonthRange,
-): Promise<StudentReportData> {
-  const startIso = range.start.toISOString();
-  const endIso = range.end.toISOString();
+export async function fetchStudentReport(studentId: string): Promise<StudentReportData> {
+  const nowIso = new Date().toISOString();
 
-  const [profileRes, attemptsRes] = await Promise.all([
+  const [profileRes, attemptsRes, enrollRes] = await Promise.all([
     safe(
       supabase
         .from("profiles")
-        .select("full_name, target_exam, class_level")
+        .select("full_name, target_exam, class_level, batch_id")
         .eq("user_id", studentId)
         .maybeSingle(),
     ),
     safe(
       (supabase as any)
         .from("test_attempts")
-        .select("test_name, score, total_questions, correct_answers, percentile, submitted_at, status, metadata")
+        .select("id, test_id, test_name, score, total_questions, correct_answers, percentile, submitted_at, status, metadata")
         .eq("user_id", studentId)
-        .in("status", ["submitted", "auto_submitted"])
-        .gte("submitted_at", startIso)
-        .lt("submitted_at", endIso),
+        .in("status", ["submitted", "auto_submitted"]),
+    ),
+    safe(
+      (supabase as any)
+        .from("enrollments")
+        .select("course_id")
+        .eq("user_id", studentId)
+        .eq("is_active", true),
     ),
   ]);
 
   const profile = (profileRes as any)?.data ?? {};
   const mentorName: string | null = null;
+  const batchId = profile.batch_id as string | null | undefined;
+  const courseIds = ((enrollRes as any)?.data ?? []).map((e: any) => e.course_id).filter(Boolean);
 
   const attempts = ((attemptsRes as any)?.data ?? []) as any[];
+
+  // Audience: concluded tests explicitly assigned to this student's batch or
+  // enrolled course — used to detect tests they were expected to take but
+  // skipped. Open-to-all CBTs (empty cbt_allowed_batch_ids) are excluded
+  // since we can't tell whether this specific student was really assigned.
+  let audienceTests: any[] = [];
+  if (batchId || courseIds.length) {
+    const { data: candidateTests } = await safe(
+      (supabase as any)
+        .from("tests")
+        .select("id, title, ends_at, total_marks, cbt_allowed_batch_ids, course_id")
+        .lt("ends_at", nowIso),
+    ) ?? { data: [] };
+    audienceTests = (candidateTests ?? []).filter((t: any) => {
+      const batchMatch = batchId && Array.isArray(t.cbt_allowed_batch_ids) && t.cbt_allowed_batch_ids.length > 0
+        && t.cbt_allowed_batch_ids.includes(batchId);
+      const courseMatch = t.course_id && courseIds.includes(t.course_id);
+      return batchMatch || courseMatch;
+    });
+  }
+
+  // Per-test rank comes from the same RPC the student's own result page
+  // uses; admins are authorized to call it for any attempt.
+  const rankByAttemptId = new Map<string, { rank: number | null; total: number | null; percentile: number | null }>();
+  await Promise.all(
+    attempts.map(async (a) => {
+      const { data } = await safe((supabase as any).rpc("get_test_rank", { _attempt_id: a.id }));
+      const r = data as { rank?: number; total?: number; percentile?: number } | null;
+      rankByAttemptId.set(a.id, {
+        rank: r?.rank ?? null,
+        total: r?.total ?? null,
+        percentile: r?.percentile ?? null,
+      });
+    }),
+  );
+
   const totalQ = attempts.reduce((s, a) => s + (a.total_questions || 0), 0);
   const correctQ = attempts.reduce((s, a) => s + (a.correct_answers || 0), 0);
   const totalScore = attempts.reduce((s, a) => s + (a.score || 0), 0);
@@ -112,24 +143,54 @@ export async function fetchStudentReport(
   const avgAccuracyPct = totalQ > 0 ? Math.round((correctQ / totalQ) * 100) : 0;
   const bestPercentile = attempts.reduce((m, a) => Math.max(m, a.percentile || 0), 0);
 
-  const list: TestEntry[] = attempts.map((a) => {
+  const attemptedTestIds = new Set(attempts.map((a) => a.test_id).filter(Boolean));
+
+  type Sortable = TestEntry & { sortDate: string };
+
+  const attemptEntries: Sortable[] = attempts.map((a) => {
     const subjects = subjectBreakdownFromAttempt(a);
     const totalMarks = subjects.length
       ? subjects.reduce((s, x) => s + x.maxScore, 0)
       : (a.total_questions || 0) * 4;
+    const rankInfo = rankByAttemptId.get(a.id);
     return {
       testName: a.test_name || "Test",
       submittedAt: a.submitted_at ?? null,
+      sortDate: a.submitted_at ?? "",
       score: Number(a.score ?? 0),
       totalMarks,
       accuracyPct: a.total_questions ? Math.round(((a.correct_answers || 0) / a.total_questions) * 100) : 0,
-      percentile: a.percentile ?? null,
+      percentile: rankInfo?.percentile ?? a.percentile ?? null,
+      rank: rankInfo?.rank ?? null,
+      rankOf: rankInfo?.total ?? null,
       subjects,
+      isAbsent: false,
     };
-  }).sort((a, b) => (b.submittedAt ?? "").localeCompare(a.submittedAt ?? ""));
+  });
 
-  // Aggregate subject performance across every test in the month — summed
-  // score/max (not an average of percentages) so bigger tests weigh correctly.
+  const absentEntries: Sortable[] = audienceTests
+    .filter((t) => !attemptedTestIds.has(t.id))
+    .map((t) => ({
+      testName: t.title || "Test",
+      submittedAt: null,
+      sortDate: t.ends_at ?? "",
+      score: 0,
+      totalMarks: Number(t.total_marks ?? 0),
+      accuracyPct: 0,
+      percentile: null,
+      rank: null,
+      rankOf: null,
+      subjects: [],
+      isAbsent: true,
+    }));
+
+  const list: TestEntry[] = [...attemptEntries, ...absentEntries]
+    .sort((a, b) => b.sortDate.localeCompare(a.sortDate))
+    .map(({ sortDate, ...t }) => t);
+
+  // Aggregate subject performance across every test — summed score/max (not
+  // an average of percentages) so bigger tests weigh correctly. Attempted
+  // tests only; absences carry no subject marks.
   const subjAgg = new Map<string, { score: number; maxScore: number; attempts: number }>();
   list.forEach((t) => {
     t.subjects.forEach((s) => {
@@ -146,14 +207,6 @@ export async function fetchStudentReport(
     attempts: v.attempts,
   }));
 
-  const trend = [...list]
-    .filter((t) => t.submittedAt)
-    .sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? ""))
-    .map((t) => ({
-      date: new Date(t.submittedAt as string).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }),
-      pct: t.totalMarks > 0 ? Math.round((t.score / t.totalMarks) * 100) : 0,
-    }));
-
   return {
     student: {
       name: (profile as any).full_name || "Student",
@@ -161,7 +214,6 @@ export async function fetchStudentReport(
       classLevel: (profile as any).class_level,
       mentorName,
     },
-    period: range.label,
-    tests: { attempts: attempts.length, avgScorePct, avgAccuracyPct, bestPercentile, bySubject, trend, list },
+    tests: { attempts: attempts.length, avgScorePct, avgAccuracyPct, bestPercentile, bySubject, list },
   };
 }

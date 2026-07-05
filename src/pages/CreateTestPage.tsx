@@ -604,20 +604,74 @@ const CreateTestPage = () => {
     setReloadKey((k) => k + 1);
   };
 
+  // All editable `test_questions` fields for one draft question — shared by
+  // the initial insert (submit) and by per-question updates for already-
+  // imported questions (publishImportedDraft), so edits never silently fail
+  // to persist on one path but not the other.
+  const buildQuestionFields = (q: DraftQuestion): Record<string, any> => {
+    const base: Record<string, any> = {
+      subject: q.subject,
+      topic: q.topic || null,
+      question_text: q.text,
+      question_image_url: q.imageUrl || null,
+      question_type: q.type,
+      marks_correct: Number(q.marksCorrect ?? correctMarks),
+      marks_wrong: Number(q.marksWrong ?? wrongMarks),
+      options: [],
+      option_images: [],
+      correct_answer: null,
+    };
+    // Normalize option_images to match option count
+    const optImgs = (q.optionImages ?? []).slice(0, q.options.length);
+    while (optImgs.length < q.options.length) optImgs.push("");
+    if (q.type !== "numerical" && q.type !== "integer") {
+      base.option_images = optImgs;
+    }
+    if (q.type === "mcq-single") {
+      base.options = q.options.map((t, id) => ({ id, text: t }));
+      base.correct_answer = q.correct;
+    } else if (q.type === "mcq-multi") {
+      base.options = q.options.map((t, id) => ({ id, text: t }));
+      base.correct_answer = q.correctMulti.slice().sort((a, b) => a - b);
+      base.partial_marking = q.partial;
+    } else if (q.type === "numerical" || q.type === "integer") {
+      base.options = [];
+      if (q.rangeEnabled) {
+        const lo = Math.min(Number(q.rangeMin), Number(q.rangeMax));
+        const hi = Math.max(Number(q.rangeMin), Number(q.rangeMax));
+        base.answer_range_min = lo;
+        base.answer_range_max = hi;
+        // Store midpoint for legacy single-value reads; range governs scoring.
+        const mid = (lo + hi) / 2;
+        base.correct_answer = { value: mid, range: { min: lo, max: hi } };
+        base.numerical_answer = mid;
+        base.tolerance = 0;
+      } else {
+        base.correct_answer = { value: Number(q.numericalAnswer) };
+        base.numerical_answer = Number(q.numericalAnswer);
+        base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+        base.answer_range_min = null;
+        base.answer_range_max = null;
+      }
+      base.answer_format = q.type === "integer" ? "integer" : "decimal";
+    }
+    return base;
+  };
+
   const publishImportedDraft = async () => {
     if (!resolvedTestId) return toast.error("Create or import into a test first");
     setSubmitting(true);
     try {
-      // Persist per-question overrides (marks etc.) that the user edited in the UI.
+      // Persist every editable field the user may have changed in the UI
+      // (text, title image, options, correct answer, marks, etc.) — not just
+      // marks. Imported questions already have a row, so this is an UPDATE
+      // using the same field mapping the normal insert path uses.
       const perQuestionUpdates = questions
         .filter((q) => !!q.id)
         .map((q) =>
           supabase
             .from("test_questions")
-            .update({
-              marks_correct: Number(q.marksCorrect),
-              marks_wrong: Number(q.marksWrong),
-            })
+            .update(buildQuestionFields(q) as any)
             .eq("id", q.id as string)
             .eq("test_id", resolvedTestId),
         );
@@ -747,58 +801,11 @@ const CreateTestPage = () => {
       savedTestId = test.id;
     }
 
-    const rows = validQ.map((q, i) => {
-      const base: any = {
-        test_id: savedTestId,
-        position: i,
-        subject: q.subject,
-        topic: q.topic || null,
-        question_text: q.text,
-        question_image_url: q.imageUrl || null,
-        question_type: q.type,
-        marks_correct: Number(q.marksCorrect ?? correctMarks),
-        marks_wrong: Number(q.marksWrong ?? wrongMarks),
-        options: [],
-        option_images: [],
-        correct_answer: null,
-      };
-      // Normalize option_images to match option count
-      const optImgs = (q.optionImages ?? []).slice(0, q.options.length);
-      while (optImgs.length < q.options.length) optImgs.push("");
-      if (q.type !== "numerical" && q.type !== "integer") {
-        base.option_images = optImgs;
-      }
-      // Remove the duplicate stub `correct_answer: null` below by overwriting later
-      if (q.type === "mcq-single") {
-        base.options = q.options.map((t, id) => ({ id, text: t }));
-        base.correct_answer = q.correct;
-      } else if (q.type === "mcq-multi") {
-        base.options = q.options.map((t, id) => ({ id, text: t }));
-        base.correct_answer = q.correctMulti.slice().sort((a, b) => a - b);
-        base.partial_marking = q.partial;
-      } else if (q.type === "numerical" || q.type === "integer") {
-        base.options = [];
-        if (q.rangeEnabled) {
-          const lo = Math.min(Number(q.rangeMin), Number(q.rangeMax));
-          const hi = Math.max(Number(q.rangeMin), Number(q.rangeMax));
-          base.answer_range_min = lo;
-          base.answer_range_max = hi;
-          // Store midpoint for legacy single-value reads; range governs scoring.
-          const mid = (lo + hi) / 2;
-          base.correct_answer = { value: mid, range: { min: lo, max: hi } };
-          base.numerical_answer = mid;
-          base.tolerance = 0;
-        } else {
-          base.correct_answer = { value: Number(q.numericalAnswer) };
-          base.numerical_answer = Number(q.numericalAnswer);
-          base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
-          base.answer_range_min = null;
-          base.answer_range_max = null;
-        }
-        base.answer_format = q.type === "integer" ? "integer" : "decimal";
-      }
-      return base;
-    });
+    const rows: any[] = validQ.map((q, i) => ({
+      test_id: savedTestId,
+      position: i,
+      ...buildQuestionFields(q),
+    }));
     const { error: qErr } = await supabase.from("test_questions").insert(rows);
     if (qErr) {
       toast.error(qErr.message);
