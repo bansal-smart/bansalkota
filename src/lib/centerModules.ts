@@ -22,6 +22,7 @@ export const CENTER_MODULES: CenterModule[] = [
   { key: "live_classes", label: "Live Classes", path: "/center/live-classes", actions: ["view", "create", "edit", "delete"] },
   { key: "test_platform", label: "Test Platform", path: "/center/tests", actions: ["view", "create", "edit", "delete", "export"] },
   { key: "test_series", label: "Test Series", path: "/center/test-series", actions: ["view", "create", "edit", "delete"] },
+  { key: "question_bank", label: "Question Bank", path: "/center/question-bank", actions: ["view", "create", "edit", "delete"] },
   { key: "website_enquiries", label: "Website Enquiries", path: "/center/enquiries", actions: ["view", "edit", "delete", "export"] },
   { key: "course_enquiries", label: "Course Enquiries", path: "/center/course-enquiries", actions: ["view", "edit", "delete", "export"] },
   { key: "students", label: "My Students", path: "/center/students", actions: ["view", "create", "edit", "delete", "export"] },

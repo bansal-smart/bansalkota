@@ -38,6 +38,8 @@ type Props = {
   /** Parent test option-label setting. Auto means exam pattern / detected style decides. */
   optionLabelStyle?: "auto" | "numeric" | "alpha";
   examPattern?: string;
+  /** When set, question_bank rows created by this import are stamped with this centre_id. */
+  centreId?: string | null;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -55,6 +57,7 @@ const DocxBulkImportDialog = ({
   defaultSubject,
   optionLabelStyle = "auto",
   examPattern,
+  centreId,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -319,6 +322,7 @@ const DocxBulkImportDialog = ({
       const base = buildBaseRow(q, batchId);
       return {
         created_by: user.id,
+        centre_id: centreId ?? null,
         difficulty: "medium",
         is_public: true,
         marks_correct: 4,

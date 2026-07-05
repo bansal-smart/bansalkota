@@ -27,6 +27,7 @@ const AdminTestSeriesPage = () => {
     const { data } = await supabase
       .from("test_series")
       .select("id, slug, title, target_exam, total_tests, price, original_price, is_published, is_featured, thumbnail_url")
+      .is("centre_id", null)
       .order("created_at", { ascending: false });
     setRows((data ?? []) as TS[]);
     setLoading(false);

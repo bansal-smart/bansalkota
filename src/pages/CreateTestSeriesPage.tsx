@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Upload, IndianRupee, Loader2, X } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
@@ -18,8 +19,11 @@ const slugify = (s: string) =>
 const CreateTestSeriesPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
+  const isCenterContext = location.pathname.startsWith("/center");
+  const { primaryCenterId } = useCenterAdmin();
 
   const [title, setTitle] = useState("");
   const [shortDesc, setShortDesc] = useState("");
@@ -49,7 +53,7 @@ const CreateTestSeriesPage = () => {
     (async () => {
       setLoading(true);
       const { data, error } = await supabase.from("test_series").select("*").eq("id", id).maybeSingle();
-      if (error || !data) {
+      if (error || !data || (isCenterContext && (data as any).centre_id !== primaryCenterId)) {
         toast.error("Test series not found");
         setLoading(false);
         return;
@@ -119,7 +123,12 @@ const CreateTestSeriesPage = () => {
     if (!isEditMode) {
       const baseSlug = slugify(title) || `test-series-${Date.now()}`;
       const slug = `${baseSlug}-${Date.now().toString(36)}`;
-      const { error } = await supabase.from("test_series").insert({ ...payload, slug, created_by: user.id });
+      const { error } = await supabase.from("test_series").insert({
+        ...payload,
+        slug,
+        created_by: user.id,
+        ...(isCenterContext ? { centre_id: primaryCenterId } : {}),
+      });
       if (error) {
         toast.error(error.message);
         setSubmitting(false);
@@ -136,7 +145,7 @@ const CreateTestSeriesPage = () => {
 
     toast.success(isEditMode ? "Test series updated" : publish ? "Test series published!" : "Draft saved");
     setSubmitting(false);
-    navigate("/admin/tests-hub?tab=series");
+    navigate(isCenterContext ? "/center/test-series" : "/admin/tests-hub?tab=series");
   };
 
   if (loading) {

@@ -21,6 +21,7 @@ export type BankQuestion = {
   partial_marking: boolean;
   tags: string[];
   is_public: boolean;
+  centre_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -29,6 +30,7 @@ export type BankFilters = {
   subject?: string;
   difficulty?: string;
   search?: string;
+  centreId?: string | null;
 };
 
 export const QUESTION_BANK_KEY = ["question-bank"] as const;
@@ -36,9 +38,13 @@ export const QUESTION_BANK_KEY = ["question-bank"] as const;
 const fetchBank = async (filters: BankFilters) => {
   let q = supabase
     .from("question_bank")
-    .select("id, created_by, subject, topic, difficulty, question_text, question_image_url, question_type, options, option_images, tolerance, marks_correct, marks_wrong, partial_marking, tags, is_public, created_at, updated_at")
+    .select("id, created_by, subject, topic, difficulty, question_text, question_image_url, question_type, options, option_images, tolerance, marks_correct, marks_wrong, partial_marking, tags, is_public, centre_id, created_at, updated_at")
     .order("created_at", { ascending: false })
     .limit(500);
+  if (filters.centreId) {
+    // Centre banks are fully separate from the global bank — no global rows included.
+    q = q.eq("centre_id", filters.centreId);
+  }
   if (filters.subject && filters.subject !== "All") q = q.eq("subject", filters.subject);
   if (filters.difficulty && filters.difficulty !== "All") {
     q = q.eq("difficulty", filters.difficulty.toLowerCase());
@@ -65,7 +71,7 @@ const fetchBank = async (filters: BankFilters) => {
 export const useQuestionBank = (filters: BankFilters = {}) => {
   const qc = useQueryClient();
   const { data, isLoading, refetch } = useQuery({
-    queryKey: [...QUESTION_BANK_KEY, filters.subject ?? "All", filters.difficulty ?? "All", filters.search ?? ""],
+    queryKey: [...QUESTION_BANK_KEY, filters.subject ?? "All", filters.difficulty ?? "All", filters.search ?? "", filters.centreId ?? "global"],
     queryFn: () => fetchBank(filters),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

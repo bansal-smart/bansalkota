@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
-import { Loader2, Search, X, ShieldOff, ShieldCheck, UserPlus, Check } from "lucide-react";
+import { Loader2, Search, X, Trash2, UserPlus, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 type StudentRow = {
-  enrollment_id: string;
+  assignment_id: string;
   user_id: string;
-  is_active: boolean;
-  progress_percent: number | null;
-  last_accessed_at: string | null;
   full_name: string | null;
   roll_number: string | null;
   phone: string | null;
   class_level: string | null;
   target_exam: string | null;
   batch_label: string | null;
+  attempt_status: string | null;
 };
 
 type CandidateRow = {
@@ -31,16 +29,16 @@ type CandidateRow = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  courseId: string | null;
-  courseName: string;
+  testId: string | null;
+  testName: string;
   centreId: string | null;
 };
 
-const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centreId }: Props) => {
+const CenterTestStudentsDialog = ({ open, onClose, testId, testName, centreId }: Props) => {
   const { isSuperAdmin, isAdmin, isCenterAdmin } = useAuth();
   const canManage = isSuperAdmin || isAdmin || isCenterAdmin;
 
-  const [tab, setTab] = useState<"enrolled" | "assign">("enrolled");
+  const [tab, setTab] = useState<"assigned" | "assign">("assigned");
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [search, setSearch] = useState("");
@@ -56,8 +54,8 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assigning, setAssigning] = useState(false);
 
-  const loadEnrolled = async () => {
-    if (!courseId || !centreId) return;
+  const loadAssigned = async () => {
+    if (!testId || !centreId) return;
     setLoading(true);
     const { data: profs, error: pErr } = await supabase
       .from("profiles")
@@ -74,31 +72,38 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
       setLoading(false);
       return;
     }
-    const { data: enr, error: eErr } = await supabase
-      .from("enrollments")
-      .select("id, user_id, is_active, progress_percent, last_accessed_at")
-      .eq("course_id", courseId)
-      .in("user_id", ids);
-    if (eErr) {
-      toast.error(eErr.message);
+    const [{ data: asg, error: aErr }, { data: att }] = await Promise.all([
+      supabase
+        .from("test_assignments" as any)
+        .select("id, user_id")
+        .eq("test_id", testId)
+        .eq("is_active", true)
+        .in("user_id", ids),
+      supabase
+        .from("test_attempts")
+        .select("user_id, status")
+        .eq("test_id", testId)
+        .in("user_id", ids),
+    ]);
+    if (aErr) {
+      toast.error(aErr.message);
       setLoading(false);
       return;
     }
     const profMap = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
-    const merged: StudentRow[] = (enr ?? []).map((e: any) => {
-      const p: any = profMap.get(e.user_id) ?? {};
+    const attemptMap = new Map((att ?? []).map((a: any) => [a.user_id, a.status]));
+    const merged: StudentRow[] = ((asg ?? []) as any[]).map((a: any) => {
+      const p: any = profMap.get(a.user_id) ?? {};
       return {
-        enrollment_id: e.id,
-        user_id: e.user_id,
-        is_active: !!e.is_active,
-        progress_percent: e.progress_percent,
-        last_accessed_at: e.last_accessed_at,
+        assignment_id: a.id,
+        user_id: a.user_id,
         full_name: p.full_name ?? null,
         roll_number: p.roll_number ?? null,
         phone: p.phone ?? null,
         class_level: p.class_level ?? null,
         target_exam: p.target_exam ?? null,
         batch_label: p.batch_label ?? null,
+        attempt_status: attemptMap.get(a.user_id) ?? null,
       };
     });
     setRows(merged);
@@ -106,7 +111,7 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
   };
 
   const loadCandidates = async () => {
-    if (!courseId || !centreId) return;
+    if (!testId || !centreId) return;
     setLoading(true);
     const { data: profs, error } = await supabase
       .from("profiles")
@@ -118,42 +123,42 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
       return;
     }
     const ids = (profs ?? []).map((p: any) => p.user_id);
-    let enrolledIds = new Set<string>();
+    let assignedIds = new Set<string>();
     if (ids.length) {
-      const { data: enr } = await supabase
-        .from("enrollments")
+      const { data: asg } = await supabase
+        .from("test_assignments" as any)
         .select("user_id")
-        .eq("course_id", courseId)
+        .eq("test_id", testId)
+        .eq("is_active", true)
         .in("user_id", ids);
-      enrolledIds = new Set(((enr ?? []) as any[]).map((e) => e.user_id));
+      assignedIds = new Set(((asg ?? []) as any[]).map((a) => a.user_id));
     }
-    setCandidates(((profs ?? []) as any[]).filter((p) => !enrolledIds.has(p.user_id)));
+    setCandidates(((profs ?? []) as any[]).filter((p) => !assignedIds.has(p.user_id)));
     setSelected(new Set());
     setLoading(false);
   };
 
   useEffect(() => {
     if (!open) return;
-    if (tab === "enrolled") loadEnrolled();
+    if (tab === "assigned") loadAssigned();
     else loadCandidates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, courseId, centreId, tab]);
+  }, [open, testId, centreId, tab]);
 
-  const toggleAccess = async (row: StudentRow) => {
+  const removeAssignment = async (row: StudentRow) => {
     if (!canManage) return;
-    setBusyId(row.enrollment_id);
-    const next = !row.is_active;
+    setBusyId(row.assignment_id);
     const { error } = await supabase
-      .from("enrollments")
-      .update({ is_active: next })
-      .eq("id", row.enrollment_id);
+      .from("test_assignments" as any)
+      .delete()
+      .eq("id", row.assignment_id);
     setBusyId(null);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setRows((prev) => prev.map((r) => (r.enrollment_id === row.enrollment_id ? { ...r, is_active: next } : r)));
-    toast.success(next ? "Access resumed" : "Access suspended");
+    setRows((prev) => prev.filter((r) => r.assignment_id !== row.assignment_id));
+    toast.success("Removed from test");
   };
 
   const toggleSelect = (id: string) => {
@@ -166,23 +171,22 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
   };
 
   const assignSelected = async () => {
-    if (!courseId || selected.size === 0) return;
+    if (!testId || selected.size === 0) return;
     setAssigning(true);
     const payload = Array.from(selected).map((user_id) => ({
       user_id,
-      course_id: courseId,
+      test_id: testId,
       is_active: true,
-      progress_percent: 0,
     }));
-    const { error } = await supabase.from("enrollments").insert(payload as any);
+    const { error } = await supabase.from("test_assignments" as any).insert(payload as any);
     setAssigning(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success(`Assigned ${payload.length} student${payload.length > 1 ? "s" : ""} to course`);
+    toast.success(`Assigned ${payload.length} student${payload.length > 1 ? "s" : ""} to test`);
     setSelected(new Set());
-    setTab("enrolled");
+    setTab("assigned");
   };
 
   const classOptions = Array.from(new Set(rows.map((r) => r.class_level).filter(Boolean))).sort() as string[];
@@ -216,13 +220,25 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
 
   if (!open) return null;
 
+  const statusLabel = (s: string | null) => {
+    if (!s) return "Not started";
+    if (s === "in_progress") return "In progress";
+    if (s === "submitted") return "Submitted";
+    return s;
+  };
+  const statusColor = (s: string | null) => {
+    if (s === "submitted") return "bg-secondary/20 text-secondary";
+    if (s === "in_progress") return "bg-amber-500/20 text-amber-600";
+    return "bg-muted text-muted-foreground";
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-4xl rounded-2xl bg-card shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-border p-4">
           <div>
             <h2 className="text-base font-bold text-foreground">Manage Students</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{courseName}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{testName}</p>
           </div>
           <button onClick={onClose} className="rounded-md p-1.5 hover:bg-muted">
             <X className="h-4 w-4" />
@@ -231,12 +247,12 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
 
         <div className="flex items-center gap-2 border-b border-border px-4 pt-3">
           <button
-            onClick={() => setTab("enrolled")}
+            onClick={() => setTab("assigned")}
             className={`rounded-t-md px-3 py-2 text-xs font-semibold transition-colors ${
-              tab === "enrolled" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+              tab === "assigned" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Enrolled ({rows.length})
+            Assigned ({rows.length})
           </button>
           {canManage && (
             <button
@@ -251,7 +267,7 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
           )}
         </div>
 
-        {tab === "enrolled" ? (
+        {tab === "assigned" ? (
           <>
             <div className="p-4 border-b border-border flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[200px]">
@@ -292,7 +308,7 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="p-10 text-center text-sm text-muted-foreground">
-                  No students from your centre are enrolled in this course.
+                  No students are assigned to this test yet.
                 </div>
               ) : (
                 <table className="w-full text-sm">
@@ -303,50 +319,36 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
                       <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Class</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Batch</th>
                       <th className="px-4 py-2 text-left text-xs font-semibold text-muted-foreground">Phone</th>
-                      <th className="px-4 py-2 text-center text-xs font-semibold text-muted-foreground">Progress</th>
                       <th className="px-4 py-2 text-center text-xs font-semibold text-muted-foreground">Status</th>
                       <th className="px-4 py-2 text-center text-xs font-semibold text-muted-foreground">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((r) => (
-                      <tr key={r.enrollment_id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                      <tr key={r.assignment_id} className="border-b border-border last:border-0 hover:bg-muted/30">
                         <td className="px-4 py-2 font-medium text-foreground">{r.full_name ?? "—"}</td>
                         <td className="px-4 py-2 text-xs text-muted-foreground">{r.roll_number ?? "—"}</td>
                         <td className="px-4 py-2 text-xs text-muted-foreground">{r.class_level ?? "—"}</td>
                         <td className="px-4 py-2 text-xs text-muted-foreground">{r.batch_label ?? "—"}</td>
                         <td className="px-4 py-2 text-xs text-muted-foreground">{r.phone ?? "—"}</td>
-                        <td className="px-4 py-2 text-center text-xs">{r.progress_percent ?? 0}%</td>
                         <td className="px-4 py-2 text-center">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                              r.is_active
-                                ? "bg-secondary/20 text-secondary"
-                                : "bg-amber-500/20 text-amber-600"
-                            }`}
-                          >
-                            {r.is_active ? "Active" : "Suspended"}
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${statusColor(r.attempt_status)}`}>
+                            {statusLabel(r.attempt_status)}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-center">
                           {canManage ? (
                             <button
-                              onClick={() => toggleAccess(r)}
-                              disabled={busyId === r.enrollment_id}
-                              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-50 ${
-                                r.is_active
-                                  ? "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
-                                  : "bg-secondary/10 text-secondary hover:bg-secondary/20"
-                              }`}
+                              onClick={() => removeAssignment(r)}
+                              disabled={busyId === r.assignment_id}
+                              className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20 disabled:opacity-50"
                             >
-                              {busyId === r.enrollment_id ? (
+                              {busyId === r.assignment_id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : r.is_active ? (
-                                <ShieldOff className="h-3 w-3" />
                               ) : (
-                                <ShieldCheck className="h-3 w-3" />
+                                <Trash2 className="h-3 w-3" />
                               )}
-                              {r.is_active ? "Suspend" : "Resume"}
+                              Remove
                             </button>
                           ) : (
                             <span className="text-[10px] text-muted-foreground">—</span>
@@ -408,7 +410,7 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
                 </div>
               ) : filteredCandidates.length === 0 ? (
                 <div className="p-10 text-center text-sm text-muted-foreground">
-                  All centre students are already enrolled in this course.
+                  All centre students are already assigned to this test.
                 </div>
               ) : (
                 <table className="w-full text-sm">
@@ -470,4 +472,4 @@ const CenterCourseStudentsDialog = ({ open, onClose, courseId, courseName, centr
   );
 };
 
-export default CenterCourseStudentsDialog;
+export default CenterTestStudentsDialog;

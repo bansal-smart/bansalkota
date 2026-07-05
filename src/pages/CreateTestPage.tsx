@@ -25,6 +25,7 @@ import { syncTestStats } from "@/lib/tests/syncTestStats";
 import MathRenderer from "@/components/MathRenderer";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatTestDate } from "@/lib/utils";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -141,6 +142,8 @@ const CreateTestPage = () => {
   const testIdParam = params.testId;
 
   const isAdminContext = location.pathname.startsWith("/admin");
+  const isCenterContext = location.pathname.startsWith("/center");
+  const { primaryCenterId } = useCenterAdmin();
   const isEditMode = Boolean(slugParam || testIdParam);
 
   const [title, setTitle] = useState("");
@@ -218,9 +221,9 @@ const CreateTestPage = () => {
         ? await baseQ.eq("id", useId).maybeSingle()
         : await baseQ.eq("slug", slugParam!).maybeSingle();
       if (ignore) return;
-      if (!test) {
+      if (!test || (isCenterContext && (test as any).centre_id !== primaryCenterId)) {
         toast.error("Test not found");
-        navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
+        navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
         return;
       }
       const [tqsRes, ansRes] = await Promise.all([
@@ -331,7 +334,7 @@ const CreateTestPage = () => {
       setLoading(false);
     })();
     return () => { ignore = true; };
-  }, [isEditMode, slugParam, testIdParam, isAdminContext, navigate, reloadKey]);
+  }, [isEditMode, slugParam, testIdParam, isAdminContext, isCenterContext, primaryCenterId, navigate, reloadKey]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
@@ -546,6 +549,7 @@ const CreateTestPage = () => {
         ...buildSchedulePayload(),
         slug,
         created_by: user.id,
+        ...(isCenterContext ? { centre_id: primaryCenterId } : {}),
       })
       .select("id, slug")
       .single();
@@ -644,7 +648,7 @@ const CreateTestPage = () => {
         .eq("id", resolvedTestId);
       if (error) throw error;
       toast.success("Test published with imported questions");
-      navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
+      navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not publish imported test");
     } finally {
@@ -732,7 +736,7 @@ const CreateTestPage = () => {
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
       const { data: test, error } = await supabase
         .from("tests")
-        .insert({ ...basePayload, slug, created_by: user.id })
+        .insert({ ...basePayload, slug, created_by: user.id, ...(isCenterContext ? { centre_id: primaryCenterId } : {}) })
         .select("id")
         .single();
       if (error || !test) {
@@ -812,7 +816,7 @@ const CreateTestPage = () => {
           : "Draft saved",
     );
     setSubmitting(false);
-    navigate(isAdminContext ? "/admin/tests" : "/teacher/dashboard");
+    navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
   };
 
   if (loading) {
@@ -1197,7 +1201,7 @@ const CreateTestPage = () => {
               </SheetTrigger>
               <SheetContent side="right" className="p-0 w-full sm:max-w-md">
                 <div className="h-full">
-                  <QuestionBankPanel draggable compact onAdd={addFromBank} onAddMany={addManyFromBank} addedBankIds={addedBankIds} />
+                  <QuestionBankPanel draggable compact onAdd={addFromBank} onAddMany={addManyFromBank} addedBankIds={addedBankIds} centreId={isCenterContext ? primaryCenterId : null} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -1660,12 +1664,12 @@ const CreateTestPage = () => {
 
         {/* Right pane (Question Bank) — desktop only, sticky with its own scroll */}
         <aside className="hidden lg:flex lg:w-1/2 border-l border-border bg-muted/30 flex-col sticky top-[57px] self-start h-[calc(100vh-57px)]">
-          <QuestionBankPanel draggable compact onAdd={addFromBank} onAddMany={addManyFromBank} addedBankIds={addedBankIds} />
+          <QuestionBankPanel draggable compact onAdd={addFromBank} onAddMany={addManyFromBank} addedBankIds={addedBankIds} centreId={isCenterContext ? primaryCenterId : null} />
         </aside>
       </div>
 
       {/* Floating action bar */}
-      <div className={`fixed bottom-4 z-50 ${isAdminContext ? "lg:left-[252px]" : ""} left-4 right-4 lg:right-auto`}>
+      <div className={`fixed bottom-4 z-50 ${isAdminContext || isCenterContext ? "lg:left-[252px]" : ""} left-4 right-4 lg:right-auto`}>
         <div className="lg:w-[calc(50vw-146px)] max-w-3xl mx-auto flex gap-3 rounded-2xl border border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 shadow-lg px-4 md:px-6 py-3">
           <button
             disabled={submitting}

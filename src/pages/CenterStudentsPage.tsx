@@ -19,6 +19,9 @@ type Student = {
   batch_id: string | null;
   student_status: Status;
   created_at: string;
+  father_name: string | null;
+  parent_phone: string | null;
+  dob: string | null;
 };
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -45,9 +48,12 @@ const CenterStudentsPage = () => {
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
+  const [streamFilter, setStreamFilter] = useState<string>("all");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Student | null>(null);
 
   const load = async () => {
     if (!primaryCenterId) return;
@@ -55,7 +61,7 @@ const CenterStudentsPage = () => {
     const [{ data, error }, { data: bs }] = await Promise.all([
       (supabase as any)
         .from("profiles")
-        .select("id, user_id, full_name, phone, roll_number, target_exam, class_level, city, batch_id, student_status, created_at")
+        .select("id, user_id, full_name, phone, roll_number, target_exam, class_level, city, batch_id, student_status, created_at, father_name, parent_phone, dob")
         .eq("centre_id", primaryCenterId)
         .order("full_name", { ascending: true }),
       (supabase as any)
@@ -76,11 +82,22 @@ const CenterStudentsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryCenterId]);
 
+  const classOptions = useMemo(
+    () => Array.from(new Set(items.map((s) => s.class_level).filter(Boolean))).sort() as string[],
+    [items],
+  );
+  const streamOptions = useMemo(
+    () => Array.from(new Set(items.map((s) => s.target_exam).filter(Boolean))).sort() as string[],
+    [items],
+  );
+
   const filtered = useMemo(() => {
     const lq = q.trim().toLowerCase();
     return items.filter((s) => {
       if (statusFilter !== "all" && s.student_status !== statusFilter) return false;
       if (batchFilter !== "all" && (s.batch_id ?? "") !== batchFilter) return false;
+      if (classFilter !== "all" && (s.class_level ?? "") !== classFilter) return false;
+      if (streamFilter !== "all" && (s.target_exam ?? "") !== streamFilter) return false;
       if (!lq) return true;
       return (
         (s.full_name || "").toLowerCase().includes(lq) ||
@@ -88,7 +105,7 @@ const CenterStudentsPage = () => {
         (s.roll_number || "").toLowerCase().includes(lq)
       );
     });
-  }, [items, q, statusFilter, batchFilter]);
+  }, [items, q, statusFilter, batchFilter, classFilter, streamFilter]);
 
   if (!primaryCenterId) return <div className="p-8 text-sm text-muted-foreground">No centre assigned.</div>;
 
@@ -120,27 +137,34 @@ const CenterStudentsPage = () => {
     toast.success("Updated");
   };
 
-  // Bulk CSV fields — import looks students up by phone or roll_number and updates centre/status
+  // Bulk CSV fields — matches the standard Bansal students-template.csv format.
+  // Import looks students up by roll no. or contact no. and creates/updates them;
+  // the bulk-import edge function accepts these exact column keys.
   const csvFields: CsvField[] = [
-    { key: "roll_number", label: "Roll Number", example: "BC-2026-001" },
-    { key: "phone", label: "Phone", example: "9876543210" },
-    { key: "full_name", label: "Full Name", example: "Riya Sharma" },
-    { key: "class_level", label: "Class", example: "Class 11" },
-    { key: "target_exam", label: "Target Exam", example: "IIT JEE" },
-    { key: "city", label: "City", example: "Kota" },
-    {
-      key: "student_status",
-      label: "Status",
-      example: "active",
-      parse: (v: string) => {
-        const x = v.trim().toLowerCase().replace(/\s+/g, "_");
-        if (!["active", "inactive", "passed_out", "dropped"].includes(x)) {
-          throw new Error("Status must be active/inactive/passed_out/dropped");
-        }
-        return x;
-      },
-    },
+    { key: "roll_no", label: "Roll No", example: "1001" },
+    { key: "student_name", label: "Student Name", required: true, example: "Aviral Singh" },
+    { key: "fathers_name", label: "Father's Name", example: "Ashok Kumar Singh" },
+    { key: "contact_no", label: "Contact No.", example: "7857852344" },
+    { key: "parent_no", label: "Parent No.", example: "7909075201" },
+    { key: "dob", label: "DOB", example: "2008-05-12" },
+    { key: "stream", label: "Stream", example: "JEE" },
+    { key: "class", label: "Class", example: "XI" },
+    { key: "batch_code", label: "Batch Code", example: "XI-J1" },
   ];
+
+  // Export uses the same column labels/order as the import template, mapped
+  // from the DB row shape shown in the table.
+  const exportRows = filtered.map((s) => ({
+    roll_no: s.roll_number,
+    student_name: s.full_name,
+    fathers_name: s.father_name,
+    contact_no: s.phone,
+    parent_no: s.parent_phone,
+    dob: s.dob,
+    stream: s.target_exam,
+    class: s.class_level,
+    batch_code: batches.find((b) => b.id === s.batch_id)?.code ?? "",
+  }));
 
   const bulkImport = async (rows: Record<string, any>[], dry_run: boolean) => {
     const { data, error } = await (supabase as any).functions.invoke("bulk-import", {
@@ -206,6 +230,26 @@ const CenterStudentsPage = () => {
             <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
           ))}
         </select>
+        <select
+          value={classFilter}
+          onChange={(e) => setClassFilter(e.target.value)}
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">All classes</option>
+          {classOptions.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          value={streamFilter}
+          onChange={(e) => setStreamFilter(e.target.value)}
+          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
+        >
+          <option value="all">All streams</option>
+          {streamOptions.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
         <span className="text-xs text-muted-foreground">{filtered.length} of {items.length}</span>
       </div>
 
@@ -218,24 +262,37 @@ const CenterStudentsPage = () => {
           <table className="w-full text-sm">
             <thead className="bg-muted text-left text-xs uppercase">
               <tr>
-                <th className="px-4 py-2 font-bold">Name</th>
                 <th className="px-4 py-2 font-bold">Roll No</th>
-                <th className="px-4 py-2 font-bold">Phone</th>
+                <th className="px-4 py-2 font-bold">Student Name</th>
+                <th className="px-4 py-2 font-bold">Father's Name</th>
+                <th className="px-4 py-2 font-bold">Contact No.</th>
+                <th className="px-4 py-2 font-bold">Parent No.</th>
+                <th className="px-4 py-2 font-bold">DOB</th>
+                <th className="px-4 py-2 font-bold">Stream</th>
                 <th className="px-4 py-2 font-bold">Class</th>
-                <th className="px-4 py-2 font-bold">Target</th>
-                <th className="px-4 py-2 font-bold">Batch</th>
+                <th className="px-4 py-2 font-bold">Batch Code</th>
                 <th className="px-4 py-2 font-bold">Status</th>
-                <th className="px-4 py-2 font-bold">Joined</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((s) => (
                 <tr key={s.id} className="border-t border-border hover:bg-muted/30">
-                  <td className="px-4 py-2 font-semibold text-foreground">{s.full_name || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.roll_number || "—"}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      onClick={() => setEditing(s)}
+                      className="font-semibold text-foreground hover:text-primary hover:underline text-left"
+                      title="Click to view/edit details"
+                    >
+                      {s.full_name || "—"}
+                    </button>
+                  </td>
+                  <td className="px-4 py-2 text-muted-foreground">{s.father_name || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.phone || "—"}</td>
-                  <td className="px-4 py-2 text-muted-foreground">{s.class_level || "—"}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{s.parent_phone || "—"}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{s.dob || "—"}</td>
                   <td className="px-4 py-2 text-muted-foreground">{s.target_exam || "—"}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{s.class_level || "—"}</td>
                   <td className="px-4 py-2">
                     <select
                       disabled={savingId === s.id}
@@ -245,7 +302,7 @@ const CenterStudentsPage = () => {
                     >
                       <option value="">— None —</option>
                       {batches.map((b) => (
-                        <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                        <option key={b.id} value={b.id}>{b.code ?? b.name}</option>
                       ))}
                     </select>
                   </td>
@@ -266,11 +323,10 @@ const CenterStudentsPage = () => {
                       </select>
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">No students match.</td></tr>
+                <tr><td colSpan={10} className="px-4 py-10 text-center text-muted-foreground">No students match.</td></tr>
               )}
             </tbody>
           </table>
@@ -281,10 +337,10 @@ const CenterStudentsPage = () => {
         open={bulkOpen}
         onClose={() => setBulkOpen(false)}
         title="Bulk import / export Students"
-        description="Export your current roster, or upload a CSV to update existing students by phone or roll number. Status can be active, inactive, passed_out or dropped."
+        description="Export your current roster, or upload a CSV using the standard students-template format to add new students or update existing ones (matched by Roll No. or Contact No.). Batch Code must match an existing batch at your centre."
         fields={csvFields}
         fileBase="centre-students"
-        exportRows={filtered as any}
+        exportRows={exportRows}
         bulkImport={bulkImport}
         onDone={load}
       />
@@ -297,6 +353,17 @@ const CenterStudentsPage = () => {
           onCreated={() => {
             setAddOpen(false);
             load();
+          }}
+        />
+      )}
+
+      {editing && (
+        <EditStudentDialog
+          student={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(patch) => {
+            setItems((arr) => arr.map((x) => (x.id === editing.id ? { ...x, ...patch } : x)));
+            setEditing(null);
           }}
         />
       )}
@@ -314,11 +381,13 @@ type AddDialogProps = {
 const AddStudentDialog = ({ centreId, batches, onClose, onCreated }: AddDialogProps) => {
   const [form, setForm] = useState({
     full_name: "",
+    father_name: "",
     phone: "",
+    parent_phone: "",
     roll_number: "",
+    dob: "",
     class_level: "",
     target_exam: "JEE",
-    city: "",
     batch_id: "",
     email: "",
     password: "",
@@ -337,11 +406,13 @@ const AddStudentDialog = ({ centreId, batches, onClose, onCreated }: AddDialogPr
       body: {
         centre_id: centreId,
         full_name: form.full_name.trim(),
+        father_name: form.father_name.trim() || null,
         phone: form.phone.trim() || null,
+        parent_phone: form.parent_phone.trim() || null,
         roll_number: form.roll_number.trim() || null,
+        dob: form.dob.trim() || null,
         class_level: form.class_level.trim() || null,
         target_exam: form.target_exam.trim() || null,
-        city: form.city.trim() || null,
         batch_id: form.batch_id || null,
         email: form.email.trim() || null,
         password: form.password || null,
@@ -401,14 +472,30 @@ const AddStudentDialog = ({ centreId, batches, onClose, onCreated }: AddDialogPr
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 p-5 max-h-[70vh] overflow-y-auto">
-            <Field label="Full Name *" className="col-span-2">
+            <Field label="Roll No">
+              <input value={form.roll_number} onChange={(e) => set("roll_number", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Student Name *">
               <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} className={inputCls} />
             </Field>
-            <Field label="Phone">
+            <Field label="Father's Name">
+              <input value={form.father_name} onChange={(e) => set("father_name", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Contact No.">
               <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
             </Field>
-            <Field label="Roll Number">
-              <input value={form.roll_number} onChange={(e) => set("roll_number", e.target.value)} className={inputCls} />
+            <Field label="Parent No.">
+              <input value={form.parent_phone} onChange={(e) => set("parent_phone", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="DOB">
+              <input type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} className={inputCls} />
+            </Field>
+            <Field label="Stream">
+              <select value={form.target_exam} onChange={(e) => set("target_exam", e.target.value)} className={inputCls}>
+                {["JEE","NEET","Foundation","Other"].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </Field>
             <Field label="Class">
               <select value={form.class_level} onChange={(e) => set("class_level", e.target.value)} className={inputCls}>
@@ -418,28 +505,18 @@ const AddStudentDialog = ({ centreId, batches, onClose, onCreated }: AddDialogPr
                 ))}
               </select>
             </Field>
-            <Field label="Target Exam">
-              <select value={form.target_exam} onChange={(e) => set("target_exam", e.target.value)} className={inputCls}>
-                {["JEE","NEET","Foundation","Other"].map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Batch" className="col-span-2">
+            <Field label="Batch Code" className="col-span-2">
               <select value={form.batch_id} onChange={(e) => set("batch_id", e.target.value)} className={inputCls}>
                 <option value="">— None —</option>
                 {batches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
+                  <option key={b.id} value={b.id}>{b.code ?? b.name}</option>
                 ))}
               </select>
-            </Field>
-            <Field label="City">
-              <input value={form.city} onChange={(e) => set("city", e.target.value)} className={inputCls} />
             </Field>
             <Field label="Email (optional)">
               <input value={form.email} onChange={(e) => set("email", e.target.value)} className={inputCls} placeholder="auto-generated" />
             </Field>
-            <Field label="Password (optional)" className="col-span-2">
+            <Field label="Password (optional)">
               <input value={form.password} onChange={(e) => set("password", e.target.value)} className={inputCls} placeholder="auto-generated (min 8 chars)" />
             </Field>
             <div className="col-span-2 flex justify-end gap-2 pt-2">
@@ -457,6 +534,158 @@ const AddStudentDialog = ({ centreId, batches, onClose, onCreated }: AddDialogPr
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+type EditDialogProps = {
+  student: Student;
+  onClose: () => void;
+  onSaved: (patch: Partial<Student>) => void;
+};
+
+type CourseOpt = { id: string; name: string };
+
+const EditStudentDialog = ({ student, onClose, onSaved }: EditDialogProps) => {
+  const [form, setForm] = useState({
+    full_name: student.full_name ?? "",
+    father_name: student.father_name ?? "",
+    phone: student.phone ?? "",
+    parent_phone: student.parent_phone ?? "",
+    roll_number: student.roll_number ?? "",
+    dob: student.dob ?? "",
+    class_level: student.class_level ?? "",
+    target_exam: student.target_exam ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [courses, setCourses] = useState<CourseOpt[]>([]);
+  const [courseId, setCourseId] = useState<string>("");
+  const [loadingCourses, setLoadingCourses] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      setLoadingCourses(true);
+      const [{ data: courseRows }, { data: enrolled }] = await Promise.all([
+        supabase.from("courses").select("id, name").order("sort_order", { ascending: true }),
+        supabase.from("enrollments").select("course_id").eq("user_id", student.user_id).eq("is_active", true).limit(1).maybeSingle(),
+      ]);
+      setCourses((courseRows ?? []) as CourseOpt[]);
+      setCourseId((enrolled as any)?.course_id ?? "");
+      setLoadingCourses(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student.user_id]);
+
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.full_name.trim()) return toast.error("Name is required");
+    setSaving(true);
+    const patch = {
+      full_name: form.full_name.trim(),
+      father_name: form.father_name.trim() || null,
+      phone: form.phone.trim() || null,
+      parent_phone: form.parent_phone.trim() || null,
+      dob: form.dob.trim() || null,
+      class_level: form.class_level.trim() || null,
+      target_exam: form.target_exam.trim() || null,
+    };
+    const { error } = await (supabase as any).from("profiles").update(patch).eq("id", student.id);
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
+    if (courseId) {
+      const { error: enrollErr } = await supabase
+        .from("enrollments")
+        .upsert(
+          { user_id: student.user_id, course_id: courseId, is_active: true },
+          { onConflict: "user_id,course_id" },
+        );
+      if (enrollErr) {
+        setSaving(false);
+        toast.error(`Student updated, but course assignment failed: ${enrollErr.message}`);
+        onSaved(patch);
+        return;
+      }
+    }
+    setSaving(false);
+    toast.success("Student updated");
+    onSaved(patch);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-xl bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h3 className="text-lg font-black font-display">Edit Student</h3>
+          <button onClick={onClose} className="rounded p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3 p-5 max-h-[70vh] overflow-y-auto">
+          <Field label="Roll No">
+            <input value={form.roll_number} disabled className={`${inputCls} opacity-60 cursor-not-allowed`} title="Roll number can't be changed here" />
+          </Field>
+          <Field label="Student Name *">
+            <input value={form.full_name} onChange={(e) => set("full_name", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Father's Name">
+            <input value={form.father_name} onChange={(e) => set("father_name", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Contact No.">
+            <input value={form.phone} onChange={(e) => set("phone", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Parent No.">
+            <input value={form.parent_phone} onChange={(e) => set("parent_phone", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="DOB">
+            <input type="date" value={form.dob} onChange={(e) => set("dob", e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="Stream">
+            <select value={form.target_exam} onChange={(e) => set("target_exam", e.target.value)} className={inputCls}>
+              <option value="">—</option>
+              {["JEE","NEET","Foundation","Other"].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Class">
+            <select value={form.class_level} onChange={(e) => set("class_level", e.target.value)} className={inputCls}>
+              <option value="">—</option>
+              {["Class 6","Class 7","Class 8","Class 9","Class 10","Class 11","Class 12","Dropper"].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Course" className="col-span-2">
+            <select
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              disabled={loadingCourses}
+              className={inputCls}
+            >
+              <option value="">— None —</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </Field>
+          <div className="col-span-2 flex justify-end gap-2 pt-2">
+            <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-bold hover:bg-muted">
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Changes
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

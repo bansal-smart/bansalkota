@@ -29,6 +29,7 @@ const UpcomingTestsTab = () => {
         .select(
           "id, title, slug, test_type, starts_at, ends_at, duration_minutes, total_questions, is_published",
         )
+        .is("centre_id", null)
         .gt("starts_at", nowIso)
         .order("starts_at", { ascending: true })
         .limit(200);

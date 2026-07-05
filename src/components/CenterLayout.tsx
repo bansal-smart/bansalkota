@@ -12,6 +12,7 @@ import {
   CircleDot,
   Building2,
   Shield,
+  BookMarked,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -33,7 +34,7 @@ const nav = [
   { label: "Centre Courses", icon: BookOpen, path: "/center/centre-courses", moduleKey: "centre_courses" },
   { label: "Live Classes", icon: Video, path: "/center/live-classes", moduleKey: "live_classes" },
   { label: "Test Platform", icon: ClipboardList, path: "/center/tests", moduleKey: "test_platform" },
-  { label: "Test Series", icon: ClipboardList, path: "/center/test-series", moduleKey: "test_series" },
+  { label: "Question Bank", icon: BookMarked, path: "/center/question-bank", moduleKey: "question_bank" },
   { label: "Website Enquiries", icon: Inbox, path: "/center/enquiries", moduleKey: "website_enquiries" },
   { label: "Course Enquiries", icon: ClipboardList, path: "/center/course-enquiries", moduleKey: "course_enquiries" },
   { label: "My Students", icon: Users, path: "/center/students", moduleKey: "students" },

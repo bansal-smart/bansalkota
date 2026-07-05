@@ -37,6 +37,8 @@ type Props = {
   examPattern?: string;
   /** Parent test option-label setting. Auto means exam pattern / detected style decides. */
   optionLabelStyle?: "auto" | "numeric" | "alpha";
+  /** When set (bank target only), question_bank rows created by this import are stamped with this centre_id. */
+  centreId?: string | null;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -71,6 +73,7 @@ const DocxCommonImportDialog = ({
   target = "test",
   examPattern,
   optionLabelStyle = "auto",
+  centreId,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -476,6 +479,7 @@ const DocxCommonImportDialog = ({
           const ranged = marksForNumber(q.number, q.type);
           return {
             created_by: user.id,
+            centre_id: centreId ?? null,
             difficulty: "medium",
             is_public: true,
             tags: [],

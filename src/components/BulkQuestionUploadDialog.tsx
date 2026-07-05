@@ -11,6 +11,8 @@ type Props = {
   onClose: () => void;
   onUploaded: () => void;
   mode?: BulkUploadMode;
+  /** When set (question_bank mode only), imported rows are stamped with this centre_id. */
+  centreId?: string | null;
 };
 
 const QB_HEADERS = [
@@ -246,7 +248,7 @@ const PAGE_SIZE = 25;
 
 const normalizeText = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
-const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_bank" }: Props) => {
+const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_bank", centreId }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
@@ -366,7 +368,7 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
     };
   };
 
-  const toQbPayload = (row: ParsedQuestion) => row;
+  const toQbPayload = (row: ParsedQuestion) => (mode === "question_bank" ? { ...row, centre_id: centreId ?? null } : row);
 
   const buildPayload = (row: ParsedQuestion) =>
     mode === "compete" ? toCompetePayload(row) : toQbPayload(row);

@@ -66,12 +66,14 @@ Deno.serve(async (req) => {
     }
     if (!userId) return json(401, { error: "Unauthorized" });
 
-    const [{ data: isAdminOrSuper }, { data: isTeacher }] = await Promise.all([
+    const [{ data: isAdminOrSuper }, { data: isTeacher }, { data: staffRows }] = await Promise.all([
       admin.rpc("is_admin_or_super", { _user_id: userId }),
       admin.rpc("has_role", { _user_id: userId, _role: "teacher" }),
+      admin.from("centre_staff").select("centre_id").eq("user_id", userId).limit(1),
     ]);
-    if (!isAdminOrSuper && !isTeacher) {
-      return json(403, { error: "Only admins, super admins, or teachers can upload question images" });
+    const isCentreStaff = !!staffRows && staffRows.length > 0;
+    if (!isAdminOrSuper && !isTeacher && !isCentreStaff) {
+      return json(403, { error: "Only admins, super admins, teachers, or centre staff can upload question images" });
     }
 
     const body = await req.json().catch(() => null);

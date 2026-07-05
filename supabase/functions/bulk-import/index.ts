@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
         .select("id, slug, city, area");
       const { data: batchesList } = await admin
         .from("course_batches")
-        .select("id, name, code, course_id");
+        .select("id, name, code, course_id, centre_id");
       const centreByKey = new Map<string, string>();
       (centresList ?? []).forEach((c: any) => {
         const keys = [c.slug, c.city, c.area, `${c.city} ${c.area ?? ""}`.trim()]
@@ -162,10 +162,12 @@ Deno.serve(async (req) => {
       });
       const batchByKey = new Map<string, string>();
       const batchCourseById = new Map<string, string | null>();
+      const batchCentreById = new Map<string, string | null>();
       (batchesList ?? []).forEach((b: any) => {
         if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
         if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
         batchCourseById.set(b.id, b.course_id ?? null);
+        batchCentreById.set(b.id, b.centre_id ?? null);
       });
 
       const normStream = (v: any): string | null => {
@@ -239,13 +241,20 @@ Deno.serve(async (req) => {
             batchId = batchByKey.get(key) ?? null;
             if (!batchId) throw new Error(`Batch code not found: ${batchRaw}. Create it under Batches & CBT Setup first.`);
           }
+          // Centre staff (non-admin) may only assign batches that belong to their own centre.
+          if (batchId && !isAnyAdmin && isCentreStaff) {
+            const batchCentre = batchCentreById.get(batchId) ?? null;
+            if (batchCentre !== centreId) {
+              throw new Error(`Batch "${batchRaw}" does not belong to your centre`);
+            }
+          }
 
           // Find existing profile
-          let target: { id: string; user_id: string } | null = null;
+          let target: { id: string; user_id: string; centre_id: string | null } | null = null;
           if (roll) {
             const { data } = await admin
               .from("profiles")
-              .select("id, user_id")
+              .select("id, user_id, centre_id")
               .eq("roll_number", roll)
               .maybeSingle();
             target = data as any;
@@ -253,10 +262,14 @@ Deno.serve(async (req) => {
           if (!target && phone) {
             const { data } = await admin
               .from("profiles")
-              .select("id, user_id")
+              .select("id, user_id, centre_id")
               .eq("phone", phone)
               .maybeSingle();
             target = data as any;
+          }
+          // Centre staff (non-admin) may only update students already in their own centre.
+          if (target && !isAnyAdmin && isCentreStaff && target.centre_id !== centreId) {
+            throw new Error("A student with this roll number/phone already exists at a different centre");
           }
 
           const toE164In = (p: string | null): string | null => {
@@ -302,8 +315,10 @@ Deno.serve(async (req) => {
             resolvedUid = target.user_id;
             results.push({ row: i + 1, ok: true, id: target.id });
           } else {
-            // Create new student (admins only)
-            if (!isAnyAdmin) throw new Error("Student not found — only admins can create new students via bulk import");
+            // Create new student. Admins can create anywhere; centre staff can
+            // only create students stamped with their own centre_id (centreId
+            // is already forced to their own centre above for non-admins).
+            if (!isAnyAdmin && !isCentreStaff) throw new Error("Not authorised to create new students");
             if (!fullName) throw new Error("full_name (Student Name) is required to create a new student");
             if (dryRun) { results.push({ row: i + 1, ok: true }); continue; }
 

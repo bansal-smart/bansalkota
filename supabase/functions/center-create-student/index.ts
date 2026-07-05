@@ -62,6 +62,9 @@ Deno.serve(async (req) => {
     const target_exam = body?.target_exam ? String(body.target_exam).trim() : null;
     const city = body?.city ? String(body.city).trim() : null;
     const batch_id = body?.batch_id ? String(body.batch_id).trim() : null;
+    const father_name = body?.father_name ? String(body.father_name).trim() : null;
+    const parent_phone = body?.parent_phone ? String(body.parent_phone).trim() : null;
+    const dob = body?.dob ? String(body.dob).trim() : null;
     const student_status = ["active", "inactive", "passed_out", "dropped"].includes(body?.student_status)
       ? body.student_status
       : "active";
@@ -133,6 +136,9 @@ Deno.serve(async (req) => {
       class_level,
       target_exam,
       city,
+      father_name,
+      parent_phone,
+      dob,
       student_status,
       is_bansal_offline_student: true,
     };

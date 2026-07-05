@@ -115,7 +115,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
     setLoading(true);
     // Always load the test list for the dropdown
-    const testsRes = await supabase.from("tests").select("id, title, slug").order("created_at", { ascending: false });
+    const testsRes = await supabase.from("tests").select("id, title, slug").is("centre_id", null).order("created_at", { ascending: false });
     setTests(((testsRes as any).data ?? []) as any);
 
     // Fetch attempts in pages so a single test with many students is fully covered.

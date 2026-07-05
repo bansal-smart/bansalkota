@@ -34,6 +34,7 @@ const TestListPage = () => {
   const [courses, setCourses] = useState<EnrolledCourse[]>([]);
   const [attemptStatus, setAttemptStatus] = useState<Record<string, AttemptInfo>>({});
   const [batchId, setBatchId] = useState<string | null>(null);
+  const [assignedTestIds, setAssignedTestIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -42,7 +43,7 @@ const TestListPage = () => {
     let active = true;
     (async () => {
       setLoading(true);
-      const [enrollRes, testsRes, attemptsRes, profileRes] = await Promise.all([
+      const [enrollRes, testsRes, attemptsRes, profileRes, assignRes] = await Promise.all([
         supabase
           .from("enrollments")
           .select("course:courses(id, name, subject, slug)")
@@ -55,6 +56,7 @@ const TestListPage = () => {
           .order("created_at", { ascending: false }),
         supabase.from("test_attempts").select("id, test_id, status").eq("user_id", user.id),
         supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
+        supabase.from("test_assignments").select("test_id").eq("user_id", user.id).eq("is_active", true),
       ]);
       if (!active) return;
       const enrolled = (enrollRes.data ?? [])
@@ -73,6 +75,7 @@ const TestListPage = () => {
       });
       setAttemptStatus(map);
       setBatchId((profileRes.data as any)?.batch_id ?? null);
+      setAssignedTestIds(new Set((assignRes.data ?? []).map((a: any) => a.test_id)));
       // open all by default
       const open: Record<string, boolean> = { [GENERAL_KEY]: true };
       enrolled.forEach((c) => { open[c.id] = true; });
@@ -88,6 +91,9 @@ const TestListPage = () => {
     return tests.filter((t) => {
       // Always show tests the student has already attempted
       if (attemptStatus[t.id]) return true;
+      // Directly assigned tests (Centre Admin's per-student assignment) are
+      // always visible, regardless of batch/course — same as an attempted test.
+      if (assignedTestIds.has(t.id)) return true;
       const allowed = t.cbt_allowed_batch_ids;
       const inBatch = !!(batchId && allowed?.includes(batchId));
       // CBT tests: only show after results are released to mapped batch students
@@ -98,7 +104,7 @@ const TestListPage = () => {
       const inCourse = !!(t.course_id && enrolledCourseIds.has(t.course_id));
       return isOpen || inBatch || inCourse;
     });
-  }, [tests, batchId, attemptStatus, enrolledCourseIds]);
+  }, [tests, batchId, attemptStatus, enrolledCourseIds, assignedTestIds]);
 
   const filteredTests = useMemo(
     () => visibleTests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase())),

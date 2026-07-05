@@ -111,6 +111,10 @@ type Props = {
   onAddMany?: (qs: BankQuestion[]) => void;
   /** Bank question IDs already in the current test (to render "Added" state). */
   addedBankIds?: Set<string>;
+  /** When set, panel operates in centre context: scopes fetch to own-centre +
+   * global questions, stamps new/imported questions with this centre_id, and
+   * restricts edit/delete/bulk-select to the centre's own rows. */
+  centreId?: string | null;
 };
 
 const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: string; active: boolean; dir: SortDir; onClick: () => void; className?: string }) => (
@@ -122,7 +126,7 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
   </th>
 );
 
-const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, onAddMany, addedBankIds }: Props) => {
+const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, onAddMany, addedBankIds, centreId }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
@@ -144,8 +148,9 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const { confirm, ConfirmDialog } = useConfirm();
 
   // Server-side filters (subject/difficulty/search) — topic filtered client-side
-  const filters = useMemo(() => ({ subject, difficulty, search }), [subject, difficulty, search]);
+  const filters = useMemo(() => ({ subject, difficulty, search, centreId }), [subject, difficulty, search, centreId]);
   const { questions, loading, reload } = useQuestionBank(filters);
+  const isOwn = (q: BankQuestion) => !centreId || q.centre_id === centreId;
 
   // Reset page when filters/sort change
   useEffect(() => { setPage(1); }, [subject, difficulty, topic, search, sortKey, sortDir]);
@@ -403,8 +408,9 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                             <input
                               type="checkbox"
                               checked={isSel}
+                              disabled={!!centreId && !isOwn(q)}
                               onChange={() => toggleRow(q.id)}
-                              className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+                              className="h-4 w-4 rounded border-border accent-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                               aria-label="Select question"
                             />
                           </td>
@@ -423,14 +429,16 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                         </td>
                         {manage && (
                           <td className="px-3 py-2">
-                            <div className="flex items-center justify-end gap-1">
-                              <button onClick={() => { setEditing(q); setEditorOpen(true); }} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </button>
-                              <button onClick={() => handleDelete(q)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
+                            {isOwn(q) && (
+                              <div className="flex items-center justify-end gap-1">
+                                <button onClick={() => { setEditing(q); setEditorOpen(true); }} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Edit">
+                                  <Edit2 className="h-3.5 w-3.5" />
+                                </button>
+                                <button onClick={() => handleDelete(q)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete">
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
                           </td>
                         )}
                       </tr>
@@ -455,8 +463,8 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                     q={q}
                     draggable={draggable}
                     compact={compact}
-                    onEdit={manage ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
-                    onDelete={manage ? handleDelete : undefined}
+                    onEdit={manage && isOwn(q) ? (q) => { setEditing(q); setEditorOpen(true); } : undefined}
+                    onDelete={manage && isOwn(q) ? handleDelete : undefined}
                     onAdd={onAdd}
                     alreadyAdded={addedBankIds?.has(q.id)}
                   />
@@ -483,10 +491,10 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
         )}
       </div>
 
-      <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} />
-      <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} />
-      <DocxBulkImportDialog open={docxOpen} onClose={() => setDocxOpen(false)} onImported={reload} />
-      <DocxCommonImportDialog open={commonDocxOpen} onClose={() => setCommonDocxOpen(false)} onImported={reload} target="bank" />
+      <QuestionEditorDialog open={editorOpen} onClose={() => setEditorOpen(false)} onSaved={reload} initial={editing} centreId={centreId} />
+      <BulkQuestionUploadDialog open={bulkOpen} onClose={() => setBulkOpen(false)} onUploaded={reload} centreId={centreId} />
+      <DocxBulkImportDialog open={docxOpen} onClose={() => setDocxOpen(false)} onImported={reload} centreId={centreId} />
+      <DocxCommonImportDialog open={commonDocxOpen} onClose={() => setCommonDocxOpen(false)} onImported={reload} target="bank" centreId={centreId} />
 
 
       <Dialog open={bulkEditOpen} onOpenChange={setBulkEditOpen}>

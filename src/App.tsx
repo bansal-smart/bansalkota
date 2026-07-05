@@ -157,6 +157,7 @@ const CenterWebsiteEnquiriesPage = lazy(() => import("./pages/CenterWebsiteEnqui
 const CenterCourseEnquiriesPage = lazy(() => import("./pages/CenterCourseEnquiriesPage"));
 const CenterStudentsPage = lazy(() => import("./pages/CenterStudentsPage"));
 const CenterTestSeriesPage = lazy(() => import("./pages/CenterTestSeriesPage"));
+const CenterQuestionBankPage = lazy(() => import("./pages/CenterQuestionBankPage"));
 const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
 const CenterRolesPage = lazy(() => import("./pages/CenterRolesPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
@@ -442,8 +443,13 @@ const App = () => (
                   <Route path="/center/centre-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
                   <Route path="/center/live-classes" element={<CenterLiveClassesPage />} />
                   <Route path="/center/tests" element={<CenterTestsPage />} />
+                  <Route path="/center/tests/new" element={<CreateTestPage />} />
+                  <Route path="/center/tests/:slug/edit" element={<CreateTestPage />} />
                   <Route path="/center/tests/:testId/results" element={<CenterTestResultsPage />} />
                   <Route path="/center/test-series" element={<CenterTestSeriesPage />} />
+                  <Route path="/center/test-series/new" element={<CreateTestSeriesPage />} />
+                  <Route path="/center/test-series/:id/edit" element={<CreateTestSeriesPage />} />
+                  <Route path="/center/question-bank" element={<CenterQuestionBankPage />} />
                 </Route>
 
 

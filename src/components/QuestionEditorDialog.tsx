@@ -35,6 +35,8 @@ type Props = {
   onClose: () => void;
   onSaved: () => void;
   initial?: BankQuestion | null;
+  /** When set, new questions are stamped with this centre_id (ignored on update). */
+  centreId?: string | null;
 };
 
 import { SUBJECTS } from "@/lib/constants";
@@ -42,7 +44,7 @@ const DIFFICULTIES = ["easy", "medium", "hard"];
 
 type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
 
-const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
+const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Props) => {
   const { user } = useAuth();
   const [subject, setSubject] = useState("Physics");
   const [topic, setTopic] = useState("");
@@ -215,7 +217,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial }: Props) => {
     try {
       const res = initial
         ? await supabase.from("question_bank").update(payload).eq("id", initial.id)
-        : await supabase.from("question_bank").insert({ ...payload, created_by: user.id });
+        : await supabase.from("question_bank").insert({ ...payload, created_by: user.id, centre_id: centreId ?? null });
       if (res.error) {
         toast.error(res.error.message);
         return;

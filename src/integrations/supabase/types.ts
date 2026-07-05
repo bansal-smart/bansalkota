@@ -3672,6 +3672,7 @@ export type Database = {
         Row: {
           answer_range_max: number | null
           answer_range_min: number | null
+          centre_id: string | null
           correct_answer: Json
           created_at: string
           created_by: string | null
@@ -3701,6 +3702,7 @@ export type Database = {
         Insert: {
           answer_range_max?: number | null
           answer_range_min?: number | null
+          centre_id?: string | null
           correct_answer: Json
           created_at?: string
           created_by?: string | null
@@ -3730,6 +3732,7 @@ export type Database = {
         Update: {
           answer_range_max?: number | null
           answer_range_min?: number | null
+          centre_id?: string | null
           correct_answer?: Json
           created_at?: string
           created_by?: string | null
@@ -5147,6 +5150,7 @@ export type Database = {
       }
       test_series: {
         Row: {
+          centre_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -5174,6 +5178,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          centre_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -5201,6 +5206,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          centre_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -5295,6 +5301,7 @@ export type Database = {
           cbt_allowed_batch_ids: string[]
           cbt_enabled: boolean
           cbt_token: string | null
+          centre_id: string | null
           correct_marks: number
           course_id: string | null
           created_at: string
@@ -5334,6 +5341,7 @@ export type Database = {
           cbt_allowed_batch_ids?: string[]
           cbt_enabled?: boolean
           cbt_token?: string | null
+          centre_id?: string | null
           correct_marks?: number
           course_id?: string | null
           created_at?: string
@@ -5373,6 +5381,7 @@ export type Database = {
           cbt_allowed_batch_ids?: string[]
           cbt_enabled?: boolean
           cbt_token?: string | null
+          centre_id?: string | null
           correct_marks?: number
           course_id?: string | null
           created_at?: string
