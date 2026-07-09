@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -68,103 +68,6 @@ export type Database = {
           session_id?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      admin_role_assignments: {
-        Row: {
-          assigned_at: string
-          assigned_by: string | null
-          role_id: string
-          user_id: string
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by?: string | null
-          role_id: string
-          user_id: string
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string | null
-          role_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_role_assignments_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "admin_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_role_permissions: {
-        Row: {
-          can_create: boolean
-          can_delete: boolean
-          can_edit: boolean
-          can_export: boolean
-          can_view: boolean
-          created_at: string
-          id: string
-          module: string
-          role_id: string
-        }
-        Insert: {
-          can_create?: boolean
-          can_delete?: boolean
-          can_edit?: boolean
-          can_export?: boolean
-          can_view?: boolean
-          created_at?: string
-          id?: string
-          module: string
-          role_id: string
-        }
-        Update: {
-          can_create?: boolean
-          can_delete?: boolean
-          can_edit?: boolean
-          can_export?: boolean
-          can_view?: boolean
-          created_at?: string
-          id?: string
-          module?: string
-          role_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "admin_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      admin_roles: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name?: string
         }
         Relationships: []
       }
@@ -652,140 +555,6 @@ export type Database = {
           },
         ]
       }
-      centre_course_enquiries: {
-        Row: {
-          centre_id: string
-          class_level: string | null
-          course_id: string | null
-          created_at: string
-          email: string | null
-          id: string
-          message: string | null
-          name: string
-          phone: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          centre_id: string
-          class_level?: string | null
-          course_id?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          message?: string | null
-          name: string
-          phone: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          centre_id?: string
-          class_level?: string | null
-          course_id?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          message?: string | null
-          name?: string
-          phone?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "center_course_enquiries_center_id_fkey"
-            columns: ["centre_id"]
-            isOneToOne: false
-            referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "center_course_enquiries_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "centre_courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      centre_courses: {
-        Row: {
-          banner_url: string | null
-          brochure_url: string | null
-          centre_id: string
-          class_level: string | null
-          created_at: string
-          created_by: string | null
-          currency: string
-          description: string | null
-          duration: string | null
-          fees: number | null
-          highlights: Json
-          id: string
-          is_published: boolean
-          schedule: string | null
-          slug: string | null
-          sort_order: number
-          start_date: string | null
-          target_exam: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          banner_url?: string | null
-          brochure_url?: string | null
-          centre_id: string
-          class_level?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          description?: string | null
-          duration?: string | null
-          fees?: number | null
-          highlights?: Json
-          id?: string
-          is_published?: boolean
-          schedule?: string | null
-          slug?: string | null
-          sort_order?: number
-          start_date?: string | null
-          target_exam?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          banner_url?: string | null
-          brochure_url?: string | null
-          centre_id?: string
-          class_level?: string | null
-          created_at?: string
-          created_by?: string | null
-          currency?: string
-          description?: string | null
-          duration?: string | null
-          fees?: number | null
-          highlights?: Json
-          id?: string
-          is_published?: boolean
-          schedule?: string | null
-          slug?: string | null
-          sort_order?: number
-          start_date?: string | null
-          target_exam?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "center_courses_center_id_fkey"
-            columns: ["centre_id"]
-            isOneToOne: false
-            referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       centre_gallery: {
         Row: {
           caption: string | null
@@ -833,280 +602,10 @@ export type Database = {
           },
         ]
       }
-      centre_online_chapters: {
-        Row: {
-          centre_course_id: string
-          created_at: string
-          id: string
-          is_published: boolean
-          position: number
-          subject: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          centre_course_id: string
-          created_at?: string
-          id?: string
-          is_published?: boolean
-          position?: number
-          subject?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          centre_course_id?: string
-          created_at?: string
-          id?: string
-          is_published?: boolean
-          position?: number
-          subject?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "centre_online_chapters_centre_course_id_fkey"
-            columns: ["centre_course_id"]
-            isOneToOne: false
-            referencedRelation: "centre_online_courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      centre_online_courses: {
-        Row: {
-          centre_id: string
-          class_level: string | null
-          created_at: string
-          created_by: string | null
-          description: string | null
-          educator_name: string | null
-          full_description: string | null
-          id: string
-          is_published: boolean
-          learning_outcomes: string[]
-          original_price: number | null
-          price: number | null
-          requirements: string[]
-          short_description: string | null
-          slug: string | null
-          sort_order: number
-          subject: string | null
-          target_exam: string | null
-          thumbnail_url: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          centre_id: string
-          class_level?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          educator_name?: string | null
-          full_description?: string | null
-          id?: string
-          is_published?: boolean
-          learning_outcomes?: string[]
-          original_price?: number | null
-          price?: number | null
-          requirements?: string[]
-          short_description?: string | null
-          slug?: string | null
-          sort_order?: number
-          subject?: string | null
-          target_exam?: string | null
-          thumbnail_url?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          centre_id?: string
-          class_level?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          educator_name?: string | null
-          full_description?: string | null
-          id?: string
-          is_published?: boolean
-          learning_outcomes?: string[]
-          original_price?: number | null
-          price?: number | null
-          requirements?: string[]
-          short_description?: string | null
-          slug?: string | null
-          sort_order?: number
-          subject?: string | null
-          target_exam?: string | null
-          thumbnail_url?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "centre_online_courses_centre_id_fkey"
-            columns: ["centre_id"]
-            isOneToOne: false
-            referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      centre_online_lessons: {
-        Row: {
-          centre_chapter_id: string
-          centre_course_id: string
-          created_at: string
-          duration_seconds: number
-          id: string
-          is_free_preview: boolean
-          is_published: boolean
-          position: number
-          title: string
-          topic: string | null
-          updated_at: string
-          video_url: string | null
-          youtube_id: string | null
-        }
-        Insert: {
-          centre_chapter_id: string
-          centre_course_id: string
-          created_at?: string
-          duration_seconds?: number
-          id?: string
-          is_free_preview?: boolean
-          is_published?: boolean
-          position?: number
-          title: string
-          topic?: string | null
-          updated_at?: string
-          video_url?: string | null
-          youtube_id?: string | null
-        }
-        Update: {
-          centre_chapter_id?: string
-          centre_course_id?: string
-          created_at?: string
-          duration_seconds?: number
-          id?: string
-          is_free_preview?: boolean
-          is_published?: boolean
-          position?: number
-          title?: string
-          topic?: string | null
-          updated_at?: string
-          video_url?: string | null
-          youtube_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "centre_online_lessons_centre_chapter_id_fkey"
-            columns: ["centre_chapter_id"]
-            isOneToOne: false
-            referencedRelation: "centre_online_chapters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "centre_online_lessons_centre_course_id_fkey"
-            columns: ["centre_course_id"]
-            isOneToOne: false
-            referencedRelation: "centre_online_courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      centre_role_permissions: {
-        Row: {
-          can_create: boolean
-          can_delete: boolean
-          can_edit: boolean
-          can_export: boolean
-          can_view: boolean
-          created_at: string
-          id: string
-          module: string
-          role_id: string
-          updated_at: string
-        }
-        Insert: {
-          can_create?: boolean
-          can_delete?: boolean
-          can_edit?: boolean
-          can_export?: boolean
-          can_view?: boolean
-          created_at?: string
-          id?: string
-          module: string
-          role_id: string
-          updated_at?: string
-        }
-        Update: {
-          can_create?: boolean
-          can_delete?: boolean
-          can_edit?: boolean
-          can_export?: boolean
-          can_view?: boolean
-          created_at?: string
-          id?: string
-          module?: string
-          role_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "centre_role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "centre_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      centre_roles: {
-        Row: {
-          centre_id: string
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          centre_id: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          centre_id?: string
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "centre_roles_centre_id_fkey"
-            columns: ["centre_id"]
-            isOneToOne: false
-            referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       centre_staff: {
         Row: {
           centre_id: string
           created_at: string
-          custom_role_id: string | null
           id: string
           role: string
           updated_at: string
@@ -1115,7 +614,6 @@ export type Database = {
         Insert: {
           centre_id: string
           created_at?: string
-          custom_role_id?: string | null
           id?: string
           role?: string
           updated_at?: string
@@ -1124,7 +622,6 @@ export type Database = {
         Update: {
           centre_id?: string
           created_at?: string
-          custom_role_id?: string | null
           id?: string
           role?: string
           updated_at?: string
@@ -1136,13 +633,6 @@ export type Database = {
             columns: ["centre_id"]
             isOneToOne: false
             referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "centre_staff_custom_role_id_fkey"
-            columns: ["custom_role_id"]
-            isOneToOne: false
-            referencedRelation: "centre_roles"
             referencedColumns: ["id"]
           },
         ]
@@ -1198,7 +688,9 @@ export type Database = {
         Row: {
           address: string
           area: string | null
+          centre_code: string | null
           city: string
+          city_code: string | null
           created_at: string
           created_by: string | null
           email: string | null
@@ -1211,8 +703,10 @@ export type Database = {
           is_hq: boolean
           is_pinned: boolean
           is_published: boolean
+          is_suspended: boolean
           phone: string
           region: string
+          roll_seq: number
           selections_count: string | null
           selections_note: string | null
           selections_year: number | null
@@ -1221,6 +715,8 @@ export type Database = {
           state: string
           students_mentored: string | null
           students_mentored_note: string | null
+          suspended_at: string | null
+          suspension_reason: string | null
           theme: string
           updated_at: string
           verified: boolean
@@ -1228,7 +724,9 @@ export type Database = {
         Insert: {
           address?: string
           area?: string | null
+          centre_code?: string | null
           city: string
+          city_code?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -1241,8 +739,10 @@ export type Database = {
           is_hq?: boolean
           is_pinned?: boolean
           is_published?: boolean
+          is_suspended?: boolean
           phone?: string
           region?: string
+          roll_seq?: number
           selections_count?: string | null
           selections_note?: string | null
           selections_year?: number | null
@@ -1251,6 +751,8 @@ export type Database = {
           state: string
           students_mentored?: string | null
           students_mentored_note?: string | null
+          suspended_at?: string | null
+          suspension_reason?: string | null
           theme?: string
           updated_at?: string
           verified?: boolean
@@ -1258,7 +760,9 @@ export type Database = {
         Update: {
           address?: string
           area?: string | null
+          centre_code?: string | null
           city?: string
+          city_code?: string | null
           created_at?: string
           created_by?: string | null
           email?: string | null
@@ -1271,8 +775,10 @@ export type Database = {
           is_hq?: boolean
           is_pinned?: boolean
           is_published?: boolean
+          is_suspended?: boolean
           phone?: string
           region?: string
+          roll_seq?: number
           selections_count?: string | null
           selections_note?: string | null
           selections_year?: number | null
@@ -1281,6 +787,8 @@ export type Database = {
           state?: string
           students_mentored?: string | null
           students_mentored_note?: string | null
+          suspended_at?: string | null
+          suspension_reason?: string | null
           theme?: string
           updated_at?: string
           verified?: boolean
@@ -1448,33 +956,36 @@ export type Database = {
           centre_id: string | null
           class_level: string | null
           code: string
-          course_id: string
+          course_id: string | null
           created_at: string
           id: string
           is_active: boolean
           name: string
+          stream: string | null
           updated_at: string
         }
         Insert: {
           centre_id?: string | null
           class_level?: string | null
           code: string
-          course_id: string
+          course_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
+          stream?: string | null
           updated_at?: string
         }
         Update: {
           centre_id?: string | null
           class_level?: string | null
           code?: string
-          course_id?: string
+          course_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
+          stream?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1580,6 +1091,57 @@ export type Database = {
             columns: ["preferred_centre_id"]
             isOneToOne: false
             referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_offerings: {
+        Row: {
+          centre_id: string
+          course_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          original_price: number | null
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          centre_id: string
+          course_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          original_price?: number | null
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          centre_id?: string
+          course_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          original_price?: number | null
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_offerings_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_offerings_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
             referencedColumns: ["id"]
           },
         ]
@@ -1853,8 +1415,8 @@ export type Database = {
       }
       courses: {
         Row: {
-          assigned_teacher_id: string | null
           badge: string | null
+          centre_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -1864,9 +1426,11 @@ export type Database = {
           duration_label: string | null
           education_level: string | null
           educator_name: string
+          end_date: string | null
           id: string
           included_services: string[] | null
           is_featured: boolean | null
+          is_global: boolean
           is_published: boolean | null
           language: string | null
           level: string | null
@@ -1890,8 +1454,8 @@ export type Database = {
           what_youll_learn: string[]
         }
         Insert: {
-          assigned_teacher_id?: string | null
           badge?: string | null
+          centre_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1901,9 +1465,11 @@ export type Database = {
           duration_label?: string | null
           education_level?: string | null
           educator_name: string
+          end_date?: string | null
           id?: string
           included_services?: string[] | null
           is_featured?: boolean | null
+          is_global?: boolean
           is_published?: boolean | null
           language?: string | null
           level?: string | null
@@ -1927,8 +1493,8 @@ export type Database = {
           what_youll_learn?: string[]
         }
         Update: {
-          assigned_teacher_id?: string | null
           badge?: string | null
+          centre_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -1938,9 +1504,11 @@ export type Database = {
           duration_label?: string | null
           education_level?: string | null
           educator_name?: string
+          end_date?: string | null
           id?: string
           included_services?: string[] | null
           is_featured?: boolean | null
+          is_global?: boolean
           is_published?: boolean | null
           language?: string | null
           level?: string | null
@@ -1963,99 +1531,15 @@ export type Database = {
           updated_at?: string
           what_youll_learn?: string[]
         }
-        Relationships: []
-      }
-      doubt_answers: {
-        Row: {
-          answer_text: string
-          created_at: string
-          doubt_id: string
-          helpful_count: number | null
-          id: string
-          image_url: string | null
-          responder_id: string
-          responder_role: string
-        }
-        Insert: {
-          answer_text: string
-          created_at?: string
-          doubt_id: string
-          helpful_count?: number | null
-          id?: string
-          image_url?: string | null
-          responder_id: string
-          responder_role: string
-        }
-        Update: {
-          answer_text?: string
-          created_at?: string
-          doubt_id?: string
-          helpful_count?: number | null
-          id?: string
-          image_url?: string | null
-          responder_id?: string
-          responder_role?: string
-        }
         Relationships: [
           {
-            foreignKeyName: "doubt_answers_doubt_id_fkey"
-            columns: ["doubt_id"]
+            foreignKeyName: "courses_centre_id_fkey"
+            columns: ["centre_id"]
             isOneToOne: false
-            referencedRelation: "doubts"
+            referencedRelation: "centres"
             referencedColumns: ["id"]
           },
         ]
-      }
-      doubts: {
-        Row: {
-          ai_answer: string | null
-          ai_escalated: boolean
-          assigned_teacher_id: string | null
-          created_at: string
-          id: string
-          image_url: string | null
-          question_text: string
-          resolution_type: string | null
-          routed_to: string
-          status: string
-          subject: string
-          topic: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          ai_answer?: string | null
-          ai_escalated?: boolean
-          assigned_teacher_id?: string | null
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          question_text: string
-          resolution_type?: string | null
-          routed_to?: string
-          status?: string
-          subject: string
-          topic?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          ai_answer?: string | null
-          ai_escalated?: boolean
-          assigned_teacher_id?: string | null
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          question_text?: string
-          resolution_type?: string | null
-          routed_to?: string
-          status?: string
-          subject?: string
-          topic?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       educator_follows: {
         Row: {
@@ -2238,47 +1722,70 @@ export type Database = {
       }
       enrollments: {
         Row: {
+          centre_id: string | null
           completed_lessons: number
           course_id: string
           created_at: string
+          expires_at: string | null
           id: string
           is_active: boolean
           last_accessed_at: string | null
           last_lesson_title: string | null
+          offering_id: string | null
           progress_percent: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          centre_id?: string | null
           completed_lessons?: number
           course_id: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           last_accessed_at?: string | null
           last_lesson_title?: string | null
+          offering_id?: string | null
           progress_percent?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          centre_id?: string | null
           completed_lessons?: number
           course_id?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           last_accessed_at?: string | null
           last_lesson_title?: string | null
+          offering_id?: string | null
           progress_percent?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "enrollments_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "enrollments_course_id_fkey"
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollments_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "course_offerings"
             referencedColumns: ["id"]
           },
         ]
@@ -2958,7 +2465,6 @@ export type Database = {
           name: string
           subject: string
           target_exam: string | null
-          teacher_id: string | null
           title: string
           updated_at: string
         }
@@ -2975,7 +2481,6 @@ export type Database = {
           name: string
           subject: string
           target_exam?: string | null
-          teacher_id?: string | null
           title: string
           updated_at?: string
         }
@@ -2992,7 +2497,6 @@ export type Database = {
           name?: string
           subject?: string
           target_exam?: string | null
-          teacher_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -3083,13 +2587,6 @@ export type Database = {
             columns: ["centre_id"]
             isOneToOne: false
             referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "live_classes_centre_online_course_id_fkey"
-            columns: ["centre_online_course_id"]
-            isOneToOne: false
-            referencedRelation: "centre_online_courses"
             referencedColumns: ["id"]
           },
           {
@@ -3331,6 +2828,8 @@ export type Database = {
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           razorpay_signature: string | null
+          resolved_centre_id: string | null
+          resolved_offering_id: string | null
           shipping_address: string | null
           shipping_city: string | null
           shipping_fee: number
@@ -3355,6 +2854,8 @@ export type Database = {
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           razorpay_signature?: string | null
+          resolved_centre_id?: string | null
+          resolved_offering_id?: string | null
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_fee?: number
@@ -3379,6 +2880,8 @@ export type Database = {
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           razorpay_signature?: string | null
+          resolved_centre_id?: string | null
+          resolved_offering_id?: string | null
           shipping_address?: string | null
           shipping_city?: string | null
           shipping_fee?: number
@@ -3392,7 +2895,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_resolved_centre_id_fkey"
+            columns: ["resolved_centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_resolved_offering_id_fkey"
+            columns: ["resolved_offering_id"]
+            isOneToOne: false
+            referencedRelation: "course_offerings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -3553,7 +3071,6 @@ export type Database = {
           country: string | null
           created_at: string
           dob: string | null
-          doubt_preference: string
           father_name: string | null
           full_name: string | null
           goal: string | null
@@ -3587,7 +3104,6 @@ export type Database = {
           country?: string | null
           created_at?: string
           dob?: string | null
-          doubt_preference?: string
           father_name?: string | null
           full_name?: string | null
           goal?: string | null
@@ -3621,7 +3137,6 @@ export type Database = {
           country?: string | null
           created_at?: string
           dob?: string | null
-          doubt_preference?: string
           father_name?: string | null
           full_name?: string | null
           goal?: string | null
@@ -3759,7 +3274,15 @@ export type Database = {
           topic?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "question_bank_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       question_import_batches: {
         Row: {
@@ -3847,6 +3370,115 @@ export type Database = {
           resolution_notes?: string | null
           status?: string
           subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      role_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_assignments_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_export: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module: string
+          role_id: string
+          updated_at: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module: string
+          role_id: string
+          updated_at?: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          role_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          scope?: string
           updated_at?: string
         }
         Relationships: []
@@ -4683,6 +4315,41 @@ export type Database = {
         }
         Relationships: []
       }
+      test_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          test_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          test_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          test_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_assignments_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_attempt_answer_snapshots: {
         Row: {
           answer_count: number
@@ -5161,6 +4828,7 @@ export type Database = {
           id: string
           included_services: string[]
           is_featured: boolean
+          is_global: boolean
           is_published: boolean
           language: string | null
           mode: string | null
@@ -5189,6 +4857,7 @@ export type Database = {
           id?: string
           included_services?: string[]
           is_featured?: boolean
+          is_global?: boolean
           is_published?: boolean
           language?: string | null
           mode?: string | null
@@ -5217,6 +4886,7 @@ export type Database = {
           id?: string
           included_services?: string[]
           is_featured?: boolean
+          is_global?: boolean
           is_published?: boolean
           language?: string | null
           mode?: string | null
@@ -5233,7 +4903,15 @@ export type Database = {
           total_tests?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "test_series_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_support_queries: {
         Row: {
@@ -5313,6 +4991,7 @@ export type Database = {
           id: string
           import_method: string
           instructions_image_url: string | null
+          is_global: boolean
           is_published: boolean
           open_window_minutes: number | null
           option_label_style: string | null
@@ -5353,6 +5032,7 @@ export type Database = {
           id?: string
           import_method?: string
           instructions_image_url?: string | null
+          is_global?: boolean
           is_published?: boolean
           open_window_minutes?: number | null
           option_label_style?: string | null
@@ -5393,6 +5073,7 @@ export type Database = {
           id?: string
           import_method?: string
           instructions_image_url?: string | null
+          is_global?: boolean
           is_published?: boolean
           open_window_minutes?: number | null
           option_label_style?: string | null
@@ -5416,7 +5097,15 @@ export type Database = {
           visibility?: string
           wrong_marks?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tests_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       toppers: {
         Row: {
@@ -5674,6 +5363,7 @@ export type Database = {
         }
         Returns: Json
       }
+      assign_roll_number: { Args: { _centre_id: string }; Returns: string }
       can_reattempt_test: {
         Args: { _test_id: string; _user_id: string }
         Returns: boolean
@@ -5723,11 +5413,22 @@ export type Database = {
           user_id: string
         }[]
       }
+      centre_assign_test_batches: {
+        Args: { _batch_ids: string[]; _test_id: string }
+        Returns: undefined
+      }
+      centre_update_student_batch: {
+        Args: { _batch_id: string; _user_id: string }
+        Returns: undefined
+      }
+      create_standard_batches: {
+        Args: { _centre_id: string }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
-      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
@@ -5740,6 +5441,7 @@ export type Database = {
         Args: { _attempt_id: string }
         Returns: Json
       }
+      get_boost_admit_card: { Args: { _id: string }; Returns: string }
       get_chapter_quiz_answers: {
         Args: { _quiz_id: string }
         Returns: {
@@ -5769,7 +5471,6 @@ export type Database = {
       get_profile_lock_fields: {
         Args: { _user_id: string }
         Returns: {
-          batch_id: string
           centre_id: string
           is_bansal_offline_student: boolean
           roll_number: string
@@ -5790,6 +5491,24 @@ export type Database = {
       get_test_rank: { Args: { _attempt_id: string }; Returns: Json }
       get_test_result_bundle: { Args: { _attempt_id: string }; Returns: Json }
       get_user_streak: { Args: { _user_id: string }; Returns: number }
+      has_course_access: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_permission:
+        | {
+            Args: { _action: string; _module: string; _user_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              _action: string
+              _centre_id?: string
+              _module: string
+              _user_id: string
+            }
+            Returns: boolean
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5812,6 +5531,14 @@ export type Database = {
         Args: { _centre_id: string; _user_id: string }
         Returns: boolean
       }
+      is_centre_staff_for_student: {
+        Args: { _student_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_centre_suspended_for_user: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
       move_to_dlq: {
         Args: {
@@ -5827,7 +5554,6 @@ export type Database = {
         Args: { _body: string; _link: string; _title: string; _type: string }
         Returns: undefined
       }
-      pick_teacher_for_doubt: { Args: never; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

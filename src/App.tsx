@@ -7,12 +7,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Eager: layouts, guards, marketing entry — required on first paint.
 import StudentLayout from "./components/StudentLayout";
-import TeacherLayout from "./components/TeacherLayout";
 import AdminLayout from "./components/AdminLayout";
-import CenterLayout from "./components/CenterLayout";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
-import ProtectedCenterRoute from "./components/ProtectedCenterRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import PublicLayout from "./components/PublicLayout";
 import Spinner from "./components/Spinner";
@@ -38,25 +35,18 @@ const TestResponseSheetPage = lazy(() => import("./pages/TestResponseSheetPage")
 const TestSubjectBreakdownPage = lazy(() => import("./pages/TestSubjectBreakdownPage"));
 const LiveClassRoomPage = lazy(() => import("./pages/LiveClassRoomPage"));
 const LiveClassesListPage = lazy(() => import("./pages/LiveClassesListPage"));
-const DoubtPage = lazy(() => import("./pages/DoubtPage"));
 const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const CoursesPage = lazy(() => import("./pages/CoursesPage"));
 const MyCoursesPage = lazy(() => import("./pages/MyCoursesPage"));
 const CourseStudyMaterialPage = lazy(() => import("./pages/CourseLearnPage"));
 const ChapterQuizPage = lazy(() => import("./pages/ChapterQuizPage"));
-const CourseDetailPage = lazy(() => import("./pages/CourseDetailPage"));
+const CourseOrCentreRoute = lazy(() => import("./pages/CourseOrCentreRoute"));
 const LecturePlayerPage = lazy(() => import("./pages/LecturePlayerPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-const EducatorsPage = lazy(() => import("./pages/EducatorsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const StorePage = lazy(() => import("./pages/StorePage"));
-const TeacherDashboard = lazy(() => import("./pages/TeacherDashboard"));
-const TeacherDoubtQueuePage = lazy(() => import("./pages/TeacherDoubtQueuePage"));
-const TeacherLiveClassesPage = lazy(() => import("./pages/TeacherLiveClassesPage"));
-const TeacherLiveClassRoomPage = lazy(() => import("./pages/TeacherLiveClassRoomPage"));
-const TeacherSettingsPage = lazy(() => import("./pages/TeacherSettingsPage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminUsersPage = lazy(() => import("./pages/AdminUsersPage"));
 const AdminStudentsPage = lazy(() => import("./pages/AdminStudentsPage"));
@@ -140,26 +130,9 @@ const AdminBlogsPage = lazy(() => import("./pages/AdminBlogsPage"));
 const BlogsListPage = lazy(() => import("./pages/BlogsListPage"));
 const BlogDetailPage = lazy(() => import("./pages/BlogDetailPage"));
 const AdminCenterSupportPage = lazy(() => import("./pages/AdminCenterSupportPage"));
-const CenterDashboardPage = lazy(() => import("./pages/CenterDashboardPage"));
-const CenterOnlineCoursesPage = lazy(() => import("./pages/CenterOnlineCoursesPage"));
-const CenterOnlineCourseContentPage = lazy(() => import("./pages/CenterOnlineCourseContentPage"));
-const CenterBannersPage = lazy(() => import("./pages/CenterBannersPage"));
-const CenterCarouselBannersPage = lazy(() => import("./pages/CenterCarouselBannersPage"));
-const CenterContentPage = lazy(() => import("./pages/CenterContentPage"));
-const CenterGalleryPage = lazy(() => import("./pages/CenterGalleryPage"));
-const CenterUpdatesPage = lazy(() => import("./pages/CenterUpdatesPage"));
-const CenterCoursesPage = lazy(() => import("./pages/CenterCoursesPage"));
-const CenterPlatformCoursesPage = lazy(() => import("./pages/CenterPlatformCoursesPage"));
-const CenterLiveClassesPage = lazy(() => import("./pages/CenterLiveClassesPage"));
-const CenterTestsPage = lazy(() => import("./pages/CenterTestsPage"));
-const CenterTestResultsPage = lazy(() => import("./pages/CenterTestResultsPage"));
-const CenterWebsiteEnquiriesPage = lazy(() => import("./pages/CenterWebsiteEnquiriesPage"));
-const CenterCourseEnquiriesPage = lazy(() => import("./pages/CenterCourseEnquiriesPage"));
-const CenterStudentsPage = lazy(() => import("./pages/CenterStudentsPage"));
-const CenterTestSeriesPage = lazy(() => import("./pages/CenterTestSeriesPage"));
-const CenterQuestionBankPage = lazy(() => import("./pages/CenterQuestionBankPage"));
-const CenterSupportPage = lazy(() => import("./pages/CenterSupportPage"));
-const CenterRolesPage = lazy(() => import("./pages/CenterRolesPage"));
+const AdminCentreGalleryPage = lazy(() => import("./pages/AdminCentreGalleryPage"));
+const AdminNewsUpdatesPage = lazy(() => import("./pages/AdminNewsUpdatesPage"));
+const AdminCentreStaffPage = lazy(() => import("./pages/AdminCentreStaffPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
 const AdminLandingLeadsPage = lazy(() => import("./pages/AdminLandingLeadsPage"));
@@ -225,12 +198,11 @@ const App = () => (
                 <Route element={<PublicLayout />}>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/courses" element={<CoursesPage />} />
-                  <Route path="/courses/:slug" element={<CourseDetailPage />} />
+                  <Route path="/courses/:slug" element={<CourseOrCentreRoute />} />
                   <Route path="/tests" element={<TestsLandingPage />} />
                   <Route path="/test-series" element={<TestSeriesCatalogPage />} />
                   <Route path="/test-series/:slug" element={<TestSeriesDetailPage />} />
                   <Route path="/live-classes" element={<LiveClassesLandingPage />} />
-                  <Route path="/educators" element={<EducatorsPage />} />
                   <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/admissions" element={<AdmissionsPage />} />
                   <Route path="/association" element={<AssociationPage />} />
@@ -277,6 +249,7 @@ const App = () => (
                   />
                   {/* Removed pages → redirects */}
                   <Route path="/mentorship" element={<Navigate to="/" replace />} />
+                  <Route path="/educators" element={<Navigate to="/" replace />} />
                 </Route>
 
                 {/* Legacy /store redirect */}
@@ -294,7 +267,6 @@ const App = () => (
                     <Route path="/my-live-classes" element={<LiveClassesListPage />} />
                     <Route path="/live-classes/:slug" element={<LiveClassRoomPage />} />
 
-                    <Route path="/doubts" element={<DoubtPage />} />
                     <Route path="/leaderboard" element={<LeaderboardPage />} />
                     <Route path="/analytics" element={<AnalyticsPage />} />
                     <Route path="/my-courses" element={<MyCoursesPage />} />
@@ -304,30 +276,15 @@ const App = () => (
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
-                    {/* Removed mentor/compete redirects */}
+                    {/* Removed teacher/mentor/compete/doubts redirects */}
+                    <Route path="/doubts" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/compete" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/mentor-chat" element={<Navigate to="/dashboard" replace />} />
                   </Route>
                 </Route>
 
-                {/* Teacher layout — teachers only. */}
-                <Route element={<ProtectedRoute allow={["teacher"]} />}>
-                  <Route element={<TeacherLayout />}>
-                    <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-                    <Route path="/teacher/live-classes" element={<TeacherLiveClassesPage />} />
-                    <Route path="/teacher/live-classes/:slug" element={<TeacherLiveClassRoomPage />} />
-                    <Route path="/teacher/doubts" element={<TeacherDoubtQueuePage />} />
-                    <Route path="/teacher/settings" element={<TeacherSettingsPage />} />
-                    <Route path="/teacher/courses" element={<Navigate to="/teacher/dashboard" replace />} />
-                    <Route path="/teacher/courses/create" element={<Navigate to="/teacher/dashboard" replace />} />
-                    <Route path="/teacher/tests/create" element={<Navigate to="/teacher/dashboard" replace />} />
-                    <Route path="/teacher/question-bank" element={<Navigate to="/teacher/dashboard" replace />} />
-                    <Route path="/teacher/students" element={<Navigate to="/teacher/dashboard" replace />} />
-                    <Route path="/teacher/analytics" element={<Navigate to="/teacher/dashboard" replace />} />
-                  </Route>
-                </Route>
-
-                {/* Mentor routes removed → redirect to home */}
+                {/* Teacher/mentor portals removed → redirect to home */}
+                <Route path="/teacher/*" element={<Navigate to="/" replace />} />
                 <Route path="/mentor/*" element={<Navigate to="/" replace />} />
 
                 {/* Staff auth */}
@@ -382,6 +339,9 @@ const App = () => (
                   <Route path="/admin/centers" element={<Navigate to="/admin/centres" replace />} />
                   <Route path="/admin/centre-support" element={<AdminCenterSupportPage />} />
                   <Route path="/admin/center-support" element={<Navigate to="/admin/centre-support" replace />} />
+                  <Route path="/admin/centre-gallery" element={<AdminCentreGalleryPage />} />
+                  <Route path="/admin/news-updates" element={<AdminNewsUpdatesPage />} />
+                  <Route path="/admin/centre-staff" element={<AdminCentreStaffPage />} />
                   <Route path="/admin/toppers" element={<AdminToppersPage />} />
                   <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
                   <Route path="/admin/gallery" element={<AdminGalleryPage />} />
@@ -419,39 +379,9 @@ const App = () => (
                   <Route path="/admin/site-pages/refund-policy" element={<AdminSitePageEditorPage slug="refund-policy" heading="Refund Policy" />} />
                 </Route>
 
-                {/* Centre admin portal */}
-                <Route
-                  element={
-                    <ProtectedCenterRoute>
-                      <CenterLayout />
-                    </ProtectedCenterRoute>
-                  }
-                >
-                  <Route path="/center" element={<CenterDashboardPage />} />
-                  <Route path="/center/content" element={<CenterContentPage />} />
-                  <Route path="/center/banners" element={<CenterBannersPage />} />
-                  <Route path="/center/carousel-banners" element={<CenterCarouselBannersPage />} />
-                  <Route path="/center/enquiries" element={<CenterWebsiteEnquiriesPage />} />
-                  <Route path="/center/course-enquiries" element={<CenterCourseEnquiriesPage />} />
-                  <Route path="/center/students" element={<CenterStudentsPage />} />
-                  <Route path="/center/support" element={<CenterSupportPage />} />
-                  <Route path="/center/roles" element={<CenterRolesPage />} />
-                  <Route path="/center/gallery" element={<CenterGalleryPage />} />
-                  <Route path="/center/updates" element={<CenterUpdatesPage />} />
-                  <Route path="/center/online-courses" element={<CenterPlatformCoursesPage />} />
-                  <Route path="/center/centre-courses" element={<CenterOnlineCoursesPage />} />
-                  <Route path="/center/centre-courses/:courseId" element={<CenterOnlineCourseContentPage />} />
-                  <Route path="/center/live-classes" element={<CenterLiveClassesPage />} />
-                  <Route path="/center/tests" element={<CenterTestsPage />} />
-                  <Route path="/center/tests/new" element={<CreateTestPage />} />
-                  <Route path="/center/tests/:slug/edit" element={<CreateTestPage />} />
-                  <Route path="/center/tests/:testId/results" element={<CenterTestResultsPage />} />
-                  <Route path="/center/test-series" element={<CenterTestSeriesPage />} />
-                  <Route path="/center/test-series/new" element={<CreateTestSeriesPage />} />
-                  <Route path="/center/test-series/:id/edit" element={<CreateTestSeriesPage />} />
-                  <Route path="/center/question-bank" element={<CenterQuestionBankPage />} />
-                </Route>
-
+                {/* Legacy /center, /centre → merged into the admin portal */}
+                <Route path="/center/*" element={<Navigate to="/admin/students" replace />} />
+                <Route path="/centre" element={<Navigate to="/admin/students" replace />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

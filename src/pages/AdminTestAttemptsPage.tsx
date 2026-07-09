@@ -271,20 +271,20 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     const attemptedUserIds = new Set(attempts.map((a) => a.user_id));
     const naRows: Row[] = effectiveTestId
       ? notAttempted
-          .filter((s) => !attemptedUserIds.has(s.user_id))
-          .map((s) => ({
-            __na: true as const,
-            id: `na-${s.user_id}`,
-            user_id: s.user_id,
-            test_id: effectiveTestId,
-            status: "not_attempted" as const,
-            score: null, percentile: null, correct_answers: null, total_questions: null,
-            started_at: null, submitted_at: null, created_at: "",
-            time_spent_seconds: null,
-            full_name: s.full_name,
-            roll_number: s.roll_number,
-            batch_name: s.batch_name,
-          }))
+        .filter((s) => !attemptedUserIds.has(s.user_id))
+        .map((s) => ({
+          __na: true as const,
+          id: `na-${s.user_id}`,
+          user_id: s.user_id,
+          test_id: effectiveTestId,
+          status: "not_attempted" as const,
+          score: null, percentile: null, correct_answers: null, total_questions: null,
+          started_at: null, submitted_at: null, created_at: "",
+          time_spent_seconds: null,
+          full_name: s.full_name,
+          roll_number: s.roll_number,
+          batch_name: s.batch_name,
+        }))
       : [];
     return [...attempts.map((a) => a as Row), ...naRows];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -500,12 +500,11 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                       <td className="px-4 py-3 font-medium text-foreground">{studentName}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">{t?.title ?? "—"}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          a.status === "submitted" ? "bg-secondary/20 text-secondary" :
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${a.status === "submitted" ? "bg-secondary/20 text-secondary" :
                           a.status === "auto_submitted" ? "bg-amber-500/20 text-amber-600" :
-                          a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
-                          "bg-primary/10 text-primary animate-pulse"
-                        }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
+                            a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
+                              "bg-primary/10 text-primary animate-pulse"
+                          }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
                       </td>
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>
@@ -567,10 +566,10 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
               <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Mode</label>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => setReopenFresh(true)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${reopenFresh ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground"}`}>
-                  Fresh attempt<br/><span className="font-normal text-[10px] opacity-70">Clears all answers</span>
+                  Fresh attempt<br /><span className="font-normal text-[10px] opacity-70">Clears all answers</span>
                 </button>
                 <button onClick={() => setReopenFresh(false)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${!reopenFresh ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground"}`}>
-                  Resume<br/><span className="font-normal text-[10px] opacity-70">Keeps previous answers</span>
+                  Resume<br /><span className="font-normal text-[10px] opacity-70">Keeps previous answers</span>
                 </button>
               </div>
             </div>

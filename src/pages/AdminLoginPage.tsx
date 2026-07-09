@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 
 const AdminLoginPage = () => {
-  const { signIn, session, role, isStaff, roleReady, loading } = useAuth();
+  const { signIn, session, isStaff, isCenterAdmin, roleReady, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/admin/dashboard";
+  const capturedFrom = (location.state as { from?: { pathname: string } } | null)?.from?.pathname;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,21 +21,16 @@ const AdminLoginPage = () => {
 
   useEffect(() => {
     if (loading || !session || !roleReady) return;
-    if (isStaff) {
-      navigate(from, { replace: true });
+    if (isStaff || isCenterAdmin) {
+      // Centre admins land on their portal's first tab by default (there's no
+      // /admin/dashboard-equivalent for them); staff default to the dashboard.
+      const dest = capturedFrom ?? (isCenterAdmin ? "/admin/students" : "/admin/dashboard");
+      navigate(dest, { replace: true });
     } else {
-      // Non-staff: bounce to their correct portal home.
-      const home =
-        role === "teacher"
-          ? "/teacher/dashboard"
-          : role === "mentor"
-            ? "/mentor/dashboard"
-            : role === "center_admin"
-              ? "/center"
-              : "/dashboard";
-      navigate(home, { replace: true });
+      // Neither staff nor centre admin: bounce to their portal home.
+      navigate("/dashboard", { replace: true });
     }
-  }, [loading, session, roleReady, isStaff, role, navigate, from, location.pathname]);
+  }, [loading, session, roleReady, isStaff, isCenterAdmin, navigate, capturedFrom]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

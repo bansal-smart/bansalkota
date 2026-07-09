@@ -4,7 +4,7 @@ export interface AppUser {
   id: string;
   full_name: string;
   email: string;
-  role: 'student' | 'teacher' | 'admin';
+  role: 'student' | 'admin';
   target_exam: string;
   avatar_url?: string;
 }

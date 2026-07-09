@@ -1,5 +1,5 @@
-// Super Admin Dashboard module catalog — keys used by admin_role_permissions.module
-// Keep keys stable; labels are user-facing.
+// Super Admin Dashboard module catalog — keys used by role_permissions.module
+// for scope='admin' roles. Keep keys stable; labels are user-facing.
 
 export type AdminAction = "view" | "create" | "edit" | "delete" | "export";
 
@@ -38,6 +38,10 @@ export const ADMIN_MODULES: AdminModule[] = [
   // Centres
   { key: "centres", label: "Centres", path: "/admin/centres", actions: ["view", "create", "edit", "delete"] },
   { key: "centre_support", label: "Centre Support", path: "/admin/centre-support", actions: ["view", "edit"] },
+  // A centre's own gallery — distinct from the site-wide "gallery" key below
+  // (gallery_albums), which is HQ's public gallery, not a specific centre's.
+  { key: "centre_gallery", label: "Gallery", path: "/admin/centre-gallery", actions: ["view", "create", "edit", "delete"] },
+  { key: "news_updates", label: "News & Updates", path: "/admin/news-updates", actions: ["view", "create", "edit", "delete"] },
 
   // Content & Media
   { key: "page_banners", label: "Page Banners", path: "/admin/banners", actions: ["view", "create", "edit", "delete"] },

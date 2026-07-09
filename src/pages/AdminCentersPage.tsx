@@ -19,6 +19,9 @@ type Center = {
   phone: string;
   email: string | null;
   is_hq: boolean;
+  city_code: string | null;
+  centre_code: string | null;
+  is_suspended: boolean;
   established: number | null;
   theme: string;
   image_url: string | null;
@@ -60,6 +63,9 @@ const blank: Partial<Center> = {
   phone: "",
   email: "",
   is_hq: false,
+  city_code: "",
+  centre_code: "",
+  is_suspended: false,
   established: undefined as any,
   theme: "metro",
   image_url: "",
@@ -209,6 +215,8 @@ const AdminCentersPage = () => {
       phone: form.phone || "",
       email: form.email || null,
       is_hq: !!form.is_hq,
+      city_code: (form.city_code as string)?.trim().toUpperCase() || null,
+      centre_code: (form.centre_code as string)?.trim() || null,
       established: form.established ? Number(form.established) : null,
       theme: form.theme || "metro",
       image_url: form.image_url || null,
@@ -259,6 +267,31 @@ const AdminCentersPage = () => {
     else load();
   };
 
+  const toggleSuspend = async (c: Center) => {
+    const suspending = !c.is_suspended;
+    if (suspending) {
+      const reason = prompt(
+        `Suspend ${c.city}? This BLOCKS all student & staff logins for this centre, kicks live sessions, and hides it from the public site. Optionally add a reason:`,
+        "",
+      );
+      if (reason === null) return; // cancelled
+      const { error } = await supabase
+        .from("centres")
+        .update({ is_suspended: true, suspended_at: new Date().toISOString(), suspension_reason: reason || null })
+        .eq("id", c.id);
+      if (error) return toast.error(error.message);
+      toast.success(`${c.city} suspended`);
+    } else {
+      const { error } = await supabase
+        .from("centres")
+        .update({ is_suspended: false, suspended_at: null, suspension_reason: null })
+        .eq("id", c.id);
+      if (error) return toast.error(error.message);
+      toast.success(`${c.city} reinstated`);
+    }
+    load();
+  };
+
   const togglePin = async (c: Center) => {
     const { error } = await supabase
       .from("centres")
@@ -299,6 +332,8 @@ const AdminCentersPage = () => {
     { key: "established", label: "Established", parse: (v) => Number(v), example: "1991" },
     { key: "theme", label: "Theme", example: "metro" },
     { key: "image_url", label: "Image URL", example: "" },
+    { key: "city_code", label: "City Code", example: "BLR" },
+    { key: "centre_code", label: "Centre Code", example: "01" },
     { key: "is_hq", label: "Is HQ", parse: parseBool, example: "false" },
     { key: "is_pinned", label: "Pin to Top", parse: parseBool, example: "false" },
     { key: "verified", label: "Verified", parse: parseBool, example: "true" },
@@ -356,6 +391,8 @@ const AdminCentersPage = () => {
             {THEMES.map((t) => <option key={t}>{t}</option>)}
           </select>
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Slug (auto)" value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm uppercase" maxLength={3} placeholder="City code (e.g. BLR)" value={form.city_code ?? ""} onChange={(e) => setForm({ ...form, city_code: e.target.value.toUpperCase() })} title="3-letter city code, shared by all centres in this city. Used for roll numbers. Leave blank for HQ." />
+          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" maxLength={2} placeholder="Centre code (e.g. 01)" value={form.centre_code ?? ""} onChange={(e) => setForm({ ...form, centre_code: e.target.value })} title="2-digit code, unique within the city. Roll numbers become {CITY}{CENTRE}{0001}. Leave blank for HQ." />
           <textarea className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-3" rows={2} placeholder="Address" value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Phone" value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -535,6 +572,7 @@ const AdminCentersPage = () => {
               <thead className="bg-muted text-left text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3">Centre</th>
+                  <th className="px-4 py-3">Code</th>
                   <th className="px-4 py-3">State</th>
                   <th className="px-4 py-3">Region</th>
                   <th className="px-4 py-3">Phone</th>
@@ -555,7 +593,17 @@ const AdminCentersPage = () => {
                         {c.is_hq && <span className="rounded bg-primary/10 text-primary px-1 font-bold">HQ</span>}
                         {c.is_pinned && !c.is_hq && <span className="rounded bg-accent/20 text-accent-foreground px-1 font-bold">PINNED</span>}
                         {c.verified && <span className="rounded bg-green-100 text-green-700 px-1 font-bold">Verified</span>}
+                        {c.is_suspended && <span className="rounded bg-destructive/15 text-destructive px-1 font-bold">SUSPENDED</span>}
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {c.is_hq ? (
+                        <span className="text-[11px] text-muted-foreground italic">manual</span>
+                      ) : c.city_code && c.centre_code ? (
+                        <code className="text-xs font-mono font-bold">{c.city_code}{c.centre_code}</code>
+                      ) : (
+                        <span className="text-[11px] text-amber-600" title="Set city + centre code to enable roll numbers">— set —</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">{c.state}</td>
                     <td className="px-4 py-3">{c.region}</td>
@@ -608,6 +656,11 @@ const AdminCentersPage = () => {
                       <button onClick={() => togglePin(c)} title={c.is_pinned ? "Unpin" : "Pin to top"} className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_pinned ? "bg-accent/30 text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"}`}>
                         {c.is_pinned ? "★ Pinned" : "☆ Pin"}
                       </button>
+                      {!c.is_hq && (
+                        <button onClick={() => toggleSuspend(c)} title={c.is_suspended ? "Reinstate centre" : "Suspend centre (blocks all logins)"} className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${c.is_suspended ? "bg-destructive/20 text-destructive" : "bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive"}`}>
+                        {c.is_suspended ? "Reinstate" : "Suspend"}
+                      </button>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <div className="inline-flex items-center gap-2">
@@ -626,7 +679,7 @@ const AdminCentersPage = () => {
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">No centres match.</td></tr>
+                  <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">No centres match.</td></tr>
                 )}
               </tbody>
             </table>

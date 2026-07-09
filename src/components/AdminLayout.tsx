@@ -31,6 +31,7 @@ import { memo, useCallback, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppStore } from "@/store/useAppStore";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { ADMIN_MODULES } from "@/lib/adminModules";
 import { toast } from "sonner";
 
@@ -116,6 +117,33 @@ const superAdminNav: NavItem[] = [
   { label: "Platform Settings", icon: Settings, path: "/admin/settings" },
 ];
 
+// Franchise centre admins get ONLY this fixed subset of admin pages, reused
+// as-is (same components/tables, RLS-scoped to their own centre). Kept
+// entirely separate from `mainGroups` so the admin/super_admin sidebar is
+// completely unaffected — a center_admin never sees the general admin menu.
+const centreNav: NavGroup = {
+  label: "My Centre",
+  items: [
+    { label: "Students", icon: GraduationCap, path: "/admin/students" },
+    { label: "Student Analysis", icon: FileBarChart, path: "/admin/student-reports" },
+    { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
+    { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
+    { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
+    { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
+    { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
+    { label: "Gallery", icon: ImageIcon, path: "/admin/centre-gallery" },
+    { label: "News & Updates", icon: Megaphone, path: "/admin/news-updates" },
+    { label: "Staff", icon: Users, path: "/admin/centre-staff" },
+  ],
+};
+
+// Staff management is intentionally an all-or-nothing capability of an
+// unrestricted centre admin, not a delegable module — a restricted role
+// (e.g. HR) should never see it, so it's exempt from the PATH_TO_MODULE
+// grid below and gated directly on `isSuper` instead (RLS enforces the
+// same rule server-side via is_centre_admin_of()).
+const CENTRE_STAFF_PATH = "/admin/centre-staff";
+
 // Site Pages — editable public content shown in footer "Quick Links".
 const sitePagesNav: NavItem[] = [
   { label: "Achievements", icon: Award, path: "/admin/site-pages/achievements" },
@@ -130,15 +158,17 @@ type SidebarProps = {
   initials: string;
   avatarUrl?: string;
   isSuperAdmin: boolean;
+  isCenterAdmin: boolean;
+  centreLabel?: string;
   mainGroups: NavGroup[];
   sitePagesNav: NavItem[];
   onLogout: () => void;
 };
 
-const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, mainGroups, sitePagesNav, onLogout }: SidebarProps) => {
+const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, isCenterAdmin, centreLabel, mainGroups, sitePagesNav, onLogout }: SidebarProps) => {
   const { pathname } = useLocation();
-  const panelLabel = isSuperAdmin ? "Super Admin Panel" : "Admin Panel";
-  const roleLabel = isSuperAdmin ? "Super Admin" : "Admin";
+  const panelLabel = isCenterAdmin ? "Centre Panel" : isSuperAdmin ? "Super Admin Panel" : "Admin Panel";
+  const roleLabel = isCenterAdmin ? "Centre Admin" : isSuperAdmin ? "Super Admin" : "Admin";
 
   return (
     <aside
@@ -154,6 +184,11 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, mainGroup
             {panelLabel}
           </span>
         </div>
+        {isCenterAdmin && centreLabel && (
+          <p className="mt-2 text-center text-[11px] text-white/60 truncate" title={centreLabel}>
+            {centreLabel}
+          </p>
+        )}
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
@@ -243,11 +278,11 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, mainGroup
 AdminSidebar.displayName = "AdminSidebar";
 
 const AdminHeader = memo(
-  ({ initials, avatarUrl, isSuperAdmin, onLogout }: { initials: string; avatarUrl?: string; isSuperAdmin: boolean; onLogout: () => void }) => (
+  ({ initials, avatarUrl, isSuperAdmin, isCenterAdmin, onLogout }: { initials: string; avatarUrl?: string; isSuperAdmin: boolean; isCenterAdmin: boolean; onLogout: () => void }) => (
     <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:px-6">
       <div className="flex items-center gap-3">
         <h1 className="text-sm font-bold text-foreground">
-          Bansal Classes {isSuperAdmin ? "Super Admin" : "Admin"} Dashboard
+          Bansal Classes {isCenterAdmin ? "Centre" : isSuperAdmin ? "Super Admin" : "Admin"} Dashboard
         </h1>
       </div>
       <div className="flex items-center gap-3">
@@ -283,8 +318,9 @@ PATH_TO_MODULE.set("/admin/site-pages/refund-policy", "site_pages");
 
 const AdminLayout = () => {
   const navigate = useNavigate();
-  const { user, signOut, isSuperAdmin } = useAuth();
+  const { user, signOut, isSuperAdmin, isCenterAdmin } = useAuth();
   const { isSuper, can } = useAdminPermissions();
+  const { primaryCenter, loading: loadingCentre } = useCenterAdmin();
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -297,7 +333,26 @@ const AdminLayout = () => {
   const storeUser = useAppStore((s) => s.user);
   const avatarUrl = storeUser?.avatar_url;
 
+  const centreLabel = useMemo(() => {
+    if (!isCenterAdmin) return undefined;
+    if (loadingCentre) return "Loading…";
+    if (!primaryCenter) return "No centre assigned";
+    return `${primaryCenter.city}${primaryCenter.area && primaryCenter.area !== primaryCenter.city ? " — " + primaryCenter.area : ""}`;
+  }, [isCenterAdmin, loadingCentre, primaryCenter]);
+
+  // Franchise centre admins get a fixed, separate nav (their own centre's
+  // reused tabs only) — never the general admin menu, regardless of isSuper.
   const filteredMainGroups = useMemo<NavGroup[]>(() => {
+    if (isCenterAdmin) {
+      return [{
+        ...centreNav,
+        items: centreNav.items.filter((it) => {
+          if (it.path === CENTRE_STAFF_PATH) return isSuper;
+          const key = PATH_TO_MODULE.get(it.path);
+          return key ? (isSuper || can(key, "view")) : false;
+        }),
+      }].filter((g) => g.items.length > 0);
+    }
     if (isSuper) return mainGroups;
     return mainGroups
       .map((g) => ({
@@ -308,19 +363,30 @@ const AdminLayout = () => {
         }),
       }))
       .filter((g) => g.items.length > 0);
-  }, [isSuper, can]);
+  }, [isCenterAdmin, isSuper, can]);
 
   const filteredSitePages = useMemo<NavItem[]>(() => {
+    if (isCenterAdmin) return [];
     if (isSuper) return sitePagesNav;
     return can("site_pages", "view") ? sitePagesNav : [];
-  }, [isSuper, can]);
+  }, [isCenterAdmin, isSuper, can]);
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AdminSidebar email={email} initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} mainGroups={filteredMainGroups} sitePagesNav={filteredSitePages} onLogout={handleLogout} />
+      <AdminSidebar
+        email={email}
+        initials={initials}
+        avatarUrl={avatarUrl}
+        isSuperAdmin={isSuperAdmin}
+        isCenterAdmin={isCenterAdmin}
+        centreLabel={centreLabel}
+        mainGroups={filteredMainGroups}
+        sitePagesNav={filteredSitePages}
+        onLogout={handleLogout}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} onLogout={handleLogout} />
+        <AdminHeader initials={initials} avatarUrl={avatarUrl} isSuperAdmin={isSuperAdmin} isCenterAdmin={isCenterAdmin} onLogout={handleLogout} />
 
         <main className="flex-1 overflow-y-auto scrollbar-hide">
           <Suspense fallback={<AdminPageSkeleton />}>

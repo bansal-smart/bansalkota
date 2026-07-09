@@ -11,8 +11,9 @@ import {
   MapPin,
   Home,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useCourses, type CourseRow } from "@/hooks/useCourses";
+import { useCenters } from "@/hooks/useCenters";
 import { useAppStore } from "@/store/useAppStore";
 import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
 import coursePhysics from "@/assets/course-physics.webp";
@@ -91,12 +92,28 @@ const highlights = [
   { icon: Clock, label: "Lifetime Access", desc: "Learn at your own pace" },
 ];
 
-const CoursesPage = () => {
-  const [activeGoal, setActiveGoal] = useState(0);
+// `centreSlugOverride` is passed by CourseOrCentreRoute when the single
+// dynamic /courses/:slug segment resolved to a centre rather than a course —
+// see that file for why this can't just be its own `/courses/:centreSlug`
+// route (it would collide with the course-detail route's identical shape).
+const CoursesPage = ({ centreSlugOverride }: { centreSlugOverride?: string } = {}) => {
+  const centreSlug = centreSlugOverride;
+  const [searchParams] = useSearchParams();
+  const examParam = searchParams.get("exam");
+  const initialGoal = examParam ? Math.max(0, goalFilters.indexOf(examParam as (typeof goalFilters)[number])) : 0;
+
+  const [activeGoal, setActiveGoal] = useState(initialGoal);
   const [activeType, setActiveType] = useState(0);
   const [enrollFor, setEnrollFor] = useState<CourseRow | null>(null);
   const { user } = useAppStore();
-  const { courses: allCourses, loading } = useCourses();
+
+  const { centers, isFallback: centresIsFallback } = useCenters();
+  const centre = centreSlug ? centers.find((c) => c.slug === centreSlug) : undefined;
+  // A centre only in the static fallback list has no real DB uuid yet — wait
+  // for useCenters() to resolve before filtering courses by it (see useCenters.ts).
+  const centreId = centreSlug && !centresIsFallback && centre?.id ? centre.id : undefined;
+
+  const { courses: allCourses, loading } = useCourses(undefined, undefined, centreId);
   const courses = allCourses.filter(
     (c) => matchesGoal(c, goalFilters[activeGoal]) && matchesType(c, courseTypeFilters[activeType]),
   );
@@ -157,7 +174,9 @@ const CoursesPage = () => {
       <section className="container mx-auto px-4 py-12 md:py-16">
         <div className="flex flex-wrap items-end justify-between gap-3 animate-fade-in-up">
           <div>
-            <h2 className="font-display text-2xl font-black text-foreground md:text-3xl">Popular Courses</h2>
+            <h2 className="font-display text-2xl font-black text-foreground md:text-3xl">
+              {centre ? `Courses at ${centre.city}` : "Popular Courses"}
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {loading ? "Loading…" : `${courses.length} course${courses.length === 1 ? "" : "s"} available`}
             </p>
@@ -285,16 +304,29 @@ const CoursesPage = () => {
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.short_description || c.description}</p>
                     )}
                     <div className="flex items-center gap-2 mt-3 flex-wrap">
-                      {c.original_price && c.original_price > c.price && (
-                        <span className="text-xs line-through text-muted-foreground">
-                          ₹{Number(c.original_price).toLocaleString("en-IN")}
+                      {c.price_label === "starting_from" ? (
+                        <span className="text-sm font-bold text-foreground">
+                          Starting from ₹{Number(c.resolved_price).toLocaleString("en-IN")}
                         </span>
+                      ) : (
+                        <>
+                          {c.resolved_original_price && c.resolved_original_price > c.resolved_price && (
+                            <span className="text-xs line-through text-muted-foreground">
+                              ₹{Number(c.resolved_original_price).toLocaleString("en-IN")}
+                            </span>
+                          )}
+                          <span className="text-sm font-bold text-foreground">
+                            ₹{Number(c.resolved_price).toLocaleString("en-IN")}
+                          </span>
+                          {!!c.discount_percent && c.discount_percent > 0 && c.resolved_price === c.price && (
+                            <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
+                              {c.discount_percent}% OFF
+                            </span>
+                          )}
+                        </>
                       )}
-                      <span className="text-sm font-bold text-foreground">₹{Number(c.price).toLocaleString("en-IN")}</span>
-                      {!!c.discount_percent && c.discount_percent > 0 && (
-                        <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-[10px] font-bold text-secondary">
-                          {c.discount_percent}% OFF
-                        </span>
+                      {c.has_multiple_offerings && (
+                        <span className="text-[10px] text-muted-foreground">Fees may vary by centre</span>
                       )}
                     </div>
                     <div className="mt-3 flex gap-2 mt-auto pt-3">
@@ -323,7 +355,7 @@ const CoursesPage = () => {
         <CourseEnquiryDialog
           open={!!enrollFor}
           onOpenChange={(o) => !o && setEnrollFor(null)}
-          course={{ id: enrollFor.id, name: enrollFor.name, price: enrollFor.price }}
+          course={{ id: enrollFor.id, name: enrollFor.name, price: enrollFor.resolved_price, centreId }}
         />
       )}
     </div>

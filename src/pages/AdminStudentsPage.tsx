@@ -21,7 +21,6 @@ type StudentRow = {
   plan: string;
   is_suspended: boolean;
   onboarding_completed: boolean;
-  doubt_preference: string;
   created_at: string;
   email?: string | null;
   roll_number: string | null;
@@ -262,7 +261,7 @@ const AdminStudentsPage = () => {
     const staffSet = new Set<string>();
     (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
       if (r.role === "student") studentSet.add(r.user_id);
-      else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+      else if (["center_admin", "admin", "super_admin"].includes(r.role)) staffSet.add(r.user_id);
     });
     const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
     if (!studentIds.length) return [];
@@ -414,7 +413,7 @@ const AdminStudentsPage = () => {
     setLoading(true);
     try {
       // Get user_ids that have the student role, excluding anyone who also holds a staff role
-      // (handle_new_user auto-grants 'student' to every new auth user, including centre/teacher/admin staff).
+      // (handle_new_user auto-grants 'student' to every new auth user, including centre/admin staff).
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -423,7 +422,7 @@ const AdminStudentsPage = () => {
       const staffSet = new Set<string>();
       (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
         if (r.role === "student") studentSet.add(r.user_id);
-        else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+        else if (["center_admin", "admin", "super_admin"].includes(r.role)) staffSet.add(r.user_id);
       });
       const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
       if (!studentIds.length) {
@@ -433,7 +432,7 @@ const AdminStudentsPage = () => {
       let query = (supabase as any)
         .from("profiles")
         .select(
-          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
           { count: "exact" },
         )
         .in("user_id", studentIds)
@@ -585,7 +584,7 @@ const AdminStudentsPage = () => {
       const staffSet = new Set<string>();
       (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
         if (r.role === "student") studentSet.add(r.user_id);
-        else if (["center_admin", "admin", "super_admin", "teacher", "mentor"].includes(r.role)) staffSet.add(r.user_id);
+        else if (["center_admin", "admin", "super_admin"].includes(r.role)) staffSet.add(r.user_id);
       });
       const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
       if (!studentIds.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
@@ -596,7 +595,7 @@ const AdminStudentsPage = () => {
         const slice = studentIds.slice(i, i + BATCH);
         let q = (supabase as any)
           .from("profiles")
-          .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, doubt_preference, created_at, roll_number, dob, centre_id, batch_id, batch_label")
+          .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label")
           .in("user_id", slice)
           .order("created_at", { ascending: false });
         if (debouncedSearch.trim()) {
@@ -1081,10 +1080,6 @@ const AdminStudentsPage = () => {
               <div className="rounded-lg border border-border bg-background/50 p-2">
                 <p className="text-[10px] text-muted-foreground uppercase">Onboarding</p>
                 <p className="text-xs font-medium text-foreground">{drawer.onboarding_completed ? "Done" : "Pending"}</p>
-              </div>
-              <div className="rounded-lg border border-border bg-background/50 p-2">
-                <p className="text-[10px] text-muted-foreground uppercase">Doubt routing</p>
-                <p className="text-xs font-medium text-foreground capitalize">{drawer.doubt_preference}</p>
               </div>
               <div className="rounded-lg border border-border bg-background/50 p-2">
                 <p className="text-[10px] text-muted-foreground uppercase">Status</p>

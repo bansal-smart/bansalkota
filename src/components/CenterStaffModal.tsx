@@ -16,28 +16,45 @@ type StaffRow = {
   created_at: string;
   email?: string;
   full_name?: string;
+  custom_role_id: string | null;
 };
+
+type CentreRole = { id: string; name: string };
 
 const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
   const [rows, setRows] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"existing" | "create">("create");
+  const [centreRoles, setCentreRoles] = useState<CentreRole[]>([]);
 
   // existing-user form
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"admin" | "manager" | "supervisor" | "executive">("manager");
+  const [customRoleId, setCustomRoleId] = useState("");
   const [adding, setAdding] = useState(false);
 
   // create-login form
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
+  const [newCustomRoleId, setNewCustomRoleId] = useState("");
   const [creating, setCreating] = useState(false);
 
   // password reset
   const [resetEmail, setResetEmail] = useState("");
   const [resetPassword, setResetPassword] = useState("");
   const [resetting, setResetting] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("roles")
+        .select("id, name")
+        .eq("scope", "centre")
+        .neq("name", "Centre Admin")
+        .order("name");
+      setCentreRoles(data ?? []);
+    })();
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -46,20 +63,30 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
       .select("id, user_id, role, created_at")
       .eq("centre_id", centerId);
     const userIds = (staff ?? []).map((s: any) => s.user_id);
-    let enriched: StaffRow[] = staff ?? [];
+    let enriched: StaffRow[] = (staff ?? []).map((s: any) => ({ ...s, custom_role_id: null }));
     if (userIds.length) {
-      const { data: profs } = await (supabase as any)
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", userIds);
-      const map = new Map((profs ?? []).map((p: any) => [p.user_id, p.full_name]));
-      enriched = (staff ?? []).map((s: any) => ({ ...s, full_name: map.get(s.user_id) }));
+      const [{ data: profs }, { data: assigns }] = await Promise.all([
+        (supabase as any).from("profiles").select("user_id, full_name").in("user_id", userIds),
+        (supabase as any).from("role_assignments").select("user_id, role_id").in("user_id", userIds),
+      ]);
+      const nameMap = new Map((profs ?? []).map((p: any) => [p.user_id, p.full_name]));
+      const roleMap = new Map((assigns ?? []).map((a: any) => [a.user_id, a.role_id]));
+      enriched = (staff ?? []).map((s: any) => ({
+        ...s,
+        full_name: nameMap.get(s.user_id),
+        custom_role_id: roleMap.get(s.user_id) ?? null,
+      }));
     }
     setRows(enriched);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [centerId]);
+
+  // "No custom role" is a deliberate sentinel, not an oversight: is_centre_admin_of()
+  // treats "no role_assignments row" as full centre-admin access, so full access must
+  // always mean no row — never a row pointing at the "Centre Admin" role itself.
+  const roleLabelFor = (roleId: string) => centreRoles.find((r) => r.id === roleId)?.name ?? "Centre Admin";
 
   const addExisting = async () => {
     if (!email.trim()) return toast.error("Email required");
@@ -73,12 +100,25 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
     const { error } = await (supabase as any).from("centre_staff").insert({
       centre_id: centerId,
       user_id: userId,
-      role,
+      role: roleLabelFor(customRoleId),
     });
+    if (error) {
+      setAdding(false);
+      return toast.error(error.message);
+    }
+    if (customRoleId) {
+      const { error: raErr } = await (supabase as any)
+        .from("role_assignments")
+        .insert({ user_id: userId, role_id: customRoleId });
+      if (raErr) {
+        setAdding(false);
+        return toast.error(raErr.message);
+      }
+    }
     setAdding(false);
-    if (error) return toast.error(error.message);
     toast.success("Staff added — they can now sign in.");
     setEmail("");
+    setCustomRoleId("");
     load();
   };
 
@@ -93,7 +133,8 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
         password: newPassword,
         full_name: newName.trim(),
         centre_id: centerId,
-        role,
+        role: roleLabelFor(newCustomRoleId),
+        custom_role_id: newCustomRoleId || null,
       },
     });
     setCreating(false);
@@ -101,7 +142,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
       return toast.error(((data as any)?.error ?? error?.message) || "Could not create login");
     }
     toast.success(`Login created. Share these credentials with ${newEmail}.`);
-    setNewEmail(""); setNewPassword(""); setNewName("");
+    setNewEmail(""); setNewPassword(""); setNewName(""); setNewCustomRoleId("");
     load();
   };
 
@@ -126,6 +167,20 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
     if (error) return toast.error(error.message);
     toast.success("Removed");
     load();
+  };
+
+  const assignRole = async (userId: string, roleId: string | null) => {
+    try {
+      await (supabase as any).from("role_assignments").delete().eq("user_id", userId);
+      if (roleId) {
+        const { error } = await (supabase as any).from("role_assignments").insert({ user_id: userId, role_id: roleId });
+        if (error) throw error;
+      }
+      toast.success("Role updated");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to update role");
+    }
   };
 
   return (
@@ -153,11 +208,11 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Full name (optional)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
             <div className="grid grid-cols-2 gap-2">
               <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="login email" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
-              <select value={role} onChange={(e) => setRole(e.target.value as any)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option value="admin">Admin (Centre Level)</option>
-                <option value="manager">Manager (Centre Level)</option>
-                <option value="supervisor">Supervisor (Centre Level)</option>
-                <option value="executive">Executive (Centre Level)</option>
+              <select value={newCustomRoleId} onChange={(e) => setNewCustomRoleId(e.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <option value="">Full Access — Centre Admin</option>
+                {centreRoles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
               </select>
             </div>
             <input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="text" placeholder="Initial password (≥ 8 chars)" className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-mono" />
@@ -173,11 +228,11 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
             </p>
             <div className="flex gap-2">
               <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@email.com" className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm" />
-              <select value={role} onChange={(e) => setRole(e.target.value as any)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                <option value="admin">Admin (Centre Level)</option>
-                <option value="manager">Manager (Centre Level)</option>
-                <option value="supervisor">Supervisor (Centre Level)</option>
-                <option value="executive">Executive (Centre Level)</option>
+              <select value={customRoleId} onChange={(e) => setCustomRoleId(e.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <option value="">Full Access — Centre Admin</option>
+                {centreRoles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
               </select>
               <button onClick={addExisting} disabled={adding} className="rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">
                 {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
@@ -204,12 +259,22 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
           {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">No staff assigned yet.</p>
           ) : rows.map((r) => (
-            <div key={r.id} className="flex items-center justify-between rounded-lg border border-border bg-background p-3">
-              <div>
-                <p className="text-sm font-bold text-foreground">{r.full_name || r.user_id.slice(0, 8)}</p>
-                <p className="text-[10px] text-muted-foreground">{r.role} · added {new Date(r.created_at).toLocaleDateString()}</p>
+            <div key={r.id} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-foreground truncate">{r.full_name || r.user_id.slice(0, 8)}</p>
+                <p className="text-[10px] text-muted-foreground">added {new Date(r.created_at).toLocaleDateString()}</p>
               </div>
-              <button onClick={() => remove(r.id)} className="text-destructive">
+              <select
+                value={r.custom_role_id ?? ""}
+                onChange={(e) => assignRole(r.user_id, e.target.value || null)}
+                className="shrink-0 rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+              >
+                <option value="">Full Access — Centre Admin</option>
+                {centreRoles.map((cr) => (
+                  <option key={cr.id} value={cr.id}>{cr.name}</option>
+                ))}
+              </select>
+              <button onClick={() => remove(r.id)} className="shrink-0 text-destructive">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>

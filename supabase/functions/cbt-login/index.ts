@@ -32,6 +32,10 @@ Deno.serve(async (req) => {
     const student = Array.isArray(match) ? match[0] : match;
     if (!student) return json(401, { error: "Invalid roll number or password. Contact your centre." });
 
+    // Block login if the student's centre is suspended.
+    const { data: suspended } = await admin.rpc("is_centre_suspended_for_user", { _user_id: student.user_id });
+    if (suspended) return json(403, { error: "This centre is currently suspended. Contact Bansal HQ." });
+
     const { data: u, error: uErr } = await admin.auth.admin.getUserById(student.user_id);
     if (uErr || !u?.user?.email) return json(500, { error: "Account not provisioned" });
 

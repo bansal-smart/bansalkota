@@ -3,6 +3,9 @@ import { X, Loader2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ADMIN_MODULES, ADMIN_ACTION_LABEL, type AdminAction } from "@/lib/adminModules";
+import { CENTER_MODULES, ACTION_LABEL as CENTRE_ACTION_LABEL, type CenterAction } from "@/lib/centerModules";
+
+type Scope = "admin" | "centre";
 
 type Props = {
   roleId?: string | null;
@@ -12,18 +15,22 @@ type Props = {
 
 type PermMap = Record<string, Record<AdminAction, boolean>>;
 
-const emptyPerms = (): PermMap => {
+const modulesForScope = (scope: Scope) => (scope === "admin" ? ADMIN_MODULES : CENTER_MODULES);
+const actionLabelForScope = (scope: Scope) => (scope === "admin" ? ADMIN_ACTION_LABEL : CENTRE_ACTION_LABEL);
+
+const emptyPerms = (scope: Scope): PermMap => {
   const m: PermMap = {};
-  ADMIN_MODULES.forEach((mod) => {
+  modulesForScope(scope).forEach((mod) => {
     m[mod.key] = { view: false, create: false, edit: false, delete: false, export: false };
   });
   return m;
 };
 
 const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
+  const [scope, setScope] = useState<Scope>("admin");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [perms, setPerms] = useState<PermMap>(emptyPerms());
+  const [perms, setPerms] = useState<PermMap>(emptyPerms("admin"));
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!roleId);
 
@@ -31,16 +38,24 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
     if (!roleId) return;
     (async () => {
       setLoading(true);
-      const [{ data: r }, { data: ps }] = await Promise.all([
-        (supabase as any).from("admin_roles").select("name, description").eq("id", roleId).maybeSingle(),
-        (supabase as any).from("admin_role_permissions").select("*").eq("role_id", roleId),
-      ]);
+      const { data: r } = await (supabase as any)
+        .from("roles")
+        .select("name, description, scope")
+        .eq("id", roleId)
+        .maybeSingle();
+      const rScope: Scope = r?.scope === "centre" ? "centre" : "admin";
+      const { data: ps } = await (supabase as any)
+        .from("role_permissions")
+        .select("*")
+        .eq("role_id", roleId);
+      setScope(rScope);
       if (r) {
         setName(r.name ?? "");
         setDescription(r.description ?? "");
       }
-      const next = emptyPerms();
+      const next = emptyPerms(rScope);
       (ps ?? []).forEach((p: any) => {
+        if (!next[p.module]) return;
         next[p.module] = {
           view: !!p.can_view, create: !!p.can_create, edit: !!p.can_edit,
           delete: !!p.can_delete, export: !!p.can_export,
@@ -50,6 +65,12 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
       setLoading(false);
     })();
   }, [roleId]);
+
+  const changeScope = (next: Scope) => {
+    if (roleId) return; // scope is fixed once a role exists
+    setScope(next);
+    setPerms(emptyPerms(next));
+  };
 
   const toggle = (modKey: string, action: AdminAction) => {
     setPerms((prev) => {
@@ -61,9 +82,9 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
 
   const toggleAllRow = (modKey: string, on: boolean) => {
     setPerms((prev) => {
-      const mod = ADMIN_MODULES.find((m) => m.key === modKey)!;
+      const mod = modulesForScope(scope).find((m) => m.key === modKey)!;
       const next: Record<AdminAction, boolean> = { view: false, create: false, edit: false, delete: false, export: false };
-      mod.actions.forEach((a) => { next[a] = on; });
+      (mod.actions as AdminAction[]).forEach((a) => { next[a] = on; });
       return { ...prev, [modKey]: next };
     });
   };
@@ -75,21 +96,22 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
       let rid = roleId;
       if (!rid) {
         const { data, error } = await (supabase as any)
-          .from("admin_roles")
-          .insert({ name: name.trim(), description: description.trim() || null })
+          .from("roles")
+          .insert({ scope, name: name.trim(), description: description.trim() || null })
           .select("id")
           .single();
         if (error) throw error;
         rid = data.id as string;
       } else {
         const { error } = await (supabase as any)
-          .from("admin_roles")
+          .from("roles")
           .update({ name: name.trim(), description: description.trim() || null })
           .eq("id", rid);
         if (error) throw error;
-        await (supabase as any).from("admin_role_permissions").delete().eq("role_id", rid);
+        await (supabase as any).from("role_permissions").delete().eq("role_id", rid);
       }
-      const inserts = ADMIN_MODULES
+      const modules = modulesForScope(scope);
+      const inserts = modules
         .filter((m) => {
           const p = perms[m.key];
           return p.view || p.create || p.edit || p.delete || p.export;
@@ -104,7 +126,7 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
           can_export: !!perms[m.key].export,
         }));
       if (inserts.length) {
-        const { error } = await (supabase as any).from("admin_role_permissions").insert(inserts);
+        const { error } = await (supabase as any).from("role_permissions").insert(inserts);
         if (error) throw error;
       }
       toast.success(roleId ? "Role updated" : "Role created");
@@ -117,6 +139,9 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
     }
   };
 
+  const modules = modulesForScope(scope);
+  const actionLabel = actionLabelForScope(scope);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-3xl rounded-2xl bg-card p-6 space-y-4 max-h-[92vh] overflow-y-auto">
@@ -124,7 +149,7 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
           <div>
             <h3 className="text-lg font-bold text-foreground">{roleId ? "Edit Role" : "Add Role"}</h3>
             <p className="text-xs text-muted-foreground">
-              Pick which Super Admin Dashboard tabs this role can access and what they can do.
+              Pick which dashboard tabs this role can access and what they can do.
             </p>
           </div>
           <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
@@ -138,6 +163,24 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
           <>
             <div className="grid gap-3 md:grid-cols-2">
               <div>
+                <label className="text-xs font-bold text-foreground">Applies to</label>
+                <div className="mt-1 flex rounded-md border border-border overflow-hidden">
+                  {(["admin", "centre"] as Scope[]).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={!!roleId}
+                      onClick={() => changeScope(s)}
+                      className={`flex-1 px-3 py-2 text-sm font-semibold capitalize disabled:cursor-not-allowed disabled:opacity-60 ${
+                        scope === s ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"
+                      }`}
+                    >
+                      {s === "admin" ? "Admin portal" : "Centre portal"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
                 <label className="text-xs font-bold text-foreground">Role name</label>
                 <input
                   value={name}
@@ -146,7 +189,7 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
                   className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="text-xs font-bold text-foreground">Description (optional)</label>
                 <input
                   value={description}
@@ -165,9 +208,9 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
                 </p>
               </div>
               <div className="divide-y divide-border">
-                {ADMIN_MODULES.map((mod) => {
+                {modules.map((mod) => {
                   const row = perms[mod.key];
-                  const allOn = mod.actions.every((a) => row[a]);
+                  const allOn = (mod.actions as AdminAction[]).every((a) => row[a]);
                   return (
                     <div key={mod.key} className="p-4 space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -180,7 +223,7 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
                         <span className="font-bold text-sm text-foreground">{mod.label}</span>
                       </label>
                       <div className="flex flex-wrap gap-3 pl-6">
-                        {mod.actions.map((a) => (
+                        {(mod.actions as AdminAction[]).map((a) => (
                           <label key={a} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
                             <input
                               type="checkbox"
@@ -188,7 +231,7 @@ const AdminRoleModal = ({ roleId, onClose, onSaved }: Props) => {
                               onChange={() => toggle(mod.key, a)}
                               className="h-3.5 w-3.5 rounded border-border"
                             />
-                            {mod.label} {ADMIN_ACTION_LABEL[a]}
+                            {mod.label} {actionLabel[a]}
                           </label>
                         ))}
                       </div>

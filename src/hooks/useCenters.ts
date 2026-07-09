@@ -78,6 +78,7 @@ export const useCenters = () => {
         .from("centres")
         .select("*")
         .eq("is_published", true)
+        .eq("is_suspended", false)
         .limit(500);
       if (error) throw error;
       if (!data || !data.length) return [] as DBCenter[];

@@ -17,7 +17,7 @@ type Shipping = {
 };
 type Body =
   | { orderType: "cart"; items: CartItem[]; shipping: Shipping }
-  | { orderType: "course"; courseId: string; enquiryId?: string }
+  | { orderType: "course"; courseId: string; enquiryId?: string; centreId?: string }
   | { orderType: "test_series"; testSeriesId: string };
 
 Deno.serve(async (req) => {
@@ -47,6 +47,8 @@ Deno.serve(async (req) => {
     const items: Array<{ item_type: string; item_id: string; item_title: string; unit_price: number; quantity: number }> = [];
     let orderNotes = "";
     let returnLabel = "Order";
+    let resolvedCentreId: string | null = null;
+    let resolvedOfferingId: string | null = null;
 
     if (body.orderType === "cart") {
       if (!body.items?.length) return json({ error: "Cart empty" }, 400);
@@ -78,6 +80,26 @@ Deno.serve(async (req) => {
         .from("courses").select("id, name, price").eq("id", body.courseId).maybeSingle();
       if (error || !course) return json({ error: "Course not found" }, 404);
       subtotal = Number(course.price || 0);
+
+      // centreId is a client-supplied hint (which centre's listing/detail page the
+      // student was browsing) — re-resolve and price it server-side against
+      // course_offerings rather than trusting any price the client might send.
+      const centreId = (body as any).centreId as string | undefined;
+      if (centreId) {
+        const { data: offering } = await admin
+          .from("course_offerings")
+          .select("id, price")
+          .eq("course_id", course.id)
+          .eq("centre_id", centreId)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (offering) {
+          subtotal = Number(offering.price);
+          resolvedCentreId = centreId;
+          resolvedOfferingId = offering.id;
+        }
+      }
+
       items.push({ item_type: "course", item_id: course.id, item_title: course.name, unit_price: subtotal, quantity: 1 });
       orderNotes = `Course enrollment: ${course.name}`;
       returnLabel = course.name;
@@ -115,6 +137,8 @@ Deno.serve(async (req) => {
         shipping_city: shipping?.city ?? null,
         shipping_state: shipping?.state ?? null,
         shipping_pincode: shipping?.pincode ?? null,
+        resolved_centre_id: resolvedCentreId,
+        resolved_offering_id: resolvedOfferingId,
       })
       .select("id")
       .single();

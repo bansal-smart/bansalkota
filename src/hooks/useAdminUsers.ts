@@ -13,7 +13,7 @@ export type AdminUserRow = {
   is_suspended: boolean;
   created_at: string;
   email: string | null;
-  role: "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
+  role: "student" | "center_admin" | "admin" | "super_admin";
 };
 
 const PAGE_SIZE = 50;
@@ -41,11 +41,9 @@ const fetchAdminUsers = async (filter: string, search: string, page: number) => 
     : { data: [] as { user_id: string; role: AdminUserRow["role"] }[] };
 
   const priority: Record<string, number> = {
-    super_admin: 6,
-    admin: 5,
-    center_admin: 4,
-    teacher: 3,
-    mentor: 2,
+    super_admin: 4,
+    admin: 3,
+    center_admin: 2,
     student: 1,
   };
   const roleByUser = new Map<string, AdminUserRow["role"]>();

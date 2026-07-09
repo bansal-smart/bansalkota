@@ -7,6 +7,7 @@ export type PendingEnrollment = {
   courseName: string;
   coursePrice: number;
   createdAt: number;
+  centreId?: string;
 };
 
 export function setPendingEnrollment(data: PendingEnrollment) {

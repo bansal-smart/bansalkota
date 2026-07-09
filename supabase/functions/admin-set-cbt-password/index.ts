@@ -2,6 +2,7 @@
 // Body: { user_id: string, password?: string }  // password optional -> auto-generate
 // Returns: { password: string }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { resolveCallerAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,18 +30,24 @@ Deno.serve(async (req) => {
     if (!token) return json(401, { error: "Unauthorized" });
 
     const admin = createClient(url, service);
-    const { data: userRes, error: uErr } = await admin.auth.getUser(token);
-    if (uErr || !userRes?.user) return json(401, { error: "Unauthorized" });
-
-    const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", userRes.user.id);
-    const roleSet = new Set((roles ?? []).map((r) => r.role));
-    if (!roleSet.has("admin") && !roleSet.has("super_admin") && !roleSet.has("center_admin")) {
+    const access = await resolveCallerAccess(admin, token).catch(() => null);
+    if (!access) return json(401, { error: "Unauthorized" });
+    if (!access.isAdminOrSuper && access.centreIds.size === 0) {
       return json(403, { error: "Forbidden" });
     }
 
     const body = await req.json().catch(() => ({}));
     const userId = String(body?.user_id ?? "");
     if (!userId) return json(400, { error: "Missing user_id" });
+
+    // Centre admins may only touch students mapped to a centre they staff.
+    if (!access.isAdminOrSuper) {
+      const { data: target } = await admin.from("profiles").select("centre_id").eq("user_id", userId).maybeSingle();
+      if (!target?.centre_id || !access.centreIds.has(target.centre_id)) {
+        return json(403, { error: "That student is not in your centre" });
+      }
+    }
+
     let password = String(body?.password ?? "").trim();
     if (password && password.length < 6) return json(400, { error: "Password must be at least 6 characters" });
     if (!password) password = genPassword();

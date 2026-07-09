@@ -26,24 +26,29 @@ import CenterOfflineSections, { AdmissionEnquiryModal } from "@/components/Cente
 import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
 import CentreCarousel from "@/components/CentreCarousel";
 
+// `exam` matches CoursesPage.tsx's goalFilters values exactly, so each card
+// deep-links straight into the matching exam tab on that centre's course list.
 const PROGRAMS = [
   {
     icon: GraduationCap,
     title: "JEE (Main + Advanced)",
     desc: "2-year & 1-year programs for engineering aspirants. Daily problem-solving, weekly tests, IIT-veteran faculty.",
     tag: "Engineering",
+    exam: "IIT-JEE",
   },
   {
     icon: GraduationCap,
     title: "NEET (UG)",
     desc: "Integrated NEET preparation with NCERT-anchored teaching, AIIMS-style MCQs and dedicated biology mentors.",
     tag: "Medical",
+    exam: "NEET",
   },
   {
     icon: BookOpen,
     title: "Foundation (Class 5–10)",
     desc: "Build a strong base for IMO, IJSO, NSEJS & Boards. Conceptual depth + competitive aptitude.",
     tag: "Foundation",
+    exam: "Pre Foundation",
   },
 ];
 
@@ -190,7 +195,7 @@ export default function CenterDetailPage() {
                   <h3 className="font-display text-lg font-bold text-bansal-black mb-1.5">{p.title}</h3>
                   <p className="text-sm text-muted-foreground">{p.desc}</p>
                   <Link
-                    to="/courses"
+                    to={`/courses/${slug}?exam=${encodeURIComponent(p.exam)}`}
                     className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-bansal-blue hover:text-bansal-orange"
                   >
                     Explore courses <ArrowRight className="h-3.5 w-3.5" />

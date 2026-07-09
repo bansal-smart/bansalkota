@@ -13,14 +13,12 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect");
-  const { session, user, isStaff, isTeacher, isMentor, isCenterAdmin, roleReady, loading } = useAuth();
+  const { session, user, isStaff, isCenterAdmin, roleReady, loading } = useAuth();
 
   useEffect(() => {
     if (loading || !session || !roleReady) return;
     if (isStaff) return navigate("/admin/dashboard", { replace: true });
-    if (isTeacher) return navigate("/teacher/dashboard", { replace: true });
-    if (isMentor) return navigate("/mentor/dashboard", { replace: true });
-    if (isCenterAdmin) return navigate("/center", { replace: true });
+    if (isCenterAdmin) return navigate("/admin/students", { replace: true });
     // Check the profile (source of truth) before forcing the name step —
     // admin-created students have a profile name even without user_metadata.
     let cancelled = false;
@@ -44,7 +42,7 @@ const LoginPage = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [loading, session, user, roleReady, isStaff, isTeacher, isMentor, isCenterAdmin, navigate, redirectTo]);
+  }, [loading, session, user, roleReady, isStaff, isCenterAdmin, navigate, redirectTo]);
 
   const [step, setStep] = useState<Step>("phone");
   const [mobile, setMobile] = useState("");

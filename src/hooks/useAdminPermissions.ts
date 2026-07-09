@@ -51,7 +51,7 @@ export const useAdminPermissions = () => {
       }
 
       const { data: assignment } = await (supabase as any)
-        .from("admin_role_assignments")
+        .from("role_assignments")
         .select("role_id")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -65,8 +65,8 @@ export const useAdminPermissions = () => {
       }
 
       const [{ data: roleRow }, { data: permRows }] = await Promise.all([
-        (supabase as any).from("admin_roles").select("name").eq("id", customRoleId).maybeSingle(),
-        (supabase as any).from("admin_role_permissions").select("*").eq("role_id", customRoleId),
+        (supabase as any).from("roles").select("name").eq("id", customRoleId).maybeSingle(),
+        (supabase as any).from("role_permissions").select("*").eq("role_id", customRoleId),
       ]);
 
       const perms: Record<string, PermRow> = {};

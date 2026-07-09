@@ -4,10 +4,11 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { resolveContentOwnership } from "@/lib/centreOwnership";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
-import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
@@ -17,13 +18,13 @@ const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 
 const CreateTestSeriesPage = () => {
-  const { user } = useAuth();
+  const { user, isCenterAdmin } = useAuth();
+  const { primaryCenterId } = useCenterAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const isEditMode = Boolean(id);
   const isCenterContext = location.pathname.startsWith("/center");
-  const { primaryCenterId } = useCenterAdmin();
 
   const [title, setTitle] = useState("");
   const [shortDesc, setShortDesc] = useState("");
@@ -123,12 +124,8 @@ const CreateTestSeriesPage = () => {
     if (!isEditMode) {
       const baseSlug = slugify(title) || `test-series-${Date.now()}`;
       const slug = `${baseSlug}-${Date.now().toString(36)}`;
-      const { error } = await supabase.from("test_series").insert({
-        ...payload,
-        slug,
-        created_by: user.id,
-        ...(isCenterContext ? { centre_id: primaryCenterId } : {}),
-      });
+      const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
+      const { error } = await supabase.from("test_series").insert({ ...payload, slug, created_by: user.id, ...ownership });
       if (error) {
         toast.error(error.message);
         setSubmitting(false);

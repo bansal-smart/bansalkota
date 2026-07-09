@@ -4,6 +4,8 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { resolveContentOwnership } from "@/lib/centreOwnership";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
 import { X } from "lucide-react";
@@ -39,7 +41,8 @@ type DraftLecture = { id?: string; title: string; durationMin: number };
 type DraftChapter = { id?: string; title: string; lectures: DraftLecture[] };
 
 const CreateCoursePage = () => {
-  const { user } = useAuth();
+  const { user, isCenterAdmin } = useAuth();
+  const { primaryCenterId } = useCenterAdmin();
   const navigate = useNavigate();
   const { courseId } = useParams<{ courseId?: string }>();
   const location = useLocation();
@@ -68,10 +71,18 @@ const CreateCoursePage = () => {
   const [reqInput, setReqInput] = useState("");
   const [educationLevel, setEducationLevel] = useState<string>("Class 11th–12th");
   const [durationLabel, setDurationLabel] = useState<string>("1 Year");
-  const [modeValue, setModeValue] = useState<string>("Online");
+  const [modeValue, setModeValue] = useState<string>(isCenterAdmin ? "Offline" : "Online");
   const [language, setLanguage] = useState<string>("English / Hindi");
   const [subjectsCovered, setSubjectsCovered] = useState<string[]>([]);
   const [includedServices, setIncludedServices] = useState<string[]>([]);
+  const [endDate, setEndDate] = useState<string>("");       // course validity end date (access revoked after)
+  // Franchise centres can only ever create centre-local, offline courses —
+  // never global/online (that's HQ-only). Locked, not just defaulted.
+  const [isGlobal, setIsGlobal] = useState<boolean>(!isCenterAdmin);
+  const MODE_OPTIONS_FOR_ROLE = isCenterAdmin ? MODE_OPTIONS.filter((m) => m !== "Online") : MODE_OPTIONS;
+  // Franchise centres can also just run an existing HQ/global course at their
+  // own price instead of authoring their own content from scratch.
+  const [adoptMode, setAdoptMode] = useState(false);
 
 
   // Load existing course in edit mode
@@ -107,6 +118,8 @@ const CreateCoursePage = () => {
       setIncludedServices(((c.included_services as string[] | null) ?? []) as string[]);
       setLearnItems(((c.what_youll_learn as string[] | null) ?? []) as string[]);
       setReqItems(((c.requirements as string[] | null) ?? []) as string[]);
+      setEndDate((c.end_date as string | null) ?? "");
+      setIsGlobal((c.is_global as boolean | null) ?? true);
 
 
 
@@ -207,6 +220,8 @@ const CreateCoursePage = () => {
       language: language || null,
       subjects_covered: subjectsCovered,
       included_services: includedServices,
+      end_date: endDate || null,
+      is_global: isGlobal,
     };
 
     let workingCourseId = courseId;
@@ -215,9 +230,15 @@ const CreateCoursePage = () => {
       const baseSlug = slugify(name) || `course-${Date.now()}`;
       const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
+      // Centre-admin-created courses are owned by their own centre (offline,
+      // centre-local — is_global is separately forced false above via the
+      // hidden toggle, not by resolveContentOwnership, since admin/super_admin
+      // need their own is_global checkbox choice preserved here).
+      const { centre_id: ownerCentreId } = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
+
       const { data: course, error: courseErr } = await supabase
         .from("courses")
-        .insert({ ...sharedFields, slug, created_by: user.id })
+        .insert({ ...sharedFields, slug, created_by: user.id, centre_id: ownerCentreId })
         .select("id, slug")
         .single();
 
@@ -262,9 +283,24 @@ const CreateCoursePage = () => {
     );
   }
 
+  if (isCenterAdmin && !isEditMode && adoptMode) {
+    return (
+      <div className="p-4 lg:p-6 pb-16 max-w-3xl mx-auto space-y-6">
+        <h1 className="text-xl font-bold text-foreground">Create New Course</h1>
+        <AdoptModeToggle adoptMode={adoptMode} setAdoptMode={setAdoptMode} />
+        {primaryCenterId && user ? (
+          <AdoptCoursesPanel centerId={primaryCenterId} userId={user.id} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Loading centre…</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 lg:p-6 pb-64 max-w-3xl mx-auto space-y-6">
       <h1 className="text-xl font-bold text-foreground">{isEditMode ? "Edit Course" : "Create New Course"}</h1>
+      {isCenterAdmin && !isEditMode && <AdoptModeToggle adoptMode={adoptMode} setAdoptMode={setAdoptMode} />}
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Course Thumbnail</h2>
@@ -369,7 +405,7 @@ const CreateCoursePage = () => {
           <div>
             <label className="text-xs font-semibold text-foreground">Mode</label>
             <select value={modeValue} onChange={(e) => setModeValue(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
-              {MODE_OPTIONS.map((x) => <option key={x}>{x}</option>)}
+              {MODE_OPTIONS_FOR_ROLE.map((x) => <option key={x}>{x}</option>)}
             </select>
           </div>
           <div>
@@ -378,6 +414,18 @@ const CreateCoursePage = () => {
               {LANGUAGE_OPTIONS.map((x) => <option key={x}>{x}</option>)}
             </select>
           </div>
+          <div>
+            <label className="text-xs font-semibold text-foreground">Access end date (validity)</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none" title="Students lose access to this course after this date. Leave blank for no expiry." />
+          </div>
+          {!isCenterAdmin && (
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 text-sm font-medium" title="Global courses are visible/purchasable to students at every centre. Uncheck to keep it HQ-local (Kota students only).">
+                <input type="checkbox" checked={isGlobal} onChange={(e) => setIsGlobal(e.target.checked)} className="h-4 w-4" />
+                Global (all centres)
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
@@ -481,6 +529,198 @@ const CreateCoursePage = () => {
     </div>
   );
 
+};
+
+const AdoptModeToggle = ({ adoptMode, setAdoptMode }: { adoptMode: boolean; setAdoptMode: (v: boolean) => void }) => (
+  <div className="inline-flex rounded-md border border-border p-0.5 text-xs">
+    <button
+      onClick={() => setAdoptMode(false)}
+      className={`px-3 py-1.5 rounded ${!adoptMode ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+    >
+      Create a new course
+    </button>
+    <button
+      onClick={() => setAdoptMode(true)}
+      className={`px-3 py-1.5 rounded ${adoptMode ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+    >
+      Offer an existing HQ course
+    </button>
+  </div>
+);
+
+type AdoptableCourse = {
+  id: string;
+  name: string;
+  price: number;
+  original_price: number | null;
+  thumbnail_url: string | null;
+};
+
+type OfferingRow = {
+  id: string;
+  course_id: string;
+  price: number;
+  original_price: number | null;
+  is_active: boolean;
+  course_name: string;
+};
+
+// Lets a franchise centre run an existing global/HQ course at their own
+// price instead of authoring their own content — inserts into
+// course_offerings, leaving the base courses row (content) untouched.
+const AdoptCoursesPanel = ({ centerId, userId }: { centerId: string; userId: string }) => {
+  const [loading, setLoading] = useState(true);
+  const [adoptable, setAdoptable] = useState<AdoptableCourse[]>([]);
+  const [offerings, setOfferings] = useState<OfferingRow[]>([]);
+  const [draftPrices, setDraftPrices] = useState<Record<string, { price: string; original_price: string }>>({});
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const [{ data: courses }, { data: offeringRows }] = await Promise.all([
+      supabase
+        .from("courses")
+        .select("id, name, price, original_price, thumbnail_url")
+        .eq("is_published", true)
+        .eq("is_global", true)
+        .order("name"),
+      (supabase as any)
+        .from("course_offerings")
+        .select("id, course_id, price, original_price, is_active, course:courses(name)")
+        .eq("centre_id", centerId)
+        .order("created_at", { ascending: false }),
+    ]);
+    const offeredIds = new Set((offeringRows ?? []).map((o: any) => o.course_id));
+    setAdoptable(((courses ?? []) as AdoptableCourse[]).filter((c) => !offeredIds.has(c.id)));
+    setOfferings(
+      (offeringRows ?? []).map((o: any) => ({
+        id: o.id,
+        course_id: o.course_id,
+        price: o.price,
+        original_price: o.original_price,
+        is_active: o.is_active,
+        course_name: o.course?.name ?? "Untitled course",
+      })),
+    );
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerId]);
+
+  const draftFor = (courseId: string, fallbackPrice: number, fallbackOriginal: number | null) =>
+    draftPrices[courseId] ?? { price: String(fallbackPrice || ""), original_price: String(fallbackOriginal ?? "") };
+
+  const setDraft = (courseId: string, field: "price" | "original_price", value: string) => {
+    setDraftPrices((prev) => ({
+      ...prev,
+      [courseId]: { ...draftFor(courseId, 0, null), [field]: value },
+    }));
+  };
+
+  const adopt = async (course: AdoptableCourse) => {
+    const draft = draftFor(course.id, course.price, course.original_price);
+    const price = Number(draft.price);
+    if (!price || price <= 0) return toast.error("Enter a valid price");
+    setSubmittingId(course.id);
+    const { error } = await supabase.from("course_offerings").insert({
+      course_id: course.id,
+      centre_id: centerId,
+      price,
+      original_price: draft.original_price ? Number(draft.original_price) : null,
+      created_by: userId,
+    });
+    setSubmittingId(null);
+    if (error) {
+      // Unique constraint (course_id, centre_id) — two tabs adopting the same course.
+      if ((error as any).code === "23505") return toast.error("You already offer this course — edit it below.");
+      return toast.error(error.message);
+    }
+    toast.success(`Now offering "${course.name}" at your centre`);
+    load();
+  };
+
+  const updateOffering = async (offering: OfferingRow, changes: Partial<Pick<OfferingRow, "price" | "original_price" | "is_active">>) => {
+    const { error } = await supabase.from("course_offerings").update(changes).eq("id", offering.id);
+    if (error) return toast.error(error.message);
+    load();
+  };
+
+  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+
+  return (
+    <div className="space-y-6">
+      {offerings.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h2 className="text-sm font-bold text-foreground">Your current offerings</h2>
+          {offerings.map((o) => (
+            <div key={o.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background p-3">
+              <p className="flex-1 min-w-[10rem] text-sm font-semibold text-foreground">{o.course_name}</p>
+              <div className="flex items-center rounded-lg border border-border bg-background">
+                <IndianRupee className="h-3.5 w-3.5 text-muted-foreground ml-2" />
+                <input
+                  type="number"
+                  defaultValue={o.price}
+                  onBlur={(e) => {
+                    const v = Number(e.target.value) || 0;
+                    if (v > 0 && v !== o.price) updateOffering(o, { price: v });
+                  }}
+                  className="w-24 bg-transparent px-2 py-1.5 text-sm outline-none"
+                />
+              </div>
+              <label className="inline-flex items-center gap-1.5 text-xs font-medium">
+                <input
+                  type="checkbox"
+                  checked={o.is_active}
+                  onChange={(e) => updateOffering(o, { is_active: e.target.checked })}
+                  className="h-4 w-4"
+                />
+                Active
+              </label>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+        <h2 className="text-sm font-bold text-foreground">Adopt an HQ course</h2>
+        <p className="text-xs text-muted-foreground">Pick a global course and set your own price to run it at your centre.</p>
+        {adoptable.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No more global courses available to adopt.</p>
+        ) : (
+          adoptable.map((c) => {
+            const draft = draftFor(c.id, c.price, c.original_price);
+            return (
+              <div key={c.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-background p-3">
+                <p className="flex-1 min-w-[10rem] text-sm font-semibold text-foreground">
+                  {c.name} <span className="text-xs font-normal text-muted-foreground">(HQ price ₹{c.price})</span>
+                </p>
+                <div className="flex items-center rounded-lg border border-border bg-background">
+                  <IndianRupee className="h-3.5 w-3.5 text-muted-foreground ml-2" />
+                  <input
+                    type="number"
+                    value={draft.price}
+                    onChange={(e) => setDraft(c.id, "price", e.target.value)}
+                    placeholder="Your price"
+                    className="w-24 bg-transparent px-2 py-1.5 text-sm outline-none"
+                  />
+                </div>
+                <button
+                  disabled={submittingId === c.id}
+                  onClick={() => adopt(c)}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {submittingId === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Offer at my centre"}
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default CreateCoursePage;

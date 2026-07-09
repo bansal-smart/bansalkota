@@ -140,9 +140,9 @@ Deno.serve(async (req) => {
       // Optional: assign a custom admin role on creation
       const custom_role_id_create = body?.custom_role_id ? String(body.custom_role_id) : null;
       if (custom_role_id_create) {
-        await admin.from("admin_role_assignments").upsert(
+        await admin.from("role_assignments").delete().eq("user_id", user.id);
+        await admin.from("role_assignments").insert(
           { user_id: user.id, role_id: custom_role_id_create, assigned_by: userData.user.id },
-          { onConflict: "user_id" },
         );
       }
       return json(200, { success: true, user_id: user.id, email, password });
@@ -156,12 +156,10 @@ Deno.serve(async (req) => {
         _user_id: user_id, _role: "super_admin",
       });
       if (targetIsSuper) return json(403, { error: "Cannot modify a super admin" });
-      if (!role_id) {
-        await admin.from("admin_role_assignments").delete().eq("user_id", user_id);
-      } else {
-        await admin.from("admin_role_assignments").upsert(
+      await admin.from("role_assignments").delete().eq("user_id", user_id);
+      if (role_id) {
+        await admin.from("role_assignments").insert(
           { user_id, role_id, assigned_by: userData.user.id },
-          { onConflict: "user_id" },
         );
       }
       return json(200, { success: true });

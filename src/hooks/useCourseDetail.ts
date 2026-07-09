@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { CourseRow } from "./useCourses";
+import { resolveCoursePrice, type CourseRow } from "./useCourses";
 
 export type LessonRow = {
   id: string;
@@ -35,9 +35,9 @@ type Result = { course: CourseRow | null; chapters: ChapterRow[]; pdfs: CoursePd
 
 const EMPTY: Result = { course: null, chapters: [], pdfs: [] };
 
-export const useCourseDetail = (slug: string | undefined) => {
+export const useCourseDetail = (slug: string | undefined, centreId?: string | null) => {
   const query = useQuery({
-    queryKey: ["course_detail", slug],
+    queryKey: ["course_detail", slug, centreId ?? null],
     enabled: !!slug,
     queryFn: async (): Promise<Result> => {
       const { data: courseData } = await supabase
@@ -46,6 +46,19 @@ export const useCourseDetail = (slug: string | undefined) => {
         .eq("slug", slug!)
         .maybeSingle();
       if (!courseData) return EMPTY;
+
+      const { data: offeringRows } = await (supabase as any)
+        .from("course_offerings")
+        .select("course_id, centre_id, price, original_price")
+        .eq("course_id", courseData.id)
+        .eq("is_active", true);
+      const priceFields = resolveCoursePrice(
+        courseData.id,
+        Number(courseData.price ?? 0),
+        courseData.original_price != null ? Number(courseData.original_price) : null,
+        offeringRows ?? [],
+        centreId,
+      );
 
       const { data: chs } = await supabase
         .from("chapters")
@@ -76,7 +89,7 @@ export const useCourseDetail = (slug: string | undefined) => {
         .order("position");
 
       return {
-        course: courseData as CourseRow,
+        course: { ...courseData, ...priceFields } as CourseRow,
         chapters: grouped,
         pdfs: (pdfData ?? []) as CoursePdfRow[],
       };

@@ -57,11 +57,15 @@ const MyCoursesPage = () => {
         setLoading(false);
         return;
       }
+      // Exclude expired enrollments — course access is revoked after course.end_date
+      // (copied to enrollments.expires_at at enroll time).
+      const nowIso = new Date().toISOString();
       const { data, error } = await supabase
         .from("enrollments")
-        .select("id, course_id, progress_percent, completed_lessons, last_lesson_title, last_accessed_at, course:courses(*)")
+        .select("id, course_id, progress_percent, completed_lessons, last_lesson_title, last_accessed_at, expires_at, course:courses(*)")
         .eq("user_id", user.id)
         .eq("is_active", true)
+        .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
         .order("last_accessed_at", { ascending: false, nullsFirst: false });
 
       if (error) {

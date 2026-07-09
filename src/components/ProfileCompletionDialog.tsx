@@ -41,6 +41,7 @@ async function resumePendingEnrollment() {
       orderType: "course",
       courseId: pending.courseId,
       enquiryId: pending.enquiryId,
+      centreId: pending.centreId,
     } as any);
   } catch (e: any) {
     toast.error(e?.message || "Could not resume payment. Please try enrolling again.");

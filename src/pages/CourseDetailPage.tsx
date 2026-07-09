@@ -87,7 +87,8 @@ const CourseDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { course, chapters, pdfs, loading } = useCourseDetail(slug);
+  const [studentCentreId, setStudentCentreId] = useState<string | null>(null);
+  const { course, chapters, pdfs, loading } = useCourseDetail(slug, studentCentreId);
   const [expandedChapter, setExpandedChapter] = useState(0);
   const [enrollment, setEnrollment] = useState<EnrollmentInfo | null>(null);
   const [enrollOpen, setEnrollOpen] = useState(false);
@@ -96,6 +97,19 @@ const CourseDetailPage = () => {
 
   const enrolled = !!enrollment;
   const boost = useBoostSettings();
+
+  useEffect(() => {
+    if (!user) {
+      setStudentCentreId(null);
+      return;
+    }
+    supabase
+      .from("profiles")
+      .select("centre_id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setStudentCentreId((data as any)?.centre_id ?? null));
+  }, [user]);
 
   useEffect(() => {
     if (!user || !course) {
@@ -202,12 +216,13 @@ const CourseDetailPage = () => {
     setEnrollOpen(true);
   };
 
+  const price = Number(course.resolved_price);
   const discount =
-    course.original_price && course.original_price > course.price
-      ? Math.round(((Number(course.original_price) - Number(course.price)) / Number(course.original_price)) * 100)
-      : course.discount_percent || 0;
-
-  const price = Number(course.price);
+    course.resolved_original_price && course.resolved_original_price > price
+      ? Math.round(((Number(course.resolved_original_price) - price) / Number(course.resolved_original_price)) * 100)
+      : course.price_label === "fixed"
+        ? course.discount_percent || 0
+        : 0;
   const firstInstallment = Math.round(price * 0.75);
   const secondInstallment = price - firstInstallment;
 
@@ -385,8 +400,11 @@ const CourseDetailPage = () => {
                 <div>
                   <p className="text-sm font-bold text-foreground mb-1.5">Fee Structure:</p>
                   <p className="text-xs text-foreground">
-                    Actual Fee (Incl. GST): <span className="font-bold text-primary">₹{price.toLocaleString("en-IN")}/-</span>{" "}
-                    <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
+                    {course.price_label === "starting_from" ? "Starting Fee" : "Actual Fee"} (Incl. GST):{" "}
+                    <span className="font-bold text-primary">₹{price.toLocaleString("en-IN")}/-</span>{" "}
+                    {course.has_multiple_offerings && (
+                      <span className="text-muted-foreground">[Fees may vary from centre to centre]</span>
+                    )}
                   </p>
                 </div>
               </>
@@ -520,14 +538,20 @@ const CourseDetailPage = () => {
             <div className="p-5 space-y-4">
               {/* Price */}
               <div className="flex items-baseline gap-2 flex-wrap">
-                {course.original_price && course.original_price > course.price && (
+                {course.price_label === "starting_from" && (
+                  <span className="text-xs font-semibold text-muted-foreground">Starting from</span>
+                )}
+                {course.resolved_original_price && course.resolved_original_price > price && (
                   <span className="text-sm text-muted-foreground line-through">
-                    ₹{Number(course.original_price).toLocaleString("en-IN")}
+                    ₹{Number(course.resolved_original_price).toLocaleString("en-IN")}
                   </span>
                 )}
                 <span className="font-display text-2xl font-black text-foreground">₹{price.toLocaleString("en-IN")}</span>
                 {discount > 0 && <span className="text-xs font-bold text-destructive">{discount}% Off</span>}
               </div>
+              {course.has_multiple_offerings && (
+                <p className="text-[11px] text-muted-foreground -mt-2">Fees may vary by centre</p>
+              )}
 
               <div className="border-t border-border pt-4">
                 <p className="text-sm font-bold text-foreground mb-3">Payment Details</p>
@@ -585,7 +609,7 @@ const CourseDetailPage = () => {
       <CourseEnquiryDialog
         open={enrollOpen}
         onOpenChange={setEnrollOpen}
-        course={{ id: course.id, name: course.name, price: course.price }}
+        course={{ id: course.id, name: course.name, price: course.resolved_price, centreId: studentCentreId ?? undefined }}
       />
 
       {/* Sticky mobile enroll bar — desktop already has the sticky right-column CTA */}

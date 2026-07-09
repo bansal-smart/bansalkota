@@ -126,6 +126,8 @@ Deno.serve(async (req) => {
             email: trimOrNull(r.email),
             latitude: toNum(r.latitude),
             longitude: toNum(r.longitude),
+            city_code: trimOrNull(r.city_code)?.toUpperCase() ?? null,
+            centre_code: trimOrNull(r.centre_code),
             is_active: r.is_active == null ? true : toBool(r.is_active),
             is_pinned: toBool(r.is_pinned),
             is_featured: toBool(r.is_featured),
@@ -149,25 +151,36 @@ Deno.serve(async (req) => {
       // Preload centres + batches for name-based lookups (admin bulk create flow)
       const { data: centresList } = await admin
         .from("centres")
-        .select("id, slug, city, area");
+        .select("id, slug, city, area, is_hq");
       const { data: batchesList } = await admin
         .from("course_batches")
-        .select("id, name, code, course_id, centre_id");
+        .select("id, name, code, course_id, centre_id, stream, class_level");
       const centreByKey = new Map<string, string>();
+      const centreIsHqById = new Map<string, boolean>();
       (centresList ?? []).forEach((c: any) => {
         const keys = [c.slug, c.city, c.area, `${c.city} ${c.area ?? ""}`.trim()]
           .filter(Boolean)
           .map((k: string) => k.toLowerCase().trim());
         keys.forEach((k) => centreByKey.set(k, c.id));
+        centreIsHqById.set(c.id, !!c.is_hq);
       });
       const batchByKey = new Map<string, string>();
       const batchCourseById = new Map<string, string | null>();
       const batchCentreById = new Map<string, string | null>();
+      // Standard franchise batches keyed by centre + stream + class, so bulk imports
+      // for a franchise centre resolve the batch WITHOUT a batch_code column.
+      const stdBatchByKey = new Map<string, string>();
       (batchesList ?? []).forEach((b: any) => {
         if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
         if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
         batchCourseById.set(b.id, b.course_id ?? null);
         batchCentreById.set(b.id, b.centre_id ?? null);
+        if (b.centre_id && b.stream && b.class_level) {
+          stdBatchByKey.set(
+            `${b.centre_id}|${String(b.stream).toUpperCase()}|${String(b.class_level).toLowerCase()}`,
+            b.id,
+          );
+        }
       });
 
       const normStream = (v: any): string | null => {
@@ -232,7 +245,14 @@ Deno.serve(async (req) => {
             if (!centreId) throw new Error(`Centre not found: ${r.centre}`);
           }
 
-          // Resolve batch — accept batch_code (preferred), batch_id, or batch (legacy name lookup)
+          // Normalised stream/class (reused for batch resolution + profile payload).
+          const stream = normStream(r.target_exam ?? r.stream);
+          const cls = normClass(r.class_level ?? r.class);
+          const isFranchise = centreId ? centreIsHqById.get(centreId) === false : false;
+
+          // Resolve batch — accept batch_code / batch_id / batch (legacy name lookup).
+          // For a franchise centre with no batch_code, resolve the standard batch by
+          // stream+class (each franchise centre has one batch per stream×class).
           let batchId: string | null = null;
           const batchRaw = trimOrNull(r.batch_code ?? r.batch);
           if (r.batch_id) batchId = String(r.batch_id);
@@ -240,6 +260,9 @@ Deno.serve(async (req) => {
             const key = batchRaw.toLowerCase();
             batchId = batchByKey.get(key) ?? null;
             if (!batchId) throw new Error(`Batch code not found: ${batchRaw}. Create it under Batches & CBT Setup first.`);
+          } else if (isFranchise && centreId && stream && cls) {
+            batchId = stdBatchByKey.get(`${centreId}|${stream.toUpperCase()}|${cls.toLowerCase()}`) ?? null;
+            if (!batchId) throw new Error(`No standard batch for ${stream} ${cls} at this centre. Provide stream + class, or a batch_code.`);
           }
           // Centre staff (non-admin) may only assign batches that belong to their own centre.
           if (batchId && !isAnyAdmin && isCentreStaff) {
@@ -280,6 +303,16 @@ Deno.serve(async (req) => {
             return null;
           };
 
+          // Auto-assign a roll number for NEW franchise students without one
+          // (format {CITY}{CENTRE}{0001}). HQ/Kota keeps manual rolls. Existing
+          // students keep their roll. Dry-run does not consume the sequence.
+          let effectiveRoll = roll;
+          if (!target && !effectiveRoll && isFranchise && centreId && !dryRun) {
+            const { data: genRoll, error: rollErr } = await admin.rpc("assign_roll_number", { _centre_id: centreId });
+            if (rollErr) throw new Error(rollErr.message);
+            effectiveRoll = (genRoll as string | null) ?? null;
+          }
+
           const payload: Record<string, any> = {};
           if (fullName) payload.full_name = fullName;
           if (trimOrNull(r.father_name ?? r.fathers_name)) payload.father_name = trimOrNull(r.father_name ?? r.fathers_name);
@@ -294,14 +327,12 @@ Deno.serve(async (req) => {
           if (trimOrNull(r.parent_phone ?? r.parent_no)) payload.parent_phone = trimOrNull(r.parent_phone ?? r.parent_no);
           const dob = parseDob(r.dob);
           if (dob) payload.dob = dob;
-          const stream = normStream(r.target_exam ?? r.stream);
           if (stream) payload.target_exam = stream;
-          const cls = normClass(r.class_level ?? r.class);
           if (cls) payload.class_level = cls;
           if (centreId) payload.centre_id = centreId;
           if (batchId) payload.batch_id = batchId;
           if (batchRaw) payload.batch_label = batchRaw;
-          if (roll) payload.roll_number = roll;
+          if (effectiveRoll) payload.roll_number = effectiveRoll;
           if (trimOrNull(r.city)) payload.city = trimOrNull(r.city);
           if (status) payload.student_status = status;
           payload.is_bansal_offline_student = true;
@@ -322,8 +353,8 @@ Deno.serve(async (req) => {
             if (!fullName) throw new Error("full_name (Student Name) is required to create a new student");
             if (dryRun) { results.push({ row: i + 1, ok: true }); continue; }
 
-            const emailSeed = roll
-              ? `roll-${roll}`
+            const emailSeed = effectiveRoll
+              ? `roll-${effectiveRoll}`
               : `phone-${phone}`;
             const email = `${emailSeed}@bansal.ac.in`.toLowerCase().replace(/[^a-z0-9@.\-]/g, "");
             const password = `Bansal@${Math.random().toString(36).slice(2, 10)}`;
@@ -389,7 +420,20 @@ Deno.serve(async (req) => {
             }
             const uniqIds = Array.from(new Set(idList));
             if (uniqIds.length) {
-              const rowsIns = uniqIds.map((course_id) => ({ user_id: resolvedUid!, course_id, is_active: true }));
+              // Course validity: expires_at = course.end_date (if any).
+              const { data: endRows } = await admin
+                .from("courses").select("id, end_date").in("id", uniqIds);
+              const endById = new Map<string, string | null>(
+                (endRows ?? []).map((c: any) => [c.id, c.end_date ?? null]),
+              );
+              const rowsIns = uniqIds.map((course_id) => ({
+                user_id: resolvedUid!,
+                course_id,
+                is_active: true,
+                expires_at: endById.get(course_id)
+                  ? new Date(`${endById.get(course_id)}T23:59:59Z`).toISOString()
+                  : null,
+              }));
               const { error: eErr } = await admin
                 .from("enrollments")
                 .upsert(rowsIns, { onConflict: "user_id,course_id" });
@@ -499,12 +543,18 @@ Deno.serve(async (req) => {
           if (!userId)
             throw new Error("No user matches that email/phone/roll — student must sign up first");
 
+          // Course validity: expires_at = course.end_date (if any).
+          const { data: endRow } = await admin
+            .from("courses").select("end_date").eq("id", resolvedCourseId).maybeSingle();
           const payload: Record<string, any> = {
             user_id: userId,
             course_id: resolvedCourseId,
             progress_percent: toNum(r.progress_percent) ?? 0,
             completed_lessons: toNum(r.completed_lessons) ?? 0,
             is_active: r.is_active == null ? true : toBool(r.is_active),
+            expires_at: (endRow as any)?.end_date
+              ? new Date(`${(endRow as any).end_date}T23:59:59Z`).toISOString()
+              : null,
           };
           if (dryRun) {
             results.push({ row: i + 1, ok: true });

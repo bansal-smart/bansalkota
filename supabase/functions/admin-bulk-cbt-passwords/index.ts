@@ -5,6 +5,7 @@
 // within a single invocation.
 // Returns: { results: [{ user_id, roll_number, full_name, password | null, status }], generated: n }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { resolveCallerAccess } from "../_shared/authz.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,13 +45,9 @@ Deno.serve(async (req) => {
     if (!token) return json(401, { error: "Unauthorized" });
 
     const admin = createClient(url, service);
-    const { data: userRes, error: uErr } = await admin.auth.getUser(token);
-    if (uErr || !userRes?.user) return json(401, { error: "Unauthorized" });
-    const callerId = userRes.user.id;
-
-    const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", callerId);
-    const roleSet = new Set((roles ?? []).map((r) => r.role));
-    if (!roleSet.has("admin") && !roleSet.has("super_admin") && !roleSet.has("center_admin")) {
+    const access = await resolveCallerAccess(admin, token).catch(() => null);
+    if (!access) return json(401, { error: "Unauthorized" });
+    if (!access.isAdminOrSuper && access.centreIds.size === 0) {
       return json(403, { error: "Forbidden" });
     }
 
@@ -64,9 +61,21 @@ Deno.serve(async (req) => {
 
     const { data: profs, error: pErr } = await admin
       .from("profiles")
-      .select("user_id, roll_number, full_name, cbt_password_set_at, batch_label, centres:centre_id(city, area)")
+      .select("user_id, centre_id, roll_number, full_name, cbt_password_set_at, batch_label, centres:centre_id(city, area)")
       .in("user_id", userIds);
     if (pErr) return json(500, { error: pErr.message });
+
+    // Centre admins may only touch students mapped to a centre they staff.
+    // Split rather than silently drop so the response accounts for every
+    // requested id (the caller already knows these ids — they sent them).
+    const scopedProfs = access.isAdminOrSuper
+      ? (profs ?? [])
+      : (profs ?? []).filter((p) => p.centre_id && access.centreIds.has(p.centre_id));
+    const outOfScopeIds = access.isAdminOrSuper
+      ? []
+      : (profs ?? [])
+          .filter((p) => !(p.centre_id && access.centreIds.has(p.centre_id)))
+          .map((p) => p.user_id);
 
     const results: Array<{
       user_id: string;
@@ -78,7 +87,7 @@ Deno.serve(async (req) => {
       status: string;
     }> = [];
 
-    for (const p of profs ?? []) {
+    for (const p of scopedProfs) {
       const alreadySet = !!p.cbt_password_set_at;
       const centre = (p as any).centres
         ? [(p as any).centres.area, (p as any).centres.city].filter(Boolean).join(", ")
@@ -134,6 +143,18 @@ Deno.serve(async (req) => {
         batch: p.batch_label ?? null,
         password: pwd,
         status: "generated",
+      });
+    }
+
+    for (const uid of outOfScopeIds) {
+      results.push({
+        user_id: uid,
+        roll_number: null,
+        full_name: null,
+        centre: null,
+        batch: null,
+        password: null,
+        status: "forbidden_wrong_centre",
       });
     }
 

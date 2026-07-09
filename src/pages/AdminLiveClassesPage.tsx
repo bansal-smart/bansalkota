@@ -35,7 +35,7 @@ type AdminLive = {
   cancellation_reason?: string | null;
 };
 
-type Teacher = { user_id: string; full_name: string | null };
+type Educator = { user_id: string; full_name: string | null };
 type Course = { id: string; name: string };
 
 type Template = {
@@ -62,7 +62,7 @@ const statusColors: Record<string, string> = {
 type FormState = {
   title: string;
   subject: string;
-  teacherId: string;
+  educatorId: string;
   courseId: string;
   starts_at: string;
   duration_minutes: number;
@@ -74,7 +74,7 @@ type FormState = {
 const emptyForm: FormState = {
   title: "",
   subject: "",
-  teacherId: "",
+  educatorId: "",
   courseId: "",
   starts_at: "",
   duration_minutes: 60,
@@ -106,7 +106,7 @@ const PAGE_SIZE = 25;
 const AdminLiveClassesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
   const [classes, setClasses] = useState<AdminLive[]>([]);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [educators, setEducators] = useState<Educator[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,7 +119,7 @@ const AdminLiveClassesPage = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [teacherFilter, setTeacherFilter] = useState<string>("all");
+  const [educatorFilter, setEducatorFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
 
   // Templates dialog
@@ -141,18 +141,18 @@ const AdminLiveClassesPage = () => {
           "id, title, subject, educator_name, status, starts_at, ends_at, meeting_url, description, target_exam, created_by, course_id, cancellation_reason",
         )
         .order("starts_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").eq("role", "teacher"),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "super_admin"]),
       supabase.from("live_class_templates").select("*").order("created_at", { ascending: false }),
       supabase.from("courses").select("id, name").order("name"),
     ]);
-    const teacherIds = (rolesRes.data ?? []).map((r) => r.user_id);
-    const { data: profiles } = teacherIds.length
-      ? await supabase.from("profiles").select("user_id, full_name").in("user_id", teacherIds)
-      : { data: [] as Teacher[] };
+    const educatorIds = (rolesRes.data ?? []).map((r) => r.user_id);
+    const { data: profiles } = educatorIds.length
+      ? await supabase.from("profiles").select("user_id, full_name").in("user_id", educatorIds)
+      : { data: [] as Educator[] };
 
     setClasses((classesRes.data ?? []) as AdminLive[]);
-    setTeachers(
-      ((profiles ?? []) as Teacher[]).sort((a, b) =>
+    setEducators(
+      ((profiles ?? []) as Educator[]).sort((a, b) =>
         (a.full_name ?? "").localeCompare(b.full_name ?? ""),
       ),
     );
@@ -167,7 +167,7 @@ const AdminLiveClassesPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, teacherFilter]);
+  }, [debouncedSearch, statusFilter, educatorFilter]);
 
   const counts = useMemo(() => {
     const now = new Date();
@@ -178,13 +178,13 @@ const AdminLiveClassesPage = () => {
     };
   }, [classes]);
 
-  const teacherMap = useMemo(() => new Map(teachers.map((t) => [t.user_id, t])), [teachers]);
+  const educatorMap = useMemo(() => new Map(educators.map((t) => [t.user_id, t])), [educators]);
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     return classes.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
-      if (teacherFilter !== "all" && c.created_by !== teacherFilter) return false;
+      if (educatorFilter !== "all" && c.created_by !== educatorFilter) return false;
       if (!q) return true;
       return (
         c.title.toLowerCase().includes(q) ||
@@ -192,7 +192,7 @@ const AdminLiveClassesPage = () => {
         (c.educator_name ?? "").toLowerCase().includes(q)
       );
     });
-  }, [classes, debouncedSearch, statusFilter, teacherFilter]);
+  }, [classes, debouncedSearch, statusFilter, educatorFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = useMemo(
@@ -214,7 +214,7 @@ const AdminLiveClassesPage = () => {
     setForm({
       title: cls.title,
       subject: cls.subject,
-      teacherId: cls.created_by ?? "",
+      educatorId: cls.created_by ?? "",
       courseId: cls.course_id ?? "",
       starts_at: toLocalInput(cls.starts_at),
       duration_minutes: duration,
@@ -234,7 +234,7 @@ const AdminLiveClassesPage = () => {
     setForm({
       title: cls.title,
       subject: cls.subject,
-      teacherId: cls.created_by ?? "",
+      educatorId: cls.created_by ?? "",
       courseId: cls.course_id ?? "",
       starts_at: "",
       duration_minutes: duration,
@@ -254,28 +254,28 @@ const AdminLiveClassesPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.subject || !form.teacherId || !form.starts_at) {
-      toast.error("Title, subject, teacher and start time are required");
+    if (!form.title || !form.subject || !form.educatorId || !form.starts_at) {
+      toast.error("Title, subject, educator and start time are required");
       return;
     }
     setSubmitting(true);
     try {
       const { data: userRes } = await supabase.auth.getUser();
       const adminId = userRes.user?.id;
-      const teacher = teacherMap.get(form.teacherId);
+      const educator = educatorMap.get(form.educatorId);
       const startsAt = new Date(form.starts_at);
       const endsAt = new Date(startsAt.getTime() + form.duration_minutes * 60 * 1000);
 
       const payload = {
         title: form.title,
         subject: form.subject,
-        educator_name: teacher?.full_name || "Educator",
+        educator_name: educator?.full_name || "Educator",
         target_exam: form.target_exam || null,
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
         meeting_url: form.meeting_url || null,
         description: form.description || null,
-        created_by: form.teacherId,
+        created_by: form.educatorId,
         course_id: form.courseId || null,
         scheduled_by: adminId,
       };
@@ -374,15 +374,15 @@ const AdminLiveClassesPage = () => {
       return;
     }
     const { data: userRes } = await supabase.auth.getUser();
-    const teacher = teacherMap.get(form.teacherId);
+    const educator = educatorMap.get(form.educatorId);
     const { error } = await supabase.from("live_class_templates").insert({
       name: templateName.trim(),
       title: form.title,
       subject: form.subject,
       description: form.description || null,
       target_exam: form.target_exam || null,
-      educator_name: teacher?.full_name || null,
-      teacher_id: form.teacherId || null,
+      educator_name: educator?.full_name || null,
+      teacher_id: form.educatorId || null,
       meeting_url: form.meeting_url || null,
       duration_minutes: form.duration_minutes,
       created_by: userRes.user?.id,
@@ -402,7 +402,7 @@ const AdminLiveClassesPage = () => {
     setForm({
       title: t.title,
       subject: t.subject,
-      teacherId: t.teacher_id ?? "",
+      educatorId: t.teacher_id ?? "",
       courseId: "",
       starts_at: "",
       duration_minutes: t.duration_minutes,
@@ -523,7 +523,7 @@ const AdminLiveClassesPage = () => {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-black font-display">Live Classes</h1>
-            <p className="text-white/90 text-sm mt-1">Schedule and monitor classes on behalf of teachers</p>
+            <p className="text-white/90 text-sm mt-1">Schedule and monitor classes on behalf of educators</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -563,7 +563,7 @@ const AdminLiveClassesPage = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title, subject or teacher…"
+            placeholder="Search by title, subject or educator…"
             className="flex-1 bg-transparent text-sm outline-none"
           />
         </div>
@@ -579,12 +579,12 @@ const AdminLiveClassesPage = () => {
           <option value="cancelled">Cancelled</option>
         </select>
         <select
-          value={teacherFilter}
-          onChange={(e) => setTeacherFilter(e.target.value)}
+          value={educatorFilter}
+          onChange={(e) => setEducatorFilter(e.target.value)}
           className="rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none"
         >
-          <option value="all">All teachers</option>
-          {teachers.map((t) => (
+          <option value="all">All educators</option>
+          {educators.map((t) => (
             <option key={t.user_id} value={t.user_id}>
               {t.full_name || "Unnamed"}
             </option>
@@ -650,7 +650,7 @@ const AdminLiveClassesPage = () => {
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-foreground">
-                {editingId ? "Edit live class" : "Schedule class on behalf of teacher"}
+                {editingId ? "Edit live class" : "Schedule class on behalf of educator"}
               </p>
               <button type="button" onClick={closeForm} className="text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
@@ -681,17 +681,17 @@ const AdminLiveClassesPage = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Teacher</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Educator</label>
                   <select
                     required
-                    value={form.teacherId}
-                    onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
+                    value={form.educatorId}
+                    onChange={(e) => setForm({ ...form, educatorId: e.target.value })}
                     className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                   >
-                    <option value="">Select teacher</option>
-                    {teachers.map((t) => (
+                    <option value="">Select educator</option>
+                    {educators.map((t) => (
                       <option key={t.user_id} value={t.user_id}>
-                        {t.full_name || "Unnamed teacher"}
+                        {t.full_name || "Unnamed educator"}
                       </option>
                     ))}
                   </select>
@@ -818,7 +818,7 @@ const AdminLiveClassesPage = () => {
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl">
             <p className="text-sm font-bold text-foreground">Save as template</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Reuse this title, subject, teacher, meeting link and duration for future classes.
+              Reuse this title, subject, educator, meeting link and duration for future classes.
             </p>
             <input
               autoFocus
@@ -906,7 +906,7 @@ const AdminLiveClassesPage = () => {
               rows={4}
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="e.g. Teacher unavailable, rescheduling for next week"
+              placeholder="e.g. Educator unavailable, rescheduling for next week"
               className="mt-3 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
             <div className="mt-4 flex gap-2">

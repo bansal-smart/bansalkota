@@ -82,7 +82,16 @@ const CourseLearnPage = () => {
     });
 
     if (user) {
-      const { data: enr } = await supabase.from("enrollments").select("id").eq("user_id", user.id).eq("course_id", c.id).eq("is_active", true).maybeSingle();
+      // Access requires an active, non-expired enrollment (course validity end date).
+      const nowIso = new Date().toISOString();
+      const { data: enr } = await supabase
+        .from("enrollments")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("course_id", c.id)
+        .eq("is_active", true)
+        .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+        .maybeSingle();
       setAllowed(!!enr);
     }
     setLoading(false);

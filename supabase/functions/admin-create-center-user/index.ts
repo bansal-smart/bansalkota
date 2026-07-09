@@ -1,7 +1,8 @@
 // Edge function: admin-create-center-user
 // Creates an auth user (email + password), or resets an existing user's password,
 // and attaches them to a centre via centre_staff (which auto-grants center_admin role).
-// Only callable by admin or super_admin.
+// Optionally assigns a centre-scope custom role via role_assignments.
+// Callable by admin/super_admin for any centre, or by that centre's own admin.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -56,17 +57,14 @@ Deno.serve(async (req) => {
   const role = (body.role ?? "manager").toString();
   const customRoleId: string | null = body.custom_role_id ?? null;
 
-  // Non-admins must be a centre admin (centre_staff row with no custom_role_id) for the target centre.
+  // Non-admins must be the centre admin (no custom role assigned) for the target centre.
   if (!isAdmin) {
     if (!centerId) return json(403, { error: "Only admins can perform this action" });
-    const { data: cs } = await admin
-      .from("centre_staff")
-      .select("id")
-      .eq("user_id", callerId)
-      .eq("centre_id", centerId)
-      .is("custom_role_id", null)
-      .maybeSingle();
-    if (!cs) return json(403, { error: "Only the Centre Admin can perform this action" });
+    const { data: isCentreAdmin } = await admin.rpc("is_centre_admin_of", {
+      _user_id: callerId,
+      _centre_id: centerId,
+    });
+    if (!isCentreAdmin) return json(403, { error: "Only the Centre Admin can perform this action" });
   }
 
   if (!email || !password) return json(400, { error: "email and password are required" });
@@ -94,14 +92,23 @@ Deno.serve(async (req) => {
       if (updErr) return json(400, { error: updErr.message });
     }
 
-    // Attach to centre (idempotent) with optional custom role
+    // Attach to centre (idempotent)
     const { error: linkErr } = await admin
       .from("centre_staff")
       .upsert(
-        { user_id: userId, centre_id: centerId, role, custom_role_id: customRoleId },
+        { user_id: userId, centre_id: centerId, role },
         { onConflict: "user_id,centre_id" },
       );
     if (linkErr) return json(400, { error: linkErr.message });
+
+    // Optional custom centre role assignment
+    await admin.from("role_assignments").delete().eq("user_id", userId);
+    if (customRoleId) {
+      const { error: roleErr } = await admin
+        .from("role_assignments")
+        .insert({ user_id: userId, role_id: customRoleId });
+      if (roleErr) return json(400, { error: roleErr.message });
+    }
 
     return json(200, { ok: true, user_id: userId, email });
   }

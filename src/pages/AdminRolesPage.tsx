@@ -8,6 +8,7 @@ import AdminRoleModal from "@/components/AdminRoleModal";
 
 type RoleRow = {
   id: string;
+  scope: "admin" | "centre";
   name: string;
   description: string | null;
   created_at: string;
@@ -19,6 +20,15 @@ type AdminRow = {
   email: string | null;
   full_name: string | null;
   role: "admin" | "super_admin";
+  custom_role_id: string | null;
+};
+
+type CentreStaffRow = {
+  id: string;
+  user_id: string;
+  centre_id: string;
+  full_name: string | null;
+  centre_label: string | null;
   custom_role_id: string | null;
 };
 
@@ -35,12 +45,13 @@ const AdminRolesPage = () => {
   const { isSuper, loading: loadingPerms } = useAdminPermissions();
   const [roles, setRoles] = useState<RoleRow[]>([]);
   const [admins, setAdmins] = useState<AdminRow[]>([]);
+  const [centreStaff, setCentreStaff] = useState<CentreStaffRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const { confirm: askConfirm, ConfirmDialog } = useConfirm();
 
-  // Create login state
+  // Create admin login state
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPhone, setNewPhone] = useState("");
@@ -48,16 +59,22 @@ const AdminRolesPage = () => {
   const [newCustomRoleId, setNewCustomRoleId] = useState<string>("");
   const [creating, setCreating] = useState(false);
 
+  const adminRoles = roles.filter((r) => r.scope === "admin");
+  const centreRoles = roles.filter((r) => r.scope === "centre");
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data: rs }, listRes, { data: assigns }] = await Promise.all([
+      const [{ data: rs }, listRes, { data: assigns }, { data: staff }] = await Promise.all([
         (supabase as any)
-          .from("admin_roles")
-          .select("id, name, description, created_at")
+          .from("roles")
+          .select("id, scope, name, description, created_at")
           .order("created_at", { ascending: false }),
         callFn("list"),
-        (supabase as any).from("admin_role_assignments").select("user_id, role_id"),
+        (supabase as any).from("role_assignments").select("user_id, role_id"),
+        (supabase as any)
+          .from("centre_staff")
+          .select("id, user_id, centre_id, centre:centres(city, area)"),
       ]);
 
       const assignMap = new Map<string, string>(
@@ -76,6 +93,24 @@ const AdminRolesPage = () => {
           custom_role_id: assignMap.get(a.user_id) ?? null,
         })),
       );
+
+      const staffUserIds = ((staff ?? []) as any[]).map((s) => s.user_id);
+      let names = new Map<string, string>();
+      if (staffUserIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles").select("user_id, full_name").in("user_id", staffUserIds);
+        names = new Map((profs ?? []).map((p: any) => [p.user_id, p.full_name ?? ""]));
+      }
+      setCentreStaff(
+        ((staff ?? []) as any[]).map((s) => ({
+          id: s.id,
+          user_id: s.user_id,
+          centre_id: s.centre_id,
+          full_name: names.get(s.user_id) ?? null,
+          centre_label: s.centre ? `${s.centre.city}${s.centre.area ? " — " + s.centre.area : ""}` : null,
+          custom_role_id: assignMap.get(s.user_id) ?? null,
+        })),
+      );
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to load");
     } finally {
@@ -88,13 +123,13 @@ const AdminRolesPage = () => {
   const removeRole = async (id: string) => {
     const ok = await askConfirm({
       title: "Delete Role?",
-      description: "Admins assigned to it will revert to full admin access.",
+      description: "Anyone assigned to it will revert to full access for their portal.",
       confirmLabel: "Delete",
       cancelLabel: "Cancel",
       variant: "destructive",
     });
     if (!ok) return;
-    const { error } = await (supabase as any).from("admin_roles").delete().eq("id", id);
+    const { error } = await (supabase as any).from("roles").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Role deleted");
     load();
@@ -107,6 +142,22 @@ const AdminRolesPage = () => {
       load();
     } catch (e: any) {
       toast.error(e?.message ?? "Failed");
+    }
+  };
+
+  const assignToCentreStaff = async (userId: string, roleId: string | null) => {
+    try {
+      await (supabase as any).from("role_assignments").delete().eq("user_id", userId);
+      if (roleId) {
+        const { error } = await (supabase as any)
+          .from("role_assignments")
+          .insert({ user_id: userId, role_id: roleId });
+        if (error) throw error;
+      }
+      toast.success("Role assigned");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to assign role");
     }
   };
 
@@ -157,7 +208,7 @@ const AdminRolesPage = () => {
             <Shield className="h-6 w-6 text-primary" /> Role Management
           </h1>
           <p className="text-sm text-muted-foreground">
-            Create custom roles for your admin team and choose which Super Admin Dashboard tabs and actions they can use.
+            Create roles for the admin portal or for centre staff, and choose which tabs and actions each role can use.
           </p>
         </div>
         <button
@@ -169,67 +220,74 @@ const AdminRolesPage = () => {
       </div>
 
       {/* Roles list */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-4 py-3">
-          <p className="text-sm font-bold text-foreground">Custom roles</p>
-        </div>
-        {loading ? (
-          <div className="flex items-center justify-center py-10 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        {([
+          { label: "Admin portal roles", rows: adminRoles },
+          { label: "Centre portal roles", rows: centreRoles },
+        ] as const).map((group) => (
+          <div key={group.label} className="rounded-xl border border-border bg-card">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-bold text-foreground">{group.label}</p>
+            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-10 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
+            ) : group.rows.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No roles yet. Click <span className="font-semibold">Add Role</span> to create one.
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {group.rows.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-3 p-4">
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground truncate">{r.name}</p>
+                      {r.description && (
+                        <p className="text-xs text-muted-foreground truncate">{r.description}</p>
+                      )}
+                      <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
+                        <Users className="h-3 w-3" /> {r.member_count} member{r.member_count === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setEditingId(r.id); setShowModal(true); }}
+                        className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-semibold"
+                      >
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                      <button
+                        onClick={() => removeRole(r.id)}
+                        className="inline-flex items-center gap-1 rounded-md border border-destructive/30 text-destructive px-3 py-1.5 text-xs font-semibold"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        ) : roles.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            No custom roles yet. Click <span className="font-semibold">Add Role</span> to create one.
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {roles.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
-                  <p className="font-bold text-foreground truncate">{r.name}</p>
-                  {r.description && (
-                    <p className="text-xs text-muted-foreground truncate">{r.description}</p>
-                  )}
-                  <p className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
-                    <Users className="h-3 w-3" /> {r.member_count} member{r.member_count === 1 ? "" : "s"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { setEditingId(r.id); setShowModal(true); }}
-                    className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-semibold"
-                  >
-                    <Pencil className="h-3 w-3" /> Edit
-                  </button>
-                  <button
-                    onClick={() => removeRole(r.id)}
-                    className="inline-flex items-center gap-1 rounded-md border border-destructive/30 text-destructive px-3 py-1.5 text-xs font-semibold"
-                  >
-                    <Trash2 className="h-3 w-3" /> Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        ))}
       </div>
 
       {/* Create login for a custom role */}
       <div className="rounded-xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-bold text-foreground inline-flex items-center gap-1.5">
-            <UserPlus className="h-4 w-4 text-primary" /> Create login for a role
+            <UserPlus className="h-4 w-4 text-primary" /> Create admin login for a role
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Add a new admin login and assign one of your custom roles. They will only see the tabs/actions you allowed.
+            Add a new admin login and assign one of your admin-portal roles. They will only see the tabs/actions you allowed.
           </p>
         </div>
         <div className="p-4 space-y-2">
           <div className="grid gap-2 md:grid-cols-2">
             <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Full name" className="rounded-md border border-border bg-background px-3 py-2 text-sm" />
             <select value={newCustomRoleId} onChange={(e) => setNewCustomRoleId(e.target.value)} className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-              <option value="">— Assign a custom role —</option>
-              {roles.map((r) => (
+              <option value="">— Assign an admin role —</option>
+              {adminRoles.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </select>
@@ -239,14 +297,14 @@ const AdminRolesPage = () => {
           </div>
           <button
             onClick={createLogin}
-            disabled={creating || roles.length === 0}
+            disabled={creating || adminRoles.length === 0}
             className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
             Create login
           </button>
-          {roles.length === 0 && (
-            <p className="text-[11px] text-muted-foreground">Create a role first, then add admin logins for it.</p>
+          {adminRoles.length === 0 && (
+            <p className="text-[11px] text-muted-foreground">Create an admin-portal role first, then add logins for it.</p>
           )}
         </div>
       </div>
@@ -256,7 +314,7 @@ const AdminRolesPage = () => {
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-bold text-foreground">Assign roles to admins</p>
           <p className="text-[11px] text-muted-foreground">
-            Pick a custom role for each admin. Super Admins always have full access.
+            Pick an admin-portal role for each admin. Super Admins always have full access.
           </p>
         </div>
         {admins.length === 0 ? (
@@ -283,13 +341,49 @@ const AdminRolesPage = () => {
                     title={isSuperRow ? "Super Admins always have full access" : ""}
                   >
                     <option value="">— No custom role —</option>
-                    {roles.map((r) => (
+                    {adminRoles.map((r) => (
                       <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                   </select>
                 </li>
               );
             })}
+          </ul>
+        )}
+      </div>
+
+      {/* Assign centre roles to centre staff */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <p className="text-sm font-bold text-foreground">Assign roles to centre staff</p>
+          <p className="text-[11px] text-muted-foreground">
+            Pick a centre-portal role for each centre staff member. Staff with no custom role have full access to their centre.
+          </p>
+        </div>
+        {centreStaff.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">No centre staff yet.</div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {centreStaff.map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="font-bold text-foreground truncate">
+                    {s.full_name || s.user_id.slice(0, 8)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">{s.centre_label ?? s.centre_id}</p>
+                </div>
+                <select
+                  value={s.custom_role_id ?? ""}
+                  onChange={(e) => assignToCentreStaff(s.user_id, e.target.value || null)}
+                  className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+                >
+                  <option value="">— No custom role (full access) —</option>
+                  {centreRoles.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </li>
+            ))}
           </ul>
         )}
       </div>

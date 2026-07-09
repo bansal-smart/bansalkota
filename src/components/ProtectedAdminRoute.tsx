@@ -3,18 +3,19 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 /**
- * Guards admin/staff-only routes (everything under /admin/*).
+ * Guards admin/staff/centre-staff routes (everything under /admin/*).
  *
  * Behaviour:
  * - Not signed in → redirect to /admin/login (preserving the original destination).
- * - Signed in but not staff/admin → redirect to the user's correct portal home.
- * - Signed in as staff/admin → render the route.
+ * - Signed in but not staff/center_admin → redirect to the user's correct portal home.
+ * - Signed in as staff or center_admin → render the route (AdminLayout's nav
+ *   filters what a center_admin actually sees; RLS bounds what they can do).
  *
  * The role check is verified server-side via the `has_role` RPC, so a non-staff
  * user cannot grant themselves admin access by editing local state or URLs.
  */
 const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, role, isStaff, roleReady, loading } = useAuth();
+  const { session, role, isStaff, isCenterAdmin, roleReady, loading } = useAuth();
   const location = useLocation();
 
   if (loading || (session && !roleReady)) {
@@ -29,17 +30,9 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  if (!isStaff) {
-    // Non-staff: bounce to their correct portal home.
-    const home =
-      role === "teacher"
-        ? "/teacher/dashboard"
-        : role === "mentor"
-          ? "/mentor/dashboard"
-          : role === "center_admin"
-            ? "/center"
-            : "/dashboard";
-    return <Navigate to={home} replace />;
+  if (!isStaff && !isCenterAdmin) {
+    // Neither staff nor centre admin: bounce to their correct portal home.
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

@@ -14,6 +14,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { uploadImageToS3 } from "@/lib/s3Upload";
 import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { resolveContentOwnership } from "@/lib/centreOwnership";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
@@ -25,7 +27,6 @@ import { syncTestStats } from "@/lib/tests/syncTestStats";
 import MathRenderer from "@/components/MathRenderer";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatTestDate } from "@/lib/utils";
-import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -134,7 +135,8 @@ const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boole
 
 const CreateTestPage = () => {
   const { exams: examList } = useExams();
-  const { user } = useAuth();
+  const { user, isCenterAdmin } = useAuth();
+  const { primaryCenterId } = useCenterAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ testId?: string; slug?: string }>();
@@ -143,7 +145,6 @@ const CreateTestPage = () => {
 
   const isAdminContext = location.pathname.startsWith("/admin");
   const isCenterContext = location.pathname.startsWith("/center");
-  const { primaryCenterId } = useCenterAdmin();
   const isEditMode = Boolean(slugParam || testIdParam);
 
   const [title, setTitle] = useState("");
@@ -526,6 +527,7 @@ const CreateTestPage = () => {
 
     setSubmitting(true);
     const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+    const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
     const { data: test, error } = await supabase
       .from("tests")
       .insert({
@@ -547,6 +549,7 @@ const CreateTestPage = () => {
         cbt_enabled: testMode === "cbt",
         cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
         ...buildSchedulePayload(),
+        ...ownership,
         slug,
         created_by: user.id,
         ...(isCenterContext ? { centre_id: primaryCenterId } : {}),
@@ -788,9 +791,10 @@ const CreateTestPage = () => {
       await supabase.from("test_questions").delete().eq("test_id", resolvedTestId);
     } else {
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+      const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
       const { data: test, error } = await supabase
         .from("tests")
-        .insert({ ...basePayload, slug, created_by: user.id, ...(isCenterContext ? { centre_id: primaryCenterId } : {}) })
+        .insert({ ...basePayload, ...ownership, slug, created_by: user.id })
         .select("id")
         .single();
       if (error || !test) {

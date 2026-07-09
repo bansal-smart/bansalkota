@@ -24,7 +24,7 @@ import { setPendingEnrollment } from "@/lib/pendingEnrollment";
 
 type Centre = { id: string; name: string };
 
-type Course = { id: string; name: string; price: number | string };
+type Course = { id: string; name: string; price: number | string; centreId?: string };
 
 interface Props {
   open: boolean;
@@ -93,7 +93,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     (async () => {
       setSubmitting(true);
       try {
-        await startCashfreeCheckout({ orderType: "course", courseId: course.id });
+        await startCashfreeCheckout({ orderType: "course", courseId: course.id, centreId: course.centreId });
       } catch (e: any) {
         if (!cancelled) toast.error(e?.message || "Could not start payment");
       } finally {
@@ -156,6 +156,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
         courseName: course.name,
         coursePrice: Number(course.price),
         createdAt: Date.now(),
+        centreId: course.centreId,
       });
       toast.success("Enquiry saved! Verify your mobile number to continue to payment.");
       onOpenChange(false);

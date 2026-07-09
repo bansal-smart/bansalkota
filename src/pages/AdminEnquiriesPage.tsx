@@ -75,6 +75,9 @@ const AdminEnquiriesPage = () => {
       supabase
         .from("enquiries")
         .select("*, centre:centres(id, city, area, slug)")
+        // Centre Support tickets have their own dedicated tab (AdminCenterSupportPage)
+        // — exclude them here so they never show up twice.
+        .neq("source", "center_support")
         .order("created_at", { ascending: false }),
       supabase.from("centres").select("id, city, area, slug").order("city"),
     ]);

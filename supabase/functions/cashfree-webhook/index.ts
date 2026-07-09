@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
 
   // Fetch order + items + user
   const { data: order } = await admin
-    .from("orders").select("id, user_id, total, currency, status").eq("id", orderId).maybeSingle();
+    .from("orders").select("id, user_id, total, currency, status, resolved_centre_id, resolved_offering_id").eq("id", orderId).maybeSingle();
   if (!order) {
     console.warn("Order not found", orderId);
     return new Response("ok", { status: 200 });
@@ -132,6 +132,8 @@ Deno.serve(async (req) => {
           course_id: it.item_id,
           is_active: true,
           last_accessed_at: new Date().toISOString(),
+          centre_id: order.resolved_centre_id ?? null,
+          offering_id: order.resolved_offering_id ?? null,
         }, { onConflict: "user_id,course_id" });
       }
       await admin.from("notifications").insert({

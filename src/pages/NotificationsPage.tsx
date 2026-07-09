@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell, CheckCheck, Archive, MessageCircle, Calendar, CreditCard, Sparkles, BookOpen } from "lucide-react";
+import { Bell, CheckCheck, Archive, Calendar, CreditCard, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
@@ -13,15 +13,11 @@ import { format, isThisWeek, isToday, isYesterday } from "date-fns";
 const TYPE_FILTERS = [
   { id: "all", label: "All" },
   { id: "unread", label: "Unread" },
-  { id: "mentor", label: "Mentor" },
-  { id: "doubt", label: "Doubts" },
   { id: "live_class", label: "Classes" },
   { id: "course", label: "Courses" },
 ] as const;
 
 const iconForType = (type: string) => {
-  if (type.includes("mentor")) return MessageCircle;
-  if (type.includes("doubt")) return Sparkles;
   if (type.includes("live")) return Calendar;
   if (type.includes("payment") || type.includes("course")) return CreditCard;
   return BookOpen;

@@ -57,7 +57,14 @@ Deno.serve(async (req) => {
 
     const full_name = String(body?.full_name ?? "").trim();
     const phone = body?.phone ? String(body.phone).trim() : null;
-    const roll_number = body?.roll_number ? String(body.roll_number).trim() : null;
+    let roll_number = body?.roll_number ? String(body.roll_number).trim() : null;
+
+    // Auto-assign a roll number for franchise centres when none is provided.
+    // HQ (Kota) keeps manual rolls (assign_roll_number returns NULL for HQ).
+    if (!roll_number) {
+      const { data: gen } = await admin.rpc("assign_roll_number", { _centre_id: centre_id });
+      if (gen) roll_number = gen as string;
+    }
     const class_level = body?.class_level ? String(body.class_level).trim() : null;
     const target_exam = body?.target_exam ? String(body.target_exam).trim() : null;
     const city = body?.city ? String(body.city).trim() : null;

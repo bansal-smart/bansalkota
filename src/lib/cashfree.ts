@@ -26,7 +26,9 @@ function loadSdk(): Promise<void> {
 
 type StartPaymentArgs =
   | { orderType: "cart"; items: Array<{ type: "book" | "pack"; id: string; quantity: number }>; shipping: any }
-  | { orderType: "course"; courseId: string; enquiryId?: string }
+  // centreId is a hint for resolving a centre-offering price — the server
+  // re-resolves and validates it against course_offerings, never trusts it.
+  | { orderType: "course"; courseId: string; enquiryId?: string; centreId?: string }
   | { orderType: "test_series"; testSeriesId: string };
 
 export async function startCashfreeCheckout(args: StartPaymentArgs) {

@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
 
         // Enrollment
         await admin.from("enrollments").upsert(
-          { user_id: userId, course_id: courseId, is_active: true },
+          { user_id: userId, course_id: courseId, is_active: true, centre_id: centerId },
           { onConflict: "user_id,course_id" },
         );
 

@@ -10,8 +10,6 @@ import { useAdminUsers, type AdminUserRow } from "@/hooks/useAdminUsers";
 const roleBadge = (role: string) => {
   const styles: Record<string, string> = {
     student: "bg-secondary/10 text-secondary",
-    teacher: "bg-primary/10 text-primary",
-    mentor: "bg-secondary/15 text-secondary",
     center_admin: "bg-orange-100 text-orange-700",
     admin: "bg-accent/20 text-accent",
     super_admin: "bg-destructive/10 text-destructive",
@@ -43,10 +41,8 @@ const exportCsv = (rows: AdminUserRow[]) => {
 
 const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
   student: "Can access their own dashboard, courses, tests, and progress only.",
-  teacher: "Goes live on scheduled classes, uploads notes PDFs, and resolves doubts assigned to their courses.",
-  mentor: "Chats 1:1 and in groups with assigned students; views their performance read-only.",
   center_admin: "Manages the assigned centre panel, centre page content, banners, local enquiries, and offline centre operations.",
-  admin: "Manages courses, live classes, mentors, students, and content moderation.",
+  admin: "Manages courses, live classes, students, and content moderation.",
   super_admin: "Highest privilege — everything admin can do, plus revenue, refunds, platform settings and admin account creation.",
 };
 
@@ -254,7 +250,7 @@ const AdminUsersPage = () => {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["all", "student", "teacher", "mentor", "admin"].map((f) => (
+          {["all", "student", "center_admin", "admin"].map((f) => (
             <button
               key={f}
               onClick={() => {
@@ -360,7 +356,7 @@ const AdminUsersPage = () => {
                 </p>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">Change role to</p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {(["student", "teacher", "mentor", "center_admin", "admin", "super_admin"] as const).map((r) => {
+                  {(["student", "center_admin", "admin", "super_admin"] as const).map((r) => {
                     const isCurrent = drawerUser.role === r;
                     const label = r === "super_admin" ? "Super Admin" : r;
                     return (

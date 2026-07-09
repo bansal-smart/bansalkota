@@ -120,6 +120,12 @@ Deno.serve(async (req) => {
       }
 
 
+      // Block login if the user's centre (as student or staff) is suspended.
+      const { data: suspended } = await supabase.rpc("is_centre_suspended_for_user", { _user_id: userId });
+      if (suspended) {
+        return new Response(JSON.stringify({ error: "This centre is currently suspended. Please contact Bansal HQ." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
       // Mint a magic link the client will exchange.
       const { data: link, error: linkErr } = await supabase.auth.admin.generateLink({
         type: "magiclink",

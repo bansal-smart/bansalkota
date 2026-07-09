@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Briefcase, GraduationCap, Users, ArrowRight, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,10 +33,23 @@ const positions = [
 const subjects = ["Physics", "Chemistry (Organic)", "Chemistry (Inorganic)", "Chemistry (Physical)", "Mathematics", "Biology", "Other"];
 const nonAcademicDepartments = ["HR", "IT", "Accounts", "Marketing", "Operations", "Others"];
 
+type CentreOption = { id: string; city: string; area: string | null };
+
 const CareerPage = () => {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", position: "", subject: "", experience: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", position: "", subject: "", experience: "", message: "", preferred_centre_id: "" });
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [centres, setCentres] = useState<CentreOption[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("centres")
+      .select("id, city, area")
+      .eq("is_published", true)
+      .eq("is_suspended", false)
+      .order("city")
+      .then(({ data }) => setCentres((data ?? []) as CentreOption[]));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +73,8 @@ const CareerPage = () => {
       phone: form.phone,
       message: messageBody,
       source: "other",
+      category: "career",
+      centre_id: form.preferred_centre_id || null,
       region: "india",
     });
     setSubmitting(false);
@@ -196,6 +211,20 @@ const CareerPage = () => {
                   <Label htmlFor="exp">Experience (years)</Label>
                   <Input id="exp" type="number" min="0" max="50" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} />
                 </div>
+              </div>
+
+              <div>
+                <Label>Preferred centre</Label>
+                <Select value={form.preferred_centre_id} onValueChange={(v) => setForm({ ...form, preferred_centre_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select a centre (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    {centres.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

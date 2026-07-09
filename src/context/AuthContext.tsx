@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import { useSingleDeviceLogin } from "@/hooks/useSingleDeviceLogin";
 import { SessionKickedModal } from "@/components/SessionKickedModal";
+import { toast } from "sonner";
 
-export type UserRole = "student" | "teacher" | "mentor" | "center_admin" | "admin" | "super_admin";
+export type UserRole = "student" | "center_admin" | "admin" | "super_admin";
 
 interface AuthContextValue {
   session: Session | null;
@@ -19,10 +20,6 @@ interface AuthContextValue {
   isSuperAdmin: boolean;
   /** True if the user is an admin (but not super_admin). */
   isAdmin: boolean;
-  /** True if the user has the 'teacher' role. */
-  isTeacher: boolean;
-  /** True if the user has the 'mentor' role. */
-  isMentor: boolean;
   /** True if the user has the 'center_admin' role (manages a Bansal centre). */
   isCenterAdmin: boolean;
   /** True if the user has no elevated role (default student). */
@@ -63,8 +60,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isSuperAdmin = role === "super_admin";
   const isAdmin = role === "admin";
   const isStaff = role === "admin" || role === "super_admin";
-  const isTeacher = role === "teacher";
-  const isMentor = role === "mentor";
   const isCenterAdmin = role === "center_admin";
   const isStudent = role === "student";
 
@@ -84,17 +79,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   const resolveRoleFromServer = useCallback(async (userId: string): Promise<UserRole> => {
     try {
-      const [superRes, adminRes, teacherRes, mentorRes, centerRes] = await Promise.all([
+      const [superRes, adminRes, centerRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
-        supabase.rpc("has_role", { _user_id: userId, _role: "teacher" }),
-        supabase.rpc("has_role", { _user_id: userId, _role: "mentor" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "center_admin" as any }),
       ]);
       if (superRes.data) return "super_admin";
       if (adminRes.data) return "admin";
-      if (teacherRes.data) return "teacher";
-      if (mentorRes.data) return "mentor";
       if (centerRes.data) return "center_admin";
       return "student";
     } catch (err) {
@@ -106,8 +97,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const roles = (data ?? []).map((r) => r.role as UserRole);
       if (roles.includes("super_admin")) return "super_admin";
       if (roles.includes("admin")) return "admin";
-      if (roles.includes("teacher")) return "teacher";
-      if (roles.includes("mentor")) return "mentor";
       if (roles.includes("center_admin")) return "center_admin";
       return "student";
     }
@@ -158,6 +147,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Kick a live session if the user's centre has been suspended mid-session.
+  const enforceCentreSuspension = useCallback(async (userId: string) => {
+    const { data: suspended } = await supabase.rpc("is_centre_suspended_for_user", { _user_id: userId });
+    if (suspended) {
+      await supabase.auth.signOut();
+      setStoreUser(null);
+      toast.error("This centre has been suspended. Please contact Bansal HQ.");
+      return true;
+    }
+    return false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const refreshRole = useCallback(async () => {
     const { data: { user: u } } = await supabase.auth.getUser();
     if (!u) {
@@ -183,8 +185,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (newSession?.user) {
         setRoleReady(false);
         setTimeout(() => {
-          checkRole(newSession.user.id);
-          loadProfile(newSession.user);
+          enforceCentreSuspension(newSession.user.id).then((kicked) => {
+            if (kicked) return;
+            checkRole(newSession.user.id);
+            loadProfile(newSession.user);
+          });
         }, 0);
       } else {
         lastRoleUserId.current = null;
@@ -197,9 +202,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session: existing } }) => {
       setSession(existing);
       if (existing?.user) {
-        Promise.all([checkRole(existing.user.id), loadProfile(existing.user)]).finally(() =>
-          setLoading(false),
-        );
+        enforceCentreSuspension(existing.user.id).then((kicked) => {
+          if (kicked) { setLoading(false); return; }
+          Promise.all([checkRole(existing.user.id), loadProfile(existing.user)]).finally(() =>
+            setLoading(false),
+          );
+        });
       } else {
         setRoleReady(true);
         setLoading(false);
@@ -224,6 +232,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await supabase.auth.signOut();
         return { error: "Your account has been blocked. Please contact a super admin." };
       }
+      // Block if the user's centre (student or staff) is suspended.
+      const { data: centreSuspended } = await supabase.rpc("is_centre_suspended_for_user", {
+        _user_id: data.user.id,
+      });
+      if (centreSuspended) {
+        await supabase.auth.signOut();
+        return { error: "This centre is currently suspended. Please contact Bansal HQ." };
+      }
       await checkRole(data.user.id);
     }
     return { error: null };
@@ -242,8 +258,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isStaff,
         isSuperAdmin,
         isAdmin,
-        isTeacher,
-        isMentor,
         isCenterAdmin,
         isStudent,
         role,

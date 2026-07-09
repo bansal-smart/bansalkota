@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     if (!order_id) return json({ error: "order_id required" }, 400);
 
     const { data: order } = await admin
-      .from("orders").select("id, user_id, status, total").eq("id", order_id).maybeSingle();
+      .from("orders").select("id, user_id, status, total, resolved_centre_id, resolved_offering_id").eq("id", order_id).maybeSingle();
     if (!order || order.user_id !== userData.user.id) return json({ error: "Order not found" }, 404);
 
     // Fast path: already paid in DB
@@ -53,9 +53,18 @@ Deno.serve(async (req) => {
         .from("order_items").select("item_type, item_id, item_title").eq("order_id", order.id);
       for (const it of items || []) {
         if (it.item_type === "course") {
+          // Course validity: access expires at course.end_date (if set).
+          const { data: course } = await admin
+            .from("courses").select("end_date").eq("id", it.item_id).maybeSingle();
+          const expiresAt = course?.end_date
+            ? new Date(`${course.end_date}T23:59:59Z`).toISOString()
+            : null;
           await admin.from("enrollments").upsert({
             user_id: order.user_id, course_id: it.item_id, is_active: true,
+            expires_at: expiresAt,
             last_accessed_at: new Date().toISOString(),
+            centre_id: order.resolved_centre_id ?? null,
+            offering_id: order.resolved_offering_id ?? null,
           }, { onConflict: "user_id,course_id" });
         }
       }
