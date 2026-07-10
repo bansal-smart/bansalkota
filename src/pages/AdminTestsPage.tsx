@@ -62,7 +62,6 @@ const AdminTestsPage = () => {
         .select(
           "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
         )
-        .is("centre_id", null)
         .order("created_at", { ascending: false }),
       supabase.from("course_batches").select("id, name").order("name"),
     ]);
