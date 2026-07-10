@@ -1,6 +1,24 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__apify__call-actor",
+      "mcp__apify__fetch-actor-details",
+      "mcp__apify__get-dataset-items",
+      "Bash(py --version)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(where chrome.exe)",
+      "Bash(where msedge.exe)",
+      "Bash(where wkhtmltopdf *)",
+      "Bash(where pandoc *)",
+      "Bash(node -e \"const {chromium} = require\\('playwright'\\); console.log\\('playwright module resolved'\\)\")",
+      "Bash(npx playwright *)",
+      "Bash(node *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\ADMIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Bansal-bansalkota\\\\f6c20955-08be-43d1-a863-56d9a6ab3779\\\\scratchpad\")",
+      "Bash(cp \"C:\\\\Users\\\\ADMIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Bansal-bansalkota\\\\75bb0c13-3d82-42ee-897a-d41683d4dd17\\\\scratchpad\\\\allen_digital_all_employees.csv\" \"C:\\\\Users\\\\ADMIN\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Bansal-bansalkota\\\\f6c20955-08be-43d1-a863-56d9a6ab3779\\\\scratchpad\\\\allen_digital_all_employees.csv\")",
+      "Bash(python -c ' *)"
+    ]
+  },
   "enabledMcpjsonServers": [
     "supabase"
   ]
 }
- 

@@ -1,32 +1,68 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Loader2, Copy, ShieldCheck, Monitor, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CBT_KIOSK_URL } from "@/lib/brand";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
-type Batch = { id: string; code: string; name: string };
+type Batch = { id: string; code: string; name: string; centre_id?: string | null };
 
 type Props = { testId: string };
 
 const CbtSettingsPanel = ({ testId }: Props) => {
+  const { isCenterAdmin } = useAuth();
+  const { primaryCenterId } = useCenterAdmin();
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"digital" | "cbt">("digital");
   const [allowed, setAllowed] = useState<string[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [saving, setSaving] = useState(false);
+  const [selectedCentreId, setSelectedCentreId] = useState<string>("all");
+  const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: t }, { data: bs }] = await Promise.all([
+    const [{ data: t }, { data: bs }, { data: cs }] = await Promise.all([
       supabase.from("tests").select("test_mode, cbt_allowed_batch_ids").eq("id", testId).maybeSingle(),
-      supabase.from("course_batches").select("id, code, name").order("code"),
+      supabase.from("course_batches").select("id, code, name, centre_id").order("code"),
+      supabase.from("centres").select("id, city, area, is_hq").eq("is_published", true).eq("is_suspended", false).order("city"),
     ]);
     const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null } | null;
     setMode(row?.test_mode === "cbt" ? "cbt" : "digital");
     setAllowed(row?.cbt_allowed_batch_ids ?? []);
     setBatches((bs ?? []) as Batch[]);
+    setCentres((cs ?? []) as any[]);
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (isCenterAdmin && primaryCenterId) {
+      setSelectedCentreId(primaryCenterId);
+    }
+  }, [isCenterAdmin, primaryCenterId]);
+
+  const filteredBatches = useMemo(() => {
+    if (isCenterAdmin && primaryCenterId) {
+      return batches.filter((b) => b.centre_id === primaryCenterId);
+    }
+    if (selectedCentreId === "all") {
+      return batches;
+    }
+    if (selectedCentreId === "global") {
+      return batches.filter((b) => !b.centre_id);
+    }
+    return batches.filter((b) => b.centre_id === selectedCentreId);
+  }, [batches, selectedCentreId, isCenterAdmin, primaryCenterId]);
+
+  const getBatchDisplayLabel = useCallback((batchId: string) => {
+    const batch = batches.find((b) => b.id === batchId);
+    if (!batch) return "";
+    if (!batch.centre_id) return `${batch.code} (Global)`;
+    const centre = centres.find((c) => c.id === batch.centre_id);
+    if (!centre) return `${batch.code}`;
+    return `${batch.code} (${centre.city}${centre.area ? ` - ${centre.area}` : ""})`;
+  }, [batches, centres]);
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [testId]);
 
@@ -89,21 +125,82 @@ const CbtSettingsPanel = ({ testId }: Props) => {
             <p className="mt-3 text-[11px] text-muted-foreground">Open this on lab computers in kiosk mode. Students sign in with Roll No + Mobile and will see this test if it's live and their batch is allowed.</p>
           </div>
 
-          <div>
-            <p className="text-xs font-semibold text-foreground mb-2">Allowed batches <span className="text-muted-foreground font-normal">({allowed.length === 0 ? "open to all batches" : `${allowed.length} selected`})</span></p>
-            <div className="flex flex-wrap gap-2">
-              {batches.length === 0 && <p className="text-xs text-muted-foreground">No batches yet — create them on the Batches page first.</p>}
-              {batches.map((b) => {
-                const sel = allowed.includes(b.id);
-                return (
-                  <button key={b.id} onClick={() => toggleBatch(b.id)} disabled={saving}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold border transition ${
-                      sel ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border text-foreground hover:bg-muted"
-                    } disabled:opacity-60`}>
-                    {b.code}
-                  </button>
-                );
-              })}
+          <div className="space-y-3">
+            {/* Selected Batches badges */}
+            {allowed.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Selected Batches</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {allowed.map((id) => {
+                    const label = getBatchDisplayLabel(id);
+                    if (!label) return null;
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[11px] font-semibold text-primary"
+                      >
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => toggleBatch(id)}
+                          className="hover:text-destructive text-muted-foreground font-bold ml-1 text-xs"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Centre Filter dropdown */}
+            {!isCenterAdmin && (
+              <div>
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Filter by Centre</label>
+                <select
+                  value={selectedCentreId}
+                  onChange={(e) => setSelectedCentreId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                >
+                  <option value="all">All Centres (Shows all batches - may repeat)</option>
+                  <option value="global">Global / HQ (No Centre)</option>
+                  {centres.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.city}{c.area ? ` (${c.area})` : ""}{c.is_hq ? " (HQ)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5">
+                {isCenterAdmin ? "Allowed batches" : "Select batches below"} <span className="text-muted-foreground font-normal">({allowed.length === 0 ? "open to all batches" : `${allowed.length} selected`})</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1 border border-border bg-background rounded-lg">
+                {filteredBatches.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground p-1">No batches found for this selection.</p>
+                )}
+                {filteredBatches.map((b) => {
+                  const sel = allowed.includes(b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => toggleBatch(b.id)}
+                      disabled={saving}
+                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${
+                        sel
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border text-foreground hover:bg-muted"
+                      }`}
+                      title={getBatchDisplayLabel(b.id)}
+                    >
+                      {b.code}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </>
