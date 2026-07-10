@@ -18,7 +18,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
   const [allowed, setAllowed] = useState<string[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [saving, setSaving] = useState(false);
-  const [selectedCentreId, setSelectedCentreId] = useState<string>("all");
+  const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
   const [testCentreId, setTestCentreId] = useState<string | null>(null);
 
@@ -51,11 +51,8 @@ const CbtSettingsPanel = ({ testId }: Props) => {
     if (isCenterAdmin && primaryCenterId) {
       return batches.filter((b) => b.centre_id === primaryCenterId);
     }
-    if (selectedCentreId === "all") {
-      return batches;
-    }
-    if (selectedCentreId === "global") {
-      return batches.filter((b) => !b.centre_id);
+    if (!selectedCentreId) {
+      return [];
     }
     return batches.filter((b) => b.centre_id === selectedCentreId);
   }, [batches, selectedCentreId, isCenterAdmin, primaryCenterId]);
@@ -168,8 +165,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
                   onChange={(e) => setSelectedCentreId(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 >
-                  <option value="all">All Centres (Shows all batches - may repeat)</option>
-                  <option value="global">Global / HQ (No Centre)</option>
+                  <option value="">Select a Centre...</option>
                   {centres.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.city}{c.area ? ` (${c.area})` : ""}{c.is_hq ? " (HQ)" : ""}
@@ -184,27 +180,30 @@ const CbtSettingsPanel = ({ testId }: Props) => {
                 {isCenterAdmin ? "Allowed batches" : "Select batches below"} <span className="text-muted-foreground font-normal">({allowed.length === 0 ? "open to all batches" : `${allowed.length} selected`})</span>
               </p>
               <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1 border border-border bg-background rounded-lg">
-                {filteredBatches.length === 0 && (
+                {!selectedCentreId && !isCenterAdmin ? (
+                  <p className="text-[11px] text-muted-foreground p-1">Please select a centre above to view its batches.</p>
+                ) : filteredBatches.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground p-1">No batches found for this selection.</p>
+                ) : (
+                  filteredBatches.map((b) => {
+                    const sel = allowed.includes(b.id);
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={() => toggleBatch(b.id)}
+                        disabled={saving}
+                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${
+                          sel
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background border-border text-foreground hover:bg-muted"
+                        }`}
+                        title={getBatchDisplayLabel(b.id)}
+                      >
+                        {b.code}
+                      </button>
+                    );
+                  })
                 )}
-                {filteredBatches.map((b) => {
-                  const sel = allowed.includes(b.id);
-                  return (
-                    <button
-                      key={b.id}
-                      onClick={() => toggleBatch(b.id)}
-                      disabled={saving}
-                      className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${
-                        sel
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background border-border text-foreground hover:bg-muted"
-                      }`}
-                      title={getBatchDisplayLabel(b.id)}
-                    >
-                      {b.code}
-                    </button>
-                  );
-                })}
               </div>
             </div>
           </div>
