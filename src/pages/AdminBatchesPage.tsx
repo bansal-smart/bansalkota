@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { CBT_KIOSK_URL, SECRET_ADMIN_URL } from "@/lib/brand";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 type CourseRow = { id: string; name: string; slug: string };
 type BatchRow = {
@@ -19,6 +21,9 @@ type BatchRow = {
 const CLASS_OPTIONS = ["VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"];
 
 const AdminBatchesPage = () => {
+  const { isStaff, isSuperAdmin } = useAuth();
+  const { isHq } = useCenterAdmin();
+  const canManageBatches = isStaff || isHq;
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
@@ -136,49 +141,53 @@ const AdminBatchesPage = () => {
         <p className="mt-3 text-[11px] text-muted-foreground">Open this URL on lab computers in kiosk mode. Students log in with their roll number + mobile and see every live CBT test for their batch.</p>
       </div>
 
-      <div className="rounded-2xl border border-bansal-navy/30 bg-bansal-navy/5 p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <Globe className="h-4 w-4 text-bansal-navy" />
-          <p className="text-xs font-bold uppercase tracking-wider text-bansal-navy">Secret Admin URL · super_admin only</p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <p className="text-lg font-bold text-foreground truncate">{SECRET_ADMIN_URL}</p>
-            <p className="text-[10px] text-muted-foreground">Hidden command-centre entry — not linked anywhere public.</p>
+      {isSuperAdmin && (
+        <div className="rounded-2xl border border-bansal-navy/30 bg-bansal-navy/5 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Globe className="h-4 w-4 text-bansal-navy" />
+            <p className="text-xs font-bold uppercase tracking-wider text-bansal-navy">Secret Admin URL · super_admin only</p>
           </div>
-          <button
-            onClick={() => { navigator.clipboard.writeText(SECRET_ADMIN_URL); toast.success("Secret URL copied"); }}
-            className="rounded-lg bg-bansal-navy px-3 py-2 text-xs font-bold text-white hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
-            <Copy className="h-3.5 w-3.5" /> Copy
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-bold text-foreground truncate">{SECRET_ADMIN_URL}</p>
+              <p className="text-[10px] text-muted-foreground">Hidden command-centre entry — not linked anywhere public.</p>
+            </div>
+            <button
+              onClick={() => { navigator.clipboard.writeText(SECRET_ADMIN_URL); toast.success("Secret URL copied"); }}
+              className="rounded-lg bg-bansal-navy px-3 py-2 text-xs font-bold text-white hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-sm font-bold text-foreground mb-3">Add a new batch</p>
-        <div className="grid md:grid-cols-5 gap-3">
-          <select
-            value={form.courseId}
-            onChange={(e) => setForm({ ...form, courseId: e.target.value })}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Course…</option>
-            {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
-            placeholder="Code e.g. XI-J1" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Display name (optional)" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <select value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            {CLASS_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <button onClick={createBatch}
-            className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground inline-flex items-center justify-center gap-1 hover:opacity-90">
-            <Plus className="h-3.5 w-3.5" /> Create batch
-          </button>
+      {canManageBatches && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-sm font-bold text-foreground mb-3">Add a new batch</p>
+          <div className="grid md:grid-cols-5 gap-3">
+            <select
+              value={form.courseId}
+              onChange={(e) => setForm({ ...form, courseId: e.target.value })}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Course…</option>
+              {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })}
+              placeholder="Code e.g. XI-J1" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Display name (optional)" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+            <select value={form.class_level} onChange={(e) => setForm({ ...form, class_level: e.target.value })}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              {CLASS_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <button onClick={createBatch}
+              className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground inline-flex items-center justify-center gap-1 hover:opacity-90">
+              <Plus className="h-3.5 w-3.5" /> Create batch
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {loading ? (
         <div className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
@@ -215,14 +224,16 @@ const AdminBatchesPage = () => {
                       </td>
                       <td className="px-4 py-2"><span className="inline-flex items-center gap-1 text-xs"><Users className="h-3 w-3" /> {studentCounts[b.id] ?? 0}</span></td>
                       <td className="px-4 py-2 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <button onClick={() => setEditing(b)} title="Edit batch" className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button onClick={() => deleteBatch(b.id)} title="Delete batch" className="rounded p-1.5 text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                        {canManageBatches && (
+                          <div className="inline-flex items-center gap-1">
+                            <button onClick={() => setEditing(b)} title="Edit batch" className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => deleteBatch(b.id)} title="Delete batch" className="rounded p-1.5 text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -241,12 +252,16 @@ const AdminBatchesPage = () => {
                       <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
                       <td className="px-4 py-2">{b.name}</td>
                       <td className="px-4 py-2 text-right">
-                        <button onClick={() => setEditing(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button onClick={() => deleteBatch(b.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10 ml-1">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {canManageBatches && (
+                          <>
+                            <button onClick={() => setEditing(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => deleteBatch(b.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10 ml-1">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}

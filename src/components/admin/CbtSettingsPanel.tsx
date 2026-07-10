@@ -17,11 +17,17 @@ const CbtSettingsPanel = ({ testId }: Props) => {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: t }, { data: bs }] = await Promise.all([
-      supabase.from("tests").select("test_mode, cbt_allowed_batch_ids").eq("id", testId).maybeSingle(),
-      supabase.from("course_batches").select("id, code, name").order("code"),
-    ]);
-    const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null } | null;
+    const { data: t } = await supabase
+      .from("tests")
+      .select("test_mode, cbt_allowed_batch_ids, centre_id")
+      .eq("id", testId)
+      .maybeSingle();
+    const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null; centre_id: string | null } | null;
+    // course_batches codes (e.g. XI-J) repeat identically across every
+    // franchise centre, so scope the picker to this test's own centre.
+    let bq = supabase.from("course_batches").select("id, code, name").order("code");
+    if (row?.centre_id) bq = bq.eq("centre_id", row.centre_id);
+    const { data: bs } = await bq;
     setMode(row?.test_mode === "cbt" ? "cbt" : "digital");
     setAllowed(row?.cbt_allowed_batch_ids ?? []);
     setBatches((bs ?? []) as Batch[]);

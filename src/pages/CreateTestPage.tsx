@@ -202,13 +202,18 @@ const CreateTestPage = () => {
     return () => { ignore = true; };
   }, [user, isAdminContext]);
 
-  // Load all batches for CBT batch picker
+  // Load batches for the CBT batch picker, scoped to this test's owning
+  // centre — course_batches codes (e.g. XI-J, XI-N) repeat identically across
+  // every franchise centre, so an unfiltered query pulled in every other
+  // centre's batches too.
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("course_batches").select("id, code, name").order("code");
+      let q = supabase.from("course_batches").select("id, code, name").order("code");
+      if (isCenterAdmin && primaryCenterId) q = q.eq("centre_id", primaryCenterId);
+      const { data } = await q;
       setBatchOptions((data ?? []) as { id: string; code: string; name: string }[]);
     })();
-  }, []);
+  }, [isCenterAdmin, primaryCenterId]);
 
   // Load existing test for edit mode (by slug or id)
   useEffect(() => {
