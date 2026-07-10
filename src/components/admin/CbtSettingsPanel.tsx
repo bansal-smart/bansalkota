@@ -20,19 +20,24 @@ const CbtSettingsPanel = ({ testId }: Props) => {
   const [saving, setSaving] = useState(false);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("all");
   const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
+  const [testCentreId, setTestCentreId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
     const [{ data: t }, { data: bs }, { data: cs }] = await Promise.all([
-      supabase.from("tests").select("test_mode, cbt_allowed_batch_ids").eq("id", testId).maybeSingle(),
+      supabase.from("tests").select("test_mode, cbt_allowed_batch_ids, centre_id").eq("id", testId).maybeSingle(),
       supabase.from("course_batches").select("id, code, name, centre_id").order("code"),
       supabase.from("centres").select("id, city, area, is_hq").eq("is_published", true).eq("is_suspended", false).order("city"),
     ]);
-    const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null } | null;
+    const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null; centre_id: string | null } | null;
     setMode(row?.test_mode === "cbt" ? "cbt" : "digital");
     setAllowed(row?.cbt_allowed_batch_ids ?? []);
     setBatches((bs ?? []) as Batch[]);
     setCentres((cs ?? []) as any[]);
+    setTestCentreId(row?.centre_id ?? null);
+    if (row?.centre_id) {
+      setSelectedCentreId(row.centre_id);
+    }
     setLoading(false);
   };
 
@@ -155,7 +160,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
             )}
 
             {/* Centre Filter dropdown */}
-            {!isCenterAdmin && (
+            {!isCenterAdmin && !testCentreId && (
               <div>
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Filter by Centre</label>
                 <select

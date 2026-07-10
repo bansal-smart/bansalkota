@@ -180,6 +180,7 @@ const CreateTestPage = () => {
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string; centre_id?: string | null }[]>([]);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("all");
   const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
+  const [testCentreId, setTestCentreId] = useState<string | null>(null);
   const [solutionPdfPath, setSolutionPdfPath] = useState<string | null>(null);
   const [solutionPdfUploading, setSolutionPdfUploading] = useState(false);
   // Scheduling — controls when test opens, closes, and results auto-release
@@ -204,7 +205,10 @@ const CreateTestPage = () => {
     return () => { ignore = true; };
   }, [user, isAdminContext]);
 
-  // Load all batches for CBT batch picker
+  // Load batches for the CBT batch picker, scoped to this test's owning
+  // centre — course_batches codes (e.g. XI-J, XI-N) repeat identically across
+  // every franchise centre, so an unfiltered query pulled in every other
+  // centre's batches too.
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("course_batches").select("id, code, name, centre_id").order("code");
@@ -319,6 +323,10 @@ const CreateTestPage = () => {
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
       setSolutionPdfPath((test as { solution_pdf_path?: string | null }).solution_pdf_path ?? null);
+      setTestCentreId((test as any).centre_id ?? null);
+      if ((test as any).centre_id) {
+        setSelectedCentreId((test as any).centre_id);
+      }
       // Load schedule (starts_at / ends_at) into date + time inputs (local TZ).
       const sAt = (test as any).starts_at ? new Date((test as any).starts_at) : null;
       const eAt = (test as any).ends_at ? new Date((test as any).ends_at) : null;
@@ -961,7 +969,7 @@ const CreateTestPage = () => {
               )}
 
               {/* Centre Filter dropdown */}
-              {!isCenterAdmin && (
+              {!isCenterAdmin && !testCentreId && (
                 <div>
                   <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Filter by Centre</label>
                   <select

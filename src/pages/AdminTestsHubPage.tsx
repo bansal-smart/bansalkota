@@ -21,7 +21,7 @@ const fetchHub = async () => {
     testsRes, qBankRes, qByTypeRes, attTodayRes, attWeekRes, attAllRes,
     attRecent, attChart, attLast7, importsRes, profilesRes,
   ] = await Promise.all([
-    supabase.from("tests").select("id, is_published").is("centre_id", null),
+    supabase.from("tests").select("id, is_published"),
     supabase.from("question_bank").select("id, subject"),
     supabase.from("test_questions").select("subject"),
     supabase.from("test_attempts").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
