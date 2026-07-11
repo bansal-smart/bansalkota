@@ -316,13 +316,21 @@ const DocxCommonImportDialog = ({
     toast.success(`Split into ${ranges.length} subjects equally`);
   };
 
+  const OPTION_SLOTS: DocxImage["slot"][] = ["optionA", "optionB", "optionC", "optionD"];
+
   const buildRow = (q: ParsedDocxQuestion, batchId: string) => {
     const stemHtml = replaceMarkersWithUrls(q.stemHtml, q.images);
     const stemImg = firstImageForSlot(q.images, "stem");
     const stemHasInlineImg = /<img\b/i.test(stemHtml);
+    // Options can be image-only (cropped-paper imports) — resolve any inline
+    // image markers to real URLs, and fall back to the option's own image
+    // slot (optionA-D) when the option has no text at all.
+    const resolvedOptions = (q.type === "integer" || q.type === "numerical")
+      ? q.options
+      : q.options.map((o) => ({ ...o, text: replaceMarkersWithUrls(o.text, q.images) }));
     const optionImages = (q.type === "integer" || q.type === "numerical")
       ? []
-      : ["", "", "", ""];
+      : OPTION_SLOTS.map((slot, i) => (resolvedOptions[i]?.text ? "" : firstImageForSlot(q.images, slot) ?? ""));
 
     return {
       subject: q.subject || subjectForNumber(q.number),
@@ -330,7 +338,7 @@ const DocxCommonImportDialog = ({
       question_text: stemHtml || q.stemText,
       question_image_url: stemHasInlineImg ? null : stemImg,
       question_type: q.type,
-      options: q.options,
+      options: resolvedOptions,
       option_images: optionImages,
       match_left: null,
       correct_answer: q.correctAnswer,

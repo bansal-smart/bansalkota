@@ -40,9 +40,19 @@ const CbtLiveTestsPage = () => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/cbt", { replace: true }); return; }
-      // Enforce kiosk users only
-      const isKiosk = user.email?.endsWith("@cbt.bansal.local") || user.email === "it-testing@bansal.internal";
-      if (!isKiosk) {
+      // Enforce student accounts only (login itself is already gated by roll number + password via cbt-login).
+      const isKnownKioskEmail = user.email?.endsWith("@cbt.bansal.local") || user.email === "it-testing@bansal.internal";
+      let isStudent = isKnownKioskEmail;
+      if (!isStudent) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "student")
+          .maybeSingle();
+        isStudent = !!roleRow;
+      }
+      if (!isStudent) {
         toast.error("This area is for CBT kiosk users only.");
         await supabase.auth.signOut();
         navigate("/cbt", { replace: true });
