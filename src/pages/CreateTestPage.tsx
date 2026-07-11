@@ -12,7 +12,6 @@ import {
   useDroppable,
 } from "@dnd-kit/core";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadImageToS3 } from "@/lib/s3Upload";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { resolveContentOwnership } from "@/lib/centreOwnership";
@@ -491,9 +490,16 @@ const CreateTestPage = () => {
     setUploadingInstructions(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const key = `question-images/${user.id}/test-instructions/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const publicUrl = await uploadImageToS3(file, key, file.type);
-      setInstructionsImageUrl(publicUrl);
+      const path = `${user.id}/test-instructions/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      setInstructionsImageUrl(signed.signedUrl);
       toast.success("Instructions image uploaded");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, X, Sigma, FlaskConical, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadImageToS3 } from "@/lib/s3Upload";
 import { useAuth } from "@/context/AuthContext";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
 
@@ -122,9 +121,16 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const key = `question-images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const publicUrl = await uploadImageToS3(file, key, file.type);
-      setImageUrl(publicUrl);
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      setImageUrl(signed.signedUrl);
       toast.success("Image uploaded");
     } catch (e: any) {
       toast.error(e?.message || "Upload failed");
@@ -140,12 +146,19 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
     setUploadingOpt(oi);
     try {
       const ext = file.name.split(".").pop() || "png";
-      const key = `question-images/${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const publicUrl = await uploadImageToS3(file, key, file.type);
+      const path = `${user.id}/opt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
       setOptionImages((prev) => {
         const next = [...prev];
         while (next.length <= oi) next.push("");
-        next[oi] = publicUrl;
+        next[oi] = signed.signedUrl;
         return next;
       });
       toast.success("Option image uploaded");

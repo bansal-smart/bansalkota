@@ -1,4 +1,4 @@
-import { uploadImageToS3 } from "@/lib/s3Upload";
+import { supabase } from "@/integrations/supabase/client";
 import type { ParsedDocxQuestion, DocxImage } from "./parseDocx";
 
 const extFromType = (ct: string) => {
@@ -29,11 +29,19 @@ export const uploadParsedImages = async (
 
   for (const { q, img } of flat) {
     const ext = extFromType(img.contentType);
-    const key = `question-images/${batchId}/q${q.number}_${img.slot}_${img.id}.${ext}`;
+    const path = `${batchId}/q${q.number}_${img.slot}_${img.id}.${ext}`;
     try {
       const ab = img.bytes.buffer.slice(img.bytes.byteOffset, img.bytes.byteOffset + img.bytes.byteLength) as ArrayBuffer;
       const blob = new Blob([ab], { type: img.contentType });
-      img.publicUrl = await uploadImageToS3(blob, key, img.contentType);
+      const { error: upErr } = await supabase.storage
+        .from("question-images")
+        .upload(path, blob, { contentType: img.contentType, upsert: false });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("question-images")
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 100);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Sign URL failed");
+      img.publicUrl = signed.signedUrl;
     } catch {
       failed += 1;
     }

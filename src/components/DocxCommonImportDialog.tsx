@@ -413,41 +413,53 @@ const DocxCommonImportDialog = ({
         await supabase.from("tests").update(update as any).eq("id", targetTestId);
 
 
-        // Dedupe: skip questions whose stem already exists in this test from the same file
-        const { data: existingDup } = await supabase
+        // Replace mode: importing into a test always replaces every existing
+        // question in that test (and their S3 images) instead of appending.
+        const { data: existingRows } = await supabase
           .from("test_questions")
-          .select("question_text")
-          .eq("test_id", targetTestId)
-          .eq("source_filename", fileName);
-        const seen = new Set((existingDup ?? []).map((r: any) => String(r.question_text ?? "")));
-        const dedupQs = questions.filter((q) => {
-          const stemHtml = replaceMarkersWithUrls(q.stemHtml, q.images);
-          const txt = stemHtml || q.stemText;
-          return !seen.has(txt);
-        });
-        const skipped = questions.length - dedupQs.length;
-        if (dedupQs.length === 0) {
-          toast.info(`All ${questions.length} questions are already in this test (same file). Nothing added.`);
-          await supabase.from("question_import_batches").update({ status: "completed", question_count: 0 }).eq("id", batchId);
-          setImported({ ok: 0, failed: 0 });
-          setStep("done");
-          onImported(targetTestId);
-          return;
-        }
-        if (skipped > 0) {
-          toast.warning(`Skipped ${skipped} duplicate question${skipped === 1 ? "" : "s"} already in this test.`);
+          .select("question_text, question_image_url, option_images")
+          .eq("test_id", targetTestId);
+
+        if (existingRows && existingRows.length > 0) {
+          const oldImageUrls: string[] = [];
+          for (const r of existingRows as any[]) {
+            if (r.question_image_url) oldImageUrls.push(r.question_image_url);
+            if (Array.isArray(r.option_images)) {
+              for (const u of r.option_images) if (u) oldImageUrls.push(u);
+            }
+            const txt = String(r.question_text ?? "");
+            const imgSrcRe = /<img[^>]+src="([^"]+)"/gi;
+            let m: RegExpExecArray | null;
+            while ((m = imgSrcRe.exec(txt))) oldImageUrls.push(m[1]);
+          }
+
+          const { error: delErr } = await supabase
+            .from("test_questions")
+            .delete()
+            .eq("test_id", targetTestId);
+          if (delErr) throw delErr;
+
+          if (oldImageUrls.length > 0) {
+            const pathFromSignedUrl = (url: string): string | null => {
+              const m = url.match(/\/storage\/v1\/object\/sign\/question-images\/([^?]+)/);
+              return m ? decodeURIComponent(m[1]) : null;
+            };
+            const paths = oldImageUrls.map(pathFromSignedUrl).filter((p): p is string => !!p);
+            if (paths.length > 0) {
+              try {
+                await supabase.storage.from("question-images").remove(paths);
+              } catch {
+                // Non-fatal: rows are already replaced; stray storage objects can be cleaned up later.
+              }
+            }
+          }
+
+          toast.info(`Replaced ${existingRows.length} existing question${existingRows.length === 1 ? "" : "s"} in this test.`);
         }
 
-        // Compute starting position for ordering
-        const { data: existing } = await supabase
-          .from("test_questions")
-          .select("position")
-          .eq("test_id", targetTestId)
-          .order("position", { ascending: false })
-          .limit(1);
-        const startPos = (existing?.[0]?.position ?? -1) + 1;
+        const startPos = 0;
 
-        const rows = dedupQs.map((q, i) => {
+        const rows = questions.map((q, i) => {
           const base = buildRow(q, batchId);
           const baseMarks = DEFAULT_MARKS[q.type];
           const ranged = marksForNumber(q.number, q.type);
@@ -1027,7 +1039,9 @@ const DocxCommonImportDialog = ({
         {step === "preview" && (
           <div className="border-t border-border p-3 flex items-center justify-between gap-2">
             <p className="text-[11px] text-muted-foreground">
-              Tip: type detection follows the answer cell. Override per question above.
+              {target === "test"
+                ? "This replaces all existing questions (and images) in the target test."
+                : "Tip: type detection follows the answer cell. Override per question above."}
             </p>
             <div className="flex gap-2">
               <button
@@ -1040,7 +1054,7 @@ const DocxCommonImportDialog = ({
                 onClick={handleConfirm}
                 className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:opacity-90"
               >
-                Import {questions.length} question{questions.length === 1 ? "" : "s"}
+                {target === "test" ? "Replace with" : "Import"} {questions.length} question{questions.length === 1 ? "" : "s"}
               </button>
             </div>
           </div>
