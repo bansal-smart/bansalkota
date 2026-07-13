@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Download, FileSpreadsheet, Loader2, User2 } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, Loader2, MessageSquare, User2, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,8 @@ type TestRow = {
   total_marks: number;
   starts_at: string | null;
   ends_at: string | null;
+  results_released_at: string | null;
+  auto_release: boolean | null;
 };
 
 type ResultRow = {
@@ -80,6 +82,8 @@ const AdminCombinedResultPage = () => {
   const [rows2, setRows2] = useState<ResultRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [smsConfirmOpen, setSmsConfirmOpen] = useState(false);
+  const [sendingResultSms, setSendingResultSms] = useState(false);
 
   const load = async () => {
     if (!slug || !partnerSlug) {
@@ -90,7 +94,7 @@ const AdminCombinedResultPage = () => {
     setLoading(true);
     setError(null);
 
-    const cols = "id, title, slug, exam_pattern, subjects, total_marks, starts_at, ends_at";
+    const cols = "id, title, slug, exam_pattern, subjects, total_marks, starts_at, ends_at, results_released_at, auto_release";
     const [a, b] = await Promise.all([
       supabase.from("tests").select(cols).eq("slug", slug).maybeSingle(),
       supabase.from("tests").select(cols).eq("slug", partnerSlug).maybeSingle(),
@@ -231,6 +235,37 @@ const AdminCombinedResultPage = () => {
   const t1Label = test1 ? `${safeFmt(test1.starts_at ?? test1.ends_at, "dd/MM/yy")} · ${test1.title}` : "";
   const t2Label = test2 ? `${safeFmt(test2.starts_at ?? test2.ends_at, "dd/MM/yy")} · ${test2.title}` : "";
 
+  const isReleased = (t: TestRow | null) => {
+    if (!t) return false;
+    if (!t.ends_at) return true;
+    if (t.results_released_at && new Date(t.results_released_at) <= new Date()) return true;
+    if (t.auto_release && new Date(t.ends_at) <= new Date()) return true;
+    return false;
+  };
+  const released = isReleased(test1) && isReleased(test2);
+
+  const sendCombinedResultSms = async () => {
+    if (!test1 || !test2) return;
+    setSendingResultSms(true);
+    const { data, error: sErr } = await supabase.functions.invoke("prpsms-send-combined-result-sms", {
+      body: { test_id: test1.id, partner_test_id: test2.id },
+    });
+    setSendingResultSms(false);
+    setSmsConfirmOpen(false);
+    if (sErr) {
+      toast.error(`Combined result SMS failed: ${sErr.message}`);
+    } else if (data?.error) {
+      toast.error(`Combined result SMS failed: ${data.error}`);
+    } else if (data?.sent !== undefined) {
+      const parentPart = data.parent_sent || data.parent_failed
+        ? ` · Parents: ${data.parent_sent ?? 0} sent, ${data.parent_failed ?? 0} failed`
+        : "";
+      toast.success(`Combined result SMS: ${data.sent} sent, ${data.failed} failed (of ${data.total})${parentPart}`);
+    } else {
+      toast.success("Combined result SMS dispatched");
+    }
+  };
+
   const cellNum = (m: Merged, which: 1 | 2, s: string) => {
     const r = which === 1 ? m.p1 : m.p2;
     if (!r) return "—";
@@ -369,6 +404,15 @@ const AdminCombinedResultPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setSmsConfirmOpen(true)}
+            disabled={!released || sendingResultSms || merged.length === 0}
+            title={released ? "Send combined result SMS to all students (present + absent)" : "Available after both papers' results are released"}
+            className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendingResultSms ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
+            Send Result SMS
+          </button>
           <button onClick={downloadXLSX} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
@@ -484,6 +528,78 @@ const AdminCombinedResultPage = () => {
               ))}
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {smsConfirmOpen && test1 && test2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div
+            className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between p-4 border-b border-border">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                  <MessageSquare className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Send Combined Result SMS</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Each student — and their registered parent contact, if on file — will receive
+                    the combined P1+P2 subject-wise score & rank (or "Absent") for these papers.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => !sendingResultSms && setSmsConfirmOpen(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted disabled:opacity-40"
+                disabled={sendingResultSms}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Papers</div>
+                <div className="text-sm font-bold text-foreground">{test1.title}</div>
+                <div className="text-sm font-bold text-foreground">{test2.title}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  M.M. {test1.total_marks} + {test2.total_marks} = {test1.total_marks + test2.total_marks}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                <div className="rounded-lg border border-border bg-card p-2.5 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Students</div>
+                  <div className="text-lg font-bold text-foreground">{merged.length}</div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-3 text-[11px] text-amber-800">
+                SMS will be delivered via PRPSMS DLT route to both the student and parent number
+                (if registered). Contacts without a mobile number on file will be skipped.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-border bg-muted/20 rounded-b-2xl">
+              <button
+                onClick={() => setSmsConfirmOpen(false)}
+                disabled={sendingResultSms}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendCombinedResultSms}
+                disabled={sendingResultSms}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {sendingResultSms && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Send to {merged.length} student{merged.length === 1 ? "" : "s"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

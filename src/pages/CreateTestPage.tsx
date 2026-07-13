@@ -391,6 +391,14 @@ const CreateTestPage = () => {
     setQuestions(next);
   };
 
+  // Inserts a blank manual question right after position `afterIdx` (-1 = insert at the very top).
+  const insertQuestionAt = (afterIdx: number) => {
+    const next = [...questions];
+    next.splice(afterIdx + 1, 0, blankQuestion({ correct: correctMarks, wrong: wrongMarks }));
+    setQuestions(next);
+    setSelectedIdx((prev) => new Set(Array.from(prev).map((idx) => (idx > afterIdx ? idx + 1 : idx))));
+  };
+
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const uploadQuestionImage = async (i: number, file: File) => {
     if (!user) return toast.error("Sign in required");
@@ -1440,9 +1448,21 @@ const CreateTestPage = () => {
         )}
 
         <DropZone empty={questions.length === 0}>
+          {questions.length > 0 && (
+            <div className="group/insert relative h-2 flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => insertQuestionAt(-1)}
+                className="opacity-0 group-hover/insert:opacity-100 focus:opacity-100 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm hover:bg-primary/10 transition-opacity"
+                title="Insert question at the top"
+              >
+                <Plus className="h-3 w-3" /> Add question here
+              </button>
+            </div>
+          )}
           {questions.map((q, i) => (
+            <div key={i} className="contents">
             <div
-              key={i}
               className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm hover:border-primary/40 transition-colors"
             >
               <div className="flex items-center gap-2 flex-wrap">
@@ -1775,6 +1795,17 @@ const CreateTestPage = () => {
                 </div>
               )}
 
+            </div>
+            <div className="group/insert relative h-2 flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => insertQuestionAt(i)}
+                className="opacity-0 group-hover/insert:opacity-100 focus:opacity-100 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm hover:bg-primary/10 transition-opacity"
+                title={`Insert question after Q${i + 1}`}
+              >
+                <Plus className="h-3 w-3" /> Add question here
+              </button>
+            </div>
             </div>
           ))}
         </DropZone>
