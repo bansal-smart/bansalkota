@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import StudentLayout from "./components/StudentLayout";
 import AdminLayout from "./components/AdminLayout";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import CentreAdminDashboardRedirect from "./components/CentreAdminDashboardRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
 import PublicLayout from "./components/PublicLayout";
@@ -299,7 +300,14 @@ const App = () => (
                   }
                 >
                   <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="/admin/dashboard" element={<StaffDashboardPage />} />
+                  <Route
+                    path="/admin/dashboard"
+                    element={
+                      <CentreAdminDashboardRedirect>
+                        <StaffDashboardPage />
+                      </CentreAdminDashboardRedirect>
+                    }
+                  />
 
                   <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
                   <Route path="/admin/course-enquiries" element={<AdminCourseEnquiriesPage />} />
