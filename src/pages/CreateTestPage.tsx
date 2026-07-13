@@ -602,7 +602,7 @@ const CreateTestPage = () => {
         course_id: courseId || null,
         test_mode: testMode,
         cbt_enabled: testMode === "cbt",
-        cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+        cbt_allowed_batch_ids: allowedBatches,
         ...buildSchedulePayload(),
         ...ownership,
         slug,
@@ -753,7 +753,7 @@ const CreateTestPage = () => {
           course_id: courseId || null,
           test_mode: testMode,
           cbt_enabled: testMode === "cbt",
-          cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+          cbt_allowed_batch_ids: allowedBatches,
           ...buildSchedulePayload(),
           is_published: true,
         })
@@ -830,7 +830,7 @@ const CreateTestPage = () => {
       course_id: courseId || null,
       test_mode: testMode,
       cbt_enabled: testMode === "cbt",
-      cbt_allowed_batch_ids: testMode === "cbt" ? allowedBatches : null,
+      cbt_allowed_batch_ids: allowedBatches,
       ...buildSchedulePayload(),
     };
 
@@ -935,13 +935,15 @@ const CreateTestPage = () => {
           </div>
         </div>
 
-        {testMode === "cbt" && (
+        {(
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Kiosk URL</p>
-              <code className="text-xs bg-background rounded px-2 py-1 inline-block mt-1">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>
-              <p className="text-[10px] text-muted-foreground mt-1">All CBT tests use this single fixed link. Students log in with roll no + mobile.</p>
-            </div>
+            {testMode === "cbt" && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Kiosk URL</p>
+                <code className="text-xs bg-background rounded px-2 py-1 inline-block mt-1">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>
+                <p className="text-[10px] text-muted-foreground mt-1">All CBT tests use this single fixed link. Students log in with roll no + mobile.</p>
+              </div>
+            )}
             <div className="space-y-3">
               {/* Selected Batches badges */}
               {allowedBatches.length > 0 && (
