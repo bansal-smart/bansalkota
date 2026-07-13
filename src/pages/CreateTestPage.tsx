@@ -845,6 +845,24 @@ const CreateTestPage = () => {
     let savedTestId: string | null = resolvedTestId;
 
     if (isEditMode && resolvedTestId) {
+      // This path deletes and reinserts every question row (new ids), which
+      // would orphan test_attempts.answers (keyed by question_id) for anyone
+      // who already submitted — silently zeroing every one of their answers
+      // on next recompute. Once a test has submitted attempts, block it here;
+      // use the dedicated "Fix correct answer" action on the result page for
+      // answer-key corrections instead, which updates in place.
+      const { count: attemptCount } = await supabase
+        .from("test_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("test_id", resolvedTestId)
+        .in("status", ["submitted", "auto_submitted"]);
+      if (attemptCount && attemptCount > 0) {
+        toast.error(
+          "This test already has submitted attempts, so its questions can't be edited here (it would break everyone's saved answers). To fix a wrong correct answer, use \"Fix correct answer\" on the test's result page instead.",
+        );
+        setSubmitting(false);
+        return;
+      }
       const { error } = await supabase.from("tests").update(basePayload).eq("id", resolvedTestId);
       if (error) {
         toast.error(error.message);

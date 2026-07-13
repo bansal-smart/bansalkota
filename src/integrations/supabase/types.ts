@@ -4510,6 +4510,57 @@ export type Database = {
           },
         ]
       }
+      test_question_answer_key_log: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_correct_answer: Json | null
+          old_correct_answer: Json | null
+          question_id: string
+          reason: string | null
+          test_id: string
+          updated_attempts: number
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_correct_answer?: Json | null
+          old_correct_answer?: Json | null
+          question_id: string
+          reason?: string | null
+          test_id: string
+          updated_attempts?: number
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_correct_answer?: Json | null
+          old_correct_answer?: Json | null
+          question_id?: string
+          reason?: string | null
+          test_id?: string
+          updated_attempts?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_question_answer_key_log_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_question_answer_key_log_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_question_bonus_log: {
         Row: {
           action: string
@@ -5360,6 +5411,14 @@ export type Database = {
           _reason?: string
           _test_id: string
           _user_id: string
+        }
+        Returns: Json
+      }
+      admin_update_question_answer_key: {
+        Args: {
+          _new_correct_answer: Json
+          _question_id: string
+          _reason?: string
         }
         Returns: Json
       }

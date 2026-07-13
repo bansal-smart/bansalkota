@@ -35,6 +35,7 @@ type QRow = {
   id: string; position: number; subject: string | null; topic: string | null;
   question_text: string; question_type: string | null; difficulty: string | null;
   marks_correct: number | null; marks_wrong: number | null; is_bonus: boolean | null;
+  options: { id: number; text: string }[] | null; correct_answer: any;
 };
 
 const AdminTestDetailPage = () => {
@@ -51,6 +52,7 @@ const AdminTestDetailPage = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showCommonImport, setShowCommonImport] = useState(false);
+  const [editingAnswerKey, setEditingAnswerKey] = useState<QRow | null>(null);
 
   const load = async () => {
     if (!slug) {
@@ -78,7 +80,7 @@ const AdminTestDetailPage = () => {
       const [qRes, aRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong, is_bonus")
+          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong, is_bonus, options, correct_answer")
           .eq("test_id", t.id)
           .order("position"),
         supabase
@@ -378,7 +380,16 @@ const AdminTestDetailPage = () => {
                       </button>
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <button onClick={() => deleteQuestion(q)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingAnswerKey(q)}
+                          title="Fix correct answer (recomputes every submitted attempt)"
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button onClick={() => deleteQuestion(q)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -467,6 +478,169 @@ const AdminTestDetailPage = () => {
 
       <DocxBulkImportDialog open={showImport} onClose={() => setShowImport(false)} onImported={() => { setShowImport(false); load(); }} testId={test.id} />
       <DocxCommonImportDialog open={showCommonImport} onClose={() => setShowCommonImport(false)} onImported={() => { setShowCommonImport(false); load(); }} testId={test.id} examPattern={test.exam_pattern} />
+      {editingAnswerKey && (
+        <FixAnswerKeyModal
+          question={editingAnswerKey}
+          onClose={() => setEditingAnswerKey(null)}
+          onSaved={() => { setEditingAnswerKey(null); load(); }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Corrects test_questions.correct_answer in place (never touches question
+// ids) and recomputes every submitted attempt via admin_update_question_
+// answer_key(), so a wrong answer key found after results are released can be
+// fixed without breaking students' saved answers — see CreateTestPage.tsx's
+// guard against the destructive delete+reinsert path for why this exists as
+// a separate, narrow action rather than the general question editor.
+const FixAnswerKeyModal = ({
+  question,
+  onClose,
+  onSaved,
+}: {
+  question: QRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) => {
+  const options = question.options ?? [];
+  const isMultiSingle = question.question_type === "mcq-single" || !question.question_type;
+  const isMulti = question.question_type === "mcq-multi";
+  const isMcq = isMultiSingle || isMulti;
+
+  const currentSingle = (() => {
+    const c = question.correct_answer;
+    if (c && typeof c === "object" && "value" in c) return Number(c.value);
+    return typeof c === "number" ? c : null;
+  })();
+  const currentMulti = Array.isArray(question.correct_answer) ? question.correct_answer.map(Number) : [];
+
+  const [singleAnswer, setSingleAnswer] = useState<number | null>(currentSingle);
+  const [multiAnswer, setMultiAnswer] = useState<number[]>(currentMulti);
+  const [rawJson, setRawJson] = useState(JSON.stringify(question.correct_answer ?? null, null, 2));
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
+
+  const save = async () => {
+    let newCorrectAnswer: any;
+    if (isMulti) {
+      if (multiAnswer.length === 0) return toast.error("Select at least one correct option");
+      newCorrectAnswer = multiAnswer.slice().sort((a, b) => a - b);
+    } else if (isMultiSingle) {
+      if (singleAnswer === null) return toast.error("Select the correct option");
+      newCorrectAnswer = singleAnswer;
+    } else {
+      try {
+        newCorrectAnswer = JSON.parse(rawJson);
+      } catch {
+        return toast.error("Correct answer must be valid JSON");
+      }
+    }
+
+    const ok = await confirm({
+      title: "Recompute results now?",
+      description:
+        "This will recompute the score, percentile and rank for every student who submitted this test — even if results are already released. Result release status and any already-sent SMS are unaffected; re-release/resend manually if needed.",
+      confirmLabel: "Save & recompute",
+      variant: "default",
+    });
+    if (!ok) return;
+
+    setSubmitting(true);
+    const { data, error } = await supabase.rpc("admin_update_question_answer_key", {
+      _question_id: question.id,
+      _new_correct_answer: newCorrectAnswer,
+      _reason: reason || null,
+    });
+    setSubmitting(false);
+    if (error) return toast.error(error.message);
+    const n = (data as any)?.updated_attempts ?? 0;
+    toast.success(`Answer key fixed · ${n} attempts re-scored`);
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      {ConfirmDialog}
+      <div className="w-full max-w-lg rounded-2xl bg-card p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Fix correct answer</h3>
+            <p className="text-xs text-muted-foreground">Q{question.position + 1} · recomputes all submitted attempts on save</p>
+          </div>
+          <button onClick={onClose}><X className="h-5 w-5 text-muted-foreground" /></button>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background p-3 text-sm text-foreground">
+          <MathRenderer content={question.question_text} />
+        </div>
+
+        {isMcq ? (
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-foreground">
+              {isMulti ? "Select all correct options" : "Select the correct option"}
+            </p>
+            {options.map((o) => (
+              <label key={o.id} className="flex items-center gap-2 rounded-lg border border-border bg-background p-2.5 text-sm cursor-pointer hover:border-primary/50">
+                <input
+                  type={isMulti ? "checkbox" : "radio"}
+                  name="correct-option"
+                  checked={isMulti ? multiAnswer.includes(o.id) : singleAnswer === o.id}
+                  onChange={() => {
+                    if (isMulti) {
+                      setMultiAnswer((prev) => (prev.includes(o.id) ? prev.filter((x) => x !== o.id) : [...prev, o.id]));
+                    } else {
+                      setSingleAnswer(o.id);
+                    }
+                  }}
+                  className="h-4 w-4"
+                />
+                <MathRenderer content={o.text} inline />
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div>
+            <label className="text-xs font-semibold text-foreground">
+              Correct answer (raw JSON — {question.question_type ?? "unknown type"})
+            </label>
+            <textarea
+              value={rawJson}
+              onChange={(e) => setRawJson(e.target.value)}
+              rows={4}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono outline-none"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              No dedicated editor for this question type yet — edit the raw value matching how score_test_attempt reads it.
+            </p>
+          </div>
+        )}
+
+        <div>
+          <label className="text-xs font-semibold text-foreground">Reason (optional, kept in the audit log)</label>
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. Option B was mismarked as correct"
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none"
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground">
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            disabled={submitting}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save & recompute"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
