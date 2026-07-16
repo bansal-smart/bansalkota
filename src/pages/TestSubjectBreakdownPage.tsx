@@ -17,6 +17,62 @@ import { optionLabel, resolveOptionStyle, type OptionLabelStyle } from "@/lib/op
 const slugifySubject = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general";
 
+// correct_answer's shape varies by question_type — mcq-single: a plain number;
+// mcq-multi: number[]; numerical/integer: {value} or {value, range:{min,max}};
+// match-following: handled separately (isMatch branches below). A naive
+// `selected === correct_answer` only works for mcq-single; it silently
+// treats every other type as wrong (arrays/objects never `===` each other)
+// and, for display, stringifies objects to the literal text "[object Object]".
+const isAnswerCorrect = (selected: any, correctAnswer: any, questionType: string | null): boolean => {
+  if (selected == null) return false;
+  if (questionType === "mcq-multi") {
+    if (!Array.isArray(selected) || !Array.isArray(correctAnswer)) return false;
+    const a = [...selected].map(Number).sort((x, y) => x - y);
+    const b = [...correctAnswer].map(Number).sort((x, y) => x - y);
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+  }
+  if (questionType === "numerical" || questionType === "integer") {
+    const num = Number(selected);
+    if (Number.isNaN(num)) return false;
+    if (correctAnswer && typeof correctAnswer === "object") {
+      if (correctAnswer.range?.min != null && correctAnswer.range?.max != null) {
+        return num >= Number(correctAnswer.range.min) && num <= Number(correctAnswer.range.max);
+      }
+      if ("value" in correctAnswer) return num === Number(correctAnswer.value);
+    }
+    return num === Number(correctAnswer);
+  }
+  return selected === correctAnswer;
+};
+
+const formatCorrectAnswer = (correctAnswer: any, questionType: string | null, style: OptionLabelStyle): string => {
+  if (correctAnswer == null) return "—";
+  if (questionType === "mcq-multi" && Array.isArray(correctAnswer)) {
+    return correctAnswer.length ? correctAnswer.map((id: any) => optionLabel(Number(id), style)).join(", ") : "—";
+  }
+  if (questionType === "numerical" || questionType === "integer") {
+    if (correctAnswer && typeof correctAnswer === "object") {
+      if (correctAnswer.range?.min != null && correctAnswer.range?.max != null) {
+        return correctAnswer.range.min === correctAnswer.range.max
+          ? String(correctAnswer.range.min)
+          : `${correctAnswer.range.min} – ${correctAnswer.range.max}`;
+      }
+      if ("value" in correctAnswer) return String(correctAnswer.value);
+    }
+    return String(correctAnswer);
+  }
+  if (typeof correctAnswer === "number") return optionLabel(correctAnswer, style);
+  return String(correctAnswer);
+};
+
+const formatSelectedAnswer = (selected: any, questionType: string | null, style: OptionLabelStyle): string => {
+  if (questionType === "mcq-multi" && Array.isArray(selected)) {
+    return selected.length ? selected.map((id: any) => optionLabel(Number(id), style)).join(", ") : "Not attempted";
+  }
+  if (typeof selected === "number") return optionLabel(selected, style);
+  return String(selected);
+};
+
 type Question = {
   id: string;
   subject: string | null;
@@ -113,7 +169,7 @@ const TestSubjectBreakdownPage = () => {
       const allCorrect = Object.keys(cm).every((k) => ans[k] === cm[k]);
       if (allCorrect) { correct += 1; score += Number(q.marks_correct ?? 4); }
       else { wrong += 1; score += Number(q.marks_wrong ?? -1); }
-    } else if (sel === q.correct_answer) {
+    } else if (isAnswerCorrect(sel, q.correct_answer, q.question_type)) {
       correct += 1;
       score += Number(q.marks_correct ?? 4);
     } else {
@@ -157,7 +213,7 @@ const TestSubjectBreakdownPage = () => {
               Object.keys(q.correct_answer as object).every(
                 (k) => (sel as Record<string, string>)[k] === (q.correct_answer as Record<string, string>)[k],
               )
-            : sel === q.correct_answer;
+            : isAnswerCorrect(sel, q.correct_answer, q.question_type);
           const opts = (Array.isArray(q.options) ? q.options : []) as { id: number; text: string }[];
           return (
             <div key={q.id} className="rounded-2xl border border-border bg-card p-4 animate-fade-in">
@@ -177,10 +233,10 @@ const TestSubjectBreakdownPage = () => {
               {!isMatch && (
                 <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
                   <span className={`rounded-md px-2 py-1 font-semibold ${isUnattempted ? "bg-muted text-muted-foreground" : isCorrect ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"}`}>
-                    Your answer: {isUnattempted ? "Not attempted" : (typeof sel === "number" ? optionLabel(sel, optStyle) : String(sel))}
+                    Your answer: {isUnattempted ? "Not attempted" : formatSelectedAnswer(sel, q.question_type, optStyle)}
                   </span>
                   <span className="rounded-md bg-secondary/10 px-2 py-1 font-semibold text-secondary">
-                    Correct answer: {typeof q.correct_answer === "number" ? optionLabel(q.correct_answer, optStyle) : (q.correct_answer != null ? String(q.correct_answer) : "—")}
+                    Correct answer: {formatCorrectAnswer(q.correct_answer, q.question_type, optStyle)}
                   </span>
                 </div>
               )}
@@ -203,8 +259,14 @@ const TestSubjectBreakdownPage = () => {
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {opts.map((opt) => {
-                    const isAns = opt.id === q.correct_answer;
-                    const isSel = opt.id === sel;
+                    const isAns =
+                      q.question_type === "mcq-multi"
+                        ? Array.isArray(q.correct_answer) && q.correct_answer.map(Number).includes(opt.id)
+                        : opt.id === q.correct_answer;
+                    const isSel =
+                      q.question_type === "mcq-multi"
+                        ? Array.isArray(sel) && (sel as any[]).map(Number).includes(opt.id)
+                        : opt.id === sel;
                     const optImg = Array.isArray(q.option_images) ? q.option_images[opt.id] : null;
                     return (
                       <div
