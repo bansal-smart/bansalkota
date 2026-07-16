@@ -17,6 +17,7 @@ import boostHero from "@/assets/boost-hero-banner.png";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
+import { useSiteBanner } from "@/hooks/useSiteBanner";
 
 const benefits = [
   {
@@ -81,6 +82,7 @@ const faqs = [
 export default function BoostPage() {
   const [regOpen, setRegOpen] = useState(false);
   const boost = useBoostSettings();
+  const { banner } = useSiteBanner("boost");
   const timeline = [
     { phase: "Registration", date: "Open Now", desc: `Pay ₹${boost.priceInr} and reserve your slot on bansal.ac.in` },
     { phase: "Admit Card", date: "T-3 days", desc: "Download your admit card from the official portal" },
@@ -93,7 +95,7 @@ export default function BoostPage() {
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-16 md:py-24 relative overflow-hidden">
         <img
-          src={boostHero}
+          src={banner?.image_url || boostHero}
           alt="BOOST scholarship test — confident student surrounded by glowing science and math symbols"
           className="absolute inset-0 h-full w-full object-cover object-right"
         />
@@ -107,12 +109,22 @@ export default function BoostPage() {
               Bansal Flagship Scholarship Test
             </BansalBadge>
             <h1 className="font-display text-4xl md:text-6xl font-bold leading-tight mb-5">
-              BOOST <span className="text-bansal-orange">Scholarship Test</span>
+              {banner?.headline ? (
+                banner.headline
+              ) : (
+                <>
+                  BOOST <span className="text-bansal-orange">Scholarship Test</span>
+                </>
+              )}
             </h1>
             <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl leading-relaxed">
-              Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most trusted
-              JEE / NEET coaching at Bansal Classes, Kota. Just <span className="font-bold">₹{boost.priceInr}</span> to
-              register.
+              {banner?.subheading || (
+                <>
+                  Win up to <span className="text-bansal-orange font-bold">90% scholarship</span> on India's most
+                  trusted JEE / NEET coaching at Bansal Classes, Kota. Just{" "}
+                  <span className="font-bold">₹{boost.priceInr}</span> to register.
+                </>
+              )}
             </p>
             <div className="flex flex-wrap gap-3">
               <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
