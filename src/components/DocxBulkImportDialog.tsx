@@ -74,6 +74,9 @@ const DocxBulkImportDialog = ({
   const [showInstructions, setShowInstructions] = useState(false);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
   const isNeetPattern = (examPattern ?? "").toLowerCase().includes("neet");
+  // JEE Main uses a uniform 4/-1 scheme for every question type — otherwise
+  // numerical/integer questions default to no negative marking below.
+  const isJeeMainPattern = /jee.*main/i.test(examPattern ?? "");
   const effectiveOptionStyle: "numeric" | "alpha" =
     optionLabelStyle === "numeric" || optionLabelStyle === "alpha"
       ? optionLabelStyle
@@ -326,8 +329,9 @@ const DocxBulkImportDialog = ({
         difficulty: "medium",
         is_public: true,
         marks_correct: 4,
-        marks_wrong:
-          q.type === "mcq-single" || q.type === "mcq-multi"
+        marks_wrong: isJeeMainPattern
+          ? -1
+          : q.type === "mcq-single" || q.type === "mcq-multi"
             ? -1
             : q.type === "match-following"
               ? -1
@@ -374,8 +378,9 @@ const DocxBulkImportDialog = ({
             test_id: selectedTestId,
             position: startPos + i,
             marks_correct: 4,
-            marks_wrong:
-              q.type === "mcq-single" || q.type === "mcq-multi" || q.type === "match-following"
+            marks_wrong: isJeeMainPattern
+              ? -1
+              : q.type === "mcq-single" || q.type === "mcq-multi" || q.type === "match-following"
                 ? -1
                 : 0,
             marks_unanswered: 0,

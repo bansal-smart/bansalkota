@@ -109,6 +109,10 @@ const DocxCommonImportDialog = ({
   const [tests, setTests] = useState<TestRow[]>([]);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
   const isNeetPattern = (examPattern ?? "").toLowerCase().includes("neet");
+  // JEE Main uses a uniform 4/-1 scheme for every question type (unlike the
+  // per-type defaults below, where integer/numerical questions default to no
+  // negative marking).
+  const isJeeMainPattern = /jee.*main/i.test(examPattern ?? "");
   const effectiveOptionStyle: "numeric" | "alpha" =
     optionLabelStyle === "numeric" || optionLabelStyle === "alpha"
       ? optionLabelStyle
@@ -134,6 +138,7 @@ const DocxCommonImportDialog = ({
       const r = marksRanges[i];
       if (n >= r.from && n <= r.to) return { c: r.marksCorrect, w: r.marksWrong };
     }
+    if (isJeeMainPattern) return { c: 4, w: -1 };
     const d = DEFAULT_MARKS[type];
     return { c: d.c, w: d.w };
   };
