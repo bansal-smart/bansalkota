@@ -11,6 +11,8 @@ export type CentreNotification = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  // Empty array = broadcast to all centres. Non-empty = only these centres.
+  target_centre_ids: string[];
 };
 
 export const CENTRE_NOTIFICATIONS_KEY = ["centre_notifications"] as const;
@@ -18,10 +20,15 @@ export const CENTRE_NOTIFICATIONS_KEY = ["centre_notifications"] as const;
 const fetchCentreNotifications = async () => {
   const { data, error } = await (supabase as any)
     .from("centre_notifications")
-    .select("id, title, body, priority, created_by, created_at, updated_at")
+    .select(
+      "id, title, body, priority, created_by, created_at, updated_at, centre_notification_targets(centre_id)",
+    )
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []) as CentreNotification[];
+  return (data ?? []).map((n: any) => ({
+    ...n,
+    target_centre_ids: (n.centre_notification_targets ?? []).map((t: any) => t.centre_id),
+  })) as CentreNotification[];
 };
 
 /**
@@ -50,6 +57,11 @@ export const useCentreNotifications = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "centre_notifications" },
+        () => qc.invalidateQueries({ queryKey: CENTRE_NOTIFICATIONS_KEY }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "centre_notification_targets" },
         () => qc.invalidateQueries({ queryKey: CENTRE_NOTIFICATIONS_KEY }),
       )
       .subscribe();

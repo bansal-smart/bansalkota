@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { Megaphone, Send, Trash2, Loader2, AlertTriangle, Info, Flame } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Megaphone, Send, Trash2, Loader2, AlertTriangle, Info, Flame, ChevronDown, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCentreNotifications, type CentreNotification } from "@/hooks/useCentreNotifications";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { useAllCentres, type CentreOption } from "@/hooks/useAllCentres";
 
 // Super admin -> all centre admins, one-way broadcast. Every centre_staff
 // member sees every row here (RLS: is_any_centre_staff), read-only on their
@@ -26,32 +28,84 @@ const priorityIcon = (p: CentreNotification["priority"]) => {
   return <Info className="h-3 w-3" />;
 };
 
+const centreLabel = (c: CentreOption) => (c.area && c.area !== c.city ? `${c.city} — ${c.area}` : c.city);
+
 const AdminCentreNotificationsPage = () => {
   const { notifications, loading, reload } = useCentreNotifications();
+  const { centres } = useAllCentres();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [priority, setPriority] = useState<CentreNotification["priority"]>("normal");
+  const [selectedCentreIds, setSelectedCentreIds] = useState<string[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const centreNameById = useMemo(() => new Map(centres.map((c) => [c.id, centreLabel(c)])), [centres]);
+
+  const toggleCentre = (id: string) => {
+    setSelectedCentreIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const pickerSummary =
+    selectedCentreIds.length === 0
+      ? "All centres"
+      : selectedCentreIds.length === 1
+        ? centreNameById.get(selectedCentreIds[0]) ?? "1 centre"
+        : `${selectedCentreIds.length} centres selected`;
 
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
       return toast.error("Title and message are required");
     }
     setSending(true);
-    const { error } = await (supabase as any)
+    const { data: inserted, error } = await (supabase as any)
       .from("centre_notifications")
-      .insert({ title: title.trim(), body: body.trim(), priority });
+      .insert({ title: title.trim(), body: body.trim(), priority })
+      .select("id")
+      .single();
+    if (error) {
+      setSending(false);
+      return toast.error(error.message);
+    }
+    if (selectedCentreIds.length > 0) {
+      const { error: targetErr } = await (supabase as any)
+        .from("centre_notification_targets")
+        .insert(selectedCentreIds.map((centre_id) => ({ notification_id: inserted.id, centre_id })));
+      if (targetErr) {
+        setSending(false);
+        return toast.error(targetErr.message);
+      }
+    }
     setSending(false);
-    if (error) return toast.error(error.message);
-    toast.success("Notification sent to all centres");
+    toast.success(
+      selectedCentreIds.length > 0
+        ? `Notification sent to ${selectedCentreIds.length} centre${selectedCentreIds.length === 1 ? "" : "s"}`
+        : "Notification sent to all centres",
+    );
     setTitle("");
     setBody("");
     setPriority("normal");
+    setSelectedCentreIds([]);
     reload();
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this notification? Centre admins will no longer see it.")) return;
+    const ok = await confirm({
+      title: "Delete this notification?",
+      description: "Centre admins will no longer see it. This cannot be undone.",
+      confirmLabel: "Delete notification",
+    });
+    if (!ok) return;
     const { error } = await (supabase as any).from("centre_notifications").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
@@ -60,13 +114,14 @@ const AdminCentreNotificationsPage = () => {
 
   return (
     <div className="p-4 lg:p-6 space-y-6 pb-24 lg:pb-6">
+      {ConfirmDialog}
       <div>
         <h1 className="text-2xl font-black font-display text-foreground flex items-center gap-2">
           <Megaphone className="h-6 w-6 text-primary" /> Centre Notifications
         </h1>
         <p className="text-sm text-muted-foreground">
-          Send updates and announcements to every centre admin. This is one-way — centre admins can only view these,
-          not reply.
+          Send updates and announcements to all centre admins, or target specific centres. This is one-way — centre
+          admins can only view these, not reply.
         </p>
       </div>
 
@@ -94,21 +149,70 @@ const AdminCentreNotificationsPage = () => {
           />
         </div>
 
-        <div>
-          <label className="text-xs font-semibold text-foreground">Priority</label>
-          <div className="mt-2 flex gap-2">
-            {PRIORITIES.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => setPriority(p.value)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  priority === p.value ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-semibold text-foreground">Priority</label>
+            <div className="mt-2 flex gap-2">
+              {PRIORITIES.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPriority(p.value)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
+                    priority === p.value ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div ref={pickerRef} className="relative">
+            <label className="text-xs font-semibold text-foreground">Centres</label>
+            <button
+              type="button"
+              onClick={() => setPickerOpen((o) => !o)}
+              className="mt-2 flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary"
+            >
+              <span className="inline-flex items-center gap-1.5 truncate text-foreground">
+                <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">{pickerSummary}</span>
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            </button>
+
+            {pickerOpen && (
+              <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-border bg-card shadow-elevated">
+                <label className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs font-semibold hover:bg-background/50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedCentreIds.length === 0}
+                    onChange={() => setSelectedCentreIds([])}
+                  />
+                  All centres
+                </label>
+                {centres.map((c) => (
+                  <label
+                    key={c.id}
+                    className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-background/50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCentreIds.includes(c.id)}
+                      onChange={() => toggleCentre(c.id)}
+                    />
+                    <span className="truncate">
+                      {centreLabel(c)} <span className="text-muted-foreground">· {c.state}</span>
+                    </span>
+                  </label>
+                ))}
+                {centres.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-muted-foreground">No centres found.</p>
+                )}
+              </div>
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground">Leave unchecked for all centres.</p>
           </div>
         </div>
 
@@ -118,7 +222,7 @@ const AdminCentreNotificationsPage = () => {
           className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Send to all centres
+          {selectedCentreIds.length > 0 ? `Send to ${selectedCentreIds.length} centre${selectedCentreIds.length === 1 ? "" : "s"}` : "Send to all centres"}
         </button>
       </div>
 
@@ -143,6 +247,14 @@ const AdminCentreNotificationsPage = () => {
                   </div>
                   <h3 className="text-sm font-bold text-foreground">{n.title}</h3>
                   <p className="text-xs text-muted-foreground whitespace-pre-line mt-1">{n.body}</p>
+                  <p className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                    <Building2 className="h-3 w-3" />
+                    {n.target_centre_ids.length === 0
+                      ? "All centres"
+                      : n.target_centre_ids.length === 1
+                        ? centreNameById.get(n.target_centre_ids[0]) ?? "1 centre"
+                        : `${n.target_centre_ids.length} centres`}
+                  </p>
                 </div>
                 <button
                   onClick={() => handleDelete(n.id)}
