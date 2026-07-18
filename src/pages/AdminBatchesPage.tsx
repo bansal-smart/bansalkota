@@ -242,6 +242,7 @@ const AdminBatchesPage = () => {
             </div>
           ))}
 
+      {/* 
           {orphans.length > 0 && (
             <div className="rounded-2xl border border-destructive/30 bg-destructive/5 overflow-hidden">
               <div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-destructive">Batches without a valid course</div>
@@ -268,7 +269,8 @@ const AdminBatchesPage = () => {
                 </tbody>
               </table>
             </div>
-          )}
+          )} */}
+
         </div>
       )}
 
