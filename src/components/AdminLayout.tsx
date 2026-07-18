@@ -24,6 +24,7 @@ import {
   BarChart3,
   LifeBuoy,
   Megaphone,
+  Bell,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -112,6 +113,7 @@ const mainGroups: NavGroup[] = [
 const superAdminNav: NavItem[] = [
   { label: "Admin Management", icon: ShieldCheck, path: "/admin/admins" },
   { label: "Role Management", icon: ShieldCheck, path: "/admin/roles" },
+  { label: "Centre Notifications", icon: Bell, path: "/admin/centre-notifications" },
   { label: "Payments & Revenue", icon: CreditCard, path: "/admin/payments" },
   { label: "Moderation", icon: ShieldCheck, path: "/admin/moderation" },
   { label: "Platform Settings", icon: Settings, path: "/admin/settings" },
@@ -134,6 +136,7 @@ const centreNav: NavGroup = {
     { label: "Gallery", icon: ImageIcon, path: "/admin/centre-gallery" },
     { label: "News & Updates", icon: Megaphone, path: "/admin/news-updates" },
     { label: "Staff", icon: Users, path: "/admin/centre-staff" },
+    { label: "Notifications", icon: Bell, path: "/admin/centre-notifications" },
   ],
 };
 
@@ -143,6 +146,11 @@ const centreNav: NavGroup = {
 // grid below and gated directly on `isSuper` instead (RLS enforces the
 // same rule server-side via is_centre_admin_of()).
 const CENTRE_STAFF_PATH = "/admin/centre-staff";
+
+// Notifications is a read-only broadcast feed every centre_staff member can
+// see regardless of delegated role (RLS: is_any_centre_staff), so unlike
+// other centre-nav items it isn't gated through PATH_TO_MODULE/ADMIN_MODULES.
+const CENTRE_NOTIFICATIONS_PATH = "/admin/centre-notifications";
 
 // Site Pages — editable public content shown in footer "Quick Links".
 const sitePagesNav: NavItem[] = [
@@ -348,6 +356,7 @@ const AdminLayout = () => {
         ...centreNav,
         items: centreNav.items.filter((it) => {
           if (it.path === CENTRE_STAFF_PATH) return isSuper;
+          if (it.path === CENTRE_NOTIFICATIONS_PATH) return true;
           const key = PATH_TO_MODULE.get(it.path);
           return key ? (isSuper || can(key, "view")) : false;
         }),

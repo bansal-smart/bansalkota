@@ -1,17 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, Megaphone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { markAllNotificationsRead, markNotificationRead } from "@/hooks/useNotifications";
+import { useCentreNotificationsUnread } from "@/hooks/useCentreNotifications";
 import { formatDistanceToNow } from "date-fns";
 
 const NotificationBell = () => {
-  const { user } = useAuth();
+  const { user, isCenterAdmin } = useAuth();
   const { notifications, unreadCount } = useAppStore();
+  const {
+    notifications: centreNotifications,
+    unreadCount: centreUnreadCount,
+    markAllSeen: markCentreSeen,
+  } = useCentreNotificationsUnread();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
+
+  const totalUnread = unreadCount + centreUnreadCount;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -27,17 +35,27 @@ const NotificationBell = () => {
     if (link) navigate(link);
   };
 
+  const handleToggleOpen = () => {
+    setOpen((o) => {
+      const next = !o;
+      if (next && isCenterAdmin) markCentreSeen();
+      return next;
+    });
+  };
+
+  const viewAllLink = isCenterAdmin ? "/admin/centre-notifications" : "/notifications";
+
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggleOpen}
         className="relative rounded-lg p-2 text-muted-foreground hover:bg-background transition-colors"
         aria-label="Notifications"
       >
         <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
+        {totalUnread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {totalUnread > 9 ? "9+" : totalUnread}
           </span>
         )}
       </button>
@@ -57,7 +75,28 @@ const NotificationBell = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {notifications.length === 0 && (
+            {isCenterAdmin &&
+              centreNotifications.slice(0, 10).map((n) => (
+                <Link
+                  key={n.id}
+                  to="/admin/centre-notifications"
+                  onClick={() => setOpen(false)}
+                  className="block w-full text-left border-b border-border px-4 py-3 hover:bg-background/50 transition-colors bg-primary/5"
+                >
+                  <div className="flex items-start gap-2">
+                    <Megaphone className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground">{n.title}</p>
+                      <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{n.body}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+
+            {notifications.length === 0 && !(isCenterAdmin && centreNotifications.length > 0) && (
               <div className="px-4 py-8 text-center">
                 <Bell className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground">You&apos;re all caught up</p>
@@ -90,7 +129,7 @@ const NotificationBell = () => {
           </div>
 
           <Link
-            to="/notifications"
+            to={viewAllLink}
             onClick={() => setOpen(false)}
             className="border-t border-border px-4 py-2.5 text-center text-xs font-bold text-primary hover:bg-background/50 transition-colors"
           >
