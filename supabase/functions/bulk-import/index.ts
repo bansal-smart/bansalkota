@@ -293,8 +293,9 @@ Deno.serve(async (req) => {
               .eq("phone", phone)
               .maybeSingle();
             // If the incoming row has an explicit roll number, and the profile found by phone
-            // belongs to a DIFFERENT roll number (e.g. sibling sharing parent phone), DO NOT overwrite it!
-            if (data && roll && (data as any).roll_number && (data as any).roll_number !== roll) {
+            // does NOT already carry that exact roll number (e.g. sibling sharing parent phone,
+            // or a profile whose own roll hasn't been set yet), DO NOT overwrite it!
+            if (data && roll && (data as any).roll_number !== roll) {
               target = null;
             } else {
               target = data as any;
@@ -354,6 +355,12 @@ Deno.serve(async (req) => {
             const { error } = await admin.from("profiles").update(payload).eq("id", target.id);
             if (error) throw error;
             resolvedUid = target.user_id;
+            // Backfill the student role in case an earlier import run failed to set it.
+            const { error: roleErr } = await admin.from("user_roles").upsert(
+              { user_id: target.user_id, role: "student" },
+              { onConflict: "user_id,role" },
+            );
+            if (roleErr) throw roleErr;
             results.push({ row: i + 1, ok: true, id: target.id });
           } else {
             // Create new student. Admins can create anywhere; centre staff can
@@ -404,10 +411,11 @@ Deno.serve(async (req) => {
               if (error) throw error;
             }
 
-            await admin.from("user_roles").upsert(
+            const { error: roleErr } = await admin.from("user_roles").upsert(
               { user_id: newUid, role: "student" },
               { onConflict: "user_id,role" },
             );
+            if (roleErr) throw roleErr;
 
             resolvedUid = newUid;
             results.push({ row: i + 1, ok: true, id: newUid });
