@@ -655,23 +655,43 @@ const AdminStudentsPage = () => {
     setBulkDeleting(true);
     setBulkProgress({ done: 0, total: selected.length });
     let ok = 0;
-    let fail = 0;
+    const failed: { user_id: string; reason: string }[] = [];
     for (const user_id of selected) {
-      try {
-        const { error } = await supabase.functions.invoke("manage-student", {
-          body: { action: "delete", user_id },
-        });
-        if (error) throw error;
+      let lastErr: unknown = null;
+      // A stale session token intermittently fails the platform's own JWT check
+      // ("unrecognized JWT kid") mid-loop, so refresh once and retry before giving up.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const { error } = await supabase.functions.invoke("manage-student", {
+            body: { action: "delete", user_id },
+          });
+          if (error) throw error;
+          lastErr = null;
+          break;
+        } catch (e) {
+          lastErr = e;
+          if (attempt === 0) await supabase.auth.refreshSession().catch(() => {});
+        }
+      }
+      if (lastErr) {
+        const reason = lastErr instanceof Error ? lastErr.message : String(lastErr);
+        failed.push({ user_id, reason });
+        console.error(`Bulk delete failed for ${user_id}:`, lastErr);
+      } else {
         ok++;
-      } catch {
-        fail++;
       }
       setBulkProgress((p) => ({ done: p.done + 1, total: p.total }));
     }
     setBulkDeleting(false);
     setConfirmBulkDelete(false);
-    setSelected([]);
-    toast.success(`Deleted ${ok} student${ok === 1 ? "" : "s"}${fail ? ` · ${fail} failed` : ""}`);
+    setSelected(failed.map((f) => f.user_id));
+    if (failed.length) {
+      toast.error(`Deleted ${ok} · ${failed.length} failed`, {
+        description: `${failed[0].reason}${failed.length > 1 ? ` (+${failed.length - 1} more, still selected — retry deleting)` : " — still selected, retry deleting"}`,
+      });
+    } else {
+      toast.success(`Deleted ${ok} student${ok === 1 ? "" : "s"}`);
+    }
     load();
   };
 
