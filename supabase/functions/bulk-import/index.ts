@@ -40,6 +40,26 @@ const toBool = (v: any): boolean => {
   return s === "true" || s === "1" || s === "yes" || s === "y";
 };
 
+// GoTrue occasionally rejects a handful of admin API calls in a bulk run with
+// "unrecognized JWT kid ... for algorithm ES256" (a transient signing-key cache
+// blip on Supabase's side, not a bad key — most calls in the same batch succeed).
+// Retrying after a short backoff resolves it without failing the whole row.
+const isTransientAuthError = (msg?: string | null) =>
+  !!msg && /unrecognized JWT kid|invalid JWT/i.test(msg);
+
+async function withAuthRetry<T extends { error: any }>(
+  fn: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
+  let result: T;
+  for (let i = 0; i < attempts; i++) {
+    result = await fn();
+    if (!result.error || !isTransientAuthError(result.error.message)) return result;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+  }
+  return result!;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
@@ -213,12 +233,29 @@ Deno.serve(async (req) => {
         if (v == null || v === "") return null;
         if (v instanceof Date) return v.toISOString().slice(0, 10);
         const s = String(v).trim();
+        // Already ISO (yyyy-mm-dd or yyyy-m-d)
+        const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (iso) {
+          const mm = Number(iso[2]);
+          const dd = Number(iso[3]);
+          if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+          return `${iso[1]}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+        }
         const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
         if (m) {
           const yyyy = m[3].length === 2 ? `20${m[3]}` : m[3];
-          const mm = m[2].padStart(2, "0");
-          const dd = m[1].padStart(2, "0");
-          return `${yyyy}-${mm}-${dd}`;
+          const a = Number(m[1]);
+          const b = Number(m[2]);
+          // Ambiguous slash/dash dates can be DD-MM-YYYY (Indian convention, default)
+          // or MM-DD-YYYY (US/Excel export). Disambiguate using whichever component
+          // is out of month range (>12); only fall back to the default when both
+          // readings are plausible.
+          let dd: number, mm: number;
+          if (a > 12 && b <= 12) { dd = a; mm = b; }
+          else if (b > 12 && a <= 12) { mm = a; dd = b; }
+          else { dd = a; mm = b; }
+          if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+          return `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
         }
         const d = new Date(s);
         if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
@@ -377,17 +414,23 @@ Deno.serve(async (req) => {
             const password = `Bansal@${Math.random().toString(36).slice(2, 10)}`;
 
             let newUid: string | null = null;
-            const { data: created, error: cErr } = await admin.auth.admin.createUser({
-              email,
-              password,
-              email_confirm: true,
-              user_metadata: { full_name: fullName, source: "bulk_import" },
-            });
+            const { data: created, error: cErr } = await withAuthRetry(() =>
+              admin.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: { full_name: fullName, source: "bulk_import" },
+              })
+            );
             if (created?.user) {
               newUid = created.user.id;
             } else if (cErr) {
-              // If user already exists in Auth, retrieve their user_id
-              const { data: listData } = await admin.auth.admin.listUsers();
+              // If user already exists in Auth, retrieve their user_id. perPage covers
+              // the full roster (well beyond current enrolment size) since listUsers
+              // has no email filter — a low default page size silently misses matches.
+              const { data: listData } = await withAuthRetry(() =>
+                admin.auth.admin.listUsers({ page: 1, perPage: 2000 })
+              );
               const existingAuth = (listData?.users ?? []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
               if (existingAuth) {
                 newUid = existingAuth.id;
@@ -565,7 +608,9 @@ Deno.serve(async (req) => {
             if (u) userId = (u as any).id;
             if (!userId) {
               // Fallback: query auth.admin
-              const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+              const { data: list } = await withAuthRetry(() =>
+                admin.auth.admin.listUsers({ page: 1, perPage: 2000 })
+              );
               const match = list?.users?.find((x: any) => x.email?.toLowerCase() === email.toLowerCase());
               if (match) userId = match.id;
             }
