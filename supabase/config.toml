@@ -32,3 +32,7 @@ verify_jwt = false
 
 [functions.manage-admin]
 verify_jwt = false
+
+[functions.bulk-import]
+verify_jwt = false
+

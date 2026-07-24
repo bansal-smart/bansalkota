@@ -704,8 +704,13 @@ const AdminCentersPage = () => {
         fileBase="centres"
         exportRows={items as any}
         bulkImport={async (rows, dry_run) => {
-          const { data, error } = await (supabase as any).functions.invoke("bulk-import", {
+          const { data: { session } } = await supabase.auth.getSession();
+          const headers: Record<string, string> = session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {};
+          const { data, error } = await supabase.functions.invoke("bulk-import", {
             body: { kind: "centres", rows, dry_run },
+            headers,
           });
           if (error) throw new Error(error.message || "Bulk import failed");
           return data;

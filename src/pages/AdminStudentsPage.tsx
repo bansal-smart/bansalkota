@@ -376,8 +376,13 @@ const AdminStudentsPage = () => {
       const row: Record<string, any> = {};
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
       if (addCourseIds.length) row.course_ids = addCourseIds;
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const { data, error } = await supabase.functions.invoke("bulk-import", {
         body: { kind: "students", rows: [row], dry_run: false },
+        headers,
       });
       if (error) throw new Error(error.message);
       const res = data as BulkServerResult;
@@ -731,8 +736,13 @@ const AdminStudentsPage = () => {
           { key: "centre", label: "Centre", required: true, example: "Jamshedpur" },
         ]}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
+          const { data: { session } } = await supabase.auth.getSession();
+          const headers: Record<string, string> = session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {};
           const { data, error } = await supabase.functions.invoke("bulk-import", {
             body: { kind: "students", rows, dry_run: dryRun },
+            headers,
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
