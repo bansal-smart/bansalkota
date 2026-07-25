@@ -6,6 +6,7 @@
 // Returns: { results: [{ user_id, roll_number, full_name, password | null, status }], generated: n }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { resolveCallerAccess } from "../_shared/authz.ts";
+import { withAuthRetry } from "../_shared/retry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -121,7 +122,7 @@ Deno.serve(async (req) => {
         });
         continue;
       }
-      const { error: aErr } = await admin.auth.admin.updateUserById(p.user_id, { password: pwd });
+      const { error: aErr } = await withAuthRetry(() => admin.auth.admin.updateUserById(p.user_id, { password: pwd }));
       if (aErr) {
         results.push({
           user_id: p.user_id,

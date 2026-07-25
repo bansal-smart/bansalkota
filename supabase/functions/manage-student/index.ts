@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { withAuthRetry } from "../_shared/retry.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -36,7 +37,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
     // Confirm the user still exists
-    const { data: authUser, error: authUserErr } = await admin.auth.admin.getUserById(callerId);
+    const { data: authUser, error: authUserErr } = await withAuthRetry(() => admin.auth.admin.getUserById(callerId));
     if (authUserErr || !authUser?.user) return json(401, { error: "Unauthorized" });
     const userData = { user: authUser.user };
 
@@ -121,7 +122,7 @@ Deno.serve(async (req) => {
       if (!(await ensureStudent(user_id))) return json(403, { error: "Target is not a student" });
       // Cleanup roles then delete auth user (profile cascades via FK)
       await admin.from("user_roles").delete().eq("user_id", user_id);
-      const { error: dErr } = await admin.auth.admin.deleteUser(user_id);
+      const { error: dErr } = await withAuthRetry(() => admin.auth.admin.deleteUser(user_id));
       if (dErr) throw dErr;
       return json(200, { success: true });
     }
