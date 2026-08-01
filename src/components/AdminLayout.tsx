@@ -76,6 +76,7 @@ const mainGroups: NavGroup[] = [
       { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
       { label: "E-Store Orders", icon: BookOpen, path: "/admin/orders" },
       { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
+      { label: "BOOST Page", icon: FileText, path: "/admin/boost-page" },
     ],
   },
   {
@@ -316,6 +317,8 @@ PATH_TO_MODULE.set("/admin/site-pages/disclaimer", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/terms", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/privacy", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/refund-policy", "site_pages");
+// The BOOST page-content editor shares the "boost" module with BOOST Registrations.
+PATH_TO_MODULE.set("/admin/boost-page", "boost");
 
 const AdminLayout = () => {
   const navigate = useNavigate();
