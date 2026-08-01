@@ -63,7 +63,7 @@ const mainGroups: NavGroup[] = [
     label: "Academics",
     items: [
       { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
-      
+
       { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
       { label: "Live Classes", icon: Video, path: "/admin/live-classes" },
       { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
@@ -187,11 +187,7 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, isCenterA
         <Link to="/" className="flex items-center justify-center rounded-lg bg-white px-3 py-2">
           <BansalLogo className="h-8 w-auto" />
         </Link>
-        <div className="mt-3 rounded-md bg-primary/20 px-2 py-1 text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-            {panelLabel}
-          </span>
-        </div>
+
         {isCenterAdmin && centreLabel && (
           <p className="mt-2 text-center text-[11px] text-white/60 truncate" title={centreLabel}>
             {centreLabel}
@@ -212,9 +208,8 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, isCenterA
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
-                  }`}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                    }`}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>
@@ -231,9 +226,8 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, isCenterA
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
-              }`}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
               <span>{item.label}</span>
@@ -252,9 +246,8 @@ const AdminSidebar = memo(({ email, initials, avatarUrl, isSuperAdmin, isCenterA
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
-                  }`}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                    }`}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   <span>{item.label}</span>

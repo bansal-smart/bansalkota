@@ -241,9 +241,9 @@ export default function BoostPage() {
               <tbody className="divide-y divide-border text-bansal-black">
                 <tr className="hover:bg-muted/30">
                   <td className="p-4 font-bold bg-muted/20">Classes (in 2026-27)</td>
-                  <td className="p-4">4<sup>th</sup> to 9<sup>th</sup></td>
-                  <td className="p-4">10<sup>th</sup>, 11<sup>th</sup> & 12<sup>th</sup> (PCM)</td>
-                  <td className="p-4">10<sup>th</sup>, 11<sup>th</sup> & 12<sup>th</sup> (PCB)</td>
+                  <td className="p-4">4<sup>th</sup> to 10<sup>th</sup></td>
+                  <td className="p-4">11<sup>th</sup> & 12<sup>th</sup> (PCM)</td>
+                  <td className="p-4">11<sup>th</sup> & 12<sup>th</sup> (PCB)</td>
                 </tr>
                 <tr className="hover:bg-muted/30">
                   <td className="p-4 font-bold bg-muted/20">Mode of Exam</td>
@@ -448,9 +448,8 @@ export default function BoostPage() {
                     </span>
                   </button>
                   <div
-                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                      isOpen ? "max-h-[300px] border-t border-border/40" : "max-h-0"
-                    }`}
+                    className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "max-h-[300px] border-t border-border/40" : "max-h-0"
+                      }`}
                   >
                     <p className="p-5 text-sm text-muted-foreground leading-relaxed bg-background/5">
                       {answer}
@@ -476,23 +475,23 @@ export default function BoostPage() {
         </div>
       </section>
 
-    {/* Final CTA */ }
-    < section className = "py-16 md:py-20 bg-bansal-blue text-white" >
-      <div className="container mx-auto px-4 text-center max-w-2xl">
-        <IndianRupee className="h-12 w-12 text-bansal-orange mx-auto mb-4" />
-        <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">
-          Your future called — at just ₹{boost.priceInr}.
-        </h2>
-        <p className="text-white/80 mb-7">
-          Register on the official Bansal Classes portal and lock in your BOOST slot today.
-        </p>
-        <BansalButton variant="cta" className="text-base px-10 py-4" onClick={() => setRegOpen(true)}>
-          Fill an Application
-        </BansalButton>
-        <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
-          <Clock className="h-3 w-3" /> Limited slots every Sunday
-        </p>
-      </div>
+      {/* Final CTA */}
+      < section className="py-16 md:py-20 bg-bansal-blue text-white" >
+        <div className="container mx-auto px-4 text-center max-w-2xl">
+          <IndianRupee className="h-12 w-12 text-bansal-orange mx-auto mb-4" />
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">
+            Your future called — at just ₹{boost.priceInr}.
+          </h2>
+          <p className="text-white/80 mb-7">
+            Register on the official Bansal Classes portal and lock in your BOOST slot today.
+          </p>
+          <BansalButton variant="cta" className="text-base px-10 py-4" onClick={() => setRegOpen(true)}>
+            Fill an Application
+          </BansalButton>
+          <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
+            <Clock className="h-3 w-3" /> Limited slots every Sunday
+          </p>
+        </div>
       </section >
     </div >
   );
