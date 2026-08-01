@@ -138,6 +138,7 @@ const centreNav: NavGroup = {
     { label: "News & Updates", icon: Megaphone, path: "/admin/news-updates" },
     { label: "Staff", icon: Users, path: "/admin/centre-staff" },
     { label: "Notifications", icon: Bell, path: "/admin/centre-notifications" },
+    { label: "BOOST Page", icon: FileText, path: "/admin/boost-page" },
   ],
 };
 
@@ -152,6 +153,11 @@ const CENTRE_STAFF_PATH = "/admin/centre-staff";
 // see regardless of delegated role (RLS: is_any_centre_staff), so unlike
 // other centre-nav items it isn't gated through PATH_TO_MODULE/ADMIN_MODULES.
 const CENTRE_NOTIFICATIONS_PATH = "/admin/centre-notifications";
+
+// The BOOST page-content editor is a HQ-only capability: shown in the centre
+// panel only to the unrestricted admin of the HQ (Kota) centre. RLS enforces
+// the same rule server-side via is_hq_centre_admin().
+const BOOST_PAGE_PATH = "/admin/boost-page";
 
 // Site Pages — editable public content shown in footer "Quick Links".
 const sitePagesNav: NavItem[] = [
@@ -317,14 +323,12 @@ PATH_TO_MODULE.set("/admin/site-pages/disclaimer", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/terms", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/privacy", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/refund-policy", "site_pages");
-// The BOOST page-content editor shares the "boost" module with BOOST Registrations.
-PATH_TO_MODULE.set("/admin/boost-page", "boost");
 
 const AdminLayout = () => {
   const navigate = useNavigate();
   const { user, signOut, isSuperAdmin, isCenterAdmin } = useAuth();
   const { isSuper, can } = useAdminPermissions();
-  const { primaryCenter, loading: loadingCentre } = useCenterAdmin();
+  const { primaryCenter, loading: loadingCentre, isHq } = useCenterAdmin();
 
   const handleLogout = useCallback(async () => {
     await signOut();
@@ -353,6 +357,8 @@ const AdminLayout = () => {
         items: centreNav.items.filter((it) => {
           if (it.path === CENTRE_STAFF_PATH) return isSuper;
           if (it.path === CENTRE_NOTIFICATIONS_PATH) return true;
+          // BOOST page editor: only the unrestricted admin of the HQ centre.
+          if (it.path === BOOST_PAGE_PATH) return isHq && isSuper;
           const key = PATH_TO_MODULE.get(it.path);
           return key ? (isSuper || can(key, "view")) : false;
         }),
@@ -368,7 +374,7 @@ const AdminLayout = () => {
         }),
       }))
       .filter((g) => g.items.length > 0);
-  }, [isCenterAdmin, isSuper, can]);
+  }, [isCenterAdmin, isSuper, can, isHq]);
 
   const filteredSitePages = useMemo<NavItem[]>(() => {
     if (isCenterAdmin) return [];
