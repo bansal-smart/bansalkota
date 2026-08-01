@@ -34,11 +34,21 @@ Deno.serve(async (req) => {
   });
   const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // Validate caller
+  // Validate caller. getClaims() is preferred (fast local verification) but
+  // isn't reliable in every project setup — same issue hit in prpsms-balance
+  // — so fall back to getUser() (a network round-trip to Auth) rather than
+  // hard-failing the whole request when it throws or comes back empty.
   const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
-  if (claimsErr || !claimsData?.claims?.sub) return json(401, { error: "Unauthorized" });
-  const callerId = claimsData.claims.sub as string;
+  let callerId: string | null = null;
+  try {
+    const { data: claimsData } = await userClient.auth.getClaims(token);
+    if (claimsData?.claims?.sub) callerId = claimsData.claims.sub as string;
+  } catch (_) { /* fall through */ }
+  if (!callerId) {
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+    if (userErr || !userData.user) return json(401, { error: "Unauthorized" });
+    callerId = userData.user.id;
+  }
 
   const { data: isAdmin } = await admin.rpc("is_admin_or_super", { _user_id: callerId });
 
@@ -54,7 +64,10 @@ Deno.serve(async (req) => {
   const password = (body.password ?? "").toString();
   const centerId = (body.centre_id ?? "").toString();
   const fullName = (body.full_name ?? "").toString().trim();
-  const role = (body.role ?? "manager").toString();
+  // centre_staff.role only allows 'owner' | 'manager' (DB CHECK constraint) —
+  // guard against any caller passing a human-readable role label instead.
+  const rawRole = (body.role ?? "manager").toString();
+  const role = rawRole === "owner" ? "owner" : "manager";
   const customRoleId: string | null = body.custom_role_id ?? null;
 
   // Non-admins must be the centre admin (no custom role assigned) for the target centre.
@@ -71,10 +84,16 @@ Deno.serve(async (req) => {
   if (password.length < 8) return json(400, { error: "Password must be at least 8 characters" });
   if (action === "create" && !centerId) return json(400, { error: "centre_id is required when creating" });
 
-  // Look up existing user
+  // Look up existing user. lookup_user_id_by_email() itself checks
+  // is_admin_or_super(auth.uid()) — but auth.uid() is NULL for the
+  // service-role `admin` client (no user JWT attached), so that RPC always
+  // raises "Not authorized" here, silently swallowed since only `data` was
+  // read. Use listUsers() + filter instead (same pattern as manage-admin),
+  // since this function has already authorized the caller itself above.
   let userId: string | null = null;
-  const { data: existing } = await admin.rpc("lookup_user_id_by_email", { _email: email });
-  if (existing) userId = existing as string;
+  const { data: existingUsers } = await admin.auth.admin.listUsers({ perPage: 1000 });
+  const existingUser = existingUsers?.users.find((u) => u.email?.toLowerCase() === email);
+  if (existingUser) userId = existingUser.id;
 
   if (action === "create") {
     if (!userId) {

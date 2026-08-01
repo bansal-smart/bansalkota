@@ -41,26 +41,11 @@ const schema = z.object({
     .optional()
     .or(z.literal("")),
   preferred_centre_id: z.string().optional().or(z.literal("")),
-  exam_slot: z.string().min(1, "Choose an exam slot"),
+  exam_slot: z.string().trim().optional().or(z.literal("")),
 });
 
 const CLASS_LEVELS = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12", "Dropper"];
 const EXAMS = ["JEE", "NEET", "Olympiad", "Foundation / School"];
-
-const SLOT_TIMES: { label: string; mode: "Online" | "Offline" }[] = [
-  { label: "10:00 AM", mode: "Online" },
-  { label: "3:00 PM", mode: "Online" },
-  { label: "10:00 AM", mode: "Offline" },
-];
-
-const slotDateFmt = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long" });
-function buildSlots(dates: Date[]): string[] {
-  if (!dates.length) return [];
-  return dates.flatMap((d) => {
-    const ds = slotDateFmt.format(d);
-    return SLOT_TIMES.map((s) => `${ds} · ${s.label} ${s.mode}`);
-  });
-}
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -71,8 +56,8 @@ function onlyDigitsInput(e: React.FormEvent<HTMLInputElement>) {
 
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
-  const { priceInr, examDates } = useBoostSettings();
-  const slots = buildSlots(examDates);
+  const { priceInr, examDateLabels } = useBoostSettings();
+  const hasExamDates = examDateLabels.length > 0;
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
   const [city, setCity] = useState("");
@@ -90,6 +75,10 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       toast.error(first || "Please check the form");
       return;
     }
+    if (hasExamDates && !parsed.data.exam_slot) {
+      toast.error("Please select your preferred exam date");
+      return;
+    }
     setSubmitting(true);
     const centre = centers.find((c) => c.id === parsed.data.preferred_centre_id);
     // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
@@ -103,6 +92,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       id: regId,
       date_of_birth: parsed.data.date_of_birth || null,
       preferred_centre_id: parsed.data.preferred_centre_id || null,
+      exam_slot: parsed.data.exam_slot || null,
       preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
       amount: priceInr,
       payment_status: "pending",
@@ -150,7 +140,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
           <div>
             <h2 className="font-display text-xl font-bold text-bansal-black">BOOST 2026 Registration</h2>
-            <p className="text-xs text-muted-foreground">Just ₹{priceInr} to reserve your scholarship test slot</p>
+            <p className="text-xs text-muted-foreground">Just ₹{priceInr} to reserve your scholarship.</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded"><X className="h-5 w-5" /></button>
         </div>
@@ -209,7 +199,14 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
               <Input name="parent_phone" label="Parent phone" type="tel" inputMode="numeric" maxLength={10} onInput={onlyDigitsInput} />
             </Section>
 
-            <Section title="Exam slot & centre">
+            <Section title="Exam date & centre">
+              <Select
+                name="exam_slot"
+                label="Preferred exam date *"
+                options={hasExamDates ? examDateLabels : ["Dates coming soon"]}
+                required={hasExamDates}
+                disabled={!hasExamDates}
+              />
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">Preferred centre</label>
                 <select name="preferred_centre_id" className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm">
@@ -221,7 +218,6 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
                   ))}
                 </select>
               </div>
-              <Select name="exam_slot" label="Exam slot *" options={slots.length ? slots : ["Exam dates not announced yet"]} required />
             </Section>
 
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">

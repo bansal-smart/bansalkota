@@ -83,10 +83,13 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
 
   useEffect(() => { load(); }, [centerId]);
 
-  // "No custom role" is a deliberate sentinel, not an oversight: is_centre_admin_of()
-  // treats "no role_assignments row" as full centre-admin access, so full access must
-  // always mean no row — never a row pointing at the "Centre Admin" role itself.
-  const roleLabelFor = (roleId: string) => centreRoles.find((r) => r.id === roleId)?.name ?? "Centre Admin";
+  // centre_staff.role is a coarse DB column (CHECK constraint only allows
+  // 'owner' | 'manager') — distinct from the fine-grained centre role picked
+  // in the dropdown. "No custom role" is a deliberate sentinel, not an
+  // oversight: is_centre_admin_of() treats "no role_assignments row" as full
+  // centre-admin access, so full access = 'owner' with no role_assignments
+  // row; any delegated/restricted custom role = 'manager' plus that row.
+  const dbRoleFor = (roleId: string) => (roleId ? "manager" : "owner");
 
   const addExisting = async () => {
     if (!email.trim()) return toast.error("Email required");
@@ -100,7 +103,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
     const { error } = await (supabase as any).from("centre_staff").insert({
       centre_id: centerId,
       user_id: userId,
-      role: roleLabelFor(customRoleId),
+      role: dbRoleFor(customRoleId),
     });
     if (error) {
       setAdding(false);
@@ -133,7 +136,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
         password: newPassword,
         full_name: newName.trim(),
         centre_id: centerId,
-        role: roleLabelFor(newCustomRoleId),
+        role: dbRoleFor(newCustomRoleId),
         custom_role_id: newCustomRoleId || null,
       },
     });

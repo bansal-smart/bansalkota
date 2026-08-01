@@ -4,6 +4,7 @@
 // function that needs a centre-ownership check (not just a role check) can
 // enforce it consistently instead of re-deriving it ad hoc.
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { withAuthRetry } from "./retry.ts";
 
 export type CallerAccess = {
   userId: string;
@@ -14,7 +15,7 @@ export type CallerAccess = {
 
 /** Throws on a missing/invalid token — callers should catch and return 401. */
 export async function resolveCallerAccess(admin: SupabaseClient, token: string): Promise<CallerAccess> {
-  const { data: userRes, error: uErr } = await admin.auth.getUser(token);
+  const { data: userRes, error: uErr } = await withAuthRetry(() => admin.auth.getUser(token));
   if (uErr || !userRes?.user) throw new Error("Unauthorized");
   const userId = userRes.user.id;
 

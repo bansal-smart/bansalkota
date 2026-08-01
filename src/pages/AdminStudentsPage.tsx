@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { Search, Download, X, ChevronLeft, ChevronRight, Loader2, Trash2, Save, Mail, GraduationCap, UserPlus, Upload, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
-import { useAuth } from "@/context/AuthContext";
-import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 type StudentRow = {
   user_id: string;
@@ -36,7 +36,7 @@ type StudentRow = {
 };
 
 type CentreLite = { id: string; city: string; area: string | null; slug: string };
-type BatchLite = { id: string; name: string; code: string | null };
+type BatchLite = { id: string; name: string; code: string | null; centre_id: string | null };
 type CourseLite = { id: string; name: string };
 
 const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
@@ -202,6 +202,7 @@ function BatchesMultiSelect({
 const AdminStudentsPage = () => {
   const { isCenterAdmin } = useAuth();
   const { primaryCenterId, primaryCenter, loading: centerAdminLoading } = useCenterAdmin();
+  const myCentreLabel = primaryCenter ? centreLabel(primaryCenter) : "";
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -384,8 +385,13 @@ const AdminStudentsPage = () => {
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
       row.centre = finalCentre;
       if (addCourseIds.length) row.course_ids = addCourseIds;
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = session?.access_token
+        ? { Authorization: `Bearer ${session.access_token}` }
+        : {};
       const { data, error } = await supabase.functions.invoke("bulk-import", {
         body: { kind: "students", rows: [row], dry_run: false },
+        headers,
       });
       if (error) throw new Error(error.message);
       const res = data as BulkServerResult;
@@ -404,11 +410,19 @@ const AdminStudentsPage = () => {
     }
   };
 
+  // primaryCenter loads asynchronously; if "Add Student" was opened before it
+  // resolved, backfill the locked centre once it's available.
+  useEffect(() => {
+    if (isCenterAdmin && addOpen && myCentreLabel && !addForm.centre) {
+      setAddForm((s) => ({ ...s, centre: myCentreLabel }));
+    }
+  }, [isCenterAdmin, addOpen, myCentreLabel, addForm.centre]);
+
   useEffect(() => {
     (async () => {
       const [{ data: cs }, { data: bs }, { data: crs }] = await Promise.all([
         (supabase as any).from("centres").select("id, city, area, slug").order("city"),
-        (supabase as any).from("course_batches").select("id, name, code").order("name"),
+        (supabase as any).from("course_batches").select("id, name, code, centre_id").order("name"),
         (supabase as any).from("courses").select("id, name").order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
@@ -664,26 +678,55 @@ const AdminStudentsPage = () => {
     setBulkDeleting(true);
     setBulkProgress({ done: 0, total: selected.length });
     let ok = 0;
-    let fail = 0;
+    const failed: { user_id: string; reason: string }[] = [];
     for (const user_id of selected) {
-      try {
-        const { error } = await supabase.functions.invoke("manage-student", {
-          body: { action: "delete", user_id },
-        });
-        if (error) throw error;
+      let lastErr: unknown = null;
+      // A stale session token intermittently fails the platform's own JWT check
+      // ("unrecognized JWT kid") mid-loop, so refresh once and retry before giving up.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const { error } = await supabase.functions.invoke("manage-student", {
+            body: { action: "delete", user_id },
+          });
+          if (error) throw error;
+          lastErr = null;
+          break;
+        } catch (e) {
+          lastErr = e;
+          if (attempt === 0) await supabase.auth.refreshSession().catch(() => { });
+        }
+      }
+      if (lastErr) {
+        const reason = lastErr instanceof Error ? lastErr.message : String(lastErr);
+        failed.push({ user_id, reason });
+        console.error(`Bulk delete failed for ${user_id}:`, lastErr);
+      } else {
         ok++;
-      } catch {
-        fail++;
       }
       setBulkProgress((p) => ({ done: p.done + 1, total: p.total }));
     }
     setBulkDeleting(false);
     setConfirmBulkDelete(false);
-    setSelected([]);
-    toast.success(`Deleted ${ok} student${ok === 1 ? "" : "s"}${fail ? ` · ${fail} failed` : ""}`);
+    setSelected(failed.map((f) => f.user_id));
+    if (failed.length) {
+      toast.error(`Deleted ${ok} · ${failed.length} failed`, {
+        description: `${failed[0].reason}${failed.length > 1 ? ` (+${failed.length - 1} more, still selected — retry deleting)` : " — still selected, retry deleting"}`,
+      });
+    } else {
+      toast.success(`Deleted ${ok} student${ok === 1 ? "" : "s"}`);
+    }
     load();
   };
 
+  // Batches span every centre (each franchise centre has its own standard
+  // batches); scope the picker to whichever centre is selected so the list
+  // isn't a 500-row wall of same-named batches from other centres.
+  const addCentreId = isCenterAdmin
+    ? primaryCenterId
+    : (centres.find((c) => centreLabel(c) === addForm.centre)?.id ?? null);
+  const addBatches = addCentreId ? batches.filter((b) => b.centre_id === addCentreId) : batches;
+  const editCentreId = isCenterAdmin ? primaryCenterId : (edit.centre_id ?? null);
+  const editBatches = editCentreId ? batches.filter((b) => b.centre_id === editCentreId) : batches;
 
   return (
     <div className="p-4 lg:p-6 space-y-4 pb-24 lg:pb-6">
@@ -699,14 +742,7 @@ const AdminStudentsPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              setAddForm({
-                ...emptyAdd,
-                centre: (isCenterAdmin && primaryCenter) ? centreLabel(primaryCenter) : "",
-              });
-              setAddCourseIds([]);
-              setAddOpen(true);
-            }}
+            onClick={() => { setAddForm(emptyAdd); setAddOpen(true); }}
             className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
           >
             <UserPlus className="h-3.5 w-3.5" /> Add Student
@@ -757,14 +793,8 @@ const AdminStudentsPage = () => {
           return base;
         })()}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
-          const mappedRows = rows.map((r) => {
-            if (isCenterAdmin && primaryCenter) {
-              return { ...r, centre: primaryCenter.city };
-            }
-            return r;
-          });
           const { data, error } = await supabase.functions.invoke("bulk-import", {
-            body: { kind: "students", rows: mappedRows, dry_run: dryRun },
+            body: { kind: "students", rows, dry_run: dryRun },
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
@@ -798,7 +828,14 @@ const AdminStudentsPage = () => {
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
-                  {f.type === "select" ? (
+                  {f.k === "centre" && isCenterAdmin ? (
+                    <input
+                      value={myCentreLabel || "Loading centre…"}
+                      disabled
+                      readOnly
+                      className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground opacity-80 cursor-not-allowed"
+                    />
+                  ) : f.type === "select" ? (
                     <select
                       value={addForm[f.k] ?? ""}
                       onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
@@ -825,10 +862,11 @@ const AdminStudentsPage = () => {
                 <select
                   value={addForm.batch_id ?? ""}
                   onChange={(e) => setAddForm((s) => ({ ...s, batch_id: e.target.value }))}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                  disabled={!addCentreId}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary disabled:opacity-50"
                 >
-                  <option value="">Select batch</option>
-                  {batches.map((b) => (
+                  <option value="">{addCentreId ? "Select batch" : "Select a centre first"}</option>
+                  {addBatches.map((b) => (
                     <option key={b.id} value={b.id}>{b.name}{b.code ? ` (${b.code})` : ""}</option>
                   ))}
                 </select>
@@ -1069,11 +1107,18 @@ const AdminStudentsPage = () => {
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
-                ...(!isCenterAdmin ? [{ k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) }] : []),
+                { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
-                  {f.type === "select" ? (
+                  {f.k === "centre_id" && isCenterAdmin ? (
+                    <input
+                      value={myCentreLabel || "Loading centre…"}
+                      disabled
+                      readOnly
+                      className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground opacity-80 cursor-not-allowed"
+                    />
+                  ) : f.type === "select" ? (
                     <select
                       value={((edit as any)[f.k] as string) ?? ""}
                       onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
@@ -1127,9 +1172,8 @@ const AdminStudentsPage = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => toggleSuspend(drawer)}
-                  className={`rounded-lg border px-3 py-2 text-xs font-medium ${
-                    drawer.is_suspended ? "border-secondary/30 text-secondary" : "border-destructive/30 text-destructive"
-                  }`}
+                  className={`rounded-lg border px-3 py-2 text-xs font-medium ${drawer.is_suspended ? "border-secondary/30 text-secondary" : "border-destructive/30 text-destructive"
+                    }`}
                 >
                   {drawer.is_suspended ? "Unsuspend" : "Suspend"}
                 </button>

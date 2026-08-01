@@ -3,6 +3,7 @@
 // Returns: { password: string }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { resolveCallerAccess } from "../_shared/authz.ts";
+import { withAuthRetry } from "../_shared/retry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,7 +53,7 @@ Deno.serve(async (req) => {
     if (password && password.length < 6) return json(400, { error: "Password must be at least 6 characters" });
     if (!password) password = genPassword();
 
-    const { error: aErr } = await admin.auth.admin.updateUserById(userId, { password });
+    const { error: aErr } = await withAuthRetry(() => admin.auth.admin.updateUserById(userId, { password }));
     if (aErr) return json(500, { error: aErr.message });
 
     await admin.from("profiles").update({ cbt_password_set_at: new Date().toISOString() }).eq("user_id", userId);

@@ -1,3 +1,5 @@
+/// <reference path="../deno.d.ts" />
+
 // Generic bulk-import edge function.
 // Kinds: 'centres' | 'students' | 'centre_courses' | 'enrollments'
 // Supports dry_run (validates without writing). Returns per-row results.
@@ -38,6 +40,26 @@ const toBool = (v: any): boolean => {
   return s === "true" || s === "1" || s === "yes" || s === "y";
 };
 
+// GoTrue occasionally rejects a handful of admin API calls in a bulk run with
+// "unrecognized JWT kid ... for algorithm ES256" (a transient signing-key cache
+// blip on Supabase's side, not a bad key — most calls in the same batch succeed).
+// Retrying after a short backoff resolves it without failing the whole row.
+const isTransientAuthError = (msg?: string | null) =>
+  !!msg && /unrecognized JWT kid|invalid JWT/i.test(msg);
+
+async function withAuthRetry<T extends { error: any }>(
+  fn: () => Promise<T>,
+  attempts = 3,
+): Promise<T> {
+  let result: T;
+  for (let i = 0; i < attempts; i++) {
+    result = await fn();
+    if (!result.error || !isTransientAuthError(result.error.message)) return result;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+  }
+  return result!;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
@@ -74,7 +96,7 @@ Deno.serve(async (req) => {
       .from("centre_staff")
       .select("centre_id, role")
       .eq("user_id", uid);
-    const staffCentres = new Set((staff ?? []).map((s: any) => s.centre_id as string));
+    const staffCentres = new Set<string>((staff ?? []).map((s: any) => s.centre_id as string));
     const isCentreStaff = staffCentres.size > 0;
 
     const body = await req.json().catch(() => ({}));
@@ -99,7 +121,7 @@ Deno.serve(async (req) => {
     if (!isAnyAdmin && isCentreStaff) {
       if (!scopeCentreId || !staffCentres.has(scopeCentreId)) {
         // Default to first membership if none provided
-        forcedCentreId = [...staffCentres][0];
+        forcedCentreId = [...staffCentres][0] ?? null;
       } else {
         forcedCentreId = scopeCentreId;
       }
@@ -211,13 +233,32 @@ Deno.serve(async (req) => {
         if (v == null || v === "") return null;
         if (v instanceof Date) return v.toISOString().slice(0, 10);
         const s = String(v).trim();
-        const d = new Date(s);
-        if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+        // Already ISO (yyyy-mm-dd or yyyy-m-d)
+        const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (iso) {
+          const mm = Number(iso[2]);
+          const dd = Number(iso[3]);
+          if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+          return `${iso[1]}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+        }
         const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
         if (m) {
           const yyyy = m[3].length === 2 ? `20${m[3]}` : m[3];
-          return `${yyyy}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+          const a = Number(m[1]);
+          const b = Number(m[2]);
+          // Ambiguous slash/dash dates can be DD-MM-YYYY (Indian convention, default)
+          // or MM-DD-YYYY (US/Excel export). Disambiguate using whichever component
+          // is out of month range (>12); only fall back to the default when both
+          // readings are plausible.
+          let dd: number, mm: number;
+          if (a > 12 && b <= 12) { dd = a; mm = b; }
+          else if (b > 12 && a <= 12) { mm = a; dd = b; }
+          else { dd = a; mm = b; }
+          if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+          return `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
         }
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
         return null;
       };
 
@@ -272,12 +313,12 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Find existing profile
+          // Find existing profile — match by roll_number first
           let target: { id: string; user_id: string; centre_id: string | null } | null = null;
           if (roll) {
             const { data } = await admin
               .from("profiles")
-              .select("id, user_id, centre_id")
+              .select("id, user_id, centre_id, roll_number")
               .eq("roll_number", roll)
               .maybeSingle();
             target = data as any;
@@ -285,10 +326,17 @@ Deno.serve(async (req) => {
           if (!target && phone) {
             const { data } = await admin
               .from("profiles")
-              .select("id, user_id, centre_id")
+              .select("id, user_id, centre_id, roll_number")
               .eq("phone", phone)
               .maybeSingle();
-            target = data as any;
+            // If the incoming row has an explicit roll number, and the profile found by phone
+            // does NOT already carry that exact roll number (e.g. sibling sharing parent phone,
+            // or a profile whose own roll hasn't been set yet), DO NOT overwrite it!
+            if (data && roll && (data as any).roll_number !== roll) {
+              target = null;
+            } else {
+              target = data as any;
+            }
           }
           // Centre staff (non-admin) may only update students already in their own centre.
           if (target && !isAnyAdmin && isCentreStaff && target.centre_id !== centreId) {
@@ -344,6 +392,12 @@ Deno.serve(async (req) => {
             const { error } = await admin.from("profiles").update(payload).eq("id", target.id);
             if (error) throw error;
             resolvedUid = target.user_id;
+            // Backfill the student role in case an earlier import run failed to set it.
+            const { error: roleErr } = await admin.from("user_roles").upsert(
+              { user_id: target.user_id, role: "student" },
+              { onConflict: "user_id,role" },
+            );
+            if (roleErr) throw roleErr;
             results.push({ row: i + 1, ok: true, id: target.id });
           } else {
             // Create new student. Admins can create anywhere; centre staff can
@@ -359,14 +413,32 @@ Deno.serve(async (req) => {
             const email = `${emailSeed}@bansal.ac.in`.toLowerCase().replace(/[^a-z0-9@.\-]/g, "");
             const password = `Bansal@${Math.random().toString(36).slice(2, 10)}`;
 
-            const { data: created, error: cErr } = await admin.auth.admin.createUser({
-              email,
-              password,
-              email_confirm: true,
-              user_metadata: { full_name: fullName, source: "bulk_import" },
-            });
-            if (cErr || !created?.user) throw new Error(cErr?.message || "Failed to create auth user");
-            const newUid = created.user.id;
+            let newUid: string | null = null;
+            const { data: created, error: cErr } = await withAuthRetry(() =>
+              admin.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: { full_name: fullName, source: "bulk_import" },
+              })
+            );
+            if (created?.user) {
+              newUid = created.user.id;
+            } else if (cErr) {
+              // If user already exists in Auth, retrieve their user_id. perPage covers
+              // the full roster (well beyond current enrolment size) since listUsers
+              // has no email filter — a low default page size silently misses matches.
+              const { data: listData } = await withAuthRetry(() =>
+                admin.auth.admin.listUsers({ page: 1, perPage: 2000 })
+              );
+              const existingAuth = (listData?.users ?? []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+              if (existingAuth) {
+                newUid = existingAuth.id;
+              } else {
+                throw new Error(cErr.message || "Failed to create auth user");
+              }
+            }
+            if (!newUid) throw new Error("Failed to resolve auth user ID");
 
             // Profile may have been auto-created by trigger; upsert
             const { data: existingProfile } = await admin
@@ -382,10 +454,11 @@ Deno.serve(async (req) => {
               if (error) throw error;
             }
 
-            await admin.from("user_roles").upsert(
+            const { error: roleErr } = await admin.from("user_roles").upsert(
               { user_id: newUid, role: "student" },
               { onConflict: "user_id,role" },
             );
+            if (roleErr) throw roleErr;
 
             resolvedUid = newUid;
             results.push({ row: i + 1, ok: true, id: newUid });
@@ -535,7 +608,9 @@ Deno.serve(async (req) => {
             if (u) userId = (u as any).id;
             if (!userId) {
               // Fallback: query auth.admin
-              const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+              const { data: list } = await withAuthRetry(() =>
+                admin.auth.admin.listUsers({ page: 1, perPage: 2000 })
+              );
               const match = list?.users?.find((x: any) => x.email?.toLowerCase() === email.toLowerCase());
               if (match) userId = match.id;
             }

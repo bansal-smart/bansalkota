@@ -133,6 +133,7 @@ const BlogDetailPage = lazy(() => import("./pages/BlogDetailPage"));
 const AdminCenterSupportPage = lazy(() => import("./pages/AdminCenterSupportPage"));
 const AdminCentreGalleryPage = lazy(() => import("./pages/AdminCentreGalleryPage"));
 const AdminNewsUpdatesPage = lazy(() => import("./pages/AdminNewsUpdatesPage"));
+const CentreNotificationsRoute = lazy(() => import("./components/CentreNotificationsRoute"));
 const AdminCentreStaffPage = lazy(() => import("./pages/AdminCentreStaffPage"));
 const LandingNewPage = lazy(() => import("./pages/LandingNewPage"));
 const AdminLandingPage = lazy(() => import("./pages/AdminLandingPage"));
@@ -350,6 +351,7 @@ const App = () => (
                   <Route path="/admin/centre-gallery" element={<AdminCentreGalleryPage />} />
                   <Route path="/admin/news-updates" element={<AdminNewsUpdatesPage />} />
                   <Route path="/admin/centre-staff" element={<AdminCentreStaffPage />} />
+                  <Route path="/admin/centre-notifications" element={<CentreNotificationsRoute />} />
                   <Route path="/admin/toppers" element={<AdminToppersPage />} />
                   <Route path="/admin/achievement-posters" element={<AdminAchievementPostersPage />} />
                   <Route path="/admin/gallery" element={<AdminGalleryPage />} />
