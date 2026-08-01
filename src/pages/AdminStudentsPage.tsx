@@ -892,11 +892,16 @@ const AdminStudentsPage = () => {
               </button>
               <button
                 onClick={submitAddStudent}
-                disabled={addSaving}
+                disabled={addSaving || (isCenterAdmin && !primaryCenter)}
+                title={isCenterAdmin && !primaryCenter ? "Loading your centre…" : undefined}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                {addSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-                {addSaving ? "Adding..." : "Add Student"}
+                {addSaving || (isCenterAdmin && !primaryCenter) ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <UserPlus className="h-3.5 w-3.5" />
+                )}
+                {addSaving ? "Adding..." : isCenterAdmin && !primaryCenter ? "Loading centre…" : "Add Student"}
               </button>
             </div>
           </div>
