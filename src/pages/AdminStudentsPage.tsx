@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 type StudentRow = {
   user_id: string;
@@ -198,6 +200,8 @@ function BatchesMultiSelect({
 
 
 const AdminStudentsPage = () => {
+  const { isCenterAdmin } = useAuth();
+  const { primaryCenterId, primaryCenter, loading: centerAdminLoading } = useCenterAdmin();
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
@@ -266,6 +270,8 @@ const AdminStudentsPage = () => {
     const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
     if (!studentIds.length) return [];
 
+    const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
+
     const all: string[] = [];
     const CHUNK = 500;
     for (let i = 0; i < studentIds.length; i += CHUNK) {
@@ -275,8 +281,8 @@ const AdminStudentsPage = () => {
         const s = debouncedSearch.trim();
         q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
-      if (centreFilter === "none") q = q.is("centre_id", null);
-      else if (centreFilter) q = q.eq("centre_id", centreFilter);
+      if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
+      else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
       if (classFilter) q = q.eq("class_level", classFilter);
       if (batchFilter.length) q = q.in("batch_id", batchFilter);
       const { data, error } = await q;
@@ -368,13 +374,15 @@ const AdminStudentsPage = () => {
 
 
   const submitAddStudent = async () => {
-    if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !addForm.centre.trim()) {
+    const finalCentre = (isCenterAdmin && primaryCenter) ? centreLabel(primaryCenter) : addForm.centre;
+    if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !finalCentre.trim()) {
       return toast.error("Roll No, Student Name and Centre are required");
     }
     setAddSaving(true);
     try {
       const row: Record<string, any> = {};
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
+      row.centre = finalCentre;
       if (addCourseIds.length) row.course_ids = addCourseIds;
       const { data, error } = await supabase.functions.invoke("bulk-import", {
         body: { kind: "students", rows: [row], dry_run: false },
@@ -410,6 +418,9 @@ const AdminStudentsPage = () => {
   }, []);
 
   const load = useCallback(async () => {
+    if (isCenterAdmin && centerAdminLoading) {
+      return;
+    }
     setLoading(true);
     try {
       // Get user_ids that have the student role, excluding anyone who also holds a staff role
@@ -442,8 +453,9 @@ const AdminStudentsPage = () => {
         const s = debouncedSearch.trim();
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
-      if (centreFilter === "none") query = query.is("centre_id", null);
-      else if (centreFilter) query = query.eq("centre_id", centreFilter);
+      const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
+      if (effectiveCentreFilter === "none") query = query.is("centre_id", null);
+      else if (effectiveCentreFilter) query = query.eq("centre_id", effectiveCentreFilter);
       if (classFilter) query = query.eq("class_level", classFilter);
       if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
@@ -476,7 +488,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches]);
+  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches, isCenterAdmin, centerAdminLoading, primaryCenterId]);
 
   useEffect(() => {
     load();
@@ -589,6 +601,8 @@ const AdminStudentsPage = () => {
       const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
       if (!studentIds.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
 
+      const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
+
       const all: StudentRow[] = [];
       const BATCH = 1000;
       for (let i = 0; i < studentIds.length; i += BATCH) {
@@ -602,8 +616,8 @@ const AdminStudentsPage = () => {
           const s = debouncedSearch.trim();
           q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
         }
-        if (centreFilter === "none") q = q.is("centre_id", null);
-        else if (centreFilter) q = q.eq("centre_id", centreFilter);
+        if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
+        else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
         if (classFilter) q = q.eq("class_level", classFilter);
         if (batchFilter.length) q = q.in("batch_id", batchFilter);
 
@@ -685,7 +699,14 @@ const AdminStudentsPage = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => { setAddForm(emptyAdd); setAddOpen(true); }}
+            onClick={() => {
+              setAddForm({
+                ...emptyAdd,
+                centre: (isCenterAdmin && primaryCenter) ? centreLabel(primaryCenter) : "",
+              });
+              setAddCourseIds([]);
+              setAddOpen(true);
+            }}
             className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10"
           >
             <UserPlus className="h-3.5 w-3.5" /> Add Student
@@ -718,21 +739,32 @@ const AdminStudentsPage = () => {
         title="Bulk import students"
         description="Upload a CSV/XLSX with one row per student. Existing students (matched by roll number or phone) are updated; new students are created automatically. Centre is matched by city name."
         fileBase="students"
-        fields={[
-          { key: "roll_number", label: "Roll No", required: true, example: "1001" },
-          { key: "full_name", label: "Student Name", required: true, example: "Aviral Singh" },
-          { key: "father_name", label: "Father's Name", example: "Ashok Kumar Singh" },
-          { key: "phone", label: "Contact No.", example: "7857852344" },
-          { key: "parent_phone", label: "Parent No.", example: "7909075201" },
-          { key: "dob", label: "DOB", example: "2008-05-12" },
-          { key: "target_exam", label: "Stream", example: "JEE" },
-          { key: "class_level", label: "Class", example: "XI" },
-          { key: "batch_code", label: "Batch Code", example: "XI-J1" },
-          { key: "centre", label: "Centre", required: true, example: "Jamshedpur" },
-        ]}
+        fields={(() => {
+          const base = [
+            { key: "roll_number", label: "Roll No", required: true, example: "1001" },
+            { key: "full_name", label: "Student Name", required: true, example: "Aviral Singh" },
+            { key: "father_name", label: "Father's Name", example: "Ashok Kumar Singh" },
+            { key: "phone", label: "Contact No.", example: "7857852344" },
+            { key: "parent_phone", label: "Parent No.", example: "7909075201" },
+            { key: "dob", label: "DOB", example: "2008-05-12" },
+            { key: "target_exam", label: "Stream", example: "JEE" },
+            { key: "class_level", label: "Class", example: "XI" },
+            { key: "batch_code", label: "Batch Code", example: "XI-J1" },
+          ];
+          if (!isCenterAdmin) {
+            base.push({ key: "centre", label: "Centre", required: true, example: "Jamshedpur" });
+          }
+          return base;
+        })()}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
+          const mappedRows = rows.map((r) => {
+            if (isCenterAdmin && primaryCenter) {
+              return { ...r, centre: primaryCenter.city };
+            }
+            return r;
+          });
           const { data, error } = await supabase.functions.invoke("bulk-import", {
-            body: { kind: "students", rows, dry_run: dryRun },
+            body: { kind: "students", rows: mappedRows, dry_run: dryRun },
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
@@ -762,7 +794,7 @@ const AdminStudentsPage = () => {
                 { k: "dob", l: "DOB", ph: "", type: "date" },
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS },
-                { k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) },
+                ...(!isCenterAdmin ? [{ k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) }] : []),
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
@@ -843,15 +875,17 @@ const AdminStudentsPage = () => {
             className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
-        <select
-          value={centreFilter}
-          onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
-          className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
-        >
-          <option value="">All Centres</option>
-          <option value="none">No centre assigned</option>
-          {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
-        </select>
+        {!isCenterAdmin && (
+          <select
+            value={centreFilter}
+            onChange={(e) => { setCentreFilter(e.target.value); setPage(0); }}
+            className="rounded-lg border border-border bg-background py-2 px-3 text-sm outline-none focus:border-primary min-w-[160px]"
+          >
+            <option value="">All Centres</option>
+            <option value="none">No centre assigned</option>
+            {centres.map((c) => <option key={c.id} value={c.id}>{centreLabel(c)}</option>)}
+          </select>
+        )}
         <select
           value={classFilter}
           onChange={(e) => { setClassFilter(e.target.value); setPage(0); }}
@@ -1035,7 +1069,7 @@ const AdminStudentsPage = () => {
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
-                { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
+                ...(!isCenterAdmin ? [{ k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) }] : []),
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
