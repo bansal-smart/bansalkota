@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CBT_KIOSK_URL, SECRET_ADMIN_URL } from "@/lib/brand";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 
 type CourseRow = { id: string; name: string; slug: string };
 type BatchRow = {
@@ -21,9 +22,13 @@ type BatchRow = {
 const CLASS_OPTIONS = ["VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"];
 
 const AdminBatchesPage = () => {
-  const { isStaff, isSuperAdmin } = useAuth();
-  const { isHq } = useCenterAdmin();
+  const { isStaff, isSuperAdmin, isCenterAdmin } = useAuth();
+  const { isHq, primaryCenterId, loading: centreLoading } = useCenterAdmin();
   const canManageBatches = isStaff || isHq;
+  // Batch codes (XI-J, XI-N …) repeat identically across every franchise
+  // centre, so an unscoped list is not just noisy — it makes two different
+  // centres' batches indistinguishable in the UI.
+  const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [batches, setBatches] = useState<BatchRow[]>([]);
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
@@ -36,8 +41,8 @@ const AdminBatchesPage = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: cs }, { data: bs }] = await Promise.all([
-      supabase.from("courses").select("id, name, slug").order("name"),
-      supabase.from("course_batches").select("*").order("code"),
+      scopeQueryToCentre(supabase.from("courses").select("id, name, slug"), scopeCentreId).order("name"),
+      scopeQueryToCentre(supabase.from("course_batches").select("*"), scopeCentreId).order("code"),
     ]);
     setCourses((cs ?? []) as CourseRow[]);
     setBatches((bs ?? []) as BatchRow[]);
@@ -55,7 +60,12 @@ const AdminBatchesPage = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    // Don't fire an unscoped first load before the centre is known.
+    if (isCenterAdmin && centreLoading) return;
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCenterAdmin, centreLoading, scopeCentreId]);
 
   const createBatch = async () => {
     if (!form.courseId || !form.code) return toast.error("Course and code are required");
@@ -242,14 +252,16 @@ const AdminBatchesPage = () => {
             </div>
           ))}
 
-      {/* 
+      {/* Auto-created franchise batches carry no course_id, so for most centres
+          every batch they own lands here. Hiding this section made the Batches
+          tab look completely empty for them. */}
           {orphans.length > 0 && (
-            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 overflow-hidden">
-              <div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-destructive">Batches without a valid course</div>
+            <div className="rounded-2xl border border-border bg-card overflow-hidden">
+              <div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Batches not linked to a course</div>
               <table className="w-full text-sm">
                 <tbody>
                   {orphans.map((b) => (
-                    <tr key={b.id} className="border-t border-destructive/20">
+                    <tr key={b.id} className="border-t border-border">
                       <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
                       <td className="px-4 py-2">{b.name}</td>
                       <td className="px-4 py-2 text-right">
@@ -269,7 +281,7 @@ const AdminBatchesPage = () => {
                 </tbody>
               </table>
             </div>
-          )} */}
+          )}
 
         </div>
       )}

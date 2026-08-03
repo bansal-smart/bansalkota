@@ -43,7 +43,34 @@ Deno.serve(async (req) => {
 
     const { data: isAdmin } = await admin.rpc("has_role", { _user_id: callerId, _role: "admin" });
     const { data: isSuper } = await admin.rpc("has_role", { _user_id: callerId, _role: "super_admin" });
-    if (!isAdmin && !isSuper) return json(403, { error: "Only admins can manage students" });
+    const isPlatformAdmin = !!isAdmin || !!isSuper;
+
+    // Centre admins run the same Students screen as platform admins, so they
+    // need this function too (emails, edit, delete) — but strictly limited to
+    // students of the centre(s) they staff. Without this they got a blanket
+    // 403: no email column, and Edit/Delete silently failed.
+    let staffCentreIds: string[] = [];
+    if (!isPlatformAdmin) {
+      const { data: staffRows } = await admin
+        .from("centre_staff")
+        .select("centre_id")
+        .eq("user_id", callerId);
+      staffCentreIds = (staffRows ?? [])
+        .map((r: { centre_id: string | null }) => r.centre_id)
+        .filter((x): x is string => !!x);
+      if (!staffCentreIds.length) return json(403, { error: "Only admins can manage students" });
+    }
+
+    /** True when the target student belongs to a centre the caller may act on. */
+    const inCallerScope = async (uid: string) => {
+      if (isPlatformAdmin) return true;
+      const { data: p } = await admin
+        .from("profiles")
+        .select("centre_id")
+        .eq("user_id", uid)
+        .maybeSingle();
+      return !!p?.centre_id && staffCentreIds.includes(p.centre_id);
+    };
 
     const body = await req.json();
     const action: string = body?.action;
@@ -57,8 +84,19 @@ Deno.serve(async (req) => {
     };
 
     if (action === "get_emails") {
-      const ids: string[] = Array.isArray(body?.user_ids) ? body.user_ids : [];
+      let ids: string[] = Array.isArray(body?.user_ids) ? body.user_ids : [];
       if (!ids.length) return json(200, { emails: {} });
+      if (!isPlatformAdmin) {
+        // Never hand a centre admin an email for a student outside their centre.
+        const { data: scoped } = await admin
+          .from("profiles")
+          .select("user_id")
+          .in("user_id", ids)
+          .in("centre_id", staffCentreIds);
+        const allowedIds = new Set((scoped ?? []).map((r: { user_id: string }) => r.user_id));
+        ids = ids.filter((id) => allowedIds.has(id));
+        if (!ids.length) return json(200, { emails: {} });
+      }
       const { data: usersList } = await admin.auth.admin.listUsers({ perPage: 1000 });
       const map: Record<string, string | null> = {};
       ids.forEach((id) => {
@@ -72,11 +110,18 @@ Deno.serve(async (req) => {
       const user_id = String(body?.user_id ?? "");
       if (!user_id) return json(400, { error: "user_id required" });
       if (!(await ensureStudent(user_id))) return json(403, { error: "Target is not a student" });
+      if (!(await inCallerScope(user_id))) return json(403, { error: "Student is not in your centre" });
 
       const allowed = ["full_name", "father_name", "roll_number", "dob", "phone", "parent_phone", "target_exam", "class_level", "city", "country", "plan", "goal", "centre_id", "batch_id", "batch_label"];
       const update: Record<string, unknown> = { user_id };
       for (const k of allowed) {
         if (body?.[k] !== undefined) update[k] = body[k];
+      }
+      // A centre admin must not be able to move a student into another centre.
+      if (!isPlatformAdmin && update.centre_id !== undefined) {
+        if (!staffCentreIds.includes(String(update.centre_id))) {
+          return json(403, { error: "Cannot move a student to another centre" });
+        }
       }
       if (Object.keys(update).length > 1) {
         const { error: pErr } = await admin
@@ -120,6 +165,7 @@ Deno.serve(async (req) => {
       if (!user_id) return json(400, { error: "user_id required" });
       if (user_id === userData.user.id) return json(400, { error: "Cannot delete yourself" });
       if (!(await ensureStudent(user_id))) return json(403, { error: "Target is not a student" });
+      if (!(await inCallerScope(user_id))) return json(403, { error: "Student is not in your centre" });
       // Cleanup roles then delete auth user (profile cascades via FK)
       await admin.from("user_roles").delete().eq("user_id", user_id);
       const { error: dErr } = await withAuthRetry(() => admin.auth.admin.deleteUser(user_id));

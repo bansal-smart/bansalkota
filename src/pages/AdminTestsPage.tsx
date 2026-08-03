@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
@@ -44,7 +46,8 @@ const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
 };
 
 const AdminTestsPage = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isCenterAdmin } = useAuth();
+  const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
   const { confirm, ConfirmDialog } = useConfirm();
   const [tests, setTests] = useState<AdminTest[]>([]);
   const [batches, setBatches] = useState<BatchOpt[]>([]);
@@ -54,16 +57,22 @@ const AdminTestsPage = () => {
   const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | "unrestricted" | batchId
   const [loading, setLoading] = useState(true);
 
+  // `Authenticated can view published tests` matches for every logged-in user,
+  // so RLS alone would show a centre admin every other centre's tests.
+  const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
+
   const load = async () => {
     setLoading(true);
     const [{ data: testRows }, { data: batchRows }] = await Promise.all([
-      supabase
-        .from("tests")
-        .select(
-          "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
-        )
-        .order("created_at", { ascending: false }),
-      supabase.from("course_batches").select("id, name").order("name"),
+      scopeQueryToCentre(
+        supabase
+          .from("tests")
+          .select(
+            "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
+          ),
+        scopeCentreId,
+      ).order("created_at", { ascending: false }),
+      scopeQueryToCentre(supabase.from("course_batches").select("id, name"), scopeCentreId).order("name"),
     ]);
     setTests((testRows ?? []) as AdminTest[]);
     setBatches((batchRows ?? []) as BatchOpt[]);
@@ -71,8 +80,10 @@ const AdminTestsPage = () => {
   };
 
   useEffect(() => {
+    if (isCenterAdmin && centreLoading) return;
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCenterAdmin, centreLoading, scopeCentreId]);
 
   const togglePublish = async (t: AdminTest, publish: boolean) => {
     const { error } = await supabase.from("tests").update({ is_published: publish }).eq("id", t.id);

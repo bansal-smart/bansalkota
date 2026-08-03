@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
 import {
@@ -157,7 +159,8 @@ const SortableRow = ({
 
 const AdminCoursesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isCenterAdmin } = useAuth();
+  const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,11 +175,19 @@ const AdminCoursesPage = () => {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // A centre admin must only ever see their own centre's courses. RLS can't do
+  // this for us — `Published courses are viewable by everyone` matches for any
+  // logged-in user — so scope the query explicitly.
+  const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
+
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("courses")
-      .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order")
+    const { data } = await scopeQueryToCentre(
+      supabase
+        .from("courses")
+        .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order"),
+      scopeCentreId,
+    )
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
     const base = (data ?? []) as AdminCourse[];
@@ -209,6 +220,9 @@ const AdminCoursesPage = () => {
   };
 
   useEffect(() => {
+    // Wait for the centre to resolve, otherwise the first load would run
+    // unscoped and briefly render every centre's courses.
+    if (isCenterAdmin && centreLoading) return;
     load();
     const channel = supabase
       .channel("admin-courses-sync")
@@ -217,7 +231,8 @@ const AdminCoursesPage = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "lessons" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCenterAdmin, centreLoading, scopeCentreId]);
 
   const togglePublish = async (c: AdminCourse, publish: boolean) => {
     if (!publish) {

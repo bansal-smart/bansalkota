@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
@@ -419,17 +420,24 @@ const AdminStudentsPage = () => {
   }, [isCenterAdmin, addOpen, myCentreLabel, addForm.centre]);
 
   useEffect(() => {
+    // Wait for the centre to resolve so a centre admin never briefly gets the
+    // unscoped batch/course lists (batch codes repeat across centres).
+    if (isCenterAdmin && centerAdminLoading) return;
+    const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
     (async () => {
       const [{ data: cs }, { data: bs }, { data: crs }] = await Promise.all([
         (supabase as any).from("centres").select("id, city, area, slug").order("city"),
-        (supabase as any).from("course_batches").select("id, name, code, centre_id").order("name"),
-        (supabase as any).from("courses").select("id, name").order("name"),
+        scopeQueryToCentre(
+          (supabase as any).from("course_batches").select("id, name, code, centre_id"),
+          scopeCentreId,
+        ).order("name"),
+        scopeQueryToCentre((supabase as any).from("courses").select("id, name"), scopeCentreId).order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
       setBatches((bs as BatchLite[]) ?? []);
       setCourses((crs as CourseLite[]) ?? []);
     })();
-  }, []);
+  }, [isCenterAdmin, centerAdminLoading, primaryCenterId]);
 
   const load = useCallback(async () => {
     if (isCenterAdmin && centerAdminLoading) {
