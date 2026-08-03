@@ -295,7 +295,7 @@ export default function BoostPage() {
               From Registration to Scholarship
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
             {timeline.map((t, i) => (
               <BansalCard key={t.phase} className="relative">
                 <div className="absolute -top-3 -left-3 h-8 w-8 rounded-full bg-bansal-orange text-white font-bold flex items-center justify-center text-sm shadow-md">
@@ -384,7 +384,7 @@ export default function BoostPage() {
             Fill an Application
           </BansalButton>
           <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
-            <Clock className="h-3 w-3" /> Limited slots every Sunday
+            <Clock className="h-3 w-3" /> Refer dates from Page
           </p>
         </div>
       </section>

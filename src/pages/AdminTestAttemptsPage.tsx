@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock, Play, Radio } from "lucide-react";
+import { Search, Loader2, Eye, Trash2, Download, RotateCcw, RefreshCcw, CheckCircle2, XCircle, Clock, Play, Radio, AlertTriangle } from "lucide-react";
 
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ type Attempt = {
   submitted_at: string | null;
   created_at: string;
   time_spent_seconds: number | null;
+  metadata: { tab_switches?: number } | null;
 };
 
 type Props = { testId?: string; compact?: boolean };
@@ -126,7 +127,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     while (allRows.length < 10000) {
       let q = supabase
         .from("test_attempts")
-        .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds")
+        .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds, metadata")
         .order("created_at", { ascending: false })
         .range(from, from + PAGE - 1);
       if (effectiveTestId) q = q.eq("test_id", effectiveTestId);
@@ -262,6 +263,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     submitted_at: null;
     created_at: string;
     time_spent_seconds: null;
+    metadata: null;
     full_name: string | null;
     roll_number: string | null;
     batch_name: string | null;
@@ -281,6 +283,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           score: null, percentile: null, correct_answers: null, total_questions: null,
           started_at: null, submitted_at: null, created_at: "",
           time_spent_seconds: null,
+          metadata: null,
           full_name: s.full_name,
           roll_number: s.roll_number,
           batch_name: s.batch_name,
@@ -303,6 +306,8 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
       return changed ? next : prev;
     });
   }, [notAttempted]);
+
+  const getWarningCount = (row: Row) => row.metadata?.tab_switches ?? 0;
 
   const getStudentName = (row: Row) => {
     const rosterName = row.__na ? row.full_name?.trim() : "";
@@ -353,13 +358,14 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
   const exportCsv = () => {
     const rows = [
-      ["Student", "Test", "Status", "Score", "Correct", "Total", "Percentile", "Time (s)", "Started", "Submitted"],
+      ["Student", "Test", "Status", "Warnings", "Score", "Correct", "Total", "Percentile", "Time (s)", "Started", "Submitted"],
       ...filtered.map((a) => {
         const t = tests.find((x) => x.id === a.test_id);
         return [
           getStudentName(a),
           t?.title ?? "",
           a.status,
+          a.status === "not_attempted" ? "" : getWarningCount(a),
           a.score ?? "",
           a.correct_answers ?? "",
           a.total_questions ?? "",
@@ -480,6 +486,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Student</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Test</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Warnings</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Score</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Correct</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">%ile</th>
@@ -504,6 +511,25 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                             a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
                               "bg-primary/10 text-primary animate-pulse"
                           }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {a.status === "not_attempted" ? (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        ) : (
+                          (() => {
+                            const warnings = getWarningCount(a);
+                            if (warnings === 0) return <span className="text-xs text-muted-foreground">0</span>;
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${warnings >= 3 ? "bg-destructive/15 text-destructive" : "bg-amber-500/15 text-amber-600"
+                                  }`}
+                                title={`${warnings} tab-switch warning${warnings > 1 ? "s" : ""}${warnings >= 3 ? " — auto-submitted" : ""}`}
+                              >
+                                <AlertTriangle className="h-3 w-3" /> {warnings}
+                              </span>
+                            );
+                          })()
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right text-foreground">{a.score ?? "—"}</td>
                       <td className="px-4 py-3 text-right text-xs text-muted-foreground">{a.correct_answers ?? "—"}/{a.total_questions ?? "—"}</td>

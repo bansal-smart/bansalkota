@@ -140,7 +140,6 @@ export const DEFAULTS: BoostContent = {
   timeline: [
     { phase: "Registration", date: "Open Now", desc: "Pay ₹{price} and reserve your slot on bansal.ac.in" },
     { phase: "Admit Card", date: "T-3 days", desc: "Download your admit card from the official portal" },
-    { phase: "Test Day", date: "Every Sunday", desc: "Online slots and offline center slots available" },
     { phase: "Result", date: "Within 48 hrs", desc: "Scholarship + counselling call from Bansal admissions" },
   ],
   faqs: [
