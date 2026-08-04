@@ -3,7 +3,7 @@ import {
   Trophy, Target, TrendingUp, RotateCcw, Home, Loader2, CheckCircle2, XCircle,
   MinusCircle, Clock, Award, ChevronRight, Lock, Medal, Users, Activity, RefreshCcw,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -21,6 +21,7 @@ type SubjectStat = { total: number; correct: number; attempted: number; score: n
 
 type Attempt = {
   id: string;
+  user_id: string;
   test_name: string;
   score: number | null;
   total_questions: number | null;
@@ -75,6 +76,11 @@ const PIE_COLORS = ["#10b981", "#ef4444", "#94a3b8"];
 const TestResultPage = () => {
   const { attemptId: id, slug } = useParams<{ attemptId: string; slug: string }>();
   const { user } = useAuth();
+  // This page is reused verbatim under /admin/tests/:slug/result/:attemptId
+  // (so centre staff can open the Attempts tab's Eye button) — keep the
+  // Responses/Subject-breakdown links inside the same base so they don't
+  // bounce a staff viewer back to the student-only /tests/... route.
+  const basePath = useLocation().pathname.startsWith("/admin") ? "/admin" : "";
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [subjects, setSubjects] = useState<Record<string, SubjectStat>>({});
@@ -85,9 +91,13 @@ const TestResultPage = () => {
   const [reattemptOpen, setReattemptOpen] = useState(false);
   const [reattemptSubmitting, setReattemptSubmitting] = useState(false);
 
+  // Only the attempt's own student may request a re-attempt — a staff member
+  // viewing someone else's result must not see (or be able to trigger) this.
+  const isOwnAttempt = !!user && !!attempt && user.id === attempt.user_id;
+
   // Load latest re-attempt request status for this user + test
   useEffect(() => {
-    if (!user || !attempt?.test_id) return;
+    if (!isOwnAttempt || !user || !attempt?.test_id) return;
     let cancelled = false;
     (async () => {
       const { data } = await supabase
@@ -103,7 +113,7 @@ const TestResultPage = () => {
       setReattemptStatus(s);
     })();
     return () => { cancelled = true; };
-  }, [user, attempt?.test_id]);
+  }, [isOwnAttempt, user, attempt?.test_id]);
 
   const submitReattemptRequest = async () => {
     if (!user || !attempt?.test_id) return;
@@ -246,10 +256,12 @@ const TestResultPage = () => {
   const buildScorecardInput = async (): Promise<AdminStyleReportInput | null> => {
     if (!attempt || !user) return null;
     const { optionLabel, resolveOptionStyle } = await import("@/lib/optionLabel");
+    // Always the attempt's own student — a staff member viewing someone else's
+    // result must get that student's scorecard, not their own admin profile.
     const [{ data: prof }, { data: testMeta }, { data: respBundle }] = await Promise.all([
       supabase.from("profiles")
         .select("full_name, roll_number, phone, batch_label, course_batches(name, code), centres(city, area)")
-        .eq("user_id", user.id).maybeSingle(),
+        .eq("user_id", attempt.user_id).maybeSingle(),
       supabase.from("tests").select("title, exam_pattern, total_marks, option_label_style").eq("id", attempt.test_id!).maybeSingle(),
       supabase.rpc("get_attempt_response_sheet", { _attempt_id: attempt.id }),
     ]);
@@ -520,7 +532,7 @@ const TestResultPage = () => {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-foreground">Subject-wise Breakdown</h2>
             <Link
-              to={`/tests/${slug}/result/${id}/responses`}
+              to={`${basePath}/tests/${slug}/result/${id}/responses`}
               className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90"
             >
               View detailed response sheet <ChevronRight className="h-3.5 w-3.5" />
@@ -552,7 +564,7 @@ const TestResultPage = () => {
                         <td className="px-2 py-3 text-right">{acc}%</td>
                         <td className="px-2 py-3 text-right font-semibold">{stat.score.toFixed(1)} / {stat.maxScore.toFixed(0)}</td>
                         <td className="px-2 py-3 text-right">
-                          <Link to={`/tests/${slug}/result/${id}/subject/${slugifySubject(subj)}`}
+                          <Link to={`${basePath}/tests/${slug}/result/${id}/subject/${slugifySubject(subj)}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
                             Review <ChevronRight className="h-3 w-3" />
                           </Link>
@@ -566,7 +578,8 @@ const TestResultPage = () => {
           )}
         </div>
 
-        {/* Re-attempt request panel */}
+        {/* Re-attempt request panel — the attempt owner only */}
+        {isOwnAttempt && (
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -633,6 +646,7 @@ const TestResultPage = () => {
             </div>
           )}
         </div>
+        )}
 
         <div className="flex flex-col gap-3 sm:flex-row">
 

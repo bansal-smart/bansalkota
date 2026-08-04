@@ -19,7 +19,7 @@ type BatchRow = {
   centre_id: string | null;
 };
 
-const CLASS_OPTIONS = ["VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"];
+const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"];
 
 const AdminBatchesPage = () => {
   const { isStaff, isSuperAdmin, isCenterAdmin } = useAuth();

@@ -59,6 +59,10 @@ type Pack = {
 const SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "Mental Ability", "Mixed / General"];
 const TARGET_EXAMS = ["JEE", "NEET", "Olympiads", "Foundation", "CBSE / Board", "Mixed"];
 const CLASS_LEVELS = [
+  "Class I",
+  "Class II",
+  "Class III",
+  "Class IV",
   "Class V",
   "Class VI",
   "Class VII",

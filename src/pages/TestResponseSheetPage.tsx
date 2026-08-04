@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Printer, Sparkles, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -64,6 +64,10 @@ const correctIndices = (correct: any): number[] => {
 
 const TestResponseSheetPage = () => {
   const { attemptId, slug } = useParams<{ attemptId: string; slug: string }>();
+  // Reused under /admin/tests/:slug/result/:attemptId/responses too — stay in
+  // that base so "Back to result" doesn't bounce a staff viewer to the
+  // student-only route.
+  const basePath = useLocation().pathname.startsWith("/admin") ? "/admin" : "";
   const [data, setData] = useState<SheetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "correct" | "wrong" | "unattempted">("all");
@@ -146,7 +150,7 @@ const TestResponseSheetPage = () => {
     <div className="pb-16">
       <div className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <Link to={`/tests/${slug}/result/${attemptId}`} className="inline-flex items-center gap-2 text-sm font-bold text-foreground hover:text-primary">
+          <Link to={`${basePath}/tests/${slug}/result/${attemptId}`} className="inline-flex items-center gap-2 text-sm font-bold text-foreground hover:text-primary">
             <ArrowLeft className="h-4 w-4" /> Back to result
           </Link>
           <div className="flex flex-wrap items-center gap-2">

@@ -205,6 +205,16 @@ const SignupPage = () => {
               <div>
                 <label className="text-sm font-medium text-foreground">Class</label>
                 <select value={form.class_level} onChange={(e) => update("class_level", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground">
+                  <option>Class 1</option>
+                  <option>Class 2</option>
+                  <option>Class 3</option>
+                  <option>Class 4</option>
+                  <option>Class 5</option>
+                  <option>Class 6</option>
+                  <option>Class 7</option>
+                  <option>Class 8</option>
+                  <option>Class 9</option>
+                  <option>Class 10</option>
                   <option>Class 11</option>
                   <option>Class 12</option>
                   <option>Dropper</option>

@@ -340,6 +340,13 @@ const App = () => (
                   <Route path="/admin/tests/new" element={<CreateTestPage />} />
                   <Route path="/admin/tests/:slug/edit" element={<CreateTestPage />} />
                   <Route path="/admin/tests/:slug/result" element={<AdminTestResultPage />} />
+                  {/* Same per-student result view students use, reused so admin/centre
+                      staff can open an individual attempt from the Attempts tab's Eye
+                      button — the student-only route (/tests/:slug/result/:attemptId)
+                      is gated to the "student" role and bounced them to /admin/students. */}
+                  <Route path="/admin/tests/:slug/result/:attemptId" element={<TestResultPage />} />
+                  <Route path="/admin/tests/:slug/result/:attemptId/responses" element={<TestResponseSheetPage />} />
+                  <Route path="/admin/tests/:slug/result/:attemptId/subject/:subject" element={<TestSubjectBreakdownPage />} />
                   <Route path="/admin/tests/:slug/combined" element={<AdminCombinedResultPage />} />
                   <Route path="/admin/tests/:slug" element={<AdminTestDetailPage />} />
                   <Route path="/admin/books" element={<AdminBooksPage />} />

@@ -8,7 +8,7 @@ import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 const tabItems = ["Personal Info"];
 
-const CLASSES = ["8", "9", "10", "11", "12", "Dropper"];
+const CLASSES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
 const STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh",

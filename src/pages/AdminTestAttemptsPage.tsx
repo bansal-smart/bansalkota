@@ -543,7 +543,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                           ) : (
                             <>
                               {t?.slug && a.status !== "in_progress" && (
-                                <Link to={`/tests/${t.slug}/result/${a.id}`} target="_blank" className="rounded-md p-1.5 text-foreground hover:bg-muted" title="View result">
+                                <Link to={`/admin/tests/${t.slug}/result/${a.id}`} target="_blank" className="rounded-md p-1.5 text-foreground hover:bg-muted" title="View result">
                                   <Eye className="h-3.5 w-3.5" />
                                 </Link>
                               )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -94,6 +94,10 @@ const TestSubjectBreakdownPage = () => {
     slug: string;
     subject: string;
   }>();
+  // Reused under /admin/tests/:slug/result/:attemptId/subject/:subject too —
+  // stay in that base so "Back to result" doesn't bounce a staff viewer to
+  // the student-only route.
+  const basePath = useLocation().pathname.startsWith("/admin") ? "/admin" : "";
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, { selected: any }>>({});
@@ -182,7 +186,7 @@ const TestSubjectBreakdownPage = () => {
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 lg:p-6">
       <Link
-        to={`/tests/${slug}/result/${attemptId}`}
+        to={`${basePath}/tests/${slug}/result/${attemptId}`}
         className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Back to result

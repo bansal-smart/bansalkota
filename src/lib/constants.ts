@@ -21,6 +21,10 @@ export type Subject = (typeof SUBJECTS)[number];
 
 // Canonical student class levels used in every enquiry/admission form.
 export const CLASS_LEVELS = [
+  "Class 1",
+  "Class 2",
+  "Class 3",
+  "Class 4",
   "Class 5",
   "Class 6",
   "Class 7",

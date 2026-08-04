@@ -41,7 +41,7 @@ type BatchLite = { id: string; name: string; code: string | null; centre_id: str
 type CourseLite = { id: string; name: string };
 
 const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
-const CLASS_OPTIONS = ["VI", "VII", "VIII", "IX", "X", "XI", "XII", "Dropper"];
+const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Dropper"];
 
 const PAGE_SIZE = 25;
 

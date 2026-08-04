@@ -9,7 +9,7 @@ import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import { consumePendingEnrollment } from "@/lib/pendingEnrollment";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 
-const CLASSES = ["8", "9", "10", "11", "12", "Dropper"];
+const CLASSES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
 const STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh",
