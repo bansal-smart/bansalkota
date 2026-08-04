@@ -336,6 +336,27 @@ export type Database = {
         }
         Relationships: []
       }
+      boost_page_content: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       boost_registrations: {
         Row: {
           admit_card_number: string | null
@@ -460,6 +481,36 @@ export type Database = {
           exam_dates?: string[]
           id?: string
           price_inr?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      boost_syllabus_resources: {
+        Row: {
+          class_label: string
+          created_at: string
+          id: string
+          sample_paper_path: string | null
+          sort_order: number
+          syllabus_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_label: string
+          created_at?: string
+          id?: string
+          sample_paper_path?: string | null
+          sort_order?: number
+          syllabus_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_label?: string
+          created_at?: string
+          id?: string
+          sample_paper_path?: string | null
+          sort_order?: number
+          syllabus_path?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -601,6 +652,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      centre_notification_targets: {
+        Row: {
+          centre_id: string
+          id: string
+          notification_id: string
+        }
+        Insert: {
+          centre_id: string
+          id?: string
+          notification_id: string
+        }
+        Update: {
+          centre_id?: string
+          id?: string
+          notification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centre_notification_targets_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "centre_notification_targets_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "centre_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centre_notifications: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          priority: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          priority?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          priority?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       centre_staff: {
         Row: {
@@ -5598,6 +5712,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      is_hq_centre_admin: { Args: { _user_id: string }; Returns: boolean }
       lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
       move_to_dlq: {
         Args: {

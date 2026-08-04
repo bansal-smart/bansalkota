@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, IndianRupee, Clock, ChevronDown } from "lucide-react";
+import { Calendar, IndianRupee, Clock, ChevronDown, FileText, FileDown } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
@@ -8,6 +8,7 @@ import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import BoostRegistrationModal from "@/components/BoostRegistrationModal";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { useSiteBanner } from "@/hooks/useSiteBanner";
+import { useBoostSyllabus, boostSyllabusPublicUrl } from "@/hooks/useBoostSyllabus";
 import {
   useBoostContent,
   resolveIcon,
@@ -24,6 +25,7 @@ export default function BoostPage() {
   const { banner } = useSiteBanner("boost");
   const { content } = useBoostContent();
   const { legacy, benefits, examStructure, scholarshipGrid, notes, timeline, faqs } = content;
+  const { rows: syllabusRows } = useBoostSyllabus();
 
   const renderScholarshipTable = (rows: ScholarshipRow[], startIndex: number) => (
     <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-md">
@@ -283,6 +285,69 @@ export default function BoostPage() {
           </div>
         </div>
       </section>
+
+      {/* Syllabus & Sample Papers */}
+      {syllabusRows.length > 0 && (
+        <section className="py-16 md:py-20 bg-background">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <div className="text-center mb-12">
+              <BansalBadge variant="blue" className="mb-3">
+                Resources
+              </BansalBadge>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-bansal-black">
+                Sample Paper And Syllabus
+              </h2>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-lg">
+              <table className="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr className="bg-bansal-blue text-white font-semibold">
+                    <th className="p-4 border-b border-border">Class</th>
+                    <th className="p-4 border-b border-border text-center">Sample Paper</th>
+                    <th className="p-4 border-b border-border text-center">Syllabus</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border text-bansal-black">
+                  {syllabusRows.map((row) => (
+                    <tr key={row.id} className="hover:bg-muted/30">
+                      <td className="p-4 font-bold bg-muted/10">{row.class_label}</td>
+                      <td className="p-4 text-center">
+                        {row.sample_paper_path ? (
+                          <a
+                            href={boostSyllabusPublicUrl(row.sample_paper_path)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+                          >
+                            <FileText className="h-3.5 w-3.5" /> Get
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-center">
+                        {row.syllabus_path ? (
+                          <a
+                            href={boostSyllabusPublicUrl(row.syllabus_path)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-bansal-orange/10 px-3 py-1.5 text-xs font-bold text-bansal-orange hover:bg-bansal-orange/20 transition-colors"
+                          >
+                            <FileDown className="h-3.5 w-3.5" /> Get
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Timeline */}
       <section className="py-16 md:py-20 bg-bansal-cream">

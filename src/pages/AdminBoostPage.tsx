@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
+import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
 
 type Registration = {
   id: string;
@@ -144,6 +145,7 @@ const AdminBoostPage = () => {
       </div>
 
       <BoostSettingsPanel />
+      <BoostSyllabusPanel />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
