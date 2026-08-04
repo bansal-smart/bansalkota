@@ -14,9 +14,12 @@ const CbtLoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Kota HQ rolls are plain numeric (e.g. 93685); every franchise centre's
+    // rolls are alphanumeric ({CITY_CODE}{CENTRE_CODE}{SEQ4}, e.g. KOLH0001) —
+    // see assign_roll_number(). Accept both.
     const r = roll.trim();
     const pwd = password;
-    if (!/^\d{2,}$/.test(r)) return toast.error("Enter your roll number (registration no).");
+    if (!/^[A-Za-z0-9]{2,}$/.test(r)) return toast.error("Enter your roll number (registration no).");
     if (!pwd || pwd.length < 4) return toast.error("Enter your password.");
     setSubmitting(true);
     try {
@@ -109,12 +112,14 @@ const CbtLoginPage = () => {
                   </div>
                   <input
                     type="text"
-                    inputMode="numeric"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
                     value={roll}
                     onChange={(e) => setRoll(e.target.value)}
                     autoFocus
                     className="flex-1 px-3 py-3 text-sm font-semibold text-bansal-black placeholder:text-bansal-gray/70 outline-none"
-                    placeholder="e.g. 261059"
+                    placeholder="e.g. 261059 or KOLH0001"
                   />
                 </div>
               </div>
