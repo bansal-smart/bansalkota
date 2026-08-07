@@ -276,62 +276,6 @@ const AdminBatchesPage = () => {
               </table>
             </div>
           ))}
-
-      {/* Auto-created franchise batches carry no course_id, so for most centres
-          every batch they own lands here. Hiding this section made the Batches
-          tab look completely empty for them. Batch codes like XI-J repeat
-          identically across every franchise centre, so instead of listing all
-          centres at once (a wall of near-identical cards), the admin picks one
-          centre from a dropdown and only that centre's batches render. */}
-          {orphans.length > 0 && activeOrphanGroup && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Batches not linked to a course <span className="normal-case font-medium">· {orphanGroups.length} centre{orphanGroups.length === 1 ? "" : "s"}, {orphans.length} batch{orphans.length === 1 ? "" : "es"}</span>
-                </p>
-                {orphanGroups.length > 1 && (
-                  <select
-                    value={activeOrphanGroup.key}
-                    onChange={(e) => setOrphanCentreKey(e.target.value)}
-                    className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold"
-                  >
-                    {orphanGroups.map((g) => (
-                      <option key={g.key} value={g.key}>{g.label} ({g.items.length})</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-border bg-card overflow-hidden">
-                <div className="bg-muted/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground">
-                  {activeOrphanGroup.label} <span className="text-muted-foreground font-medium normal-case">· {activeOrphanGroup.items.length} batch{activeOrphanGroup.items.length === 1 ? "" : "es"}</span>
-                </div>
-                <table className="w-full text-sm">
-                  <tbody>
-                    {activeOrphanGroup.items.map((b) => (
-                      <tr key={b.id} className="border-t border-border">
-                        <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
-                        <td className="px-4 py-2">{b.name}</td>
-                        <td className="px-4 py-2 text-right">
-                          {canManageBatches && (
-                            <>
-                              <button onClick={() => setEditing(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                                <Pencil className="h-3.5 w-3.5" />
-                              </button>
-                              <button onClick={() => deleteBatch(b.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10 ml-1">
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
         </div>
       )}
 
