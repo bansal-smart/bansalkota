@@ -17,9 +17,17 @@ type BatchRow = {
   is_active: boolean;
   course_id: string;
   centre_id: string | null;
+  centre: { id: string; city: string; area: string | null; is_hq: boolean } | null;
 };
 
 const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"];
+
+const centreLabel = (centre: BatchRow["centre"]) =>
+  centre
+    ? centre.is_hq
+      ? "Kota HQ"
+      : `${centre.city}${centre.area && centre.area !== centre.city ? " — " + centre.area : ""}`
+    : "No centre";
 
 const AdminBatchesPage = () => {
   const { isStaff, isSuperAdmin, isCenterAdmin } = useAuth();
@@ -37,15 +45,19 @@ const AdminBatchesPage = () => {
   const [form, setForm] = useState({ courseId: "", code: "", name: "", class_level: "XI" });
   const [editing, setEditing] = useState<BatchRow | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [orphanCentreKey, setOrphanCentreKey] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
     const [{ data: cs }, { data: bs }] = await Promise.all([
       scopeQueryToCentre(supabase.from("courses").select("id, name, slug"), scopeCentreId).order("name"),
-      scopeQueryToCentre(supabase.from("course_batches").select("*"), scopeCentreId).order("code"),
+      scopeQueryToCentre(
+        supabase.from("course_batches").select("*, centre:centres(id, city, area, is_hq)"),
+        scopeCentreId
+      ).order("code"),
     ]);
     setCourses((cs ?? []) as CourseRow[]);
-    setBatches((bs ?? []) as BatchRow[]);
+    setBatches((bs ?? []) as unknown as BatchRow[]);
 
     const { data: profs } = await supabase
       .from("profiles")
@@ -115,6 +127,19 @@ const AdminBatchesPage = () => {
     .map((c) => ({ course: c, items: batches.filter((b) => b.course_id === c.id) }))
     .filter((g) => g.items.length > 0);
   const orphans = batches.filter((b) => !courses.find((c) => c.id === b.course_id));
+
+  // Auto-created franchise batches all share the same codes (XI-J, XI-N …),
+  // so an unscoped flat list of orphans made every centre's batch look like
+  // the same row repeated dozens of times. Group by centre and let the admin
+  // pick one centre from a dropdown instead of scrolling past 80 cards.
+  const orphansByCentre = new Map<string, { key: string; label: string; items: BatchRow[] }>();
+  for (const b of orphans) {
+    const key = b.centre_id ?? "none";
+    if (!orphansByCentre.has(key)) orphansByCentre.set(key, { key, label: centreLabel(b.centre), items: [] });
+    orphansByCentre.get(key)!.items.push(b);
+  }
+  const orphanGroups = Array.from(orphansByCentre.values()).sort((a, b) => a.label.localeCompare(b.label));
+  const activeOrphanGroup = orphanGroups.find((g) => g.key === orphanCentreKey) ?? orphanGroups[0] ?? null;
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -254,32 +279,56 @@ const AdminBatchesPage = () => {
 
       {/* Auto-created franchise batches carry no course_id, so for most centres
           every batch they own lands here. Hiding this section made the Batches
-          tab look completely empty for them. */}
-          {orphans.length > 0 && (
-            <div className="rounded-2xl border border-border bg-card overflow-hidden">
-              <div className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Batches not linked to a course</div>
-              <table className="w-full text-sm">
-                <tbody>
-                  {orphans.map((b) => (
-                    <tr key={b.id} className="border-t border-border">
-                      <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
-                      <td className="px-4 py-2">{b.name}</td>
-                      <td className="px-4 py-2 text-right">
-                        {canManageBatches && (
-                          <>
-                            <button onClick={() => setEditing(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
-                              <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={() => deleteBatch(b.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10 ml-1">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          tab look completely empty for them. Batch codes like XI-J repeat
+          identically across every franchise centre, so instead of listing all
+          centres at once (a wall of near-identical cards), the admin picks one
+          centre from a dropdown and only that centre's batches render. */}
+          {orphans.length > 0 && activeOrphanGroup && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Batches not linked to a course <span className="normal-case font-medium">· {orphanGroups.length} centre{orphanGroups.length === 1 ? "" : "s"}, {orphans.length} batch{orphans.length === 1 ? "" : "es"}</span>
+                </p>
+                {orphanGroups.length > 1 && (
+                  <select
+                    value={activeOrphanGroup.key}
+                    onChange={(e) => setOrphanCentreKey(e.target.value)}
+                    className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold"
+                  >
+                    {orphanGroups.map((g) => (
+                      <option key={g.key} value={g.key}>{g.label} ({g.items.length})</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="bg-muted/40 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground">
+                  {activeOrphanGroup.label} <span className="text-muted-foreground font-medium normal-case">· {activeOrphanGroup.items.length} batch{activeOrphanGroup.items.length === 1 ? "" : "es"}</span>
+                </div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {activeOrphanGroup.items.map((b) => (
+                      <tr key={b.id} className="border-t border-border">
+                        <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
+                        <td className="px-4 py-2">{b.name}</td>
+                        <td className="px-4 py-2 text-right">
+                          {canManageBatches && (
+                            <>
+                              <button onClick={() => setEditing(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => deleteBatch(b.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10 ml-1">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
