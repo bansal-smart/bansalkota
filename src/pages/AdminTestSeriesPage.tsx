@@ -3,6 +3,9 @@ import { Trophy, Loader2, Plus, Trash2, Pencil, Eye, ImageIcon } from "lucide-re
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 
 type TS = {
   id: string;
@@ -15,26 +18,43 @@ type TS = {
   is_published: boolean;
   is_featured: boolean;
   thumbnail_url: string | null;
+  centre_id: string | null;
+  centre: { city: string; area: string | null; is_hq: boolean } | null;
 };
 
 const AdminTestSeriesPage = () => {
   const navigate = useNavigate();
+  const { isCenterAdmin } = useAuth();
+  const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
+  // The 2026-07-07 multi-centre backfill (multicentre_backfill_to_kota.sql)
+  // gave every pre-existing test series a Kota centre_id, so a hardcoded
+  // "centre_id IS NULL" filter here made them all permanently invisible to
+  // admins even though they're still live on the public catalogue. Scope
+  // like AdminBatchesPage: centre admins see their own centre (+ any truly
+  // global rows), staff/super_admin see every centre for full oversight.
+  const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
   const [rows, setRows] = useState<TS[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("test_series")
-      .select("id, slug, title, target_exam, total_tests, price, original_price, is_published, is_featured, thumbnail_url")
-      .is("centre_id", null)
-      .order("created_at", { ascending: false });
-    setRows((data ?? []) as TS[]);
+    const { data } = await scopeQueryToCentre(
+      supabase
+        .from("test_series")
+        .select(
+          "id, slug, title, target_exam, total_tests, price, original_price, is_published, is_featured, thumbnail_url, centre_id, centre:centres(city, area, is_hq)"
+        ),
+      scopeCentreId
+    ).order("created_at", { ascending: false });
+    setRows((data ?? []) as unknown as TS[]);
     setLoading(false);
   };
   useEffect(() => {
+    // Don't fire an unscoped first load before the centre is known.
+    if (isCenterAdmin && centreLoading) return;
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCenterAdmin, centreLoading, scopeCentreId]);
 
   const remove = async (id: string) => {
     if (!confirm("Delete this test series? This cannot be undone.")) return;
@@ -82,6 +102,7 @@ const AdminTestSeriesPage = () => {
                 <tr>
                   <th className="px-4 py-3">Cover</th>
                   <th className="px-4 py-3">Title</th>
+                  <th className="px-4 py-3">Centre</th>
                   <th className="px-4 py-3">Exam</th>
                   <th className="px-4 py-3">Tests</th>
                   <th className="px-4 py-3">Price</th>
@@ -103,6 +124,13 @@ const AdminTestSeriesPage = () => {
                       </div>
                     </td>
                     <td className="px-4 py-3 font-semibold text-foreground">{r.title}</td>
+                    <td className="px-4 py-3">
+                      {r.centre
+                        ? r.centre.is_hq
+                          ? "Kota HQ"
+                          : `${r.centre.city}${r.centre.area && r.centre.area !== r.centre.city ? " — " + r.centre.area : ""}`
+                        : <span className="text-muted-foreground">Global</span>}
+                    </td>
                     <td className="px-4 py-3">{r.target_exam ?? "-"}</td>
                     <td className="px-4 py-3">{r.total_tests}</td>
                     <td className="px-4 py-3">
@@ -145,7 +173,7 @@ const AdminTestSeriesPage = () => {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                       No test series yet. Click "New Test Series" to add one.
                     </td>
                   </tr>
