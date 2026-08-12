@@ -22,6 +22,7 @@ type Registration = {
   parent_name: string | null;
   parent_phone: string | null;
   preferred_centre_label: string | null;
+  exam_mode: string | null;
   exam_slot: string | null;
   amount: number;
   payment_status: "pending" | "paid" | "failed";
@@ -102,7 +103,7 @@ const AdminBoostPage = () => {
   const exportCsv = () => {
     const headers = [
       "admit_card_number","full_name","email","phone","whatsapp","date_of_birth","class_level","target_exam",
-      "school_name","city","state","parent_name","parent_phone","preferred_centre_label","exam_slot",
+      "school_name","city","state","parent_name","parent_phone","preferred_centre_label","exam_mode","exam_slot",
       "amount","payment_status","payment_ref","status","created_at",
     ];
     const csv = [headers.join(",")]
@@ -278,6 +279,7 @@ const AdminBoostPage = () => {
               {selected.city && <Field label="City / State" value={`${selected.city}, ${selected.state ?? ""}`} />}
               {selected.parent_name && <Field label="Parent" value={`${selected.parent_name} · ${selected.parent_phone ?? ""}`} />}
               {selected.preferred_centre_label && <Field label="Centre" value={selected.preferred_centre_label} />}
+              {selected.exam_mode && <Field label="Exam Mode" value={selected.exam_mode} />}
               {selected.exam_slot && <Field label="Slot" value={selected.exam_slot} />}
               <Field label="Amount" value={`₹${Number(selected.amount).toLocaleString("en-IN")}`} />
               {selected.payment_ref && <Field label="Payment ref" value={selected.payment_ref} />}

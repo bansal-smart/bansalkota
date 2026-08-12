@@ -40,7 +40,8 @@ const schema = z.object({
     .pipe(z.string().regex(/^$|^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"))
     .optional()
     .or(z.literal("")),
-  preferred_centre_id: z.string().optional().or(z.literal("")),
+  preferred_centre_id: z.string().min(1, "Select your preferred centre"),
+  exam_mode: z.enum(["Online", "Offline"], { errorMap: () => ({ message: "Select exam mode" }) }),
   exam_slot: z.string().trim().optional().or(z.literal("")),
 });
 
@@ -59,6 +60,7 @@ const CLASS_LEVELS = [
   "XII to XIII (Medical) Moving",
 ];
 const EXAMS = ["JEE", "NEET", "Olympiad", "Foundation / School"];
+const EXAM_MODES = ["Online", "Offline"];
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -105,6 +107,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       id: regId,
       date_of_birth: parsed.data.date_of_birth || null,
       preferred_centre_id: parsed.data.preferred_centre_id || null,
+      exam_mode: parsed.data.exam_mode,
       exam_slot: parsed.data.exam_slot || null,
       preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
       amount: priceInr,
@@ -220,10 +223,11 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
                 required={hasExamDates}
                 disabled={!hasExamDates}
               />
+              <Select name="exam_mode" label="Exam mode *" options={EXAM_MODES} required />
               <div>
-                <label className="text-xs font-semibold text-muted-foreground">Preferred centre</label>
-                <select name="preferred_centre_id" className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  <option value="">Online (no centre)</option>
+                <label className="text-xs font-semibold text-muted-foreground">Preferred centre *</label>
+                <select name="preferred_centre_id" required defaultValue="" className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm">
+                  <option value="" disabled>Select centre</option>
                   {centers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}, {c.state}
