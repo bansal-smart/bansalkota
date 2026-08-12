@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShieldAlert, ArrowLeft, LogOut, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import Seo from "@/components/Seo";
 
 type Reason = "student-tried-admin" | "staff-tried-student" | "not-signed-in" | "generic";
 
@@ -51,6 +52,7 @@ const AccessDeniedPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <Seo title="Access Denied" raw description="Access denied." noindex />
       <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-8 shadow-lg animate-fade-in-up">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
           <Icon className="h-7 w-7 text-destructive" />

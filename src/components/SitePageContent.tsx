@@ -1,5 +1,6 @@
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { useSitePage } from "@/hooks/useSitePage";
+import Seo from "@/components/Seo";
 
 type Props = {
   slug: string;
@@ -14,6 +15,7 @@ const SitePageContent = ({ slug, fallbackTitle, badge = "Legal" }: Props) => {
 
   return (
     <div className="bg-background">
+      <Seo title={title} raw description={`${title} for Bansal Classes — India's most trusted IIT-JEE and NEET coaching institute.`} path={`/${slug}`} />
       <section className="bg-gradient-to-br from-bansal-blue to-bansal-blue-dark text-white py-14">
         <div className="container mx-auto px-4 max-w-3xl text-center">
           <BansalBadge tone="orange" className="mb-3">

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo, { SITE_URL } from "@/components/Seo";
 
 type Post = {
   id: string;
@@ -41,6 +42,7 @@ const BlogDetailPage = () => {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   if (!post) return (
     <div className="container mx-auto px-4 py-16 text-center">
+      <Seo title="Post Not Found" description="This blog post could not be found." noindex />
       <p className="text-muted-foreground">Post not found.</p>
       <Link to="/blog" className="text-primary font-bold mt-3 inline-block">← Back to blog</Link>
     </div>
@@ -48,6 +50,24 @@ const BlogDetailPage = () => {
 
   return (
     <article className="container mx-auto px-4 py-10 max-w-3xl">
+      <Seo
+        title={post.title}
+        raw
+        description={(post.excerpt || post.title).slice(0, 160)}
+        path={`/blog/${post.slug}`}
+        image={post.cover_image_url ?? undefined}
+        og="article"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: post.title,
+          image: post.cover_image_url ?? undefined,
+          author: { "@type": "Organization", name: post.author_name ?? "Bansal Classes" },
+          datePublished: post.published_at ?? undefined,
+          publisher: { "@type": "Organization", name: "Bansal Classes", logo: { "@type": "ImageObject", url: `${SITE_URL}/favicon.png` } },
+          mainEntityOfPage: `${SITE_URL}/blog/${post.slug}`,
+        }}
+      />
       <Link to="/blog" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-6">
         <ArrowLeft className="h-4 w-4" /> All posts
       </Link>

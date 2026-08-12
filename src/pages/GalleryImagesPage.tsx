@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 
 const sb: any = supabase;
 
@@ -144,6 +145,11 @@ const GalleryImagesPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-bansal-blue-light/30 to-background">
+      <Seo
+        title="Photo Gallery | Bansal Classes"
+        description="Photos from Bansal Classes campus life — celebrations, events and student moments."
+        path="/gallery/images"
+      />
       <section className="bg-bansal-blue text-white py-14">
         <div className="container mx-auto px-4 text-center">
           <ImageIcon className="h-10 w-10 mx-auto mb-3 text-bansal-orange" />

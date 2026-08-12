@@ -10,6 +10,7 @@ import contactHero from "@/assets/contact-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 import SubmissionSuccess from "@/components/SubmissionSuccess";
 import { sendConfirmation } from "@/lib/sendConfirmation";
+import Seo from "@/components/Seo";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -89,6 +90,11 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Contact Us | Bansal Classes"
+        description="Get in touch with Bansal Classes for admissions, course enquiries and centre information. Call, email or visit any of our centres across India."
+        path="/contact"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
         <img

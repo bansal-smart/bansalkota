@@ -14,6 +14,7 @@ import {
   leadership,
 } from "@/content/bansal/about";
 import { useSiteStats } from "@/hooks/useSiteContent";
+import Seo from "@/components/Seo";
 
 
 const SECTION = "py-16 md:py-24";
@@ -41,6 +42,11 @@ const AboutPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="About Us | Bansal Classes Kota"
+        description="Bansal Classes — founded by V.K. Bansal in 1981, pioneering organised IIT-JEE and NEET coaching in Kota. Meet our leadership and our mission."
+        path="/about"
+      />
       {/* ============= HERO ============= */}
       <section className="relative w-full min-h-[70vh] md:min-h-[85vh] flex items-end overflow-hidden bg-bansal-blue-dark">
         <img

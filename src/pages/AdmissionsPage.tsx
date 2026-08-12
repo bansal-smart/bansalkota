@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import Seo from "@/components/Seo";
 
 const steps = [
   { icon: GraduationCap, title: "Choose Program", body: "Pick the course aligned with your target exam." },
@@ -62,6 +63,11 @@ const documents = [
 const AdmissionsPage = () => {
   return (
     <div className="bg-background">
+      <Seo
+        title="Admissions | Bansal Classes"
+        description="Admission process, eligibility and important dates for Bansal Classes IIT-JEE and NEET coaching programs."
+        path="/admissions"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 md:py-28">
         <img src={admissionsHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />

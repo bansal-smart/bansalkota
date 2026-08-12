@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Loader2, Video as VideoIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 
 const sb: any = supabase;
 
@@ -43,6 +44,11 @@ const GalleryVideosPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-bansal-blue-light/30 to-background">
+      <Seo
+        title="Video Gallery | Bansal Classes"
+        description="Watch videos from Bansal Classes — campus life, events and student achievements."
+        path="/gallery/videos"
+      />
       <section className="bg-bansal-blue text-white py-14">
         <div className="container mx-auto px-4 text-center">
           <VideoIcon className="h-10 w-10 mx-auto mb-3 text-bansal-orange" />

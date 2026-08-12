@@ -8,6 +8,7 @@ import CartDrawer from "@/components/CartDrawer";
 import { toast } from "sonner";
 import estoreHero from "@/assets/estore-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import Seo from "@/components/Seo";
 
 const examFilters = ["All", "JEE Advanced", "JEE Main", "NEET", "Foundation"];
 const classFilters = ["All", "Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
@@ -34,6 +35,11 @@ const EStorePage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="E-Store | Books & Study Material | Bansal Classes"
+        description="Shop Bansal Classes study material, books and module packs for JEE and NEET preparation."
+        path="/e-store"
+      />
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 text-white">
         <img src={estoreHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/85 via-[hsl(var(--navy2))]/75 to-[hsl(222,47%,15%)]/90" />

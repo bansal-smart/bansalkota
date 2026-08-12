@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Suspense } from "react";
 import BansalLogo from "@/components/bansal/BansalLogo";
+import Seo from "@/components/Seo";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import {
   LayoutDashboard,
@@ -384,6 +385,7 @@ const AdminLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
+      <Seo title="Admin" raw description="Bansal Classes admin panel." noindex />
       <AdminSidebar
         email={email}
         initials={initials}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ const SignupPage = () => {
 
   return (
     <div className="flex min-h-screen">
+      <Seo title="Sign Up" raw description="Create your Bansal Classes account." noindex />
       {/* Left Panel */}
       <div className="hidden w-[60%] grid-texture p-12 lg:flex lg:flex-col lg:justify-center" style={{ background: "linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 18%) 50%, hsl(222 47% 15%) 100%)" }}>
         <div className="mx-auto max-w-md">

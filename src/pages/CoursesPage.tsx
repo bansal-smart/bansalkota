@@ -22,6 +22,7 @@ import courseMaths from "@/assets/course-maths.webp";
 import courseBiology from "@/assets/course-biology.webp";
 import coursesHero from "@/assets/courses-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import Seo from "@/components/Seo";
 
 const goalFilters = ["All", "IIT-JEE", "NEET", "Pre Foundation"] as const;
 const courseTypeFilters = ["All", "Online", "Offline"] as const;
@@ -122,8 +123,33 @@ const CoursesPage = ({ centreSlugOverride }: { centreSlugOverride?: string } = {
     setEnrollFor(c);
   };
 
+  const seo = centre
+    ? {
+        title: `Courses at ${centre.area && centre.area !== centre.city ? `${centre.city} — ${centre.area}` : centre.city}`,
+        description: `Explore IIT-JEE, NEET and foundation courses offered by Bansal Classes at our ${centre.city} centre.`,
+        path: `/courses/${centreSlug}`,
+      }
+    : examParam === "IIT-JEE"
+      ? {
+          title: "IIT JEE Coaching | JEE Main & Advanced Preparation",
+          description: "Prepare for JEE Main and JEE Advanced with Bansal Classes. Structured courses, experienced faculty and regular tests for Class 11, 12 and droppers.",
+          path: "/courses?exam=IIT-JEE",
+        }
+      : examParam === "NEET"
+        ? {
+            title: "NEET Coaching | NEET Preparation & Entrance Exam",
+            description: "Prepare for NEET-UG with Bansal Classes through NCERT-focused learning, regular tests and mentorship for Class 11, 12 and droppers.",
+            path: "/courses?exam=NEET",
+          }
+        : {
+            title: "Courses | IIT-JEE, NEET & Foundation Coaching",
+            description: "Browse all Bansal Classes courses — IIT-JEE, NEET and foundation programs for Class 6 to 12 and droppers, across classroom and online modes.",
+            path: "/courses",
+          };
+
   return (
     <div className="bg-background">
+      <Seo title={seo.title} description={seo.description} path={seo.path} />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 md:py-20">
         <img

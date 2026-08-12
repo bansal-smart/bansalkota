@@ -23,6 +23,7 @@ import sameerProfilePhoto from "@/assets/leader-portraits/sameer-bansal-latest-v
 import neelamProfilePhoto from "@/assets/leader-portraits/neelam-bansal-latest-v2.png";
 import mahimaProfilePhoto from "@/assets/leader-portraits/mahima-bansal-latest-v2.png";
 import wsjFeature from "@/assets/about/wsj-feature.jpg";
+import Seo from "@/components/Seo";
 
 const LEADER_HERO_BG: Record<string, string> = {
   "vk-bansal": vkHeroBg,
@@ -76,8 +77,29 @@ export default function LeadershipDetailPage() {
   const honorific = ((profile as { honorific?: string }).honorific ?? "").trim();
   const displayFirst = honorific ? `${firstName || profile.name} ${honorific}` : (firstName || profile.name);
 
+  const seoTitle = slug === "vk-bansal" ? "V.K. Bansal — Bansal Sir | Founder of Bansal Classes" : `${profile.name}${profile.title ? ` — ${profile.title}` : ""} | Bansal Classes`;
+  const seoDescription =
+    slug === "vk-bansal"
+      ? "Learn about V.K. Bansal, popularly known as Bansal Sir, and his pioneering contribution to organised IIT-JEE and NEET coaching in Kota since 1981."
+      : (profile.intro || profile.headline || `${profile.name} at Bansal Classes.`).slice(0, 160);
+
   return (
     <div className="bg-background">
+      <Seo
+        title={seoTitle}
+        raw
+        description={seoDescription}
+        path={`/about/${slug}`}
+        image={portrait}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: profile.name,
+          jobTitle: profile.title ?? undefined,
+          description: seoDescription,
+          worksFor: { "@type": "EducationalOrganization", name: "Bansal Classes" },
+        }}
+      />
       {/* ============= HERO (uniform across all leaders) ============= */}
       <section className="relative w-full min-h-[88vh] md:min-h-[80vh] flex items-end md:items-center overflow-hidden bg-bansal-blue-dark">
         {/* Background image — anchored top on mobile (face visible), right on desktop */}

@@ -3,6 +3,7 @@ import { Check, X, Sparkles, Crown, Rocket, Shield, Zap, HelpCircle, ChevronDown
 import { useState } from "react";
 import pricingHero from "@/assets/pricing-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import Seo from "@/components/Seo";
 
 const PricingPage = () => {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
@@ -102,6 +103,11 @@ const PricingPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="Pricing | Bansal Classes Online Courses"
+        description="Compare Bansal Classes online course plans for JEE and NEET preparation. Transparent pricing, flexible billing and no hidden fees."
+        path="/pricing"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 md:py-24 text-white">
         <img src={pricingHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />

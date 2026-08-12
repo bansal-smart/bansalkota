@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 
 type Post = {
   id: string;
@@ -33,6 +34,11 @@ const BlogsListPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-6xl">
+      <Seo
+        title="Blog | Bansal Classes"
+        description="Exam strategies, study tips and student stories from Bansal Classes — India's most trusted IIT-JEE and NEET coaching institute."
+        path="/blog"
+      />
       <h1 className="text-3xl sm:text-4xl font-black mb-2">Blog</h1>
       <p className="text-muted-foreground mb-8">Insights, exam strategies and student stories from Bansal Classes.</p>
 

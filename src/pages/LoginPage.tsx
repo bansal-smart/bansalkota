@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
+import Seo from "@/components/Seo";
 
 type Step = "phone" | "otp" | "name";
 
@@ -173,6 +174,7 @@ const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen">
+      <Seo title="Login" raw description="Sign in to Bansal Classes." noindex />
       {/* Left brand panel */}
       <div
         className="hidden lg:flex w-[55%] flex-col justify-between p-12 text-white relative overflow-hidden"

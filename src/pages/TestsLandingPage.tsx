@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import testsHero from "@/assets/tests-hero.png";
+import Seo from "@/components/Seo";
 import {
   ClipboardCheck,
   Timer,
@@ -71,6 +72,11 @@ const TestsLandingPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="Online Tests & Mock Tests | Bansal Classes"
+        description="Practice JEE and NEET mock tests, chapter tests and full-syllabus tests with Bansal Classes. Instant results, rank analysis and performance tracking."
+        path="/tests"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 md:py-28">
         <img src={testsHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Building2, Handshake, GraduationCap, Globe2, Award, ArrowRight, Users, Sparkles } from "lucide-react";
 import associationHero from "@/assets/association-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import Seo from "@/components/Seo";
 
 const partners = [
   { name: "IIT Delhi", type: "Institute" },
@@ -47,6 +48,11 @@ const benefits = [
 const AssociationPage = () => {
   return (
     <div className="bg-background">
+      <Seo
+        title="Associations & Partnerships | Bansal Classes"
+        description="Bansal Classes' associations and partnerships with leading institutes and organisations across India."
+        path="/association"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 text-white">
         <img src={associationHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />

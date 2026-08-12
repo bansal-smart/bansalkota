@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import liveClassesHero from "@/assets/live-classes-hero.png";
+import Seo from "@/components/Seo";
 import {
   Video,
   Users,
@@ -91,6 +92,11 @@ const LiveClassesLandingPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="Live Classes | Bansal Classes Online"
+        description="Attend live, interactive JEE and NEET classes with Bansal Classes faculty from anywhere. Real-time doubt solving and structured schedules."
+        path="/live-classes"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-20 md:py-28">
         <img

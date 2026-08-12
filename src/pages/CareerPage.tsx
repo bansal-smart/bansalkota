@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import careerHero from "@/assets/career-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
+import Seo from "@/components/Seo";
 
 const applicationSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -94,6 +95,11 @@ const CareerPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="Careers | Join Bansal Classes"
+        description="Explore career opportunities at Bansal Classes — teaching, academic and operations roles at India's most trusted IIT-JEE and NEET coaching institute."
+        path="/career"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-16 md:py-20">
         <img src={careerHero} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-70" />

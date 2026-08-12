@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Award, Loader2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 
 type Poster = {
   id: string;
@@ -31,6 +32,11 @@ const GalleryAchievementsPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Achievement Posters | Bansal Classes"
+        description="Achievement posters celebrating Bansal Classes students' top ranks in JEE and NEET."
+        path="/gallery/achievements"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--navy))]/90 via-[hsl(var(--navy2))]/80 to-[hsl(222,47%,15%)]/95" />

@@ -39,6 +39,7 @@ import {
 import { Button } from "@/components/ui/button";
 import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
 import { Sparkles } from "lucide-react";
+import Seo, { SITE_URL } from "@/components/Seo";
 
 type EnrollmentInfo = {
   id: string;
@@ -226,8 +227,29 @@ const CourseDetailPage = () => {
   const firstInstallment = Math.round(price * 0.75);
   const secondInstallment = price - firstInstallment;
 
+  const seoDescription = (
+    course.short_description ||
+    course.description ||
+    `${course.name} at Bansal Classes — ${educationLevel} · ${mode} · ${durationLabel}. Structured curriculum, experienced faculty and regular tests.`
+  ).slice(0, 160);
+
   return (
     <div className="bg-background pb-24 lg:pb-16">
+      <Seo
+        title={course.name}
+        description={seoDescription}
+        path={`/courses/${course.slug}`}
+        image={course.thumbnail_url ?? undefined}
+        og="product"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Course",
+          name: course.name,
+          description: seoDescription,
+          provider: { "@type": "EducationalOrganization", name: "Bansal Classes", sameAs: SITE_URL },
+          ...(price ? { offers: { "@type": "Offer", price, priceCurrency: "INR", url: `${SITE_URL}/courses/${course.slug}` } } : {}),
+        }}
+      />
       {/* Breadcrumb */}
       <div className="border-b border-border bg-muted/30">
         <div className="container mx-auto px-4 py-3 text-xs text-muted-foreground">
@@ -346,10 +368,11 @@ const CourseDetailPage = () => {
                     <span className="font-bold text-bansal-orange">₹{boost.priceInr}</span> to register.
                   </p>
                   {boost.examDateLabels.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {boost.examDateLabels.map((d) => (
-                        <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                          {d}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {boost.examDateLabels.map((d, i) => (
+                        <span key={d} className="inline-flex items-center gap-2">
+                          <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">{d}</span>
+                          {i < boost.examDateLabels.length - 1 && <span aria-hidden="true" className="text-white/40">•</span>}
                         </span>
                       ))}
                     </div>

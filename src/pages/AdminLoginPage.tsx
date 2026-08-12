@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
+import Seo from "@/components/Seo";
 
 const AdminLoginPage = () => {
   const { signIn, session, isStaff, isCenterAdmin, roleReady, loading } = useAuth();
@@ -52,6 +53,7 @@ const AdminLoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4" style={{ background: "linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 18%) 100%)" }}>
+      <Seo title="Admin Login" raw description="Bansal Classes admin login." noindex />
       <div className="w-full max-w-md">
         <Link to="/" className="inline-flex items-center gap-1.5 mb-4 text-sm font-medium text-white/80 hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to home

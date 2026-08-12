@@ -12,6 +12,9 @@ supabase/.temp/
 # Generated asset manifests (Lovable / Vite CDN build artifacts)
 *.asset.json
 
+# Auto-generated at build time by scripts/generate-sitemap.mjs — don't commit stale data
+public/sitemap.xml
+
 # Logs
 logs
 *.log

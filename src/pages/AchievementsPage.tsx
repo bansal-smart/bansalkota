@@ -6,6 +6,7 @@ import BansalButton from "@/components/bansal/BansalButton";
 import achievementsHero from "@/assets/achievements-hero.webp";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
+import Seo from "@/components/Seo";
 import { useToppers } from "@/hooks/useToppers";
 import { MapPin } from "lucide-react";
 
@@ -27,6 +28,11 @@ export default function AchievementsPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Achievements & Results | Bansal Classes"
+        description="Bansal Classes JEE and NEET results — top ranks, selections and achievements from students across our centres in India."
+        path="/achievements"
+      />
       {/* Hero */}
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] text-white py-14 md:py-20">
         <img

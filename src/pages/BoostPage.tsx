@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Calendar, IndianRupee, Clock, ChevronDown, FileText, FileDown } from "lucide-react";
+import Seo from "@/components/Seo";
 import BansalButton from "@/components/bansal/BansalButton";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalBadge from "@/components/bansal/BansalBadge";
@@ -53,6 +54,18 @@ export default function BoostPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="BOOST Exam 2026 | Bansal Scholarship Test"
+        description={`Register for BOOST, the Bansal Open Opportunity Scholarship Test. Up to 90% scholarship for Class V–XII students.${boost.nextExamDateLabel ? ` Next exam: ${boost.nextExamDateLabel}.` : ""} Check eligibility, exam dates and syllabus.`}
+        path="/boost"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "EducationalOccupationalCredential",
+          name: "Bansal Open Opportunity Scholarship Test (BOOST)",
+          description: "National scholarship test by Bansal Classes offering up to 90% scholarship for Class V to XII students.",
+          provider: { "@type": "EducationalOrganization", name: "Bansal Classes" },
+        }}
+      />
       <BoostRegistrationModal open={regOpen} onClose={() => setRegOpen(false)} />
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-16 md:py-24 relative overflow-hidden">
@@ -100,20 +113,22 @@ export default function BoostPage() {
             </div>
             {boost.examDateLabels.length > 0 && (
               <div className="mt-6 space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  {boost.examDateLabels.map((d) => {
+                <div className="flex flex-wrap items-center gap-2">
+                  {boost.examDateLabels.map((d, i) => {
                     const isNext = boost.nextExamDateLabel === d;
                     return (
-                      <span
-                        key={d}
-                        className={
-                          isNext
-                            ? "rounded-full bg-bansal-orange text-white px-4 py-1.5 text-sm font-bold ring-2 ring-white/40 shadow-lg"
-                            : "rounded-full bg-white/15 text-white px-4 py-1.5 text-sm font-semibold"
-                        }
-                      >
-                        {d}
-                        {isNext && <span className="ml-2 text-[10px] uppercase tracking-wider">Upcoming</span>}
+                      <span key={d} className="inline-flex items-center gap-2">
+                        <span
+                          className={
+                            isNext
+                              ? "rounded-full bg-bansal-orange text-white px-4 py-1.5 text-sm font-bold ring-2 ring-white/40 shadow-lg"
+                              : "rounded-full bg-white/15 text-white px-4 py-1.5 text-sm font-semibold"
+                          }
+                        >
+                          {d}
+                          {isNext && <span className="ml-2 text-[10px] uppercase tracking-wider">Upcoming</span>}
+                        </span>
+                        {i < boost.examDateLabels.length - 1 && <span aria-hidden="true" className="text-white/40">•</span>}
                       </span>
                     );
                   })}

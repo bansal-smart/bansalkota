@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import { useState } from "react";
+import Seo, { SITE_URL } from "@/components/Seo";
 
 const SERVICE_META: Record<string, { icon: any; label: string }> = {
   study_material: { icon: BookOpen, label: "Study Material" },
@@ -53,6 +54,7 @@ const TestSeriesDetailPage = () => {
   if (!item) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
+        <Seo title="Test Series Not Found" description="This test series could not be found." noindex />
         <h1 className="text-2xl font-bold">Test series not found</h1>
         <Link to="/test-series" className="mt-4 inline-block text-primary underline">
           Back to test series
@@ -67,6 +69,19 @@ const TestSeriesDetailPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title={item.title}
+        raw
+        description={(shortDesc || `${item.title} — Bansal Classes All India Test Series.`).slice(0, 160)}
+        path={`/test-series/${item.slug}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Course",
+          name: item.title,
+          description: (shortDesc || item.title).slice(0, 300),
+          provider: { "@type": "EducationalOrganization", name: "Bansal Classes", sameAs: SITE_URL },
+        }}
+      />
       <section className="bg-gradient-to-br from-[hsl(var(--navy))] via-[hsl(var(--navy2))] to-[hsl(222,47%,15%)] py-12 text-white">
         <div className="container mx-auto px-4 max-w-6xl">
           <Link to="/test-series" className="inline-flex items-center gap-1.5 text-sm text-white/80 hover:text-white">

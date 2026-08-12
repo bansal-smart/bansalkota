@@ -8,6 +8,7 @@ import centersHero from "@/assets/centers-hero.webp";
 import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useCenters, getCenterImage, type DBCenter } from "@/hooks/useCenters";
 import { useSiteBanner } from "@/hooks/useSiteBanner";
+import Seo from "@/components/Seo";
 
 const REGIONS = ["All", "North", "South", "East", "West", "Central"] as const;
 
@@ -43,6 +44,11 @@ export default function CentersPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Our Centres | Bansal Classes Across India"
+        description="Find your nearest Bansal Classes centre. IIT-JEE and NEET coaching across Kota and 60+ cities in India."
+        path="/centres"
+      />
       {/* Hero */}
       <section className="bg-bansal-blue text-white py-14 md:py-20 relative overflow-hidden">
         <img

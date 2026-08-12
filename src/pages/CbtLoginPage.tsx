@@ -4,6 +4,7 @@ import { Loader2, ShieldCheck, Sparkles, Flame, Hash, Lock, Eye, EyeOff } from "
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BansalLogo from "@/components/bansal/BansalLogo";
+import Seo from "@/components/Seo";
 
 const CbtLoginPage = () => {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const CbtLoginPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+      <Seo title="CBT Login" raw description="Bansal Classes CBT kiosk login." noindex />
       {/* Left: branded blessing panel */}
       <div
         className="relative lg:w-[55%] flex flex-col justify-between p-8 lg:p-12 text-white overflow-hidden"

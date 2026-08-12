@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import BansalButton from "@/components/bansal/BansalButton";
+import Seo from "@/components/Seo";
 import {
   Dialog,
   DialogContent,
@@ -168,6 +169,11 @@ export default function AlumniPage() {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="Alumni | Bansal Classes"
+        description="Meet Bansal Classes alumni — IITians, doctors and professionals who trained with India's most trusted JEE and NEET coaching institute."
+        path="/alumni"
+      />
       <AlumniHero onSubmit={() => setSubmitOpen(true)} />
 
       {/* Featured / Notable spotlight */}

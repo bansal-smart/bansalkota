@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import Seo from "@/components/Seo";
 
 const CheckoutPage = () => {
   const { cart, user } = useAppStore();
@@ -54,6 +55,7 @@ const CheckoutPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo title="Checkout" raw description="Complete your Bansal Classes order." noindex />
       <div className="container mx-auto max-w-5xl px-4 py-8">
         <Link to="/e-store" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Continue shopping

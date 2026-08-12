@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 
 type Status = "loading" | "paid" | "failed" | "pending" | "error";
 
@@ -80,6 +81,7 @@ const BoostPaymentReturnPage = () => {
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
+      <Seo title="BOOST Registration Status" raw description="Bansal Classes BOOST registration status." noindex />
       <div className="max-w-md w-full text-center rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="flex justify-center">{icon}</div>
         <h1 className="mt-4 font-display text-2xl font-black">{heading}</h1>

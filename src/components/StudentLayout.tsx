@@ -10,6 +10,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import { toast } from "sonner";
+import Seo from "@/components/Seo";
 
 type StudentNavItem = {
   label: string;
@@ -150,6 +151,7 @@ const StudentLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <Seo title="Dashboard" raw description="Bansal Classes student dashboard." noindex />
       <StudentSidebar
         fullName={fullName}
         avatarUrl={user?.avatar_url}

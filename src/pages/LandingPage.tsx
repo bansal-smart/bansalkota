@@ -44,6 +44,7 @@ import { useLandingHeroBanners } from "@/hooks/useLandingHeroBanners";
 import HeroBannerCarousel from "@/components/landing/HeroBannerCarousel";
 import AdvantagesGrid from "@/components/landing/AdvantagesGrid";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
+import Seo, { SITE_URL } from "@/components/Seo";
 
 const iconMap: Record<string, any> = {
   Trophy,
@@ -203,6 +204,27 @@ const LandingPage = () => {
 
   return (
     <div className="bg-background">
+      <Seo
+        title="Bansal Classes Kota | IIT-JEE & NEET Coaching"
+        description="Bansal Classes Kota — India's most trusted IIT-JEE & NEET coaching institute since 1981. Explore classroom courses, AITS test series and results across 60+ centres nationwide."
+        path="/"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "EducationalOrganization",
+          name: "Bansal Classes",
+          alternateName: "Bansal Classes Private Limited",
+          url: SITE_URL,
+          logo: `${SITE_URL}/favicon.png`,
+          foundingDate: "1981",
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: "Kota",
+            addressRegion: "Rajasthan",
+            addressCountry: "IN",
+          },
+          sameAs: [],
+        }}
+      />
       <WelcomeEnquiryPopup />
       {/* 1. HERO */}
       <section className="relative bg-bansal-blue text-white overflow-hidden">
@@ -508,10 +530,11 @@ const LandingPage = () => {
               <span className="text-bansal-orange font-bold">₹{boost.priceInr}</span> to register.
             </p>
             {boost.examDateLabels.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
-                {boost.examDateLabels.map((d) => (
-                  <span key={d} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                    {d}
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {boost.examDateLabels.map((d, i) => (
+                  <span key={d} className="inline-flex items-center gap-2">
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">{d}</span>
+                    {i < boost.examDateLabels.length - 1 && <span aria-hidden="true" className="text-white/40">•</span>}
                   </span>
                 ))}
               </div>

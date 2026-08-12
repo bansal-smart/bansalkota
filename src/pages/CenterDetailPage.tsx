@@ -25,6 +25,7 @@ import { useCenters } from "@/hooks/useCenters";
 import CenterOfflineSections, { AdmissionEnquiryModal } from "@/components/CenterOfflineSections";
 import CenterGalleryAndUpdates from "@/components/CenterGalleryAndUpdates";
 import CentreCarousel from "@/components/CentreCarousel";
+import Seo from "@/components/Seo";
 
 // `exam` matches CoursesPage.tsx's goalFilters values exactly, so each card
 // deep-links straight into the matching exam tab on that centre's course list.
@@ -85,8 +86,35 @@ export default function CenterDetailPage() {
   const mapQuery = encodeURIComponent(`Bansal Classes ${displayName}, ${center.state}`);
   const heroImg = dbCenter?.image_url || THEME_IMAGE[center.theme];
 
+  const seoTitle = center.isHQ
+    ? "Best Coaching Classes in Kota | JEE & NEET Coaching"
+    : `Bansal Classes ${displayName} | IIT-JEE & NEET Coaching`;
+  const seoDescription = center.isHQ
+    ? "Bansal Classes Kota — the original, most trusted IIT-JEE and NEET coaching institute since 1981. Visit our Kota centre for admissions, demo classes and counselling."
+    : `Bansal Classes ${displayName}, ${center.state} — IIT-JEE and NEET coaching with experienced faculty, structured study material and regular tests. Visit for admissions and demo classes.`;
+
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title={seoTitle}
+        raw
+        description={seoDescription}
+        path={`/centres/${center.slug}`}
+        image={heroImg}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "EducationalOrganization",
+          name: `Bansal Classes ${displayName}`,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: center.city,
+            addressRegion: center.state,
+            addressCountry: "IN",
+            ...(center.address ? { streetAddress: center.address } : {}),
+          },
+          ...(center.phone ? { telephone: center.phone } : {}),
+        }}
+      />
       {/* Hero with city image */}
       <section className="relative h-[420px] md:h-[480px] overflow-hidden">
         <img src={heroImg} alt={`${displayName} city view`} className="absolute inset-0 h-full w-full object-cover" />
