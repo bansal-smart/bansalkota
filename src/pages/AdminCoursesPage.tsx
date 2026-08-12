@@ -187,6 +187,7 @@ const AdminCoursesPage = () => {
         .from("courses")
         .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order"),
       scopeCentreId,
+      { globalFlagColumn: "is_global" },
     )
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });

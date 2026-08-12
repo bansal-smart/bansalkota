@@ -56,7 +56,7 @@ const AdminBatchesPage = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: cs }, { data: bs }] = await Promise.all([
-      scopeQueryToCentre(supabase.from("courses").select("id, name, slug"), scopeCentreId).order("name"),
+      scopeQueryToCentre(supabase.from("courses").select("id, name, slug"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
       scopeQueryToCentre(
         supabase.from("course_batches").select("*, centre:centres(id, city, area, is_hq)"),
         scopeCentreId

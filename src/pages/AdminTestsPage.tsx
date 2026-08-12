@@ -71,6 +71,7 @@ const AdminTestsPage = () => {
             "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
           ),
         scopeCentreId,
+        { globalFlagColumn: "is_global" },
       ).order("created_at", { ascending: false }),
       scopeQueryToCentre(supabase.from("course_batches").select("id, name"), scopeCentreId).order("name"),
     ]);

@@ -431,7 +431,7 @@ const AdminStudentsPage = () => {
           (supabase as any).from("course_batches").select("id, name, code, centre_id"),
           scopeCentreId,
         ).order("name"),
-        scopeQueryToCentre((supabase as any).from("courses").select("id, name"), scopeCentreId).order("name"),
+        scopeQueryToCentre((supabase as any).from("courses").select("id, name"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
       setBatches((bs as BatchLite[]) ?? []);
@@ -732,9 +732,12 @@ const AdminStudentsPage = () => {
   const addCentreId = isCenterAdmin
     ? primaryCenterId
     : (centres.find((c) => centreLabel(c) === addForm.centre)?.id ?? null);
-  const addBatches = addCentreId ? batches.filter((b) => b.centre_id === addCentreId) : batches;
+  // batches already includes NULL-centre_id (PAN-India) rows courtesy of
+  // scopeQueryToCentre — keep them here too, don't drop them with a strict
+  // centre_id match.
+  const addBatches = addCentreId ? batches.filter((b) => b.centre_id === addCentreId || b.centre_id === null) : batches;
   const editCentreId = isCenterAdmin ? primaryCenterId : (edit.centre_id ?? null);
-  const editBatches = editCentreId ? batches.filter((b) => b.centre_id === editCentreId) : batches;
+  const editBatches = editCentreId ? batches.filter((b) => b.centre_id === editCentreId || b.centre_id === null) : batches;
 
   return (
     <div className="p-4 lg:p-6 space-y-4 pb-24 lg:pb-6">

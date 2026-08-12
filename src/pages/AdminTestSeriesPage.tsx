@@ -44,7 +44,8 @@ const AdminTestSeriesPage = () => {
         .select(
           "id, slug, title, target_exam, total_tests, price, original_price, is_published, is_featured, thumbnail_url, centre_id, centre:centres(city, area, is_hq)"
         ),
-      scopeCentreId
+      scopeCentreId,
+      { globalFlagColumn: "is_global" }
     ).order("created_at", { ascending: false });
     setRows((data ?? []) as unknown as TS[]);
     setLoading(false);
