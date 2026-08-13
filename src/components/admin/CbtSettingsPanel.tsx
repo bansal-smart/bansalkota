@@ -49,12 +49,12 @@ const CbtSettingsPanel = ({ testId }: Props) => {
 
   const filteredBatches = useMemo(() => {
     if (isCenterAdmin && primaryCenterId) {
-      return batches.filter((b) => b.centre_id === primaryCenterId);
+      return batches.filter((b) => b.centre_id === primaryCenterId || b.centre_id === null);
     }
     if (!selectedCentreId) {
       return [];
     }
-    return batches.filter((b) => b.centre_id === selectedCentreId);
+    return batches.filter((b) => b.centre_id === selectedCentreId || b.centre_id === null);
   }, [batches, selectedCentreId, isCenterAdmin, primaryCenterId]);
 
   const getBatchDisplayLabel = useCallback((batchId: string) => {

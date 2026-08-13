@@ -237,12 +237,12 @@ const CreateTestPage = () => {
 
   const filteredBatches = useMemo(() => {
     if (isCenterAdmin && primaryCenterId) {
-      return batchOptions.filter((b) => b.centre_id === primaryCenterId);
+      return batchOptions.filter((b) => b.centre_id === primaryCenterId || b.centre_id === null);
     }
     if (!selectedCentreId) {
       return [];
     }
-    return batchOptions.filter((b) => b.centre_id === selectedCentreId);
+    return batchOptions.filter((b) => b.centre_id === selectedCentreId || b.centre_id === null);
   }, [batchOptions, selectedCentreId, isCenterAdmin, primaryCenterId]);
 
   const getBatchDisplayLabel = useCallback((batchId: string) => {

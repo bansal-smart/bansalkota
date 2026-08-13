@@ -189,21 +189,25 @@ Deno.serve(async (req) => {
       const batchByKey = new Map<string, string>();
       const batchCourseById = new Map<string, string | null>();
       const batchCentreById = new Map<string, string | null>();
-      // Standard franchise batches keyed by centre + stream + class, so bulk imports
-      // for a franchise centre resolve the batch WITHOUT a batch_code column.
-      const stdBatchByKey = new Map<string, string>();
       (batchesList ?? []).forEach((b: any) => {
         if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
         if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
         batchCourseById.set(b.id, b.course_id ?? null);
         batchCentreById.set(b.id, b.centre_id ?? null);
-        if (b.centre_id && b.stream && b.class_level) {
-          stdBatchByKey.set(
-            `${b.centre_id}|${String(b.stream).toUpperCase()}|${String(b.class_level).toLowerCase()}`,
-            b.id,
-          );
-        }
       });
+      // Batches are centralized on the 6 PAN-India batches (course_batches with
+      // centre_id IS NULL) rather than per-centre placeholders — every franchise
+      // centre resolves the SAME batch for a given stream+class, keyed by its
+      // fixed code (mirrors the codes create_standard_batches used to auto-create
+      // per centre, now retired).
+      const PAN_BATCH_CODE_BY_STREAM_CLASS: Record<string, string> = {
+        "JEE|Class 11": "J-XI",
+        "JEE|Class 12": "J-XII",
+        "JEE|Dropper": "J-XIII",
+        "NEET|Class 11": "M-XI",
+        "NEET|Class 12": "M-XII",
+        "NEET|Dropper": "M-XIII",
+      };
 
       const normStream = (v: any): string | null => {
         const s = trimOrNull(v);
@@ -292,8 +296,8 @@ Deno.serve(async (req) => {
           const isFranchise = centreId ? centreIsHqById.get(centreId) === false : false;
 
           // Resolve batch — accept batch_code / batch_id / batch (legacy name lookup).
-          // For a franchise centre with no batch_code, resolve the standard batch by
-          // stream+class (each franchise centre has one batch per stream×class).
+          // For a franchise centre with no batch_code, resolve the PAN-India batch by
+          // stream+class (batches are centralized, not per-centre).
           let batchId: string | null = null;
           const batchRaw = trimOrNull(r.batch_code ?? r.batch);
           if (r.batch_id) batchId = String(r.batch_id);
@@ -301,14 +305,16 @@ Deno.serve(async (req) => {
             const key = batchRaw.toLowerCase();
             batchId = batchByKey.get(key) ?? null;
             if (!batchId) throw new Error(`Batch code not found: ${batchRaw}. Create it under Batches & CBT Setup first.`);
-          } else if (isFranchise && centreId && stream && cls) {
-            batchId = stdBatchByKey.get(`${centreId}|${stream.toUpperCase()}|${cls.toLowerCase()}`) ?? null;
-            if (!batchId) throw new Error(`No standard batch for ${stream} ${cls} at this centre. Provide stream + class, or a batch_code.`);
+          } else if (isFranchise && stream && cls) {
+            const panCode = PAN_BATCH_CODE_BY_STREAM_CLASS[`${stream}|${cls}`];
+            batchId = panCode ? (batchByKey.get(panCode.toLowerCase()) ?? null) : null;
+            if (!batchId) throw new Error(`No PAN-India batch for ${stream} ${cls}. Provide a batch_code.`);
           }
-          // Centre staff (non-admin) may only assign batches that belong to their own centre.
+          // Centre staff (non-admin) may assign batches that belong to their own
+          // centre, or a global PAN-India batch (centre_id IS NULL).
           if (batchId && !isAnyAdmin && isCentreStaff) {
             const batchCentre = batchCentreById.get(batchId) ?? null;
-            if (batchCentre !== centreId) {
+            if (batchCentre !== null && batchCentre !== centreId) {
               throw new Error(`Batch "${batchRaw}" does not belong to your centre`);
             }
           }
