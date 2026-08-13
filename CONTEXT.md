@@ -72,12 +72,33 @@ by HQ and remains the site-wide public gallery shown to all visitors. Franchise 
 use their own `centre_gallery` (shown on their public centre page). No gallery data is
 moved or deleted.
 
-**Batch (resolved):** a **batch** is `(centre, stream, class)` with a code like `XI-J`
-(JEE, Class 11), **decoupled from any single course** (`course_batches.course_id`
-becomes optional/removed). Each franchise centre auto-gets **one batch per
-stream×class**. Kota HQ keeps its existing course-linked batches untouched. Batch
-membership (for CBT test targeting via `tests.cbt_allowed_batch_ids` and for grouping)
-is now separate from course enrollment.
+**Batch (superseded 2026-08-13 — see below):** ~~a **batch** is `(centre, stream,
+class)` with a code like `XI-J` (JEE, Class 11), decoupled from any single course.
+Each franchise centre auto-gets one batch per stream×class.~~ Franchise batches are
+now **centralized on PAN-India batches** instead — see "Batch (centralized,
+2026-08-13)" below. Kota HQ keeps its existing course-linked batches untouched
+either way. Batch membership (for CBT test targeting via `tests.cbt_allowed_batch_ids`
+and for grouping) remains separate from course enrollment.
+
+**Batch (centralized, 2026-08-13):** franchise centres no longer get their own
+per-centre batches. Every franchise student is assigned one of the 6 **PAN-India
+batches** (`course_batches` with `centre_id IS NULL`, `course_id` set) — `J-XI`
+(JEPAN-XI), `J-XII`, `J-XIII`, `M-XI` (MEPAN-XI), `M-XII`, `M-XIII` — keyed by
+stream (JEE/NEET) × class (11/12/Dropper). `create_standard_batches()` (called by
+the `trg_centre_create_batches` trigger on centre creation) is now a **no-op**;
+the ~490 previously auto-created per-centre placeholder batches (`XI-J`, `XII-J`,
+`XIII-J`, `XI-N`, `XII-N`, `XIII-N` per centre) were deleted and any student
+sitting in one was reassigned to the matching PAN-India batch by code (migration
+`20260813060000_centralize_pan_india_batches`). **Kota HQ is unaffected** — its
+own batches (`XI-J1`, `XII-A2`, `XIII-V2`, etc.) are real course-linked classroom
+sections, a different naming scheme, never touched by the trigger. Any query/UI
+that lists "batches for centre X" **must** include `centre_id IS NULL` rows (the
+PAN-India batches) alongside that centre's own — `scopeQueryToCentre()` does this
+by default; hand-rolled filters (`b.centre_id === primaryCenterId`) do not and
+must add `|| b.centre_id === null` (see `AdminStudentsPage`, `CreateTestPage`,
+`CbtSettingsPanel` for the pattern). `bulk-import`'s franchise-student fallback
+(no `batch_code` given) resolves the PAN-India batch by stream+class via a fixed
+code map, not a per-centre lookup.
 
 **Roll number (resolved):** franchise centres auto-assign a roll on student creation,
 format `{CITY_CODE}{CENTRE_CODE}{SEQ}` — e.g. `BLR010001` = Bengaluru, centre `01`,
