@@ -39,6 +39,8 @@ type AdminCourse = {
   price: number;
   created_at: string;
   sort_order: number;
+  is_global?: boolean;
+  centre_id?: string | null;
   chapter_count?: number;
   test_count?: number;
   lesson_count?: number;
@@ -47,6 +49,8 @@ type AdminCourse = {
 const SortableRow = ({
   c,
   isSuperAdmin,
+  isCenterAdmin,
+  primaryCenterId,
   navigate,
   togglePublish,
   deleteCourse,
@@ -55,15 +59,20 @@ const SortableRow = ({
 }: {
   c: AdminCourse;
   isSuperAdmin: boolean;
+  isCenterAdmin: boolean;
+  primaryCenterId: string | null;
   navigate: (path: string) => void;
   togglePublish: (c: AdminCourse, publish: boolean) => void;
   deleteCourse: (c: AdminCourse) => void;
   manageStudents: (c: AdminCourse) => void;
   draggable: boolean;
 }) => {
+  const isSuperAdminCourse = Boolean(c.is_global) || !c.centre_id || (isCenterAdmin && c.centre_id !== primaryCenterId);
+  const isEditable = isSuperAdmin || !isSuperAdminCourse;
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: c.id,
-    disabled: !draggable,
+    disabled: !draggable || !isEditable,
   });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -82,16 +91,23 @@ const SortableRow = ({
           {...attributes}
           {...listeners}
           className={`flex items-center justify-center rounded p-1.5 text-muted-foreground transition-colors ${
-            draggable ? "cursor-grab active:cursor-grabbing hover:bg-muted hover:text-primary" : "cursor-not-allowed opacity-30"
+            draggable && isEditable ? "cursor-grab active:cursor-grabbing hover:bg-muted hover:text-primary" : "cursor-not-allowed opacity-30"
           }`}
-          title={draggable ? "Drag to reorder" : "Enable reorder mode to drag"}
+          title={draggable && isEditable ? "Drag to reorder" : "Reordering disabled"}
           aria-label="Drag handle"
           type="button"
         >
           <GripVertical className="h-4 w-4" />
         </button>
       </td>
-      <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
+      <td className="px-4 py-3 font-medium text-foreground">
+        {c.name}
+        {isSuperAdminCourse && isCenterAdmin && (
+          <span className="ml-2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-semibold">
+            Super Admin
+          </span>
+        )}
+      </td>
       <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
@@ -113,16 +129,24 @@ const SortableRow = ({
             <Eye className="h-3.5 w-3.5" />
           </a>
           <button
-            onClick={() => navigate(`/admin/courses/${c.id}/edit`)}
-            className="rounded-md p-1.5 text-primary hover:bg-primary/10 transition-colors"
-            title="Edit course"
+            onClick={() => {
+              if (!isEditable) {
+                toast.error("Super Admin courses cannot be edited by Centre Admins.");
+                return;
+              }
+              navigate(`/admin/courses/${c.id}/edit`);
+            }}
+            className={`rounded-md p-1.5 transition-colors ${
+              isEditable ? "text-primary hover:bg-primary/10" : "text-muted-foreground/40 cursor-not-allowed"
+            }`}
+            title={isEditable ? "Edit course" : "Super Admin course (Read-Only)"}
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => navigate(`/admin/courses/${c.id}/content`)}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors"
-            title="Manage content"
+            title={isEditable ? "Manage content" : "View content (Read-Only)"}
           >
             <BookOpen className="h-3.5 w-3.5" />
           </button>
@@ -134,11 +158,35 @@ const SortableRow = ({
             <Users className="h-3.5 w-3.5" />
           </button>
           {!c.is_published ? (
-            <button onClick={() => togglePublish(c, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Publish">
+            <button
+              onClick={() => {
+                if (!isEditable) {
+                  toast.error("Super Admin courses cannot be modified by Centre Admins.");
+                  return;
+                }
+                togglePublish(c, true);
+              }}
+              className={`rounded-md p-1.5 transition-colors ${
+                isEditable ? "text-secondary hover:bg-secondary/10" : "text-muted-foreground/40 cursor-not-allowed"
+              }`}
+              title={isEditable ? "Publish" : "Super Admin course (Read-Only)"}
+            >
               <Check className="h-3.5 w-3.5" />
             </button>
           ) : (
-            <button onClick={() => togglePublish(c, false)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors" title="Unpublish">
+            <button
+              onClick={() => {
+                if (!isEditable) {
+                  toast.error("Super Admin courses cannot be modified by Centre Admins.");
+                  return;
+                }
+                togglePublish(c, false);
+              }}
+              className={`rounded-md p-1.5 transition-colors ${
+                isEditable ? "text-destructive hover:bg-destructive/10" : "text-muted-foreground/40 cursor-not-allowed"
+              }`}
+              title={isEditable ? "Unpublish" : "Super Admin course (Read-Only)"}
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -185,7 +233,7 @@ const AdminCoursesPage = () => {
     const { data } = await scopeQueryToCentre(
       supabase
         .from("courses")
-        .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order"),
+        .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order, is_global, centre_id"),
       scopeCentreId,
       { globalFlagColumn: "is_global" },
     )
@@ -382,6 +430,8 @@ const AdminCoursesPage = () => {
                         key={c.id}
                         c={c}
                         isSuperAdmin={isSuperAdmin}
+                        isCenterAdmin={isCenterAdmin}
+                        primaryCenterId={primaryCenterId}
                         navigate={navigate}
                         togglePublish={togglePublish}
                         deleteCourse={deleteCourse}

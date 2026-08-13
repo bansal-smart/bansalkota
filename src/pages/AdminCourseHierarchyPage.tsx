@@ -20,6 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -52,7 +55,9 @@ type Node =
 
 const AdminCourseHierarchyPage = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const [course, setCourse] = useState<{ id: string; name: string; slug: string } | null>(null);
+  const { isSuperAdmin, isCenterAdmin } = useAuth();
+  const { primaryCenterId } = useCenterAdmin();
+  const [course, setCourse] = useState<{ id: string; name: string; slug: string; is_global?: boolean; centre_id?: string | null } | null>(null);
   const [subjects, setSubjects] = useState<CourseSubject[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Node | null>(null);
@@ -67,7 +72,7 @@ const AdminCourseHierarchyPage = () => {
   const load = async () => {
     if (!courseId) return;
     setLoading(true);
-    const { data: c } = await supabase.from("courses").select("id,name,slug").eq("id", courseId).maybeSingle();
+    const { data: c } = await supabase.from("courses").select("id,name,slug,is_global,centre_id").eq("id", courseId).maybeSingle();
     setCourse(c as any);
     const tree = await fetchCourseContentTree(courseId, null);
     setSubjects(tree);
@@ -92,7 +97,7 @@ const AdminCourseHierarchyPage = () => {
     const k = `admin_tree_${courseId}`;
     try {
       setExpanded(new Set(JSON.parse(localStorage.getItem(k) ?? "[]")));
-    } catch {}
+    } catch { }
   }, [courseId]);
 
   useEffect(() => {
@@ -107,7 +112,10 @@ const AdminCourseHierarchyPage = () => {
     });
   };
 
+  const isReadOnly = isCenterAdmin && !isSuperAdmin && (Boolean(course?.is_global) || !course?.centre_id || course?.centre_id !== primaryCenterId);
+
   const createSubject = async (name: string) => {
+    if (isReadOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     const trimmed = name.trim();
     if (!trimmed || !courseId) {
       setAddingSubject(false);
@@ -122,6 +130,7 @@ const AdminCourseHierarchyPage = () => {
     load();
   };
   const createTopic = async (subject: CourseSubject, name: string) => {
+    if (isReadOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     const trimmed = name.trim();
     if (!trimmed) {
       setAddingTopicFor(null);
@@ -140,11 +149,13 @@ const AdminCourseHierarchyPage = () => {
   };
 
   const openRename = (table: string, id: string, current: string, label: string) => {
+    if (isReadOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     setRenameTarget({ table, id, current, label });
     setRenameValue(current);
   };
   const submitRename = async () => {
     if (!renameTarget) return;
+    if (isReadOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     const name = renameValue.trim();
     if (!name || name === renameTarget.current) {
       setRenameTarget(null);
@@ -161,6 +172,7 @@ const AdminCourseHierarchyPage = () => {
   };
 
   const remove = async (table: string, id: string, label: string) => {
+    if (isReadOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     const ok = await confirm({
       title: `Delete ${label}?`,
       description: "This will permanently remove it and its contents.",
@@ -178,6 +190,7 @@ const AdminCourseHierarchyPage = () => {
   };
 
   const move = async (table: string, items: { id: string }[], idx: number, dir: -1 | 1) => {
+    if (isReadOnly) return;
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= items.length) return;
     const ids = items.map((i) => i.id);
@@ -197,6 +210,12 @@ const AdminCourseHierarchyPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {isReadOnly && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center gap-2 text-amber-700 dark:text-amber-300 text-xs font-semibold">
+          <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span>Read-Only View: This course was uploaded by Super Admin. Centre Admins can view content but cannot edit or modify it.</span>
+        </div>
+      )}
       <div className="border-b bg-card">
         <div className="flex items-center justify-between gap-4 p-4">
           <div className="flex items-center gap-3">
@@ -211,40 +230,44 @@ const AdminCourseHierarchyPage = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                const ok = await confirm({
-                  title: "Sort all videos A → Z?",
-                  description:
-                    "Re-positions every topic's videos by natural title order (Lec-01, Lec-02 …). Existing manual ordering will be overwritten.",
-                  confirmLabel: "Sort all",
-                });
-                if (!ok) return;
-                let touched = 0;
-                for (const s of subjects) {
-                  for (const t of s.topics ?? []) {
-                    const vids = t.videos ?? [];
-                    if (vids.length < 2) continue;
-                    const sorted = [...vids].sort((a, b) =>
-                      a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }),
-                    );
-                    const changed = sorted.some((v, i) => v.id !== vids[i].id);
-                    if (!changed) continue;
-                    await reorderSiblings("subtopic_videos", sorted.map((v) => v.id));
-                    touched++;
-                  }
-                }
-                toast.success(`Sorted ${touched} topic${touched === 1 ? "" : "s"}`);
-                load();
-              }}
-            >
-              Sort All A → Z
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
-              <Upload className="h-4 w-4 mr-1" /> Bulk Upload Videos
-            </Button>
+            {!isReadOnly && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: "Sort all videos A → Z?",
+                      description:
+                        "Re-positions every topic's videos by natural title order (Lec-01, Lec-02 …). Existing manual ordering will be overwritten.",
+                      confirmLabel: "Sort all",
+                    });
+                    if (!ok) return;
+                    let touched = 0;
+                    for (const s of subjects) {
+                      for (const t of s.topics ?? []) {
+                        const vids = t.videos ?? [];
+                        if (vids.length < 2) continue;
+                        const sorted = [...vids].sort((a, b) =>
+                          a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }),
+                        );
+                        const changed = sorted.some((v, i) => v.id !== vids[i].id);
+                        if (!changed) continue;
+                        await reorderSiblings("subtopic_videos", sorted.map((v) => v.id));
+                        touched++;
+                      }
+                    }
+                    toast.success(`Sorted ${touched} topic${touched === 1 ? "" : "s"}`);
+                    load();
+                  }}
+                >
+                  Sort All A → Z
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setBulkOpen(true)}>
+                  <Upload className="h-4 w-4 mr-1" /> Bulk Upload Videos
+                </Button>
+              </>
+            )}
             <Button variant="outline" size="sm" asChild>
               <a href={`/learn/${course.id}`} target="_blank" rel="noreferrer">
                 <Eye className="h-4 w-4 mr-1" /> Preview as Student <ExternalLink className="h-3 w-3 ml-1" />
@@ -259,15 +282,17 @@ const AdminCourseHierarchyPage = () => {
         <div className="bg-card border rounded-lg p-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-sm">Content Tree</h2>
-            <Button size="sm" variant="ghost" onClick={() => setAddingSubject(true)}>
-              <Plus className="h-3 w-3 mr-1" /> Subject
-            </Button>
+            {!isReadOnly && (
+              <Button size="sm" variant="ghost" onClick={() => setAddingSubject(true)}>
+                <Plus className="h-3 w-3 mr-1" /> Subject
+              </Button>
+            )}
           </div>
           {subjects.length === 0 && !addingSubject && (
             <p className="text-xs text-muted-foreground">No subjects yet. Add one to start.</p>
           )}
           <div className="space-y-1">
-            {addingSubject && (
+            {addingSubject && !isReadOnly && (
               <InlineAddInput
                 placeholder="Subject name"
                 onSubmit={createSubject}
@@ -293,6 +318,7 @@ const AdminCourseHierarchyPage = () => {
                     onRename={() => openRename("course_subjects", subject.id, subject.name, "subject")}
                     onDelete={() => remove("course_subjects", subject.id, "subject")}
                     depth={0}
+                    readOnly={isReadOnly}
                   />
                   {sOpen && (
                     <div className="ml-4">
@@ -300,7 +326,7 @@ const AdminCourseHierarchyPage = () => {
                         <NodeRow
                           key={topic.id}
                           open={false}
-                          onToggle={() => {}}
+                          onToggle={() => { }}
                           selected={selected?.id === topic.id}
                           onSelect={() => setSelected({ kind: "topic", id: topic.id, data: topic, subject })}
                           label={topic.name}
@@ -311,22 +337,25 @@ const AdminCourseHierarchyPage = () => {
                           onDelete={() => remove("course_topics", topic.id, "topic")}
                           depth={1}
                           leaf
+                          readOnly={isReadOnly}
                         />
                       ))}
-                      {addingTopicFor === subject.id ? (
-                        <InlineAddInput
-                          placeholder="Topic name"
-                          onSubmit={(n) => createTopic(subject, n)}
-                          onCancel={() => setAddingTopicFor(null)}
-                          indent={2}
-                        />
-                      ) : (
-                        <button
-                          onClick={() => setAddingTopicFor(subject.id)}
-                          className="ml-2 text-xs text-primary hover:underline py-1"
-                        >
-                          + Add Topic
-                        </button>
+                      {!isReadOnly && (
+                        addingTopicFor === subject.id ? (
+                          <InlineAddInput
+                            placeholder="Topic name"
+                            onSubmit={(n) => createTopic(subject, n)}
+                            onCancel={() => setAddingTopicFor(null)}
+                            indent={2}
+                          />
+                        ) : (
+                          <button
+                            onClick={() => setAddingTopicFor(subject.id)}
+                            className="ml-2 text-xs text-primary hover:underline py-1"
+                          >
+                            + Add Topic
+                          </button>
+                        )
                       )}
                     </div>
                   )}
@@ -339,9 +368,9 @@ const AdminCourseHierarchyPage = () => {
         {/* Editor */}
         <div className="bg-card border rounded-lg p-4 min-h-[60vh]">
           {!selected && <EmptyEditor />}
-          {selected?.kind === "subject" && <SubjectEditor subject={selected.data} onSaved={load} />}
+          {selected?.kind === "subject" && <SubjectEditor subject={selected.data} onSaved={load} readOnly={isReadOnly} />}
           {selected?.kind === "topic" && (
-            <TopicEditor topic={selected.data} subject={selected.subject} courseId={courseId!} onSaved={load} />
+            <TopicEditor topic={selected.data} subject={selected.subject} courseId={courseId!} onSaved={load} readOnly={isReadOnly} />
           )}
         </div>
       </div>
@@ -373,7 +402,7 @@ const AdminCourseHierarchyPage = () => {
         </DialogContent>
       </Dialog>
       {ConfirmDialog}
-      <BulkCourseVideosDialog open={bulkOpen} onOpenChange={setBulkOpen} courseId={courseId!} onDone={load} />
+      {!isReadOnly && <BulkCourseVideosDialog open={bulkOpen} onOpenChange={setBulkOpen} courseId={courseId!} onDone={load} />}
     </div>
   );
 };
@@ -430,6 +459,7 @@ function NodeRow(props: {
   onDelete: () => void;
   depth: number;
   leaf?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <div
@@ -442,22 +472,24 @@ function NodeRow(props: {
       ) : (
         <span className="w-4" />
       )}
-      <GripVertical className="h-3 w-3 text-muted-foreground/40" />
+      {!props.readOnly && <GripVertical className="h-3 w-3 text-muted-foreground/40" />}
       <button onClick={props.onSelect} className="flex-1 text-left text-sm truncate">
         {props.icon && <span className="mr-1">{props.icon}</span>}
         {props.label}
       </button>
       {props.badge && <span className="text-[10px] text-muted-foreground">{props.badge}</span>}
-      <div className="opacity-0 group-hover:opacity-100 flex gap-0.5">
-        <button onClick={props.onUp} title="Move up" className="text-xs px-1">↑</button>
-        <button onClick={props.onDown} title="Move down" className="text-xs px-1">↓</button>
-        <button onClick={props.onRename} title="Rename" className="text-xs px-1">
-          <Pencil className="h-3 w-3" />
-        </button>
-        <button onClick={props.onDelete} title="Delete" className="text-xs px-1 text-destructive">
-          <Trash2 className="h-3 w-3" />
-        </button>
-      </div>
+      {!props.readOnly && (
+        <div className="opacity-0 group-hover:opacity-100 flex gap-0.5">
+          <button onClick={props.onUp} title="Move up" className="text-xs px-1">↑</button>
+          <button onClick={props.onDown} title="Move down" className="text-xs px-1">↓</button>
+          <button onClick={props.onRename} title="Rename" className="text-xs px-1">
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button onClick={props.onDelete} title="Delete" className="text-xs px-1 text-destructive">
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -473,7 +505,7 @@ function EmptyEditor() {
   );
 }
 
-function SubjectEditor({ subject, onSaved }: { subject: CourseSubject; onSaved: () => void }) {
+function SubjectEditor({ subject, onSaved, readOnly }: { subject: CourseSubject; onSaved: () => void; readOnly?: boolean }) {
   const [name, setName] = useState(subject.name);
   const [icon, setIcon] = useState(subject.icon ?? "");
   const [color, setColor] = useState(subject.color ?? "");
@@ -483,6 +515,7 @@ function SubjectEditor({ subject, onSaved }: { subject: CourseSubject; onSaved: 
     setColor(subject.color ?? "");
   }, [subject.id]);
   const save = async () => {
+    if (readOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     const { error } = await supabase
       .from("course_subjects" as any)
       .update({ name, icon: icon || null, color: color || null })
@@ -504,19 +537,19 @@ function SubjectEditor({ subject, onSaved }: { subject: CourseSubject; onSaved: 
       <h2 className="font-semibold">Subject</h2>
       <div>
         <Label>Name</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
+        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label>Icon (emoji)</Label>
-          <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="⚛️" />
+          <Input value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="⚛️" disabled={readOnly} />
         </div>
         <div>
           <Label>Color</Label>
-          <Input type="color" value={color || "#3B82F6"} onChange={(e) => setColor(e.target.value)} />
+          <Input type="color" value={color || "#3B82F6"} onChange={(e) => setColor(e.target.value)} disabled={readOnly} />
         </div>
       </div>
-      <Button onClick={save}>Save</Button>
+      {!readOnly && <Button onClick={save}>Save</Button>}
       <div className="pt-3 text-xs text-muted-foreground">
         📊 {totals.topics} topics · {totals.videos} videos · {totals.pdfs} PDFs
       </div>
@@ -529,17 +562,20 @@ function TopicEditor({
   subject,
   courseId,
   onSaved,
+  readOnly,
 }: {
   topic: CourseTopic;
   subject: CourseSubject;
   courseId: string;
   onSaved: () => void;
+  readOnly?: boolean;
 }) {
   const [name, setName] = useState(topic.name);
   useEffect(() => {
     setName(topic.name);
   }, [topic.id]);
   const save = async () => {
+    if (readOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     const { error } = await supabase
       .from("course_topics" as any)
       .update({ name })
@@ -557,11 +593,13 @@ function TopicEditor({
       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 max-w-2xl">
         <div>
           <Label>Topic name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <Input value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
         </div>
-        <Button onClick={save} className="self-end">
-          Save
-        </Button>
+        {!readOnly && (
+          <Button onClick={save} className="self-end">
+            Save
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="videos">
@@ -574,10 +612,10 @@ function TopicEditor({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="videos">
-          <VideoTab topic={topic} courseId={courseId} onSaved={onSaved} />
+          <VideoTab topic={topic} courseId={courseId} onSaved={onSaved} readOnly={readOnly} />
         </TabsContent>
         <TabsContent value="pdfs">
-          <PdfTab topic={topic} courseId={courseId} onSaved={onSaved} />
+          <PdfTab topic={topic} courseId={courseId} onSaved={onSaved} readOnly={readOnly} />
         </TabsContent>
       </Tabs>
     </div>
@@ -594,12 +632,14 @@ function SortableVideoRow({
   v,
   onEdit,
   onDelete,
+  readOnly,
 }: {
   v: SubtopicVideo;
   onEdit: () => void;
   onDelete: () => void;
+  readOnly?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: v.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: v.id, disabled: readOnly });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -607,16 +647,18 @@ function SortableVideoRow({
   };
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-2 border rounded bg-card">
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary p-1"
-        title="Drag to reorder"
-        type="button"
-        aria-label="Drag handle"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
+      {!readOnly && (
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary p-1"
+          title="Drag to reorder"
+          type="button"
+          aria-label="Drag handle"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      )}
       <img
         src={v.thumbnail_url || (v.youtube_video_id ? getYouTubeThumbnail(v.youtube_video_id) : "")}
         alt=""
@@ -628,12 +670,16 @@ function SortableVideoRow({
           {v.subtopic_label?.trim() || "—"} · {v.is_preview ? "🔓 Preview" : "🔒 Enrolled"}
         </div>
       </div>
-      <Button size="sm" variant="ghost" onClick={onEdit}>
-        <Pencil className="h-3 w-3" />
-      </Button>
-      <Button size="sm" variant="ghost" onClick={onDelete}>
-        <Trash2 className="h-3 w-3 text-destructive" />
-      </Button>
+      {!readOnly && (
+        <>
+          <Button size="sm" variant="ghost" onClick={onEdit}>
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDelete}>
+            <Trash2 className="h-3 w-3 text-destructive" />
+          </Button>
+        </>
+      )}
     </div>
   );
 }
@@ -642,10 +688,12 @@ function VideoTab({
   topic,
   courseId,
   onSaved,
+  readOnly,
 }: {
   topic: CourseTopic;
   courseId: string;
   onSaved: () => void;
+  readOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SubtopicVideo | null>(null);
@@ -653,6 +701,7 @@ function VideoTab({
   const videos = topic.videos ?? [];
 
   const del = async (v: SubtopicVideo) => {
+    if (readOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     if (!window.confirm(`Delete "${v.title}"?`)) return;
     await supabase.from("subtopic_videos" as any).delete().eq("id", v.id);
     toast.success("Video deleted");
@@ -660,6 +709,7 @@ function VideoTab({
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
+    if (readOnly) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIdx = videos.findIndex((v) => v.id === active.id);
@@ -671,7 +721,7 @@ function VideoTab({
   };
 
   const sortAZ = async () => {
-    if (videos.length < 2) return;
+    if (readOnly || videos.length < 2) return;
     const sorted = naturalSortVideos(videos);
     await reorderSiblings("subtopic_videos", sorted.map((v) => v.id));
     toast.success("Sorted A → Z");
@@ -680,20 +730,22 @@ function VideoTab({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="outline" onClick={sortAZ} disabled={videos.length < 2}>
-          Sort A → Z
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          <Plus className="h-3 w-3 mr-1" /> Add Video
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={sortAZ} disabled={videos.length < 2}>
+            Sort A → Z
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-3 w-3 mr-1" /> Add Video
+          </Button>
+        </div>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={videos.map((v) => v.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
@@ -706,6 +758,7 @@ function VideoTab({
                   setOpen(true);
                 }}
                 onDelete={() => del(v)}
+                readOnly={readOnly}
               />
             ))}
             {videos.length === 0 && (
@@ -714,17 +767,19 @@ function VideoTab({
           </div>
         </SortableContext>
       </DndContext>
-      <VideoDialog
-        open={open}
-        onOpenChange={setOpen}
-        topicId={topic.id}
-        courseId={courseId}
-        video={editing}
-        onSaved={() => {
-          setOpen(false);
-          onSaved();
-        }}
-      />
+      {!readOnly && (
+        <VideoDialog
+          open={open}
+          onOpenChange={setOpen}
+          topicId={topic.id}
+          courseId={courseId}
+          video={editing}
+          onSaved={() => {
+            setOpen(false);
+            onSaved();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -852,7 +907,7 @@ function VideoDialog({
   );
 }
 
-function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: string; onSaved: () => void }) {
+function PdfTab({ topic, courseId, onSaved, readOnly }: { topic: CourseTopic; courseId: string; onSaved: () => void; readOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [fileUrl, setFileUrl] = useState("");
@@ -860,6 +915,7 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
   const [saving, setSaving] = useState(false);
 
   const handleFile = async (file: File) => {
+    if (readOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       return toast.error("Please select a PDF file");
     }
@@ -883,6 +939,7 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
   };
 
   const save = async () => {
+    if (readOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     if (!title || !fileUrl) return toast.error("Title and PDF file are required");
     setSaving(true);
     const { error } = await supabase.from("subtopic_pdfs" as any).insert({
@@ -901,6 +958,7 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
     onSaved();
   };
   const del = async (p: SubtopicPdf) => {
+    if (readOnly) return toast.error("Super Admin courses cannot be modified by Centre Admins.");
     if (!window.confirm(`Delete "${p.title}"?`)) return;
     await supabase.from("subtopic_pdfs" as any).delete().eq("id", p.id);
     toast.success("Deleted");
@@ -908,61 +966,102 @@ function PdfTab({ topic, courseId, onSaved }: { topic: CourseTopic; courseId: st
   };
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="h-3 w-3 mr-1" /> Add PDF
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="h-3 w-3 mr-1" /> Add PDF
+          </Button>
+        </div>
+      )}
       {(topic.pdfs ?? []).map((p) => (
         <div key={p.id} className="flex items-center gap-3 p-2 border rounded">
           <FileText className="h-4 w-4" />
           <a href={p.file_url} target="_blank" rel="noreferrer" className="flex-1 text-sm truncate hover:underline">
             {p.title}
           </a>
-          <Button size="sm" variant="ghost" onClick={() => del(p)}>
-            <Trash2 className="h-3 w-3 text-destructive" />
-          </Button>
+          {!readOnly && (
+            <Button size="sm" variant="ghost" onClick={() => del(p)}>
+              <Trash2 className="h-3 w-3 text-destructive" />
+            </Button>
+          )}
         </div>
       ))}
       {(topic.pdfs ?? []).length === 0 && (
         <p className="text-xs text-muted-foreground py-4 text-center">No PDFs yet.</p>
       )}
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setTitle(""); setFileUrl(""); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add PDF</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Title *</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+      {!readOnly && (
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setTitle(""); setFileUrl(""); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add PDF</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label>Title *</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div>
+                <Label>PDF File *</Label>
+                <Input
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  disabled={uploading}
+                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                />
+                {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
+                {fileUrl && !uploading && (
+                  <p className="text-xs text-green-600 mt-1 truncate">✓ Uploaded</p>
+                )}
+              </div>
             </div>
-            <div>
-              <Label>PDF File *</Label>
-              <Input
-                type="file"
-                accept="application/pdf,.pdf"
-                disabled={uploading}
-                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-              />
-              {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
-              {fileUrl && !uploading && (
-                <p className="text-xs text-green-600 mt-1 truncate">✓ Uploaded</p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={save} disabled={saving || uploading || !fileUrl}>
-              {saving ? "Saving…" : "Add"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={save} disabled={saving || uploading || !fileUrl}>
+                {saving ? "Saving…" : "Add"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+//           <DialogHeader>
+//             <DialogTitle>Add PDF</DialogTitle>
+//           </DialogHeader>
+//           <div className="space-y-3">
+//             <div>
+//               <Label>Title *</Label>
+//               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+//             </div>
+//             <div>
+//               <Label>PDF File *</Label>
+//               <Input
+//                 type="file"
+//                 accept="application/pdf,.pdf"
+//                 disabled={uploading}
+//                 onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+//               />
+//               {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
+//               {fileUrl && !uploading && (
+//                 <p className="text-xs text-green-600 mt-1 truncate">✓ Uploaded</p>
+//               )}
+//             </div>
+//           </div>
+//           <DialogFooter>
+//             <Button variant="outline" onClick={() => setOpen(false)}>
+//               Cancel
+//             </Button>
+//             <Button onClick={save} disabled={saving || uploading || !fileUrl}>
+//               {saving ? "Saving…" : "Add"}
+//             </Button>
+//           </DialogFooter>
+//         </DialogContent>
+//       </Dialog>
+//     </div>
+//   );
+// }
 
 export default AdminCourseHierarchyPage;

@@ -105,8 +105,14 @@ const CreateCoursePage = () => {
         setLoading(false);
         return;
       }
-      setName(course.name ?? "");
       const c = course as unknown as Record<string, unknown>;
+      const isSuperAdminCourse = Boolean(c.is_global) || !c.centre_id || (isCenterAdmin && c.centre_id !== primaryCenterId);
+      if (isCenterAdmin && isSuperAdminCourse) {
+        toast.error("Super Admin courses cannot be edited by Centre Admins.");
+        navigate(isAdminContext ? "/admin/courses" : "/teacher/courses");
+        return;
+      }
+      setName(course.name ?? "");
       setShortDesc((c.short_description as string | null) ?? "");
       setDescription(course.description ?? "");
       setDescriptionHtml((c.description_html as string | null) ?? "");
