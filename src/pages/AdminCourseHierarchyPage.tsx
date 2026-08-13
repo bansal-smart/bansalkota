@@ -1028,40 +1028,5 @@ function PdfTab({ topic, courseId, onSaved, readOnly }: { topic: CourseTopic; co
     </div>
   );
 }
-//           <DialogHeader>
-//             <DialogTitle>Add PDF</DialogTitle>
-//           </DialogHeader>
-//           <div className="space-y-3">
-//             <div>
-//               <Label>Title *</Label>
-//               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-//             </div>
-//             <div>
-//               <Label>PDF File *</Label>
-//               <Input
-//                 type="file"
-//                 accept="application/pdf,.pdf"
-//                 disabled={uploading}
-//                 onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-//               />
-//               {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading…</p>}
-//               {fileUrl && !uploading && (
-//                 <p className="text-xs text-green-600 mt-1 truncate">✓ Uploaded</p>
-//               )}
-//             </div>
-//           </div>
-//           <DialogFooter>
-//             <Button variant="outline" onClick={() => setOpen(false)}>
-//               Cancel
-//             </Button>
-//             <Button onClick={save} disabled={saving || uploading || !fileUrl}>
-//               {saving ? "Saving…" : "Add"}
-//             </Button>
-//           </DialogFooter>
-//         </DialogContent>
-//       </Dialog>
-//     </div>
-//   );
-// }
 
 export default AdminCourseHierarchyPage;
