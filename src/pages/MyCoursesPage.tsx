@@ -73,7 +73,10 @@ const MyCoursesPage = () => {
         setLoading(false);
         return;
       }
-      const rows = (data ?? []) as unknown as Enrollment[];
+      // Drop enrollments whose course RLS-blocked the nested select (e.g. an
+      // unpublished course) — course comes back null in that case, and such
+      // courses should simply not appear here, same as before.
+      const rows = ((data ?? []) as unknown as Enrollment[]).filter((r) => r.course != null);
       const courseIds = rows.map((r) => r.course_id);
       if (courseIds.length) {
         const [{ data: vids }, { data: prog }] = await Promise.all([
