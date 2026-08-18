@@ -13,8 +13,10 @@ const roleBadge = (role: string) => {
     center_admin: "bg-orange-100 text-orange-700",
     admin: "bg-accent/20 text-accent",
     super_admin: "bg-destructive/10 text-destructive",
+    no_role: "bg-muted text-muted-foreground",
   };
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.student}`}>{role.replace("_", " ")}</span>;
+  const label = role === "no_role" ? "no role" : role.replace("_", " ");
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${styles[role] ?? styles.no_role}`}>{label}</span>;
 };
 
 const planBadge = (plan: string) => {
@@ -44,6 +46,7 @@ const ROLE_DESCRIPTIONS: Record<AdminUserRow["role"], string> = {
   center_admin: "Manages the assigned centre panel, centre page content, banners, local enquiries, and offline centre operations.",
   admin: "Manages courses, live classes, students, and content moderation.",
   super_admin: "Highest privilege — everything admin can do, plus revenue, refunds, platform settings and admin account creation.",
+  no_role: "This account has no role assigned yet — likely an incomplete signup. Assign a role below to grant access.",
 };
 
 type UserRowProps = {

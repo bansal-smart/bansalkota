@@ -13,7 +13,7 @@ export type AdminUserRow = {
   is_suspended: boolean;
   created_at: string;
   email: string | null;
-  role: "student" | "center_admin" | "admin" | "super_admin";
+  role: "student" | "center_admin" | "admin" | "super_admin" | "no_role";
 };
 
 const PAGE_SIZE = 50;
@@ -54,10 +54,14 @@ const fetchAdminUsers = async (filter: string, search: string, page: number) => 
     }
   });
 
+  // No user_roles row is a real data gap (e.g. a signup that never finished
+  // granting a role), not a student by default — defaulting it to "student"
+  // silently mislabels these accounts and makes them invisible on the
+  // Students tab (which requires an explicit role='student' row).
   const merged: AdminUserRow[] = (profiles ?? []).map((p) => ({
     ...p,
     email: null,
-    role: roleByUser.get(p.user_id) ?? "student",
+    role: roleByUser.get(p.user_id) ?? "no_role",
   }));
 
   const visibleMerged = merged.filter((u) => u.role !== "super_admin");
