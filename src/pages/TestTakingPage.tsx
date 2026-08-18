@@ -53,12 +53,54 @@ const isMulti = (t: QuestionType) => t === "mcq-multi";
 const isNumeric = (t: QuestionType) => t === "numerical" || t === "integer";
 const isMatch = (t: QuestionType) => t === "match-following";
 
+// Shuffles question order within each subject, per student. Subject grouping
+// and subject order both come straight from the canonical array, so section
+// boundaries never move — only the order of questions inside each subject does.
+function shuffledQuestionOrder(questions: { id: string; subject: string | null }[]): string[] {
+  const bySubject = new Map<string, string[]>();
+  for (const q of questions) {
+    const s = q.subject || "General";
+    if (!bySubject.has(s)) bySubject.set(s, []);
+    bySubject.get(s)!.push(q.id);
+  }
+  const fisherYates = (arr: string[]) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const result: string[] = [];
+  for (const ids of bySubject.values()) result.push(...fisherYates(ids));
+  return result;
+}
+
+// Reorders a canonical-order question array to match a stored per-attempt
+// question_order id list. Falls back to canonical order for any id missing
+// from the list (e.g. a question added after the shuffle was generated), and
+// silently drops ids no longer present (e.g. a deleted question).
+function applyStoredOrder<T extends { id: string }>(canonical: T[], orderIds: string[] | null | undefined): T[] {
+  if (!orderIds || orderIds.length === 0) return canonical;
+  const byId = new Map(canonical.map((q) => [q.id, q]));
+  const ordered: T[] = [];
+  const used = new Set<string>();
+  for (const id of orderIds) {
+    const q = byId.get(id);
+    if (q) { ordered.push(q); used.add(id); }
+  }
+  for (const q of canonical) {
+    if (!used.has(q.id)) ordered.push(q);
+  }
+  return ordered;
+}
+
 const TestTakingPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number; option_label_style?: string | null; exam_pattern?: string | null } | null>(null);
+  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number; option_label_style?: string | null; exam_pattern?: string | null; shuffle_questions?: boolean | null } | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
@@ -132,7 +174,7 @@ const TestTakingPage = () => {
       setLoading(true);
       const { data: t } = await supabase
         .from("tests")
-        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern, starts_at, ends_at, open_window_minutes")
+        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern, starts_at, ends_at, open_window_minutes, shuffle_questions")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       // Legacy instruction images were saved as `/object/public/question-images/...`
@@ -158,12 +200,18 @@ const TestTakingPage = () => {
         console.error("[TestTakingPage] questions load failed", qErr);
         toast.error(`Could not load questions: ${qErr.message}`);
       }
-      setQuestions((qs ?? []) as unknown as TestQuestion[]);
+      const canonicalQs = (qs ?? []) as unknown as TestQuestion[];
 
       const { data: existing } = await supabase
         .from("test_attempts")
-        .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at")
+        .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at, question_order")
         .eq("user_id", user.id).eq("test_id", t.id).eq("status", "in_progress").maybeSingle();
+
+      // Resumed attempt: replay the exact per-student order it was created with.
+      // Fresh attempt: keep canonical order for now — startAttempt() generates
+      // and persists the shuffle once the student actually clicks "Start".
+      const orderIds = (existing as { question_order?: string[] | null } | null)?.question_order ?? null;
+      setQuestions(applyStoredOrder(canonicalQs, orderIds));
 
       if (existing) {
         setAttemptId(existing.id);
@@ -525,13 +573,16 @@ const TestTakingPage = () => {
       navigate(`/tests/${slug}`);
       return;
     }
+    const orderIds = test.shuffle_questions !== false ? shuffledQuestionOrder(questions) : null;
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
+      question_order: orderIds,
     }).select("id, started_at").single();
     if (error || !data) { toast.error("Could not start test"); return; }
     setAttemptId(data.id);
     setStartedAt(new Date(data.started_at as string));
+    if (orderIds) setQuestions((prev) => applyStoredOrder(prev, orderIds));
     setStarted(true);
   };
 
@@ -1426,6 +1477,7 @@ const TestTakingPage = () => {
                         attempt_id: attemptId,
                         test_id: test.id,
                         question_position: currentQ + 1,
+                        question_id: q?.id ?? null,
                         message: supportMessage.trim(),
                       });
                       setSupportSubmitting(false);

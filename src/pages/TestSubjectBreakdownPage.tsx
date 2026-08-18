@@ -111,7 +111,7 @@ const TestSubjectBreakdownPage = () => {
     (async () => {
       const { data: att } = await supabase
         .from("test_attempts")
-        .select("test_id, test_name, answers")
+        .select("test_id, test_name, answers, question_order")
         .eq("id", attemptId)
         .maybeSingle();
       if (cancelled || !att?.test_id) {
@@ -134,11 +134,15 @@ const TestSubjectBreakdownPage = () => {
       const ansMap = new Map<string, { correct_answer: any; explanation: string | null }>(
         ((ansRes.data ?? []) as any[]).map((a) => [a.id, { correct_answer: a.correct_answer, explanation: a.explanation }]),
       );
-      const merged = ((qsRes.data ?? []) as any[]).map((q) => ({
+      const mergedCanonical = ((qsRes.data ?? []) as any[]).map((q) => ({
         ...q,
         correct_answer: ansMap.get(q.id)?.correct_answer ?? null,
         explanation: ansMap.get(q.id)?.explanation ?? null,
       }));
+      const orderIds = (att as { question_order?: string[] | null }).question_order ?? null;
+      const merged = orderIds && orderIds.length
+        ? (orderIds.map((id) => mergedCanonical.find((q) => q.id === id)).filter(Boolean) as typeof mergedCanonical)
+        : mergedCanonical;
       const filtered = merged.filter((q) => slugifySubject(q.subject ?? "General") === subject);
       if (filtered.length > 0) setSubjectName(filtered[0].subject ?? "General");
       setQuestions(filtered as Question[]);

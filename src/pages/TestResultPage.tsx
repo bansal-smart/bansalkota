@@ -303,7 +303,7 @@ const TestResultPage = () => {
       const correctVal = (q.question_type === "numerical" || q.question_type === "integer") ? q.numerical_answer : q.correct_answer;
       const marks = Number(m.marks ?? 0);
       return {
-        position: Number(q.position ?? 0) + 1,
+        position: Number(q.display_index ?? q.position ?? 0) + 1,
         subject: String(q.subject ?? "—"),
         result,
         marks_str: marks > 0 ? `+${marks}` : String(marks),

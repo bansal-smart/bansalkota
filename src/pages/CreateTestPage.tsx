@@ -175,6 +175,7 @@ const CreateTestPage = () => {
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
+  const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(true);
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string; centre_id?: string | null }[]>([]);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
@@ -315,6 +316,7 @@ const CreateTestPage = () => {
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
       setTestMode(((test as { test_mode?: string }).test_mode === "cbt" ? "cbt" : "digital"));
+      setShuffleQuestions((test as { shuffle_questions?: boolean }).shuffle_questions ?? true);
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
@@ -611,6 +613,7 @@ const CreateTestPage = () => {
         test_mode: testMode,
         cbt_enabled: testMode === "cbt",
         cbt_allowed_batch_ids: allowedBatches,
+        shuffle_questions: shuffleQuestions,
         ...buildSchedulePayload(),
         ...ownership,
         slug,
@@ -762,6 +765,7 @@ const CreateTestPage = () => {
           test_mode: testMode,
           cbt_enabled: testMode === "cbt",
           cbt_allowed_batch_ids: allowedBatches,
+          shuffle_questions: shuffleQuestions,
           ...buildSchedulePayload(),
           is_published: true,
         })
@@ -839,6 +843,7 @@ const CreateTestPage = () => {
       test_mode: testMode,
       cbt_enabled: testMode === "cbt",
       cbt_allowed_batch_ids: allowedBatches,
+      shuffle_questions: shuffleQuestions,
       ...buildSchedulePayload(),
     };
 
@@ -959,6 +964,24 @@ const CreateTestPage = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Shuffle questions per student</p>
+            <p className="text-[11px] text-muted-foreground">
+              Each student gets a different question order within each subject (sections/tabs stay in the same order for everyone).
+            </p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-foreground">
+            <input
+              type="checkbox"
+              checked={shuffleQuestions}
+              onChange={(e) => setShuffleQuestions(e.target.checked)}
+              className="h-3.5 w-3.5"
+            />
+            Enabled
+          </label>
         </div>
 
         {(
