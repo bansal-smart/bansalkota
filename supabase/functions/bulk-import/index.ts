@@ -47,13 +47,13 @@ const toBool = (v: any): boolean => {
 const isTransientAuthError = (msg?: string | null) =>
   !!msg && /unrecognized JWT kid|invalid JWT/i.test(msg);
 
-async function withAuthRetry<T extends { error: any }>(
-  fn: () => Promise<T>,
+async function withAuthRetry<F extends () => Promise<{ error: any }>>(
+  fn: F,
   attempts = 3,
-): Promise<T> {
-  let result: T;
+): Promise<Awaited<ReturnType<F>>> {
+  let result: Awaited<ReturnType<F>>;
   for (let i = 0; i < attempts; i++) {
-    result = await fn();
+    result = (await fn()) as Awaited<ReturnType<F>>;
     if (!result.error || !isTransientAuthError(result.error.message)) return result;
     if (i < attempts - 1) await new Promise((r) => setTimeout(r, 300 * (i + 1)));
   }

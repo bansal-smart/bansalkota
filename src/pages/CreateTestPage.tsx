@@ -1179,6 +1179,11 @@ const CreateTestPage = () => {
               <option value="chapter">Chapter Test</option>
               <option value="pyq">Previous Year</option>
               <option value="practice">Practice</option>
+              <option value="review">Review Test</option>
+              <option value="part">Part Test</option>
+              <option value="full-syllabus">Full Syllabus Test</option>
+              <option value="class">Class Test</option>
+              <option value="special">Special Test</option>
             </select>
           </div>
           <div>
