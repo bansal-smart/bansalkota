@@ -125,7 +125,7 @@ const TestTakingPage = () => {
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
-  const submitRef = useRef<(auto?: boolean) => void>(() => {});
+  const submitRef = useRef<(auto?: boolean) => void>(() => { });
   const persistProgressRef = useRef<((a?: Record<string, AnswerVal>, s?: Record<string, QStatus>, c?: Set<string>) => Promise<unknown>) | null>(null);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -201,7 +201,6 @@ const TestTakingPage = () => {
         toast.error(`Could not load questions: ${qErr.message}`);
       }
       const canonicalQs = (qs ?? []) as unknown as TestQuestion[];
-
       const { data: existing } = await supabase
         .from("test_attempts")
         .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at, question_order")
@@ -952,11 +951,11 @@ const TestTakingPage = () => {
 
   const typeLabel =
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
-    q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
-    q.question_type === "integer" ? "Integer Type" :
-    q.question_type === "numerical" ? "Numerical Answer" :
-    q.question_type === "match-following" ? "Match the Following" :
-    "Assertion & Reason";
+      q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
+        q.question_type === "integer" ? "Integer Type" :
+          q.question_type === "numerical" ? "Numerical Answer" :
+            q.question_type === "match-following" ? "Match the Following" :
+              "Assertion & Reason";
 
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col select-none">
@@ -1649,7 +1648,7 @@ const NumericInput = ({
           className="mt-1 w-full bg-transparent text-2xl font-bold tabular-nums text-foreground outline-none" />
       </div>
       <div className="grid grid-cols-5 gap-1.5 max-w-sm">
-        {["7","8","9","back","clear","4","5","6",".","-","1","2","3","0"].map((k) => {
+        {["7", "8", "9", "back", "clear", "4", "5", "6", ".", "-", "1", "2", "3", "0"].map((k) => {
           const disabled =
             (k === "." && !allowDecimal) ||
             (k === "-" && !allowNeg);
@@ -1658,13 +1657,12 @@ const NumericInput = ({
               key={k}
               onClick={() => { if (!disabled) press(k); }}
               disabled={disabled}
-              className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors ${
-                disabled
+              className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors ${disabled
                   ? "bg-muted/30 text-muted-foreground/40 cursor-not-allowed"
                   : k === "back" || k === "clear"
                     ? "bg-muted/50 text-foreground/70 hover:bg-muted"
                     : "bg-card text-foreground hover:bg-muted"
-              }`}>
+                }`}>
               {k === "back" ? <Delete className="mx-auto h-4 w-4" /> : k === "clear" ? "C" : k}
             </button>
           );
