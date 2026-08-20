@@ -72,6 +72,8 @@ function onlyDigitsInput(e: React.FormEvent<HTMLInputElement>) {
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
   const { priceInr, examDateLabels } = useBoostSettings();
+  const currentYear = new Date().getFullYear();
+  const academicYear = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
   const hasExamDates = examDateLabels.length > 0;
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
@@ -155,7 +157,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
           <div>
-            <h2 className="font-display text-xl font-bold text-bansal-black">BOOST 2026 Registration</h2>
+            <h2 className="font-display text-xl font-bold text-bansal-black">BOOST {academicYear} Registration</h2>
             <p className="text-xs text-muted-foreground">Just ₹{priceInr} to reserve your scholarship.</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded"><X className="h-5 w-5" /></button>
