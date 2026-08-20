@@ -5,6 +5,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
+import { useAuth } from "@/context/AuthContext";
 
 type Registration = {
   id: string;
@@ -36,6 +37,7 @@ const STATUS_OPTIONS = ["all", "registered", "confirmed", "attended", "cancelled
 const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
 
 const AdminBoostPage = () => {
+  const { isCenterAdmin } = useAuth();
   const [rows, setRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -145,8 +147,14 @@ const AdminBoostPage = () => {
         </button>
       </div>
 
-      <BoostSettingsPanel />
-      <BoostSyllabusPanel />
+      {/* Exam dates/price and syllabus resources are global (not per-centre) —
+          only HQ admins manage them; centre staff only work their own leads below. */}
+      {!isCenterAdmin && (
+        <>
+          <BoostSettingsPanel />
+          <BoostSyllabusPanel />
+        </>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
