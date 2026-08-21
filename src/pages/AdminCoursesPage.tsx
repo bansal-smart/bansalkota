@@ -339,7 +339,7 @@ const AdminCoursesPage = () => {
   const filtered = courses.filter(
     (c) => c.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || c.educator_name.toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 15);
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
   const draggable = reorderMode && !search;
   const rows = reorderMode ? filtered : paged;
 
@@ -444,7 +444,7 @@ const AdminCoursesPage = () => {
               </table>
             </DndContext>
             {!reorderMode && (
-              <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+              <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
             )}
           </div>
         )}

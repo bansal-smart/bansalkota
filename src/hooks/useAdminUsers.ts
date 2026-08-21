@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 
 export type AdminUserRow = {
   user_id: string;
@@ -16,10 +17,9 @@ export type AdminUserRow = {
   role: "student" | "center_admin" | "admin" | "super_admin" | "no_role";
 };
 
-const PAGE_SIZE = 50;
 export const ADMIN_USERS_KEY = ["admin-users"] as const;
 
-const fetchAdminUsers = async (filter: string, search: string, page: number) => {
+const fetchAdminUsers = async (filter: string, search: string, page: number, pageSize: number) => {
   let query = supabase
     .from("profiles")
     .select(
@@ -30,8 +30,9 @@ const fetchAdminUsers = async (filter: string, search: string, page: number) => 
 
   if (search) query = query.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
 
-  const from = page * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const size = pageSize === TABLE_PAGE_SIZE_ALL ? 10000 : pageSize;
+  const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
+  const to = from + size - 1;
   const { data: profiles, count, error } = await query.range(from, to);
   if (error) throw error;
 
@@ -70,11 +71,11 @@ const fetchAdminUsers = async (filter: string, search: string, page: number) => 
   return { rows: filtered, total: Math.max(0, (count ?? 0) - superAdminCount) };
 };
 
-export const useAdminUsers = (filter: string, search: string, page: number) => {
+export const useAdminUsers = (filter: string, search: string, page: number, pageSize: number) => {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
-    queryKey: [...ADMIN_USERS_KEY, filter, search, page],
-    queryFn: () => fetchAdminUsers(filter, search, page),
+    queryKey: [...ADMIN_USERS_KEY, filter, search, page, pageSize],
+    queryFn: () => fetchAdminUsers(filter, search, page, pageSize),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -85,7 +86,7 @@ export const useAdminUsers = (filter: string, search: string, page: number) => {
     rows: data?.rows ?? [],
     total: data?.total ?? 0,
     loading: isLoading,
-    pageSize: PAGE_SIZE,
+    pageSize,
     reload: () => qc.invalidateQueries({ queryKey: ADMIN_USERS_KEY }),
   };
 };

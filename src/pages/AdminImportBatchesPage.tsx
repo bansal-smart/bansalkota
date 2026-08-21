@@ -5,6 +5,8 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Batch = {
   id: string;
@@ -49,6 +51,8 @@ const AdminImportBatchesPage = () => {
   };
 
   useEffect(() => { load(); }, []);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(batches, 25);
 
   const undoBatch = async (b: Batch) => {
     const ok = await confirm({
@@ -101,7 +105,7 @@ const AdminImportBatchesPage = () => {
               <th className="px-4 py-2 text-center">Actions</th>
             </tr></thead>
             <tbody>
-              {batches.map((b) => {
+              {paged.map((b) => {
                 const target = b.target_type === "test" && b.target_id ? tests.get(b.target_id) : null;
                 const errors: any[] = Array.isArray(b.error_log) ? b.error_log : (b.error_log?.errors ?? []);
                 const hasErrors = errors.length > 0;
@@ -159,6 +163,7 @@ const AdminImportBatchesPage = () => {
               })}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         )}
       </div>
     </div>

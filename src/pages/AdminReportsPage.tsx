@@ -87,7 +87,7 @@ const AdminReportsPage = () => {
       );
     });
   }, [rows, debouncedSearch, statusFilter, categoryFilter]);
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const stats = useMemo(() => ({
     total: rows.length,
@@ -215,7 +215,7 @@ const AdminReportsPage = () => {
             ))}
           </ul>
         )}
-        <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+        <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
       <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>

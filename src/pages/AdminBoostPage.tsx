@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
 import { useAuth } from "@/context/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Registration = {
   id: string;
@@ -76,6 +78,8 @@ const AdminBoostPage = () => {
       );
     });
   }, [rows, debouncedQ, statusFilter, payFilter]);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -222,7 +226,7 @@ const AdminBoostPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {paged.map((r) => (
                 <tr
                   key={r.id}
                   onClick={() => setSelected(r)}
@@ -263,6 +267,7 @@ const AdminBoostPage = () => {
               )}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

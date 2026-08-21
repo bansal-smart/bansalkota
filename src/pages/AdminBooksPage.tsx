@@ -596,7 +596,7 @@ const BooksTab = () => {
     }
   };
 
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(books, 15);
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(books, 25);
   const rows = reorderMode ? books : paged;
   const draggable = reorderMode;
 
@@ -684,7 +684,7 @@ const BooksTab = () => {
               </DndContext>
             </div>
             {!reorderMode && books.length > 0 && (
-              <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+              <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
             )}
           </>
         )}

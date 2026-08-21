@@ -8,6 +8,7 @@ import { scopeQueryToCentre } from "@/lib/centreScope";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
+import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 
 type StudentRow = {
   user_id: string;
@@ -42,8 +43,6 @@ type CourseLite = { id: string; name: string };
 
 const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
 const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Dropper"];
-
-const PAGE_SIZE = 25;
 
 const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -210,6 +209,7 @@ const AdminStudentsPage = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -483,8 +483,9 @@ const AdminStudentsPage = () => {
       if (classFilter) query = query.eq("class_level", classFilter);
       if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+      const size = pageSize === TABLE_PAGE_SIZE_ALL ? 10000 : pageSize;
+      const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
+      const to = from + size - 1;
       const { data, count, error } = await query.range(from, to);
       if (error) throw error;
 
@@ -512,7 +513,7 @@ const AdminStudentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches, isCenterAdmin, centerAdminLoading, primaryCenterId]);
+  }, [debouncedSearch, page, pageSize, centreFilter, classFilter, batchFilter, centres, batches, isCenterAdmin, centerAdminLoading, primaryCenterId]);
 
   useEffect(() => {
     load();
@@ -528,7 +529,7 @@ const AdminStudentsPage = () => {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = pageSize === TABLE_PAGE_SIZE_ALL ? 1 : Math.max(1, Math.ceil(total / pageSize));
   const allSelected = useMemo(() => rows.length > 0 && rows.every((r) => selected.includes(r.user_id)), [rows, selected]);
 
   const openDrawer = async (u: StudentRow) => {
@@ -1091,8 +1092,12 @@ const AdminStudentsPage = () => {
         page={page + 1}
         totalPages={totalPages}
         total={total}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
         onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       {/* Edit Modal */}

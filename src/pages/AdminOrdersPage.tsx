@@ -3,6 +3,8 @@ import { ShoppingBag, Loader2, Search, Download, X as XIcon } from "lucide-react
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Order = {
   id: string;
@@ -79,6 +81,8 @@ const AdminOrdersPage = () => {
       );
     });
   }, [orders, debouncedQ, statusFilter]);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const stats = useMemo(() => {
     const total = orders.length;
@@ -180,7 +184,7 @@ const AdminOrdersPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((o) => (
+              {paged.map((o) => (
                 <tr key={o.id} onClick={() => openDetail(o)} className="border-t border-border hover:bg-muted/40 cursor-pointer">
                   <td className="p-3 font-mono text-xs">{o.id.slice(0, 8)}…</td>
                   <td className="p-3 font-semibold">{o.shipping_name ?? "—"}<br /><span className="text-xs text-muted-foreground">{o.shipping_phone}</span></td>
@@ -203,6 +207,7 @@ const AdminOrdersPage = () => {
               )}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

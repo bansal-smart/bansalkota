@@ -525,7 +525,7 @@ const AdminCourseContentPage = () => {
       c.educator_name.toLowerCase().includes(q)
     );
   }, [courses, debouncedSearch]);
-  const { paged: pagedCourses, page: coursePage, setPage: setCoursePage, totalPages: courseTotalPages, total: courseTotal, pageSize: coursePageSize } = usePagination(filteredCourses, 15);
+  const { paged: pagedCourses, page: coursePage, setPage: setCoursePage, totalPages: courseTotalPages, total: courseTotal, pageSize: coursePageSize, setPageSize: setCoursePageSize } = usePagination(filteredCourses, 25);
 
   const visibleResources = useMemo(() => {
     if (chapterFilter === "all") return resources;
@@ -680,7 +680,7 @@ const AdminCourseContentPage = () => {
                 </li>
               ))}
             </ul>
-            <TablePagination page={coursePage} totalPages={courseTotalPages} total={courseTotal} pageSize={coursePageSize} onPageChange={setCoursePage} />
+            <TablePagination page={coursePage} totalPages={courseTotalPages} total={courseTotal} pageSize={coursePageSize} onPageChange={setCoursePage} onPageSizeChange={setCoursePageSize} />
             </>
           )}
         </div>

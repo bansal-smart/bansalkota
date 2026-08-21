@@ -1,4 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { TABLE_PAGE_SIZE_ALL, TABLE_PAGE_SIZE_OPTIONS } from "@/lib/tablePageSize";
+
+export { TABLE_PAGE_SIZE_ALL, TABLE_PAGE_SIZE_OPTIONS };
 
 type Props = {
   page: number;
@@ -6,15 +9,24 @@ type Props = {
   total: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   className?: string;
 };
 
-const TablePagination = ({ page, totalPages, total, pageSize, onPageChange, className = "" }: Props) => {
+const TablePagination = ({
+  page,
+  totalPages,
+  total,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  className = "",
+}: Props) => {
   if (total === 0) return null;
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(total, page * pageSize);
+  const size = pageSize > 0 ? pageSize : Math.max(total, 1);
+  const start = (page - 1) * size + 1;
+  const end = Math.min(total, page * size);
 
-  // Build a compact page list (max 5 buttons + ellipsis)
   const pages: (number | "…")[] = [];
   const push = (n: number | "…") => pages.push(n);
   if (totalPages <= 7) {
@@ -31,11 +43,31 @@ const TablePagination = ({ page, totalPages, total, pageSize, onPageChange, clas
 
   return (
     <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border bg-card ${className}`}>
-      <p className="text-xs text-muted-foreground">
-        Showing <span className="font-semibold text-foreground">{start}</span>–
-        <span className="font-semibold text-foreground">{end}</span> of{" "}
-        <span className="font-semibold text-foreground">{total}</span>
-      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        {onPageSizeChange && (
+          <label className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>Show</span>
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground outline-none focus:border-primary"
+              aria-label="Rows per page"
+            >
+              {TABLE_PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n === TABLE_PAGE_SIZE_ALL ? "All" : n}
+                </option>
+              ))}
+            </select>
+            <span>per page</span>
+          </label>
+        )}
+        <p className="text-xs text-muted-foreground">
+          Showing <span className="font-semibold text-foreground">{start}</span>–
+          <span className="font-semibold text-foreground">{end}</span> of{" "}
+          <span className="font-semibold text-foreground">{total}</span>
+        </p>
+      </div>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(Math.max(1, page - 1))}

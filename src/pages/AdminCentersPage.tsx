@@ -7,6 +7,8 @@ import CenterStaffModal from "@/components/CenterStaffModal";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Center = {
   id: string;
@@ -162,6 +164,8 @@ const AdminCentersPage = () => {
       );
     });
   }, [items, debouncedSearch, region]);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const startEdit = (c: Center) => {
     setEditingId(c.id);
@@ -582,7 +586,7 @@ const AdminCentersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => {
+                {paged.map((c) => {
                   const logins = loginByCenter[c.id] ?? [];
                   return (
                   <tr key={c.id} className="border-t border-border hover:bg-muted/30">
@@ -683,6 +687,7 @@ const AdminCentersPage = () => {
                 )}
               </tbody>
             </table>
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>

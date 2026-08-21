@@ -340,7 +340,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     return c;
   }, [combined]);
 
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(filtered, 20);
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const resetAttempt = async (a: Attempt) => {
     const name = profiles.get(a.user_id) ?? "this student";
@@ -571,7 +571,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                 })}
               </tbody>
             </table>
-            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>

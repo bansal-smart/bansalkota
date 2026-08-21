@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type AdminLive = {
   id: string;
@@ -101,8 +103,6 @@ const toLocalInput = (iso: string) => {
   return new Date(d.getTime() - tz).toISOString().slice(0, 16);
 };
 
-const PAGE_SIZE = 25;
-
 const AdminLiveClassesPage = () => {
   const { confirm, ConfirmDialog } = useConfirm();
   const [classes, setClasses] = useState<AdminLive[]>([]);
@@ -120,7 +120,6 @@ const AdminLiveClassesPage = () => {
   const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [educatorFilter, setEducatorFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
 
   // Templates dialog
   const [showTemplates, setShowTemplates] = useState(false);
@@ -165,10 +164,6 @@ const AdminLiveClassesPage = () => {
     load();
   }, []);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, statusFilter, educatorFilter]);
-
   const counts = useMemo(() => {
     const now = new Date();
     return {
@@ -194,11 +189,11 @@ const AdminLiveClassesPage = () => {
     });
   }, [classes, debouncedSearch, statusFilter, educatorFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageRows = useMemo(
-    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [filtered, page],
-  );
+  const { paged: pageRows, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter, educatorFilter, setPage]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -612,32 +607,15 @@ const AdminLiveClassesPage = () => {
             />
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of{" "}
-              {filtered.length}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="rounded-md border border-border px-2 py-1 disabled:opacity-50"
-              >
-                Prev
-              </button>
-              <span>
-                Page {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="rounded-md border border-border px-2 py-1 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            className="rounded-b-xl"
+          />
         </>
       )}
 

@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Loader2, Search, X, ShieldOff, ShieldCheck }
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { TABLE_PAGE_SIZE_ALL, TABLE_PAGE_SIZE_OPTIONS } from "@/lib/tablePageSize";
 
 type StudentRow = {
   enrollment_id: string;
@@ -24,8 +25,6 @@ type Props = {
   courseId: string | null;
   courseName: string;
 };
-
-const PAGE_SIZES = [25, 50, 100, 200];
 
 const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Props) => {
   const { isSuperAdmin, isAdmin } = useAuth();
@@ -123,9 +122,12 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
       (r.centre_name ?? "").toLowerCase().includes(q)
     );
   });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const size = pageSize === TABLE_PAGE_SIZE_ALL ? Math.max(filtered.length, 1) : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / size));
   const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageRows = pageSize === TABLE_PAGE_SIZE_ALL
+    ? filtered
+    : filtered.slice((currentPage - 1) * size, currentPage * size);
 
   if (!open) return null;
 
@@ -248,13 +250,13 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
               }}
               className="rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
             >
-              {PAGE_SIZES.map((size) => (
-                <option key={size} value={size}>{size}</option>
+              {TABLE_PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n === TABLE_PAGE_SIZE_ALL ? "All" : n}</option>
               ))}
             </select>
             <span>entries</span>
             {filtered.length > 0 && (
-              <span className="hidden sm:inline">· {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filtered.length)} of {filtered.length}</span>
+              <span className="hidden sm:inline">· {(currentPage - 1) * size + 1}–{Math.min(currentPage * size, filtered.length)} of {filtered.length}</span>
             )}
             <div className="flex items-center gap-1">
               <button
