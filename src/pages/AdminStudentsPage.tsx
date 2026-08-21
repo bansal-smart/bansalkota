@@ -45,6 +45,8 @@ const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "
 
 const PAGE_SIZE = 25;
 
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
 const centreLabel = (c: { city: string; area: string | null }) =>
   c.area ? `${c.city} — ${c.area}` : c.city;
 
@@ -278,7 +280,7 @@ const AdminStudentsPage = () => {
     const CHUNK = 500;
     for (let i = 0; i < studentIds.length; i += CHUNK) {
       const slice = studentIds.slice(i, i + CHUNK);
-      let q: any = (supabase as any).from("profiles").select("user_id").in("user_id", slice);
+      let q = supabase.from("profiles").select("user_id").in("user_id", slice);
       if (debouncedSearch.trim()) {
         const s = debouncedSearch.trim();
         q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
@@ -299,8 +301,8 @@ const AdminStudentsPage = () => {
     try {
       if (scope === "selected") ids = selected.slice();
       else ids = await fetchAllFilteredStudentIds();
-    } catch (e: any) {
-      toast.error("Failed to gather students", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Failed to gather students", { description: errorMessage(e) });
       return;
     }
     if (!ids.length) { toast.error("No students to process"); return; }
@@ -330,8 +332,8 @@ const AdminStudentsPage = () => {
       }
       toast.success(`Generated ${generated} passwords · Skipped ${skipped}`);
       load();
-    } catch (e: any) {
-      toast.error("Bulk generate failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Bulk generate failed", { description: errorMessage(e) });
     } finally {
       setPwdBulkRunning(false);
     }
@@ -367,8 +369,8 @@ const AdminStudentsPage = () => {
       setPwdResetResult((data as { password: string }).password);
       toast.success("Password updated");
       load();
-    } catch (e: any) {
-      toast.error("Reset failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Reset failed", { description: errorMessage(e) });
     } finally {
       setPwdResetRunning(false);
     }
@@ -382,7 +384,7 @@ const AdminStudentsPage = () => {
     }
     setAddSaving(true);
     try {
-      const row: Record<string, any> = {};
+      const row: Record<string, string | string[] | null> = {};
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
       row.centre = finalCentre;
       if (addCourseIds.length) row.course_ids = addCourseIds;
@@ -404,8 +406,8 @@ const AdminStudentsPage = () => {
       setAddForm(emptyAdd);
       setAddCourseIds([]);
       load();
-    } catch (e: any) {
-      toast.error("Add failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Add failed", { description: errorMessage(e) });
     } finally {
       setAddSaving(false);
     }
@@ -426,12 +428,12 @@ const AdminStudentsPage = () => {
     const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
     (async () => {
       const [{ data: cs }, { data: bs }, { data: crs }] = await Promise.all([
-        (supabase as any).from("centres").select("id, city, area, slug").order("city"),
+        supabase.from("centres").select("id, city, area, slug").order("city"),
         scopeQueryToCentre(
-          (supabase as any).from("course_batches").select("id, name, code, centre_id"),
+          supabase.from("course_batches").select("id, name, code, centre_id"),
           scopeCentreId,
         ).order("name"),
-        scopeQueryToCentre((supabase as any).from("courses").select("id, name"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
+        scopeQueryToCentre(supabase.from("courses").select("id, name"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
       setBatches((bs as BatchLite[]) ?? []);
@@ -462,7 +464,7 @@ const AdminStudentsPage = () => {
         setRows([]); setTotal(0); setLoading(false); return;
       }
 
-      let query = (supabase as any)
+      let query = supabase
         .from("profiles")
         .select(
           "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
@@ -504,8 +506,8 @@ const AdminStudentsPage = () => {
       }
       setRows(baseRows.map((r) => ({ ...r, email: emails[r.user_id] ?? null })));
       setTotal(count ?? 0);
-    } catch (e: any) {
-      toast.error("Failed to load students", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Failed to load students", { description: errorMessage(e) });
 
     } finally {
       setLoading(false);
@@ -546,7 +548,7 @@ const AdminStudentsPage = () => {
       country: u.country ?? "",
     });
     setEditCourseIds([]);
-    const { data: er } = await (supabase as any)
+    const { data: er } = await supabase
       .from("enrollments")
       .select("course_id")
       .eq("user_id", u.user_id)
@@ -558,7 +560,7 @@ const AdminStudentsPage = () => {
     if (!drawer) return;
     setSaving(true);
     try {
-      const payload: Record<string, any> = { action: "update", user_id: drawer.user_id };
+      const payload: Record<string, unknown> = { action: "update", user_id: drawer.user_id };
       Object.entries(edit).forEach(([k, v]) => {
         payload[k] = typeof v === "string" && v.trim() === "" ? null : v;
       });
@@ -568,8 +570,8 @@ const AdminStudentsPage = () => {
       toast.success("Student updated");
       setDrawer(null);
       load();
-    } catch (e: any) {
-      toast.error("Update failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Update failed", { description: errorMessage(e) });
     } finally {
       setSaving(false);
     }
@@ -596,8 +598,8 @@ const AdminStudentsPage = () => {
       setDrawer(null);
       setSelected((s) => s.filter((id) => id !== confirmDelete.user_id));
       load();
-    } catch (e: any) {
-      toast.error("Delete failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Delete failed", { description: errorMessage(e) });
     } finally {
       setDeleting(false);
     }
@@ -629,7 +631,7 @@ const AdminStudentsPage = () => {
       const BATCH = 1000;
       for (let i = 0; i < studentIds.length; i += BATCH) {
         const slice = studentIds.slice(i, i + BATCH);
-        let q = (supabase as any)
+        let q = supabase
           .from("profiles")
           .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label")
           .in("user_id", slice)
@@ -675,9 +677,9 @@ const AdminStudentsPage = () => {
       if (!withEmails.length) return toast.error("Nothing to export");
       exportCsv(withEmails);
       toast.success(`Exported ${withEmails.length} students`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.dismiss(tId);
-      toast.error("Export failed", { description: e.message });
+      toast.error("Export failed", { description: errorMessage(e) });
     }
   };
 
@@ -803,9 +805,15 @@ const AdminStudentsPage = () => {
           }
           return base;
         })()}
+        chunkSize={20}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
           const { data, error } = await supabase.functions.invoke("bulk-import", {
-            body: { kind: "students", rows, dry_run: dryRun },
+            body: {
+              kind: "students",
+              rows,
+              dry_run: dryRun,
+              centre_id: isCenterAdmin ? primaryCenterId : undefined,
+            },
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
@@ -1124,7 +1132,7 @@ const AdminStudentsPage = () => {
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
                 { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
-              ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
+              ] as Array<{ k: keyof StudentRow; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
                   {f.k === "centre_id" && isCenterAdmin ? (
@@ -1136,7 +1144,7 @@ const AdminStudentsPage = () => {
                     />
                   ) : f.type === "select" ? (
                     <select
-                      value={((edit as any)[f.k] as string) ?? ""}
+                      value={(edit[f.k] as string | undefined) ?? ""}
                       onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                     >
@@ -1148,7 +1156,7 @@ const AdminStudentsPage = () => {
                   ) : (
                     <input
                       type={f.type}
-                      value={((edit as any)[f.k] as string) ?? ""}
+                      value={(edit[f.k] as string | undefined) ?? ""}
                       onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
                       placeholder={f.ph}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"

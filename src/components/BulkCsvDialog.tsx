@@ -32,6 +32,12 @@ export type BulkCsvDialogProps = {
   importRow?: (row: Record<string, any>, index: number) => Promise<string | void>;
   /** Server-side batched callback. If provided, the dialog sends ALL rows at once and respects dryRun. */
   bulkImport?: (rows: Record<string, any>[], dryRun: boolean) => Promise<BulkServerResult>;
+  /**
+   * Split server imports into this many rows per request. Edge Functions have a hard
+   * 2s CPU / 256MB isolate cap (independent of Pro plan DB compute) — student imports
+   * that create Auth users will 546 without chunking.
+   */
+  chunkSize?: number;
   /** Called once after a successful (or partial) import */
   onDone?: () => void;
   fileBase?: string;
@@ -61,6 +67,7 @@ const BulkCsvDialog = ({
   exportRows,
   importRow,
   bulkImport,
+  chunkSize,
   onDone,
   fileBase = "data",
 }: BulkCsvDialogProps) => {
@@ -136,17 +143,26 @@ const BulkCsvDialog = ({
         return;
       }
       try {
-        const res = await bulkImport(validRows.map((v) => v.row), dryRun);
-        ok = res.ok;
-        res.results.forEach((r) => {
-          if (!r.ok) {
-            const orig = validRows[r.row - 1];
-            errors.push({ row: (orig?.idx ?? r.row - 1) + 2, error: r.error || "Unknown error" });
-          }
-        });
-        setProgress({ done: validRows.length, total: validRows.length });
+        const size = chunkSize && chunkSize > 0 ? chunkSize : validRows.length;
+        for (let offset = 0; offset < validRows.length; offset += size) {
+          const slice = validRows.slice(offset, offset + size);
+          const res = await bulkImport(slice.map((v) => v.row), dryRun);
+          ok += res.ok;
+          res.results.forEach((r) => {
+            if (!r.ok) {
+              const orig = validRows[offset + r.row - 1];
+              errors.push({ row: (orig?.idx ?? offset + r.row - 1) + 2, error: r.error || "Unknown error" });
+            }
+          });
+          setProgress({ done: Math.min(offset + slice.length, validRows.length), total: validRows.length });
+        }
       } catch (e: any) {
         toast.error(e.message || "Bulk import failed");
+        if (ok > 0) {
+          errors.push({ row: 0, error: `Stopped after ${ok} row(s): ${e.message || "Bulk import failed"}` });
+          setResults({ ok, errors, dryRun });
+          if (!dryRun) onDone?.();
+        }
         setBusy(false);
         return;
       }

@@ -60,6 +60,41 @@ async function withAuthRetry<F extends () => Promise<{ error: any }>>(
   return result!;
 }
 
+// Edge isolates are capped at ~2s CPU / 256MB regardless of Pro plan DB compute.
+// Fetching thousands of Auth users into memory is a common 546 (WORKER_RESOURCE_LIMIT).
+async function findAuthUserIdByEmail(
+  supabaseUrl: string,
+  serviceKey: string,
+  email: string,
+): Promise<string | null> {
+  const url = `${supabaseUrl}/auth/v1/admin/users?page=1&per_page=5&filter=${encodeURIComponent(email)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey },
+  });
+  if (!res.ok) return null;
+  const body = await res.json().catch(() => null);
+  const users: any[] = Array.isArray(body?.users) ? body.users : [];
+  const match = users.find((u: any) => String(u.email ?? "").toLowerCase() === email.toLowerCase());
+  return match?.id ?? null;
+}
+
+async function fetchProfilesByColumn(
+  admin: ReturnType<typeof createClient>,
+  column: "roll_number" | "phone",
+  values: string[],
+) {
+  const out: any[] = [];
+  for (let i = 0; i < values.length; i += 100) {
+    const slice = values.slice(i, i + 100);
+    const { data } = await admin
+      .from("profiles")
+      .select("id, user_id, centre_id, roll_number, phone")
+      .in(column, slice);
+    if (data) out.push(...data);
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
@@ -107,7 +142,12 @@ Deno.serve(async (req) => {
 
     if (!kind) return json(400, { error: "kind is required" });
     if (rows.length === 0) return json(400, { error: "rows is empty" });
-    if (rows.length > 2000) return json(400, { error: "Max 2000 rows per request" });
+    // Student imports create Auth users + several DB writes per row. A 177-row
+    // payload exceeds Edge Function CPU/memory (546 WORKER_RESOURCE_LIMIT).
+    const maxRows = kind === "students" ? 40 : 2000;
+    if (rows.length > maxRows) {
+      return json(400, { error: `Max ${maxRows} rows per request for ${kind}` });
+    }
 
     // Authorization per kind
     if (kind === "centres" && !isAnyAdmin) return json(403, { error: "Admins only" });
@@ -195,6 +235,38 @@ Deno.serve(async (req) => {
         batchCourseById.set(b.id, b.course_id ?? null);
         batchCentreById.set(b.id, b.centre_id ?? null);
       });
+      const rolls = Array.from(
+        new Set(rows.map((r) => trimOrNull(r.roll_number ?? r.roll_no)).filter((x): x is string => !!x)),
+      );
+      const phones = Array.from(
+        new Set(rows.map((r) => trimOrNull(r.phone ?? r.contact_no)).filter((x): x is string => !!x)),
+      );
+      const profileByRoll = new Map<string, any>();
+      const profilesByPhone = new Map<string, any[]>();
+      if (rolls.length) {
+        for (const p of await fetchProfilesByColumn(admin, "roll_number", rolls)) {
+          if (p.roll_number) profileByRoll.set(String(p.roll_number), p);
+        }
+      }
+      if (phones.length) {
+        for (const p of await fetchProfilesByColumn(admin, "phone", phones)) {
+          const k = String(p.phone ?? "");
+          if (!k) continue;
+          const arr = profilesByPhone.get(k) ?? [];
+          arr.push(p);
+          profilesByPhone.set(k, arr);
+        }
+      }
+
+      const rememberProfile = (p: { id: string; user_id: string; centre_id: string | null; roll_number?: string | null; phone?: string | null }) => {
+        if (p.roll_number) profileByRoll.set(String(p.roll_number), p);
+        if (p.phone) {
+          const arr = profilesByPhone.get(String(p.phone)) ?? [];
+          if (!arr.some((x) => x.id === p.id)) arr.push(p);
+          profilesByPhone.set(String(p.phone), arr);
+        }
+      };
+
       // Batches are centralized on the 6 PAN-India batches (course_batches with
       // centre_id IS NULL) rather than per-centre placeholders — every franchise
       // centre resolves the SAME batch for a given stream+class, keyed by its
@@ -319,29 +391,18 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Find existing profile — match by roll_number first
-          let target: { id: string; user_id: string; centre_id: string | null } | null = null;
-          if (roll) {
-            const { data } = await admin
-              .from("profiles")
-              .select("id, user_id, centre_id, roll_number")
-              .eq("roll_number", roll)
-              .maybeSingle();
-            target = data as any;
-          }
+          // Find existing profile — match by roll_number first (preloaded for this chunk)
+          let target: { id: string; user_id: string; centre_id: string | null; roll_number?: string | null; phone?: string | null } | null = null;
+          if (roll) target = profileByRoll.get(roll) ?? null;
           if (!target && phone) {
-            const { data } = await admin
-              .from("profiles")
-              .select("id, user_id, centre_id, roll_number")
-              .eq("phone", phone)
-              .maybeSingle();
+            const data = (profilesByPhone.get(phone) ?? [])[0] ?? null;
             // If the incoming row has an explicit roll number, and the profile found by phone
             // does NOT already carry that exact roll number (e.g. sibling sharing parent phone,
             // or a profile whose own roll hasn't been set yet), DO NOT overwrite it!
-            if (data && roll && (data as any).roll_number !== roll) {
+            if (data && roll && data.roll_number !== roll) {
               target = null;
             } else {
-              target = data as any;
+              target = data;
             }
           }
           // Centre staff (non-admin) may only update students already in their own centre.
@@ -404,6 +465,7 @@ Deno.serve(async (req) => {
               { onConflict: "user_id,role" },
             );
             if (roleErr) throw roleErr;
+            rememberProfile({ ...target, ...payload, id: target.id, user_id: target.user_id });
             results.push({ row: i + 1, ok: true, id: target.id });
           } else {
             // Create new student. Admins can create anywhere; centre staff can
@@ -431,18 +493,9 @@ Deno.serve(async (req) => {
             if (created?.user) {
               newUid = created.user.id;
             } else if (cErr) {
-              // If user already exists in Auth, retrieve their user_id. perPage covers
-              // the full roster (well beyond current enrolment size) since listUsers
-              // has no email filter — a low default page size silently misses matches.
-              const { data: listData } = await withAuthRetry(() =>
-                admin.auth.admin.listUsers({ page: 1, perPage: 2000 })
-              );
-              const existingAuth = (listData?.users ?? []).find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
-              if (existingAuth) {
-                newUid = existingAuth.id;
-              } else {
-                throw new Error(cErr.message || "Failed to create auth user");
-              }
+              const existingId = await findAuthUserIdByEmail(supabaseUrl, serviceKey, email);
+              if (existingId) newUid = existingId;
+              else throw new Error(cErr.message || "Failed to create auth user");
             }
             if (!newUid) throw new Error("Failed to resolve auth user ID");
 
@@ -467,6 +520,13 @@ Deno.serve(async (req) => {
             if (roleErr) throw roleErr;
 
             resolvedUid = newUid;
+            rememberProfile({
+              id: existingProfile ? (existingProfile as any).id : newUid,
+              user_id: newUid,
+              centre_id: centreId,
+              roll_number: effectiveRoll,
+              phone,
+            });
             results.push({ row: i + 1, ok: true, id: newUid });
           }
 
@@ -613,12 +673,7 @@ Deno.serve(async (req) => {
               .then((res: any) => res, () => ({ data: null }));
             if (u) userId = (u as any).id;
             if (!userId) {
-              // Fallback: query auth.admin
-              const { data: list } = await withAuthRetry(() =>
-                admin.auth.admin.listUsers({ page: 1, perPage: 2000 })
-              );
-              const match = list?.users?.find((x: any) => x.email?.toLowerCase() === email.toLowerCase());
-              if (match) userId = match.id;
+              userId = await findAuthUserIdByEmail(supabaseUrl, serviceKey, email);
             }
           }
           if (!userId)
