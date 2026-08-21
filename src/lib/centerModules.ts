@@ -23,6 +23,7 @@ export const CENTER_MODULES: CenterModule[] = [
   { key: "courses", label: "Courses", actions: ["view", "create", "edit", "delete"] },
   { key: "enquiries", label: "Enquiries", actions: ["view", "edit", "delete", "export"] },
   { key: "centre_support", label: "Centre Support", actions: ["view", "edit"] },
+  { key: "boost", label: "BOOST Registrations", actions: ["view", "edit", "export"] },
   { key: "gallery", label: "Gallery", actions: ["view", "create", "edit", "delete"] },
   { key: "news_updates", label: "News & Updates", actions: ["view", "create", "edit", "delete"] },
 ];
