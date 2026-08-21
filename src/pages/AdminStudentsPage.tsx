@@ -310,27 +310,44 @@ const AdminStudentsPage = () => {
     setPwdBulkResults(null);
     setPwdBulkProgress({ done: 0, total: ids.length });
     try {
-      const CHUNK = 200;
+      const CHUNK = 20;
       const all: NonNullable<typeof pwdBulkResults> = [];
       let generated = 0;
       let skipped = 0;
+      let failed = 0;
       for (let i = 0; i < ids.length; i += CHUNK) {
         const slice = ids.slice(i, i + CHUNK);
-        // Carry forward every password issued so far so uniqueness holds across
-        // the whole run, not just within a single chunk.
         const excludePasswords = all.map((r) => r.password).filter((p): p is string => !!p);
-        const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
-          body: { user_ids: slice, overwrite: pwdBulkOverwrite, exclude_passwords: excludePasswords },
-        });
-        if (error) throw error;
-        const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
-        all.push(...res);
-        generated += Number(data?.generated ?? 0);
-        skipped += Number(data?.skipped ?? 0);
+        try {
+          const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
+            body: { user_ids: slice, overwrite: pwdBulkOverwrite, exclude_passwords: excludePasswords },
+          });
+          if (error) throw error;
+          const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
+          all.push(...res);
+          generated += Number(data?.generated ?? 0);
+          skipped += Number(data?.skipped ?? 0);
+          failed += Number(data?.errors ?? res.filter((r) => r.status !== "generated" && r.status !== "skipped_existing").length);
+        } catch (chunkErr: unknown) {
+          failed += slice.length;
+          all.push(...slice.map((user_id) => ({
+            user_id,
+            roll_number: null,
+            full_name: null,
+            centre: null,
+            batch: null,
+            password: null,
+            status: `error: ${errorMessage(chunkErr)}`,
+          })));
+        }
         setPwdBulkProgress({ done: Math.min(i + slice.length, ids.length), total: ids.length });
         setPwdBulkResults(all.slice());
       }
-      toast.success(`Generated ${generated} passwords · Skipped ${skipped}`);
+      const parts = [`Generated ${generated}`];
+      if (skipped) parts.push(`skipped ${skipped} (already had a password)`);
+      if (failed) parts.push(`${failed} failed`);
+      if (failed) toast.error(parts.join(" · "));
+      else toast.success(parts.join(" · "));
       load();
     } catch (e: unknown) {
       toast.error("Bulk generate failed", { description: errorMessage(e) });
@@ -341,10 +358,9 @@ const AdminStudentsPage = () => {
 
   const downloadPwdCsv = () => {
     if (!pwdBulkResults?.length) return;
-    const rowsOut = pwdBulkResults.filter((r) => r.password);
-    const header = ["Roll No", "Student Name", "Centre", "Batch", "Password"];
-    const body = rowsOut.map((r) =>
-      [r.roll_number ?? "", r.full_name ?? "", r.centre ?? "", r.batch ?? "", r.password ?? ""]
+    const header = ["Roll No", "Student Name", "Centre", "Batch", "Password", "Status"];
+    const body = pwdBulkResults.map((r) =>
+      [r.roll_number ?? "", r.full_name ?? "", r.centre ?? "", r.batch ?? "", r.password ?? "", r.status ?? ""]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
     );
     const csv = [header.join(","), ...body].join("\n");
@@ -1389,7 +1405,9 @@ const AdminStudentsPage = () => {
               <>
                 <div className="p-4 border-b border-border flex items-center justify-between gap-2">
                   <p className="text-xs text-muted-foreground">
-                    Showing {pwdBulkResults.length} students. Copy or download now — passwords are not retrievable later.
+                    Showing {pwdBulkResults.length} students
+                    ({pwdBulkResults.filter((r) => r.password).length} with a password).
+                    Download now — new passwords are not retrievable later.
                   </p>
                   <button
                     onClick={downloadPwdCsv}
