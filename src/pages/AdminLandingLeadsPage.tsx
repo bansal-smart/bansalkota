@@ -154,6 +154,7 @@ export default function AdminLandingLeadsPage() {
         ) : filtered.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">No leads yet.</div>
         ) : (
+          <>
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -196,6 +197,7 @@ export default function AdminLandingLeadsPage() {
             </tbody>
           </table>
           <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 
