@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type TS = {
   id: string;
@@ -73,6 +75,8 @@ const AdminTestSeriesPage = () => {
     else load();
   };
 
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(rows, 25);
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div className="rounded-2xl bg-[#1C3F8E] p-6 text-white flex items-start justify-between gap-4 flex-wrap">
@@ -113,7 +117,7 @@ const AdminTestSeriesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {paged.map((r) => (
                   <tr key={r.id} className="border-t border-border">
                     <td className="px-4 py-3">
                       <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded border border-border bg-muted">
@@ -181,6 +185,7 @@ const AdminTestSeriesPage = () => {
                 )}
               </tbody>
             </table>
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>

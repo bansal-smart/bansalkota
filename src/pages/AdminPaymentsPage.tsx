@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Payment = {
   id: string;
@@ -120,6 +122,7 @@ const AdminPaymentsPage = () => {
   }, [dateFiltered]);
 
   const filtered = filter === "all" ? dateFiltered : dateFiltered.filter((t) => t.status === filter);
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const hasActiveFilters = fromDate || toDate || debouncedSearch;
   const clearFilters = () => {
@@ -262,7 +265,7 @@ const AdminPaymentsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => (
+                {paged.map((t) => (
                   <tr key={t.id} className="border-b border-border last:border-0">
                     <td className="py-2.5 font-mono text-muted-foreground">{t.external_id ?? t.id.slice(0, 8)}</td>
                     <td className="py-2.5 font-medium text-foreground">{t.student_name ?? "—"}</td>
@@ -275,6 +278,7 @@ const AdminPaymentsPage = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>

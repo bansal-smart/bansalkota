@@ -12,10 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { usePagination } from "@/hooks/usePagination";
 
 import { SUBJECTS_WITH_ALL as SUBJECTS } from "@/lib/constants";
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
-const PAGE_SIZE = 25;
 
 const difficultyColor = (d: string) => {
   if (d === "easy") return "bg-emerald-100 text-emerald-700";
@@ -139,7 +139,6 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [sortKey, setSortKey] = useState<SortKey>("question_text");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [bulkSubject, setBulkSubject] = useState("");
   const [bulkTopic, setBulkTopic] = useState("");
@@ -151,9 +150,6 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const filters = useMemo(() => ({ subject, difficulty, search, centreId }), [subject, difficulty, search, centreId]);
   const { questions, loading, reload } = useQuestionBank(filters);
   const isOwn = (q: BankQuestion) => !centreId || q.centre_id === centreId;
-
-  // Reset page when filters/sort change
-  useEffect(() => { setPage(1); }, [subject, difficulty, topic, search, sortKey, sortDir]);
 
   // Topic options derived from current dataset
   const topicOptions = useMemo(() => {
@@ -176,8 +172,8 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
     });
   }, [questions, topic, sortKey, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
-  const pageItems = useMemo(() => processed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [processed, page]);
+  const { paged: pageItems, page, setPage, totalPages, pageSize, setPageSize } = usePagination(processed, 25);
+  useEffect(() => { setPage(1); }, [subject, difficulty, topic, search, sortKey, sortDir, setPage]);
   const pageIds = useMemo(() => pageItems.map((q) => q.id), [pageItems]);
   const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const someOnPageSelected = pageIds.some((id) => selected.has(id));
@@ -447,7 +443,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                 </tbody>
               </table>
             </div>
-            <TablePagination page={page} totalPages={totalPages} total={processed.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+            <TablePagination page={page} totalPages={totalPages} total={processed.length} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
         ) : (
           <div className="p-3 space-y-2">

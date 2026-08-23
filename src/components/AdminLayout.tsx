@@ -134,6 +134,7 @@ const centreNav: NavGroup = {
     { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
     { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
     { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
+    { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
     { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
     { label: "Gallery", icon: ImageIcon, path: "/admin/centre-gallery" },
     { label: "News & Updates", icon: Megaphone, path: "/admin/news-updates" },

@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
 import RichTextEditor from "@/components/RichTextEditor";
 import { slugify } from "@/lib/validators";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Post = {
   id: string;
@@ -54,6 +56,8 @@ const AdminBlogsPage = () => {
     setLoading(false);
   };
   useEffect(() => { void load(); }, []);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(posts, 25);
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm, sort_order: posts.length }); setShowForm(true); };
   const openEdit = (p: Post) => {
@@ -155,7 +159,7 @@ const AdminBlogsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {posts.map((p) => (
+              {paged.map((p) => (
                 <tr key={p.id} className="border-t border-border">
                   <td className="px-4 py-2 font-medium">{p.title}</td>
                   <td className="px-4 py-2 text-muted-foreground">{p.slug}</td>
@@ -175,6 +179,7 @@ const AdminBlogsPage = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

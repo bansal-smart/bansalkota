@@ -20,7 +20,7 @@ const AdminExamsPage = () => {
   const { exams, loading, reload } = useExams({ includeInactive: true });
   const [editing, setEditing] = useState<EditDraft | null>(null);
   const [saving, setSaving] = useState(false);
-  const { paged, page, setPage, totalPages, total, pageSize } = usePagination(exams, 15);
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(exams, 25);
 
   const save = async () => {
     if (!editing) return;
@@ -116,7 +116,7 @@ const AdminExamsPage = () => {
               )}
             </tbody>
           </table>
-          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

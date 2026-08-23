@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import { School, Plus, Edit3, Trash2, Loader2, X, Upload, Users, ChevronRight, Copy, Download, FileText } from "lucide-react";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type SchoolRow = {
   id: string;
@@ -194,6 +196,7 @@ const AdminSchoolsPage = () => {
   const filtered = schools.filter((s) =>
     !debouncedSearch || s.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || (s.code ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   return (
     <div className="p-4 lg:p-6 space-y-4">
@@ -230,7 +233,7 @@ const AdminSchoolsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s) => (
+              {paged.map((s) => (
                 <tr key={s.id} className="border-t border-border hover:bg-muted/30">
                   <td className="px-3 py-2 font-bold text-foreground">{s.name}</td>
                   <td className="px-3 py-2 text-muted-foreground">{s.code || "—"}</td>
@@ -250,6 +253,7 @@ const AdminSchoolsPage = () => {
               )}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

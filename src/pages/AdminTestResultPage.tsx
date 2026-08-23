@@ -468,7 +468,7 @@ const AdminTestResultPage = () => {
       const [{ data: att }, { data: qs }] = await Promise.all([
         supabase
           .from("test_attempts")
-          .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata")
+          .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata, question_order")
           .eq("test_id", test.id)
           .eq("user_id", r.user_id)
           .in("status", ["submitted", "auto_submitted"])
@@ -481,7 +481,11 @@ const AdminTestResultPage = () => {
           .eq("test_id", test.id)
           .order("position"),
       ]);
-      setStudentDetail({ attempt: att ?? null, questions: (qs ?? []) as any[] });
+      const orderIds = (att as { question_order?: string[] | null } | null)?.question_order ?? null;
+      const orderedQs = orderIds && orderIds.length
+        ? (orderIds.map((id) => (qs ?? []).find((q: any) => q.id === id)).filter(Boolean) as any[])
+        : ((qs ?? []) as any[]);
+      setStudentDetail({ attempt: att ?? null, questions: orderedQs });
     } finally {
       setLoadingDetail(false);
     }
@@ -585,7 +589,7 @@ const AdminTestResultPage = () => {
       // 1) Fetch this student's attempt with answers
       const { data: att } = await supabase
         .from("test_attempts")
-        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata")
+        .select("id, score, percentile, correct_answers, total_questions, time_spent_seconds, status, submitted_at, answers, metadata, question_order")
         .eq("test_id", test.id)
         .eq("user_id", r.user_id)
         .in("status", ["submitted", "auto_submitted"])
@@ -605,7 +609,11 @@ const AdminTestResultPage = () => {
       const ansMap = new Map<string, { correct_answer: unknown }>(
         ((qAns ?? []) as Array<{ id: string; correct_answer: unknown }>).map((a) => [a.id, { correct_answer: a.correct_answer }]),
       );
-      const qs = (qsRaw ?? []).map((q: any) => ({ ...q, correct_answer: ansMap.get(q.id)?.correct_answer ?? null }));
+      const qsCanonical = (qsRaw ?? []).map((q: any) => ({ ...q, correct_answer: ansMap.get(q.id)?.correct_answer ?? null }));
+      const orderIds = (att as { question_order?: string[] | null } | null)?.question_order ?? null;
+      const qs = orderIds && orderIds.length
+        ? (orderIds.map((id) => qsCanonical.find((q: any) => q.id === id)).filter(Boolean) as typeof qsCanonical)
+        : qsCanonical;
 
       // 3) Fetch all submitted attempts for anonymous comparison
       const { data: allAtt } = await supabase
@@ -802,7 +810,7 @@ const AdminTestResultPage = () => {
           if (typeof val === "number") return fmtOptionLabel(val, opts);
           return String(val);
         };
-        const rows = (qs as any[]).map((q) => {
+        const rows = (qs as any[]).map((q, idx) => {
           const rec = perQ.find((x) => x?.question_id === q.id);
           const qType = String(q.question_type ?? rec?.question_type ?? "mcq-single");
           const ans = answers[q.id]?.selected ?? rec?.selected;
@@ -820,7 +828,7 @@ const AdminTestResultPage = () => {
           }
           const marksStr = marks > 0 ? `+${marks}` : String(marks);
           return [
-            String((q.position ?? 0) + 1),
+            String(idx + 1),
             String(q.subject ?? "—"),
             yourTxt,
             corrTxt,
@@ -1147,7 +1155,7 @@ const AdminTestResultPage = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {studentDetail.questions.map((q: any) => {
+                          {studentDetail.questions.map((q: any, idx: number) => {
                             const perQ: any[] = (studentDetail.attempt?.metadata?.questions as any[]) ?? [];
                             const rec = perQ.find((x) => x?.question_id === q.id);
                             const attempted = rec ? !!rec.attempted : false;
@@ -1162,7 +1170,7 @@ const AdminTestResultPage = () => {
                             const marksCls = m > 0 ? "text-green-700" : m < 0 ? "text-red-600" : "text-gray-500";
                             return (
                               <tr key={q.id} className="border-t border-border">
-                                <td className="px-2 py-1.5">{(q.position ?? 0) + 1}</td>
+                                <td className="px-2 py-1.5">{idx + 1}</td>
                                 <td className="px-2 py-1.5">{q.subject ?? "—"}</td>
                                 <td className={`px-2 py-1.5 text-center font-semibold ${cls}`}>{label}</td>
                                 <td className={`px-2 py-1.5 text-center font-semibold ${marksCls}`}>{m > 0 ? `+${m}` : m}</td>

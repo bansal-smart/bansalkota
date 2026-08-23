@@ -368,6 +368,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           email: string
+          exam_mode: string | null
           exam_slot: string | null
           full_name: string
           id: string
@@ -397,6 +398,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           email: string
+          exam_mode?: string | null
           exam_slot?: string | null
           full_name: string
           id?: string
@@ -426,6 +428,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           email?: string
+          exam_mode?: string | null
           exam_slot?: string | null
           full_name?: string
           id?: string
@@ -4516,6 +4519,7 @@ export type Database = {
           id: string
           metadata: Json | null
           percentile: number | null
+          question_order: Json | null
           question_statuses: Json | null
           reopened_by: string | null
           reopened_reason: string | null
@@ -4543,6 +4547,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           percentile?: number | null
+          question_order?: Json | null
           question_statuses?: Json | null
           reopened_by?: string | null
           reopened_reason?: string | null
@@ -4570,6 +4575,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           percentile?: number | null
+          question_order?: Json | null
           question_statuses?: Json | null
           reopened_by?: string | null
           reopened_reason?: string | null
@@ -5087,6 +5093,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          question_id: string | null
           question_position: number | null
           resolution_note: string | null
           resolved_at: string | null
@@ -5101,6 +5108,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          question_id?: string | null
           question_position?: number | null
           resolution_note?: string | null
           resolved_at?: string | null
@@ -5115,6 +5123,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          question_id?: string | null
           question_position?: number | null
           resolution_note?: string | null
           resolved_at?: string | null
@@ -5130,6 +5139,13 @@ export type Database = {
             columns: ["attempt_id"]
             isOneToOne: false
             referencedRelation: "test_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_support_queries_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
             referencedColumns: ["id"]
           },
           {
@@ -5168,6 +5184,7 @@ export type Database = {
           partial_marking_scheme: string | null
           results_released_at: string | null
           section_instructions: Json | null
+          shuffle_questions: boolean
           slug: string
           solution_pdf_path: string | null
           solution_pdf_uploaded_at: string | null
@@ -5209,6 +5226,7 @@ export type Database = {
           partial_marking_scheme?: string | null
           results_released_at?: string | null
           section_instructions?: Json | null
+          shuffle_questions?: boolean
           slug: string
           solution_pdf_path?: string | null
           solution_pdf_uploaded_at?: string | null
@@ -5250,6 +5268,7 @@ export type Database = {
           partial_marking_scheme?: string | null
           results_released_at?: string | null
           section_instructions?: Json | null
+          shuffle_questions?: boolean
           slug?: string
           solution_pdf_path?: string | null
           solution_pdf_uploaded_at?: string | null
@@ -5716,6 +5735,7 @@ export type Database = {
         Returns: boolean
       }
       is_hq_centre_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_phone_registered: { Args: { p_phone: string }; Returns: boolean }
       lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
       move_to_dlq: {
         Args: {

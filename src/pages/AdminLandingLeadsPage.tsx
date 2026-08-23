@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Lead = {
   id: string;
@@ -75,6 +77,8 @@ export default function AdminLandingLeadsPage() {
       );
     });
   }, [leads, debouncedQ, status]);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const saveRow = async () => {
     if (!open) return;
@@ -150,6 +154,7 @@ export default function AdminLandingLeadsPage() {
         ) : filtered.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">No leads yet.</div>
         ) : (
+          <>
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -164,7 +169,7 @@ export default function AdminLandingLeadsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
+              {paged.map((l) => (
                 <tr
                   key={l.id}
                   onClick={() => setOpen(l)}
@@ -191,6 +196,8 @@ export default function AdminLandingLeadsPage() {
               ))}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
         )}
       </div>
 

@@ -8,6 +8,7 @@ import { scopeQueryToCentre } from "@/lib/centreScope";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
+import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 
 type StudentRow = {
   user_id: string;
@@ -43,7 +44,27 @@ type CourseLite = { id: string; name: string };
 const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
 const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Dropper"];
 
-const PAGE_SIZE = 25;
+const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+const STAFF_ROLES = ["center_admin", "admin", "super_admin"] as const;
+
+/** Staff IDs only — never `.in()` hundreds of student UUIDs (PostgREST 400 / URL too long). */
+async function fetchStaffUserIds(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .in("role", [...STAFF_ROLES]);
+  if (error) throw error;
+  return [...new Set((data ?? []).map((r) => r.user_id))];
+}
+
+function excludeStaffFromProfiles<Q extends { not: (column: string, op: string, value: string) => Q }>(
+  query: Q,
+  staffIds: string[],
+): Q {
+  if (!staffIds.length) return query;
+  return query.not("user_id", "in", `(${staffIds.join(",")})`);
+}
 
 const centreLabel = (c: { city: string; area: string | null }) =>
   c.area ? `${c.city} — ${c.area}` : c.city;
@@ -208,6 +229,7 @@ const AdminStudentsPage = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -261,35 +283,28 @@ const AdminStudentsPage = () => {
   };
 
   const fetchAllFilteredStudentIds = async (): Promise<string[]> => {
-    const { data: roleRows, error: rErr } = await supabase.from("user_roles").select("user_id, role");
-    if (rErr) throw rErr;
-    const studentSet = new Set<string>();
-    const staffSet = new Set<string>();
-    (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
-      if (r.role === "student") studentSet.add(r.user_id);
-      else if (["center_admin", "admin", "super_admin"].includes(r.role)) staffSet.add(r.user_id);
-    });
-    const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
-    if (!studentIds.length) return [];
-
+    const staffIds = await fetchStaffUserIds();
     const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
+    let q = excludeStaffFromProfiles(supabase.from("profiles").select("user_id"), staffIds);
+    if (debouncedSearch.trim()) {
+      const s = debouncedSearch.trim();
+      q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
+    }
+    if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
+    else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
+    if (classFilter) q = q.eq("class_level", classFilter);
+    if (batchFilter.length) q = q.in("batch_id", batchFilter);
+
     const all: string[] = [];
-    const CHUNK = 500;
-    for (let i = 0; i < studentIds.length; i += CHUNK) {
-      const slice = studentIds.slice(i, i + CHUNK);
-      let q: any = (supabase as any).from("profiles").select("user_id").in("user_id", slice);
-      if (debouncedSearch.trim()) {
-        const s = debouncedSearch.trim();
-        q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
-      }
-      if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
-      else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
-      if (classFilter) q = q.eq("class_level", classFilter);
-      if (batchFilter.length) q = q.in("batch_id", batchFilter);
-      const { data, error } = await q;
+    let from = 0;
+    while (true) {
+      const { data, error } = await q.range(from, from + 999);
       if (error) throw error;
-      (data ?? []).forEach((r: { user_id: string }) => all.push(r.user_id));
+      const chunk = (data ?? []) as { user_id: string }[];
+      chunk.forEach((r) => all.push(r.user_id));
+      if (chunk.length < 1000) break;
+      from += 1000;
     }
     return all;
   };
@@ -299,8 +314,8 @@ const AdminStudentsPage = () => {
     try {
       if (scope === "selected") ids = selected.slice();
       else ids = await fetchAllFilteredStudentIds();
-    } catch (e: any) {
-      toast.error("Failed to gather students", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Failed to gather students", { description: errorMessage(e) });
       return;
     }
     if (!ids.length) { toast.error("No students to process"); return; }
@@ -308,30 +323,47 @@ const AdminStudentsPage = () => {
     setPwdBulkResults(null);
     setPwdBulkProgress({ done: 0, total: ids.length });
     try {
-      const CHUNK = 200;
+      const CHUNK = 20;
       const all: NonNullable<typeof pwdBulkResults> = [];
       let generated = 0;
       let skipped = 0;
+      let failed = 0;
       for (let i = 0; i < ids.length; i += CHUNK) {
         const slice = ids.slice(i, i + CHUNK);
-        // Carry forward every password issued so far so uniqueness holds across
-        // the whole run, not just within a single chunk.
         const excludePasswords = all.map((r) => r.password).filter((p): p is string => !!p);
-        const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
-          body: { user_ids: slice, overwrite: pwdBulkOverwrite, exclude_passwords: excludePasswords },
-        });
-        if (error) throw error;
-        const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
-        all.push(...res);
-        generated += Number(data?.generated ?? 0);
-        skipped += Number(data?.skipped ?? 0);
+        try {
+          const { data, error } = await supabase.functions.invoke("admin-bulk-cbt-passwords", {
+            body: { user_ids: slice, overwrite: pwdBulkOverwrite, exclude_passwords: excludePasswords },
+          });
+          if (error) throw error;
+          const res = (data?.results ?? []) as NonNullable<typeof pwdBulkResults>;
+          all.push(...res);
+          generated += Number(data?.generated ?? 0);
+          skipped += Number(data?.skipped ?? 0);
+          failed += Number(data?.errors ?? res.filter((r) => r.status !== "generated" && r.status !== "skipped_existing").length);
+        } catch (chunkErr: unknown) {
+          failed += slice.length;
+          all.push(...slice.map((user_id) => ({
+            user_id,
+            roll_number: null,
+            full_name: null,
+            centre: null,
+            batch: null,
+            password: null,
+            status: `error: ${errorMessage(chunkErr)}`,
+          })));
+        }
         setPwdBulkProgress({ done: Math.min(i + slice.length, ids.length), total: ids.length });
         setPwdBulkResults(all.slice());
       }
-      toast.success(`Generated ${generated} passwords · Skipped ${skipped}`);
+      const parts = [`Generated ${generated}`];
+      if (skipped) parts.push(`skipped ${skipped} (already had a password)`);
+      if (failed) parts.push(`${failed} failed`);
+      if (failed) toast.error(parts.join(" · "));
+      else toast.success(parts.join(" · "));
       load();
-    } catch (e: any) {
-      toast.error("Bulk generate failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Bulk generate failed", { description: errorMessage(e) });
     } finally {
       setPwdBulkRunning(false);
     }
@@ -339,10 +371,9 @@ const AdminStudentsPage = () => {
 
   const downloadPwdCsv = () => {
     if (!pwdBulkResults?.length) return;
-    const rowsOut = pwdBulkResults.filter((r) => r.password);
-    const header = ["Roll No", "Student Name", "Centre", "Batch", "Password"];
-    const body = rowsOut.map((r) =>
-      [r.roll_number ?? "", r.full_name ?? "", r.centre ?? "", r.batch ?? "", r.password ?? ""]
+    const header = ["Roll No", "Student Name", "Centre", "Batch", "Password", "Status"];
+    const body = pwdBulkResults.map((r) =>
+      [r.roll_number ?? "", r.full_name ?? "", r.centre ?? "", r.batch ?? "", r.password ?? "", r.status ?? ""]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
     );
     const csv = [header.join(","), ...body].join("\n");
@@ -367,8 +398,8 @@ const AdminStudentsPage = () => {
       setPwdResetResult((data as { password: string }).password);
       toast.success("Password updated");
       load();
-    } catch (e: any) {
-      toast.error("Reset failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Reset failed", { description: errorMessage(e) });
     } finally {
       setPwdResetRunning(false);
     }
@@ -382,7 +413,7 @@ const AdminStudentsPage = () => {
     }
     setAddSaving(true);
     try {
-      const row: Record<string, any> = {};
+      const row: Record<string, string | string[] | null> = {};
       Object.entries(addForm).forEach(([k, v]) => { row[k] = v.trim() === "" ? null : v.trim(); });
       row.centre = finalCentre;
       if (addCourseIds.length) row.course_ids = addCourseIds;
@@ -404,8 +435,8 @@ const AdminStudentsPage = () => {
       setAddForm(emptyAdd);
       setAddCourseIds([]);
       load();
-    } catch (e: any) {
-      toast.error("Add failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Add failed", { description: errorMessage(e) });
     } finally {
       setAddSaving(false);
     }
@@ -426,12 +457,12 @@ const AdminStudentsPage = () => {
     const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
     (async () => {
       const [{ data: cs }, { data: bs }, { data: crs }] = await Promise.all([
-        (supabase as any).from("centres").select("id, city, area, slug").order("city"),
+        supabase.from("centres").select("id, city, area, slug").order("city"),
         scopeQueryToCentre(
-          (supabase as any).from("course_batches").select("id, name, code, centre_id"),
+          supabase.from("course_batches").select("id, name, code, centre_id"),
           scopeCentreId,
         ).order("name"),
-        scopeQueryToCentre((supabase as any).from("courses").select("id, name"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
+        scopeQueryToCentre(supabase.from("courses").select("id, name"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
       setBatches((bs as BatchLite[]) ?? []);
@@ -445,31 +476,20 @@ const AdminStudentsPage = () => {
     }
     setLoading(true);
     try {
-      // Get user_ids that have the student role, excluding anyone who also holds a staff role
-      // (handle_new_user auto-grants 'student' to every new auth user, including centre/admin staff).
-      const { data: roleRows, error: rErr } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
-      if (rErr) throw rErr;
-      const studentSet = new Set<string>();
-      const staffSet = new Set<string>();
-      (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
-        if (r.role === "student") studentSet.add(r.user_id);
-        else if (["center_admin", "admin", "super_admin"].includes(r.role)) staffSet.add(r.user_id);
-      });
-      const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
-      if (!studentIds.length) {
-        setRows([]); setTotal(0); setLoading(false); return;
-      }
+      // Exclude staff/centre-admin profiles (handle_new_user also grants them 'student').
+      // Do not `.in()` every student UUID — that request is ~24KB and PostgREST returns 400.
+      const staffIds = await fetchStaffUserIds();
 
-      let query = (supabase as any)
-        .from("profiles")
-        .select(
-          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
-          { count: "exact" },
-        )
-        .in("user_id", studentIds)
-        .order("created_at", { ascending: false });
+      let query = excludeStaffFromProfiles(
+        supabase
+          .from("profiles")
+          .select(
+            "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
+            { count: "exact" },
+          )
+          .order("created_at", { ascending: false }),
+        staffIds,
+      );
 
       if (debouncedSearch.trim()) {
         const s = debouncedSearch.trim();
@@ -481,8 +501,9 @@ const AdminStudentsPage = () => {
       if (classFilter) query = query.eq("class_level", classFilter);
       if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+      const size = pageSize === TABLE_PAGE_SIZE_ALL ? 10000 : pageSize;
+      const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
+      const to = from + size - 1;
       const { data, count, error } = await query.range(from, to);
       if (error) throw error;
 
@@ -504,13 +525,14 @@ const AdminStudentsPage = () => {
       }
       setRows(baseRows.map((r) => ({ ...r, email: emails[r.user_id] ?? null })));
       setTotal(count ?? 0);
-    } catch (e: any) {
-      toast.error("Failed to load students", { description: e.message });
-
+    } catch (e: unknown) {
+      toast.error("Failed to load students", { description: errorMessage(e) });
+      setRows([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, page, centreFilter, classFilter, batchFilter, centres, batches, isCenterAdmin, centerAdminLoading, primaryCenterId]);
+  }, [debouncedSearch, page, pageSize, centreFilter, classFilter, batchFilter, centres, batches, isCenterAdmin, centerAdminLoading, primaryCenterId]);
 
   useEffect(() => {
     load();
@@ -526,7 +548,7 @@ const AdminStudentsPage = () => {
     return () => { supabase.removeChannel(ch); };
   }, [load]);
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = pageSize === TABLE_PAGE_SIZE_ALL ? 1 : Math.max(1, Math.ceil(total / pageSize));
   const allSelected = useMemo(() => rows.length > 0 && rows.every((r) => selected.includes(r.user_id)), [rows, selected]);
 
   const openDrawer = async (u: StudentRow) => {
@@ -546,7 +568,7 @@ const AdminStudentsPage = () => {
       country: u.country ?? "",
     });
     setEditCourseIds([]);
-    const { data: er } = await (supabase as any)
+    const { data: er } = await supabase
       .from("enrollments")
       .select("course_id")
       .eq("user_id", u.user_id)
@@ -558,7 +580,7 @@ const AdminStudentsPage = () => {
     if (!drawer) return;
     setSaving(true);
     try {
-      const payload: Record<string, any> = { action: "update", user_id: drawer.user_id };
+      const payload: Record<string, unknown> = { action: "update", user_id: drawer.user_id };
       Object.entries(edit).forEach(([k, v]) => {
         payload[k] = typeof v === "string" && v.trim() === "" ? null : v;
       });
@@ -568,8 +590,8 @@ const AdminStudentsPage = () => {
       toast.success("Student updated");
       setDrawer(null);
       load();
-    } catch (e: any) {
-      toast.error("Update failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Update failed", { description: errorMessage(e) });
     } finally {
       setSaving(false);
     }
@@ -596,8 +618,8 @@ const AdminStudentsPage = () => {
       setDrawer(null);
       setSelected((s) => s.filter((id) => id !== confirmDelete.user_id));
       load();
-    } catch (e: any) {
-      toast.error("Delete failed", { description: e.message });
+    } catch (e: unknown) {
+      toast.error("Delete failed", { description: errorMessage(e) });
     } finally {
       setDeleting(false);
     }
@@ -611,48 +633,36 @@ const AdminStudentsPage = () => {
     }
     const tId = toast.loading("Preparing export…");
     try {
-      const { data: roleRows, error: rErr } = await supabase
-        .from("user_roles").select("user_id, role");
-      if (rErr) throw rErr;
-      const studentSet = new Set<string>();
-      const staffSet = new Set<string>();
-      (roleRows ?? []).forEach((r: { user_id: string; role: string }) => {
-        if (r.role === "student") studentSet.add(r.user_id);
-        else if (["center_admin", "admin", "super_admin"].includes(r.role)) staffSet.add(r.user_id);
-      });
-      const studentIds = Array.from(studentSet).filter((id) => !staffSet.has(id));
-      if (!studentIds.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
-
+      const staffIds = await fetchStaffUserIds();
       const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
-      const all: StudentRow[] = [];
-      const BATCH = 1000;
-      for (let i = 0; i < studentIds.length; i += BATCH) {
-        const slice = studentIds.slice(i, i + BATCH);
-        let q = (supabase as any)
+      let q = excludeStaffFromProfiles(
+        supabase
           .from("profiles")
           .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label")
-          .in("user_id", slice)
-          .order("created_at", { ascending: false });
-        if (debouncedSearch.trim()) {
-          const s = debouncedSearch.trim();
-          q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
-        }
-        if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
-        else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
-        if (classFilter) q = q.eq("class_level", classFilter);
-        if (batchFilter.length) q = q.in("batch_id", batchFilter);
-
-        let from = 0;
-        while (true) {
-          const { data, error } = await q.range(from, from + 999);
-          if (error) throw error;
-          const chunk = (data ?? []) as StudentRow[];
-          all.push(...chunk);
-          if (chunk.length < 1000) break;
-          from += 1000;
-        }
+          .order("created_at", { ascending: false }),
+        staffIds,
+      );
+      if (debouncedSearch.trim()) {
+        const s = debouncedSearch.trim();
+        q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
+      if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
+      else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
+      if (classFilter) q = q.eq("class_level", classFilter);
+      if (batchFilter.length) q = q.in("batch_id", batchFilter);
+
+      const all: StudentRow[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await q.range(from, from + 999);
+        if (error) throw error;
+        const chunk = (data ?? []) as StudentRow[];
+        all.push(...chunk);
+        if (chunk.length < 1000) break;
+        from += 1000;
+      }
+      if (!all.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
 
       const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
       const batchMap = new Map(batches.map((b) => [b.id, b.name]));
@@ -675,9 +685,9 @@ const AdminStudentsPage = () => {
       if (!withEmails.length) return toast.error("Nothing to export");
       exportCsv(withEmails);
       toast.success(`Exported ${withEmails.length} students`);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.dismiss(tId);
-      toast.error("Export failed", { description: e.message });
+      toast.error("Export failed", { description: errorMessage(e) });
     }
   };
 
@@ -803,9 +813,15 @@ const AdminStudentsPage = () => {
           }
           return base;
         })()}
+        chunkSize={20}
         bulkImport={async (rows, dryRun): Promise<BulkServerResult> => {
           const { data, error } = await supabase.functions.invoke("bulk-import", {
-            body: { kind: "students", rows, dry_run: dryRun },
+            body: {
+              kind: "students",
+              rows,
+              dry_run: dryRun,
+              centre_id: isCenterAdmin ? primaryCenterId : undefined,
+            },
           });
           if (error) throw new Error(error.message);
           return data as BulkServerResult;
@@ -1083,8 +1099,12 @@ const AdminStudentsPage = () => {
         page={page + 1}
         totalPages={totalPages}
         total={total}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
         onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       {/* Edit Modal */}
@@ -1124,7 +1144,7 @@ const AdminStudentsPage = () => {
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
                 { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
-              ] as Array<{ k: string; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
+              ] as Array<{ k: keyof StudentRow; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
                   <span>{f.l}</span>
                   {f.k === "centre_id" && isCenterAdmin ? (
@@ -1136,7 +1156,7 @@ const AdminStudentsPage = () => {
                     />
                   ) : f.type === "select" ? (
                     <select
-                      value={((edit as any)[f.k] as string) ?? ""}
+                      value={(edit[f.k] as string | undefined) ?? ""}
                       onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                     >
@@ -1148,7 +1168,7 @@ const AdminStudentsPage = () => {
                   ) : (
                     <input
                       type={f.type}
-                      value={((edit as any)[f.k] as string) ?? ""}
+                      value={(edit[f.k] as string | undefined) ?? ""}
                       onChange={(e) => setEdit((s) => ({ ...s, [f.k]: e.target.value }))}
                       placeholder={f.ph}
                       className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
@@ -1376,7 +1396,9 @@ const AdminStudentsPage = () => {
               <>
                 <div className="p-4 border-b border-border flex items-center justify-between gap-2">
                   <p className="text-xs text-muted-foreground">
-                    Showing {pwdBulkResults.length} students. Copy or download now — passwords are not retrievable later.
+                    Showing {pwdBulkResults.length} students
+                    ({pwdBulkResults.filter((r) => r.password).length} with a password).
+                    Download now — new passwords are not retrievable later.
                   </p>
                   <button
                     onClick={downloadPwdCsv}

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, MailX, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabaseEnv";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const SUPABASE_URL = getSupabaseUrl();
+const SUPABASE_KEY = getSupabaseAnonKey();
 const FN_URL = `${SUPABASE_URL}/functions/v1/handle-email-unsubscribe`;
 
 type Status = "validating" | "ready" | "already" | "invalid" | "submitting" | "done" | "error";

@@ -27,8 +27,23 @@ function loadEnv() {
 loadEnv();
 
 const SITE_URL = "https://www.bansal.ac.in";
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+function readEnv(value) {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+const SUPABASE_URL = readEnv(process.env.VITE_SUPABASE_URL);
+const SUPABASE_KEY =
+  readEnv(process.env.VITE_SUPABASE_PUBLISHABLE_KEY) ||
+  readEnv(process.env.VITE_SUPABASE_ANON_KEY);
 
 const STATIC_ROUTES = [
   { path: "/", priority: 1.0, changefreq: "daily" },
@@ -77,7 +92,9 @@ async function main() {
   const entries = STATIC_ROUTES.map((r) => urlEntry(r.path, null, r.priority, r.changefreq));
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.warn("[sitemap] VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY not set — writing static-only sitemap.");
+    console.warn(
+      "[sitemap] VITE_SUPABASE_URL and a Supabase key (VITE_SUPABASE_PUBLISHABLE_KEY or VITE_SUPABASE_ANON_KEY) not set — writing static-only sitemap.",
+    );
   } else {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 

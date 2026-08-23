@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
@@ -89,6 +91,8 @@ export default function AdminAlumniSubmissionsPage() {
         .toLowerCase().includes(k);
     });
   }, [rows, debouncedSearch, statusFilter]);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const setStatus = async (id: string, status: Submission["status"], extra?: Partial<Submission>) => {
     setBusy(id);
@@ -223,7 +227,7 @@ export default function AdminAlumniSubmissionsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {paged.map((r) => (
                 <tr key={r.id} className="border-t border-border hover:bg-bansal-cream/20">
                   <td className="px-4 py-3">
                     <div className="font-semibold text-bansal-blue">{r.full_name}</div>
@@ -264,6 +268,7 @@ export default function AdminAlumniSubmissionsPage() {
               ))}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

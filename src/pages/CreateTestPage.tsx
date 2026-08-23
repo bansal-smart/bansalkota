@@ -83,7 +83,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
   const corr = (q as any).correct_answer;
   const correctIdx = typeof corr === "number" ? corr
     : (corr && typeof corr === "object" && "value" in corr) ? 0
-    : 0;
+      : 0;
   const correctArr = Array.isArray(corr) ? (corr as number[]) : [];
   const numericalVal = (q as any).numerical_answer != null
     ? String((q as any).numerical_answer)
@@ -175,6 +175,7 @@ const CreateTestPage = () => {
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
+  const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(true);
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string; centre_id?: string | null }[]>([]);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
@@ -315,6 +316,7 @@ const CreateTestPage = () => {
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
       setTestMode(((test as { test_mode?: string }).test_mode === "cbt" ? "cbt" : "digital"));
+      setShuffleQuestions((test as { shuffle_questions?: boolean }).shuffle_questions ?? true);
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
         : []);
@@ -611,6 +613,7 @@ const CreateTestPage = () => {
         test_mode: testMode,
         cbt_enabled: testMode === "cbt",
         cbt_allowed_batch_ids: allowedBatches,
+        shuffle_questions: shuffleQuestions,
         ...buildSchedulePayload(),
         ...ownership,
         slug,
@@ -762,6 +765,7 @@ const CreateTestPage = () => {
           test_mode: testMode,
           cbt_enabled: testMode === "cbt",
           cbt_allowed_batch_ids: allowedBatches,
+          shuffle_questions: shuffleQuestions,
           ...buildSchedulePayload(),
           is_published: true,
         })
@@ -839,6 +843,7 @@ const CreateTestPage = () => {
       test_mode: testMode,
       cbt_enabled: testMode === "cbt",
       cbt_allowed_batch_ids: allowedBatches,
+      shuffle_questions: shuffleQuestions,
       ...buildSchedulePayload(),
     };
 
@@ -961,6 +966,24 @@ const CreateTestPage = () => {
           </div>
         </div>
 
+        <div className="flex items-center justify-between rounded-xl border border-border bg-muted/20 p-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Shuffle questions per student</p>
+            <p className="text-[11px] text-muted-foreground">
+              Each student gets a different question order within each subject (sections/tabs stay in the same order for everyone).
+            </p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-foreground">
+            <input
+              type="checkbox"
+              checked={shuffleQuestions}
+              onChange={(e) => setShuffleQuestions(e.target.checked)}
+              className="h-3.5 w-3.5"
+            />
+            Enabled
+          </label>
+        </div>
+
         {(
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
             {testMode === "cbt" && (
@@ -1035,11 +1058,10 @@ const CreateTestPage = () => {
                           key={b.id}
                           type="button"
                           onClick={() => setAllowedBatches(sel ? allowedBatches.filter((x) => x !== b.id) : [...allowedBatches, b.id])}
-                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${
-                            sel
+                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold border transition ${sel
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-background border-border text-foreground hover:bg-muted"
-                          }`}
+                            }`}
                           title={getBatchDisplayLabel(b.id)}
                         >
                           {b.code}
@@ -1181,7 +1203,7 @@ const CreateTestPage = () => {
               <option value="practice">Practice</option>
               <option value="review">Review Test</option>
               <option value="part">Part Test</option>
-              <option value="full-syllabus">Full Syllabus Test</option>
+              <option value="full_syllabus">Full Syllabus Test</option>
               <option value="class">Class Test</option>
               <option value="special">Special Test</option>
             </select>
@@ -1423,7 +1445,7 @@ const CreateTestPage = () => {
                   if (dbIds.length && resolvedTestId) {
                     const { error } = await supabase.from("test_questions").delete().in("id", dbIds);
                     if (error) { toast.error(error.message); return; }
-                    try { await syncTestStats(resolvedTestId); } catch {}
+                    try { await syncTestStats(resolvedTestId); } catch { }
                   }
                   setQuestions(questions.filter((_, i) => !selectedIdx.has(i)));
                   setSelectedIdx(new Set());
@@ -1456,7 +1478,7 @@ const CreateTestPage = () => {
                     const { error } = await supabase.from("question_bank").delete().in("id", bankIds);
                     if (error) { toast.error(error.message); return; }
                   }
-                  if (resolvedTestId) { try { await syncTestStats(resolvedTestId); } catch {} }
+                  if (resolvedTestId) { try { await syncTestStats(resolvedTestId); } catch { } }
                   setQuestions(questions.filter((_, i) => !selectedIdx.has(i)));
                   setSelectedIdx(new Set());
                   toast.success(`Removed ${sel.length} · Deleted ${bankIds.length} from bank`);
@@ -1485,350 +1507,348 @@ const CreateTestPage = () => {
           )}
           {questions.map((q, i) => (
             <div key={i} className="contents">
-            <div
-              className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm hover:border-primary/40 transition-colors"
-            >
-              <div className="flex items-center gap-2 flex-wrap">
-                <input
-                  type="checkbox"
-                  checked={selectedIdx.has(i)}
-                  onChange={(e) => {
-                    const next = new Set(selectedIdx);
-                    if (e.target.checked) next.add(i); else next.delete(i);
-                    setSelectedIdx(next);
-                  }}
-                  aria-label={`Select question ${i + 1}`}
-                />
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-foreground">
-                  Q{i + 1}
-                </span>
-                {q.source === "bank" && (
-                  <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                    From Bank
-                  </span>
-                )}
-                {q.imported && (
-                  <span className="rounded-md bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold text-secondary">
-                    Imported
-                  </span>
-                )}
-                <select
-                  value={q.subject}
-                  onChange={(e) => updateQ(i, { subject: e.target.value })}
-                  className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
-                >
-                  <option>Physics</option>
-                  <option>Chemistry</option>
-                  <option>Mathematics</option>
-                  <option>Biology</option>
-                </select>
-                <input
-                  value={q.topic}
-                  onChange={(e) => updateQ(i, { topic: e.target.value })}
-                  placeholder="Topic"
-                  className="flex-1 min-w-[120px] rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
-                />
-                <select
-                  value={q.type}
-                  onChange={(e) => updateQ(i, { type: e.target.value as QType })}
-                  className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
-                  title="Question type"
-                >
-                  <option value="mcq-single">Single Correct</option>
-                  <option value="mcq-multi">Multiple Correct</option>
-                  <option value="numerical">Numerical</option>
-                  <option value="integer">Integer</option>
-                </select>
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground" title="Auto-set from the question bank; edit per question">
-                  <span>+</span>
+              <div
+                className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm hover:border-primary/40 transition-colors"
+              >
+                <div className="flex items-center gap-2 flex-wrap">
                   <input
-                    type="number"
-                    step="1"
-                    value={q.marksCorrect}
-                    onChange={(e) => updateQ(i, { marksCorrect: Number(e.target.value) })}
-                    className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
-                    aria-label="Marks for correct"
+                    type="checkbox"
+                    checked={selectedIdx.has(i)}
+                    onChange={(e) => {
+                      const next = new Set(selectedIdx);
+                      if (e.target.checked) next.add(i); else next.delete(i);
+                      setSelectedIdx(next);
+                    }}
+                    aria-label={`Select question ${i + 1}`}
                   />
-                  <span>/</span>
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                  <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-bold text-foreground">
+                    Q{i + 1}
+                  </span>
+                  {q.source === "bank" && (
+                    <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                      From Bank
+                    </span>
+                  )}
+                  {q.imported && (
+                    <span className="rounded-md bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold text-secondary">
+                      Imported
+                    </span>
+                  )}
+                  <select
+                    value={q.subject}
+                    onChange={(e) => updateQ(i, { subject: e.target.value })}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
+                  >
+                    <option>Physics</option>
+                    <option>Chemistry</option>
+                    <option>Mathematics</option>
+                    <option>Biology</option>
+                  </select>
                   <input
-                    type="number"
-                    step="1"
-                    value={q.marksWrong}
-                    onChange={(e) => updateQ(i, { marksWrong: Number(e.target.value) })}
-                    className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
-                    aria-label="Marks for wrong"
+                    value={q.topic}
+                    onChange={(e) => updateQ(i, { topic: e.target.value })}
+                    placeholder="Topic"
+                    className="flex-1 min-w-[120px] rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
                   />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
-                  className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                  aria-label="Remove question"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              {q.imported ? (
-                <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">
-                  <MathRenderer content={q.text} />
-                </div>
-              ) : (
-                <textarea
-                  value={q.text}
-                  onChange={(e) => updateQ(i, { text: e.target.value })}
-                  placeholder="Question text (LaTeX supported, e.g. $x^2$)"
-                  rows={2}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
-                />
-              )}
-
-              {/* Replace inline title image (for imported questions with embedded <img>) */}
-              {/<img\b[^>]*>/i.test(q.text) && (
-                <div>
-                  <label className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer">
-                    {replacingTitleImgIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                    {replacingTitleImgIdx === i ? "Uploading…" : "Replace title image"}
+                  <select
+                    value={q.type}
+                    onChange={(e) => updateQ(i, { type: e.target.value as QType })}
+                    className="rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
+                    title="Question type"
+                  >
+                    <option value="mcq-single">Single Correct</option>
+                    <option value="mcq-multi">Multiple Correct</option>
+                    <option value="numerical">Numerical</option>
+                    <option value="integer">Integer</option>
+                  </select>
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground" title="Auto-set from the question bank; edit per question">
+                    <span>+</span>
                     <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={replacingTitleImgIdx === i}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) replaceTitleImage(i, f);
-                        e.target.value = "";
-                      }}
+                      type="number"
+                      step="1"
+                      value={q.marksCorrect}
+                      onChange={(e) => updateQ(i, { marksCorrect: Number(e.target.value) })}
+                      className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
+                      aria-label="Marks for correct"
                     />
-                  </label>
+                    <span>/</span>
+                    <input
+                      type="number"
+                      step="1"
+                      value={q.marksWrong}
+                      onChange={(e) => updateQ(i, { marksWrong: Number(e.target.value) })}
+                      className="w-12 rounded-md border border-border bg-background px-1 py-1 text-xs text-foreground outline-none tabular-nums"
+                      aria-label="Marks for wrong"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQuestions(questions.filter((_, j) => j !== i))}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    aria-label="Remove question"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
+                {q.imported ? (
+                  <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <MathRenderer content={q.text} />
+                  </div>
+                ) : (
+                  <textarea
+                    value={q.text}
+                    onChange={(e) => updateQ(i, { text: e.target.value })}
+                    placeholder="Question text (LaTeX supported, e.g. $x^2$)"
+                    rows={2}
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none resize-none"
+                  />
+                )}
 
-              {/* Question image (diagram / figure) */}
-              <div className="flex items-start gap-3">
-                {q.imageUrl ? (
-                  <div className="relative">
-                    <img src={q.imageUrl} alt="Question diagram" className="max-h-36 rounded-md border border-border" />
-                    <div className="absolute -top-2 -right-2 flex gap-1">
-                      <label className="cursor-pointer rounded-full bg-primary text-primary-foreground p-1 shadow" title="Replace image">
-                        <Upload className="h-3 w-3" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadQuestionImage(i, f);
-                            e.target.value = "";
-                          }}
-                        />
+                {/* Replace inline title image (for imported questions with embedded <img>) */}
+                {/<img\b[^>]*>/i.test(q.text) && (
+                  <div>
+                    <label className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted cursor-pointer">
+                      {replacingTitleImgIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                      {replacingTitleImgIdx === i ? "Uploading…" : "Replace title image"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={replacingTitleImgIdx === i}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) replaceTitleImage(i, f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* Question image (diagram / figure) */}
+                <div className="flex items-start gap-3">
+                  {q.imageUrl ? (
+                    <div className="relative">
+                      <img src={q.imageUrl} alt="Question diagram" className="max-h-36 rounded-md border border-border" />
+                      <div className="absolute -top-2 -right-2 flex gap-1">
+                        <label className="cursor-pointer rounded-full bg-primary text-primary-foreground p-1 shadow" title="Replace image">
+                          <Upload className="h-3 w-3" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) uploadQuestionImage(i, f);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => updateQ(i, { imageUrl: null })}
+                          className="rounded-full bg-destructive text-destructive-foreground p-1 shadow"
+                          title="Remove image"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="inline-flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground hover:bg-muted cursor-pointer">
+                      {uploadingIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                      {uploadingIdx === i ? "Uploading…" : "Add image (PNG/JPG ≤5MB)"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadQuestionImage(i, f);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+
+                {(q.type === "mcq-single" || q.type === "mcq-multi") && (
+                  <div className="space-y-1.5">
+                    {q.options.map((opt, oi) => {
+                      const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : q.correct === oi;
+                      const optImg = q.optionImages?.[oi] || "";
+                      const optKey = `${i}:${oi}`;
+                      return (
+                        <div
+                          key={oi}
+                          className={`rounded-lg border px-3 py-1.5 transition-colors ${isCorrect ? "border-secondary bg-secondary/10" : "border-border bg-background"
+                            }`}
+                        >
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            {q.type === "mcq-multi" ? (
+                              <input
+                                type="checkbox"
+                                checked={isCorrect}
+                                onChange={() => {
+                                  const set = new Set(q.correctMulti);
+                                  if (set.has(oi)) set.delete(oi); else set.add(oi);
+                                  updateQ(i, { correctMulti: Array.from(set).sort((a, b) => a - b) });
+                                }}
+                                className="shrink-0 accent-secondary"
+                              />
+                            ) : (
+                              <input
+                                type="radio"
+                                checked={isCorrect}
+                                onChange={() => updateQ(i, { correct: oi })}
+                                className="shrink-0 accent-secondary"
+                              />
+                            )}
+                            <span className="text-xs font-bold w-5 text-foreground">{String.fromCharCode(65 + oi)}.</span>
+                            <input
+                              value={opt}
+                              onChange={(e) => {
+                                const next = [...q.options];
+                                next[oi] = e.target.value;
+                                updateQ(i, { options: next });
+                              }}
+                              placeholder={`Option ${oi + 1} — LaTeX OK ($x^2$)`}
+                              className="flex-1 bg-transparent text-sm outline-none"
+                            />
+                            {optImg ? (
+                              <span className="relative inline-flex items-center">
+                                <img src={optImg} alt="" className="h-8 w-8 rounded border border-border object-cover" />
+                                <label className="ml-1 cursor-pointer rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary" title="Replace">
+                                  ↻
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(i, oi, f); e.target.value = ""; }} />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.preventDefault(); const next = [...(q.optionImages ?? [])]; next[oi] = ""; updateQ(i, { optionImages: next }); }}
+                                  className="ml-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                                  title="Remove image"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ) : (
+                              <label className="cursor-pointer rounded-md border border-dashed border-border px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-muted" title="Add image to this option">
+                                {uploadingOpt === optKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(i, oi, f); e.target.value = ""; }} />
+                              </label>
+                            )}
+                          </label>
+                        </div>
+                      );
+                    })}
+                    {q.type === "mcq-multi" && (
+                      <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
+                        Enable partial marking (proportional credit when subset of correct options is selected, no wrong picks)
+                      </label>
+                    )}
+                  </div>
+                )}
+
+                {(q.type === "numerical" || q.type === "integer") && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-[11px] font-semibold text-foreground">
+                        Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
                       </label>
                       <button
                         type="button"
-                        onClick={() => updateQ(i, { imageUrl: null })}
-                        className="rounded-full bg-destructive text-destructive-foreground p-1 shadow"
-                        title="Remove image"
+                        onClick={() => updateQ(i, { rangeEnabled: !q.rangeEnabled })}
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${q.rangeEnabled
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background text-muted-foreground hover:bg-muted"
+                          }`}
+                        title="Accept any answer within a numeric range (e.g. 2 to 9)"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        {q.rangeEnabled ? "Range enabled" : "Enable Range"}
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  <label className="inline-flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground hover:bg-muted cursor-pointer">
-                    {uploadingIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
-                    {uploadingIdx === i ? "Uploading…" : "Add image (PNG/JPG ≤5MB)"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) uploadQuestionImage(i, f);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                )}
-              </div>
 
-
-              {(q.type === "mcq-single" || q.type === "mcq-multi") && (
-                <div className="space-y-1.5">
-                  {q.options.map((opt, oi) => {
-                    const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : q.correct === oi;
-                    const optImg = q.optionImages?.[oi] || "";
-                    const optKey = `${i}:${oi}`;
-                    return (
-                      <div
-                        key={oi}
-                        className={`rounded-lg border px-3 py-1.5 transition-colors ${
-                          isCorrect ? "border-secondary bg-secondary/10" : "border-border bg-background"
-                        }`}
-                      >
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          {q.type === "mcq-multi" ? (
-                            <input
-                              type="checkbox"
-                              checked={isCorrect}
-                              onChange={() => {
-                                const set = new Set(q.correctMulti);
-                                if (set.has(oi)) set.delete(oi); else set.add(oi);
-                                updateQ(i, { correctMulti: Array.from(set).sort((a, b) => a - b) });
-                              }}
-                              className="shrink-0 accent-secondary"
-                            />
-                          ) : (
-                            <input
-                              type="radio"
-                              checked={isCorrect}
-                              onChange={() => updateQ(i, { correct: oi })}
-                              className="shrink-0 accent-secondary"
-                            />
-                          )}
-                          <span className="text-xs font-bold w-5 text-foreground">{String.fromCharCode(65 + oi)}.</span>
-                          <input
-                            value={opt}
-                            onChange={(e) => {
-                              const next = [...q.options];
-                              next[oi] = e.target.value;
-                              updateQ(i, { options: next });
-                            }}
-                            placeholder={`Option ${oi + 1} — LaTeX OK ($x^2$)`}
-                            className="flex-1 bg-transparent text-sm outline-none"
-                          />
-                          {optImg ? (
-                            <span className="relative inline-flex items-center">
-                              <img src={optImg} alt="" className="h-8 w-8 rounded border border-border object-cover" />
-                              <label className="ml-1 cursor-pointer rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary" title="Replace">
-                                ↻
-                                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(i, oi, f); e.target.value = ""; }} />
-                              </label>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.preventDefault(); const next = [...(q.optionImages ?? [])]; next[oi] = ""; updateQ(i, { optionImages: next }); }}
-                                className="ml-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
-                                title="Remove image"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ) : (
-                            <label className="cursor-pointer rounded-md border border-dashed border-border px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-muted" title="Add image to this option">
-                              {uploadingOpt === optKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
-                              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadOptionImage(i, oi, f); e.target.value = ""; }} />
-                            </label>
-                          )}
-                        </label>
-                      </div>
-                    );
-                  })}
-                  {q.type === "mcq-multi" && (
-                    <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
-                      Enable partial marking (proportional credit when subset of correct options is selected, no wrong picks)
-                    </label>
-                  )}
-                </div>
-              )}
-
-              {(q.type === "numerical" || q.type === "integer") && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-[11px] font-semibold text-foreground">
-                      Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => updateQ(i, { rangeEnabled: !q.rangeEnabled })}
-                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${
-                        q.rangeEnabled
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-muted-foreground hover:bg-muted"
-                      }`}
-                      title="Accept any answer within a numeric range (e.g. 2 to 9)"
-                    >
-                      {q.rangeEnabled ? "Range enabled" : "Enable Range"}
-                    </button>
-                  </div>
-
-                  {q.rangeEnabled ? (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-semibold text-muted-foreground">From</label>
-                        <input
-                          value={q.rangeMin}
-                          onChange={(e) => updateQ(i, { rangeMin: e.target.value.replace(/[^0-9.\-]/g, "") })}
-                          placeholder="e.g. 2"
-                          inputMode="decimal"
-                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-semibold text-muted-foreground">To</label>
-                        <input
-                          value={q.rangeMax}
-                          onChange={(e) => updateQ(i, { rangeMax: e.target.value.replace(/[^0-9.\-]/g, "") })}
-                          placeholder="e.g. 9"
-                          inputMode="decimal"
-                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                        />
-                      </div>
-                      <p className="col-span-2 text-[10px] text-muted-foreground">
-                        Any student answer in the range [{q.rangeMin || "min"} – {q.rangeMax || "max"}] (inclusive) is marked correct.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <div className="sm:col-span-2">
-                        <input
-                          value={q.numericalAnswer}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            let cleaned = raw.replace(/[^0-9.\-]/g, "");
-                            const neg = cleaned.startsWith("-");
-                            cleaned = cleaned.replace(/-/g, "");
-                            const firstDot = cleaned.indexOf(".");
-                            if (firstDot !== -1) {
-                              cleaned =
-                                cleaned.slice(0, firstDot + 1) +
-                                cleaned.slice(firstDot + 1).replace(/\./g, "");
-                            }
-                            cleaned = (neg ? "-" : "") + cleaned;
-                            updateQ(i, { numericalAnswer: cleaned });
-                          }}
-                          placeholder="e.g. -3.14"
-                          inputMode="decimal"
-                          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
-                        />
-                      </div>
-                      {q.type === "numerical" && (
+                    {q.rangeEnabled ? (
+                      <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] font-semibold text-muted-foreground">Tolerance (±)</label>
+                          <label className="text-[10px] font-semibold text-muted-foreground">From</label>
                           <input
-                            type="number"
-                            step="0.0001"
-                            value={q.tolerance}
-                            onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                            value={q.rangeMin}
+                            onChange={(e) => updateQ(i, { rangeMin: e.target.value.replace(/[^0-9.\-]/g, "") })}
+                            placeholder="e.g. 2"
+                            inputMode="decimal"
                             className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
                           />
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                        <div>
+                          <label className="text-[10px] font-semibold text-muted-foreground">To</label>
+                          <input
+                            value={q.rangeMax}
+                            onChange={(e) => updateQ(i, { rangeMax: e.target.value.replace(/[^0-9.\-]/g, "") })}
+                            placeholder="e.g. 9"
+                            inputMode="decimal"
+                            className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                          />
+                        </div>
+                        <p className="col-span-2 text-[10px] text-muted-foreground">
+                          Any student answer in the range [{q.rangeMin || "min"} – {q.rangeMax || "max"}] (inclusive) is marked correct.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="sm:col-span-2">
+                          <input
+                            value={q.numericalAnswer}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              let cleaned = raw.replace(/[^0-9.\-]/g, "");
+                              const neg = cleaned.startsWith("-");
+                              cleaned = cleaned.replace(/-/g, "");
+                              const firstDot = cleaned.indexOf(".");
+                              if (firstDot !== -1) {
+                                cleaned =
+                                  cleaned.slice(0, firstDot + 1) +
+                                  cleaned.slice(firstDot + 1).replace(/\./g, "");
+                              }
+                              cleaned = (neg ? "-" : "") + cleaned;
+                              updateQ(i, { numericalAnswer: cleaned });
+                            }}
+                            placeholder="e.g. -3.14"
+                            inputMode="decimal"
+                            className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                          />
+                        </div>
+                        {q.type === "numerical" && (
+                          <div>
+                            <label className="text-[10px] font-semibold text-muted-foreground">Tolerance (±)</label>
+                            <input
+                              type="number"
+                              step="0.0001"
+                              value={q.tolerance}
+                              onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                              className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            </div>
-            <div className="group/insert relative h-2 flex items-center justify-center">
-              <button
-                type="button"
-                onClick={() => insertQuestionAt(i)}
-                className="opacity-0 group-hover/insert:opacity-100 focus:opacity-100 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm hover:bg-primary/10 transition-opacity"
-                title={`Insert question after Q${i + 1}`}
-              >
-                <Plus className="h-3 w-3" /> Add question here
-              </button>
-            </div>
+              </div>
+              <div className="group/insert relative h-2 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => insertQuestionAt(i)}
+                  className="opacity-0 group-hover/insert:opacity-100 focus:opacity-100 inline-flex items-center gap-1 rounded-full border border-primary/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-primary shadow-sm hover:bg-primary/10 transition-opacity"
+                  title={`Insert question after Q${i + 1}`}
+                >
+                  <Plus className="h-3 w-3" /> Add question here
+                </button>
+              </div>
             </div>
           ))}
         </DropZone>

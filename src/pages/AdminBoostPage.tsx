@@ -5,6 +5,9 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
 import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
+import { useAuth } from "@/context/AuthContext";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 
 type Registration = {
   id: string;
@@ -36,6 +39,7 @@ const STATUS_OPTIONS = ["all", "registered", "confirmed", "attended", "cancelled
 const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
 
 const AdminBoostPage = () => {
+  const { isCenterAdmin } = useAuth();
   const [rows, setRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -74,6 +78,8 @@ const AdminBoostPage = () => {
       );
     });
   }, [rows, debouncedQ, statusFilter, payFilter]);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -145,8 +151,14 @@ const AdminBoostPage = () => {
         </button>
       </div>
 
-      <BoostSettingsPanel />
-      <BoostSyllabusPanel />
+      {/* Exam dates/price and syllabus resources are global (not per-centre) —
+          only HQ admins manage them; centre staff only work their own leads below. */}
+      {!isCenterAdmin && (
+        <>
+          <BoostSettingsPanel />
+          <BoostSyllabusPanel />
+        </>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
@@ -214,7 +226,7 @@ const AdminBoostPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => (
+              {paged.map((r) => (
                 <tr
                   key={r.id}
                   onClick={() => setSelected(r)}
@@ -255,6 +267,7 @@ const AdminBoostPage = () => {
               )}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       )}
 

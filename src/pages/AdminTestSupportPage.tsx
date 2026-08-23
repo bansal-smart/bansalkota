@@ -10,6 +10,7 @@ type SupportRow = {
   attempt_id: string | null;
   test_id: string | null;
   question_position: number | null;
+  question_id: string | null;
   message: string;
   status: string;
   created_at: string;
@@ -19,6 +20,8 @@ type SupportRow = {
   test_title?: string | null;
   student_name?: string | null;
   student_phone?: string | null;
+  question_canonical_position?: number | null;
+  question_subject?: string | null;
 };
 
 const AdminTestSupportPage = () => {
@@ -31,7 +34,7 @@ const AdminTestSupportPage = () => {
     setLoading(true);
     let query = supabase
       .from("test_support_queries")
-      .select("id, user_id, attempt_id, test_id, question_position, message, status, created_at, resolved_at, resolution_note")
+      .select("id, user_id, attempt_id, test_id, question_position, question_id, message, status, created_at, resolved_at, resolution_note")
       .order("created_at", { ascending: false })
       .limit(200);
     if (filter !== "all") query = query.eq("status", filter);
@@ -46,20 +49,27 @@ const AdminTestSupportPage = () => {
     const queries = (data ?? []) as SupportRow[];
     const userIds = Array.from(new Set(queries.map((q) => q.user_id).filter(Boolean)));
     const testIds = Array.from(new Set(queries.map((q) => q.test_id).filter(Boolean) as string[]));
+    const questionIds = Array.from(new Set(queries.map((q) => q.question_id).filter(Boolean) as string[]));
 
-    const [profilesRes, testsRes] = await Promise.all([
+    const [profilesRes, testsRes, questionsRes] = await Promise.all([
       userIds.length
         ? supabase.from("profiles").select("user_id, full_name, phone").in("user_id", userIds)
         : Promise.resolve({ data: [], error: null } as { data: { user_id: string; full_name: string | null; phone: string | null }[]; error: null }),
       testIds.length
         ? supabase.from("tests").select("id, title").in("id", testIds)
         : Promise.resolve({ data: [], error: null } as { data: { id: string; title: string }[]; error: null }),
+      questionIds.length
+        ? supabase.from("test_questions").select("id, position, subject").in("id", questionIds)
+        : Promise.resolve({ data: [], error: null } as { data: { id: string; position: number | null; subject: string | null }[]; error: null }),
     ]);
 
     const profileMap = new Map(
       (profilesRes.data ?? []).map((p) => [p.user_id, { name: p.full_name, phone: p.phone }]),
     );
     const testMap = new Map((testsRes.data ?? []).map((t) => [t.id, t.title]));
+    const questionMap = new Map(
+      (questionsRes.data ?? []).map((q) => [q.id, { position: q.position, subject: q.subject }]),
+    );
 
     setRows(
       queries.map((q) => ({
@@ -67,6 +77,8 @@ const AdminTestSupportPage = () => {
         student_name: q.user_id ? profileMap.get(q.user_id)?.name ?? null : null,
         student_phone: q.user_id ? profileMap.get(q.user_id)?.phone ?? null : null,
         test_title: q.test_id ? testMap.get(q.test_id) ?? null : null,
+        question_canonical_position: q.question_id ? questionMap.get(q.question_id)?.position ?? null : null,
+        question_subject: q.question_id ? questionMap.get(q.question_id)?.subject ?? null : null,
       })),
     );
     setLoading(false);
@@ -170,7 +182,11 @@ const AdminTestSupportPage = () => {
                   </div>
                   <p className="mt-1 text-[11px] text-neutral-500">
                     Test: <b>{r.test_title || "—"}</b>
-                    {r.question_position ? <> · Q#{r.question_position}</> : null}
+                    {r.question_id && r.question_canonical_position != null ? (
+                      <> · Test Q#{r.question_canonical_position + 1}{r.question_subject ? ` (${r.question_subject})` : ""}</>
+                    ) : r.question_position ? (
+                      <> · Shown as Q#{r.question_position} (legacy/no shuffle)</>
+                    ) : null}
                     <> · {new Date(r.created_at).toLocaleString()}</>
                   </p>
                   <p className="mt-2 text-sm text-neutral-800 whitespace-pre-wrap">{r.message}</p>

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { usePagination } from "@/hooks/usePagination";
+import TablePagination from "@/components/TablePagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +64,8 @@ const AdminAdminsPage = () => {
     load();
   }, [load]);
 
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(rows, 25);
+
   useEffect(() => {
     const ch = supabase
       .channel("admin-mgmt-realtime")
@@ -109,7 +113,7 @@ const AdminAdminsPage = () => {
                 <tr><td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                   No admins yet.
                 </td></tr>
-              ) : rows.map((r) => {
+              ) : paged.map((r) => {
                 const isSuper = r.role === "super_admin";
                 return (
                   <tr key={r.user_id} className="border-t">
@@ -152,6 +156,7 @@ const AdminAdminsPage = () => {
               })}
             </tbody>
           </table>
+          <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
       </div>
 

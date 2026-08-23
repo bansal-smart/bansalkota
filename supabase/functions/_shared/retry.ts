@@ -3,7 +3,8 @@
 // calls (seen during bulk password generation / bulk delete loops). It's transient — a
 // retry a moment later succeeds — so callers doing many such calls in a loop should wrap
 // each one with this instead of failing the item outright.
-const TRANSIENT_JWT_ERROR = /unrecognized jwt kid|token is unverifiable|unable to parse or verify signature/i;
+const TRANSIENT_JWT_ERROR =
+  /unrecognized jwt kid|token is unverifiable|unable to parse or verify signature|rate limit|too many requests|over_request_rate|429|fetch failed|network/i;
 
 export async function withAuthRetry<T>(
   fn: () => Promise<{ data: T; error: { message: string } | null }>,
@@ -13,7 +14,7 @@ export async function withAuthRetry<T>(
   for (let i = 0; i < attempts; i++) {
     last = await fn();
     if (!last.error || !TRANSIENT_JWT_ERROR.test(last.error.message)) return last;
-    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, 400 * (i + 1)));
   }
   return last!;
 }

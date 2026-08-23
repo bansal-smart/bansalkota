@@ -54,12 +54,54 @@ const isMulti = (t: QuestionType) => t === "mcq-multi";
 const isNumeric = (t: QuestionType) => t === "numerical" || t === "integer";
 const isMatch = (t: QuestionType) => t === "match-following";
 
+// Shuffles question order within each subject, per student. Subject grouping
+// and subject order both come straight from the canonical array, so section
+// boundaries never move — only the order of questions inside each subject does.
+function shuffledQuestionOrder(questions: { id: string; subject: string | null }[]): string[] {
+  const bySubject = new Map<string, string[]>();
+  for (const q of questions) {
+    const s = q.subject || "General";
+    if (!bySubject.has(s)) bySubject.set(s, []);
+    bySubject.get(s)!.push(q.id);
+  }
+  const fisherYates = (arr: string[]) => {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const result: string[] = [];
+  for (const ids of bySubject.values()) result.push(...fisherYates(ids));
+  return result;
+}
+
+// Reorders a canonical-order question array to match a stored per-attempt
+// question_order id list. Falls back to canonical order for any id missing
+// from the list (e.g. a question added after the shuffle was generated), and
+// silently drops ids no longer present (e.g. a deleted question).
+function applyStoredOrder<T extends { id: string }>(canonical: T[], orderIds: string[] | null | undefined): T[] {
+  if (!orderIds || orderIds.length === 0) return canonical;
+  const byId = new Map(canonical.map((q) => [q.id, q]));
+  const ordered: T[] = [];
+  const used = new Set<string>();
+  for (const id of orderIds) {
+    const q = byId.get(id);
+    if (q) { ordered.push(q); used.add(id); }
+  }
+  for (const q of canonical) {
+    if (!used.has(q.id)) ordered.push(q);
+  }
+  return ordered;
+}
+
 const TestTakingPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number; option_label_style?: string | null; exam_pattern?: string | null } | null>(null);
+  const [test, setTest] = useState<{ id: string; title: string; duration_minutes: number; total_questions: number; option_label_style?: string | null; exam_pattern?: string | null; shuffle_questions?: boolean | null } | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
@@ -84,7 +126,7 @@ const TestTakingPage = () => {
   const [supportMessage, setSupportMessage] = useState("");
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSent, setSupportSent] = useState(false);
-  const submitRef = useRef<(auto?: boolean) => void>(() => {});
+  const submitRef = useRef<(auto?: boolean) => void>(() => { });
   const persistProgressRef = useRef<((a?: Record<string, AnswerVal>, s?: Record<string, QStatus>, c?: Set<string>) => Promise<unknown>) | null>(null);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -133,7 +175,7 @@ const TestTakingPage = () => {
       setLoading(true);
       const { data: t } = await supabase
         .from("tests")
-        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern, starts_at, ends_at, open_window_minutes")
+        .select("id, title, duration_minutes, total_questions, instructions_image_url, option_label_style, exam_pattern, starts_at, ends_at, open_window_minutes, shuffle_questions")
         .eq("slug", slug).maybeSingle();
       if (!t) { toast.error("Test not found"); navigate("/my-tests"); return; }
       // Legacy instruction images were saved as `/object/public/question-images/...`
@@ -159,12 +201,17 @@ const TestTakingPage = () => {
         console.error("[TestTakingPage] questions load failed", qErr);
         toast.error(`Could not load questions: ${qErr.message}`);
       }
-      setQuestions((qs ?? []) as unknown as TestQuestion[]);
-
+      const canonicalQs = (qs ?? []) as unknown as TestQuestion[];
       const { data: existing } = await supabase
         .from("test_attempts")
-        .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at")
+        .select("id, started_at, answers, question_statuses, status, time_override_minutes, time_override_started_at, question_order")
         .eq("user_id", user.id).eq("test_id", t.id).eq("status", "in_progress").maybeSingle();
+
+      // Resumed attempt: replay the exact per-student order it was created with.
+      // Fresh attempt: keep canonical order for now — startAttempt() generates
+      // and persists the shuffle once the student actually clicks "Start".
+      const orderIds = (existing as { question_order?: string[] | null } | null)?.question_order ?? null;
+      setQuestions(applyStoredOrder(canonicalQs, orderIds));
 
       if (existing) {
         setAttemptId(existing.id);
@@ -542,6 +589,7 @@ const TestTakingPage = () => {
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
+      question_order: orderIds,
     }).select("id, started_at").single();
     if (error || !data) {
       if (isAlreadyAttemptedError(error) && gate.completedAttemptId) {
@@ -554,6 +602,7 @@ const TestTakingPage = () => {
     }
     setAttemptId(data.id);
     setStartedAt(new Date(data.started_at as string));
+    if (orderIds) setQuestions((prev) => applyStoredOrder(prev, orderIds));
     setStarted(true);
   };
 
@@ -923,11 +972,11 @@ const TestTakingPage = () => {
 
   const typeLabel =
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
-    q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
-    q.question_type === "integer" ? "Integer Type" :
-    q.question_type === "numerical" ? "Numerical Answer" :
-    q.question_type === "match-following" ? "Match the Following" :
-    "Assertion & Reason";
+      q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
+        q.question_type === "integer" ? "Integer Type" :
+          q.question_type === "numerical" ? "Numerical Answer" :
+            q.question_type === "match-following" ? "Match the Following" :
+              "Assertion & Reason";
 
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col select-none">
@@ -1448,6 +1497,7 @@ const TestTakingPage = () => {
                         attempt_id: attemptId,
                         test_id: test.id,
                         question_position: currentQ + 1,
+                        question_id: q?.id ?? null,
                         message: supportMessage.trim(),
                       });
                       setSupportSubmitting(false);
@@ -1619,7 +1669,7 @@ const NumericInput = ({
           className="mt-1 w-full bg-transparent text-2xl font-bold tabular-nums text-foreground outline-none" />
       </div>
       <div className="grid grid-cols-5 gap-1.5 max-w-sm">
-        {["7","8","9","back","clear","4","5","6",".","-","1","2","3","0"].map((k) => {
+        {["7", "8", "9", "back", "clear", "4", "5", "6", ".", "-", "1", "2", "3", "0"].map((k) => {
           const disabled =
             (k === "." && !allowDecimal) ||
             (k === "-" && !allowNeg);
@@ -1628,13 +1678,12 @@ const NumericInput = ({
               key={k}
               onClick={() => { if (!disabled) press(k); }}
               disabled={disabled}
-              className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors ${
-                disabled
+              className={`h-11 rounded-lg border border-border text-sm font-bold transition-colors ${disabled
                   ? "bg-muted/30 text-muted-foreground/40 cursor-not-allowed"
                   : k === "back" || k === "clear"
                     ? "bg-muted/50 text-foreground/70 hover:bg-muted"
                     : "bg-card text-foreground hover:bg-muted"
-              }`}>
+                }`}>
               {k === "back" ? <Delete className="mx-auto h-4 w-4" /> : k === "clear" ? "C" : k}
             </button>
           );

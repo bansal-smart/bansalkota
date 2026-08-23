@@ -3,6 +3,8 @@ import { FileSpreadsheet, Loader2, Plus, Save, Trash2, Trophy, Upload, X, Gradua
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
+import TablePagination from "@/components/TablePagination";
+import { usePagination } from "@/hooks/usePagination";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
 
 type Topper = {
@@ -67,9 +69,8 @@ const AdminToppersPage = () => {
     if (view === "alumni") return items.filter((t) => t.is_alumni);
     return items;
   }, [items, view]);
-  useEffect(() => {
-    load();
-  }, []);
+
+  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(visible, 25);
 
   const startEdit = (t: Topper) => {
     setEditingId(t.id);
@@ -299,7 +300,7 @@ const AdminToppersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((t) => (
+                {paged.map((t) => (
                   <tr key={t.id} className="border-t border-border hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -346,6 +347,7 @@ const AdminToppersPage = () => {
                 )}
               </tbody>
             </table>
+            <TablePagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
         )}
       </div>

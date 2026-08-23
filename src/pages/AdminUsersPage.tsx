@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from "react";
 import { Search, UserPlus, Download, X, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
 import TablePagination from "@/components/TablePagination";
+import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 import { toast } from "sonner";
 import { List, type RowComponentProps } from "react-window";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,6 +175,7 @@ const AdminUsersPage = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [selected, setSelected] = useState<string[]>([]);
   const [drawerUser, setDrawerUser] = useState<AdminUserRow | null>(null);
   const [bulkBody, setBulkBody] = useState("");
@@ -181,9 +183,9 @@ const AdminUsersPage = () => {
   const [pendingRole, setPendingRole] = useState<AdminUserRow["role"] | null>(null);
   const [savingRole, setSavingRole] = useState(false);
 
-  const { rows, total, loading, pageSize, reload } = useAdminUsers(filter, debouncedSearch, page);
+  const { rows, total, loading, pageSize: fetchedPageSize, reload } = useAdminUsers(filter, debouncedSearch, page, pageSize);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const totalPages = pageSize === TABLE_PAGE_SIZE_ALL ? 1 : Math.max(1, Math.ceil(total / fetchedPageSize));
 
   const allSelected = useMemo(() => rows.length > 0 && rows.every((r) => selected.includes(r.user_id)), [rows, selected]);
 
@@ -303,6 +305,10 @@ const AdminUsersPage = () => {
         total={total}
         pageSize={pageSize}
         onPageChange={(p) => setPage(p - 1)}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
       />
 
       {drawerUser && (

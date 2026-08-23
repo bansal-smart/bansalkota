@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Loader2, Search, X, ShieldOff, ShieldCheck } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Search, X, ShieldOff, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { TABLE_PAGE_SIZE_ALL, TABLE_PAGE_SIZE_OPTIONS } from "@/lib/tablePageSize";
 
 type StudentRow = {
   enrollment_id: string;
@@ -32,6 +33,8 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [search, setSearch] = useState("");
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = async () => {
@@ -87,6 +90,7 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
 
   useEffect(() => {
     if (!open) return;
+    setPage(1);
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, courseId]);
@@ -118,6 +122,12 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
       (r.centre_name ?? "").toLowerCase().includes(q)
     );
   });
+  const size = pageSize === TABLE_PAGE_SIZE_ALL ? Math.max(filtered.length, 1) : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / size));
+  const currentPage = Math.min(page, totalPages);
+  const pageRows = pageSize === TABLE_PAGE_SIZE_ALL
+    ? filtered
+    : filtered.slice((currentPage - 1) * size, currentPage * size);
 
   if (!open) return null;
 
@@ -144,7 +154,10 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search by name, roll number, phone or centre..."
               className="w-full rounded-xl border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none focus:border-primary"
             />
@@ -176,7 +189,7 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
+                {pageRows.map((r) => (
                   <tr key={r.enrollment_id} className="border-b border-border last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-2 font-medium text-foreground">{r.full_name ?? "—"}</td>
                     <td className="px-4 py-2 text-xs text-muted-foreground">{r.roll_number ?? "—"}</td>
@@ -225,7 +238,46 @@ const AdminCourseStudentsDialog = ({ open, onClose, courseId, courseName }: Prop
           )}
         </div>
 
-        <div className="border-t border-border p-3 text-right">
+        <div className="flex items-center justify-between gap-3 border-t border-border p-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <label htmlFor="course-students-page-size">Show</label>
+            <select
+              id="course-students-page-size"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
+            >
+              {TABLE_PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n === TABLE_PAGE_SIZE_ALL ? "All" : n}</option>
+              ))}
+            </select>
+            <span>entries</span>
+            {filtered.length > 0 && (
+              <span className="hidden sm:inline">· {(currentPage - 1) * size + 1}–{Math.min(currentPage * size, filtered.length)} of {filtered.length}</span>
+            )}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+                className="rounded-md p-1 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs">Page {currentPage} of {totalPages}</span>
+              <button
+                onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                disabled={currentPage === totalPages}
+                aria-label="Next page"
+                className="rounded-md p-1 hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="rounded-lg bg-muted px-4 py-2 text-sm font-semibold hover:bg-muted/80"
