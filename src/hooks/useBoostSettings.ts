@@ -16,7 +16,7 @@ const DEFAULTS: BoostSettings = {
   exam_dates: [],
   price_inr: 99,
   apply_deadline_time: "18:00:00",
-  apply_deadline_days_before: 1,
+  apply_deadline_days_before: 2,
 };
 
 // Parse "YYYY-MM-DD" as a local-noon Date to avoid TZ off-by-one
@@ -75,16 +75,27 @@ export function useBoostSettings() {
     .map(parseISODate)
     .sort((a, b) => a.getTime() - b.getTime());
 
+  // Registration for a given exam date closes `apply_deadline_days_before` days
+  // before it, at `apply_deadline_time`.
+  function deadlineFor(examDate: Date): Date {
+    const [hStr, mStr] = settings.apply_deadline_time.split(":");
+    const deadline = new Date(examDate);
+    deadline.setDate(deadline.getDate() - settings.apply_deadline_days_before);
+    deadline.setHours(Number(hStr), Number(mStr), 0, 0);
+    return deadline;
+  }
+
   const today = startOfTodayLocal();
   const nextExamDate = examDates.find((d) => d.getTime() >= today.getTime()) ?? null;
 
-  let applyBefore: Date | null = null;
-  if (nextExamDate) {
-    const [hStr, mStr] = settings.apply_deadline_time.split(":");
-    applyBefore = new Date(nextExamDate);
-    applyBefore.setDate(applyBefore.getDate() - settings.apply_deadline_days_before);
-    applyBefore.setHours(Number(hStr), Number(mStr), 0, 0);
-  }
+  const now = Date.now();
+  // The soonest exam date whose registration window is still open — this is
+  // what registration is actually being taken for, and can differ from
+  // `nextExamDate` once that date's own cutoff has passed.
+  const openExamDate = examDates.find((d) => deadlineFor(d).getTime() >= now) ?? null;
+  // No dates announced yet: nothing to enforce, so registration stays open.
+  const registrationOpen = examDates.length === 0 || !!openExamDate;
+  const applyBefore = openExamDate ? deadlineFor(openExamDate) : null;
 
   return {
     loading,
@@ -94,6 +105,7 @@ export function useBoostSettings() {
     examDateLabels: examDates.map(formatDate),
     nextExamDate,
     nextExamDateLabel: nextExamDate ? formatDate(nextExamDate) : null,
+    registrationOpen,
     applyBefore,
     applyBeforeLabel: applyBefore
       ? `Apply before ${formatDate(applyBefore)}, ${formatTime(settings.apply_deadline_time)}`

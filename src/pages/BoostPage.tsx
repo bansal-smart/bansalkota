@@ -103,7 +103,7 @@ export default function BoostPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <BansalButton variant="cta" className="text-base px-8 py-4" onClick={() => setRegOpen(true)}>
-                Register Now
+                {boost.registrationOpen ? "Register Now" : "Registrations Closed"}
               </BansalButton>
               <a href="#how-it-works">
                 <BansalButton variant="ghost-white" className="text-base px-8 py-4">
@@ -461,7 +461,7 @@ export default function BoostPage() {
             Register on the official Bansal Classes portal and lock in your BOOST slot today.
           </p>
           <BansalButton variant="cta" className="text-base px-10 py-4" onClick={() => setRegOpen(true)}>
-            Fill an Application
+            {boost.registrationOpen ? "Fill an Application" : "Registrations Closed"}
           </BansalButton>
           <p className="mt-4 text-xs text-white/60 flex items-center justify-center gap-1">
             <Clock className="h-3 w-3" /> Refer dates from Page

@@ -71,7 +71,7 @@ function onlyDigitsInput(e: React.FormEvent<HTMLInputElement>) {
 
 export default function BoostRegistrationModal({ open, onClose }: Props) {
   const { centers } = useCenters();
-  const { priceInr, examDateLabels } = useBoostSettings();
+  const { priceInr, examDateLabels, registrationOpen, applyBeforeLabel } = useBoostSettings();
   const currentYear = new Date().getFullYear();
   const academicYear = `${currentYear}-${String(currentYear + 1).slice(-2)}`;
   const hasExamDates = examDateLabels.length > 0;
@@ -94,6 +94,10 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     }
     if (hasExamDates && !parsed.data.exam_slot) {
       toast.error("Please select your preferred exam date");
+      return;
+    }
+    if (!registrationOpen) {
+      toast.error("Registrations are closed for the upcoming exam date");
       return;
     }
     setSubmitting(true);
@@ -175,6 +179,15 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
               Our team will WhatsApp you within 24 hours with payment link and exam-day instructions.
             </p>
             <BansalButton variant="cta" onClick={onClose}>Done</BansalButton>
+          </div>
+        ) : !registrationOpen ? (
+          <div className="p-8 text-center space-y-3">
+            <h3 className="font-display text-xl font-bold text-bansal-black">Registrations closed</h3>
+            <p className="text-sm text-muted-foreground">
+              The registration window for the upcoming BOOST exam date has ended.
+              {applyBeforeLabel ? " Please check back once the next exam date is announced." : ""}
+            </p>
+            <BansalButton variant="cta" onClick={onClose}>Close</BansalButton>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="p-5 space-y-4">
