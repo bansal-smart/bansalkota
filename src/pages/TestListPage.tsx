@@ -35,6 +35,7 @@ const TestListPage = () => {
   const [attemptStatus, setAttemptStatus] = useState<Record<string, AttemptInfo>>({});
   const [batchId, setBatchId] = useState<string | null>(null);
   const [assignedTestIds, setAssignedTestIds] = useState<Set<string>>(new Set());
+  const [retakeAllowedIds, setRetakeAllowedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
@@ -43,7 +44,7 @@ const TestListPage = () => {
     let active = true;
     (async () => {
       setLoading(true);
-      const [enrollRes, testsRes, attemptsRes, profileRes, assignRes] = await Promise.all([
+      const [enrollRes, testsRes, attemptsRes, profileRes, assignRes, retakeRes] = await Promise.all([
         supabase
           .from("enrollments")
           .select("course:courses(id, name, subject, slug)")
@@ -57,6 +58,12 @@ const TestListPage = () => {
         supabase.from("test_attempts").select("id, test_id, status").eq("user_id", user.id),
         supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
         supabase.from("test_assignments").select("test_id").eq("user_id", user.id).eq("is_active", true),
+        supabase
+          .from("test_reattempt_requests")
+          .select("test_id")
+          .eq("user_id", user.id)
+          .eq("status", "approved")
+          .is("consumed_at", null),
       ]);
       if (!active) return;
       const enrolled = (enrollRes.data ?? [])
@@ -65,17 +72,18 @@ const TestListPage = () => {
       setCourses(enrolled);
       setTests((testsRes.data ?? []) as TestRow[]);
       const map: Record<string, AttemptInfo> = {};
+      const rank = (s: string) => (s === "in_progress" ? 2 : s === "submitted" || s === "auto_submitted" ? 1 : 0);
       (attemptsRes.data ?? []).forEach((a: any) => {
         if (!a.test_id) return;
         const prev = map[a.test_id];
-        // Prefer submitted over in_progress
-        if (!prev || (prev.status === "in_progress" && a.status !== "in_progress")) {
+        if (!prev || rank(a.status) > rank(prev.status)) {
           map[a.test_id] = { id: a.id, status: a.status, slug: null };
         }
       });
       setAttemptStatus(map);
       setBatchId((profileRes.data as any)?.batch_id ?? null);
       setAssignedTestIds(new Set((assignRes.data ?? []).map((a: any) => a.test_id)));
+      setRetakeAllowedIds(new Set((retakeRes.data ?? []).map((r: any) => r.test_id)));
       // open all by default
       const open: Record<string, boolean> = { [GENERAL_KEY]: true };
       enrolled.forEach((c) => { open[c.id] = true; });
@@ -184,6 +192,7 @@ const TestListPage = () => {
                         const isInProgress = att?.status === "in_progress";
                         const isCbt = t.test_mode === "cbt";
                         const cbtAbsent = isCbt && !att;
+                        const canRetake = !!(isSubmitted && retakeAllowedIds.has(t.id));
 
                         const rowInner = (
                           <>
@@ -203,8 +212,11 @@ const TestListPage = () => {
                               {cbtAbsent && (
                                 <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">Absent — No Result</span>
                               )}
-                              {isSubmitted && (
+                              {isSubmitted && !canRetake && (
                                 <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700">View Result</span>
+                              )}
+                              {canRetake && (
+                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">Retake approved</span>
                               )}
                               {isInProgress && (
                                 <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-600">Resume</span>
@@ -222,11 +234,13 @@ const TestListPage = () => {
                           );
                         }
 
-                        const href = isSubmitted
-                          ? `/tests/${att.slug ?? t.slug}/result/${att.id}`
-                          : isInProgress
-                            ? `/tests/${t.slug}/take`
-                            : `/tests/${t.slug}/instructions`;
+                        const href = isInProgress
+                          ? `/tests/${t.slug}/take`
+                          : canRetake
+                            ? `/tests/${t.slug}/instructions`
+                            : isSubmitted
+                              ? `/tests/${att.slug ?? t.slug}/result/${att.id}`
+                              : `/tests/${t.slug}/instructions`;
                         return (
                           <Link
                             key={t.id}

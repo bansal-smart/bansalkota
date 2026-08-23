@@ -18,6 +18,8 @@ type LiveTest = {
   subjects: string[] | null;
   open_window_minutes?: number | null;
   has_in_progress_attempt?: boolean;
+  has_completed_attempt?: boolean;
+  can_reattempt?: boolean;
 };
 
 const ACTIVATION_LEAD_MS = 60_000;
@@ -78,22 +80,37 @@ const CbtLiveTestsPage = () => {
       // Enrich with open_window_minutes (entry-window cutoff) and in-progress attempt flag.
       if (baseTests.length) {
         const ids = baseTests.map((t) => t.id);
-        const [{ data: meta }, { data: attempts }] = await Promise.all([
+        const [{ data: meta }, { data: attempts }, { data: reattempts }] = await Promise.all([
           supabase.from("tests").select("id, open_window_minutes").in("id", ids),
           supabase
             .from("test_attempts")
+            .select("test_id, status")
+            .eq("user_id", user.id)
+            .in("test_id", ids)
+            .in("status", ["in_progress", "submitted", "auto_submitted"]),
+          supabase
+            .from("test_reattempt_requests")
             .select("test_id")
             .eq("user_id", user.id)
-            .eq("status", "in_progress")
+            .eq("status", "approved")
+            .is("consumed_at", null)
             .in("test_id", ids),
         ]);
         const owmMap = new Map<string, number | null>(
           (meta ?? []).map((m: { id: string; open_window_minutes: number | null }) => [m.id, m.open_window_minutes]),
         );
-        const inProgressSet = new Set<string>((attempts ?? []).map((a: { test_id: string }) => a.test_id));
+        const inProgressSet = new Set<string>();
+        const completedSet = new Set<string>();
+        (attempts ?? []).forEach((a: { test_id: string; status: string }) => {
+          if (a.status === "in_progress") inProgressSet.add(a.test_id);
+          else completedSet.add(a.test_id);
+        });
+        const reattemptSet = new Set<string>((reattempts ?? []).map((r: { test_id: string }) => r.test_id));
         baseTests.forEach((t) => {
           t.open_window_minutes = owmMap.get(t.id) ?? null;
           t.has_in_progress_attempt = inProgressSet.has(t.id);
+          t.has_completed_attempt = completedSet.has(t.id);
+          t.can_reattempt = reattemptSet.has(t.id);
         });
       }
       setTests(baseTests);
@@ -156,12 +173,16 @@ const CbtLiveTestsPage = () => {
               const closed = endMs !== null && now > endMs;
               const entryClosed =
                 !t.has_in_progress_attempt && entryDeadlineMs !== null && now > entryDeadlineMs;
-              const canStart = !notYetOpen && !closed && !entryClosed;
+              const alreadyDone = !!t.has_completed_attempt && !t.has_in_progress_attempt && !t.can_reattempt;
+              const canStart = !notYetOpen && !closed && !entryClosed && !alreadyDone;
 
               let statusLabel = t.has_in_progress_attempt ? "Resume" : "Active now";
               let statusClass = "bg-emerald-100 text-emerald-700";
               let countdown: string | null = null;
-              if (closed) {
+              if (alreadyDone) {
+                statusLabel = "Submitted";
+                statusClass = "bg-emerald-100 text-emerald-700";
+              } else if (closed) {
                 statusLabel = "Closed";
                 statusClass = "bg-muted text-muted-foreground";
               } else if (entryClosed) {
@@ -201,7 +222,7 @@ const CbtLiveTestsPage = () => {
                       disabled={!canStart}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      <PlayCircle className="h-4 w-4" /> {t.has_in_progress_attempt ? "Resume Test" : "Start Test"}
+                      <PlayCircle className="h-4 w-4" /> {t.has_in_progress_attempt ? "Resume Test" : alreadyDone ? "Already submitted" : t.can_reattempt ? "Start fresh attempt" : "Start Test"}
                     </button>
                   </div>
                 </div>

@@ -4895,6 +4895,7 @@ export type Database = {
         Row: {
           admin_note: string | null
           attempt_id: string | null
+          consumed_at: string | null
           created_at: string
           decided_at: string | null
           decided_by: string | null
@@ -4908,6 +4909,7 @@ export type Database = {
         Insert: {
           admin_note?: string | null
           attempt_id?: string | null
+          consumed_at?: string | null
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null
@@ -4921,6 +4923,7 @@ export type Database = {
         Update: {
           admin_note?: string | null
           attempt_id?: string | null
+          consumed_at?: string | null
           created_at?: string
           decided_at?: string | null
           decided_by?: string | null

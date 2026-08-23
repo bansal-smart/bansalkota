@@ -77,7 +77,14 @@ const LiveTestsWidget = () => {
       if (!active) return;
       setTests((tRes.data ?? []) as TestRow[]);
       const m: Record<string, string> = {};
-      (aRes.data ?? []).forEach((a: any) => { if (a.test_id) m[a.test_id] = a.status; });
+      (aRes.data ?? []).forEach((a: any) => {
+        if (!a.test_id) return;
+        const prev = m[a.test_id];
+        if (!prev || a.status === "in_progress") m[a.test_id] = a.status;
+        else if ((a.status === "submitted" || a.status === "auto_submitted") && prev !== "in_progress") {
+          m[a.test_id] = a.status;
+        }
+      });
       setAttempts(m);
       setBatchId((pRes.data as any)?.batch_id ?? null);
       setCourseIds(new Set(((eRes.data ?? []) as any[]).map((e) => e.course_id).filter(Boolean)));

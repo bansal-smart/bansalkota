@@ -102,15 +102,20 @@ const TestResultPage = () => {
     (async () => {
       const { data } = await supabase
         .from("test_reattempt_requests")
-        .select("status")
+        .select("status, consumed_at")
         .eq("user_id", user.id)
         .eq("test_id", attempt.test_id!)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (cancelled) return;
-      const s = (data?.status as typeof reattemptStatus | undefined) ?? "none";
-      setReattemptStatus(s);
+      const raw = data as { status?: string; consumed_at?: string | null } | null;
+      if (raw?.status === "approved" && raw.consumed_at) {
+        setReattemptStatus("none");
+      } else {
+        const s = (raw?.status as typeof reattemptStatus | undefined) ?? "none";
+        setReattemptStatus(s);
+      }
     })();
     return () => { cancelled = true; };
   }, [isOwnAttempt, user, attempt?.test_id]);

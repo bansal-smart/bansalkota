@@ -10,6 +10,7 @@ import CandidateCard from "@/components/test/CandidateCard";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 import ReportQuestionButton from "@/components/test/ReportQuestionButton";
 import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
+import { getStudentAttemptGate, isAlreadyAttemptedError } from "@/lib/testAttemptGuard";
 
 type QuestionType =
   | "mcq-single"
@@ -196,6 +197,13 @@ const TestTakingPage = () => {
           setOverrideStartedAt(new Date((existing as any).time_override_started_at));
         }
         setStarted(true);
+      } else {
+        const gate = await getStudentAttemptGate(user.id, t.id);
+        if (gate.completedAttemptId && !gate.canStartNew) {
+          toast.error("You have already submitted this test. It can only be taken once.");
+          navigate(`/tests/${slug}/result/${gate.completedAttemptId}`, { replace: true });
+          return;
+        }
       }
 
       // Candidate profile
@@ -525,11 +533,25 @@ const TestTakingPage = () => {
       navigate(`/tests/${slug}`);
       return;
     }
+    const gate = await getStudentAttemptGate(user.id, test.id);
+    if (gate.completedAttemptId && !gate.canStartNew) {
+      toast.error("You have already submitted this test. It can only be taken once.");
+      navigate(`/tests/${slug}/result/${gate.completedAttemptId}`, { replace: true });
+      return;
+    }
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
     }).select("id, started_at").single();
-    if (error || !data) { toast.error("Could not start test"); return; }
+    if (error || !data) {
+      if (isAlreadyAttemptedError(error) && gate.completedAttemptId) {
+        toast.error("You have already submitted this test. It can only be taken once.");
+        navigate(`/tests/${slug}/result/${gate.completedAttemptId}`, { replace: true });
+        return;
+      }
+      toast.error("Could not start test");
+      return;
+    }
     setAttemptId(data.id);
     setStartedAt(new Date(data.started_at as string));
     setStarted(true);

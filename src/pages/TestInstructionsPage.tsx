@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Clock, FileText, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getStudentAttemptGate } from "@/lib/testAttemptGuard";
 
 type TestRow = {
   id: string;
@@ -39,6 +40,8 @@ const TestInstructionsPage = () => {
   const [agreed, setAgreed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [hasInProgressAttempt, setHasInProgressAttempt] = useState(false);
+  const [completedAttemptId, setCompletedAttemptId] = useState<string | null>(null);
+  const [reattemptAllowed, setReattemptAllowed] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -72,7 +75,12 @@ const TestInstructionsPage = () => {
             .eq("status", "in_progress")
             .limit(1)
             .maybeSingle();
-          if (active) setHasInProgressAttempt(!!att);
+          const gate = await getStudentAttemptGate(uid, row.id);
+          if (active) {
+            setHasInProgressAttempt(!!att);
+            setCompletedAttemptId(gate.completedAttemptId);
+            setReattemptAllowed(gate.canStartNew);
+          }
         }
       }
       setLoading(false);
@@ -123,7 +131,8 @@ const TestInstructionsPage = () => {
     );
   }
 
-  const canStart = agreed && !notYetOpen && !closed && !entryClosed;
+  const alreadySubmitted = !!completedAttemptId && !reattemptAllowed && !hasInProgressAttempt;
+  const canStart = agreed && !notYetOpen && !closed && !entryClosed && !alreadySubmitted;
 
   return (
     <div className="mx-auto max-w-4xl p-4 pb-24 lg:p-8">
@@ -162,6 +171,18 @@ const TestInstructionsPage = () => {
       {!closed && entryClosed && (
         <div className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-700">
           The entry window for this test has closed. New attempts are no longer accepted. Please contact your centre admin if you need to start late.
+        </div>
+      )}
+
+      {alreadySubmitted && (
+        <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+          You have already submitted this test. Each account can take a test only once. You can appear again on the next exam date after a fresh registration — that will be a new test.
+        </div>
+      )}
+
+      {alreadySubmitted && (
+        <div className="mt-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+          You have already submitted this test. Each account can take a test only once. You can appear again on the next exam date after a fresh registration — that will be a new test.
         </div>
       )}
 
@@ -293,14 +314,24 @@ const TestInstructionsPage = () => {
           >
             Cancel
           </Link>
-          <button
-            type="button"
-            disabled={!canStart}
-            onClick={() => navigate(`/tests/${test.slug}/take`)}
-            className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {notYetOpen ? "Test not open yet" : closed ? "Test closed" : entryClosed ? "Entry window closed" : hasInProgressAttempt ? "Resume Test" : "Start Test"}
-          </button>
+          {alreadySubmitted && completedAttemptId ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/tests/${test.slug}/result/${completedAttemptId}`)}
+              className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow"
+            >
+              View result
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={!canStart}
+              onClick={() => navigate(`/tests/${test.slug}/take`)}
+              className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {notYetOpen ? "Test not open yet" : closed ? "Test closed" : entryClosed ? "Entry window closed" : hasInProgressAttempt ? "Resume Test" : reattemptAllowed && completedAttemptId ? "Start fresh attempt" : "Start Test"}
+            </button>
+          )}
         </div>
       </section>
     </div>
