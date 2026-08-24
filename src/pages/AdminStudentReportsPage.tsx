@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileBarChart, Download, Search, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { fetchStudentReport } from "@/lib/studentReport";
+import { fetchNonStaffProfiles, supabaseErrorMessage } from "@/lib/studentListQuery";
 
 type StudentRow = {
   user_id: string;
@@ -30,6 +30,8 @@ type StudentRow = {
   target_exam: string | null;
   class_level: string | null;
 };
+
+const errorMessage = (e: unknown) => supabaseErrorMessage(e);
 
 const AdminStudentReportsPage = () => {
   const [students, setStudents] = useState<StudentRow[]>([]);
@@ -43,32 +45,16 @@ const AdminStudentReportsPage = () => {
     (async () => {
       setLoading(true);
       try {
-        // A "student" role row can be stale: e.g. a user bulk-imported as a
-        // student and later added as centre staff keeps their old student row
-        // forever, since centre-admin access is granted via centre_staff
-        // membership, not user_roles. Exclude anyone with an elevated role or
-        // centre_staff membership so staff never leak into this list.
-        const [{ data: roleRows, error: rErr }, { data: elevatedRows }, { data: staffRows }] = await Promise.all([
-          supabase.from("user_roles").select("user_id").eq("role", "student"),
-          supabase.from("user_roles").select("user_id").neq("role", "student"),
-          (supabase as any).from("centre_staff").select("user_id"),
-        ]);
-        if (rErr) throw rErr;
-        const excluded = new Set<string>([
-          ...(elevatedRows ?? []).map((r) => r.user_id),
-          ...((staffRows ?? []) as Array<{ user_id: string }>).map((r) => r.user_id),
-        ]);
-        const ids = Array.from(new Set((roleRows ?? []).map((r) => r.user_id))).filter((id) => !excluded.has(id));
-        if (!ids.length) { setStudents([]); return; }
-        const { data, error } = await (supabase as any)
-          .from("profiles")
-          .select("user_id, full_name, target_exam, class_level")
-          .in("user_id", ids)
-          .order("full_name", { ascending: true });
-        if (error) throw error;
-        setStudents((data ?? []) as StudentRow[]);
-      } catch (e: any) {
-        toast.error("Failed to load students", { description: e.message });
+        // Page profiles with .range() and drop staff in memory. A single
+        // `.in(user_id, 650 UUIDs)` GET is ~25KB and fails (400 / missing apikey).
+        const rows = await fetchNonStaffProfiles<StudentRow>(
+          "user_id, full_name, target_exam, class_level",
+          { column: "full_name", ascending: true },
+        );
+        setStudents(rows);
+      } catch (e: unknown) {
+        toast.error("Failed to load students", { description: errorMessage(e) });
+        setStudents([]);
       } finally {
         setLoading(false);
       }
@@ -95,8 +81,8 @@ const AdminStudentReportsPage = () => {
       const { downloadStudentReport } = await import("@/lib/studentReportPdf");
       downloadStudentReport(data);
       toast.success("Report downloaded", { description: `${data.student.name} • ${data.tests.attempts} tests` });
-    } catch (e: any) {
-      toast.error("Failed to generate report", { description: e?.message });
+    } catch (e: unknown) {
+      toast.error("Failed to generate report", { description: errorMessage(e) });
     } finally {
       setGeneratingId(null);
     }
