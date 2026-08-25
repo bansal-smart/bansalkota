@@ -130,6 +130,8 @@ const LoginPage = () => {
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: { phone: `+91${mobile}`, otp: code, purpose: "login" },
       });
       if (error) {
