@@ -74,9 +74,20 @@ Deno.serve(async (req) => {
         .from("profiles")
         .select("user_id, phone_e164, phone")
         .or(`phone_e164.eq.${e164},phone.eq.${bare},phone.eq.${e164}`)
-        .limit(1);
-      let userId: string | undefined = profRows?.[0]?.user_id;
+        .limit(10);
+      let userId: string | undefined;
       let userEmail: string | undefined;
+
+      // A profile alone is not an account: old imports or deleted auth users
+      // can leave profile rows behind. Only an active auth user may log in.
+      for (const profile of profRows ?? []) {
+        const { data: candidate } = await supabase.auth.admin.getUserById(profile.user_id);
+        if (candidate.user) {
+          userId = candidate.user.id;
+          userEmail = candidate.user.email ?? undefined;
+          break;
+        }
+      }
 
       // Fallback: search auth users by phone (half-created accounts)
       if (!userId) {
@@ -94,8 +105,9 @@ Deno.serve(async (req) => {
       }
 
       if (!userId) {
-        // Enforce platform_settings.open_registrations: if disabled, new
-        // phone-OTP signups are blocked. Existing users continue to log in.
+        // Never create a hidden placeholder account here. A verified, unknown
+        // phone must continue to the signup form so the student supplies their
+        // name, email, class, and other profile details.
         const { data: settings } = await supabase
           .from("platform_settings")
           .select("open_registrations")
@@ -104,16 +116,9 @@ Deno.serve(async (req) => {
         if (settings && settings.open_registrations === false) {
           return new Response(JSON.stringify({ error: "Registrations are currently closed. Please contact support." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        const placeholderEmail = `phone-${bare}@phone.bansalkota.local`;
-        const { data: created, error: cErr } = await supabase.auth.admin.createUser({
-          email: placeholderEmail,
-          email_confirm: true,
-          user_metadata: { phone: e164, signup_method: "phone_otp" },
-        });
-        if (cErr) throw cErr;
-        userId = created.user!.id;
-        userEmail = placeholderEmail;
-        await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true, phone: bare }).eq("user_id", userId);
+        return new Response(JSON.stringify({
+          ok: true, purpose, phone: e164, registration_required: true,
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } else {
         // Backfill phone_e164 for existing accounts so future lookups are O(1)
         await supabase.from("profiles").update({ phone_e164: e164, phone_verified: true }).eq("user_id", userId);

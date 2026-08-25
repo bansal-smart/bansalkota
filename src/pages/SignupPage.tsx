@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Flame, Mail, Eye, EyeOff, Phone, User, MapPin, Check, Sparkles, Loader2, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,8 @@ import Seo from "@/components/Seo";
 
 const SignupPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const verifiedPhone = (searchParams.get("phone") ?? "").replace(/\D/g, "").slice(-10);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -40,6 +42,10 @@ const SignupPage = () => {
     centre_id: "",
   });
 
+  useEffect(() => {
+    if (verifiedPhone) setForm((current) => ({ ...current, countryCode: "+91", phone: verifiedPhone }));
+  }, [verifiedPhone]);
+
   const [centers, setCenters] = useState<Array<{ id: string; city: string; area: string | null; state: string; is_pinned?: boolean }>>([]);
   useEffect(() => {
     (async () => {
@@ -56,8 +62,12 @@ const SignupPage = () => {
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSignup = async () => {
-    if (!form.full_name || !form.email || !form.password) {
-      toast.error("Name, email and password are required");
+    if (!form.full_name || !form.phone || !form.email || !form.password) {
+      toast.error("Name, phone, email and password are required");
+      return;
+    }
+    if (form.countryCode === "+91" && !/^[6-9]\d{9}$/.test(form.phone)) {
+      toast.error("Enter a valid 10-digit Indian mobile number");
       return;
     }
     if (form.password.length < 8) {
@@ -175,7 +185,7 @@ const SignupPage = () => {
                   <option value="+91">IN +91</option>
                   <option value="+971">AE +971</option>
                 </select>
-                <input value={form.phone} onChange={(e) => update("phone", e.target.value)} type="tel" placeholder="Phone number" className="flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+                <input value={form.phone} onChange={(e) => update("phone", e.target.value.replace(/\D/g, ""))} type="tel" inputMode="numeric" maxLength={15} placeholder="Phone number" className="flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
               </div>
             </div>
             <div>
