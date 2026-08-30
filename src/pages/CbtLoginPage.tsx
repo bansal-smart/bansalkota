@@ -23,18 +23,37 @@ const CbtLoginPage = () => {
     if (!/^[A-Za-z0-9]{2,}$/.test(r)) return toast.error("Enter your roll number (registration no).");
     if (!pwd || pwd.length < 4) return toast.error("Enter your password.");
     setSubmitting(true);
-    
     try {
       const { data, error } = await supabase.functions.invoke("cbt-login", {
         body: { roll_number: r, password: pwd },
       });
-      if (error) throw error;
       const payload = data as {
-        success: boolean;
+        success?: boolean;
         error?: string;
+        message?: string;
         session?: { access_token: string; refresh_token: string };
-      };
-      if (!payload?.success || !payload.session) throw new Error(payload?.error ?? "Login failed");
+      } | null;
+
+      // supabase-js surfaces non-2xx as error with a generic message; the real
+      // reason lives in the response body (data and/or error.context).
+      if (error || !payload?.success || !payload.session) {
+        let msg = payload?.error || payload?.message || "";
+        const ctx = (error as { context?: Response } | null)?.context;
+        if (!msg && ctx && typeof ctx.json === "function") {
+          try {
+            const body = (await ctx.json()) as { error?: string; message?: string };
+            msg = body?.error || body?.message || "";
+          } catch {
+            /* ignore parse failures */
+          }
+        }
+        if (!msg) {
+          const raw = error instanceof Error ? error.message : "";
+          msg = /non-2xx|FunctionsHttpError/i.test(raw) ? "Unable to sign in. Please try again." : raw;
+        }
+        throw new Error(msg || "Unable to sign in");
+      }
+
       const { error: sErr } = await supabase.auth.setSession({
         access_token: payload.session.access_token,
         refresh_token: payload.session.refresh_token,
