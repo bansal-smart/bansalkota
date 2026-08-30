@@ -586,6 +586,10 @@ const TestTakingPage = () => {
       navigate(`/tests/${slug}/result/${gate.completedAttemptId}`, { replace: true });
       return;
     }
+    // Per-student shuffle is generated once at start and persisted on the attempt
+    // so resume / refresh keeps the same order. When shuffle is off, store null
+    // and keep the canonical question order already loaded.
+    const orderIds = test.shuffle_questions ? shuffledQuestionOrder(questions) : null;
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
