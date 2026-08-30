@@ -130,6 +130,8 @@ const LoginPage = () => {
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("prpsms-verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: { phone: `+91${mobile}`, otp: code, purpose: "login" },
       });
       if (error) {
@@ -142,6 +144,11 @@ const LoginPage = () => {
           } catch { /* ignore */ }
         }
         throw new Error(msg);
+      }
+      if (data?.registration_required) {
+        toast.success("Your number is verified. Please complete your registration.");
+        navigate(`/signup?phone=${encodeURIComponent(mobile)}`, { replace: true });
+        return;
       }
       if (!data?.token_hash || !data?.email) {
         throw new Error("Could not verify OTP");

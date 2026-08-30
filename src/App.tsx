@@ -88,6 +88,7 @@ const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage"));
+const DeleteAccountPage = lazy(() => import("./pages/DeleteAccountPage"));
 const AccessDeniedPage = lazy(() => import("./pages/AccessDeniedPage"));
 const AdminSchoolsPage = lazy(() => import("./pages/AdminSchoolsPage"));
 const BansalPlaceholderPage = lazy(() => import("./pages/BansalPlaceholderPage"));
@@ -218,6 +219,7 @@ const App = () => (
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
                   <Route path="/terms" element={<TermsOfServicePage />} />
+                  <Route path="/delete-account" element={<DeleteAccountPage />} />
                   <Route path="/boost" element={<BoostPage />} />
                   <Route path="/centres" element={<CentersPage />} />
                   <Route path="/centres/:slug" element={<CenterDetailPage />} />

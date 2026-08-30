@@ -9,6 +9,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
 import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
+import { fetchStaffUserIds, supabaseErrorMessage } from "@/lib/studentListQuery";
 
 type StudentRow = {
   user_id: string;
@@ -44,27 +45,7 @@ type CourseLite = { id: string; name: string };
 const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
 const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "Dropper"];
 
-const errorMessage = (e: unknown) => (e instanceof Error ? e.message : String(e));
-
-const STAFF_ROLES = ["center_admin", "admin", "super_admin"] as const;
-
-/** Staff IDs only — never `.in()` hundreds of student UUIDs (PostgREST 400 / URL too long). */
-async function fetchStaffUserIds(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("user_id")
-    .in("role", [...STAFF_ROLES]);
-  if (error) throw error;
-  return [...new Set((data ?? []).map((r) => r.user_id))];
-}
-
-function excludeStaffFromProfiles<Q extends { not: (column: string, op: string, value: string) => Q }>(
-  query: Q,
-  staffIds: string[],
-): Q {
-  if (!staffIds.length) return query;
-  return query.not("user_id", "in", `(${staffIds.join(",")})`);
-}
+const errorMessage = (e: unknown) => supabaseErrorMessage(e);
 
 const centreLabel = (c: { city: string; area: string | null }) =>
   c.area ? `${c.city} — ${c.area}` : c.city;
@@ -283,10 +264,10 @@ const AdminStudentsPage = () => {
   };
 
   const fetchAllFilteredStudentIds = async (): Promise<string[]> => {
-    const staffIds = await fetchStaffUserIds();
+    const staffIds = new Set(await fetchStaffUserIds());
     const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
-    let q = excludeStaffFromProfiles(supabase.from("profiles").select("user_id"), staffIds);
+    let q = supabase.from("profiles").select("user_id");
     if (debouncedSearch.trim()) {
       const s = debouncedSearch.trim();
       q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
@@ -302,7 +283,9 @@ const AdminStudentsPage = () => {
       const { data, error } = await q.range(from, from + 999);
       if (error) throw error;
       const chunk = (data ?? []) as { user_id: string }[];
-      chunk.forEach((r) => all.push(r.user_id));
+      chunk.forEach((r) => {
+        if (!staffIds.has(r.user_id)) all.push(r.user_id);
+      });
       if (chunk.length < 1000) break;
       from += 1000;
     }
@@ -476,20 +459,14 @@ const AdminStudentsPage = () => {
     }
     setLoading(true);
     try {
-      // Exclude staff/centre-admin profiles (handle_new_user also grants them 'student').
-      // Do not `.in()` every student UUID — that request is ~24KB and PostgREST returns 400.
-      const staffIds = await fetchStaffUserIds();
+      const staffIds = new Set(await fetchStaffUserIds());
 
-      let query = excludeStaffFromProfiles(
-        supabase
-          .from("profiles")
-          .select(
-            "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
-            { count: "exact" },
-          )
-          .order("created_at", { ascending: false }),
-        staffIds,
-      );
+      let query = supabase
+        .from("profiles")
+        .select(
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
+        )
+        .order("created_at", { ascending: false });
 
       if (debouncedSearch.trim()) {
         const s = debouncedSearch.trim();
@@ -501,13 +478,21 @@ const AdminStudentsPage = () => {
       if (classFilter) query = query.eq("class_level", classFilter);
       if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
-      const size = pageSize === TABLE_PAGE_SIZE_ALL ? 10000 : pageSize;
-      const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
-      const to = from + size - 1;
-      const { data, count, error } = await query.range(from, to);
-      if (error) throw error;
+      const fetched: StudentRow[] = [];
+      let cursor = 0;
+      while (true) {
+        const { data, error } = await query.range(cursor, cursor + 999);
+        if (error) throw error;
+        const chunk = (data ?? []) as StudentRow[];
+        fetched.push(...chunk);
+        if (chunk.length < 1000) break;
+        cursor += 1000;
+      }
 
-      const baseRows = (data ?? []) as StudentRow[];
+      const filtered = fetched.filter((r) => !staffIds.has(r.user_id));
+      const size = pageSize === TABLE_PAGE_SIZE_ALL ? filtered.length || 1 : pageSize;
+      const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
+      const baseRows = pageSize === TABLE_PAGE_SIZE_ALL ? filtered : filtered.slice(from, from + size);
       const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
       const batchMap = new Map(batches.map((b) => [b.id, b.name]));
       baseRows.forEach((r) => {
@@ -524,7 +509,7 @@ const AdminStudentsPage = () => {
         emails = emailData?.emails ?? {};
       }
       setRows(baseRows.map((r) => ({ ...r, email: emails[r.user_id] ?? null })));
-      setTotal(count ?? 0);
+      setTotal(filtered.length);
     } catch (e: unknown) {
       toast.error("Failed to load students", { description: errorMessage(e) });
       setRows([]);
@@ -633,16 +618,13 @@ const AdminStudentsPage = () => {
     }
     const tId = toast.loading("Preparing export…");
     try {
-      const staffIds = await fetchStaffUserIds();
+      const staffIds = new Set(await fetchStaffUserIds());
       const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
-      let q = excludeStaffFromProfiles(
-        supabase
-          .from("profiles")
-          .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label")
-          .order("created_at", { ascending: false }),
-        staffIds,
-      );
+      let q = supabase
+        .from("profiles")
+        .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label")
+        .order("created_at", { ascending: false });
       if (debouncedSearch.trim()) {
         const s = debouncedSearch.trim();
         q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
@@ -652,16 +634,17 @@ const AdminStudentsPage = () => {
       if (classFilter) q = q.eq("class_level", classFilter);
       if (batchFilter.length) q = q.in("batch_id", batchFilter);
 
-      const all: StudentRow[] = [];
+      const fetched: StudentRow[] = [];
       let from = 0;
       while (true) {
         const { data, error } = await q.range(from, from + 999);
         if (error) throw error;
         const chunk = (data ?? []) as StudentRow[];
-        all.push(...chunk);
+        fetched.push(...chunk);
         if (chunk.length < 1000) break;
         from += 1000;
       }
+      const all = fetched.filter((r) => !staffIds.has(r.user_id));
       if (!all.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
 
       const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));

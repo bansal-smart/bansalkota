@@ -70,6 +70,7 @@ const STATIC_ROUTES = [
   { path: "/blog", priority: 0.6, changefreq: "daily" },
   { path: "/privacy", priority: 0.2, changefreq: "yearly" },
   { path: "/terms", priority: 0.2, changefreq: "yearly" },
+  { path: "/delete-account", priority: 0.2, changefreq: "yearly" },
   { path: "/refund-policy", priority: 0.2, changefreq: "yearly" },
   { path: "/disclaimer", priority: 0.2, changefreq: "yearly" },
 ];
