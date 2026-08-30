@@ -1,5 +1,9 @@
 project_id = "ebkcnepzzvpbyrnroxjh"
 
+# Public kiosk login — authenticates via roll+password inside the function.
+[functions.cbt-login]
+verify_jwt = false
+
 [functions.process-email-queue]
 verify_jwt = true
 
