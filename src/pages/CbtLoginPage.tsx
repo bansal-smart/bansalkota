@@ -23,6 +23,7 @@ const CbtLoginPage = () => {
     if (!/^[A-Za-z0-9]{2,}$/.test(r)) return toast.error("Enter your roll number (registration no).");
     if (!pwd || pwd.length < 4) return toast.error("Enter your password.");
     setSubmitting(true);
+    
     try {
       const { data, error } = await supabase.functions.invoke("cbt-login", {
         body: { roll_number: r, password: pwd },
