@@ -12,6 +12,7 @@ import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import CentreAdminDashboardRedirect from "./components/CentreAdminDashboardRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import MetaPixel from "./components/MetaPixel";
 import PublicLayout from "./components/PublicLayout";
 import Spinner from "./components/Spinner";
 import { AuthProvider } from "./context/AuthContext";
@@ -174,6 +175,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <MetaPixel />
         <AuthProvider>
           <MaintenanceGate>
             <Suspense fallback={<RouteFallback />}>

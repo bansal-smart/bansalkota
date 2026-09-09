@@ -3,6 +3,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/clipboard";
 import { School, Plus, Edit3, Trash2, Loader2, X, Upload, Users, ChevronRight, Copy, Download, FileText } from "lucide-react";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
@@ -420,7 +421,7 @@ const AdminSchoolsPage = () => {
                           {r.error ?? (r.temp_password ? (
                             <span className="inline-flex items-center gap-1 font-mono">
                               {r.temp_password}
-                              <button onClick={() => { navigator.clipboard.writeText(r.temp_password!); toast.success("Copied"); }} className="p-0.5 hover:bg-muted rounded"><Copy className="h-3 w-3" /></button>
+                              <button onClick={() => copyToClipboard(r.temp_password!, "Copied")} className="p-0.5 hover:bg-muted rounded"><Copy className="h-3 w-3" /></button>
                             </span>
                           ) : "—")}
                         </td>

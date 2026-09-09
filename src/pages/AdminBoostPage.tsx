@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
 import { useAuth } from "@/context/AuthContext";
-import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
 
 type Registration = {
@@ -35,6 +34,8 @@ type Registration = {
   created_at: string;
 };
 
+type Centre = { id: string; city: string; area: string | null };
+
 const STATUS_OPTIONS = ["all", "registered", "confirmed", "attended", "cancelled"] as const;
 const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
 
@@ -46,40 +47,72 @@ const AdminBoostPage = () => {
   const debouncedQ = useDebouncedValue(q, 300);
   const [statusFilter, setStatusFilter] = useState<(typeof STATUS_OPTIONS)[number]>("all");
   const [payFilter, setPayFilter] = useState<(typeof PAYMENT_OPTIONS)[number]>("all");
+  const [centreFilter, setCentreFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState("all");
+  const [stateFilter, setStateFilter] = useState("all");
+  const [classFilter, setClassFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [centres, setCentres] = useState<Centre[]>([]);
+  const [filterValues, setFilterValues] = useState({ cities: [] as string[], states: [] as string[], classes: [] as string[] });
   const [selected, setSelected] = useState<Registration | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+
+  const applyFilters = (query: any) => {
+    if (debouncedQ.trim()) {
+      const needle = debouncedQ.trim().replace(/[%(),]/g, " ");
+      query = query.or(`full_name.ilike.%${needle}%,email.ilike.%${needle}%,phone.ilike.%${needle}%,admit_card_number.ilike.%${needle}%,city.ilike.%${needle}%`);
+    }
+    if (statusFilter !== "all") query = query.eq("status", statusFilter);
+    if (payFilter !== "all") query = query.eq("payment_status", payFilter);
+    if (centreFilter !== "all") query = query.eq("preferred_centre_id", centreFilter);
+    if (cityFilter !== "all") query = query.eq("city", cityFilter);
+    if (stateFilter !== "all") query = query.eq("state", stateFilter);
+    if (classFilter !== "all") query = query.eq("class_level", classFilter);
+    if (fromDate) query = query.gte("created_at", `${fromDate}T00:00:00`);
+    if (toDate) {
+      const end = new Date(`${toDate}T00:00:00`);
+      end.setDate(end.getDate() + 1);
+      query = query.lt("created_at", end.toISOString());
+    }
+    return query;
+  };
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const [{ data, error, count }, { data: centreRows }, { data: optionRows }] = await Promise.all([
+      applyFilters(supabase
       .from("boost_registrations")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(1000);
+      .range(page * pageSize, page * pageSize + pageSize - 1)),
+      supabase.from("centres").select("id, city, area").order("city"),
+      supabase.from("boost_registrations").select("city, state, class_level").limit(10000),
+    ]);
     if (error) toast.error(error.message);
-    else setRows((data ?? []) as Registration[]);
+    else {
+      setRows((data ?? []) as Registration[]);
+      setTotal(count ?? 0);
+    }
+    setCentres((centreRows ?? []) as Centre[]);
+    const options = (optionRows ?? []) as Array<{ city: string | null; state: string | null; class_level: string }>;
+    setFilterValues({
+      cities: Array.from(new Set(options.map((r) => r.city).filter(Boolean) as string[])).sort(),
+      states: Array.from(new Set(options.map((r) => r.state).filter(Boolean) as string[])).sort(),
+      classes: Array.from(new Set(options.map((r) => r.class_level).filter(Boolean))).sort(),
+    });
     setLoading(false);
   };
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, fromDate, toDate, page, pageSize]);
 
-  const filtered = useMemo(() => {
-    const needle = debouncedQ.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (statusFilter !== "all" && r.status !== statusFilter) return false;
-      if (payFilter !== "all" && r.payment_status !== payFilter) return false;
-      if (!needle) return true;
-      return (
-        r.full_name.toLowerCase().includes(needle) ||
-        r.email.toLowerCase().includes(needle) ||
-        r.phone.includes(needle) ||
-        (r.admit_card_number ?? "").toLowerCase().includes(needle) ||
-        (r.city ?? "").toLowerCase().includes(needle)
-      );
-    });
-  }, [rows, debouncedQ, statusFilter, payFilter]);
+  useEffect(() => { setPage(0); }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, fromDate, toDate]);
 
-  const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const filtered = rows;
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -106,7 +139,20 @@ const AdminBoostPage = () => {
   };
 
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
+    const exportRows: Registration[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await applyFilters(supabase
+        .from("boost_registrations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, from + 999));
+      if (error) return toast.error(error.message);
+      exportRows.push(...((data ?? []) as Registration[]));
+      if (!data || data.length < 1000) break;
+      from += 1000;
+    }
     const headers = [
       "admit_card_number","full_name","email","phone","whatsapp","date_of_birth","class_level","target_exam",
       "school_name","city","state","parent_name","parent_phone","preferred_centre_label","exam_mode","exam_slot",
@@ -114,7 +160,7 @@ const AdminBoostPage = () => {
     ];
     const csv = [headers.join(",")]
       .concat(
-        filtered.map((r) =>
+        exportRows.map((r) =>
           headers
             .map((h) => {
               const v = (r as any)[h];
@@ -132,6 +178,7 @@ const AdminBoostPage = () => {
     a.download = `boost-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success(`Exported ${exportRows.length} registration${exportRows.length === 1 ? "" : "s"}`);
   };
 
   return (
@@ -147,7 +194,7 @@ const AdminBoostPage = () => {
           onClick={exportCsv}
           className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90"
         >
-          <Download className="h-4 w-4" /> Export CSV
+          <Download className="h-4 w-4" /> Export {total ? `(${total} filtered)` : "CSV"}
         </button>
       </div>
 
@@ -205,6 +252,30 @@ const AdminBoostPage = () => {
             <option key={o} value={o}>Payment: {o}</option>
           ))}
         </select>
+        <select value={centreFilter} onChange={(e) => setCentreFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">Centre: all</option>
+          {centres.map((c) => <option key={c.id} value={c.id}>{c.city}{c.area && c.area !== c.city ? ` — ${c.area}` : ""}</option>)}
+        </select>
+        <select value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">City: all</option>
+          {filterValues.cities.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">State: all</option>
+          {filterValues.states.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">Class: all</option>
+          {filterValues.classes.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
+          From
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="bg-transparent text-foreground outline-none" />
+        </label>
+        <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
+          To
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="bg-transparent text-foreground outline-none" />
+        </label>
       </div>
 
       {/* Table */}
@@ -226,7 +297,7 @@ const AdminBoostPage = () => {
               </tr>
             </thead>
             <tbody>
-              {paged.map((r) => (
+              {rows.map((r) => (
                 <tr
                   key={r.id}
                   onClick={() => setSelected(r)}
@@ -262,7 +333,7 @@ const AdminBoostPage = () => {
                   <td className="p-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {rows.length === 0 && (
                 <tr><td colSpan={8} className="p-10 text-center text-muted-foreground">No registrations match your filters.</td></tr>
               )}
             </tbody>

@@ -28,6 +28,10 @@ Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY) {
+    console.error("admin-create-center-user: required Supabase environment variables are missing");
+    return json(500, { error: "The centre login service is not configured" });
+  }
 
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
@@ -50,7 +54,11 @@ Deno.serve(async (req) => {
     callerId = userData.user.id;
   }
 
-  const { data: isAdmin } = await admin.rpc("is_admin_or_super", { _user_id: callerId });
+  const { data: isAdmin, error: authzErr } = await admin.rpc("is_admin_or_super", { _user_id: callerId });
+  if (authzErr) {
+    console.error("admin-create-center-user: role check failed", { message: authzErr.message, callerId });
+    return json(500, { error: "Could not verify administrator permissions" });
+  }
 
   let body: any;
   try {
@@ -91,9 +99,16 @@ Deno.serve(async (req) => {
   // read. Use listUsers() + filter instead (same pattern as manage-admin),
   // since this function has already authorized the caller itself above.
   let userId: string | null = null;
-  const { data: existingUsers } = await admin.auth.admin.listUsers({ perPage: 1000 });
-  const existingUser = existingUsers?.users.find((u) => u.email?.toLowerCase() === email);
-  if (existingUser) userId = existingUser.id;
+  for (let page = 1; page <= 100 && !userId; page += 1) {
+    const { data: usersPage, error: listErr } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (listErr) {
+      console.error("admin-create-center-user: failed to list Auth users", { message: listErr.message, page });
+      return json(500, { error: "Could not access centre login accounts" });
+    }
+    const existingUser = usersPage.users.find((u) => u.email?.toLowerCase() === email);
+    if (existingUser) userId = existingUser.id;
+    if (usersPage.users.length < 1000) break;
+  }
 
   if (action === "create") {
     if (!userId) {
@@ -105,6 +120,15 @@ Deno.serve(async (req) => {
       });
       if (createErr || !created.user) return json(400, { error: createErr?.message ?? "Could not create user" });
       userId = created.user.id;
+
+      // createUser() only writes auth.users — there is no DB trigger that
+      // mirrors user_metadata into public.profiles, so without this the
+      // account has no profile row at all and Role Management falls back to
+      // showing a raw user-id fragment instead of the name given here.
+      const { error: profileErr } = await admin
+        .from("profiles")
+        .upsert({ user_id: userId, full_name: fullName || null }, { onConflict: "user_id" });
+      if (profileErr) return json(400, { error: profileErr.message });
     } else {
       // user exists — just reset password
       const { error: updErr } = await admin.auth.admin.updateUserById(userId, { password });

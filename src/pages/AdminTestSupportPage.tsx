@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Loader2, LifeBuoy, CheckCircle2, ArrowLeft, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 type SupportRow = {
   id: string;
@@ -25,6 +26,7 @@ type SupportRow = {
 };
 
 const AdminTestSupportPage = () => {
+  const { isCenterAdmin } = useAuth();
   const [rows, setRows] = useState<SupportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"open" | "resolved" | "all">("open");
@@ -119,7 +121,9 @@ const AdminTestSupportPage = () => {
           <div>
             <h1 className="text-xl font-black font-display">Test Support Queries</h1>
             <p className="text-white/90 text-xs mt-0.5">
-              Live technical and platform issues raised by students during a test.
+              {isCenterAdmin
+                ? "Live test issues raised by students at your centre."
+                : "Live technical and platform issues raised by students during a test."}
             </p>
           </div>
         </div>

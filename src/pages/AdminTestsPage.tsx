@@ -7,6 +7,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
@@ -26,7 +27,7 @@ type AdminTest = {
   cbt_allowed_batch_ids: string[] | null;
 };
 
-type BatchOpt = { id: string; name: string };
+type BatchOpt = { id: string; name: string; visibility: BatchVisibility };
 type StatusFilter = "all" | "upcoming" | "active" | "previous" | "untimed";
 
 const computeStatus = (t: AdminTest, now: number): Exclude<StatusFilter, "all"> => {
@@ -73,10 +74,13 @@ const AdminTestsPage = () => {
         scopeCentreId,
         { globalFlagColumn: "is_global" },
       ).order("created_at", { ascending: false }),
-      scopeQueryToCentre(supabase.from("course_batches").select("id, name"), scopeCentreId).order("name"),
+      // Fetched unscoped (visibility replaces the old centre_id-only
+      // OR-filter) and narrowed below via filterBatchesForCentre, which also
+      // honours the centre_specific allow-list scopeQueryToCentre can't express.
+      supabase.from("course_batches").select("id, name, visibility").order("name"),
     ]);
     setTests((testRows ?? []) as AdminTest[]);
-    setBatches((batchRows ?? []) as BatchOpt[]);
+    setBatches(await filterBatchesForCentre((batchRows ?? []) as BatchOpt[], scopeCentreId));
     setLoading(false);
   };
 

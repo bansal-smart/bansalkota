@@ -3,6 +3,8 @@ import { Building2, Copy, KeyRound, Loader2, Pencil, Plus, Save, Trash2, Upload,
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/clipboard";
+import { extractEdgeFunctionError } from "@/lib/edgeFunctionError";
 import CenterStaffModal from "@/components/CenterStaffModal";
 import BulkCsvDialog, { type CsvField } from "@/components/BulkCsvDialog";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
@@ -308,20 +310,15 @@ const AdminCentersPage = () => {
     }
   };
 
-  const resetLogin = async (email: string) => {
+  const resetLogin = async (email: string, centreId: string) => {
     const tempPw = `Bansal@${Math.random().toString(36).slice(2, 8)}${Math.floor(Math.random() * 90 + 10)}`;
     const { data, error } = await supabase.functions.invoke("admin-create-center-user", {
-      body: { action: "reset_password", email, password: tempPw },
+      body: { action: "reset_password", email, password: tempPw, centre_id: centreId },
     });
     if (error || (data as any)?.error) {
-      return toast.error(((data as any)?.error ?? error?.message) || "Could not reset password");
+      return toast.error(await extractEdgeFunctionError(error, data, "Could not reset password"));
     }
-    try {
-      await navigator.clipboard.writeText(`${email} / ${tempPw}`);
-      toast.success(`Password reset · credentials copied to clipboard`);
-    } catch {
-      toast.success(`Password reset to: ${tempPw}`);
-    }
+    await copyToClipboard(`${email} / ${tempPw}`, "Password reset · credentials copied");
   };
 
   const parseBool = (v: string) => /^(true|yes|y|1)$/i.test(v.trim());
@@ -627,17 +624,14 @@ const AdminCentersPage = () => {
                             <div key={em} className="flex items-center gap-1.5">
                               <code className="text-[11px] font-mono">{em}</code>
                               <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(em);
-                                  toast.success("Email copied");
-                                }}
+                                onClick={() => copyToClipboard(em, "Email copied")}
                                 className="inline-flex items-center text-primary hover:text-primary/80"
                                 title="Copy email"
                               >
                                 <Copy className="h-3 w-3" />
                               </button>
                               <button
-                                onClick={() => resetLogin(em)}
+                                onClick={() => resetLogin(em, c.id)}
                                 className="inline-flex items-center text-amber-600 hover:text-amber-700"
                                 title="Generate temp password & copy credentials"
                               >

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { trackMetaEvent } from "@/lib/metaPixel";
 
 type Props = { config?: FormConfig; compact?: boolean };
 
@@ -61,6 +62,7 @@ export default function LeadForm({ config = {}, compact = false }: Props) {
     }
     setDone(true);
     setValues(EMPTY);
+    trackMetaEvent("Lead", { content_name: "landing registration" });
   };
 
   if (done) {

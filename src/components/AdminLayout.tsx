@@ -133,6 +133,7 @@ const centreNav: NavGroup = {
     { label: "Courses", icon: GraduationCap, path: "/admin/courses" },
     { label: "Batches & CBT Setup", icon: GraduationCap, path: "/admin/batches" },
     { label: "Test Platform", icon: ClipboardCheck, path: "/admin/tests-hub" },
+    { label: "Test Support Queries", icon: LifeBuoy, path: "/admin/test-support" },
     { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
     { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
     { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
@@ -320,6 +321,7 @@ const AdminHeader = memo(
 AdminHeader.displayName = "AdminHeader";
 
 const PATH_TO_MODULE = new Map(ADMIN_MODULES.map((m) => [m.path, m.key]));
+PATH_TO_MODULE.set("/admin/test-support", "test_platform");
 PATH_TO_MODULE.set("/admin/site-pages/achievements", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/disclaimer", "site_pages");
 PATH_TO_MODULE.set("/admin/site-pages/terms", "site_pages");

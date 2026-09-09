@@ -1,12 +1,14 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Loader2, Copy, ShieldCheck, Monitor, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CBT_KIOSK_URL } from "@/lib/brand";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
+import { copyToClipboard } from "@/lib/clipboard";
 
-type Batch = { id: string; code: string; name: string; centre_id?: string | null };
+type Batch = { id: string; code: string; name: string; centre_id?: string | null; visibility: BatchVisibility };
 
 type Props = { testId: string };
 
@@ -17,6 +19,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
   const [mode, setMode] = useState<"digital" | "cbt">("digital");
   const [allowed, setAllowed] = useState<string[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
+  const [filteredBatches, setFilteredBatches] = useState<Batch[]>([]);
   const [saving, setSaving] = useState(false);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
@@ -26,7 +29,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
     setLoading(true);
     const [{ data: t }, { data: bs }, { data: cs }] = await Promise.all([
       supabase.from("tests").select("test_mode, cbt_allowed_batch_ids, centre_id").eq("id", testId).maybeSingle(),
-      supabase.from("course_batches").select("id, code, name, centre_id").order("code"),
+      supabase.from("course_batches").select("id, code, name, centre_id, visibility").order("code"),
       supabase.from("centres").select("id, city, area, is_hq").eq("is_published", true).eq("is_suspended", false).order("city"),
     ]);
     const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null; centre_id: string | null } | null;
@@ -47,14 +50,20 @@ const CbtSettingsPanel = ({ testId }: Props) => {
     }
   }, [isCenterAdmin, primaryCenterId]);
 
-  const filteredBatches = useMemo(() => {
-    if (isCenterAdmin && primaryCenterId) {
-      return batches.filter((b) => b.centre_id === primaryCenterId || b.centre_id === null);
+  // filterBatchesForCentre needs a DB round-trip (checking batch_centre_visibility
+  // for centre_specific batches), so this can't stay a plain useMemo.
+  useEffect(() => {
+    const centreId = isCenterAdmin && primaryCenterId ? primaryCenterId : selectedCentreId || null;
+    if (!centreId) {
+      setFilteredBatches([]);
+      return;
     }
-    if (!selectedCentreId) {
-      return [];
-    }
-    return batches.filter((b) => b.centre_id === selectedCentreId || b.centre_id === null);
+    let ignore = false;
+    (async () => {
+      const result = await filterBatchesForCentre(batches, centreId);
+      if (!ignore) setFilteredBatches(result);
+    })();
+    return () => { ignore = true; };
   }, [batches, selectedCentreId, isCenterAdmin, primaryCenterId]);
 
   const getBatchDisplayLabel = useCallback((batchId: string) => {
@@ -119,7 +128,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
                 <p className="text-lg font-bold text-foreground truncate">{kioskUrl}</p>
                 <p className="text-[10px] text-muted-foreground">Single fixed link for all CBT tests</p>
               </div>
-              <button onClick={() => { navigator.clipboard.writeText(kioskUrl); toast.success("Link copied"); }}
+              <button onClick={() => copyToClipboard(kioskUrl, "Link copied")}
                 className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
                 <Copy className="h-3.5 w-3.5" /> Copy Link
               </button>

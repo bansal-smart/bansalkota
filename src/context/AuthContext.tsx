@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useSingleDeviceLogin } from "@/hooks/useSingleDeviceLogin";
 import { SessionKickedModal } from "@/components/SessionKickedModal";
 import { toast } from "sonner";
+import { describeSignInError } from "@/lib/authErrors";
 
 export type UserRole = "student" | "center_admin" | "admin" | "super_admin";
 
@@ -220,7 +221,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    if (error) return { error: describeSignInError(error.message) };
     if (data.user) {
       // Block suspended accounts at sign-in time.
       const { data: prof } = await supabase

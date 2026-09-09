@@ -175,6 +175,39 @@ export type Database = {
           },
         ]
       }
+      batch_centre_visibility: {
+        Row: {
+          batch_id: string
+          centre_id: string
+          created_at: string
+        }
+        Insert: {
+          batch_id: string
+          centre_id: string
+          created_at?: string
+        }
+        Update: {
+          batch_id?: string
+          centre_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_centre_visibility_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "course_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_centre_visibility_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_categories: {
         Row: {
           created_at: string
@@ -1080,6 +1113,7 @@ export type Database = {
           name: string
           stream: string | null
           updated_at: string
+          visibility: Database["public"]["Enums"]["batch_visibility"]
         }
         Insert: {
           centre_id?: string | null
@@ -1092,6 +1126,7 @@ export type Database = {
           name: string
           stream?: string | null
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["batch_visibility"]
         }
         Update: {
           centre_id?: string | null
@@ -1104,6 +1139,7 @@ export type Database = {
           name?: string
           stream?: string | null
           updated_at?: string
+          visibility?: Database["public"]["Enums"]["batch_visibility"]
         }
         Relationships: [
           {
@@ -5804,6 +5840,7 @@ export type Database = {
         | "teacher"
         | "mentor"
         | "center_admin"
+      batch_visibility: "global" | "centre_specific" | "disabled"
       student_status: "active" | "inactive" | "passed_out" | "dropped"
     }
     CompositeTypes: {
@@ -5820,12 +5857,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5849,11 +5886,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5874,11 +5911,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5899,11 +5936,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5916,11 +5953,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5940,6 +5977,7 @@ export const Constants = {
         "mentor",
         "center_admin",
       ],
+      batch_visibility: ["global", "centre_specific", "disabled"],
       student_status: ["active", "inactive", "passed_out", "dropped"],
     },
   },

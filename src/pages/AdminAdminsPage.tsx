@@ -291,10 +291,15 @@ const CreateAdminDialog = ({ open, onClose, onCreated }: {
             <Button
               variant="outline"
               className="w-full gap-2"
-              onClick={() => {
-                navigator.clipboard.writeText(`Email: ${created.email}\nPassword: ${created.password}`);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+              onClick={async () => {
+                try {
+                  if (!navigator.clipboard) throw new Error("Clipboard API unavailable in this context");
+                  await navigator.clipboard.writeText(`Email: ${created.email}\nPassword: ${created.password}`);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {
+                  toast.error("Couldn't copy automatically — copy the credentials shown above manually");
+                }
               }}
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

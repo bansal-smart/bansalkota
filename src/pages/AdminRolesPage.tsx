@@ -327,7 +327,7 @@ const AdminRolesPage = () => {
                 <li key={a.user_id} className="flex items-center justify-between gap-3 p-4">
                   <div className="min-w-0">
                     <p className="font-bold text-foreground truncate">
-                      {a.full_name || a.email || a.user_id.slice(0, 8)}
+                      {a.full_name || a.email || <span className="italic text-muted-foreground">(no name set)</span>}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       {a.email} · {isSuperRow ? "Super Admin" : "Admin"}
@@ -368,9 +368,11 @@ const AdminRolesPage = () => {
               <li key={s.id} className="flex items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <p className="font-bold text-foreground truncate">
-                    {s.full_name || s.user_id.slice(0, 8)}
+                    {s.full_name || <span className="italic text-muted-foreground">(no name set)</span>}
                   </p>
-                  <p className="text-[11px] text-muted-foreground truncate">{s.centre_label ?? s.centre_id}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {s.centre_label ?? (s.centre_id ? "Unknown centre" : "No centre assigned")}
+                  </p>
                 </div>
                 <select
                   value={s.custom_role_id ?? ""}

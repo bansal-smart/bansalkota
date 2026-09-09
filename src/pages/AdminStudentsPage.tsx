@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog";
 import TablePagination from "@/components/TablePagination";
@@ -39,7 +40,7 @@ type StudentRow = {
 };
 
 type CentreLite = { id: string; city: string; area: string | null; slug: string };
-type BatchLite = { id: string; name: string; code: string | null; centre_id: string | null };
+type BatchLite = { id: string; name: string; code: string | null; centre_id: string | null; visibility: BatchVisibility };
 type CourseLite = { id: string; name: string };
 
 const STREAM_OPTIONS = ["JEE", "NEET", "Foundation", "Olympiad"];
@@ -268,12 +269,19 @@ const AdminStudentsPage = () => {
     const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
     let q = supabase.from("profiles").select("user_id");
+    if (isCenterAdmin && primaryCenterId) {
+      const centreBatchIds = batches
+        .filter((b) => b.centre_id === primaryCenterId)
+        .map((b) => b.id);
+      q = centreBatchIds.length
+        ? q.or(`centre_id.eq.${primaryCenterId},and(centre_id.is.null,batch_id.in.(${centreBatchIds.join(",")}))`)
+        : q.eq("centre_id", primaryCenterId);
+    } else if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
+    else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
     if (debouncedSearch.trim()) {
       const s = debouncedSearch.trim();
       q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
     }
-    if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
-    else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
     if (classFilter) q = q.eq("class_level", classFilter);
     if (batchFilter.length) q = q.in("batch_id", batchFilter);
 
@@ -441,14 +449,13 @@ const AdminStudentsPage = () => {
     (async () => {
       const [{ data: cs }, { data: bs }, { data: crs }] = await Promise.all([
         supabase.from("centres").select("id, city, area, slug").order("city"),
-        scopeQueryToCentre(
-          supabase.from("course_batches").select("id, name, code, centre_id"),
-          scopeCentreId,
-        ).order("name"),
+        // Visibility (global / centre_specific / disabled) replaces the old
+        // centre_id-only OR-filter — see batchVisibility.ts.
+        supabase.from("course_batches").select("id, name, code, centre_id, visibility").order("name"),
         scopeQueryToCentre(supabase.from("courses").select("id, name"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
       ]);
       setCentres((cs as CentreLite[]) ?? []);
-      setBatches((bs as BatchLite[]) ?? []);
+      setBatches(await filterBatchesForCentre((bs as BatchLite[]) ?? [], scopeCentreId));
       setCourses((crs as CourseLite[]) ?? []);
     })();
   }, [isCenterAdmin, centerAdminLoading, primaryCenterId]);
@@ -460,21 +467,28 @@ const AdminStudentsPage = () => {
     setLoading(true);
     try {
       const staffIds = new Set(await fetchStaffUserIds());
+      const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
       let query = supabase
         .from("profiles")
         .select(
-          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at",
+          "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at"
         )
         .order("created_at", { ascending: false });
+      if (isCenterAdmin && primaryCenterId) {
+        const centreBatchIds = batches
+          .filter((b) => b.centre_id === primaryCenterId)
+          .map((b) => b.id);
+        query = centreBatchIds.length
+          ? query.or(`centre_id.eq.${primaryCenterId},and(centre_id.is.null,batch_id.in.(${centreBatchIds.join(",")}))`)
+          : query.eq("centre_id", primaryCenterId);
+      } else if (effectiveCentreFilter === "none") query = query.is("centre_id", null);
+      else if (effectiveCentreFilter) query = query.eq("centre_id", effectiveCentreFilter);
 
       if (debouncedSearch.trim()) {
         const s = debouncedSearch.trim();
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
-      const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
-      if (effectiveCentreFilter === "none") query = query.is("centre_id", null);
-      else if (effectiveCentreFilter) query = query.eq("centre_id", effectiveCentreFilter);
       if (classFilter) query = query.eq("class_level", classFilter);
       if (batchFilter.length) query = query.in("batch_id", batchFilter);
 
@@ -625,12 +639,19 @@ const AdminStudentsPage = () => {
         .from("profiles")
         .select("user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label")
         .order("created_at", { ascending: false });
+      if (isCenterAdmin && primaryCenterId) {
+        const centreBatchIds = batches
+          .filter((b) => b.centre_id === primaryCenterId)
+          .map((b) => b.id);
+        q = centreBatchIds.length
+          ? q.or(`centre_id.eq.${primaryCenterId},and(centre_id.is.null,batch_id.in.(${centreBatchIds.join(",")}))`)
+          : q.eq("centre_id", primaryCenterId);
+      } else if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
+      else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
       if (debouncedSearch.trim()) {
         const s = debouncedSearch.trim();
         q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
-      if (effectiveCentreFilter === "none") q = q.is("centre_id", null);
-      else if (effectiveCentreFilter) q = q.eq("centre_id", effectiveCentreFilter);
       if (classFilter) q = q.eq("class_level", classFilter);
       if (batchFilter.length) q = q.in("batch_id", batchFilter);
 

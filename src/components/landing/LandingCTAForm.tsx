@@ -8,6 +8,7 @@ import { postSubmission } from "@/content/postSubmissionMessages";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 
 import { CLASS_LEVELS } from "@/lib/constants";
+import { trackMetaEvent } from "@/lib/metaPixel";
 
 const exams = ["JEE", "NEET", "Foundation", "Olympiad", "Not sure yet"];
 const classes = [...CLASS_LEVELS];
@@ -49,6 +50,7 @@ const LandingCTAForm = () => {
       return;
     }
     setDone(true);
+    trackMetaEvent("Lead", { content_name: "free counselling enquiry" });
     toast.success(postSubmission.enquiry.toast);
     void sendConfirmation({
       templateName: "enquiry-confirmation",

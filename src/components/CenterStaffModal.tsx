@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, UserPlus, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { extractEdgeFunctionError } from "@/lib/edgeFunctionError";
 
 type Props = {
   centerId: string;
@@ -142,7 +143,7 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
     });
     setCreating(false);
     if (error || (data as any)?.error) {
-      return toast.error(((data as any)?.error ?? error?.message) || "Could not create login");
+      return toast.error(await extractEdgeFunctionError(error, data, "Could not create login"));
     }
     toast.success(`Login created. Share these credentials with ${newEmail}.`);
     setNewEmail(""); setNewPassword(""); setNewName(""); setNewCustomRoleId("");
@@ -154,11 +155,11 @@ const CenterStaffModal = ({ centerId, centerName, onClose }: Props) => {
     if (resetPassword.length < 8) return toast.error("Password must be at least 8 characters");
     setResetting(true);
     const { data, error } = await supabase.functions.invoke("admin-create-center-user", {
-      body: { action: "reset_password", email: resetEmail.trim(), password: resetPassword },
+      body: { action: "reset_password", email: resetEmail.trim(), password: resetPassword, centre_id: centerId },
     });
     setResetting(false);
     if (error || (data as any)?.error) {
-      return toast.error(((data as any)?.error ?? error?.message) || "Could not reset password");
+      return toast.error(await extractEdgeFunctionError(error, data, "Could not reset password"));
     }
     toast.success(`Password reset for ${resetEmail}.`);
     setResetEmail(""); setResetPassword("");

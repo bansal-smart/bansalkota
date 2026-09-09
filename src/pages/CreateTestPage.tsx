@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { resolveContentOwnership } from "@/lib/centreOwnership";
+import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
@@ -177,7 +178,8 @@ const CreateTestPage = () => {
   const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(true);
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
-  const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string; centre_id?: string | null }[]>([]);
+  const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string; centre_id?: string | null; visibility: BatchVisibility }[]>([]);
+  const [filteredBatches, setFilteredBatches] = useState<typeof batchOptions>([]);
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
   const [testCentreId, setTestCentreId] = useState<string | null>(null);
@@ -185,6 +187,7 @@ const CreateTestPage = () => {
   const [solutionPdfUploading, setSolutionPdfUploading] = useState(false);
   // Scheduling — controls when test opens, closes, and results auto-release
   const [testDate, setTestDate] = useState<string>(""); // YYYY-MM-DD
+  const [endDate, setEndDate] = useState<string>(""); // YYYY-MM-DD; blank means same as testDate
   const [startTime, setStartTime] = useState<string>(""); // HH:mm
   const [endTime, setEndTime] = useState<string>(""); // HH:mm
   const [autoRelease, setAutoRelease] = useState<boolean>(true);
@@ -211,8 +214,8 @@ const CreateTestPage = () => {
   // centre's batches too.
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("course_batches").select("id, code, name, centre_id").order("code");
-      setBatchOptions((data ?? []) as { id: string; code: string; name: string; centre_id: string | null }[]);
+      const { data } = await supabase.from("course_batches").select("id, code, name, centre_id, visibility").order("code");
+      setBatchOptions((data ?? []) as { id: string; code: string; name: string; centre_id: string | null; visibility: BatchVisibility }[]);
     })();
   }, []);
 
@@ -236,14 +239,20 @@ const CreateTestPage = () => {
     }
   }, [isCenterAdmin, primaryCenterId]);
 
-  const filteredBatches = useMemo(() => {
-    if (isCenterAdmin && primaryCenterId) {
-      return batchOptions.filter((b) => b.centre_id === primaryCenterId || b.centre_id === null);
+  // filterBatchesForCentre needs a DB round-trip (checking batch_centre_visibility
+  // for centre_specific batches), so this can't stay a plain useMemo.
+  useEffect(() => {
+    const centreId = isCenterAdmin && primaryCenterId ? primaryCenterId : selectedCentreId || null;
+    if (!centreId) {
+      setFilteredBatches([]);
+      return;
     }
-    if (!selectedCentreId) {
-      return [];
-    }
-    return batchOptions.filter((b) => b.centre_id === selectedCentreId || b.centre_id === null);
+    let ignore = false;
+    (async () => {
+      const result = await filterBatchesForCentre(batchOptions, centreId);
+      if (!ignore) setFilteredBatches(result);
+    })();
+    return () => { ignore = true; };
   }, [batchOptions, selectedCentreId, isCenterAdmin, primaryCenterId]);
 
   const getBatchDisplayLabel = useCallback((batchId: string) => {
@@ -337,7 +346,12 @@ const CreateTestPage = () => {
       } else if (eAt) {
         setTestDate(dateStr(eAt));
       }
-      if (eAt) setEndTime(timeStr(eAt));
+      if (eAt) {
+        setEndDate(dateStr(eAt));
+        setEndTime(timeStr(eAt));
+      } else {
+        setEndDate("");
+      }
       setAutoRelease((test as any).auto_release !== false);
       const owm = (test as any).open_window_minutes;
       if (owm != null && Number(owm) > 0 && sAt) {
@@ -570,9 +584,10 @@ const CreateTestPage = () => {
         openWindowMinutes = Math.round((winMs - startMs) / 60_000);
       }
     }
+    const effectiveEndDate = endDate || testDate;
     return {
       starts_at: toISO(testDate, startTime),
-      ends_at: toISO(testDate, endTime),
+      ends_at: toISO(effectiveEndDate, endTime),
       auto_release: autoRelease,
       open_window_minutes: openWindowMinutes,
     };
@@ -816,6 +831,20 @@ const CreateTestPage = () => {
 
     const validQ = questions.filter(isComplete);
     if (validQ.length === 0) return toast.error("Add at least one complete question");
+    if ((testDate && !startTime) || (!testDate && startTime)) {
+      return toast.error("Choose both a test start date and start time");
+    }
+    if ((endDate && !endTime) || (!endDate && endTime && !testDate)) {
+      return toast.error("Choose both a test end date and end time");
+    }
+    if (testDate && startTime && endTime) {
+      const effectiveEndDate = endDate || testDate;
+      const startMs = new Date(`${testDate}T${startTime}:00`).getTime();
+      const endMs = new Date(`${effectiveEndDate}T${endTime}:00`).getTime();
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+        return toast.error("End date and time must be after the start date and time");
+      }
+    }
     if (openWindowTime && startTime && openWindowTime <= startTime) {
       return toast.error("Open window time must be later than the start time");
     }
@@ -1295,7 +1324,7 @@ const CreateTestPage = () => {
             <div>
               <h3 className="text-sm font-bold text-foreground">Schedule & result release</h3>
               <p className="text-[11px] text-muted-foreground">
-                Pick the test date and window. Results auto-release after the end time (admins can release earlier from the test detail page).
+                Pick the start and end dates. Results auto-release after the end time (admins can release earlier from the test detail page).
               </p>
             </div>
             <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-foreground">
@@ -1310,7 +1339,7 @@ const CreateTestPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Test date</label>
+              <label className={labelCls}>Test start date</label>
               <input
                 type="date"
                 value={testDate}
@@ -1345,6 +1374,24 @@ const CreateTestPage = () => {
               )}
             </div>
             <div>
+              <label className={labelCls}>Test end date</label>
+              <input
+                type="date"
+                value={endDate || testDate}
+                min={testDate || undefined}
+                onChange={(e) => setEndDate(e.target.value)}
+                className={inputCls}
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Defaults to the start date.
+              </p>
+              {testDate && startTime && endTime && `${endDate || testDate}T${endTime}` <= `${testDate}T${startTime}` && (
+                <p className="mt-1 text-[10px] font-semibold text-red-600">
+                  End date and time must be after the start date and time.
+                </p>
+              )}
+            </div>
+            <div>
               <label className={labelCls}>End time (results release)</label>
               <input
                 type="time"
@@ -1361,7 +1408,7 @@ const CreateTestPage = () => {
               {startTime && openWindowTime && openWindowTime > startTime && (
                 <> · entry closes <span className="font-semibold text-foreground">{openWindowTime}</span></>
               )}
-              {endTime && <> · closes & results at <span className="font-semibold text-foreground">{endTime}</span></>}
+              {endTime && <> · closes & results at <span className="font-semibold text-foreground">{formatTestDate(`${endDate || testDate}T00:00:00`)} {endTime}</span></>}
             </p>
           )}
 

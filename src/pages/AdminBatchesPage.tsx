@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Users, Trash2, Globe, Copy, Pencil, Info, X } from "lucide-react";
+import { Loader2, Plus, Users, Trash2, Globe, Copy, Pencil, Info, X, Search, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,8 @@ import { CBT_KIOSK_URL, SECRET_ADMIN_URL } from "@/lib/brand";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
+import { copyToClipboard } from "@/lib/clipboard";
 
 type CourseRow = { id: string; name: string; slug: string };
 type BatchRow = {
@@ -18,22 +20,88 @@ type BatchRow = {
   course_id: string;
   centre_id: string | null;
   centre: { id: string; city: string; area: string | null; is_hq: boolean } | null;
+  visibility: BatchVisibility;
 };
+type CentreLite = { id: string; city: string; area: string | null; is_hq: boolean };
 
 const CLASS_OPTIONS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"];
 
-const centreLabel = (centre: BatchRow["centre"]) =>
+const centreLabel = (centre: { city: string; area: string | null; is_hq: boolean } | null) =>
   centre
     ? centre.is_hq
       ? "Kota HQ"
       : `${centre.city}${centre.area && centre.area !== centre.city ? " — " + centre.area : ""}`
     : "No centre";
 
-// Batches named e.g. JEPAN-XI / MEPAN-XI are PAN-India (online, not tied to a
-// physical Kota classroom) — their centre_id is already NULL rather than
-// Kota's, but the course-grouped table shows no centre info at all, so they
-// looked indistinguishable from Kota's own batches. This just labels them.
-const isPanIndiaBatch = (name: string) => /pan/i.test(name);
+// Searchable checklist of centres, used by both the create form and the edit
+// modal when visibility is set to "Centre Specific". 80+ centres is too many
+// for a plain <select multiple>, so this is a filter input over checkboxes.
+const CentreMultiSelect = ({
+  centres,
+  selected,
+  onChange,
+}: {
+  centres: CentreLite[];
+  selected: string[];
+  onChange: (ids: string[]) => void;
+}) => {
+  const [query, setQuery] = useState("");
+  const filtered = centres.filter((c) =>
+    centreLabel(c).toLowerCase().includes(query.trim().toLowerCase()),
+  );
+  const toggle = (id: string) =>
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  return (
+    <div className="rounded-lg border border-border">
+      <div className="flex items-center gap-2 border-b border-border px-2.5 py-1.5">
+        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={`Search ${centres.length} centres…`}
+          className="w-full bg-transparent text-xs outline-none"
+        />
+      </div>
+      <div className="max-h-40 overflow-y-auto p-1.5">
+        {filtered.length === 0 ? (
+          <p className="px-2 py-2 text-xs text-muted-foreground">No centres match.</p>
+        ) : (
+          filtered.map((c) => (
+            <label key={c.id} className="flex items-center gap-2 rounded px-2 py-1 text-xs hover:bg-muted cursor-pointer">
+              <input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggle(c.id)} />
+              {centreLabel(c)}
+            </label>
+          ))
+        )}
+      </div>
+      <p className="border-t border-border px-2.5 py-1 text-[10px] text-muted-foreground">
+        {selected.length} centre{selected.length === 1 ? "" : "s"} selected
+      </p>
+    </div>
+  );
+};
+
+const VisibilityPill = ({ visibility, centreCount }: { visibility: BatchVisibility; centreCount: number }) => {
+  if (visibility === "disabled") {
+    return (
+      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">
+        <Ban className="h-2.5 w-2.5" /> Disabled
+      </span>
+    );
+  }
+  if (visibility === "centre_specific") {
+    return (
+      <span className="ml-2 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+        Centre Specific ({centreCount})
+      </span>
+    );
+  }
+  return (
+    <span title="Available to all centres" className="ml-2 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700">
+      PAN India
+    </span>
+  );
+};
 
 const AdminBatchesPage = () => {
   const { isStaff, isSuperAdmin, isCenterAdmin } = useAuth();
@@ -45,25 +113,48 @@ const AdminBatchesPage = () => {
   const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [batches, setBatches] = useState<BatchRow[]>([]);
+  const [centres, setCentres] = useState<CentreLite[]>([]);
+  const [batchCentreMap, setBatchCentreMap] = useState<Map<string, string[]>>(new Map());
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
-  const [form, setForm] = useState({ courseId: "", code: "", name: "", class_level: "XI" });
-  const [editing, setEditing] = useState<BatchRow | null>(null);
+  // Only isStaff (admin/super_admin) can write batch_centre_visibility (RLS:
+  // "Admins manage batch centre visibility" = is_admin_or_super) — HQ centre
+  // staff can manage their own batches' basic fields via canManageBatches,
+  // but granting cross-centre reach is a portal-wide call, not a per-centre one.
+  const canManageVisibility = isStaff;
+
+  const [form, setForm] = useState<{
+    courseId: string; code: string; name: string; class_level: string;
+    visibility: BatchVisibility; visibilityCentreIds: string[];
+  }>({ courseId: "", code: "", name: "", class_level: "XI", visibility: "global", visibilityCentreIds: [] });
+  const [editing, setEditing] = useState<(BatchRow & { visibilityCentreIds: string[] }) | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [orphanCentreKey, setOrphanCentreKey] = useState<string>("");
 
+  const openEdit = (b: BatchRow) => setEditing({ ...b, visibilityCentreIds: batchCentreMap.get(b.id) ?? [] });
+
   const load = async () => {
     setLoading(true);
-    const [{ data: cs }, { data: bs }] = await Promise.all([
+    const [{ data: cs }, { data: bsRaw }, { data: bcv }, { data: cents }] = await Promise.all([
       scopeQueryToCentre(supabase.from("courses").select("id, name, slug"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
-      scopeQueryToCentre(
-        supabase.from("course_batches").select("*, centre:centres(id, city, area, is_hq)"),
-        scopeCentreId
-      ).order("code"),
+      // Visibility (global / centre_specific / disabled) replaces the old
+      // centre_id-only OR-filter here — RLS already keeps disabled/inactive
+      // rows away from non-admin callers, and filterBatchesForCentre below
+      // handles the centre_specific allow-list, which RLS doesn't attempt.
+      supabase.from("course_batches").select("*, centre:centres(id, city, area, is_hq)").order("code"),
+      supabase.from("batch_centre_visibility").select("batch_id, centre_id"),
+      supabase.from("centres").select("id, city, area, is_hq").order("city"),
     ]);
     setCourses((cs ?? []) as CourseRow[]);
-    setBatches((bs ?? []) as unknown as BatchRow[]);
+    setBatches(await filterBatchesForCentre((bsRaw ?? []) as unknown as BatchRow[], scopeCentreId));
+
+    const map = new Map<string, string[]>();
+    (bcv ?? []).forEach((r: { batch_id: string; centre_id: string }) => {
+      map.set(r.batch_id, [...(map.get(r.batch_id) ?? []), r.centre_id]);
+    });
+    setBatchCentreMap(map);
+    setCentres((cents ?? []) as CentreLite[]);
 
     const { data: profs } = await supabase
       .from("profiles")
@@ -87,16 +178,23 @@ const AdminBatchesPage = () => {
 
   const createBatch = async () => {
     if (!form.courseId || !form.code) return toast.error("Course and code are required");
-    const { error } = await supabase.from("course_batches").insert({
+    const { data: created, error } = await supabase.from("course_batches").insert({
       course_id: form.courseId,
       code: form.code.trim(),
       name: form.name.trim() || form.code.trim(),
       class_level: form.class_level || null,
       is_active: true,
-    });
+      visibility: form.visibility,
+    }).select("id").single();
     if (error) return toast.error(error.message);
+    if (form.visibility === "centre_specific" && form.visibilityCentreIds.length) {
+      const { error: vErr } = await supabase.from("batch_centre_visibility").insert(
+        form.visibilityCentreIds.map((centre_id) => ({ batch_id: created.id, centre_id })),
+      );
+      if (vErr) return toast.error(vErr.message);
+    }
     toast.success("Batch created");
-    setForm({ courseId: "", code: "", name: "", class_level: "XI" });
+    setForm({ courseId: "", code: "", name: "", class_level: "XI", visibility: "global", visibilityCentreIds: [] });
     load();
   };
 
@@ -111,10 +209,30 @@ const AdminBatchesPage = () => {
         name: editing.name.trim() || editing.code.trim(),
         class_level: editing.class_level,
         is_active: editing.is_active,
+        visibility: editing.visibility,
       })
       .eq("id", editing.id);
+    if (error) {
+      setSavingEdit(false);
+      return toast.error(error.message);
+    }
+    if (canManageVisibility) {
+      const { error: delErr } = await supabase.from("batch_centre_visibility").delete().eq("batch_id", editing.id);
+      if (delErr) {
+        setSavingEdit(false);
+        return toast.error(delErr.message);
+      }
+      if (editing.visibility === "centre_specific" && editing.visibilityCentreIds.length) {
+        const { error: insErr } = await supabase.from("batch_centre_visibility").insert(
+          editing.visibilityCentreIds.map((centre_id) => ({ batch_id: editing.id, centre_id })),
+        );
+        if (insErr) {
+          setSavingEdit(false);
+          return toast.error(insErr.message);
+        }
+      }
+    }
     setSavingEdit(false);
-    if (error) return toast.error(error.message);
     toast.success("Batch updated");
     setEditing(null);
     load();
@@ -174,7 +292,7 @@ const AdminBatchesPage = () => {
             <p className="text-[10px] text-muted-foreground">Single fixed link for all CBT tests</p>
           </div>
           <button
-            onClick={() => { navigator.clipboard.writeText(CBT_KIOSK_URL); toast.success("Kiosk link copied"); }}
+            onClick={() => copyToClipboard(CBT_KIOSK_URL, "Kiosk link copied")}
             className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
             <Copy className="h-3.5 w-3.5" /> Copy Link
           </button>
@@ -194,7 +312,7 @@ const AdminBatchesPage = () => {
               <p className="text-[10px] text-muted-foreground">Hidden command-centre entry — not linked anywhere public.</p>
             </div>
             <button
-              onClick={() => { navigator.clipboard.writeText(SECRET_ADMIN_URL); toast.success("Secret URL copied"); }}
+              onClick={() => copyToClipboard(SECRET_ADMIN_URL, "Secret URL copied")}
               className="rounded-lg bg-bansal-navy px-3 py-2 text-xs font-bold text-white hover:opacity-90 inline-flex items-center gap-1.5 shrink-0">
               <Copy className="h-3.5 w-3.5" /> Copy
             </button>
@@ -227,6 +345,28 @@ const AdminBatchesPage = () => {
               <Plus className="h-3.5 w-3.5" /> Create batch
             </button>
           </div>
+
+          {canManageVisibility && (
+            <div className="mt-3 border-t border-border pt-3 space-y-2">
+              <label className="text-xs font-bold text-muted-foreground">Visibility</label>
+              <select
+                value={form.visibility}
+                onChange={(e) => setForm({ ...form, visibility: e.target.value as BatchVisibility, visibilityCentreIds: [] })}
+                className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="global">Global / PAN India — available to all centres</option>
+                <option value="centre_specific">Centre Specific — pick which centres</option>
+                <option value="disabled">Disabled — not available to any centre</option>
+              </select>
+              {form.visibility === "centre_specific" && (
+                <CentreMultiSelect
+                  centres={centres}
+                  selected={form.visibilityCentreIds}
+                  onChange={(ids) => setForm({ ...form, visibilityCentreIds: ids })}
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -254,15 +394,11 @@ const AdminBatchesPage = () => {
                 </thead>
                 <tbody>
                   {items.map((b) => (
-                    <tr key={b.id} className="border-t border-border">
+                    <tr key={b.id} className={`border-t border-border ${b.visibility === "disabled" ? "opacity-50" : ""}`}>
                       <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
                       <td className="px-4 py-2">
                         {b.name}
-                        {isPanIndiaBatch(b.name) && (
-                          <span title="Name suggests a PAN-India/online batch, not tied to a physical Kota classroom" className="ml-2 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                            PAN India
-                          </span>
-                        )}
+                        <VisibilityPill visibility={b.visibility} centreCount={batchCentreMap.get(b.id)?.length ?? 0} />
                       </td>
                       <td className="px-4 py-2">{b.class_level ?? "—"}</td>
                       <td className="px-4 py-2">
@@ -274,7 +410,7 @@ const AdminBatchesPage = () => {
                       <td className="px-4 py-2 text-right">
                         {canManageBatches && (
                           <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setEditing(b)} title="Edit batch" className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                            <button onClick={() => openEdit(b)} title="Edit batch" className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button onClick={() => deleteBatch(b.id)} title="Delete batch" className="rounded p-1.5 text-destructive hover:bg-destructive/10">
@@ -322,20 +458,16 @@ const AdminBatchesPage = () => {
                 <table className="w-full text-sm">
                   <tbody>
                     {activeOrphanGroup.items.map((b) => (
-                      <tr key={b.id} className="border-t border-border">
+                      <tr key={b.id} className={`border-t border-border ${b.visibility === "disabled" ? "opacity-50" : ""}`}>
                         <td className="px-4 py-2 font-mono text-xs">{b.code}</td>
                         <td className="px-4 py-2">
                           {b.name}
-                          {isPanIndiaBatch(b.name) && (
-                            <span title="Name suggests a PAN-India/online batch, not tied to a physical Kota classroom" className="ml-2 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700">
-                              PAN India
-                            </span>
-                          )}
+                          <VisibilityPill visibility={b.visibility} centreCount={batchCentreMap.get(b.id)?.length ?? 0} />
                         </td>
                         <td className="px-4 py-2 text-right">
                           {canManageBatches && (
                             <>
-                              <button onClick={() => setEditing(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                              <button onClick={() => openEdit(b)} className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
                               <button onClick={() => deleteBatch(b.id)} className="rounded p-1.5 text-destructive hover:bg-destructive/10 ml-1">
@@ -415,6 +547,28 @@ const AdminBatchesPage = () => {
                 />
                 Active
               </label>
+
+              {canManageVisibility && (
+                <div className="space-y-2 border-t border-border pt-3">
+                  <label className="text-xs font-bold text-muted-foreground">Visibility</label>
+                  <select
+                    value={editing.visibility}
+                    onChange={(e) => setEditing({ ...editing, visibility: e.target.value as BatchVisibility })}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="global">Global / PAN India — available to all centres</option>
+                    <option value="centre_specific">Centre Specific — pick which centres</option>
+                    <option value="disabled">Disabled — not available to any centre</option>
+                  </select>
+                  {editing.visibility === "centre_specific" && (
+                    <CentreMultiSelect
+                      centres={centres}
+                      selected={editing.visibilityCentreIds}
+                      onChange={(ids) => setEditing({ ...editing, visibilityCentreIds: ids })}
+                    />
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-border p-5">
               <button onClick={() => setEditing(null)} disabled={savingEdit}
