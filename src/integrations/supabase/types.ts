@@ -1126,7 +1126,7 @@ export type Database = {
           name: string
           stream?: string | null
           updated_at?: string
-          visibility?: Database["public"]["Enums"]["batch_visibility"]
+          visibility: Database["public"]["Enums"]["batch_visibility"]
         }
         Update: {
           centre_id?: string | null
@@ -5123,6 +5123,87 @@ export type Database = {
           },
         ]
       }
+      test_series_registrations: {
+        Row: {
+          city: string | null
+          class_level: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          notes: string | null
+          order_id: string | null
+          parent_name: string | null
+          parent_phone: string | null
+          phone: string
+          school_name: string | null
+          state: string | null
+          status: string
+          target_exam: string | null
+          test_series_id: string
+          test_series_title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          class_level: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          phone: string
+          school_name?: string | null
+          state?: string | null
+          status?: string
+          target_exam?: string | null
+          test_series_id: string
+          test_series_title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          class_level?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          parent_name?: string | null
+          parent_phone?: string | null
+          phone?: string
+          school_name?: string | null
+          state?: string | null
+          status?: string
+          target_exam?: string | null
+          test_series_id?: string
+          test_series_title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_series_registrations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_series_registrations_test_series_id_fkey"
+            columns: ["test_series_id"]
+            isOneToOne: false
+            referencedRelation: "test_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_support_queries: {
         Row: {
           attempt_id: string | null
@@ -5772,6 +5853,10 @@ export type Database = {
       }
       is_hq_centre_admin: { Args: { _user_id: string }; Returns: boolean }
       is_phone_registered: { Args: { p_phone: string }; Returns: boolean }
+      link_test_series_registration_order: {
+        Args: { p_order_id: string; p_registration_id: string }
+        Returns: undefined
+      }
       lookup_user_id_by_email: { Args: { _email: string }; Returns: string }
       move_to_dlq: {
         Args: {
