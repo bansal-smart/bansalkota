@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import TablePagination, { TABLE_PAGE_SIZE_ALL } from "@/components/TablePagination";
+import { csvField, excelTextField, formatDateTimeIST, downloadCsv } from "@/lib/csvExport";
 
 type OrderInfo = { status: string; total: number | null; created_at: string } | null;
 
@@ -160,31 +161,24 @@ const AdminTestSeriesRegistrationsPage = () => {
       "school_name", "city", "state", "parent_name", "parent_phone",
       "status", "payment_status", "order_total", "created_at",
     ];
-    const csv = [headers.join(",")]
-      .concat(
-        exportRows.map((r) => {
-          const flat: Record<string, unknown> = {
-            ...r,
-            payment_status: r.orders?.status ?? "no order",
-            order_total: r.orders?.total ?? "",
-          };
-          return headers
-            .map((h) => {
-              const v = flat[h];
-              const s = v == null ? "" : String(v).replace(/"/g, '""');
-              return `"${s}"`;
-            })
-            .join(",");
-        }),
-      )
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `test-series-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const rows = exportRows.map((r) => [
+      csvField(r.full_name),
+      csvField(r.email),
+      excelTextField(r.phone),
+      csvField(r.class_level),
+      csvField(r.target_exam),
+      csvField(r.test_series_title),
+      csvField(r.school_name),
+      csvField(r.city),
+      csvField(r.state),
+      csvField(r.parent_name),
+      excelTextField(r.parent_phone),
+      csvField(r.status),
+      csvField(r.orders?.status ?? "no order"),
+      csvField(r.orders?.total ?? ""),
+      excelTextField(formatDateTimeIST(r.created_at)),
+    ]);
+    downloadCsv(`test-series-registrations-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
     toast.success(`Exported ${exportRows.length} registration${exportRows.length === 1 ? "" : "s"}`);
   };
 
