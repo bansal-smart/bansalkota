@@ -4,7 +4,7 @@ import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
-import { startCashfreeCheckout } from "@/lib/cashfree";
+import { createCashfreeOrder, openCashfreeCheckout } from "@/lib/cashfree";
 import BansalButton from "@/components/bansal/BansalButton";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
@@ -91,14 +91,26 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
       toast.error(error?.message || "Could not save registration");
       return;
     }
+    let orderData: Awaited<ReturnType<typeof createCashfreeOrder>>;
     try {
-      const result = await startCashfreeCheckout({ orderType: "test_series", testSeriesId: testSeries.id });
-      const { error: linkErr } = await supabase.rpc("link_test_series_registration_order", {
-        p_registration_id: inserted.id,
-        p_order_id: (result as { order_id: string }).order_id,
-      });
-      if (linkErr) console.error("Failed to link registration to order", linkErr);
-      onClose();
+      orderData = await createCashfreeOrder({ orderType: "test_series", testSeriesId: testSeries.id });
+    } catch (err) {
+      setSubmitting(false);
+      toast.error((err as Error).message || "Could not start payment");
+      return;
+    }
+    // Link the order to the registration as soon as the order exists —
+    // openCashfreeCheckout below only resolves once the user finishes with
+    // the payment popup (or rejects if they close it early), so linking must
+    // not wait on that; the order is already durable at this point.
+    const { error: linkErr } = await supabase.rpc("link_test_series_registration_order", {
+      p_registration_id: inserted.id,
+      p_order_id: orderData.order_id,
+    });
+    if (linkErr) console.error("Failed to link registration to order", linkErr);
+    onClose();
+    try {
+      await openCashfreeCheckout(orderData.payment_session_id, orderData.env);
     } catch (err) {
       toast.error((err as Error).message || "Could not start payment");
     } finally {
