@@ -2,10 +2,10 @@ import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingCart, Tag, Trophy, BookOpen, Video, ClipboardList, Shirt, Umbrella, HelpCircle, Backpack } from "lucide-react";
 import { useTestSeriesDetail } from "@/hooks/useTestSeries";
 import { useAppStore } from "@/store/useAppStore";
-import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import { useState } from "react";
 import Seo, { SITE_URL } from "@/components/Seo";
+import TestSeriesRegistrationModal from "@/components/TestSeriesRegistrationModal";
 
 const SERVICE_META: Record<string, { icon: any; label: string }> = {
   study_material: { icon: BookOpen, label: "Study Material" },
@@ -23,24 +23,16 @@ const TestSeriesDetailPage = () => {
   const { user } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const [placing, setPlacing] = useState(false);
+  const [regOpen, setRegOpen] = useState(false);
 
-  const handleEnroll = async () => {
+  const handleEnroll = () => {
     if (!user) {
       toast.info("Please sign in to continue with enrollment");
       const redirect = encodeURIComponent(location.pathname + location.search);
       navigate(`/login?redirect=${redirect}`);
       return;
     }
-    if (!item) return;
-
-    setPlacing(true);
-    try {
-      await startCashfreeCheckout({ orderType: "test_series", testSeriesId: item.id });
-    } catch (e) {
-      setPlacing(false);
-      toast.error((e as Error).message || "Could not start payment");
-    }
+    setRegOpen(true);
   };
 
   if (loading) {
@@ -162,10 +154,9 @@ const TestSeriesDetailPage = () => {
             )}
             <button
               onClick={handleEnroll}
-              disabled={placing}
-              className="mt-5 w-full rounded-xl bg-[hsl(var(--bansal-orange))] py-3 font-bold text-white hover:bg-[hsl(var(--bansal-orange))]/90 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              className="mt-5 w-full rounded-xl bg-[hsl(var(--bansal-orange))] py-3 font-bold text-white hover:bg-[hsl(var(--bansal-orange))]/90 inline-flex items-center justify-center gap-2"
             >
-              {placing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
+              <ShoppingCart className="h-4 w-4" />
               Enroll Now
             </button>
             <p className="mt-3 text-xs text-muted-foreground">
@@ -191,6 +182,14 @@ const TestSeriesDetailPage = () => {
           )}
         </aside>
       </section>
+
+      {item && (
+        <TestSeriesRegistrationModal
+          open={regOpen}
+          onClose={() => setRegOpen(false)}
+          testSeries={{ id: item.id, title: item.title, target_exam: item.target_exam, price: item.price }}
+        />
+      )}
     </div>
   );
 };
