@@ -34,6 +34,7 @@ export const ADMIN_MODULES: AdminModule[] = [
   { key: "books", label: "Books / E-Store", path: "/admin/books", actions: ["view", "create", "edit", "delete"] },
   { key: "orders", label: "E-Store Orders", path: "/admin/orders", actions: ["view", "edit", "export"] },
   { key: "boost", label: "BOOST Registrations", path: "/admin/boost", actions: ["view", "edit", "delete", "export"] },
+  { key: "test_series_registrations", label: "Test Series Registrations", path: "/admin/test-series-registrations", actions: ["view", "edit", "delete", "export"] },
 
   // Centres
   { key: "centres", label: "Centres", path: "/admin/centres", actions: ["view", "create", "edit", "delete"] },
