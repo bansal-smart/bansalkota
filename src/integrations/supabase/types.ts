@@ -5123,6 +5123,50 @@ export type Database = {
           },
         ]
       }
+      test_series_images: {
+        Row: {
+          alt: string | null
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link: string | null
+          sort_order: number
+          test_series_id: string
+          updated_at: string
+        }
+        Insert: {
+          alt?: string | null
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link?: string | null
+          sort_order?: number
+          test_series_id: string
+          updated_at?: string
+        }
+        Update: {
+          alt?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link?: string | null
+          sort_order?: number
+          test_series_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_series_images_test_series_id_fkey"
+            columns: ["test_series_id"]
+            isOneToOne: false
+            referencedRelation: "test_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_series_registrations: {
         Row: {
           city: string | null
