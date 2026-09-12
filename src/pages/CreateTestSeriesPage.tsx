@@ -9,6 +9,7 @@ import { resolveContentOwnership } from "@/lib/centreOwnership";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { SERVICE_OPTIONS } from "@/pages/CourseDetailPage";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
+import TestSeriesImagesEditor from "@/components/admin/TestSeriesImagesEditor";
 
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
@@ -203,6 +204,12 @@ const CreateTestSeriesPage = () => {
           </button>
         )}
       </div>
+
+      {isEditMode && id && (
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <TestSeriesImagesEditor testSeriesId={id} />
+        </div>
+      )}
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Basic Information</h2>
