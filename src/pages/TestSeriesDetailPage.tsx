@@ -1,11 +1,12 @@
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, ShoppingCart, Tag, Trophy, BookOpen, Video, ClipboardList, Shirt, Umbrella, HelpCircle, Backpack } from "lucide-react";
-import { useTestSeriesDetail } from "@/hooks/useTestSeries";
+import { useTestSeriesDetail, useTestSeriesImages } from "@/hooks/useTestSeries";
 import { useAppStore } from "@/store/useAppStore";
 import { toast } from "sonner";
 import { useState } from "react";
 import Seo, { SITE_URL } from "@/components/Seo";
 import TestSeriesRegistrationModal from "@/components/TestSeriesRegistrationModal";
+import HeroBannerCarousel from "@/components/landing/HeroBannerCarousel";
 
 const SERVICE_META: Record<string, { icon: any; label: string }> = {
   study_material: { icon: BookOpen, label: "Study Material" },
@@ -20,6 +21,7 @@ const SERVICE_META: Record<string, { icon: any; label: string }> = {
 const TestSeriesDetailPage = () => {
   const { slug } = useParams();
   const { item, loading } = useTestSeriesDetail(slug);
+  const { images } = useTestSeriesImages(item?.id);
   const { user } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,6 +60,11 @@ const TestSeriesDetailPage = () => {
   const discount = item.discount_percent ?? 0;
   const services = (item.included_services ?? []).filter((s) => SERVICE_META[s]);
   const shortDesc = item.short_description || item.description;
+  const carouselImages = images.length > 0
+    ? images.map((i) => ({ src: i.image_url, alt: i.alt || item.title, link: i.link }))
+    : item.thumbnail_url
+      ? [{ src: item.thumbnail_url, alt: item.title, link: null }]
+      : [];
 
   return (
     <div className="bg-background">
@@ -94,10 +101,8 @@ const TestSeriesDetailPage = () => {
 
       <section className="container mx-auto px-4 max-w-6xl py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          {item.thumbnail_url && (
-            <div className="overflow-hidden rounded-2xl border border-border bg-card aspect-[4/3] max-w-md">
-              <img src={item.thumbnail_url} alt={item.title} className="h-full w-full object-cover" />
-            </div>
+          {carouselImages.length > 0 && (
+            <HeroBannerCarousel banners={carouselImages} aspectRatio="2/1" badge="" />
           )}
 
           {(item.features ?? []).length > 0 && (
