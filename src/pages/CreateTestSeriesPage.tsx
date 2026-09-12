@@ -40,6 +40,7 @@ const CreateTestSeriesPage = () => {
   const [originalPrice, setOriginalPrice] = useState<number>(0);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
+  const [removeThumbnail, setRemoveThumbnail] = useState(false);
   const [features, setFeatures] = useState<string[]>([]);
   const [featureInput, setFeatureInput] = useState("");
   const [includedServices, setIncludedServices] = useState<string[]>([]);
@@ -72,6 +73,7 @@ const CreateTestSeriesPage = () => {
       setPrice(Number(r.price ?? 0));
       setOriginalPrice(Number(r.original_price ?? 0));
       setExistingThumbnail(r.thumbnail_url ?? null);
+      setRemoveThumbnail(false);
       setFeatures((r.features as string[] | null) ?? []);
       setIncludedServices((r.included_services as string[] | null) ?? []);
       setModeValue(r.mode ?? "Online");
@@ -88,7 +90,9 @@ const CreateTestSeriesPage = () => {
     setSubmitting(true);
 
     let thumbnailUrl: string | null = existingThumbnail;
-    if (thumbnailFile) {
+    if (removeThumbnail) {
+      thumbnailUrl = null;
+    } else if (thumbnailFile) {
       const path = `${user.id}/${Date.now()}-${thumbnailFile.name}`;
       const { error: upErr } = await supabase.storage.from("educator-uploads").upload(path, thumbnailFile);
       if (upErr) {
@@ -160,18 +164,44 @@ const CreateTestSeriesPage = () => {
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
         <h2 className="text-sm font-bold text-foreground">Cover Image</h2>
         <AspectRatioHint ratio="4:3" size="1200×900" note="test series card cover" />
-        {existingThumbnail && !thumbnailFile && (
+        {existingThumbnail && !thumbnailFile && !removeThumbnail && (
           <div className="w-48 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-muted">
             <img src={existingThumbnail} alt="Current thumbnail" className="h-full w-full object-cover" />
           </div>
         )}
         <label className="block">
-          <input type="file" accept="image/*" className="hidden" onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)} />
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              setThumbnailFile(e.target.files?.[0] ?? null);
+              setRemoveThumbnail(false);
+            }}
+          />
           <div className="rounded-lg border-2 border-dashed border-border bg-background p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">{thumbnailFile ? thumbnailFile.name : existingThumbnail ? "Click to replace cover" : "Click to upload cover image"}</p>
+            <p className="text-xs text-muted-foreground">
+              {thumbnailFile
+                ? thumbnailFile.name
+                : existingThumbnail && !removeThumbnail
+                  ? "Click to replace cover"
+                  : "Click to upload cover image"}
+            </p>
           </div>
         </label>
+        {(thumbnailFile || (existingThumbnail && !removeThumbnail)) && (
+          <button
+            type="button"
+            onClick={() => {
+              setThumbnailFile(null);
+              setRemoveThumbnail(true);
+            }}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive hover:underline"
+          >
+            <X className="h-3.5 w-3.5" /> Remove image
+          </button>
+        )}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5 space-y-4">
