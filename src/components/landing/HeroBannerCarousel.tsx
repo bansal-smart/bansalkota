@@ -6,9 +6,16 @@ type Banner = { src: string; alt: string; link: string | null };
 type Props = {
   banners: Banner[];
   autoAdvanceMs?: number;
+  badge?: string;
+  aspectRatio?: string;
 };
 
-export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Props) {
+export default function HeroBannerCarousel({
+  banners,
+  autoAdvanceMs = 4500,
+  badge = "Latest Results",
+  aspectRatio = "2/1",
+}: Props) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const total = banners.length;
@@ -43,7 +50,8 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
 
   return (
     <div
-      className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden bg-white"
+      className="relative w-full rounded-2xl overflow-hidden bg-white"
+      style={{ aspectRatio }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -80,9 +88,11 @@ export default function HeroBannerCarousel({ banners, autoAdvanceMs = 4500 }: Pr
         })}
       </div>
 
-      <span className="absolute top-3 right-3 rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
-        Latest Results
-      </span>
+      {badge && (
+        <span className="absolute top-3 right-3 rounded-full bg-bansal-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+          {badge}
+        </span>
+      )}
 
       {total > 1 && (
         <>
