@@ -49,6 +49,33 @@ export const useTestSeriesList = (exam?: string) => {
   return { list: query.data ?? [], loading: query.isPending };
 };
 
+export type TestSeriesImageRow = {
+  id: string;
+  image_url: string;
+  alt: string | null;
+  link: string | null;
+  sort_order: number;
+};
+
+export const useTestSeriesImages = (testSeriesId: string | undefined) => {
+  const query = useQuery({
+    queryKey: ["test_series", "images", testSeriesId],
+    enabled: !!testSeriesId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("test_series_images")
+        .select("id, image_url, alt, link, sort_order")
+        .eq("test_series_id", testSeriesId!)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as TestSeriesImageRow[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return { images: query.data ?? [], loading: query.isPending };
+};
+
 export const useTestSeriesDetail = (slug: string | undefined) => {
   const query = useQuery({
     queryKey: ["test_series", "detail", slug],
