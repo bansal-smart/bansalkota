@@ -142,7 +142,7 @@ const TestSeriesDetailPage = () => {
           )}
         </div>
 
-        <aside className="space-y-4 h-fit sticky top-24">
+        <aside className="space-y-4">
           <div className="rounded-2xl border border-border bg-card p-6">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-black text-foreground">₹{Number(item.price).toLocaleString()}</span>
