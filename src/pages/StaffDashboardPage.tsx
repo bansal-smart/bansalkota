@@ -40,28 +40,54 @@ const statusTone: Record<string, string> = {
 const StaffDashboardPage = () => {
   const [rows, setRows] = useState<BoostRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, last7: 0, pendingPay: 0, paid: 0, failed: 0, revenue: 0 });
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("boost_registrations")
-        .select("id,admit_card_number,full_name,email,class_level,target_exam,city,state,payment_status,status,amount,created_at")
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (error) console.error(error);
-      setRows((data ?? []) as BoostRow[]);
+      const last7Start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const [recentRes, totalRes, last7Res, pendingRes, paidRes, failedRes] = await Promise.all([
+        supabase
+          .from("boost_registrations")
+          .select("id,admit_card_number,full_name,email,class_level,target_exam,city,state,payment_status,status,amount,created_at")
+          .order("created_at", { ascending: false })
+          .limit(6),
+        supabase.from("boost_registrations").select("id", { count: "exact", head: true }),
+        supabase.from("boost_registrations").select("id", { count: "exact", head: true }).gte("created_at", last7Start),
+        supabase.from("boost_registrations").select("id", { count: "exact", head: true }).eq("payment_status", "pending"),
+        supabase.from("boost_registrations").select("id", { count: "exact", head: true }).eq("payment_status", "paid"),
+        supabase.from("boost_registrations").select("id", { count: "exact", head: true }).eq("payment_status", "failed"),
+      ]);
+      if (recentRes.error) console.error(recentRes.error);
+      setRows((recentRes.data ?? []) as BoostRow[]);
+
+      let revenue = 0;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("boost_registrations")
+          .select("amount")
+          .eq("payment_status", "paid")
+          .range(from, from + 999);
+        if (error) {
+          console.error(error);
+          break;
+        }
+        revenue += (data ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0);
+        if (!data || data.length < 1000) break;
+        from += 1000;
+      }
+
+      setStats({
+        total: totalRes.count ?? 0,
+        last7: last7Res.count ?? 0,
+        pendingPay: pendingRes.count ?? 0,
+        paid: paidRes.count ?? 0,
+        failed: failedRes.count ?? 0,
+        revenue,
+      });
       setLoading(false);
     })();
   }, []);
-
-  const stats = {
-    total: rows.length,
-    last7: rows.filter((r) => Date.now() - new Date(r.created_at).getTime() < 7 * 24 * 60 * 60 * 1000).length,
-    pendingPay: rows.filter((r) => r.payment_status === "pending").length,
-    paid: rows.filter((r) => r.payment_status === "paid").length,
-    failed: rows.filter((r) => r.payment_status === "failed").length,
-    revenue: rows.filter((r) => r.payment_status === "paid").reduce((s, r) => s + Number(r.amount), 0),
-  };
 
   const recent = rows.slice(0, 6);
 

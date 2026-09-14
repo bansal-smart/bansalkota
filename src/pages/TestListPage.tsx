@@ -19,6 +19,8 @@ type TestRow = {
   course_id: string | null;
   cbt_allowed_batch_ids: string[] | null;
   test_mode: string | null;
+  allows_digital_mode: boolean;
+  allows_kiosk_mode: boolean;
   results_released_at: string | null;
 };
 
@@ -52,7 +54,7 @@ const TestListPage = () => {
           .eq("is_active", true),
         supabase
           .from("tests")
-          .select("id,title,slug,description,test_type,exam_pattern,subjects,duration_minutes,total_questions,total_marks,is_published,course_id,cbt_allowed_batch_ids,test_mode,results_released_at")
+          .select("id,title,slug,description,test_type,exam_pattern,subjects,duration_minutes,total_questions,total_marks,is_published,course_id,cbt_allowed_batch_ids,test_mode,allows_digital_mode,allows_kiosk_mode,results_released_at")
           .eq("is_published", true)
           .order("created_at", { ascending: false }),
         supabase.from("test_attempts").select("id, test_id, status").eq("user_id", user.id),
@@ -105,7 +107,7 @@ const TestListPage = () => {
       const allowed = t.cbt_allowed_batch_ids;
       const inBatch = !!(batchId && allowed?.includes(batchId));
       // CBT tests: only show after results are released to mapped batch students
-      if (t.test_mode === "cbt") {
+      if (t.allows_kiosk_mode && !t.allows_digital_mode) {
         return !!t.results_released_at && inBatch;
       }
       const isOpen = !allowed || allowed.length === 0;
@@ -190,7 +192,7 @@ const TestListPage = () => {
                         const att = attemptStatus[t.id];
                         const isSubmitted = att && (att.status === "submitted" || att.status === "auto_submitted");
                         const isInProgress = att?.status === "in_progress";
-                        const isCbt = t.test_mode === "cbt";
+                        const isCbt = t.allows_kiosk_mode && !t.allows_digital_mode;
                         const cbtAbsent = isCbt && !att;
                         const canRetake = !!(isSubmitted && retakeAllowedIds.has(t.id));
 

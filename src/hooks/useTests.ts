@@ -27,9 +27,9 @@ export const useTests = (testType?: string) => {
     queryFn: async () => {
       let q = supabase
         .from("tests")
-        .select(TEST_COLUMNS)
+        .select(`${TEST_COLUMNS}, allows_digital_mode, allows_kiosk_mode`)
         .eq("is_published", true)
-        .neq("test_mode", "cbt")
+        .eq("allows_digital_mode", true)
         .order("created_at", { ascending: false });
       if (testType && testType !== "all") q = q.eq("test_type", testType);
       const { data, error } = await q;

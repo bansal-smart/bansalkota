@@ -4547,6 +4547,7 @@ export type Database = {
       test_attempts: {
         Row: {
           answers: Json | null
+          attempt_mode: string | null
           attempted_at: string
           correct_answers: number | null
           created_at: string
@@ -4575,6 +4576,7 @@ export type Database = {
         }
         Insert: {
           answers?: Json | null
+          attempt_mode?: string | null
           attempted_at?: string
           correct_answers?: number | null
           created_at?: string
@@ -4603,6 +4605,7 @@ export type Database = {
         }
         Update: {
           answers?: Json | null
+          attempt_mode?: string | null
           attempted_at?: string
           correct_answers?: number | null
           created_at?: string
@@ -5320,6 +5323,8 @@ export type Database = {
       }
       tests: {
         Row: {
+          allows_digital_mode: boolean
+          allows_kiosk_mode: boolean
           auto_release: boolean
           cbt_allowed_batch_ids: string[]
           cbt_enabled: boolean
@@ -5362,6 +5367,8 @@ export type Database = {
           wrong_marks: number
         }
         Insert: {
+          allows_digital_mode?: boolean
+          allows_kiosk_mode?: boolean
           auto_release?: boolean
           cbt_allowed_batch_ids?: string[]
           cbt_enabled?: boolean
@@ -5404,6 +5411,8 @@ export type Database = {
           wrong_marks?: number
         }
         Update: {
+          allows_digital_mode?: boolean
+          allows_kiosk_mode?: boolean
           auto_release?: boolean
           cbt_allowed_batch_ids?: string[]
           cbt_enabled?: boolean

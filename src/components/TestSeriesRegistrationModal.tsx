@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +35,24 @@ const CLASS_LEVELS = ["IX", "X", "XI", "XII", "Dropper"];
 type TestSeriesInfo = { id: string; title: string; target_exam: string | null; price: number };
 type Props = { open: boolean; onClose: () => void; testSeries: TestSeriesInfo };
 
+type RegistrationForm = {
+  full_name: string; email: string; phone: string; class_level: string;
+  school_name: string; city: string; state: string; parent_name: string; parent_phone: string;
+};
+
+const EMPTY_FORM: RegistrationForm = {
+  full_name: "", email: "", phone: "", class_level: "", school_name: "",
+  city: "", state: "", parent_name: "", parent_phone: "",
+};
+
+const isSyntheticEmail = (email: string | null | undefined) =>
+  !email || /^(?:roll|phone)-/i.test(email);
+
+const isPlaceholderName = (name: string | null | undefined) => {
+  const normalized = name?.trim().toLowerCase();
+  return !normalized || ["dummy entry", "test", "test user", "n/a", "tbd", "demo"].includes(normalized);
+};
+
 function onlyDigitsInput(e: React.FormEvent<HTMLInputElement>) {
   const el = e.currentTarget;
   el.value = el.value.replace(/\D/g, "").slice(0, 10);
@@ -46,8 +64,41 @@ const inputClass =
 export default function TestSeriesRegistrationModal({ open, onClose, testSeries }: Props) {
   const user = useAppStore((s) => s.user);
   const [submitting, setSubmitting] = useState(false);
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
+  const [form, setForm] = useState<RegistrationForm>(EMPTY_FORM);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    let active = true;
+    (async () => {
+      const realEmail = isSyntheticEmail(user.email) ? "" : (user.email ?? "");
+      const [profileRes, priorRes, boostRes] = await Promise.all([
+        supabase.from("profiles").select("full_name, phone, class_level, city, state, parent_phone").eq("user_id", user.id).maybeSingle(),
+        supabase.from("test_series_registrations").select("full_name, email, phone, class_level, school_name, city, state, parent_name, parent_phone, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        realEmail ? supabase.from("boost_registrations").select("full_name, email, phone, class_level, school_name, city, state, parent_name, parent_phone, created_at").eq("email", realEmail).order("created_at", { ascending: false }).limit(1).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
+      if (!active) return;
+      const p = profileRes.data as any;
+      const prior = priorRes.data as any;
+      const boost = boostRes.data as any;
+      const first = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim()) as string | undefined;
+      const realName = (...values: unknown[]) => values.find((value) => typeof value === "string" && !isPlaceholderName(value)) as string | undefined;
+      setForm({
+        full_name: realName(p?.full_name, prior?.full_name, boost?.full_name, user.full_name) ?? "",
+        email: first(realEmail, prior?.email, boost?.email) ?? "",
+        phone: first(p?.phone, prior?.phone, boost?.phone) ?? "",
+        class_level: first(p?.class_level, prior?.class_level, boost?.class_level) ?? "",
+        school_name: first(p?.school_name, prior?.school_name, boost?.school_name) ?? "",
+        city: first(p?.city, prior?.city, boost?.city) ?? "",
+        state: first(p?.state, prior?.state, boost?.state) ?? "",
+        parent_name: first(p?.parent_name, prior?.parent_name, boost?.parent_name) ?? "",
+        parent_phone: first(p?.parent_phone, prior?.parent_phone, boost?.parent_phone) ?? "",
+      });
+    })();
+    return () => { active = false; };
+  }, [open, user]);
+
+  const updateField = (key: keyof RegistrationForm, value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
 
   if (!open) return null;
 
@@ -136,11 +187,11 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Full name *</label>
-              <input name="full_name" required defaultValue={user?.full_name ?? ""} className={inputClass} />
+              <input name="full_name" required value={form.full_name} onChange={(e) => updateField("full_name", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Email *</label>
-              <input name="email" type="email" required defaultValue={user?.email ?? ""} className={inputClass} />
+              <input name="email" type="email" required value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="Enter your email" className={inputClass} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Mobile *</label>
@@ -151,12 +202,14 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
                 maxLength={10}
                 onInput={onlyDigitsInput}
                 required
+                value={form.phone}
+                onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
                 className={inputClass}
               />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Class *</label>
-              <select name="class_level" required defaultValue="" className={inputClass}>
+              <select name="class_level" required value={form.class_level} onChange={(e) => updateField("class_level", e.target.value)} className={inputClass}>
                 <option value="" disabled>Select class</option>
                 {CLASS_LEVELS.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -165,25 +218,25 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">School name</label>
-              <input name="school_name" className={inputClass} />
+              <input name="school_name" value={form.school_name} onChange={(e) => updateField("school_name", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">City</label>
               <CityAutocompleteInput
                 name="city"
-                value={city}
-                onChange={setCity}
-                onSelectCity={(c, s) => { setCity(c); setState(s); }}
+                value={form.city}
+                onChange={(value) => updateField("city", value)}
+                onSelectCity={(c, s) => setForm((current) => ({ ...current, city: c, state: s }))}
                 className={inputClass}
               />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">State</label>
-              <input name="state" value={state} onChange={(e) => setState(e.target.value)} className={inputClass} />
+              <input name="state" value={form.state} onChange={(e) => updateField("state", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Parent name</label>
-              <input name="parent_name" className={inputClass} />
+              <input name="parent_name" value={form.parent_name} onChange={(e) => updateField("parent_name", e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Parent phone</label>
@@ -193,6 +246,8 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
                 inputMode="numeric"
                 maxLength={10}
                 onInput={onlyDigitsInput}
+                value={form.parent_phone}
+                onChange={(e) => updateField("parent_phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
                 className={inputClass}
               />
             </div>

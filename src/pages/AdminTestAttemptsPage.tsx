@@ -25,6 +25,7 @@ type Attempt = {
   created_at: string;
   time_spent_seconds: number | null;
   metadata: { tab_switches?: number } | null;
+  attempt_mode: string | null;
 };
 
 type Props = { testId?: string; compact?: boolean };
@@ -127,7 +128,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     while (allRows.length < 10000) {
       let q = supabase
         .from("test_attempts")
-        .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds, metadata")
+        .select("id, user_id, test_id, status, score, percentile, correct_answers, total_questions, started_at, submitted_at, created_at, time_spent_seconds, metadata, attempt_mode")
         .order("created_at", { ascending: false })
         .range(from, from + PAGE - 1);
       if (effectiveTestId) q = q.eq("test_id", effectiveTestId);
@@ -264,6 +265,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
     created_at: string;
     time_spent_seconds: null;
     metadata: null;
+    attempt_mode: null;
     full_name: string | null;
     roll_number: string | null;
     batch_name: string | null;
@@ -284,6 +286,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           started_at: null, submitted_at: null, created_at: "",
           time_spent_seconds: null,
           metadata: null,
+          attempt_mode: null,
           full_name: s.full_name,
           roll_number: s.roll_number,
           batch_name: s.batch_name,
@@ -358,13 +361,14 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
 
   const exportCsv = () => {
     const rows = [
-      ["Student", "Test", "Status", "Warnings", "Score", "Correct", "Total", "Percentile", "Time (s)", "Started", "Submitted"],
+      ["Student", "Test", "Status", "Mode", "Warnings", "Score", "Correct", "Total", "Percentile", "Time (s)", "Started", "Submitted"],
       ...filtered.map((a) => {
         const t = tests.find((x) => x.id === a.test_id);
         return [
           getStudentName(a),
           t?.title ?? "",
           a.status,
+          a.attempt_mode === "cbt" ? "Kiosk" : a.attempt_mode === "digital" ? "Digital" : "",
           a.status === "not_attempted" ? "" : getWarningCount(a),
           a.score ?? "",
           a.correct_answers ?? "",
@@ -486,6 +490,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Student</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Test</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Mode</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Warnings</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Score</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">Correct</th>
@@ -511,6 +516,15 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
                             a.status === "not_attempted" ? "bg-muted text-muted-foreground" :
                               "bg-primary/10 text-primary animate-pulse"
                           }`}>{a.status === "not_attempted" ? "absent" : a.status?.replace("_", " ")}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {a.attempt_mode ? (
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${a.attempt_mode === "cbt" ? "bg-accent/20 text-accent" : "bg-primary/10 text-primary"}`}>
+                            {a.attempt_mode === "cbt" ? "Kiosk" : "Digital"}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         {a.status === "not_attempted" ? (

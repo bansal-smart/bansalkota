@@ -175,7 +175,8 @@ const CreateTestPage = () => {
   const [importTargetTestId, setImportTargetTestId] = useState<string | null>(null);
   const [createdDraftSlug, setCreatedDraftSlug] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [testMode, setTestMode] = useState<"digital" | "cbt">("digital");
+  const [allowsDigitalMode, setAllowsDigitalMode] = useState(true);
+  const [allowsKioskMode, setAllowsKioskMode] = useState(false);
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(true);
   const [allowedBatches, setAllowedBatches] = useState<string[]>([]);
   const [batchOptions, setBatchOptions] = useState<{ id: string; code: string; name: string; centre_id?: string | null; visibility: BatchVisibility }[]>([]);
@@ -324,7 +325,9 @@ const CreateTestPage = () => {
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
       setCourseId(test.course_id ?? "");
-      setTestMode(((test as { test_mode?: string }).test_mode === "cbt" ? "cbt" : "digital"));
+      const testWithModes = test as { test_mode?: string; allows_digital_mode?: boolean; allows_kiosk_mode?: boolean };
+      setAllowsDigitalMode(testWithModes.allows_digital_mode ?? testWithModes.test_mode !== "cbt");
+      setAllowsKioskMode(testWithModes.allows_kiosk_mode ?? testWithModes.test_mode === "cbt");
       setShuffleQuestions((test as { shuffle_questions?: boolean }).shuffle_questions ?? true);
       setAllowedBatches(Array.isArray((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids)
         ? ((test as { cbt_allowed_batch_ids?: string[] }).cbt_allowed_batch_ids as string[])
@@ -596,6 +599,10 @@ const CreateTestPage = () => {
 
   const ensureDraftForImport = async (): Promise<string | null> => {
     if (resolvedTestId) return resolvedTestId;
+    if (!allowsDigitalMode && !allowsKioskMode) {
+      toast.error("Select at least one test mode");
+      return null;
+    }
     if (!user) {
       toast.error("Sign in required");
       return null;
@@ -625,8 +632,10 @@ const CreateTestPage = () => {
         total_marks: 0,
         is_published: false,
         course_id: courseId || null,
-        test_mode: testMode,
-        cbt_enabled: testMode === "cbt",
+        test_mode: allowsKioskMode && !allowsDigitalMode ? "cbt" : "digital",
+        cbt_enabled: allowsKioskMode,
+        allows_digital_mode: allowsDigitalMode,
+        allows_kiosk_mode: allowsKioskMode,
         cbt_allowed_batch_ids: allowedBatches,
         shuffle_questions: shuffleQuestions,
         ...buildSchedulePayload(),
@@ -777,8 +786,10 @@ const CreateTestPage = () => {
           correct_marks: correctMarks,
           wrong_marks: wrongMarks,
           course_id: courseId || null,
-          test_mode: testMode,
-          cbt_enabled: testMode === "cbt",
+          test_mode: allowsKioskMode && !allowsDigitalMode ? "cbt" : "digital",
+          cbt_enabled: allowsKioskMode,
+          allows_digital_mode: allowsDigitalMode,
+          allows_kiosk_mode: allowsKioskMode,
           cbt_allowed_batch_ids: allowedBatches,
           shuffle_questions: shuffleQuestions,
           ...buildSchedulePayload(),
@@ -799,6 +810,7 @@ const CreateTestPage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
+    if (!allowsDigitalMode && !allowsKioskMode) return toast.error("Select at least one test mode");
     const isComplete = (q: DraftQuestion) => {
       if (!hasRenderableContent(q.text)) return false;
       const hasOptionContent =
@@ -869,8 +881,10 @@ const CreateTestPage = () => {
       total_marks: validQ.reduce((s, q) => s + Number(q.marksCorrect || 0), 0),
       is_published: publish,
       course_id: courseId || null,
-      test_mode: testMode,
-      cbt_enabled: testMode === "cbt",
+      test_mode: allowsKioskMode && !allowsDigitalMode ? "cbt" : "digital",
+      cbt_enabled: allowsKioskMode,
+      allows_digital_mode: allowsDigitalMode,
+      allows_kiosk_mode: allowsKioskMode,
       cbt_allowed_batch_ids: allowedBatches,
       shuffle_questions: shuffleQuestions,
       ...buildSchedulePayload(),
@@ -985,10 +999,10 @@ const CreateTestPage = () => {
               <button
                 key={opt.v}
                 type="button"
-                onClick={() => setTestMode(opt.v)}
-                className={`text-left rounded-xl border p-3 transition ${testMode === opt.v ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
+                onClick={() => opt.v === "digital" ? setAllowsDigitalMode((value) => !value) : setAllowsKioskMode((value) => !value)}
+                className={`text-left rounded-xl border p-3 transition ${(opt.v === "digital" ? allowsDigitalMode : allowsKioskMode) ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
               >
-                <p className={`text-sm font-bold ${testMode === opt.v ? "text-primary" : "text-foreground"}`}>{opt.label}</p>
+                <p className={`text-sm font-bold ${(opt.v === "digital" ? allowsDigitalMode : allowsKioskMode) ? "text-primary" : "text-foreground"}`}>{opt.label}</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{opt.hint}</p>
               </button>
             ))}
@@ -1015,7 +1029,7 @@ const CreateTestPage = () => {
 
         {(
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
-            {testMode === "cbt" && (
+            {allowsKioskMode && (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Kiosk URL</p>
                 <code className="text-xs bg-background rounded px-2 py-1 inline-block mt-1">{typeof window !== "undefined" ? `${window.location.origin}/cbt` : "/cbt"}</code>

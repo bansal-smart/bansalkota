@@ -16,7 +16,8 @@ const CbtSettingsPanel = ({ testId }: Props) => {
   const { isCenterAdmin } = useAuth();
   const { primaryCenterId } = useCenterAdmin();
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<"digital" | "cbt">("digital");
+  const [allowsDigitalMode, setAllowsDigitalMode] = useState(true);
+  const [allowsKioskMode, setAllowsKioskMode] = useState(false);
   const [allowed, setAllowed] = useState<string[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [filteredBatches, setFilteredBatches] = useState<Batch[]>([]);
@@ -28,12 +29,13 @@ const CbtSettingsPanel = ({ testId }: Props) => {
   const load = async () => {
     setLoading(true);
     const [{ data: t }, { data: bs }, { data: cs }] = await Promise.all([
-      supabase.from("tests").select("test_mode, cbt_allowed_batch_ids, centre_id").eq("id", testId).maybeSingle(),
+      supabase.from("tests").select("test_mode, allows_digital_mode, allows_kiosk_mode, cbt_allowed_batch_ids, centre_id").eq("id", testId).maybeSingle(),
       supabase.from("course_batches").select("id, code, name, centre_id, visibility").order("code"),
       supabase.from("centres").select("id, city, area, is_hq").eq("is_published", true).eq("is_suspended", false).order("city"),
     ]);
-    const row = t as { test_mode: string | null; cbt_allowed_batch_ids: string[] | null; centre_id: string | null } | null;
-    setMode(row?.test_mode === "cbt" ? "cbt" : "digital");
+    const row = t as { test_mode: string | null; allows_digital_mode?: boolean; allows_kiosk_mode?: boolean; cbt_allowed_batch_ids: string[] | null; centre_id: string | null } | null;
+    setAllowsDigitalMode(row?.allows_digital_mode ?? row?.test_mode !== "cbt");
+    setAllowsKioskMode(row?.allows_kiosk_mode ?? row?.test_mode === "cbt");
     setAllowed(row?.cbt_allowed_batch_ids ?? []);
     setBatches((bs ?? []) as Batch[]);
     setCentres((cs ?? []) as any[]);
@@ -77,7 +79,7 @@ const CbtSettingsPanel = ({ testId }: Props) => {
 
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [testId]);
 
-  const save = async (patch: { test_mode?: string; cbt_enabled?: boolean; cbt_allowed_batch_ids?: string[] }) => {
+  const save = async (patch: { test_mode?: string; cbt_enabled?: boolean; allows_digital_mode?: boolean; allows_kiosk_mode?: boolean; cbt_allowed_batch_ids?: string[] }) => {
     setSaving(true);
     const { error } = await supabase.from("tests").update(patch).eq("id", testId);
     setSaving(false);
@@ -86,8 +88,16 @@ const CbtSettingsPanel = ({ testId }: Props) => {
   };
 
   const setModeAndSave = async (next: "digital" | "cbt") => {
-    const ok = await save({ test_mode: next, cbt_enabled: next === "cbt" });
-    if (ok) { setMode(next); toast.success(`Test mode: ${next === "cbt" ? "CBT (Kiosk)" : "Digital"}`); }
+    const nextDigital = next === "digital" ? !allowsDigitalMode : allowsDigitalMode;
+    const nextKiosk = next === "cbt" ? !allowsKioskMode : allowsKioskMode;
+    if (!nextDigital && !nextKiosk) return toast.error("At least one test mode must remain enabled");
+    const ok = await save({
+      test_mode: nextKiosk && !nextDigital ? "cbt" : "digital",
+      cbt_enabled: nextKiosk,
+      allows_digital_mode: nextDigital,
+      allows_kiosk_mode: nextKiosk,
+    });
+    if (ok) { setAllowsDigitalMode(nextDigital); setAllowsKioskMode(nextKiosk); toast.success("Test modes updated"); }
   };
 
   const toggleBatch = async (id: string) => {
@@ -111,12 +121,12 @@ const CbtSettingsPanel = ({ testId }: Props) => {
           </div>
         </div>
         <div className="inline-flex rounded-lg border border-border overflow-hidden text-xs font-bold">
-          <button onClick={() => setModeAndSave("digital")} disabled={saving} className={`px-3 py-1.5 ${mode === "digital" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>Digital</button>
-          <button onClick={() => setModeAndSave("cbt")} disabled={saving} className={`px-3 py-1.5 ${mode === "cbt" ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>CBT (Kiosk)</button>
+          <button onClick={() => setModeAndSave("digital")} disabled={saving} className={`px-3 py-1.5 ${allowsDigitalMode ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>Digital</button>
+          <button onClick={() => setModeAndSave("cbt")} disabled={saving} className={`px-3 py-1.5 ${allowsKioskMode ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"}`}>CBT (Kiosk)</button>
         </div>
       </div>
 
-      {mode === "cbt" && (
+      {allowsKioskMode && (
         <>
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
             <div className="flex items-center gap-2 mb-2">

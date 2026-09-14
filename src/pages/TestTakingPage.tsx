@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Flag, Clock, Loader2, AlertTriangle, X, ZoomIn, ZoomOut, Delete, Info, Menu, Flame, CheckCircle2, LifeBuoy, Send, ShieldAlert } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -98,6 +98,7 @@ function applyStoredOrder<T extends { id: string }>(canonical: T[], orderIds: st
 
 const TestTakingPage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
@@ -590,8 +591,10 @@ const TestTakingPage = () => {
     // so resume / refresh keeps the same order. When shuffle is off, store null
     // and keep the canonical question order already loaded.
     const orderIds = test.shuffle_questions ? shuffledQuestionOrder(questions) : null;
+    const attemptMode = new URLSearchParams(location.search).get("mode") === "cbt" ? "cbt" : "digital";
     const { data, error } = await supabase.from("test_attempts").insert({
       user_id: user.id, test_id: test.id, test_name: test.title, status: "in_progress",
+      attempt_mode: attemptMode,
       started_at: new Date().toISOString(), answers: {}, question_statuses: {},
       question_order: orderIds,
     }).select("id, started_at").single();

@@ -122,7 +122,7 @@ const CbtLiveTestsPage = () => {
     const { data: t } = await supabase.from("tests").select("slug").eq("id", testId).maybeSingle();
     const slug = (t as { slug?: string } | null)?.slug;
     if (!slug) return toast.error("Test not available");
-    navigate(`/tests/${slug}/take`);
+    navigate(`/tests/${slug}/take?mode=cbt`);
   };
 
   const signOut = async () => {

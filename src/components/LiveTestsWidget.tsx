@@ -60,7 +60,7 @@ const LiveTestsWidget = () => {
           .from("tests")
           .select("id,title,slug,exam_pattern,test_type,duration_minutes,total_questions,total_marks,starts_at,ends_at,cbt_allowed_batch_ids,course_id")
           .eq("is_published", true)
-          .neq("test_mode", "cbt")
+          .eq("allows_digital_mode", true)
           .order("starts_at", { ascending: true, nullsFirst: false })
           .limit(40),
         supabase.from("test_attempts").select("test_id,status").eq("user_id", user.id),
