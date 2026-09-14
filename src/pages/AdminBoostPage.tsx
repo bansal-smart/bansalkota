@@ -7,7 +7,6 @@ import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
 import { useAuth } from "@/context/AuthContext";
 import TablePagination from "@/components/TablePagination";
-import { csvField, excelTextField, formatDateDDMMYYYY, formatDateTimeIST, downloadCsv } from "@/lib/csvExport";
 
 type Registration = {
   id: string;
@@ -159,30 +158,26 @@ const AdminBoostPage = () => {
       "school_name","city","state","parent_name","parent_phone","preferred_centre_label","exam_mode","exam_slot",
       "amount","payment_status","payment_ref","status","created_at",
     ];
-    const rows = exportRows.map((r) => [
-      csvField(r.admit_card_number),
-      csvField(r.full_name),
-      csvField(r.email),
-      excelTextField(r.phone),
-      excelTextField(r.whatsapp),
-      excelTextField(formatDateDDMMYYYY(r.date_of_birth)),
-      csvField(r.class_level),
-      csvField(r.target_exam),
-      csvField(r.school_name),
-      csvField(r.city),
-      csvField(r.state),
-      csvField(r.parent_name),
-      excelTextField(r.parent_phone),
-      csvField(r.preferred_centre_label),
-      csvField(r.exam_mode),
-      excelTextField(r.exam_slot),
-      csvField(r.amount),
-      csvField(r.payment_status),
-      csvField(r.payment_ref),
-      csvField(r.status),
-      excelTextField(formatDateTimeIST(r.created_at)),
-    ]);
-    downloadCsv(`boost-registrations-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    const csv = [headers.join(",")]
+      .concat(
+        exportRows.map((r) =>
+          headers
+            .map((h) => {
+              const v = (r as any)[h];
+              const s = v == null ? "" : String(v).replace(/"/g, '""');
+              return `"${s}"`;
+            })
+            .join(","),
+        ),
+      )
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `boost-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
     toast.success(`Exported ${exportRows.length} registration${exportRows.length === 1 ? "" : "s"}`);
   };
 
