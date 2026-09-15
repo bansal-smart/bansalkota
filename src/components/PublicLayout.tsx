@@ -5,10 +5,11 @@ import BansalLogo from "@/components/bansal/BansalLogo";
 import BansalButton from "@/components/bansal/BansalButton";
 import { useAppStore } from "@/store/useAppStore";
 import boostLogo from "@/assets/boost-logo.png";
+import { trackQuickAccessClick } from "@/lib/metaPixel";
 
 type NavItem =
-  | { label: string; path: string; logo?: string }
-  | { label: string; path: string; children: { label: string; path: string }[] };
+  | { label: string; path: string; id: string; section: string; logo?: string }
+  | { label: string; path: string; id: string; section: string; children: { label: string; path: string }[] };
 
 const aboutChildren = [
   { label: "About Bansal Classes", path: "/about" },
@@ -25,17 +26,19 @@ const galleriesChildren = [
   { label: "Achievement Gallery", path: "/gallery/achievements" },
 ];
 
+// Stable `id`/`section` values are relied on by Meta Pixel click tracking
+// (see trackQuickAccessClick) and must not change across builds/deploys.
 const navItems: NavItem[] = [
-  { label: "Home", path: "/" },
-  { label: "About", path: "/about", children: aboutChildren },
-  { label: "Courses", path: "/courses" },
-  { label: "Test Series", path: "/test-series" },
-  { label: "Centres", path: "/centres" },
-  { label: "Galleries", path: "/gallery/images", children: galleriesChildren },
-  { label: "BOOST", path: "/boost", logo: boostLogo },
-  { label: "E-Store", path: "/e-store" },
-  { label: "Career", path: "/career" },
-  { label: "Contact", path: "/contact" },
+  { label: "Home", path: "/", id: "nav-home", section: "home" },
+  { label: "About", path: "/about", id: "nav-about", section: "about", children: aboutChildren },
+  { label: "Courses", path: "/courses", id: "nav-courses", section: "courses" },
+  { label: "Test Series", path: "/test-series", id: "nav-test-series", section: "test_series" },
+  { label: "Centres", path: "/centres", id: "nav-centres", section: "centres" },
+  { label: "Galleries", path: "/gallery/images", id: "nav-galleries", section: "galleries", children: galleriesChildren },
+  { label: "BOOST", path: "/boost", id: "nav-boost", section: "boost", logo: boostLogo },
+  { label: "E-Store", path: "/e-store", id: "nav-e-store", section: "e_store" },
+  { label: "Career", path: "/career", id: "nav-career", section: "career" },
+  { label: "Contact", path: "/contact", id: "nav-contact", section: "contact" },
 ];
 
 
@@ -79,7 +82,9 @@ const PublicLayout = () => {
                 return (
                   <div key={item.path} className="relative group">
                     <Link
+                      id={item.id}
                       to={item.path}
+                      onClick={() => trackQuickAccessClick(item.section)}
                       className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${active ? "text-bansal-blue" : "text-bansal-black hover:text-bansal-blue"}`}
                     >
                       {item.label}
@@ -105,7 +110,9 @@ const PublicLayout = () => {
                 return (
                   <Link
                     key={item.path}
+                    id={item.id}
                     to={item.path}
+                    onClick={() => trackQuickAccessClick(item.section)}
                     aria-label={item.label}
                     className="inline-flex items-center hover:scale-105 transition-transform"
                   >
@@ -116,7 +123,9 @@ const PublicLayout = () => {
               return (
                 <Link
                   key={item.path}
+                  id={item.id}
                   to={item.path}
+                  onClick={() => trackQuickAccessClick(item.section)}
                   className={`text-sm font-semibold transition-colors ${active ? "text-bansal-blue" : "text-bansal-black hover:text-bansal-blue"}`}
                 >
                   {item.label}
@@ -169,8 +178,12 @@ const PublicLayout = () => {
               {navItems.map((item) => (
                 <div key={item.path}>
                   <Link
+                    id={`${item.id}-mobile`}
                     to={item.path}
-                    onClick={() => setOpen(false)}
+                    onClick={() => {
+                      trackQuickAccessClick(item.section);
+                      setOpen(false);
+                    }}
                     className="block rounded-lg px-3 py-3 text-base font-semibold text-white/90 hover:bg-white/10"
                   >
                     {item.label}

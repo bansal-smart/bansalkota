@@ -19,3 +19,16 @@ export function trackMetaEvent(event: string, data?: Record<string, unknown>) {
   if (!META_PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
   window.fbq("track", event, data);
 }
+
+export function trackCustomMetaEvent(event: string, data?: Record<string, unknown>) {
+  if (!META_PIXEL_ID || typeof window === "undefined" || !window.fbq) return;
+  try {
+    window.fbq("trackCustom", event, data);
+  } catch {
+    // Pixel tracking must never break navigation (e.g. ad blockers stubbing fbq).
+  }
+}
+
+export function trackQuickAccessClick(section: string) {
+  trackCustomMetaEvent("QuickAccessClick", { section });
+}
