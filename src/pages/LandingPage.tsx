@@ -29,6 +29,7 @@ import {
   Building2,
 } from "lucide-react";
 import BansalButton from "@/components/bansal/BansalButton";
+import { trackCtaClick } from "@/lib/metaPixel";
 import BansalCard from "@/components/bansal/BansalCard";
 import BansalStat from "@/components/bansal/BansalStat";
 import BansalBadge from "@/components/bansal/BansalBadge";
@@ -246,12 +247,12 @@ const LandingPage = () => {
               corner of India.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/courses">
+              <Link id="cta-explore-courses" to="/courses" onClick={() => trackCtaClick("cta-explore-courses")}>
                 <BansalButton variant="cta">
                   Explore Courses <ArrowRight className="h-4 w-4" />
                 </BansalButton>
               </Link>
-              <Link to="/contact">
+              <Link id="cta-enquire-now" to="/contact" onClick={() => trackCtaClick("cta-enquire-now")}>
                 <BansalButton variant="ghost-white">Enquire Now</BansalButton>
               </Link>
             </div>
@@ -541,7 +542,12 @@ const LandingPage = () => {
             )}
           </div>
           <div className="text-center lg:text-right">
-            <Link to="/boost" className="inline-block">
+            <Link
+              id="cta-boost-explore"
+              to="/boost"
+              onClick={() => trackCtaClick("cta-boost-explore")}
+              className="inline-block"
+            >
               <BansalButton variant="cta" className="text-base px-8 py-4">
                 Explore Now <ArrowRight className="h-5 w-5" />
               </BansalButton>
@@ -630,7 +636,12 @@ const LandingPage = () => {
                 </span>
               ))}
             </div>
-            <Link to="/centres" className="inline-block mt-7">
+            <Link
+              id="cta-find-centre"
+              to="/centres"
+              onClick={() => trackCtaClick("cta-find-centre")}
+              className="inline-block mt-7"
+            >
               <BansalButton variant="primary">
                 Find a Centre <ArrowRight className="h-4 w-4" />
               </BansalButton>
