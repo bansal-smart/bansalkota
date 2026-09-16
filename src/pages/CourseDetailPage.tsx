@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
+import { trackCtaClick } from "@/lib/metaPixel";
 import { Sparkles } from "lucide-react";
 import Seo, { SITE_URL } from "@/components/Seo";
 
@@ -214,6 +215,7 @@ const CourseDetailPage = () => {
       navigate(`/courses/${course.slug}/learn`);
       return;
     }
+    trackCtaClick("cta-enroll-course-detail");
     setEnrollOpen(true);
   };
 
@@ -595,6 +597,7 @@ const CourseDetailPage = () => {
               </div>
 
               <button
+                id="cta-enroll-course-detail"
                 onClick={handleEnrollClick}
                 className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
               >
@@ -645,6 +648,7 @@ const CourseDetailPage = () => {
             </p>
           </div>
           <button
+            id="cta-enroll-course-detail-mobile"
             onClick={handleEnrollClick}
             className="shrink-0 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-opacity"
           >

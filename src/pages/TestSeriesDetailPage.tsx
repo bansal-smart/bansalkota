@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import Seo, { SITE_URL } from "@/components/Seo";
 import TestSeriesRegistrationModal from "@/components/TestSeriesRegistrationModal";
+import { trackCtaClick } from "@/lib/metaPixel";
 import HeroBannerCarousel from "@/components/landing/HeroBannerCarousel";
 
 const SERVICE_META: Record<string, { icon: any; label: string }> = {
@@ -28,6 +29,7 @@ const TestSeriesDetailPage = () => {
   const [regOpen, setRegOpen] = useState(false);
 
   const handleEnroll = () => {
+    trackCtaClick("cta-enroll-test-series");
     if (!user) {
       toast.info("Please sign in to continue with enrollment");
       const redirect = encodeURIComponent(location.pathname + location.search);
@@ -158,6 +160,7 @@ const TestSeriesDetailPage = () => {
               </p>
             )}
             <button
+              id="cta-enroll-test-series"
               onClick={handleEnroll}
               className="mt-5 w-full rounded-xl bg-[hsl(var(--bansal-orange))] py-3 font-bold text-white hover:bg-[hsl(var(--bansal-orange))]/90 inline-flex items-center justify-center gap-2"
             >

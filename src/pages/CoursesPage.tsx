@@ -16,6 +16,7 @@ import { useCourses, type CourseRow } from "@/hooks/useCourses";
 import { useCenters } from "@/hooks/useCenters";
 import { useAppStore } from "@/store/useAppStore";
 import CourseEnquiryDialog from "@/components/CourseEnquiryDialog";
+import { trackCtaClick } from "@/lib/metaPixel";
 import coursePhysics from "@/assets/course-physics.webp";
 import courseChemistry from "@/assets/course-chemistry.webp";
 import courseMaths from "@/assets/course-maths.webp";
@@ -120,6 +121,7 @@ const CoursesPage = ({ centreSlugOverride }: { centreSlugOverride?: string } = {
   );
 
   const handleEnroll = (c: CourseRow) => {
+    trackCtaClick(`cta-enroll-${c.slug}`);
     setEnrollFor(c);
   };
 
@@ -363,6 +365,7 @@ const CoursesPage = ({ centreSlugOverride }: { centreSlugOverride?: string } = {
                         View Details
                       </Link>
                       <button
+                        id={`cta-enroll-${c.slug}`}
                         onClick={() => handleEnroll(c)}
                         className="flex-1 rounded-xl bg-primary py-2 text-xs font-bold text-primary-foreground hover:opacity-90 transition-opacity"
                       >
