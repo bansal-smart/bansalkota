@@ -21,6 +21,8 @@ import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import { setPendingEnrollment } from "@/lib/pendingEnrollment";
+import { generateId } from "@/lib/uuid";
+import { trackCompleteRegistrationOnce, trackInitiateCheckout } from "@/lib/metaPixel";
 
 type Centre = { id: string; name: string };
 
@@ -86,13 +88,34 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   }, [open, user]);
 
   // Logged-in users skip the enquiry form entirely — we already have their
-  // lead via their account — and go straight to Cashfree checkout.
+  // lead via their account — and go straight to Cashfree checkout (or, for a
+  // free course, straight to a direct enrollment with no payment step).
   useEffect(() => {
     if (!open || !user) return;
     let cancelled = false;
     (async () => {
       setSubmitting(true);
       try {
+        if (Number(course.price) === 0) {
+          const { error } = await supabase.from("enrollments").upsert(
+            {
+              user_id: user.id,
+              course_id: course.id,
+              is_active: true,
+              last_accessed_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,course_id" },
+          );
+          if (error) throw error;
+          trackCompleteRegistrationOnce(`course:${user.id}:${course.id}`, { content_name: course.name });
+          if (!cancelled) {
+            navigate("/thank-you?type=course", {
+              state: { type: "course", status: "free", title: course.name },
+            });
+          }
+          return;
+        }
+        trackInitiateCheckout({ content_name: course.name, value: Number(course.price), currency: "INR" });
         await startCashfreeCheckout({ orderType: "course", courseId: course.id, centreId: course.centreId });
       } catch (e: any) {
         if (!cancelled) toast.error(e?.message || "Could not start payment");
@@ -122,7 +145,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
       // Students have no SELECT policy on course_enquiries (only admins do), and
       // requesting the row back via RETURNING fails RLS even though the INSERT
       // itself is permitted — so we never need the server to hand the id back.
-      const enquiryId = crypto.randomUUID();
+      const enquiryId = generateId();
 
       // Persist the enquiry so admins have the lead (this form only ever runs
       // for anonymous visitors — logged-in users skip it, see the effect above).
