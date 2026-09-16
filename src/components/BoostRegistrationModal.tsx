@@ -8,6 +8,8 @@ import { useCenters } from "@/hooks/useCenters";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 import { startBoostCashfreeCheckout } from "@/lib/cashfree";
+import { generateId } from "@/lib/uuid";
+import { trackInitiateCheckout } from "@/lib/metaPixel";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 
@@ -101,56 +103,62 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       return;
     }
     setSubmitting(true);
-    const centre = centers.find((c) => c.id === parsed.data.preferred_centre_id);
-    // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
-    // Anonymous/guest submitters have no SELECT policy on boost_registrations,
-    // and requesting the row back via RETURNING fails RLS even though the
-    // INSERT itself is permitted. admit_card_number is assigned server-side by
-    // a trigger, so we fetch just that one field back via a narrow RPC after.
-    const regId = crypto.randomUUID();
-    const payload = {
-      ...parsed.data,
-      id: regId,
-      date_of_birth: parsed.data.date_of_birth || null,
-      preferred_centre_id: parsed.data.preferred_centre_id || null,
-      exam_mode: parsed.data.exam_mode,
-      exam_slot: parsed.data.exam_slot || null,
-      preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
-      amount: priceInr,
-      payment_status: "pending",
-    };
-    const { error } = await supabase.from("boost_registrations").insert([payload as any]);
-    if (error) {
-      setSubmitting(false);
-      return toast.error(error.message);
-    }
-    const { data: admitData, error: admitErr } = await (supabase as any).rpc("get_boost_admit_card", { _id: regId });
-    if (admitErr) {
-      setSubmitting(false);
-      return toast.error(admitErr.message);
-    }
-    const admit = admitData as string;
-    // Email temporarily disabled per admin request
-    // void sendConfirmation({
-    //   templateName: "boost-confirmation",
-    //   recipientEmail: parsed.data.email,
-    //   idempotencyKey: `boost-${admit}`,
-    //   templateData: {
-    //     name: parsed.data.full_name,
-    //     admitCardNumber: admit,
-    //     classLevel: parsed.data.class_level,
-    //     targetExam: parsed.data.target_exam,
-    //     preferredCentre: payload.preferred_centre_label,
-    //   },
-    // });
-    // Open Cashfree's checkout modal to collect payment
     try {
-      await startBoostCashfreeCheckout(regId);
+      const centre = centers.find((c) => c.id === parsed.data.preferred_centre_id);
+      // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
+      // Anonymous/guest submitters have no SELECT policy on boost_registrations,
+      // and requesting the row back via RETURNING fails RLS even though the
+      // INSERT itself is permitted. admit_card_number is assigned server-side by
+      // a trigger, so we fetch just that one field back via a narrow RPC after.
+      const regId = generateId();
+      const payload = {
+        ...parsed.data,
+        id: regId,
+        date_of_birth: parsed.data.date_of_birth || null,
+        preferred_centre_id: parsed.data.preferred_centre_id || null,
+        exam_mode: parsed.data.exam_mode,
+        exam_slot: parsed.data.exam_slot || null,
+        preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
+        amount: priceInr,
+        payment_status: "pending",
+      };
+      const { error } = await supabase.from("boost_registrations").insert([payload as any]);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const { data: admitData, error: admitErr } = await (supabase as any).rpc("get_boost_admit_card", { _id: regId });
+      if (admitErr) {
+        toast.error(admitErr.message);
+        return;
+      }
+      const admit = admitData as string;
+      // Email temporarily disabled per admin request
+      // void sendConfirmation({
+      //   templateName: "boost-confirmation",
+      //   recipientEmail: parsed.data.email,
+      //   idempotencyKey: `boost-${admit}`,
+      //   templateData: {
+      //     name: parsed.data.full_name,
+      //     admitCardNumber: admit,
+      //     classLevel: parsed.data.class_level,
+      //     targetExam: parsed.data.target_exam,
+      //     preferredCentre: payload.preferred_centre_label,
+      //   },
+      // });
+      // Open Cashfree's checkout modal to collect payment
+      try {
+        trackInitiateCheckout({ content_name: "BOOST Registration", value: priceInr, currency: "INR" });
+        await startBoostCashfreeCheckout(regId);
+      } catch (e) {
+        toast.error((e as Error).message || "Could not start payment");
+        // Still show admit card so user has a reference; admin can mark paid later
+        setSuccess({ admit_card_number: admit });
+      }
     } catch (e) {
+      toast.error((e as Error).message || "Something went wrong. Please try again.");
+    } finally {
       setSubmitting(false);
-      toast.error((e as Error).message || "Could not start payment");
-      // Still show admit card so user has a reference; admin can mark paid later
-      setSuccess({ admit_card_number: admit });
     }
   };
 
