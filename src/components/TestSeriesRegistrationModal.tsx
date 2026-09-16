@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
 import { createCashfreeOrder, openCashfreeCheckout } from "@/lib/cashfree";
+import { trackInitiateCheckout } from "@/lib/metaPixel";
 import BansalButton from "@/components/bansal/BansalButton";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
@@ -160,6 +161,7 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
     });
     if (linkErr) console.error("Failed to link registration to order", linkErr);
     onClose();
+    trackInitiateCheckout({ content_name: testSeries.title, value: Number(testSeries.price), currency: "INR" });
     try {
       await openCashfreeCheckout(orderData.payment_session_id, orderData.env);
     } catch (err) {
