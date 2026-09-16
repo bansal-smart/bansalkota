@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Pencil, Trash2, Lock, Unlock, ShieldCheck, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { copyToClipboard } from "@/lib/clipboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -292,13 +293,10 @@ const CreateAdminDialog = ({ open, onClose, onCreated }: {
               variant="outline"
               className="w-full gap-2"
               onClick={async () => {
-                try {
-                  if (!navigator.clipboard) throw new Error("Clipboard API unavailable in this context");
-                  await navigator.clipboard.writeText(`Email: ${created.email}\nPassword: ${created.password}`);
+                const ok = await copyToClipboard(`Email: ${created.email}\nPassword: ${created.password}`);
+                if (ok) {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
-                } catch {
-                  toast.error("Couldn't copy automatically — copy the credentials shown above manually");
                 }
               }}
             >

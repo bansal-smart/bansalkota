@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BookOpen, Boxes, Loader2, Plus, Trash2, Save, Pencil, Upload, X, ImageIcon, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generateId } from "@/lib/uuid";
 import { Label } from "@/components/ui/label";
 import AspectRatioHint from "@/components/admin/AspectRatioHint";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -157,18 +158,23 @@ const CoverUploader = ({ value, onChange }: { value: string; onChange: (url: str
     if (!file.type.startsWith("image/")) return toast.error("Please choose an image file");
     if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5 MB");
     setUploading(true);
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `book-covers/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("site-content")
-      .upload(path, file, { cacheControl: "3600", upsert: false });
-    if (error) {
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `book-covers/${generateId()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("site-content")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      const { data } = supabase.storage.from("site-content").getPublicUrl(path);
+      onChange(data.publicUrl);
+    } catch (e) {
+      toast.error((e as Error).message || "Could not upload cover image");
+    } finally {
       setUploading(false);
-      return toast.error(error.message);
     }
-    const { data } = supabase.storage.from("site-content").getPublicUrl(path);
-    onChange(data.publicUrl);
-    setUploading(false);
   };
 
   return (

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, Megaphone, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { copyToClipboard } from "@/lib/clipboard";
 
 type Update = {
   id: string;
@@ -65,8 +65,7 @@ const CentreUpdateDetailPage = () => {
       if (navigator.share) {
         await navigator.share({ title: item?.title ?? "Centre update", url });
       } else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Link copied");
+        await copyToClipboard(url, "Link copied");
       }
     } catch {
       /* user cancelled */

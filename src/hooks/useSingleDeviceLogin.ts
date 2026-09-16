@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateId } from "@/lib/uuid";
 
 /**
  * Enforces single-device login per user.
@@ -67,9 +68,7 @@ export function useSingleDeviceLogin(userId: string | null): SingleDeviceState {
     const run = async () => {
       let sessionId = localStorage.getItem(sessionKey(userId));
       if (!sessionId) {
-        sessionId = (typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `s_${Date.now()}_${Math.random().toString(36).slice(2)}`) as string;
+        sessionId = generateId();
         localStorage.setItem(sessionKey(userId), sessionId);
       }
       lastSessionId.current = sessionId;

@@ -11,6 +11,7 @@ import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog
 import TablePagination from "@/components/TablePagination";
 import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 import { fetchStaffUserIds, supabaseErrorMessage } from "@/lib/studentListQuery";
+import { copyToClipboard as copyTextToClipboard } from "@/lib/clipboard";
 
 type StudentRow = {
   user_id: string;
@@ -257,11 +258,11 @@ const AdminStudentsPage = () => {
   const [pwdBulkProgress, setPwdBulkProgress] = useState({ done: 0, total: 0 });
 
   const copyToClipboard = async (val: string) => {
-    try {
-      await navigator.clipboard.writeText(val);
+    const copied = await copyTextToClipboard(val, "Password copied");
+    if (copied) {
       setCopiedPwd(val);
       setTimeout(() => setCopiedPwd((c) => (c === val ? null : c)), 1500);
-    } catch { /* ignore */ }
+    }
   };
 
   const fetchAllFilteredStudentIds = async (): Promise<string[]> => {

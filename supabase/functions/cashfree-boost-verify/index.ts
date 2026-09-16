@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     // If already marked paid, return.
     if (reg.payment_status === "paid") {
-      return json({ status: "paid", admit_card_number: reg.admit_card_number });
+      return json({ status: "paid", admit_card_number: reg.admit_card_number, amount: reg.amount });
     }
 
     // Ask Cashfree for the latest order status
@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
       status: newStatus,
       cf_status: cfStatus,
       admit_card_number: reg.admit_card_number,
+      amount: reg.amount,
     });
   } catch (e) {
     console.error(e);
