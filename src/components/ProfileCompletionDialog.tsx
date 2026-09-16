@@ -6,8 +6,11 @@ import { Loader2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { useNavigate } from "react-router-dom";
+import type { NavigateFunction } from "react-router-dom";
 import { consumePendingEnrollment } from "@/lib/pendingEnrollment";
 import { startCashfreeCheckout } from "@/lib/cashfree";
+import { trackCompleteRegistrationOnce, trackInitiateCheckout } from "@/lib/metaPixel";
 
 const CLASSES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
@@ -32,11 +35,29 @@ const schema = z.object({
 });
 
 /** If the student had an enrollment in flight before logging in, resume it now. */
-async function resumePendingEnrollment() {
+async function resumePendingEnrollment(userId: string, navigate: NavigateFunction) {
   const pending = consumePendingEnrollment();
   if (!pending) return;
   try {
+    if (pending.coursePrice === 0) {
+      const { error } = await supabase.from("enrollments").upsert(
+        {
+          user_id: userId,
+          course_id: pending.courseId,
+          is_active: true,
+          last_accessed_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,course_id" },
+      );
+      if (error) throw error;
+      trackCompleteRegistrationOnce(`course:${userId}:${pending.courseId}`, { content_name: pending.courseName });
+      navigate("/thank-you?type=course", {
+        state: { type: "course", status: "free", title: pending.courseName },
+      });
+      return;
+    }
     toast.success(`Redirecting you to payment for ${pending.courseName}…`);
+    trackInitiateCheckout({ content_name: pending.courseName, value: pending.coursePrice, currency: "INR" });
     await startCashfreeCheckout({
       orderType: "course",
       courseId: pending.courseId,
@@ -58,6 +79,7 @@ function toE164In(phone: string): string | null {
 
 const ProfileCompletionDialog = () => {
   const { user, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,7 +124,7 @@ const ProfileCompletionDialog = () => {
       } else {
         // Profile already complete (e.g. returning student) — resume any
         // enrollment they started before logging in.
-        resumePendingEnrollment();
+        resumePendingEnrollment(user.id, navigate);
       }
       setChecking(false);
     })();
@@ -139,7 +161,7 @@ const ProfileCompletionDialog = () => {
     toast.success("Welcome aboard!");
     await refreshProfile();
     setOpen(false);
-    await resumePendingEnrollment();
+    await resumePendingEnrollment(user.id, navigate);
   };
 
   if (checking || !user) return null;
