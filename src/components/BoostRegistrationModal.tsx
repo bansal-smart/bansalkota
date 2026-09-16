@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Loader2, CheckCircle2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 import { startBoostCashfreeCheckout } from "@/lib/cashfree";
 import { generateId } from "@/lib/uuid";
-import { trackInitiateCheckout } from "@/lib/metaPixel";
+import { trackInitiateCheckout, trackCompleteRegistrationOnce } from "@/lib/metaPixel";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 
@@ -72,6 +73,7 @@ function onlyDigitsInput(e: React.FormEvent<HTMLInputElement>) {
 }
 
 export default function BoostRegistrationModal({ open, onClose }: Props) {
+  const navigate = useNavigate();
   const { centers } = useCenters();
   const { priceInr, examDateLabels, registrationOpen, applyBeforeLabel } = useBoostSettings();
   const currentYear = new Date().getFullYear();
@@ -111,6 +113,13 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       // INSERT itself is permitted. admit_card_number is assigned server-side by
       // a trigger, so we fetch just that one field back via a narrow RPC after.
       const regId = generateId();
+      // A ₹0 registration fee has nothing for Cashfree to collect — its own
+      // order-creation API rejects amount<=0 with a 400 ("Invalid amount"),
+      // so this must never reach startBoostCashfreeCheckout. There's no
+      // anonymous UPDATE policy on this table (only admins/centre-staff can
+      // UPDATE), but the INSERT policy is unrestricted, so the confirmed
+      // state is set directly in this initial insert instead.
+      const isFree = Number(priceInr) <= 0;
       const payload = {
         ...parsed.data,
         id: regId,
@@ -120,8 +129,15 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         exam_slot: parsed.data.exam_slot || null,
         preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
         amount: priceInr,
-        payment_status: "pending",
+        payment_status: isFree ? "paid" : "pending",
+        status: isFree ? "confirmed" : undefined,
+        paid_at: isFree ? new Date().toISOString() : undefined,
       };
+      // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
+      // Anonymous/guest submitters have no SELECT policy on boost_registrations,
+      // and requesting the row back via RETURNING fails RLS even though the
+      // INSERT itself is permitted. admit_card_number is assigned server-side by
+      // a trigger, so we fetch just that one field back via a narrow RPC after.
       const { error } = await supabase.from("boost_registrations").insert([payload as any]);
       if (error) {
         toast.error(error.message);
@@ -146,6 +162,14 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       //     preferredCentre: payload.preferred_centre_label,
       //   },
       // });
+      if (isFree) {
+        trackCompleteRegistrationOnce(`boost:${regId}`, { content_name: "BOOST Registration" });
+        onClose();
+        navigate("/thank-you?type=boost", {
+          state: { type: "boost", status: "free", admitCardNumber: admit },
+        });
+        return;
+      }
       // Open Cashfree's checkout modal to collect payment
       try {
         trackInitiateCheckout({ content_name: "BOOST Registration", value: priceInr, currency: "INR" });
