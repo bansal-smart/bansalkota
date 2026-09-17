@@ -400,7 +400,7 @@ const AdminGalleryPage = () => {
                 <label className="text-xs font-bold text-muted-foreground">Title</label>
                 <input
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  placeholder={form.kind === "image" ? "e.g. JEE MAIN 2026 Result Celebration" : "e.g. Tilak before JEE Main 2026"}
+                  placeholder={form.kind === "image" ? "e.g. JEE (Main) 2026 Result Celebration" : "e.g. Tilak before JEE (Main) 2026"}
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />

@@ -35,6 +35,7 @@ import BansalStat from "@/components/bansal/BansalStat";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { GlowBlob, GridTexture, DotTexture, CornerSparkles, FloatingIcons } from "@/components/bansal/BansalDecor";
 import { useSiteTestimonials, useSiteStats } from "@/hooks/useSiteContent";
+import { useCentreCount } from "@/hooks/useCenters";
 import ToppersWall from "@/components/landing/ToppersWall";
 
 import CentresShowcase from "@/components/landing/CentresShowcase";
@@ -80,7 +81,7 @@ const streams = [
     img: streamJee,
     title: "JEE",
     subtitle: "IIT-JEE Aspirants",
-    tagline: "Cracking JEE Main + Advanced with strategy, speed & strong fundamentals.",
+    tagline: "Cracking JEE (Main) + Advanced with strategy, speed & strong fundamentals.",
     Icon: Atom,
     to: "/courses?exam=jee",
   },
@@ -161,13 +162,13 @@ const testimonials = [
   },
   {
     name: "Rohan Mehta",
-    rank: "AIR 286 — JEE Main 2024",
+    rank: "AIR 286 — JEE (Main) 2024",
     quote: "From Pre-Foundation to JEE, Bansal has been my second home. Ideal for Scholars in every sense.",
   },
 ];
 
-const clpFeatures = [
-  "Classroom sessions at 100+ Bansal centers",
+const getClpFeatures = (centreCount: number) => [
+  `Classroom sessions at ${centreCount}+ Bansal centers`,
   "Direct interaction with master mentors",
   "Daily doubt sessions & weekly tests",
   "Peer learning with India's top scholars",
@@ -181,33 +182,37 @@ const dlpFeatures = [
   "Online mentor check-ins every week",
 ];
 
+const isCentreStat = (label: string) => /centre|center/i.test(label);
+
 const LandingPage = () => {
   const { rows: dbTestimonials } = useSiteTestimonials();
   const { rows: dbStats } = useSiteStats();
+  const centreCount = useCentreCount();
   const boost = useBoostSettings();
   const { banners: dbHeroBanners } = useLandingHeroBanners();
   const heroBanners = dbHeroBanners.length
     ? dbHeroBanners.map((b) => ({ src: b.image_url, alt: b.alt ?? "Bansal Classes banner", link: b.link }))
     : [
-        { src: resultsBanner, alt: "Bansal Classes — JEE Main Result 2026", link: null as string | null },
+        { src: resultsBanner, alt: "Bansal Classes — JEE (Main) Result 2026", link: null as string | null },
         { src: legacyBanner, alt: "Bansal Classes — Trusted since 1981", link: null as string | null },
       ];
   const liveTestimonials = dbTestimonials.length
     ? dbTestimonials.map((t) => ({ name: t.name, rank: t.rank_label ?? "", quote: t.quote }))
     : testimonials;
-  const liveAchievements = dbStats.length
+  const liveAchievements = (dbStats.length
     ? dbStats.map((s) => ({
         value: s.value + (s.suffix ?? ""),
         label: s.label,
         icon: iconMap[s.icon ?? "Award"] ?? Award,
       }))
-    : achievements;
+    : achievements
+  ).map((a) => (isCentreStat(a.label) ? { ...a, value: `${centreCount}+` } : a));
 
   return (
     <div className="bg-background">
       <Seo
         title="Bansal Classes Kota | IIT-JEE & NEET Coaching"
-        description="Bansal Classes Kota — India's most trusted IIT-JEE & NEET coaching institute since 1981. Explore classroom courses, AITS test series and results across 60+ centres nationwide."
+        description={`Bansal Classes Kota — India's most trusted IIT-JEE & NEET coaching institute since 1981. Explore classroom courses, AITS test series and results across ${centreCount}+ centres nationwide.`}
         path="/"
         jsonLd={{
           "@context": "https://schema.org",
@@ -266,7 +271,7 @@ const LandingPage = () => {
                 <GraduationCap className="h-4 w-4 text-bansal-orange" /> 1,00,000+ IITians, NITians & Doctors
               </span>
               <span className="flex items-center gap-1.5">
-                <MapPin className="h-4 w-4 text-bansal-orange" /> 85+ Centres
+                <MapPin className="h-4 w-4 text-bansal-orange" /> {centreCount}+ Centres
               </span>
             </div>
           </div>
@@ -286,7 +291,7 @@ const LandingPage = () => {
               { Icon: Play, value: "Daily", label: "Live Interactive Sessions" },
               { Icon: BookOpen, value: "10M+", label: "Tests, Papers & Notes" },
               { Icon: Headphones, value: "24×7", label: "Learning Support" },
-              { Icon: Building2, value: "85+", label: "Offline Centres" },
+              { Icon: Building2, value: `${centreCount}+`, label: "Offline Centres" },
             ].map(({ Icon, value, label }) => (
               <div key={label} className="text-center">
                 <Icon className="h-5 w-5 mx-auto text-bansal-orange mb-1.5" />
@@ -448,8 +453,8 @@ const LandingPage = () => {
                 title: "Classroom Learning Program (CLP)",
                 Icon: Users,
                 tone: "blue",
-                features: clpFeatures,
-                desc: "Live classroom sessions at 100+ Bansal centers, daily doubt sessions and a peer environment built for toppers.",
+                features: getClpFeatures(centreCount),
+                desc: `Live classroom sessions at ${centreCount}+ Bansal centers, daily doubt sessions and a peer environment built for toppers.`,
                 link: "/courses",
               },
               {
@@ -619,7 +624,7 @@ const LandingPage = () => {
           <div>
             <BansalBadge tone="blue">Pan-India Presence</BansalBadge>
             <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-bansal-black leading-tight">
-              85+ Centres Across <span className="text-bansal-orange">India</span>
+              {centreCount}+ Centres Across <span className="text-bansal-orange">India</span>
             </h2>
             <p className="mt-4 text-sm md:text-base text-bansal-gray">
               From our headquarters in Kota to every major city — find a Bansal centre near you and start your journey

@@ -13,6 +13,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import bansalLogo from "@/assets/bansal-logo.webp";
+import { examPatternLabel } from "@/lib/examPattern";
 
 export type AdminStyleReportInput = {
   student: {
@@ -149,7 +150,7 @@ export const generateAdminStyleReportPdf = async (input: AdminStyleReportInput):
     ["Roll No", input.student.roll_number ?? "—"],
     ["Batch", input.student.batch ?? "—"],
     ["Date", input.test.date_label],
-    ["Pattern", (input.test.exam_pattern ?? "").replace(/-/g, " ").toUpperCase() || "—"],
+    ["Pattern", examPatternLabel(input.test.exam_pattern).toUpperCase()],
     ["Max Marks", String(input.test.total_marks ?? "—")],
   ];
   autoTable(doc, {

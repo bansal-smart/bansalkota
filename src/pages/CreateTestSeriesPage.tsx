@@ -215,7 +215,7 @@ const CreateTestSeriesPage = () => {
         <h2 className="text-sm font-bold text-foreground">Basic Information</h2>
         <div>
           <label className="text-xs font-semibold text-foreground">Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="e.g. JEE Main 2027 AIR Test Series" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" placeholder="e.g. JEE (Main) 2027 AIR Test Series" />
         </div>
         <div>
           <label className="text-xs font-semibold text-foreground">Short Description</label>

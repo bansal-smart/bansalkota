@@ -1256,7 +1256,7 @@ const CreateTestPage = () => {
             <select value={examPattern} onChange={(e) => setExamPattern(e.target.value)} className={inputCls}>
               {examList.length === 0 && (
                 <>
-                  <option value="jee-main">JEE Main</option>
+                  <option value="jee-main">JEE (Main)</option>
                   <option value="jee-advanced">JEE Advanced</option>
                   <option value="neet">NEET</option>
                 </>

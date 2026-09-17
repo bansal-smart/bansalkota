@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { MapPin, Search, ArrowRight, Building2, Star, Crown } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
 import { useCentresShowcase } from "@/hooks/useLandingData";
+import { useCentreCount } from "@/hooks/useCenters";
 
 const CentresShowcase = () => {
   const { data: centres = [], isLoading } = useCentresShowcase();
+  const centreCount = useCentreCount();
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
@@ -35,8 +37,8 @@ const CentresShowcase = () => {
             A Bansal Centre Near <span className="text-bansal-orange">You</span>
           </h2>
           <p className="mt-2 text-sm md:text-base text-bansal-gray">
-            85+ centres across India — every one staffed with master mentors, libraries and the same Bansal curriculum
-            that built Kota.
+            {centreCount}+ centres across India — every one staffed with master mentors, libraries and the same Bansal
+            curriculum that built Kota.
           </p>
           <div className="mt-5 max-w-md mx-auto relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-bansal-gray" />

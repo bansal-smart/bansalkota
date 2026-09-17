@@ -46,7 +46,7 @@ export default function CentersPage() {
     <div className="min-h-screen bg-background">
       <Seo
         title="Our Centres | Bansal Classes Across India"
-        description="Find your nearest Bansal Classes centre. IIT-JEE and NEET coaching across Kota and 60+ cities in India."
+        description={`Find your nearest Bansal Classes centre. IIT-JEE and NEET coaching across Kota and ${CENTER_COUNT}+ centres in India.`}
         path="/centres"
       />
       {/* Hero */}

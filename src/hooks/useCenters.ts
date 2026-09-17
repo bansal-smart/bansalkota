@@ -99,3 +99,10 @@ export const useCenters = () => {
 };
 
 export const getCenterImage = (c: DBCenter): string => c.image_url || THEME_IMAGE[c.theme];
+
+/**
+ * Single source of truth for "X+ centres" style copy across the site — the
+ * live count of published, non-suspended centres. Use this instead of a
+ * hardcoded number anywhere the site advertises how many centres it has.
+ */
+export const useCentreCount = (): number => useCenters().centers.length;

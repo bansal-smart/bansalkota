@@ -10,6 +10,7 @@ import { scopeQueryToCentre } from "@/lib/centreScope";
 import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
+import { examPatternLabel } from "@/lib/examPattern";
 import TablePagination from "@/components/TablePagination";
 
 type AdminTest = {
@@ -208,7 +209,7 @@ const AdminTestsPage = () => {
                 {paged.map((t) => (
                   <tr key={t.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{t.title}</td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs capitalize">{t.test_type} · {t.exam_pattern}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs capitalize">{t.test_type} · {examPatternLabel(t.exam_pattern)}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{t.total_questions}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{t.duration_minutes} min</td>
                     <td className="px-4 py-3 text-center">

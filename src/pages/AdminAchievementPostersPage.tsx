@@ -154,7 +154,7 @@ const AdminAchievementPostersPage = () => {
               </div>
               <div>
                 <label className="text-xs font-bold text-muted-foreground">Caption (shown below image)</label>
-                <input className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. JEE MAIN 2026 Result" value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} />
+                <input className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="e.g. JEE (Main) 2026 Result" value={form.caption} onChange={(e) => setForm({ ...form, caption: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

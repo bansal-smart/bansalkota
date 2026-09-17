@@ -24,25 +24,25 @@ import bookMathematics from "@/assets/book-mathematics.png";
 export const sameerBooks = [
   {
     title: "Problems in Calculus",
-    subtitle: "JEE Main + Advanced",
+    subtitle: "JEE (Main) + Advanced",
     cover: bookCalculus,
     edition: "G.R. Bathla & Sons",
   },
   {
     title: "Problems in Algebra",
-    subtitle: "JEE Main + Advanced",
+    subtitle: "JEE (Main) + Advanced",
     cover: bookAlgebra,
     edition: "G.R. Bathla & Sons",
   },
   {
     title: "Coordinate Geometry, Trigonometry, Vectors & 3D Geometry",
-    subtitle: "JEE Main + Advanced",
+    subtitle: "JEE (Main) + Advanced",
     cover: bookCoordinate,
     edition: "G.R. Bathla & Sons",
   },
   {
     title: "1000 Challenging Problems in Mathematics",
-    subtitle: "JEE Main + Advanced",
+    subtitle: "JEE (Main) + Advanced",
     cover: bookMathematics,
     edition: "G.R. Bathla & Sons",
   },

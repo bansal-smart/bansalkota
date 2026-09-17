@@ -6,7 +6,7 @@ import testSeriesHero from "@/assets/test-series-hero.webp";
 import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalDecor";
 import Seo from "@/components/Seo";
 
-const exams = ["All", "JEE Advanced", "JEE Main", "NEET", "Foundation"];
+const exams = ["All", "JEE Advanced", "JEE (Main)", "NEET", "Foundation"];
 
 const TestSeriesCatalogPage = () => {
   const [exam, setExam] = useState("All");
@@ -22,7 +22,7 @@ const TestSeriesCatalogPage = () => {
           "@context": "https://schema.org",
           "@type": "ItemList",
           name: "Bansal Classes All India Test Series (AITS)",
-          description: "JEE Main, JEE Advanced, NEET and Foundation test series with AIR predictor.",
+          description: "JEE (Main), JEE Advanced, NEET and Foundation test series with AIR predictor.",
         }}
       />
       <section className="relative overflow-hidden bg-[hsl(var(--navy))] py-16 text-white">
@@ -36,7 +36,7 @@ const TestSeriesCatalogPage = () => {
           </div>
           <h1 className="mt-4 font-display text-4xl md:text-5xl font-black">Test Series</h1>
           <p className="mt-3 max-w-2xl text-white/80">
-            JEE Main, JEE Advanced, NEET and Foundation test series with AIR predictor and Bansal-grade analytics.
+            JEE (Main), JEE Advanced, NEET and Foundation test series with AIR predictor and Bansal-grade analytics.
           </p>
         </div>
       </section>

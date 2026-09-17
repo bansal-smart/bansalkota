@@ -496,6 +496,29 @@ const DocxCommonImportDialog = ({
         okCount = rows.length;
         await syncTestStats(targetTestId);
 
+        // Also mirror into the Question Bank so imported papers are reusable
+        // across tests, matching the Master-method import's behavior.
+        const bankRows = questions.map((q) => {
+          const base = buildRow(q, batchId);
+          const baseMarks = DEFAULT_MARKS[q.type];
+          const ranged = marksForNumber(q.number, q.type);
+          return {
+            created_by: user.id,
+            centre_id: centreId ?? null,
+            difficulty: "medium",
+            is_public: true,
+            tags: [],
+            marks_correct: ranged.c,
+            marks_wrong: ranged.w,
+            partial_marking: baseMarks.partial,
+            ...base,
+          };
+        });
+        const { error: bankErr } = await supabase.from("question_bank").insert(bankRows as any);
+        if (bankErr) {
+          toast.warning(`Saved to the test, but could not mirror into the Question Bank (${bankErr.message}).`);
+        }
+
       } else {
         // target === "bank"
         const rows = questions.map((q) => {

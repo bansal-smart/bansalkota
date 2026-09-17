@@ -12,7 +12,7 @@ export type Exam = {
   updated_at: string;
 };
 
-const FALLBACK_EXAMS = ["JEE Main", "JEE Advanced", "NEET", "Boards", "Foundation"];
+const FALLBACK_EXAMS = ["JEE (Main)", "JEE Advanced", "NEET", "Boards", "Foundation"];
 
 export const useExams = (opts: { includeInactive?: boolean } = {}) => {
   const qc = useQueryClient();

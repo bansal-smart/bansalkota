@@ -3,6 +3,7 @@ import { Search, ChevronRight, Clock, FileText, Loader2, BookOpen } from "lucide
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { examPatternLabel } from "@/lib/examPattern";
 
 type TestRow = {
   id: string;
@@ -202,7 +203,7 @@ const TestListPage = () => {
                               <FileText className="h-4.5 w-4.5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[10px] font-bold text-primary uppercase">{t.test_type} · {t.exam_pattern}</p>
+                              <p className="text-[10px] font-bold text-primary uppercase">{t.test_type} · {examPatternLabel(t.exam_pattern)}</p>
                               <h3 className="text-sm font-bold text-foreground mt-0.5">{t.title}</h3>
                               <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {t.total_questions} Qs</span>

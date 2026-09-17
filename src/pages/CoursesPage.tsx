@@ -133,8 +133,8 @@ const CoursesPage = ({ centreSlugOverride }: { centreSlugOverride?: string } = {
       }
     : examParam === "IIT-JEE"
       ? {
-          title: "IIT JEE Coaching | JEE Main & Advanced Preparation",
-          description: "Prepare for JEE Main and JEE Advanced with Bansal Classes. Structured courses, experienced faculty and regular tests for Class 11, 12 and droppers.",
+          title: "IIT JEE Coaching | JEE (Main) & Advanced Preparation",
+          description: "Prepare for JEE (Main) and JEE Advanced with Bansal Classes. Structured courses, experienced faculty and regular tests for Class 11, 12 and droppers.",
           path: "/courses?exam=IIT-JEE",
         }
       : examParam === "NEET"

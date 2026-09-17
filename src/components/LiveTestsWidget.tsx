@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Clock, FileText, ChevronRight, Radio, CalendarClock, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { examPatternLabel } from "@/lib/examPattern";
 
 type TestRow = {
   id: string;
@@ -165,7 +166,7 @@ const LiveTestsWidget = () => {
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
-                  {t.exam_pattern} · {t.test_type}
+                  {examPatternLabel(t.exam_pattern)} · {t.test_type}
                 </span>
                 {isLive ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-black uppercase text-white">

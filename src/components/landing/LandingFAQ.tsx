@@ -1,19 +1,20 @@
 import { useState } from "react";
 import { Plus, Minus, HelpCircle } from "lucide-react";
 import BansalBadge from "@/components/bansal/BansalBadge";
+import { useCentreCount } from "@/hooks/useCenters";
 
-const faqs = [
+const getFaqs = (centreCount: number) => [
   {
     q: "Is Bansal Classes really the original Kota institute?",
     a: "Yes. Bansal Classes was founded in 1981 by Shri V. K. Bansal in Kota and pioneered the IIT-JEE coaching model that became the Kota legacy.",
   },
   {
     q: "Which exams do you prepare students for?",
-    a: "JEE Main, JEE Advanced, NEET-UG, Foundation (Class VI–X) & Olympiads. Dedicated batches exist for repeaters and droppers.",
+    a: "JEE (Main), JEE Advanced, NEET-UG, Foundation (Class VI–X) & Olympiads. Dedicated batches exist for repeaters and droppers.",
   },
   {
     q: "Can I learn online or only in classroom?",
-    a: "Both. Choose Classroom Learning Programs (CLP) at any of our 85+ centres, or fully online Live Classes with the same faculty and study material.",
+    a: `Both. Choose Classroom Learning Programs (CLP) at any of our ${centreCount}+ centres, or fully online Live Classes with the same faculty and study material.`,
   },
   {
     q: "What is the BOOST scholarship and how do I qualify?",
@@ -33,7 +34,7 @@ const faqs = [
   },
   {
     q: "Do you have a centre in my city?",
-    a: "Bansal operates 85+ centres across India. Use the Centres section above to find the one nearest you — or learn online with the same faculty.",
+    a: `Bansal operates ${centreCount}+ centres across India. Use the Centres section above to find the one nearest you — or learn online with the same faculty.`,
   },
   {
     q: "What makes Bansal different from other coaching brands?",
@@ -43,6 +44,8 @@ const faqs = [
 
 const LandingFAQ = () => {
   const [open, setOpen] = useState<number | null>(0);
+  const centreCount = useCentreCount();
+  const faqs = getFaqs(centreCount);
   return (
     <section className="relative py-12 md:py-20 bg-white">
       <div className="container mx-auto px-4 max-w-4xl">

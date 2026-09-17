@@ -86,7 +86,7 @@ const AnalyticsPage = () => {
   // Apply exam + range filters first
   const scoped = useMemo(() => {
     const since = rangeFilter === "all" ? 0 : Date.now() - Number(rangeFilter) * 24 * 60 * 60 * 1000;
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "-");
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
     return attempts.filter(a => {
       if (since && new Date(a.attempted_at).getTime() < since) return false;
       if (examFilter !== "all") {

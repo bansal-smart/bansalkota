@@ -75,14 +75,14 @@ const QB_SAMPLE_ROWS: string[][] = [
 
 const COMPETE_SAMPLE_ROWS: string[][] = [
   [
-    "Physics", "Kinematics", "easy", "JEE Main", "11",
+    "Physics", "Kinematics", "easy", "JEE (Main)", "11",
     "What is the SI unit of acceleration?",
     "m/s", "m/s^2", "m^2/s", "kg.m/s",
     "2",
     "Acceleration = change in velocity per unit time, so units are m/s².",
   ],
   [
-    "Math", "Algebra", "medium", "JEE Main", "11",
+    "Math", "Algebra", "medium", "JEE (Main)", "11",
     "Solve for x: $2x + 6 = 14$",
     "2", "4", "6", "8",
     "2",

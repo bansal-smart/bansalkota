@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Clock, FileText, Loader2, ShieldCheck, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getStudentAttemptGate } from "@/lib/testAttemptGuard";
+import { examPatternLabel } from "@/lib/examPattern";
 
 type TestRow = {
   id: string;
@@ -142,7 +143,7 @@ const TestInstructionsPage = () => {
 
       <header className="mt-4 rounded-2xl bg-gradient-to-br from-secondary to-primary p-6 text-white shadow-lg">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
-          {test.exam_pattern} · {test.test_type}
+          {examPatternLabel(test.exam_pattern)} · {test.test_type}
         </p>
         <h1 className="mt-1 font-display text-2xl font-black lg:text-3xl">{test.title}</h1>
         {test.description && <p className="mt-2 text-sm text-white/85">{test.description}</p>}

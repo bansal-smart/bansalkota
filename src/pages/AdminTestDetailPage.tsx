@@ -11,6 +11,7 @@ import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import MathRenderer from "@/components/MathRenderer";
 import CbtSettingsPanel from "@/components/admin/CbtSettingsPanel";
+import { examPatternLabel } from "@/lib/examPattern";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
 
@@ -235,7 +236,7 @@ const AdminTestDetailPage = () => {
           <Link to="/admin/tests" className="rounded-lg border border-border p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
           <div>
             <h1 className="text-xl font-bold text-foreground">{test.title}</h1>
-            <p className="text-xs text-muted-foreground capitalize">{test.test_type} · {test.exam_pattern} · {test.duration_minutes} min</p>
+            <p className="text-xs text-muted-foreground capitalize">{test.test_type} · {examPatternLabel(test.exam_pattern)} · {test.duration_minutes} min</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -8,18 +8,19 @@ import { FloatingIcons, DotTexture } from "@/components/bansal/BansalDecor";
 import { useSitePage } from "@/hooks/useSitePage";
 import Seo from "@/components/Seo";
 import { useToppers } from "@/hooks/useToppers";
+import { useCentreCount } from "@/hooks/useCenters";
 import { MapPin } from "lucide-react";
-
-const milestones = [
-  { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
-  { icon: Medal, value: "5000+", label: "NEET Qualified" },
-  { icon: Star, value: "25,000+", label: "IITians" },
-  { icon: Building2, value: "85+", label: "Centres" },
-];
 
 export default function AchievementsPage() {
   const { page: cmsPage } = useSitePage("achievements");
   const { toppers, loading: toppersLoading } = useToppers();
+  const centreCount = useCentreCount();
+  const milestones = [
+    { icon: Trophy, value: "330+", label: "AIR Top 100 in JEE Advanced 2025" },
+    { icon: Medal, value: "5000+", label: "NEET Qualified" },
+    { icon: Star, value: "25,000+", label: "IITians" },
+    { icon: Building2, value: `${centreCount}+`, label: "Centres" },
+  ];
   const [examFilter, setExamFilter] = useState<string>("All");
   const [visible, setVisible] = useState(48);
 

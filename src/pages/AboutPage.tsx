@@ -14,6 +14,7 @@ import {
   leadership,
 } from "@/content/bansal/about";
 import { useSiteStats } from "@/hooks/useSiteContent";
+import { useCentreCount } from "@/hooks/useCenters";
 import Seo from "@/components/Seo";
 
 
@@ -31,11 +32,15 @@ function Eyebrow({ children, className = "" }: { children: React.ReactNode; clas
   );
 }
 
+const isCentreStat = (label: string) => /centre|center/i.test(label);
+
 const AboutPage = () => {
   const { rows: dbStats } = useSiteStats();
-  const liveStats = dbStats.length
+  const centreCount = useCentreCount();
+  const liveStats = (dbStats.length
     ? dbStats.map((s) => ({ value: s.value + (s.suffix ?? ""), label: s.label }))
-    : bansalStats;
+    : bansalStats
+  ).map((s) => (isCentreStat(s.label) ? { ...s, value: `${centreCount}+` } : s));
 
   // Non-founder leaders (column section)
   const otherLeaders = leadership.filter((l) => l.slug !== "vk-bansal");

@@ -18,6 +18,8 @@ const ICONS = ["Trophy", "GraduationCap", "Star", "ShieldCheck", "Award", "Spark
 
 const blank = (): Row => ({ key: "", label: "", value: "", suffix: "", icon: "Trophy", sort_order: 0, is_active: true });
 
+const isCentreStat = (label: string) => /centre|center/i.test(label);
+
 const AdminStatsPage = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,8 +83,14 @@ const AdminStatsPage = () => {
               onChange={(e) => update(i, { key: e.target.value })} />
             <input className="rounded-lg border px-3 py-2 text-sm sm:col-span-2" placeholder="Label" value={r.label}
               onChange={(e) => update(i, { label: e.target.value })} />
-            <input className="rounded-lg border px-3 py-2 text-sm" placeholder="Value" value={r.value}
-              onChange={(e) => update(i, { value: e.target.value })} />
+            <input
+              className="rounded-lg border px-3 py-2 text-sm disabled:bg-muted disabled:text-muted-foreground"
+              placeholder="Value"
+              value={r.value}
+              disabled={isCentreStat(r.label)}
+              title={isCentreStat(r.label) ? "Auto-computed from published centres — not editable here" : undefined}
+              onChange={(e) => update(i, { value: e.target.value })}
+            />
             <select className="rounded-lg border px-3 py-2 text-sm" value={r.icon ?? "Trophy"}
               onChange={(e) => update(i, { icon: e.target.value })}>
               {ICONS.map((ic) => <option key={ic} value={ic}>{ic}</option>)}
@@ -100,6 +108,11 @@ const AdminStatsPage = () => {
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
+            {isCentreStat(r.label) && (
+              <p className="sm:col-span-7 text-[11px] text-muted-foreground -mt-1">
+                This stat's number is shown live from the count of published centres on the site — the Value field here is ignored on the frontend.
+              </p>
+            )}
           </div>
         ))}
         {rows.length === 0 && <div className="text-center py-12 text-muted-foreground">No stats yet</div>}

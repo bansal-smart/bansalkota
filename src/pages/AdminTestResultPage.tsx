@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import bansalLogo from "@/assets/bansal-logo.webp";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
+import { examPatternLabel } from "@/lib/examPattern";
 
 type TestRow = {
   id: string;
@@ -341,7 +342,7 @@ const AdminTestResultPage = () => {
     load();
   };
 
-  const examLabel = (test?.exam_pattern ?? "").replace(/-/g, " ").toUpperCase();
+  const examLabel = examPatternLabel(test?.exam_pattern).toUpperCase();
   const dateLabel = safeFmt(test?.starts_at ?? test?.ends_at, "dd/MM/yyyy");
   const timeLabel = test?.starts_at
     ? `${safeFmt(test.starts_at, "HH:mm")}${test.ends_at ? "–" + safeFmt(test.ends_at, "HH:mm") : ""}`
@@ -1226,7 +1227,7 @@ const AdminTestResultPage = () => {
                     >
                       <div>
                         <div className="text-sm font-semibold text-foreground">{p.title}</div>
-                        <div className="text-[11px] text-muted-foreground">{safeFmt(p.starts_at, "dd MMM yyyy")} · {p.exam_pattern}</div>
+                        <div className="text-[11px] text-muted-foreground">{safeFmt(p.starts_at, "dd MMM yyyy")} · {examPatternLabel(p.exam_pattern)}</div>
                       </div>
                       <GitMerge className="h-4 w-4 text-primary" />
                     </button>

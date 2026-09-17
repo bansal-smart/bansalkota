@@ -129,7 +129,7 @@ const AdminExamsPage = () => {
             </div>
 
             <Field label="Name *">
-              <input value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="e.g. JEE Main" className="exam-input" />
+              <input value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="e.g. JEE (Main)" className="exam-input" />
             </Field>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Code">

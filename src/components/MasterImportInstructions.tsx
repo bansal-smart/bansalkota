@@ -122,7 +122,7 @@ Solution: Optional explanation (supports LaTeX and images).`}
           <section className="space-y-2">
             <h3 className="font-bold flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> JEE exam-paper format (also auto-detected)</h3>
             <p className="text-xs text-muted-foreground">
-              Master import also reads real JEE Advanced / JEE Main papers as-is. Use section bracket
+              Master import also reads real JEE Advanced / JEE (Main) papers as-is. Use section bracket
               headers and standard JEE markers — no template required.
             </p>
             <pre className="rounded-lg border border-border bg-muted/40 p-3 text-[11px] leading-5 text-foreground overflow-x-auto">
