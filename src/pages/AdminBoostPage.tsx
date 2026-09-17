@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, Loader2, Search, Download, Check, X as XIcon } from "lucide-react";
+import { Award, Loader2, Search, Download, Check, X as XIcon, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
@@ -7,6 +7,10 @@ import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
 import { useAuth } from "@/context/AuthContext";
 import TablePagination from "@/components/TablePagination";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
+import { useConfirm } from "@/components/ConfirmDialog";
+
+const EXAM_MODE_OPTIONS = ["all", "Online", "Offline"] as const;
 
 type Registration = {
   id: string;
@@ -40,7 +44,8 @@ const STATUS_OPTIONS = ["all", "registered", "confirmed", "attended", "cancelled
 const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
 
 const AdminBoostPage = () => {
-  const { isCenterAdmin } = useAuth();
+  const { isCenterAdmin, isStaff } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [rows, setRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -51,14 +56,17 @@ const AdminBoostPage = () => {
   const [cityFilter, setCityFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [classFilter, setClassFilter] = useState("all");
+  const [examModeFilter, setExamModeFilter] = useState<(typeof EXAM_MODE_OPTIONS)[number]>("all");
+  const [examSlotFilter, setExamSlotFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [centres, setCentres] = useState<Centre[]>([]);
-  const [filterValues, setFilterValues] = useState({ cities: [] as string[], states: [] as string[], classes: [] as string[] });
+  const [filterValues, setFilterValues] = useState({ cities: [] as string[], classes: [] as string[], examSlots: [] as string[] });
   const [selected, setSelected] = useState<Registration | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const applyFilters = (query: any) => {
     if (debouncedQ.trim()) {
@@ -71,6 +79,8 @@ const AdminBoostPage = () => {
     if (cityFilter !== "all") query = query.eq("city", cityFilter);
     if (stateFilter !== "all") query = query.eq("state", stateFilter);
     if (classFilter !== "all") query = query.eq("class_level", classFilter);
+    if (examModeFilter !== "all") query = query.eq("exam_mode", examModeFilter);
+    if (examSlotFilter !== "all") query = query.eq("exam_slot", examSlotFilter);
     if (fromDate) query = query.gte("created_at", `${fromDate}T00:00:00`);
     if (toDate) {
       const end = new Date(`${toDate}T00:00:00`);
@@ -89,7 +99,7 @@ const AdminBoostPage = () => {
       .order("created_at", { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)),
       supabase.from("centres").select("id, city, area").order("city"),
-      supabase.from("boost_registrations").select("city, state, class_level").limit(10000),
+      supabase.from("boost_registrations").select("city, class_level, exam_slot").limit(10000),
     ]);
     if (error) toast.error(error.message);
     else {
@@ -97,19 +107,19 @@ const AdminBoostPage = () => {
       setTotal(count ?? 0);
     }
     setCentres((centreRows ?? []) as Centre[]);
-    const options = (optionRows ?? []) as Array<{ city: string | null; state: string | null; class_level: string }>;
+    const options = (optionRows ?? []) as Array<{ city: string | null; class_level: string; exam_slot: string | null }>;
     setFilterValues({
       cities: Array.from(new Set(options.map((r) => r.city).filter(Boolean) as string[])).sort(),
-      states: Array.from(new Set(options.map((r) => r.state).filter(Boolean) as string[])).sort(),
       classes: Array.from(new Set(options.map((r) => r.class_level).filter(Boolean))).sort(),
+      examSlots: Array.from(new Set(options.map((r) => r.exam_slot).filter(Boolean) as string[])).sort(),
     });
     setLoading(false);
   };
   useEffect(() => {
     void load();
-  }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, fromDate, toDate, page, pageSize]);
+  }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, examModeFilter, examSlotFilter, fromDate, toDate, page, pageSize]);
 
-  useEffect(() => { setPage(0); }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, fromDate, toDate]);
+  useEffect(() => { setPage(0); }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, examModeFilter, examSlotFilter, fromDate, toDate]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const filtered = rows;
@@ -138,6 +148,23 @@ const AdminBoostPage = () => {
     if (selected?.id === id) setSelected({ ...selected, ...full } as Registration);
   };
 
+
+  const deleteRegistration = async (r: Registration) => {
+    const ok = await confirm({
+      title: `Delete registration for "${r.full_name}"?`,
+      description: "This permanently deletes this BOOST registration record. This cannot be undone.",
+      confirmLabel: "Delete registration",
+    });
+    if (!ok) return;
+    setDeletingId(r.id);
+    const { error } = await supabase.from("boost_registrations").delete().eq("id", r.id);
+    setDeletingId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Registration deleted");
+    setRows((rs) => rs.filter((row) => row.id !== r.id));
+    setTotal((t) => Math.max(0, t - 1));
+    if (selected?.id === r.id) setSelected(null);
+  };
 
   const exportCsv = async () => {
     const exportRows: Registration[] = [];
@@ -262,11 +289,18 @@ const AdminBoostPage = () => {
         </select>
         <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
           <option value="all">State: all</option>
-          {filterValues.states.map((value) => <option key={value} value={value}>{value}</option>)}
+          {INDIAN_STATES_AND_UTS.map((value) => <option key={value} value={value}>{value}</option>)}
         </select>
         <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
           <option value="all">Class: all</option>
           {filterValues.classes.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        <select value={examModeFilter} onChange={(e) => setExamModeFilter(e.target.value as any)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          {EXAM_MODE_OPTIONS.map((o) => <option key={o} value={o}>Exam Mode: {o}</option>)}
+        </select>
+        <select value={examSlotFilter} onChange={(e) => setExamSlotFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">Exam Slot: all</option>
+          {filterValues.examSlots.map((value) => <option key={value} value={value}>{value}</option>)}
         </select>
         <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
           From
@@ -294,6 +328,7 @@ const AdminBoostPage = () => {
                 <th className="text-left p-3">Payment</th>
                 <th className="text-left p-3">Status</th>
                 <th className="text-left p-3">When</th>
+                {isStaff && <th className="text-left p-3 w-10">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -331,10 +366,22 @@ const AdminBoostPage = () => {
                     <span className="inline-flex rounded-full bg-bansal-blue/10 text-bansal-blue px-2 py-0.5 text-[10px] font-bold">{r.status}</span>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td>
+                  {isStaff && (
+                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => deleteRegistration(r)}
+                        disabled={deletingId === r.id}
+                        title="Delete registration"
+                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        {deletingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={8} className="p-10 text-center text-muted-foreground">No registrations match your filters.</td></tr>
+                <tr><td colSpan={isStaff ? 9 : 8} className="p-10 text-center text-muted-foreground">No registrations match your filters.</td></tr>
               )}
             </tbody>
           </table>
@@ -404,6 +451,7 @@ const AdminBoostPage = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

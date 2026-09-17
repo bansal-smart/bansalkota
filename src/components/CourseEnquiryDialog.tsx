@@ -23,6 +23,7 @@ import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import { setPendingEnrollment } from "@/lib/pendingEnrollment";
 import { generateId } from "@/lib/uuid";
 import { trackCompleteRegistrationOnce, trackInitiateCheckout } from "@/lib/metaPixel";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 type Centre = { id: string; name: string };
 
@@ -49,7 +50,7 @@ const schema = z.object({
     .pipe(z.string().regex(/^$|^[6-9]\d{9}$/, "Enter a valid 10-digit mobile number"))
     .optional(),
   city: z.string().trim().min(1, "Enter city").max(80),
-  state: z.string().trim().min(1, "Enter state").max(80),
+  state: z.enum(INDIAN_STATES_AND_UTS, { errorMap: () => ({ message: "Select a state" }) }),
   preferred_centre_id: z.string().optional(),
   message: z.string().max(1000).optional(),
 });
@@ -271,7 +272,18 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
             </div>
             <div>
               <Label htmlFor="ce-state">State *</Label>
-              <Input id="ce-state" value={form.state} onChange={(e) => update("state", e.target.value)} />
+              <Select value={form.state} onValueChange={(v) => update("state", v)}>
+                <SelectTrigger id="ce-state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INDIAN_STATES_AND_UTS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div>

@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from "react";
-import { Search, UserPlus, Download, X, Loader2, ShieldOff, ShieldCheck } from "lucide-react";
+import { Search, UserPlus, Download, X, Loader2, ShieldOff, ShieldCheck, Trash2 } from "lucide-react";
 import TablePagination from "@/components/TablePagination";
 import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 import { toast } from "sonner";
@@ -7,6 +7,8 @@ import { List, type RowComponentProps } from "react-window";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAdminUsers, type AdminUserRow } from "@/hooks/useAdminUsers";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { extractEdgeFunctionError } from "@/lib/edgeFunctionError";
 
 const roleBadge = (role: string) => {
   const styles: Record<string, string> = {
@@ -182,6 +184,8 @@ const AdminUsersPage = () => {
   const [showBulk, setShowBulk] = useState(false);
   const [pendingRole, setPendingRole] = useState<AdminUserRow["role"] | null>(null);
   const [savingRole, setSavingRole] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const { rows, total, loading, pageSize: fetchedPageSize, reload } = useAdminUsers(filter, debouncedSearch, page, pageSize);
 
@@ -195,6 +199,33 @@ const AdminUsersPage = () => {
     toast.success(u.is_suspended ? "User unsuspended" : "User suspended");
     setDrawerUser(null);
     reload();
+  };
+
+  const deleteUser = async (u: AdminUserRow) => {
+    const ok = await confirm({
+      title: `Delete "${u.full_name || "this user"}" permanently?`,
+      description:
+        u.role === "student"
+          ? "This permanently deletes this student's account and all their data (profile, progress, attempts, enrollments). This cannot be undone."
+          : "This permanently deletes this account and its access. This cannot be undone.",
+      confirmLabel: "Delete account",
+    });
+    if (!ok) return;
+    setDeleting(true);
+    try {
+      const fn = u.role === "student" ? "manage-student" : "manage-admin";
+      const { data, error } = await supabase.functions.invoke(fn, {
+        body: { action: "delete", user_id: u.user_id },
+      });
+      if (error) throw new Error(await extractEdgeFunctionError(error, data, "Delete failed"));
+      toast.success("Account deleted");
+      setDrawerUser(null);
+      reload();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const confirmChangeRole = async () => {
@@ -388,16 +419,28 @@ const AdminUsersPage = () => {
 
               <button
                 onClick={() => toggleSuspend(drawerUser)}
-                className={`w-full rounded-lg border px-3 py-2 text-xs font-medium ${
+                disabled={drawerUser.role === "super_admin"}
+                className={`w-full rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-40 ${
                   drawerUser.is_suspended ? "border-secondary/30 text-secondary" : "border-destructive/30 text-destructive"
                 }`}
               >
                 {drawerUser.is_suspended ? "Unsuspend user" : "Suspend user"}
               </button>
+
+              <button
+                onClick={() => deleteUser(drawerUser)}
+                disabled={deleting || drawerUser.role === "super_admin"}
+                title={drawerUser.role === "super_admin" ? "Super admin accounts cannot be deleted" : undefined}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-40"
+              >
+                {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                Delete account
+              </button>
             </div>
           </div>
         </div>
       )}
+      {ConfirmDialog}
 
       {pendingRole && drawerUser && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

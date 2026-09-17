@@ -5,17 +5,12 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 const tabItems = ["Personal Info"];
 
 const CLASSES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
-const STATES = [
-  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh",
-  "Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha",
-  "Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
-  "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
-];
 
 const ProfilePage = () => {
   const { user } = useAppStore();
@@ -239,7 +234,7 @@ const ProfilePage = () => {
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                 />
               </div>
-              <SelectField label="State" value={form.state} options={STATES} onChange={(v) => setForm({ ...form, state: v })} />
+              <SelectField label="State" value={form.state} options={[...INDIAN_STATES_AND_UTS]} onChange={(v) => setForm({ ...form, state: v })} />
             </div>
             <button
               onClick={handleSave}

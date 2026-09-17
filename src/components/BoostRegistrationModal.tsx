@@ -12,6 +12,7 @@ import { startBoostCashfreeCheckout } from "@/lib/cashfree";
 import { generateId } from "@/lib/uuid";
 import { trackInitiateCheckout, trackCompleteRegistrationOnce } from "@/lib/metaPixel";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 
 const schema = z.object({
@@ -34,7 +35,7 @@ const schema = z.object({
   target_exam: z.string().min(1, "Select your target exam"),
   school_name: z.string().trim().max(160).optional().or(z.literal("")),
   city: z.string().trim().max(80).optional().or(z.literal("")),
-  state: z.string().trim().max(80).optional().or(z.literal("")),
+  state: z.enum(INDIAN_STATES_AND_UTS).optional().or(z.literal("")),
   parent_name: z.string().trim().max(120).optional().or(z.literal("")),
   parent_phone: z
     .string()
@@ -247,12 +248,17 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground">State</label>
-                <input
+                <select
                   name="state"
                   value={state}
                   onChange={(e) => setState(e.target.value)}
                   className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bansal-orange"
-                />
+                >
+                  <option value="">Select…</option>
+                  {INDIAN_STATES_AND_UTS.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
               </div>
             </Section>
 

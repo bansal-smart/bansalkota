@@ -8,6 +8,7 @@ import { createCashfreeOrder, openCashfreeCheckout } from "@/lib/cashfree";
 import { trackInitiateCheckout } from "@/lib/metaPixel";
 import BansalButton from "@/components/bansal/BansalButton";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
@@ -20,7 +21,7 @@ const schema = z.object({
   class_level: z.string().min(1, "Select your class"),
   school_name: z.string().trim().max(160).optional().or(z.literal("")),
   city: z.string().trim().max(80).optional().or(z.literal("")),
-  state: z.string().trim().max(80).optional().or(z.literal("")),
+  state: z.enum(INDIAN_STATES_AND_UTS).optional().or(z.literal("")),
   parent_name: z.string().trim().max(120).optional().or(z.literal("")),
   parent_phone: z
     .string()
@@ -234,7 +235,12 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">State</label>
-              <input name="state" value={form.state} onChange={(e) => updateField("state", e.target.value)} className={inputClass} />
+              <select name="state" value={form.state} onChange={(e) => updateField("state", e.target.value)} className={inputClass}>
+                <option value="">Select state</option>
+                {INDIAN_STATES_AND_UTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Parent name</label>

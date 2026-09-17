@@ -473,6 +473,17 @@ Deno.serve(async (req) => {
             // is already forced to their own centre above for non-admins).
             if (!isAnyAdmin && !isCentreStaff) throw new Error("Not authorised to create new students");
             if (!fullName) throw new Error("full_name (Student Name) is required to create a new student");
+            // Single-record creation (the interactive "Add Student" dialog, not a
+            // multi-row CSV roster upload) has no reason to allow an incomplete
+            // profile — require the same fields the dialog itself now requires.
+            if (rows.length === 1) {
+              const missing: string[] = [];
+              if (!trimOrNull(r.father_name ?? r.fathers_name)) missing.push("father_name");
+              if (!dob) missing.push("dob");
+              if (!stream) missing.push("target_exam");
+              if (!cls) missing.push("class_level");
+              if (missing.length) throw new Error(`Missing required field(s): ${missing.join(", ")}`);
+            }
             if (dryRun) { results.push({ row: i + 1, ok: true }); continue; }
 
             const emailSeed = effectiveRoll

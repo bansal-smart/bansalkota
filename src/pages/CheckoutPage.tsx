@@ -6,6 +6,7 @@ import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import Seo from "@/components/Seo";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 const CheckoutPage = () => {
   const { cart, user } = useAppStore();
@@ -92,12 +93,14 @@ const CheckoutPage = () => {
                   onChange={(city) => setForm({ ...form, city })}
                   onSelectCity={(city, state) => setForm({ ...form, city, state })}
                 />
-                <input
+                <select
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  placeholder="State"
                   value={form.state}
                   onChange={(e) => setForm({ ...form, state: e.target.value })}
-                />
+                >
+                  <option value="">State</option>
+                  {INDIAN_STATES_AND_UTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
                 <input
                   className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   placeholder="Pincode"

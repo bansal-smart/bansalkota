@@ -11,15 +11,10 @@ import type { NavigateFunction } from "react-router-dom";
 import { consumePendingEnrollment } from "@/lib/pendingEnrollment";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 import { trackCompleteRegistrationOnce, trackInitiateCheckout } from "@/lib/metaPixel";
+import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 const CLASSES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "Dropper"];
 const STREAMS = ["IIT-JEE", "NEET", "Pre Foundation"];
-const STATES = [
-  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh",
-  "Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha",
-  "Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
-  "Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
-];
 
 const phoneRegex = /^[0-9+\-\s()]{7,20}$/;
 
@@ -28,6 +23,11 @@ const schema = z.object({
   phone: z.string().trim().regex(phoneRegex, "Enter a valid phone"),
   parent_phone: z.string().trim().regex(phoneRegex, "Enter a valid parent phone"),
   father_name: z.string().trim().min(2, "Enter father's name").max(100),
+  dob: z.string().min(1, "Enter your date of birth").refine((v) => {
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return false;
+    return d < new Date();
+  }, "Enter a valid date of birth"),
   class_level: z.string().min(1, "Select your class"),
   target_exam: z.string().min(1, "Select your stream"),
   city: z.string().trim().min(2, "Enter your city").max(100),
@@ -88,6 +88,7 @@ const ProfileCompletionDialog = () => {
     phone: "",
     parent_phone: "",
     father_name: "",
+    dob: "",
     class_level: "",
     target_exam: "",
     city: "",
@@ -104,7 +105,7 @@ const ProfileCompletionDialog = () => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, phone, parent_phone, father_name, class_level, target_exam, city, state, onboarding_completed")
+        .select("full_name, phone, parent_phone, father_name, dob, class_level, target_exam, city, state, onboarding_completed")
         .eq("user_id", user.id)
         .maybeSingle();
       if (!active) return;
@@ -115,6 +116,7 @@ const ProfileCompletionDialog = () => {
           phone: p?.phone ?? "",
           parent_phone: p?.parent_phone ?? "",
           father_name: p?.father_name ?? "",
+          dob: p?.dob ?? "",
           class_level: p?.class_level ?? "",
           target_exam: p?.target_exam ?? "",
           city: p?.city ?? "",
@@ -185,6 +187,16 @@ const ProfileCompletionDialog = () => {
           <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} error={errors.phone} />
           <Field label="Parent's Phone" value={form.parent_phone} onChange={(v) => setForm({ ...form, parent_phone: v })} error={errors.parent_phone} />
           <Field label="Father's Name" value={form.father_name} onChange={(v) => setForm({ ...form, father_name: v })} error={errors.father_name} />
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date of Birth</label>
+            <input
+              type="date"
+              value={form.dob}
+              onChange={(e) => setForm({ ...form, dob: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+            />
+            {errors.dob && <p className="mt-0.5 text-[10px] text-destructive">{errors.dob}</p>}
+          </div>
           <Select label="Class" value={form.class_level} options={CLASSES} onChange={(v) => setForm({ ...form, class_level: v })} error={errors.class_level} />
           <Select label="Stream" value={form.target_exam} options={STREAMS} onChange={(v) => setForm({ ...form, target_exam: v })} error={errors.target_exam} />
           <div>
@@ -197,7 +209,7 @@ const ProfileCompletionDialog = () => {
             />
             {errors.city && <p className="mt-0.5 text-[10px] text-destructive">{errors.city}</p>}
           </div>
-          <Select label="State" value={form.state} options={STATES} onChange={(v) => setForm({ ...form, state: v })} error={errors.state} />
+          <Select label="State" value={form.state} options={[...INDIAN_STATES_AND_UTS]} onChange={(v) => setForm({ ...form, state: v })} error={errors.state} />
         </div>
 
         <button
