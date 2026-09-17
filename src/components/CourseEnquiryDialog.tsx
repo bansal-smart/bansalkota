@@ -110,7 +110,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
           if (error) throw error;
           trackCompleteRegistrationOnce(`course:${user.id}:${course.id}`, { content_name: course.name });
           if (!cancelled) {
-            navigate("/thank-you?type=course", {
+            navigate("/thank-you/course", {
               state: { type: "course", status: "free", title: course.name },
             });
           }

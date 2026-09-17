@@ -166,7 +166,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       if (isFree) {
         trackCompleteRegistrationOnce(`boost:${regId}`, { content_name: "BOOST Registration" });
         onClose();
-        navigate("/thank-you?type=boost", {
+        navigate("/thank-you/boost", {
           state: { type: "boost", status: "free", admitCardNumber: admit },
         });
         return;

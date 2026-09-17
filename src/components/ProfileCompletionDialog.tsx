@@ -51,7 +51,7 @@ async function resumePendingEnrollment(userId: string, navigate: NavigateFunctio
       );
       if (error) throw error;
       trackCompleteRegistrationOnce(`course:${userId}:${pending.courseId}`, { content_name: pending.courseName });
-      navigate("/thank-you?type=course", {
+      navigate("/thank-you/course", {
         state: { type: "course", status: "free", title: pending.courseName },
       });
       return;

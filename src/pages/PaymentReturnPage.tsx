@@ -13,6 +13,12 @@ const ITEM_TYPE_TO_THANK_YOU_TYPE: Record<string, "e_store" | "course" | "test_s
   test_series: "test_series",
 };
 
+const THANK_YOU_PATHS = {
+  e_store: "/thank-you/e-store",
+  course: "/thank-you/course",
+  test_series: "/thank-you/test-series",
+} as const;
+
 const PaymentReturnPage = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -23,7 +29,7 @@ const PaymentReturnPage = () => {
     let cancelled = false;
     async function verify() {
       if (!orderId) {
-        navigate("/thank-you", {
+        navigate(THANK_YOU_PATHS.e_store, {
           replace: true,
           state: { type: "e_store", status: "error", message: "Missing order id" },
         });
@@ -34,7 +40,7 @@ const PaymentReturnPage = () => {
       });
       if (cancelled) return;
       if (error || data?.error) {
-        navigate("/thank-you", {
+        navigate(THANK_YOU_PATHS.e_store, {
           replace: true,
           state: {
             type: "e_store",
@@ -68,7 +74,7 @@ const PaymentReturnPage = () => {
         }
       }
 
-      navigate(`/thank-you?type=${type}`, {
+      navigate(THANK_YOU_PATHS[type], {
         replace: true,
         state: { type, status, title, amount },
       });

@@ -2,8 +2,10 @@ import { Link, useLocation } from "react-router-dom";
 import { CheckCircle2, XCircle, Clock, PartyPopper } from "lucide-react";
 import Seo from "@/components/Seo";
 
-type ThankYouState = {
-  type: "e_store" | "course" | "test_series" | "boost";
+export type ThankYouModule = "e_store" | "course" | "test_series" | "boost";
+
+export type ThankYouState = {
+  type?: ThankYouModule;
   status: "paid" | "free" | "failed" | "cancelled" | "pending" | "error";
   title?: string;
   amount?: number;
@@ -11,9 +13,50 @@ type ThankYouState = {
   message?: string;
 };
 
-const ThankYouPage = () => {
+const moduleCopy: Record<ThankYouModule, {
+  label: string;
+  directTitle: string;
+  directBody: string;
+  primaryLink: string;
+  primaryLabel: string;
+  secondaryLink?: string;
+  secondaryLabel?: string;
+}> = {
+  e_store: {
+    label: "E-Store order",
+    directTitle: "E-Store confirmation",
+    directBody: "Payment confirmations are shown here after checkout. You can also review your orders at any time.",
+    primaryLink: "/orders",
+    primaryLabel: "View My Orders",
+  },
+  course: {
+    label: "course enrolment",
+    directTitle: "Course enrolment confirmation",
+    directBody: "Your enrolment confirmation appears here after payment. Your active courses are always available from My Courses.",
+    primaryLink: "/my-courses",
+    primaryLabel: "Go to My Courses",
+  },
+  test_series: {
+    label: "test-series registration",
+    directTitle: "Test-series registration confirmation",
+    directBody: "Your registration confirmation appears here after payment. You can find active test series in My Tests.",
+    primaryLink: "/my-tests",
+    primaryLabel: "Go to My Tests",
+  },
+  boost: {
+    label: "BOOST registration",
+    directTitle: "BOOST registration confirmation",
+    directBody: "Your BOOST registration confirmation and admit-card details appear here after payment.",
+    primaryLink: "/boost",
+    primaryLabel: "Back to BOOST",
+  },
+};
+
+const ThankYouPage = ({ module }: { module?: ThankYouModule }) => {
   const location = useLocation();
   const state = (location.state as ThankYouState | null) ?? null;
+  const pageModule = module ?? state?.type ?? "e_store";
+  const copy = moduleCopy[pageModule];
 
   // Direct visit, refresh, or a bookmarked/shared link carries no router
   // state — never fabricate a success screen in that case.
@@ -22,16 +65,13 @@ const ThankYouPage = () => {
       <div className="min-h-[60vh] flex items-center justify-center px-4 py-16">
         <Seo title="Thank You" raw description="Bansal Classes confirmation." noindex />
         <div className="max-w-md w-full text-center rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <h1 className="font-display text-2xl font-black">Looking for a confirmation?</h1>
+          <h1 className="font-display text-2xl font-black">{copy.directTitle}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We couldn't find details for this page directly. Check your orders or courses instead.
+            {copy.directBody}
           </p>
           <div className="mt-6 flex flex-col gap-2">
-            <Link to="/orders" className="rounded-xl bg-[hsl(var(--bansal-orange))] py-2.5 font-bold text-white">
-              View My Orders
-            </Link>
-            <Link to="/my-courses" className="rounded-xl border border-border py-2.5 font-semibold">
-              Go to My Courses
+            <Link to={copy.primaryLink} className="rounded-xl bg-[hsl(var(--bansal-orange))] py-2.5 font-bold text-white">
+              {copy.primaryLabel}
             </Link>
             <Link to="/" className="text-xs text-muted-foreground underline">
               Back to home
@@ -42,7 +82,7 @@ const ThankYouPage = () => {
     );
   }
 
-  const isBoost = state.type === "boost";
+  const isBoost = pageModule === "boost";
 
   const icon = {
     paid: <CheckCircle2 className="h-14 w-14 text-green-600" />,
@@ -85,8 +125,8 @@ const ThankYouPage = () => {
     : {
         paid: state.title
           ? `Your payment for ${state.title} is confirmed. Access has been activated.`
-          : "Your order is confirmed. Course and test-series access has been activated.",
-        free: state.title ? `You now have access to ${state.title}.` : "You now have access to this course.",
+          : `Your ${copy.label} is confirmed. Access has been activated.`,
+        free: state.title ? `You now have access to ${state.title}.` : `Your ${copy.label} is confirmed.`,
         failed: "We could not process your payment. No money was charged, or it will be auto-refunded.",
         cancelled: "You cancelled the payment. You can try again any time.",
         pending: "Cashfree is still confirming. We'll mark your order paid as soon as it clears.",
@@ -110,28 +150,12 @@ const ThankYouPage = () => {
           </div>
         )}
         <div className="mt-6 flex flex-col gap-2">
-          {isBoost ? (
-            <>
-              <Link to="/boost" className="rounded-xl bg-[hsl(var(--bansal-orange))] py-2.5 font-bold text-white">
-                Back to BOOST
-              </Link>
-              <Link to="/" className="text-xs text-muted-foreground underline">
-                Back to home
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link to="/orders" className="rounded-xl bg-[hsl(var(--bansal-orange))] py-2.5 font-bold text-white">
-                View My Orders
-              </Link>
-              <Link to="/my-courses" className="rounded-xl border border-border py-2.5 font-semibold">
-                Go to My Courses
-              </Link>
-              <Link to="/" className="text-xs text-muted-foreground underline">
-                Back to home
-              </Link>
-            </>
-          )}
+          <Link to={copy.primaryLink} className="rounded-xl bg-[hsl(var(--bansal-orange))] py-2.5 font-bold text-white">
+            {copy.primaryLabel}
+          </Link>
+          <Link to="/" className="text-xs text-muted-foreground underline">
+            Back to home
+          </Link>
         </div>
       </div>
     </div>

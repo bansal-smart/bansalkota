@@ -115,6 +115,10 @@ const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const PaymentReturnPage = lazy(() => import("./pages/PaymentReturnPage"));
 const BoostPaymentReturnPage = lazy(() => import("./pages/BoostPaymentReturnPage"));
 const ThankYouPage = lazy(() => import("./pages/ThankYouPage"));
+const EStoreThankYouPage = lazy(() => import("./pages/EStoreThankYouPage"));
+const CourseThankYouPage = lazy(() => import("./pages/CourseThankYouPage"));
+const TestSeriesThankYouPage = lazy(() => import("./pages/TestSeriesThankYouPage"));
+const BoostThankYouPage = lazy(() => import("./pages/BoostThankYouPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const TestSeriesCatalogPage = lazy(() => import("./pages/TestSeriesCatalogPage"));
 const TestSeriesDetailPage = lazy(() => import("./pages/TestSeriesDetailPage"));
@@ -242,6 +246,10 @@ const App = () => (
                   <Route path="/e-store/pack/:slug" element={<PackDetailPage />} />
                   <Route path="/payments/return" element={<PaymentReturnPage />} />
                   <Route path="/boost/payment-return" element={<BoostPaymentReturnPage />} />
+                  <Route path="/thank-you/e-store" element={<EStoreThankYouPage />} />
+                  <Route path="/thank-you/course" element={<CourseThankYouPage />} />
+                  <Route path="/thank-you/test-series" element={<TestSeriesThankYouPage />} />
+                  <Route path="/thank-you/boost" element={<BoostThankYouPage />} />
                   <Route path="/thank-you" element={<ThankYouPage />} />
 
                   <Route path="/e-store/:slug" element={<BookDetailPage />} />
