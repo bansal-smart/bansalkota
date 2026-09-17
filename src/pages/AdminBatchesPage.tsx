@@ -136,25 +136,32 @@ const AdminBatchesPage = () => {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: cs }, { data: bsRaw }, { data: bcv }, { data: cents }] = await Promise.all([
+    const [coursesResult, batchesResult, visibilityResult, centresResult] = await Promise.all([
       scopeQueryToCentre(supabase.from("courses").select("id, name, slug"), scopeCentreId, { globalFlagColumn: "is_global" }).order("name"),
       // Visibility (global / centre_specific / disabled) replaces the old
       // centre_id-only OR-filter here — RLS already keeps disabled/inactive
       // rows away from non-admin callers, and filterBatchesForCentre below
       // handles the centre_specific allow-list, which RLS doesn't attempt.
-      supabase.from("course_batches").select("*, centre:centres(id, city, area, is_hq)").order("code"),
+      // `course_batches` also reaches `centres` through
+      // `batch_centre_visibility`, so the direct owning-centre relation must
+      // be named explicitly. Without this, PostgREST returns PGRST201 and the
+      // page silently renders an empty list.
+      supabase.from("course_batches").select("*, centre:centres!course_batches_center_id_fkey(id, city, area, is_hq)").order("code"),
       supabase.from("batch_centre_visibility").select("batch_id, centre_id"),
       supabase.from("centres").select("id, city, area, is_hq").order("city"),
     ]);
-    setCourses((cs ?? []) as CourseRow[]);
-    setBatches(await filterBatchesForCentre((bsRaw ?? []) as unknown as BatchRow[], scopeCentreId));
+    if (coursesResult.error || batchesResult.error || visibilityResult.error || centresResult.error) {
+      toast.error(coursesResult.error?.message ?? batchesResult.error?.message ?? visibilityResult.error?.message ?? centresResult.error?.message ?? "Could not load batches");
+    }
+    setCourses((coursesResult.data ?? []) as CourseRow[]);
+    setBatches(await filterBatchesForCentre((batchesResult.data ?? []) as unknown as BatchRow[], scopeCentreId));
 
     const map = new Map<string, string[]>();
-    (bcv ?? []).forEach((r: { batch_id: string; centre_id: string }) => {
+    (visibilityResult.data ?? []).forEach((r: { batch_id: string; centre_id: string }) => {
       map.set(r.batch_id, [...(map.get(r.batch_id) ?? []), r.centre_id]);
     });
     setBatchCentreMap(map);
-    setCentres((cents ?? []) as CentreLite[]);
+    setCentres((centresResult.data ?? []) as CentreLite[]);
 
     const { data: profs } = await supabase
       .from("profiles")
