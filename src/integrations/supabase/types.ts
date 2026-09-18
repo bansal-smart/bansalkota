@@ -3341,6 +3341,7 @@ export type Database = {
           answer_range_max: number | null
           answer_range_min: number | null
           centre_id: string | null
+          class_level: string | null
           correct_answer: Json
           created_at: string
           created_by: string | null
@@ -3361,8 +3362,10 @@ export type Database = {
           question_type: string
           solution_image_url: string | null
           source_filename: string | null
+          stream: string | null
           subject: string
           tags: string[]
+          test_type: string | null
           tolerance: number
           topic: string | null
           updated_at: string
@@ -3371,6 +3374,7 @@ export type Database = {
           answer_range_max?: number | null
           answer_range_min?: number | null
           centre_id?: string | null
+          class_level?: string | null
           correct_answer: Json
           created_at?: string
           created_by?: string | null
@@ -3391,8 +3395,10 @@ export type Database = {
           question_type?: string
           solution_image_url?: string | null
           source_filename?: string | null
+          stream?: string | null
           subject: string
           tags?: string[]
+          test_type?: string | null
           tolerance?: number
           topic?: string | null
           updated_at?: string
@@ -3401,6 +3407,7 @@ export type Database = {
           answer_range_max?: number | null
           answer_range_min?: number | null
           centre_id?: string | null
+          class_level?: string | null
           correct_answer?: Json
           created_at?: string
           created_by?: string | null
@@ -3421,8 +3428,10 @@ export type Database = {
           question_type?: string
           solution_image_url?: string | null
           source_filename?: string | null
+          stream?: string | null
           subject?: string
           tags?: string[]
+          test_type?: string | null
           tolerance?: number
           topic?: string | null
           updated_at?: string

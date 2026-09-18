@@ -27,6 +27,7 @@ import { syncTestStats } from "@/lib/tests/syncTestStats";
 import MathRenderer from "@/components/MathRenderer";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatTestDate } from "@/lib/utils";
+import { TEST_TYPES } from "@/lib/constants";
 
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -1240,15 +1241,9 @@ const CreateTestPage = () => {
           <div>
             <label className={labelCls}>Test Type</label>
             <select value={testType} onChange={(e) => setTestType(e.target.value)} className={inputCls}>
-              <option value="mock">Mock Test</option>
-              <option value="chapter">Chapter Test</option>
-              <option value="pyq">Previous Year</option>
-              <option value="practice">Practice</option>
-              <option value="review">Review Test</option>
-              <option value="part">Part Test</option>
-              <option value="full_syllabus">Full Syllabus Test</option>
-              <option value="class">Class Test</option>
-              <option value="special">Special Test</option>
+              {TEST_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
             </select>
           </div>
           <div>
@@ -1964,6 +1959,7 @@ const CreateTestPage = () => {
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
         examPattern={examPattern}
         optionLabelStyle={optionLabelStyle}
+        defaultTestType={testType}
       />
       <DocxCommonImportDialog
         open={commonImportOpen}
@@ -1972,6 +1968,7 @@ const CreateTestPage = () => {
         testId={importTargetTestId ?? resolvedTestId ?? undefined}
         examPattern={examPattern}
         optionLabelStyle={optionLabelStyle}
+        defaultTestType={testType}
       />
       <MasterImportInstructions open={masterInstructionsOpen} onClose={() => setMasterInstructionsOpen(false)} />
     </DndContext>

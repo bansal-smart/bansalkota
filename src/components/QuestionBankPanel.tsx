@@ -14,8 +14,13 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { usePagination } from "@/hooks/usePagination";
 
-import { SUBJECTS_WITH_ALL as SUBJECTS } from "@/lib/constants";
+import { SUBJECTS_WITH_ALL as SUBJECTS, CLASS_LEVELS_WITH_ALL, STREAMS_WITH_ALL, TEST_TYPES, testTypeLabel } from "@/lib/constants";
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
+// "Unclassified" is a synthetic filter bucket (not a real tag value) for
+// questions that predate this feature and have no Class/Stream/Test Type yet.
+const CLASS_LEVEL_OPTIONS = [...CLASS_LEVELS_WITH_ALL, "Unclassified"];
+const STREAM_OPTIONS = [...STREAMS_WITH_ALL, "Unclassified"];
+const TEST_TYPE_OPTIONS = [{ value: "All", label: "All test types" }, ...TEST_TYPES, { value: "Unclassified", label: "Unclassified" }];
 
 const difficultyColor = (d: string) => {
   if (d === "easy") return "bg-emerald-100 text-emerald-700";
@@ -23,7 +28,7 @@ const difficultyColor = (d: string) => {
   return "bg-amber-100 text-amber-700";
 };
 
-type SortKey = "question_text" | "subject" | "topic" | "difficulty";
+type SortKey = "question_text" | "subject" | "topic" | "difficulty" | "class_level" | "stream" | "test_type";
 type SortDir = "asc" | "desc";
 
 type CardProps = {
@@ -57,6 +62,9 @@ const QuestionCard = ({ q, draggable, onEdit, onDelete, onAdd, alreadyAdded, com
             <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">{q.subject}</span>
             {q.topic && <span className="text-[10px] font-medium text-muted-foreground">{q.topic}</span>}
             <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
+            {q.class_level && <span className="rounded-md bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold text-secondary">{q.class_level}</span>}
+            {q.stream && <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">{q.stream}</span>}
+            {q.test_type && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">{testTypeLabel(q.test_type)}</span>}
             {(q as any).question_image_url && (
               <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground" title="Has image">img</span>
             )}
@@ -129,6 +137,8 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
 const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, onAddMany, addedBankIds, centreId }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
+  const [stream, setStream] = useState("All");
+  const [testType, setTestType] = useState("All");
   const [topic, setTopic] = useState("All");
   const [search, setSearch] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
@@ -143,11 +153,20 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [bulkSubject, setBulkSubject] = useState("");
   const [bulkTopic, setBulkTopic] = useState("");
   const [bulkDifficulty, setBulkDifficulty] = useState("");
+  const [bulkClassLevel, setBulkClassLevel] = useState("");
+  const [bulkStream, setBulkStream] = useState("");
+  const [bulkTestType, setBulkTestType] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
-  // Server-side filters (subject/difficulty/search) — topic filtered client-side
-  const filters = useMemo(() => ({ subject, difficulty, search, centreId }), [subject, difficulty, search, centreId]);
+  // Server-side filters (subject/difficulty/stream/testType/search) — topic
+  // filtered client-side since it's mostly free text with no fixed list.
+  // No Class filter: virtually no question is tagged with one yet, so it
+  // would only ever show "Unclassified" — see Class column/badges instead.
+  const filters = useMemo(
+    () => ({ subject, difficulty, stream, testType, search, centreId }),
+    [subject, difficulty, stream, testType, search, centreId],
+  );
   const { questions, loading, reload } = useQuestionBank(filters);
   const isOwn = (q: BankQuestion) => !centreId || q.centre_id === centreId;
 
@@ -173,7 +192,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   }, [questions, topic, sortKey, sortDir]);
 
   const { paged: pageItems, page, setPage, totalPages, pageSize, setPageSize } = usePagination(processed, 25);
-  useEffect(() => { setPage(1); }, [subject, difficulty, topic, search, sortKey, sortDir, setPage]);
+  useEffect(() => { setPage(1); }, [subject, difficulty, stream, testType, topic, search, sortKey, sortDir, setPage]);
   const pageIds = useMemo(() => pageItems.map((q) => q.id), [pageItems]);
   const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const someOnPageSelected = pageIds.some((id) => selected.has(id));
@@ -229,16 +248,20 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
 
   const openBulkEdit = () => {
     setBulkSubject(""); setBulkTopic(""); setBulkDifficulty("");
+    setBulkClassLevel(""); setBulkStream(""); setBulkTestType("");
     setBulkEditOpen(true);
   };
 
   const handleBulkEditSave = async () => {
     const ids = Array.from(selected);
     if (!ids.length) return;
-    const patch: { subject?: string; topic?: string; difficulty?: string } = {};
+    const patch: { subject?: string; topic?: string; difficulty?: string; class_level?: string; stream?: string; test_type?: string } = {};
     if (bulkSubject) patch.subject = bulkSubject;
     if (bulkTopic.trim()) patch.topic = bulkTopic.trim();
     if (bulkDifficulty) patch.difficulty = bulkDifficulty.toLowerCase();
+    if (bulkClassLevel) patch.class_level = bulkClassLevel;
+    if (bulkStream) patch.stream = bulkStream;
+    if (bulkTestType) patch.test_type = bulkTestType;
     if (!Object.keys(patch).length) {
       toast.error("Set at least one field to update");
       return;
@@ -306,6 +329,12 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           </select>
           <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none" aria-label="Filter by difficulty">
             {DIFFICULTIES.map((d) => <option key={d} value={d}>{d === "All" ? "All difficulty" : d}</option>)}
+          </select>
+          <select value={stream} onChange={(e) => setStream(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none" aria-label="Filter by stream">
+            {STREAM_OPTIONS.map((s) => <option key={s} value={s}>{s === "All" ? "All streams" : s}</option>)}
+          </select>
+          <select value={testType} onChange={(e) => setTestType(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none" aria-label="Filter by test type">
+            {TEST_TYPE_OPTIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
         {tableView && manage && selected.size > 0 && (
@@ -391,6 +420,9 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                     <SortHeader label="Subject" active={sortKey === "subject"} dir={sortDir} onClick={() => toggleSort("subject")} className="w-32" />
                     <SortHeader label="Topic" active={sortKey === "topic"} dir={sortDir} onClick={() => toggleSort("topic")} className="w-40" />
                     <SortHeader label="Difficulty" active={sortKey === "difficulty"} dir={sortDir} onClick={() => toggleSort("difficulty")} className="w-28" />
+                    <SortHeader label="Class" active={sortKey === "class_level"} dir={sortDir} onClick={() => toggleSort("class_level")} className="w-28" />
+                    <SortHeader label="Stream" active={sortKey === "stream"} dir={sortDir} onClick={() => toggleSort("stream")} className="w-28" />
+                    <SortHeader label="Test Type" active={sortKey === "test_type"} dir={sortDir} onClick={() => toggleSort("test_type")} className="w-32" />
                     {manage && <th className="px-3 py-2 text-right font-semibold w-28">Actions</th>}
                   </tr>
                 </thead>
@@ -422,6 +454,15 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
                         <td className="px-3 py-2 text-xs text-muted-foreground">{q.topic || "—"}</td>
                         <td className="px-3 py-2">
                           <span className={`rounded-md px-1.5 py-0.5 text-[11px] font-bold capitalize ${difficultyColor(q.difficulty)}`}>{q.difficulty}</span>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {q.class_level || <span className="italic">Unclassified</span>}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {q.stream || <span className="italic">Unclassified</span>}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {q.test_type ? testTypeLabel(q.test_type) : <span className="italic">Unclassified</span>}
                         </td>
                         {manage && (
                           <td className="px-3 py-2">
@@ -516,6 +557,27 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
               <select value={bulkDifficulty} onChange={(e) => setBulkDifficulty(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none">
                 <option value="">— No change —</option>
                 {DIFFICULTIES.filter((d) => d !== "All").map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Class</label>
+              <select value={bulkClassLevel} onChange={(e) => setBulkClassLevel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none">
+                <option value="">— No change —</option>
+                {CLASS_LEVEL_OPTIONS.filter((c) => c !== "All" && c !== "Unclassified").map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Stream</label>
+              <select value={bulkStream} onChange={(e) => setBulkStream(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none">
+                <option value="">— No change —</option>
+                {STREAM_OPTIONS.filter((s) => s !== "All" && s !== "Unclassified").map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Test Type</label>
+              <select value={bulkTestType} onChange={(e) => setBulkTestType(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none">
+                <option value="">— No change —</option>
+                {TEST_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
           </div>

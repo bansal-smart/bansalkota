@@ -49,3 +49,7 @@ NOTES
 - Inline LaTeX uses single dollars: $x^2$.
 - Display LaTeX uses double dollars: $$\int_0^1 x dx$$.
 - Inline images inside the .docx are extracted automatically.
+- Class, Stream and Test Type are NOT written inside the .docx — a single
+  uploaded paper is almost always one class/stream/test type throughout, so
+  you pick these once for the whole file using the "Class" / "Stream" /
+  "Test Type" dropdowns in the Word import dialog before confirming.

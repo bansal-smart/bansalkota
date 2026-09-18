@@ -38,7 +38,7 @@ type Props = {
   centreId?: string | null;
 };
 
-import { SUBJECTS } from "@/lib/constants";
+import { SUBJECTS, CLASS_LEVELS, STREAMS, TEST_TYPES } from "@/lib/constants";
 const DIFFICULTIES = ["easy", "medium", "hard"];
 
 type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
@@ -48,6 +48,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
   const [subject, setSubject] = useState("Physics");
   const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState("medium");
+  const [classLevel, setClassLevel] = useState<string>("");
+  const [stream, setStream] = useState<string>("");
+  const [testType, setTestType] = useState<string>("");
   const [questionType, setQuestionType] = useState<QType>("mcq-single");
   const [text, setText] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -72,6 +75,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
       setSubject(initial.subject);
       setTopic(initial.topic || "");
       setDifficulty(initial.difficulty);
+      setClassLevel(initial.class_level || "");
+      setStream(initial.stream || "");
+      setTestType(initial.test_type || "");
       setQuestionType((initial.question_type as QType) || "mcq-single");
       setText(initial.question_text);
       setImageUrl(initial.question_image_url || null);
@@ -96,6 +102,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
       setSubject("Physics");
       setTopic("");
       setDifficulty("medium");
+      setClassLevel("");
+      setStream("");
+      setTestType("");
       setQuestionType("mcq-single");
       setText("");
       setImageUrl(null);
@@ -210,6 +219,9 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
       subject,
       topic: cleanTopic || null,
       difficulty,
+      class_level: classLevel || null,
+      stream: stream || null,
+      test_type: testType || null,
       question_type: questionType,
       question_text: cleanText,
       question_image_url: imageUrl,
@@ -285,6 +297,30 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
                 <option value="numerical">Numerical</option>
                 <option value="integer">Integer</option>
                 <option value="assertion-reason">Assertion–Reason</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-foreground">Class</label>
+              <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+                <option value="">Unclassified</option>
+                {CLASS_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Stream</label>
+              <select value={stream} onChange={(e) => setStream(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+                <option value="">Unclassified</option>
+                {STREAMS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-foreground">Test Type</label>
+              <select value={testType} onChange={(e) => setTestType(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
+                <option value="">Unclassified</option>
+                {TEST_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
           </div>

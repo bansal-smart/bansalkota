@@ -19,6 +19,9 @@ const QB_HEADERS = [
   "subject",
   "topic",
   "difficulty",
+  "class_level",
+  "stream",
+  "test_type",
   "question_text",
   "option_a",
   "option_b",
@@ -48,7 +51,7 @@ const COMPETE_HEADERS = [
 
 const QB_SAMPLE_ROWS: string[][] = [
   [
-    "Physics", "Kinematics", "easy",
+    "Physics", "Kinematics", "easy", "Class 11", "JEE", "chapter",
     "What is the SI unit of acceleration?",
     "m/s", "m/s^2", "m^2/s", "kg.m/s",
     "2",
@@ -56,7 +59,7 @@ const QB_SAMPLE_ROWS: string[][] = [
     "4", "-1", "units;basics",
   ],
   [
-    "Mathematics", "Algebra", "medium",
+    "Mathematics", "Algebra", "medium", "Class 12", "JEE", "mock",
     "Solve for x: $2x + 6 = 14$",
     "2", "4", "6", "8",
     "2",
@@ -64,7 +67,7 @@ const QB_SAMPLE_ROWS: string[][] = [
     "4", "-1", "linear-equations",
   ],
   [
-    "Chemistry", "Periodic Table", "hard",
+    "Chemistry", "Periodic Table", "hard", "Class 11", "NEET", "practice",
     "Which of the following are noble gases? (Select all that apply)",
     "Helium", "Nitrogen", "Argon", "Oxygen",
     "1,3",
@@ -167,14 +170,19 @@ type ParsedQuestion = {
   created_by: string | null;
   target_exam?: string | null;
   class_level?: string | null;
+  stream?: string | null;
+  test_type?: string | null;
 };
 
 type RowError = { row: number; message: string; raw: string[] };
 
-import { SUBJECTS, SUBJECTS_VALID_ANY } from "@/lib/constants";
+import { SUBJECTS, SUBJECTS_VALID_ANY, CLASS_LEVELS, STREAMS, TEST_TYPES } from "@/lib/constants";
 const VALID_SUBJECTS_QB: string[] = [...SUBJECTS];
 const VALID_SUBJECTS_COMPETE: string[] = [...SUBJECTS_VALID_ANY];
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
+const VALID_CLASS_LEVELS: string[] = [...CLASS_LEVELS];
+const VALID_STREAMS: string[] = [...STREAMS];
+const VALID_TEST_TYPES: string[] = TEST_TYPES.map((t) => t.value);
 
 const parseRow = (
   headers: string[],
@@ -196,6 +204,21 @@ const parseRow = (
   const difficulty = (get("difficulty") || "medium").toLowerCase();
   if (!VALID_DIFFICULTIES.includes(difficulty)) {
     throw new Error(`Invalid difficulty "${difficulty}" (allowed: easy, medium, hard)`);
+  }
+
+  // Class/Stream/Test Type are optional — a blank cell leaves the question
+  // "Unclassified" rather than failing the whole row.
+  const classLevelRaw = get("class_level");
+  if (mode === "question_bank" && classLevelRaw && !VALID_CLASS_LEVELS.includes(classLevelRaw)) {
+    throw new Error(`Invalid class_level "${classLevelRaw}" (allowed: ${VALID_CLASS_LEVELS.join(", ")})`);
+  }
+  const streamRaw = get("stream");
+  if (mode === "question_bank" && streamRaw && !VALID_STREAMS.includes(streamRaw)) {
+    throw new Error(`Invalid stream "${streamRaw}" (allowed: ${VALID_STREAMS.join(", ")})`);
+  }
+  const testTypeRaw = get("test_type").toLowerCase();
+  if (mode === "question_bank" && testTypeRaw && !VALID_TEST_TYPES.includes(testTypeRaw)) {
+    throw new Error(`Invalid test_type "${testTypeRaw}" (allowed: ${VALID_TEST_TYPES.join(", ")})`);
   }
 
   const question_text = get("question_text");
@@ -238,7 +261,9 @@ const parseRow = (
     is_public: true,
     created_by: userId,
     target_exam: get("target_exam") || null,
-    class_level: get("class_level") || null,
+    class_level: classLevelRaw || null,
+    stream: streamRaw || null,
+    test_type: testTypeRaw || null,
   };
 };
 
@@ -368,7 +393,26 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
     };
   };
 
-  const toQbPayload = (row: ParsedQuestion) => (mode === "question_bank" ? { ...row, centre_id: centreId ?? null } : row);
+  // Explicit allowlist (not a blind spread) — `row` also carries `target_exam`,
+  // which only exists on `compete_questions`, not `question_bank`.
+  const toQbPayload = (row: ParsedQuestion) => ({
+    subject: row.subject,
+    topic: row.topic,
+    difficulty: row.difficulty,
+    class_level: row.class_level ?? null,
+    stream: row.stream ?? null,
+    test_type: row.test_type ?? null,
+    question_text: row.question_text,
+    options: row.options,
+    correct_answer: row.correct_answer,
+    explanation: row.explanation,
+    marks_correct: row.marks_correct,
+    marks_wrong: row.marks_wrong,
+    tags: row.tags,
+    is_public: row.is_public,
+    created_by: row.created_by,
+    centre_id: centreId ?? null,
+  });
 
   const buildPayload = (row: ParsedQuestion) =>
     mode === "compete" ? toCompetePayload(row) : toQbPayload(row);
@@ -530,6 +574,13 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
                   Required columns: <code className="px-1 rounded bg-background">subject</code>,{" "}
                   <code className="px-1 rounded bg-background">question_text</code>,{" "}
                   <code className="px-1 rounded bg-background">correct_answer</code>. Multi-correct answers: comma-separate (e.g. <code className="px-1 rounded bg-background">1,3</code>). Tags use <code className="px-1 rounded bg-background">;</code> separator.
+                  {mode === "question_bank" && (
+                    <>
+                      {" "}Optional: <code className="px-1 rounded bg-background">class_level</code>,{" "}
+                      <code className="px-1 rounded bg-background">stream</code>,{" "}
+                      <code className="px-1 rounded bg-background">test_type</code> — leave blank to import as "Unclassified".
+                    </>
+                  )}
                 </p>
                 <input
                   ref={fileRef}
@@ -632,6 +683,13 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
                             <th className="px-2 py-2 text-left">Subject</th>
                             <th className="px-2 py-2 text-left">Topic</th>
                             <th className="px-2 py-2 text-left">Diff.</th>
+                            {mode === "question_bank" && (
+                              <>
+                                <th className="px-2 py-2 text-left">Class</th>
+                                <th className="px-2 py-2 text-left">Stream</th>
+                                <th className="px-2 py-2 text-left">Test Type</th>
+                              </>
+                            )}
                             <th className="px-2 py-2 text-left">Question</th>
                             <th className="px-2 py-2 text-left">Options</th>
                             <th className="px-2 py-2 text-left">Correct</th>
@@ -639,13 +697,20 @@ const BulkQuestionUploadDialog = ({ open, onClose, onUploaded, mode = "question_
                         </thead>
                         <tbody>
                           {pageRows.length === 0 ? (
-                            <tr><td colSpan={7} className="px-2 py-6 text-center text-muted-foreground">No rows match your search.</td></tr>
+                            <tr><td colSpan={mode === "question_bank" ? 10 : 7} className="px-2 py-6 text-center text-muted-foreground">No rows match your search.</td></tr>
                           ) : pageRows.map(({ q, idx }) => (
                             <tr key={idx} className="border-t border-border align-top">
                               <td className="px-2 py-2 text-muted-foreground">{idx + 2}</td>
                               <td className="px-2 py-2 font-semibold">{q.subject}</td>
                               <td className="px-2 py-2 text-muted-foreground">{q.topic ?? "—"}</td>
                               <td className="px-2 py-2 capitalize">{q.difficulty}</td>
+                              {mode === "question_bank" && (
+                                <>
+                                  <td className="px-2 py-2 text-muted-foreground">{q.class_level ?? "—"}</td>
+                                  <td className="px-2 py-2 text-muted-foreground">{q.stream ?? "—"}</td>
+                                  <td className="px-2 py-2 text-muted-foreground">{q.test_type ?? "—"}</td>
+                                </>
+                              )}
                               <td className="px-2 py-2 max-w-[260px] truncate" title={q.question_text}>{q.question_text}</td>
                               <td className="px-2 py-2 text-muted-foreground">{q.options.length}</td>
                               <td className="px-2 py-2 font-semibold text-emerald-700">{renderCorrect(q)}</td>

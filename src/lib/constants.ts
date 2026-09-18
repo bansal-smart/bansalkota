@@ -36,3 +36,29 @@ export const CLASS_LEVELS = [
   "Dropper",
 ] as const;
 export type ClassLevel = (typeof CLASS_LEVELS)[number];
+export const CLASS_LEVELS_WITH_ALL = ["All", ...CLASS_LEVELS] as const;
+
+// The broad teaching tracks the institute organises students/questions into.
+// "JEE (Main)" vs "JEE Advanced" are sub-exams within the JEE stream, not
+// separate streams — that finer split lives in `exams`/`exam_pattern` instead.
+export const STREAMS = ["JEE", "NEET", "Foundation"] as const;
+export type Stream = (typeof STREAMS)[number];
+export const STREAMS_WITH_ALL = ["All", ...STREAMS] as const;
+
+// Test types, matching the `tests.test_type` values used when creating a
+// test (CreateTestPage) — reused here so a question's Test Type tag lines up
+// with the same taxonomy the rest of the platform uses for tests.
+export const TEST_TYPES = [
+  { value: "mock", label: "Mock Test" },
+  { value: "chapter", label: "Chapter Test" },
+  { value: "pyq", label: "Previous Year" },
+  { value: "practice", label: "Practice" },
+  { value: "review", label: "Review Test" },
+  { value: "part", label: "Part Test" },
+  { value: "full_syllabus", label: "Full Syllabus Test" },
+  { value: "class", label: "Class Test" },
+  { value: "special", label: "Special Test" },
+] as const;
+export type TestType = (typeof TEST_TYPES)[number]["value"];
+export const testTypeLabel = (v: string | null | undefined): string =>
+  TEST_TYPES.find((t) => t.value === v)?.label ?? v ?? "—";

@@ -20,7 +20,8 @@ import {
   replaceMarkersWithUrls,
   firstImageForSlot,
 } from "@/lib/docxImport/uploadImages";
-import { SUBJECTS } from "@/lib/constants";
+import { SUBJECTS, CLASS_LEVELS, STREAMS, TEST_TYPES } from "@/lib/constants";
+import { streamFromExamPattern } from "@/lib/examPattern";
 import MathRenderer from "@/components/MathRenderer";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
 
@@ -33,12 +34,15 @@ type Props = {
   defaultSubject?: string;
   /** "test" (default) imports into test_questions; "bank" imports into question_bank. */
   target?: "test" | "bank";
-  /** Exam pattern of the target test, used to restrict subject choices (e.g. jee-main → no Biology). */
+  /** Exam pattern of the target test, used to restrict subject choices (e.g. jee-main → no Biology)
+   * and to default the bank rows' Stream (jee-main/jee-advanced → "JEE", etc). */
   examPattern?: string;
   /** Parent test option-label setting. Auto means exam pattern / detected style decides. */
   optionLabelStyle?: "auto" | "numeric" | "alpha";
   /** When set (bank target only), question_bank rows created by this import are stamped with this centre_id. */
   centreId?: string | null;
+  /** Parent test's Test Type — defaults the bank rows' Test Type tag so admins don't re-pick what they already chose. */
+  defaultTestType?: string;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -74,6 +78,7 @@ const DocxCommonImportDialog = ({
   examPattern,
   optionLabelStyle = "auto",
   centreId,
+  defaultTestType,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,6 +98,14 @@ const DocxCommonImportDialog = ({
   const [warnings, setWarnings] = useState<string[]>([]);
   const [imgProgress, setImgProgress] = useState({ done: 0, total: 0 });
   const [subject, setSubject] = useState<string>(defaultSubject && allowedSubjects.includes(defaultSubject) ? defaultSubject : allowedSubjects[0]);
+  // Applied to every question_bank row created by this import (both the
+  // target="bank" path and target="test"'s bank mirror) — a single uploaded
+  // paper is almost always one class/stream/test type throughout. Stream and
+  // Test Type default from the parent test's own exam pattern / test type
+  // (already chosen once when creating the test) rather than asking again.
+  const [classLevel, setClassLevel] = useState("");
+  const [stream, setStream] = useState(() => streamFromExamPattern(examPattern) ?? "");
+  const [testType, setTestType] = useState(() => defaultTestType ?? "");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
 
@@ -170,6 +183,9 @@ const DocxCommonImportDialog = ({
     setImported({ ok: 0, failed: 0 });
     setSubjectRanges([]);
       setDetectedOptionStyle(null);
+    setClassLevel("");
+    setStream(streamFromExamPattern(examPattern) ?? "");
+    setTestType(defaultTestType ?? "");
     if (!testId) setSelectedTestId(null);
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -506,6 +522,9 @@ const DocxCommonImportDialog = ({
             created_by: user.id,
             centre_id: centreId ?? null,
             difficulty: "medium",
+            class_level: classLevel || null,
+            stream: stream || null,
+            test_type: testType || null,
             is_public: true,
             tags: [],
             marks_correct: ranged.c,
@@ -529,6 +548,9 @@ const DocxCommonImportDialog = ({
             created_by: user.id,
             centre_id: centreId ?? null,
             difficulty: "medium",
+            class_level: classLevel || null,
+            stream: stream || null,
+            test_type: testType || null,
             is_public: true,
             tags: [],
             marks_correct: ranged.c,
@@ -711,6 +733,46 @@ const DocxCommonImportDialog = ({
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Class/Stream/Test Type — applied to every question this import saves to the bank */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-lg border border-border bg-muted/20 p-3">
+                <div>
+                  <label className="text-xs font-bold text-foreground">Class</label>
+                  <select
+                    value={classLevel}
+                    onChange={(e) => setClassLevel(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border bg-background p-2 text-xs"
+                  >
+                    <option value="">Unclassified</option>
+                    {CLASS_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-foreground">Stream</label>
+                  <select
+                    value={stream}
+                    onChange={(e) => setStream(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border bg-background p-2 text-xs"
+                  >
+                    <option value="">Unclassified</option>
+                    {STREAMS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-foreground">Test Type</label>
+                  <select
+                    value={testType}
+                    onChange={(e) => setTestType(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border bg-background p-2 text-xs"
+                  >
+                    <option value="">Unclassified</option>
+                    {TEST_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+                <p className="sm:col-span-3 text-[10px] text-muted-foreground">
+                  Applied to every question this import saves to the Question Bank.
+                </p>
               </div>
 
               {/* Subject-by-range tagger */}

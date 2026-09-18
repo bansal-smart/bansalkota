@@ -73,6 +73,7 @@ Answer: B
 Solution: Optional explanation (supports LaTeX and images).`}
             </pre>
             <p className="text-[11px] text-muted-foreground">Separate each question with a blank line. Re-number from <Code>1.</Code> if you like — the importer uses your numbers verbatim.</p>
+            <p className="text-[11px] text-muted-foreground">Class, Stream and Test Type aren't written in the .docx — pick them once for the whole file from the dropdowns in the import dialog, since one uploaded paper is almost always a single class/stream/test type.</p>
           </section>
 
           {/* Answer table */}

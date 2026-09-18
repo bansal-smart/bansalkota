@@ -7,6 +7,9 @@ export type BankQuestion = {
   subject: string;
   topic: string | null;
   difficulty: string;
+  class_level: string | null;
+  stream: string | null;
+  test_type: string | null;
   question_text: string;
   question_image_url: string | null;
   question_type: "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
@@ -29,6 +32,9 @@ export type BankQuestion = {
 export type BankFilters = {
   subject?: string;
   difficulty?: string;
+  classLevel?: string;
+  stream?: string;
+  testType?: string;
   search?: string;
   centreId?: string | null;
 };
@@ -38,7 +44,7 @@ export const QUESTION_BANK_KEY = ["question-bank"] as const;
 const fetchBank = async (filters: BankFilters) => {
   let q = supabase
     .from("question_bank")
-    .select("id, created_by, subject, topic, difficulty, question_text, question_image_url, question_type, options, option_images, tolerance, marks_correct, marks_wrong, partial_marking, tags, is_public, centre_id, created_at, updated_at")
+    .select("id, created_by, subject, topic, difficulty, class_level, stream, test_type, question_text, question_image_url, question_type, options, option_images, tolerance, marks_correct, marks_wrong, partial_marking, tags, is_public, centre_id, created_at, updated_at")
     .order("created_at", { ascending: false })
     .limit(500);
   if (filters.centreId) {
@@ -49,6 +55,16 @@ const fetchBank = async (filters: BankFilters) => {
   if (filters.subject && filters.subject !== "All") q = q.eq("subject", filters.subject);
   if (filters.difficulty && filters.difficulty !== "All") {
     q = q.eq("difficulty", filters.difficulty.toLowerCase());
+  }
+  if (filters.classLevel && filters.classLevel !== "All") {
+    // "Unclassified" is a synthetic bucket for existing untagged rows.
+    q = filters.classLevel === "Unclassified" ? q.is("class_level", null) : q.eq("class_level", filters.classLevel);
+  }
+  if (filters.stream && filters.stream !== "All") {
+    q = filters.stream === "Unclassified" ? q.is("stream", null) : q.eq("stream", filters.stream);
+  }
+  if (filters.testType && filters.testType !== "All") {
+    q = filters.testType === "Unclassified" ? q.is("test_type", null) : q.eq("test_type", filters.testType);
   }
   if (filters.search) q = q.ilike("question_text", `%${filters.search}%`);
   const { data, error } = await q;
@@ -72,7 +88,16 @@ const fetchBank = async (filters: BankFilters) => {
 export const useQuestionBank = (filters: BankFilters = {}) => {
   const qc = useQueryClient();
   const { data, isLoading, refetch } = useQuery({
-    queryKey: [...QUESTION_BANK_KEY, filters.subject ?? "All", filters.difficulty ?? "All", filters.search ?? "", filters.centreId ?? "global"],
+    queryKey: [
+      ...QUESTION_BANK_KEY,
+      filters.subject ?? "All",
+      filters.difficulty ?? "All",
+      filters.classLevel ?? "All",
+      filters.stream ?? "All",
+      filters.testType ?? "All",
+      filters.search ?? "",
+      filters.centreId ?? "global",
+    ],
     queryFn: () => fetchBank(filters),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

@@ -14,3 +14,15 @@ export const examPatternLabel = (pattern: string | null | undefined): string => 
   if (!pattern) return "—";
   return EXAM_PATTERN_LABELS[pattern.toLowerCase()] ?? pattern;
 };
+
+// Maps a test's exam_pattern slug to the Question Bank's broader Stream
+// taxonomy (JEE / NEET / Foundation — see `STREAMS` in constants.ts). Both
+// "jee-main" and "jee-advanced" fold into the single "JEE" stream. Patterns
+// with no matching stream (e.g. "boost") return null rather than guessing.
+export const streamFromExamPattern = (pattern: string | null | undefined): string | null => {
+  const p = (pattern ?? "").toLowerCase();
+  if (p.startsWith("jee")) return "JEE";
+  if (p === "neet") return "NEET";
+  if (p === "foundation") return "Foundation";
+  return null;
+};
