@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet, Copy } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
@@ -11,6 +11,8 @@ import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibil
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { examPatternLabel } from "@/lib/examPattern";
+import { slugify } from "@/lib/validators";
+import { resolveContentOwnership } from "@/lib/centreOwnership";
 import TablePagination from "@/components/TablePagination";
 
 type AdminTest = {
@@ -48,9 +50,10 @@ const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
 };
 
 const AdminTestsPage = () => {
-  const { isSuperAdmin, isCenterAdmin } = useAuth();
+  const { user, isSuperAdmin, isCenterAdmin } = useAuth();
   const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
   const { confirm, ConfirmDialog } = useConfirm();
+  const navigate = useNavigate();
   const [tests, setTests] = useState<AdminTest[]>([]);
   const [batches, setBatches] = useState<BatchOpt[]>([]);
   const [search, setSearch] = useState("");
@@ -58,6 +61,7 @@ const AdminTestsPage = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | "unrestricted" | batchId
   const [loading, setLoading] = useState(true);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   // `Authenticated can view published tests` matches for every logged-in user,
   // so RLS alone would show a centre admin every other centre's tests.
@@ -110,6 +114,83 @@ const AdminTestsPage = () => {
     if (error) return toast.error(error.message);
     toast.success("Test deleted");
     load();
+  };
+
+  // Deep-copies a test (all settings + its own independent question rows) as
+  // a new, always-unpublished draft — duplicating a Published test must never
+  // create a second live, student-visible test.
+  const duplicateTest = async (t: AdminTest) => {
+    if (!user) return toast.error("Sign in required");
+    setDuplicatingId(t.id);
+    try {
+      const { data: source, error: sourceError } = await supabase
+        .from("tests")
+        .select("*")
+        .eq("id", t.id)
+        .single();
+      if (sourceError || !source) {
+        toast.error(sourceError?.message ?? "Could not load test to duplicate");
+        return;
+      }
+
+      const { data: sourceQuestions, error: questionsError } = await supabase
+        .from("test_questions")
+        .select("*")
+        .eq("test_id", t.id);
+      if (questionsError) {
+        toast.error(questionsError.message);
+        return;
+      }
+
+      const {
+        id: _id,
+        created_at: _createdAt,
+        updated_at: _updatedAt,
+        created_by: _createdBy,
+        slug: _slug,
+        cbt_token: _cbtToken,
+        results_released_at: _resultsReleasedAt,
+        ...rest
+      } = source;
+      const title = `${source.title} (Copy)`;
+      const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+      const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
+
+      const { data: newTest, error: insertTestError } = await supabase
+        .from("tests")
+        .insert({
+          ...rest,
+          title,
+          slug,
+          is_published: false,
+          created_by: user.id,
+          ...ownership,
+        })
+        .select("id, slug")
+        .single();
+      if (insertTestError || !newTest) {
+        toast.error(insertTestError?.message ?? "Could not create duplicate test");
+        return;
+      }
+
+      if (sourceQuestions && sourceQuestions.length > 0) {
+        const questionRows = sourceQuestions.map(({ id: _qid, created_at: _qCreatedAt, test_id: _qTestId, ...q }) => ({
+          ...q,
+          test_id: newTest.id,
+        }));
+        const { error: insertQuestionsError } = await supabase.from("test_questions").insert(questionRows);
+        if (insertQuestionsError) {
+          toast.error(`Test duplicated, but copying questions failed: ${insertQuestionsError.message}`);
+          navigate(`/admin/tests/${newTest.slug}/edit`);
+          return;
+        }
+      }
+
+      toast.success("Test duplicated as a new draft");
+      navigate(`/admin/tests/${newTest.slug}/edit`);
+    } finally {
+      setDuplicatingId(null);
+    }
   };
 
   const now = Date.now();
@@ -232,6 +313,18 @@ const AdminTestsPage = () => {
                         <Link to={`/admin/tests/${t.slug || t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
                           <Pencil className="h-3.5 w-3.5" />
                         </Link>
+                        <button
+                          onClick={() => duplicateTest(t)}
+                          disabled={duplicatingId === t.id}
+                          className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                          title="Duplicate test"
+                        >
+                          {duplicatingId === t.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
                         <Link to={`/admin/tests/${t.slug || t.id}/result`} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Result sheet">
                           <FileSpreadsheet className="h-3.5 w-3.5" />
                         </Link>

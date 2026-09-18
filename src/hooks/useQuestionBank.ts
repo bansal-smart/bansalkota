@@ -42,8 +42,9 @@ const fetchBank = async (filters: BankFilters) => {
     .order("created_at", { ascending: false })
     .limit(500);
   if (filters.centreId) {
-    // Centre banks are fully separate from the global bank — no global rows included.
-    q = q.eq("centre_id", filters.centreId);
+    // Centre admins see Bansal's shared global bank (centre_id IS NULL) plus
+    // their own centre's private questions — but never another centre's.
+    q = q.or(`centre_id.is.null,centre_id.eq.${filters.centreId}`);
   }
   if (filters.subject && filters.subject !== "All") q = q.eq("subject", filters.subject);
   if (filters.difficulty && filters.difficulty !== "All") {

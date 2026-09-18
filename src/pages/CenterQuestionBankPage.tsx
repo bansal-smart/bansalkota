@@ -17,7 +17,7 @@ const CenterQuestionBankPage = () => {
         <div>
           <h1 className="text-xl font-bold text-foreground">Question Bank</h1>
           <p className="text-xs text-muted-foreground">
-            Author and manage your centre's own questions, separate from Bansal's question bank.
+            Browse Bansal's shared question bank, plus author and manage your own centre's private questions.
           </p>
         </div>
       </div>
