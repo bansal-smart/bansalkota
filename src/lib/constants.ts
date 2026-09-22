@@ -62,3 +62,16 @@ export const TEST_TYPES = [
 export type TestType = (typeof TEST_TYPES)[number]["value"];
 export const testTypeLabel = (v: string | null | undefined): string =>
   TEST_TYPES.find((t) => t.value === v)?.label ?? v ?? "—";
+
+// Question Bank's Class taxonomy: the Roman-numeral batch classes this
+// institute actually teaches (Foundation IV–X, JEE/NEET senior-secondary
+// XI–XIII, where XIII = dropper) — matching `course_batches.code` naming
+// (e.g. "J-XI", "BOOST-XII-E"). Distinct from CLASS_LEVELS above (Arabic
+// "Class 1"–"Class 12" + "Dropper"), which is the general admission/enquiry
+// taxonomy used elsewhere and covers primary grades this list doesn't.
+export const QUESTION_BANK_CLASSES = ["IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII"] as const;
+export type QuestionBankClass = (typeof QUESTION_BANK_CLASSES)[number];
+export const QUESTION_BANK_CLASSES_WITH_ALL = ["All", ...QUESTION_BANK_CLASSES] as const;
+export const QUESTION_BANK_JEE_NEET_CLASSES = ["XI", "XII", "XIII"] as const;
+export const QUESTION_BANK_FOUNDATION_CLASSES = ["IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
+

@@ -38,7 +38,7 @@ type Props = {
   centreId?: string | null;
 };
 
-import { SUBJECTS, CLASS_LEVELS, STREAMS, TEST_TYPES } from "@/lib/constants";
+import { SUBJECTS, QUESTION_BANK_CLASSES, STREAMS, TEST_TYPES } from "@/lib/constants";
 const DIFFICULTIES = ["easy", "medium", "hard"];
 
 type QType = "mcq-single" | "mcq-multi" | "numerical" | "integer" | "assertion-reason";
@@ -306,7 +306,7 @@ const QuestionEditorDialog = ({ open, onClose, onSaved, initial, centreId }: Pro
               <label className="text-xs font-semibold text-foreground">Class</label>
               <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none">
                 <option value="">Unclassified</option>
-                {CLASS_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+                {QUESTION_BANK_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>

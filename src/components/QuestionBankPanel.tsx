@@ -14,11 +14,11 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { usePagination } from "@/hooks/usePagination";
 
-import { SUBJECTS_WITH_ALL as SUBJECTS, CLASS_LEVELS_WITH_ALL, STREAMS_WITH_ALL, TEST_TYPES, testTypeLabel } from "@/lib/constants";
+import { SUBJECTS_WITH_ALL as SUBJECTS, QUESTION_BANK_CLASSES, QUESTION_BANK_CLASSES_WITH_ALL, QUESTION_BANK_JEE_NEET_CLASSES, QUESTION_BANK_FOUNDATION_CLASSES, STREAMS_WITH_ALL, TEST_TYPES, testTypeLabel } from "@/lib/constants";
 const DIFFICULTIES = ["All", "Easy", "Medium", "Hard"];
 // "Unclassified" is a synthetic filter bucket (not a real tag value) for
 // questions that predate this feature and have no Class/Stream/Test Type yet.
-const CLASS_LEVEL_OPTIONS = [...CLASS_LEVELS_WITH_ALL, "Unclassified"];
+const CLASS_LEVEL_OPTIONS = [...QUESTION_BANK_CLASSES_WITH_ALL, "Unclassified"];
 const STREAM_OPTIONS = [...STREAMS_WITH_ALL, "Unclassified"];
 const TEST_TYPE_OPTIONS = [{ value: "All", label: "All test types" }, ...TEST_TYPES, { value: "Unclassified", label: "Unclassified" }];
 
@@ -137,6 +137,7 @@ const SortHeader = ({ label, active, dir, onClick, className = "" }: { label: st
 const QuestionBankPanel = ({ draggable = false, manage = false, compact = false, tableView = false, className = "", onAdd, onAddMany, addedBankIds, centreId }: Props) => {
   const [subject, setSubject] = useState("All");
   const [difficulty, setDifficulty] = useState("All");
+  const [classLevel, setClassLevel] = useState("All");
   const [stream, setStream] = useState("All");
   const [testType, setTestType] = useState("All");
   const [topic, setTopic] = useState("All");
@@ -159,13 +160,11 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   const [bulkSaving, setBulkSaving] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
-  // Server-side filters (subject/difficulty/stream/testType/search) — topic
+  // Server-side filters (subject/difficulty/classLevel/stream/testType/search) — topic
   // filtered client-side since it's mostly free text with no fixed list.
-  // No Class filter: virtually no question is tagged with one yet, so it
-  // would only ever show "Unclassified" — see Class column/badges instead.
   const filters = useMemo(
-    () => ({ subject, difficulty, stream, testType, search, centreId }),
-    [subject, difficulty, stream, testType, search, centreId],
+    () => ({ subject, difficulty, classLevel, stream, testType, search, centreId }),
+    [subject, difficulty, classLevel, stream, testType, search, centreId],
   );
   const { questions, loading, reload } = useQuestionBank(filters);
   const isOwn = (q: BankQuestion) => !centreId || q.centre_id === centreId;
@@ -192,7 +191,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
   }, [questions, topic, sortKey, sortDir]);
 
   const { paged: pageItems, page, setPage, totalPages, pageSize, setPageSize } = usePagination(processed, 25);
-  useEffect(() => { setPage(1); }, [subject, difficulty, stream, testType, topic, search, sortKey, sortDir, setPage]);
+  useEffect(() => { setPage(1); }, [subject, difficulty, classLevel, stream, testType, topic, search, sortKey, sortDir, setPage]);
   const pageIds = useMemo(() => pageItems.map((q) => q.id), [pageItems]);
   const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
   const someOnPageSelected = pageIds.some((id) => selected.has(id));
@@ -329,6 +328,24 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
           </select>
           <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none" aria-label="Filter by difficulty">
             {DIFFICULTIES.map((d) => <option key={d} value={d}>{d === "All" ? "All difficulty" : d}</option>)}
+          </select>
+          <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none" aria-label="Filter by class">
+            <option value="All">All classes</option>
+            {(!stream || stream === "All" || stream === "JEE" || stream === "NEET") && (
+              <optgroup label="JEE / NEET">
+                {QUESTION_BANK_JEE_NEET_CLASSES.map((c) => (
+                  <option key={c} value={c}>Class {c}{c === "XIII" ? " (Dropper)" : ""}</option>
+                ))}
+              </optgroup>
+            )}
+            {(!stream || stream === "All" || stream === "Foundation") && (
+              <optgroup label="Foundation">
+                {QUESTION_BANK_FOUNDATION_CLASSES.map((c) => (
+                  <option key={c} value={c}>Class {c}</option>
+                ))}
+              </optgroup>
+            )}
+            <option value="Unclassified">Unclassified</option>
           </select>
           <select value={stream} onChange={(e) => setStream(e.target.value)} className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none" aria-label="Filter by stream">
             {STREAM_OPTIONS.map((s) => <option key={s} value={s}>{s === "All" ? "All streams" : s}</option>)}
@@ -563,7 +580,7 @@ const QuestionBankPanel = ({ draggable = false, manage = false, compact = false,
               <label className="text-xs font-semibold text-foreground">Class</label>
               <select value={bulkClassLevel} onChange={(e) => setBulkClassLevel(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none">
                 <option value="">— No change —</option>
-                {CLASS_LEVEL_OPTIONS.filter((c) => c !== "All" && c !== "Unclassified").map((c) => <option key={c} value={c}>{c}</option>)}
+                {QUESTION_BANK_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>

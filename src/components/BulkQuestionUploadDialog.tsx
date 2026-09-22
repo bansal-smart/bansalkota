@@ -51,7 +51,7 @@ const COMPETE_HEADERS = [
 
 const QB_SAMPLE_ROWS: string[][] = [
   [
-    "Physics", "Kinematics", "easy", "Class 11", "JEE", "chapter",
+    "Physics", "Kinematics", "easy", "XI", "JEE", "chapter",
     "What is the SI unit of acceleration?",
     "m/s", "m/s^2", "m^2/s", "kg.m/s",
     "2",
@@ -59,7 +59,7 @@ const QB_SAMPLE_ROWS: string[][] = [
     "4", "-1", "units;basics",
   ],
   [
-    "Mathematics", "Algebra", "medium", "Class 12", "JEE", "mock",
+    "Mathematics", "Algebra", "medium", "XII", "JEE", "mock",
     "Solve for x: $2x + 6 = 14$",
     "2", "4", "6", "8",
     "2",
@@ -67,7 +67,7 @@ const QB_SAMPLE_ROWS: string[][] = [
     "4", "-1", "linear-equations",
   ],
   [
-    "Chemistry", "Periodic Table", "hard", "Class 11", "NEET", "practice",
+    "Chemistry", "Periodic Table", "hard", "XI", "NEET", "practice",
     "Which of the following are noble gases? (Select all that apply)",
     "Helium", "Nitrogen", "Argon", "Oxygen",
     "1,3",
@@ -176,11 +176,12 @@ type ParsedQuestion = {
 
 type RowError = { row: number; message: string; raw: string[] };
 
-import { SUBJECTS, SUBJECTS_VALID_ANY, CLASS_LEVELS, STREAMS, TEST_TYPES } from "@/lib/constants";
+import { SUBJECTS, SUBJECTS_VALID_ANY, CLASS_LEVELS, QUESTION_BANK_CLASSES, STREAMS, TEST_TYPES } from "@/lib/constants";
 const VALID_SUBJECTS_QB: string[] = [...SUBJECTS];
 const VALID_SUBJECTS_COMPETE: string[] = [...SUBJECTS_VALID_ANY];
 const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
-const VALID_CLASS_LEVELS: string[] = [...CLASS_LEVELS];
+const VALID_CLASS_LEVELS_QB: string[] = [...QUESTION_BANK_CLASSES];
+const VALID_CLASS_LEVELS_COMPETE: string[] = [...CLASS_LEVELS];
 const VALID_STREAMS: string[] = [...STREAMS];
 const VALID_TEST_TYPES: string[] = TEST_TYPES.map((t) => t.value);
 
@@ -208,9 +209,21 @@ const parseRow = (
 
   // Class/Stream/Test Type are optional — a blank cell leaves the question
   // "Unclassified" rather than failing the whole row.
-  const classLevelRaw = get("class_level");
-  if (mode === "question_bank" && classLevelRaw && !VALID_CLASS_LEVELS.includes(classLevelRaw)) {
-    throw new Error(`Invalid class_level "${classLevelRaw}" (allowed: ${VALID_CLASS_LEVELS.join(", ")})`);
+  let classLevelRaw = get("class_level");
+  if (mode === "question_bank" && classLevelRaw) {
+    const norm = classLevelRaw.replace(/^class\s+/i, "").trim().toUpperCase();
+    const map: Record<string, string> = {
+      "4": "IV", "5": "V", "6": "VI", "7": "VII", "8": "VIII", "9": "IX", "10": "X",
+      "11": "XI", "12": "XII", "13": "XIII", "DROPPER": "XIII",
+    };
+    if (map[norm]) classLevelRaw = map[norm];
+    else if ((VALID_CLASS_LEVELS_QB as readonly string[]).includes(norm)) classLevelRaw = norm;
+
+    if (!VALID_CLASS_LEVELS_QB.includes(classLevelRaw)) {
+      throw new Error(`Invalid class_level "${classLevelRaw}" (allowed: ${VALID_CLASS_LEVELS_QB.join(", ")})`);
+    }
+  } else if (mode === "compete" && classLevelRaw && !VALID_CLASS_LEVELS_COMPETE.includes(classLevelRaw)) {
+    throw new Error(`Invalid class_level "${classLevelRaw}" (allowed: ${VALID_CLASS_LEVELS_COMPETE.join(", ")})`);
   }
   const streamRaw = get("stream");
   if (mode === "question_bank" && streamRaw && !VALID_STREAMS.includes(streamRaw)) {

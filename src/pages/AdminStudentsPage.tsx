@@ -11,7 +11,6 @@ import BulkCsvDialog, { type BulkServerResult } from "@/components/BulkCsvDialog
 import TablePagination from "@/components/TablePagination";
 import { TABLE_PAGE_SIZE_ALL } from "@/lib/tablePageSize";
 import { fetchStaffUserIds, supabaseErrorMessage } from "@/lib/studentListQuery";
-import { copyToClipboard as copyTextToClipboard } from "@/lib/clipboard";
 
 type StudentRow = {
   user_id: string;
@@ -258,11 +257,11 @@ const AdminStudentsPage = () => {
   const [pwdBulkProgress, setPwdBulkProgress] = useState({ done: 0, total: 0 });
 
   const copyToClipboard = async (val: string) => {
-    const copied = await copyTextToClipboard(val, "Password copied");
-    if (copied) {
+    try {
+      await navigator.clipboard.writeText(val);
       setCopiedPwd(val);
       setTimeout(() => setCopiedPwd((c) => (c === val ? null : c)), 1500);
-    }
+    } catch { /* ignore */ }
   };
 
   const fetchAllFilteredStudentIds = async (): Promise<string[]> => {
@@ -402,9 +401,6 @@ const AdminStudentsPage = () => {
     const finalCentre = (isCenterAdmin && primaryCenter) ? centreLabel(primaryCenter) : addForm.centre;
     if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !finalCentre.trim()) {
       return toast.error("Roll No, Student Name and Centre are required");
-    }
-    if (!addForm.father_name.trim() || !addForm.dob.trim() || !addForm.target_exam.trim() || !addForm.class_level.trim()) {
-      return toast.error("Father's Name, DOB, Stream and Class are required");
     }
     setAddSaving(true);
     try {
@@ -853,12 +849,12 @@ const AdminStudentsPage = () => {
               {([
                 { k: "roll_number", l: "Roll No *", ph: "1001", type: "text" },
                 { k: "full_name", l: "Student Name *", ph: "Aviral Singh", type: "text" },
-                { k: "father_name", l: "Father's Name *", ph: "Ashok Kumar Singh", type: "text" },
+                { k: "father_name", l: "Father's Name", ph: "Ashok Kumar Singh", type: "text" },
                 { k: "phone", l: "Contact No.", ph: "7857852344", type: "text" },
                 { k: "parent_phone", l: "Parent No.", ph: "7909075201", type: "text" },
-                { k: "dob", l: "DOB *", ph: "", type: "date" },
-                { k: "target_exam", l: "Stream *", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
-                { k: "class_level", l: "Class *", ph: "Select class", type: "select", options: CLASS_OPTIONS },
+                { k: "dob", l: "DOB", ph: "", type: "date" },
+                { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
+                { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS },
                 ...(!isCenterAdmin ? [{ k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) }] : []),
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -1030,19 +1026,18 @@ const AdminStudentsPage = () => {
                 <th className="p-3 text-left font-medium hidden lg:table-cell">Batch</th>
                 <th className="p-3 text-left font-medium hidden md:table-cell">Centre</th>
                 <th className="p-3 text-left font-medium">Status</th>
-                <th className="p-3 text-left font-medium w-10">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={13} className="p-10 text-center">
+                  <td colSpan={12} className="p-10 text-center">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary" />
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="p-10 text-center text-muted-foreground">No students found.</td>
+                  <td colSpan={12} className="p-10 text-center text-muted-foreground">No students found.</td>
                 </tr>
               ) : (
                 rows.map((u) => (
@@ -1095,15 +1090,6 @@ const AdminStudentsPage = () => {
                           </span>
                         ) : null}
                       </div>
-                    </td>
-                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => setConfirmDelete(u)}
-                        title="Delete student"
-                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
                     </td>
                   </tr>
                 ))

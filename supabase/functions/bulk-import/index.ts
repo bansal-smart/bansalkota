@@ -217,6 +217,26 @@ Deno.serve(async (req) => {
       const { data: batchesList } = await admin
         .from("course_batches")
         .select("id, name, code, course_id, centre_id, stream, class_level");
+      // Batches backing a test-series-only product (e.g. "AITS NEET"/"AITS JEE",
+      // included_services = ["test_series"]) are add-on enrollments, not a
+      // student's classroom/home batch. A bulk-import Batch Code column should
+      // never be able to point a student's primary batch_id at one of these —
+      // that's how hundreds of students ended up with their real classroom
+      // batch (and its course) silently replaced by a test-series product.
+      const batchCourseIds = Array.from(
+        new Set((batchesList ?? []).map((b: any) => b.course_id).filter((x: any): x is string => !!x)),
+      );
+      const testSeriesOnlyCourseIds = new Set<string>();
+      if (batchCourseIds.length) {
+        const { data: coursesList } = await admin
+          .from("courses")
+          .select("id, included_services")
+          .in("id", batchCourseIds);
+        (coursesList ?? []).forEach((c: any) => {
+          const services = Array.isArray(c.included_services) ? c.included_services : [];
+          if (services.length === 1 && services[0] === "test_series") testSeriesOnlyCourseIds.add(c.id);
+        });
+      }
       const centreByKey = new Map<string, string>();
       const centreIsHqById = new Map<string, boolean>();
       (centresList ?? []).forEach((c: any) => {
@@ -230,8 +250,11 @@ Deno.serve(async (req) => {
       const batchCourseById = new Map<string, string | null>();
       const batchCentreById = new Map<string, string | null>();
       (batchesList ?? []).forEach((b: any) => {
-        if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
-        if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
+        const isTestSeriesOnly = b.course_id && testSeriesOnlyCourseIds.has(b.course_id);
+        if (!isTestSeriesOnly) {
+          if (b.name) batchByKey.set(String(b.name).toLowerCase().trim(), b.id);
+          if (b.code) batchByKey.set(String(b.code).toLowerCase().trim(), b.id);
+        }
         batchCourseById.set(b.id, b.course_id ?? null);
         batchCentreById.set(b.id, b.centre_id ?? null);
       });

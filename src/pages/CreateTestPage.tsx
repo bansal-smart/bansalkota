@@ -19,6 +19,7 @@ import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibil
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
+import { classFromBatchCodes } from "@/lib/batchClass";
 import MasterImportInstructions from "@/components/MasterImportInstructions";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { BankQuestion } from "@/hooks/useQuestionBank";
@@ -27,7 +28,6 @@ import { syncTestStats } from "@/lib/tests/syncTestStats";
 import MathRenderer from "@/components/MathRenderer";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatTestDate } from "@/lib/utils";
-import { TEST_TYPES } from "@/lib/constants";
 
 
 const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -265,6 +265,18 @@ const CreateTestPage = () => {
     if (!centre) return `${batch.code}`;
     return `${batch.code} (${centre.city}${centre.area ? ` - ${centre.area}` : ""})`;
   }, [batchOptions, centres]);
+
+  // Derived default Class for Word/Common imports from this test's scoped batches.
+  // When batches resolve to exactly one distinct class (e.g. all XI batches),
+  // defaults the import dialogs so question_bank rows don't land unclassified.
+  // Returns undefined (requiring manual choice) if open-to-all or multi-class.
+  const derivedClassLevel = useMemo(() => {
+    if (allowedBatches.length === 0) return undefined;
+    const codes = allowedBatches
+      .map((id) => batchOptions.find((b) => b.id === id)?.code)
+      .filter((c): c is string => Boolean(c));
+    return classFromBatchCodes(codes) ?? undefined;
+  }, [allowedBatches, batchOptions]);
 
   // Load existing test for edit mode (by slug or id)
   useEffect(() => {
@@ -1241,9 +1253,15 @@ const CreateTestPage = () => {
           <div>
             <label className={labelCls}>Test Type</label>
             <select value={testType} onChange={(e) => setTestType(e.target.value)} className={inputCls}>
-              {TEST_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
+              <option value="mock">Mock Test</option>
+              <option value="chapter">Chapter Test</option>
+              <option value="pyq">Previous Year</option>
+              <option value="practice">Practice</option>
+              <option value="review">Review Test</option>
+              <option value="part">Part Test</option>
+              <option value="full_syllabus">Full Syllabus Test</option>
+              <option value="class">Class Test</option>
+              <option value="special">Special Test</option>
             </select>
           </div>
           <div>
@@ -1251,7 +1269,7 @@ const CreateTestPage = () => {
             <select value={examPattern} onChange={(e) => setExamPattern(e.target.value)} className={inputCls}>
               {examList.length === 0 && (
                 <>
-                  <option value="jee-main">JEE (Main)</option>
+                  <option value="jee-main">JEE Main</option>
                   <option value="jee-advanced">JEE Advanced</option>
                   <option value="neet">NEET</option>
                 </>
@@ -1960,6 +1978,7 @@ const CreateTestPage = () => {
         examPattern={examPattern}
         optionLabelStyle={optionLabelStyle}
         defaultTestType={testType}
+        defaultClassLevel={derivedClassLevel}
       />
       <DocxCommonImportDialog
         open={commonImportOpen}
@@ -1969,6 +1988,7 @@ const CreateTestPage = () => {
         examPattern={examPattern}
         optionLabelStyle={optionLabelStyle}
         defaultTestType={testType}
+        defaultClassLevel={derivedClassLevel}
       />
       <MasterImportInstructions open={masterInstructionsOpen} onClose={() => setMasterInstructionsOpen(false)} />
     </DndContext>

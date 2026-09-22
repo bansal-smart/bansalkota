@@ -20,7 +20,7 @@ import {
   replaceMarkersWithUrls,
   firstImageForSlot,
 } from "@/lib/docxImport/uploadImages";
-import { SUBJECTS, CLASS_LEVELS, STREAMS, TEST_TYPES } from "@/lib/constants";
+import { SUBJECTS, QUESTION_BANK_CLASSES, STREAMS, TEST_TYPES } from "@/lib/constants";
 import { streamFromExamPattern } from "@/lib/examPattern";
 import MathRenderer from "@/components/MathRenderer";
 import { syncTestStats } from "@/lib/tests/syncTestStats";
@@ -43,6 +43,8 @@ type Props = {
   centreId?: string | null;
   /** Parent test's Test Type — defaults the bank rows' Test Type tag so admins don't re-pick what they already chose. */
   defaultTestType?: string;
+  /** Parent test's derived batch Class (e.g. "XI", "XII") — defaults the bank rows' Class tag when unambiguous. */
+  defaultClassLevel?: string;
 };
 
 type Step = "upload" | "preview" | "uploading" | "saving" | "done";
@@ -79,6 +81,7 @@ const DocxCommonImportDialog = ({
   optionLabelStyle = "auto",
   centreId,
   defaultTestType,
+  defaultClassLevel,
 }: Props) => {
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -100,12 +103,20 @@ const DocxCommonImportDialog = ({
   const [subject, setSubject] = useState<string>(defaultSubject && allowedSubjects.includes(defaultSubject) ? defaultSubject : allowedSubjects[0]);
   // Applied to every question_bank row created by this import (both the
   // target="bank" path and target="test"'s bank mirror) — a single uploaded
-  // paper is almost always one class/stream/test type throughout. Stream and
-  // Test Type default from the parent test's own exam pattern / test type
+  // paper is almost always one class/stream/test type throughout. Class, Stream and
+  // Test Type default from the parent test's batch codes / exam pattern / test type
   // (already chosen once when creating the test) rather than asking again.
-  const [classLevel, setClassLevel] = useState("");
+  const [classLevel, setClassLevel] = useState(() => defaultClassLevel ?? "");
   const [stream, setStream] = useState(() => streamFromExamPattern(examPattern) ?? "");
   const [testType, setTestType] = useState(() => defaultTestType ?? "");
+
+  useEffect(() => {
+    if (open) {
+      if (defaultClassLevel !== undefined) setClassLevel(defaultClassLevel);
+      if (defaultTestType !== undefined) setTestType(defaultTestType);
+      if (examPattern) setStream(streamFromExamPattern(examPattern) ?? "");
+    }
+  }, [open, defaultClassLevel, defaultTestType, examPattern]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imported, setImported] = useState({ ok: 0, failed: 0 });
 
@@ -745,7 +756,7 @@ const DocxCommonImportDialog = ({
                     className="mt-1 w-full rounded-md border border-border bg-background p-2 text-xs"
                   >
                     <option value="">Unclassified</option>
-                    {CLASS_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    {QUESTION_BANK_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>

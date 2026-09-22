@@ -8,7 +8,7 @@ import { toast } from "sonner";
 // deployment. Centralizing the guard here also gives the user a way to
 // actually get the value (shown in the failure toast) instead of a silent
 // no-op or a crash.
-export async function copyToClipboard(text: string, successMessage = "Copied"): Promise<boolean> {
+export async function copyToClipboard(text: string, successMessage = "Copied") {
   try {
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(text);
@@ -25,9 +25,7 @@ export async function copyToClipboard(text: string, successMessage = "Copied"): 
       if (!copied) throw new Error("Clipboard fallback failed");
     }
     toast.success(successMessage);
-    return true;
   } catch {
     toast.error("Couldn't copy automatically — copy manually", { description: text });
-    return false;
   }
 }

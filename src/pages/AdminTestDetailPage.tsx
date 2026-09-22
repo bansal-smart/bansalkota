@@ -12,6 +12,7 @@ import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
 import MathRenderer from "@/components/MathRenderer";
 import CbtSettingsPanel from "@/components/admin/CbtSettingsPanel";
 import { examPatternLabel } from "@/lib/examPattern";
+import { classFromBatchCodes } from "@/lib/batchClass";
 
 type Tab = "summary" | "questions" | "attempts" | "leaderboard" | "analytics";
 
@@ -54,6 +55,24 @@ const AdminTestDetailPage = () => {
   const [showImport, setShowImport] = useState(false);
   const [showCommonImport, setShowCommonImport] = useState(false);
   const [editingAnswerKey, setEditingAnswerKey] = useState<QRow | null>(null);
+  const [testBatchCodes, setTestBatchCodes] = useState<string[]>([]);
+
+  useEffect(() => {
+    const ids = (test as any)?.cbt_allowed_batch_ids;
+    if (Array.isArray(ids) && ids.length > 0) {
+      supabase
+        .from("course_batches")
+        .select("code")
+        .in("id", ids)
+        .then(({ data }) => {
+          if (data) setTestBatchCodes(data.map((b) => b.code));
+        });
+    } else {
+      setTestBatchCodes([]);
+    }
+  }, [test]);
+
+  const derivedClassLevel = useMemo(() => classFromBatchCodes(testBatchCodes) ?? undefined, [testBatchCodes]);
 
   const load = async () => {
     if (!slug) {
@@ -477,8 +496,24 @@ const AdminTestDetailPage = () => {
         </div>
       )}
 
-      <DocxBulkImportDialog open={showImport} onClose={() => setShowImport(false)} onImported={() => { setShowImport(false); load(); }} testId={test.id} />
-      <DocxCommonImportDialog open={showCommonImport} onClose={() => setShowCommonImport(false)} onImported={() => { setShowCommonImport(false); load(); }} testId={test.id} examPattern={test.exam_pattern} />
+      <DocxBulkImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={() => { setShowImport(false); load(); }}
+        testId={test.id}
+        examPattern={test.exam_pattern}
+        defaultTestType={test.test_type}
+        defaultClassLevel={derivedClassLevel}
+      />
+      <DocxCommonImportDialog
+        open={showCommonImport}
+        onClose={() => setShowCommonImport(false)}
+        onImported={() => { setShowCommonImport(false); load(); }}
+        testId={test.id}
+        examPattern={test.exam_pattern}
+        defaultTestType={test.test_type}
+        defaultClassLevel={derivedClassLevel}
+      />
       {editingAnswerKey && (
         <FixAnswerKeyModal
           question={editingAnswerKey}

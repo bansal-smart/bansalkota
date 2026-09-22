@@ -11,7 +11,6 @@ import AspectRatioHint from "@/components/admin/AspectRatioHint";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import { usePagination } from "@/hooks/usePagination";
 import TablePagination from "@/components/TablePagination";
-import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 type Center = {
   id: string;
@@ -385,10 +384,7 @@ const AdminCentersPage = () => {
             onSelectCity={(city, state) => setForm({ ...form, city, state })}
           />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Area (optional)" value={form.area ?? ""} onChange={(e) => setForm({ ...form, area: e.target.value })} />
-          <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.state ?? ""} onChange={(e) => setForm({ ...form, state: e.target.value })}>
-            <option value="">State *</option>
-            {INDIAN_STATES_AND_UTS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="State *" value={form.state ?? ""} onChange={(e) => setForm({ ...form, state: e.target.value })} />
           <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm" value={form.region ?? "North"} onChange={(e) => setForm({ ...form, region: e.target.value })}>
             {REGIONS.map((r) => <option key={r}>{r}</option>)}
           </select>
