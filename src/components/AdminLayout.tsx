@@ -26,6 +26,7 @@ import {
   LifeBuoy,
   Megaphone,
   Bell,
+  ClipboardList,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -77,6 +78,7 @@ const mainGroups: NavGroup[] = [
       { label: "Books / E-Store", icon: BookOpen, path: "/admin/books" },
       { label: "E-Store Orders", icon: BookOpen, path: "/admin/orders" },
       { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
+      { label: "Test Series Registrations", icon: ClipboardList, path: "/admin/test-series-registrations" },
       { label: "BOOST Page", icon: FileText, path: "/admin/boost-page" },
     ],
   },

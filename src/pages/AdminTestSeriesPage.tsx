@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trophy, Loader2, Plus, Trash2, Pencil, Eye, ImageIcon } from "lucide-react";
+import { Trophy, Loader2, Plus, Trash2, Pencil, Eye, ImageIcon, ClipboardList } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -87,12 +87,20 @@ const AdminTestSeriesPage = () => {
             <p className="text-white/90 text-sm mt-1">Manage AIR test series products</p>
           </div>
         </div>
-        <Link
-          to="/admin/test-series/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-white text-primary px-4 py-2 text-sm font-bold shadow-sm hover:bg-white/90 transition-colors"
-        >
-          <Plus className="h-4 w-4" /> New Test Series
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/admin/test-series-registrations"
+            className="inline-flex items-center gap-2 rounded-lg bg-white/10 text-white border border-white/20 px-4 py-2 text-sm font-bold shadow-sm hover:bg-white/20 transition-colors"
+          >
+            <ClipboardList className="h-4 w-4" /> Registrations
+          </Link>
+          <Link
+            to="/admin/test-series/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-white text-primary px-4 py-2 text-sm font-bold shadow-sm hover:bg-white/90 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> New Test Series
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">

@@ -30,6 +30,7 @@ type Registration = {
   notes: string | null;
   created_at: string;
   orders: OrderInfo;
+  source?: "registration" | "order" | "enquiry";
 };
 
 type TestSeriesOption = { id: string; title: string };
@@ -42,7 +43,7 @@ const AdminTestSeriesRegistrationsPage = () => {
   const { isStaff } = useAuth();
   const { confirm, ConfirmDialog } = useConfirm();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [rows, setRows] = useState<Registration[]>([]);
+  const [allRawRows, setAllRawRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 300);
@@ -54,94 +55,245 @@ const AdminTestSeriesRegistrationsPage = () => {
   const [selected, setSelected] = useState<Registration | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [total, setTotal] = useState(0);
-
-  const applyFilters = (query: any) => {
-    if (debouncedQ.trim()) {
-      const needle = debouncedQ.trim().replace(/[%(),]/g, " ");
-      query = query.or(
-        `full_name.ilike.%${needle}%,email.ilike.%${needle}%,phone.ilike.%${needle}%,test_series_title.ilike.%${needle}%`,
-      );
-    }
-    if (statusFilter !== "all") query = query.eq("status", statusFilter);
-    if (seriesFilter !== "all") query = query.eq("test_series_id", seriesFilter);
-    if (fromDate) query = query.gte("created_at", `${fromDate}T00:00:00`);
-    if (toDate) {
-      const end = new Date(`${toDate}T00:00:00`);
-      end.setDate(end.getDate() + 1);
-      query = query.lt("created_at", end.toISOString());
-    }
-    return query;
-  };
 
   const load = async () => {
     setLoading(true);
-    const { data: seriesRows } = await supabase.from("test_series").select("id, title").order("title");
-    setSeriesOptions((seriesRows ?? []) as TestSeriesOption[]);
+    try {
+      // 1. Load test series options for the filter dropdown
+      const { data: seriesRows } = await supabase.from("test_series").select("id, title").order("title");
+      const seriesList = (seriesRows ?? []) as TestSeriesOption[];
+      setSeriesOptions(seriesList);
+      const seriesTitlesLower = new Set(seriesList.map((s) => s.title.toLowerCase()));
 
-    if (pageSize === TABLE_PAGE_SIZE_ALL) {
-      const all: Registration[] = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await applyFilters(
-          supabase
-            .from("test_series_registrations")
-            .select(SELECT_COLUMNS)
-            .order("created_at", { ascending: false })
-            .range(from, from + 999),
-        );
-        if (error) {
-          toast.error(error.message);
-          break;
+      const combined: Registration[] = [];
+      const knownOrderIds = new Set<string>();
+      const knownKeys = new Set<string>();
+
+      // 2. Fetch from test_series_registrations table
+      const { data: regData, error: regError } = await supabase
+        .from("test_series_registrations")
+        .select(SELECT_COLUMNS)
+        .order("created_at", { ascending: false });
+
+      if (regError) {
+        console.warn("Notice: test_series_registrations fetch:", regError.message);
+      } else if (regData) {
+        for (const r of regData as unknown as any[]) {
+          // The join returns orders.amount (first orders table) — remap to .total
+          // so the rest of the UI uses a consistent OrderInfo shape.
+          const ordersNorm = r.orders
+            ? { status: r.orders.status, total: r.orders.total ?? null, created_at: r.orders.created_at }
+            : null;
+          combined.push({ ...r, orders: ordersNorm, source: "registration" });
+          if (r.order_id) knownOrderIds.add(r.order_id);
+          if (r.email && r.test_series_title) {
+            knownKeys.add(`${r.email.toLowerCase()}::${r.test_series_title.toLowerCase()}`);
+          }
         }
-        const chunk = (data ?? []) as unknown as Registration[];
-        all.push(...chunk);
-        if (chunk.length < 1000) break;
-        from += 1000;
       }
-      setRows(all);
-      setTotal(all.length);
-    } else {
-      const { data, error, count } = await applyFilters(
-        supabase
-          .from("test_series_registrations")
-          .select(SELECT_COLUMNS, { count: "exact" })
-          .order("created_at", { ascending: false })
-          .range((page - 1) * pageSize, (page - 1) * pageSize + pageSize - 1),
-      );
-      if (error) toast.error(error.message);
-      else {
-        setRows((data ?? []) as unknown as Registration[]);
-        setTotal(count ?? 0);
+
+      // 3. Fetch test series purchases from order_items via SECURITY DEFINER RPC
+      //    (joins order_items → orders → auth.users → profiles server-side
+      //    so we can read email from auth.users which is inaccessible to the client)
+      const { data: orderRows, error: oiError } = await supabase
+        .rpc("admin_get_test_series_order_registrations");
+
+      if (oiError) {
+        console.warn("Notice: admin_get_test_series_order_registrations:", oiError.message);
+      } else if (orderRows && orderRows.length > 0) {
+        for (const row of orderRows as any[]) {
+          if (knownOrderIds.has(row.order_id)) continue;
+
+          const email = row.email || "";
+          const title = row.item_title || "Test Series";
+          const dedupeKey = email ? `${email.toLowerCase()}::${title.toLowerCase()}` : null;
+          if (dedupeKey && knownKeys.has(dedupeKey)) continue;
+
+          const matchingSeries = seriesList.find(
+            (s) => s.id === row.item_id || s.title.toLowerCase() === title.toLowerCase()
+          );
+
+          const resolvedName =
+            row.full_name ||
+            row.shipping_name ||
+            (row.phone ? row.phone : "Unknown Student");
+
+          combined.push({
+            id: `order-item-${row.order_item_id}`,
+            user_id: row.user_id || "",
+            test_series_id: matchingSeries ? matchingSeries.id : row.item_id || "",
+            test_series_title: matchingSeries ? matchingSeries.title : title,
+            full_name: resolvedName,
+            email: email,
+            phone: row.phone || "",
+            class_level: row.class_level || "—",
+            target_exam: row.target_exam || null,
+            school_name: null,
+            city: row.city || row.shipping_city || null,
+            state: row.state || row.shipping_state || null,
+            parent_name: row.father_name || null,
+            parent_phone: row.parent_phone || null,
+            order_id: row.order_id,
+            status: row.order_status === "cancelled" ? "cancelled" : "registered",
+            notes: null,
+            created_at: row.order_created_at || row.oi_created_at,
+            orders: {
+              status: row.order_status,
+              total: row.order_total ?? row.unit_price ?? null,
+              created_at: row.order_created_at || row.oi_created_at,
+            },
+            source: "order",
+          });
+
+          knownOrderIds.add(row.order_id);
+          if (dedupeKey) knownKeys.add(dedupeKey);
+        }
       }
+
+      // 4. Fetch test series leads from course_enquiries (enquiries submitted on test series)
+      const { data: enquiries, error: enqError } = await supabase
+        .from("course_enquiries")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (enqError) {
+        console.warn("Notice: course_enquiries fetch:", enqError.message);
+      } else if (enquiries && enquiries.length > 0) {
+        const tsEnquiries = enquiries.filter((e: any) => {
+          const name = (e.course_name || "").toLowerCase();
+          return name.includes("test series") || name.includes("test-series") || seriesTitlesLower.has(name);
+        });
+
+        for (const e of tsEnquiries) {
+          if (e.payment_order_id && knownOrderIds.has(e.payment_order_id)) continue;
+          const dedupeKey = e.email && e.course_name ? `${e.email.toLowerCase()}::${e.course_name.toLowerCase()}` : null;
+          if (dedupeKey && knownKeys.has(dedupeKey)) continue;
+
+          const matchingSeries = seriesList.find(
+            (s) => s.id === e.course_id || s.title.toLowerCase() === (e.course_name || "").toLowerCase()
+          );
+
+          combined.push({
+            id: `enquiry-${e.id}`,
+            user_id: e.user_id || "",
+            test_series_id: matchingSeries ? matchingSeries.id : e.course_id || "",
+            test_series_title: matchingSeries ? matchingSeries.title : e.course_name,
+            full_name: e.full_name || "Lead",
+            email: e.email || "",
+            phone: e.phone || "",
+            class_level: e.class_level || "-",
+            target_exam: null,
+            school_name: null,
+            city: e.city || null,
+            state: e.state || null,
+            parent_name: null,
+            parent_phone: e.parent_phone || null,
+            order_id: e.payment_order_id || null,
+            status: e.status === "closed" ? "cancelled" : "registered",
+            notes: e.admin_notes || e.message || null,
+            created_at: e.created_at,
+            orders: e.payment_status
+              ? {
+                  status: e.payment_status,
+                  total: e.course_price,
+                  created_at: e.paid_at || e.created_at,
+                }
+              : null,
+            source: "enquiry",
+          });
+
+          if (e.payment_order_id) knownOrderIds.add(e.payment_order_id);
+          if (dedupeKey) knownKeys.add(dedupeKey);
+        }
+      }
+
+      // Sort all combined entries by created_at desc
+      combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setAllRawRows(combined);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load registrations");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQ, statusFilter, seriesFilter, fromDate, toDate, page, pageSize]);
+  }, []);
 
   useEffect(() => {
     setPage(1);
   }, [debouncedQ, statusFilter, seriesFilter, fromDate, toDate]);
 
-  const totalPages = pageSize === TABLE_PAGE_SIZE_ALL ? 1 : Math.max(1, Math.ceil(total / pageSize));
+  const filteredRows = useMemo(() => {
+    let result = allRawRows;
+    const needle = debouncedQ.trim().toLowerCase();
+
+    if (needle) {
+      result = result.filter(
+        (r) =>
+          r.full_name.toLowerCase().includes(needle) ||
+          r.email.toLowerCase().includes(needle) ||
+          r.phone.includes(needle) ||
+          r.test_series_title.toLowerCase().includes(needle) ||
+          (r.city && r.city.toLowerCase().includes(needle))
+      );
+    }
+
+    if (statusFilter !== "all") {
+      result = result.filter((r) => r.status === statusFilter);
+    }
+
+    if (seriesFilter !== "all") {
+      result = result.filter((r) => r.test_series_id === seriesFilter || r.test_series_title === seriesFilter);
+    }
+
+    if (fromDate) {
+      const fromMs = new Date(`${fromDate}T00:00:00`).getTime();
+      result = result.filter((r) => new Date(r.created_at).getTime() >= fromMs);
+    }
+
+    if (toDate) {
+      const toEndMs = new Date(`${toDate}T23:59:59.999`).getTime();
+      result = result.filter((r) => new Date(r.created_at).getTime() <= toEndMs);
+    }
+
+    return result;
+  }, [allRawRows, debouncedQ, statusFilter, seriesFilter, fromDate, toDate]);
 
   const stats = useMemo(() => {
-    const totalCount = rows.length;
-    const withOrder = rows.filter((r) => r.orders).length;
-    const paid = rows.filter((r) => r.orders?.status === "paid").length;
-    const cancelled = rows.filter((r) => r.status === "cancelled").length;
+    const totalCount = filteredRows.length;
+    const withOrder = filteredRows.filter((r) => r.orders).length;
+    const paid = filteredRows.filter((r) => r.orders?.status === "paid").length;
+    const cancelled = filteredRows.filter((r) => r.status === "cancelled").length;
     return { totalCount, withOrder, paid, cancelled };
-  }, [rows]);
+  }, [filteredRows]);
+
+  const total = filteredRows.length;
+  const totalPages = pageSize === TABLE_PAGE_SIZE_ALL ? 1 : Math.max(1, Math.ceil(total / pageSize));
+
+  const rows = useMemo(() => {
+    if (pageSize === TABLE_PAGE_SIZE_ALL) return filteredRows;
+    const start = (page - 1) * pageSize;
+    return filteredRows.slice(start, start + pageSize);
+  }, [filteredRows, page, pageSize]);
 
   const update = async (id: string, patch: Partial<Pick<Registration, "status" | "notes">>) => {
-    const { error } = await supabase.from("test_series_registrations").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (id.startsWith("enquiry-")) {
+      const enqId = id.replace("enquiry-", "");
+      const enqPatch: any = {};
+      if (patch.notes !== undefined) enqPatch.admin_notes = patch.notes;
+      if (patch.status !== undefined) enqPatch.status = patch.status === "cancelled" ? "closed" : "converted";
+      const { error } = await supabase.from("course_enquiries").update(enqPatch).eq("id", enqId);
+      if (error) return toast.error(error.message);
+    } else if (id.startsWith("order-item-")) {
+      toast.info("Status updated in view.");
+    } else {
+      const { error } = await supabase.from("test_series_registrations").update(patch).eq("id", id);
+      if (error) return toast.error(error.message);
+    }
     toast.success("Updated");
-    setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    setAllRawRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
     if (selected?.id === id) setSelected({ ...selected, ...patch } as Registration);
   };
 
@@ -153,37 +305,34 @@ const AdminTestSeriesRegistrationsPage = () => {
     });
     if (!ok) return;
     setDeletingId(r.id);
-    const { error } = await supabase.from("test_series_registrations").delete().eq("id", r.id);
+
+    let error: any = null;
+    if (r.id.startsWith("enquiry-")) {
+      const res = await supabase.from("course_enquiries").delete().eq("id", r.id.replace("enquiry-", ""));
+      error = res.error;
+    } else if (r.id.startsWith("order-item-")) {
+      toast.error("This registration is tied to a completed order. Manage it under Commerce > E-Store Orders.");
+      setDeletingId(null);
+      return;
+    } else {
+      const res = await supabase.from("test_series_registrations").delete().eq("id", r.id);
+      error = res.error;
+    }
+
     setDeletingId(null);
     if (error) return toast.error(error.message);
     toast.success("Registration deleted");
-    setRows((rs) => rs.filter((row) => row.id !== r.id));
-    setTotal((t) => Math.max(0, t - 1));
+    setAllRawRows((rs) => rs.filter((row) => row.id !== r.id));
     if (selected?.id === r.id) setSelected(null);
   };
 
-  const exportCsv = async () => {
-    const exportRows: Registration[] = [];
-    let from = 0;
-    while (true) {
-      const { data, error } = await applyFilters(
-        supabase
-          .from("test_series_registrations")
-          .select(SELECT_COLUMNS)
-          .order("created_at", { ascending: false })
-          .range(from, from + 999),
-      );
-      if (error) return toast.error(error.message);
-      exportRows.push(...((data ?? []) as unknown as Registration[]));
-      if (!data || data.length < 1000) break;
-      from += 1000;
-    }
+  const exportCsv = () => {
     const headers = [
       "full_name", "email", "phone", "class_level", "target_exam", "test_series_title",
       "school_name", "city", "state", "parent_name", "parent_phone",
       "status", "payment_status", "order_total", "created_at",
     ];
-    const rows = exportRows.map((r) => [
+    const exportData = filteredRows.map((r) => [
       csvField(r.full_name),
       csvField(r.email),
       excelTextField(r.phone),
@@ -200,8 +349,8 @@ const AdminTestSeriesRegistrationsPage = () => {
       csvField(r.orders?.total ?? ""),
       excelTextField(formatDateTimeIST(r.created_at)),
     ]);
-    downloadCsv(`test-series-registrations-${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
-    toast.success(`Exported ${exportRows.length} registration${exportRows.length === 1 ? "" : "s"}`);
+    downloadCsv(`test-series-registrations-${new Date().toISOString().slice(0, 10)}.csv`, headers, exportData);
+    toast.success(`Exported ${filteredRows.length} registration${filteredRows.length === 1 ? "" : "s"}`);
   };
 
   return (
@@ -299,9 +448,19 @@ const AdminTestSeriesRegistrationsPage = () => {
                   onClick={() => setSelected(r)}
                   className="border-t border-border hover:bg-muted/40 cursor-pointer"
                 >
-                  <td className="p-3 font-semibold">{r.full_name}</td>
+                  <td className="p-3">
+                    <div className="font-semibold">{r.full_name}</div>
+                    {r.phone && <div className="text-xs text-muted-foreground mt-0.5">{r.phone}</div>}
+                    <span className={`mt-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                      r.source === "order"
+                        ? "bg-blue-100 text-blue-700"
+                        : r.source === "enquiry"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-green-100 text-green-700"
+                    }`}>{r.source ?? "reg"}</span>
+                  </td>
                   <td className="p-3">{r.class_level}</td>
-                  <td className="p-3 text-xs">{r.email}<br />{r.phone}</td>
+                  <td className="p-3 text-xs">{r.email || "—"}<br />{r.phone || "—"}</td>
                   <td className="p-3">{r.test_series_title}</td>
                   <td className="p-3">{r.city ?? "—"}</td>
                   <td className="p-3">
@@ -351,22 +510,56 @@ const AdminTestSeriesRegistrationsPage = () => {
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelected(null)} />
           <div className="relative w-full max-w-md bg-card shadow-2xl overflow-y-auto">
             <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border bg-card">
-              <h2 className="font-bold">{selected.full_name}</h2>
+              <div>
+                <h2 className="font-bold">{selected.full_name}</h2>
+                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  selected.source === "order"
+                    ? "bg-blue-100 text-blue-700"
+                    : selected.source === "enquiry"
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-green-100 text-green-700"
+                }`}>
+                  {selected.source === "order" ? "Store order" : selected.source === "enquiry" ? "Enquiry lead" : "Registration"}
+                </span>
+              </div>
               <button onClick={() => setSelected(null)} className="p-1 hover:bg-muted rounded"><XIcon className="h-4 w-4" /></button>
             </div>
-            <div className="p-4 space-y-4 text-sm">
-              <Field label="Email" value={selected.email} />
-              <Field label="Phone" value={selected.phone} />
-              <Field label="Class" value={selected.class_level} />
-              {selected.target_exam && <Field label="Target Exam" value={selected.target_exam} />}
-              <Field label="Test Series" value={selected.test_series_title} />
-              {selected.school_name && <Field label="School" value={selected.school_name} />}
-              {selected.city && <Field label="City / State" value={`${selected.city}, ${selected.state ?? ""}`} />}
-              {selected.parent_name && <Field label="Parent" value={`${selected.parent_name} · ${selected.parent_phone ?? ""}`} />}
-              <Field label="Payment status" value={selected.orders?.status ?? "No order started"} />
-              {selected.orders?.total != null && <Field label="Order total" value={`₹${Number(selected.orders.total).toLocaleString("en-IN")}`} />}
+            <div className="p-4 space-y-3 text-sm">
+              {/* Student Details */}
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase text-muted-foreground tracking-wide mb-1">Student Info</div>
+                <Field label="Full Name" value={selected.full_name || "—"} />
+                <Field label="Email" value={selected.email || "—"} />
+                <Field label="Phone" value={selected.phone || "—"} />
+                <Field label="Class / Level" value={selected.class_level || "—"} />
+                <Field label="Target Exam" value={selected.target_exam || "—"} />
+                <Field label="School" value={selected.school_name || "—"} />
+              </div>
 
-              <div className="pt-3 border-t border-border space-y-2">
+              {/* Location */}
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase text-muted-foreground tracking-wide mb-1">Location</div>
+                <Field label="City" value={selected.city || "—"} />
+                <Field label="State" value={selected.state || "—"} />
+              </div>
+
+              {/* Parent Details */}
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase text-muted-foreground tracking-wide mb-1">Parent Info</div>
+                <Field label="Parent Name" value={selected.parent_name || "—"} />
+                <Field label="Parent Phone" value={selected.parent_phone || "—"} />
+              </div>
+
+              {/* Test Series & Payment */}
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                <div className="text-[11px] font-bold uppercase text-muted-foreground tracking-wide mb-1">Test Series & Payment</div>
+                <Field label="Test Series" value={selected.test_series_title} />
+                <Field label="Payment Status" value={selected.orders?.status ?? "No order started"} />
+                <Field label="Order Total" value={selected.orders?.total != null ? `₹${Number(selected.orders.total).toLocaleString("en-IN")}` : "—"} />
+              </div>
+
+              {/* Actions */}
+              <div className="pt-1 space-y-2">
                 <label className="text-xs font-semibold text-muted-foreground">Registration status</label>
                 <select
                   value={selected.status}
