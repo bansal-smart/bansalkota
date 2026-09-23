@@ -154,7 +154,12 @@ const AdminTestsPage = () => {
       } = source;
       const title = `${source.title} (Copy)`;
       const slug = `${slugify(title)}-${Date.now().toString(36)}`;
-      const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
+      // Ownership/visibility are test settings too: an HQ/super admin copy keeps
+      // the source's centre + global flag. A centre admin can only own content
+      // in their own centre, so their copy is always centre-local.
+      const ownership = isCenterAdmin
+        ? await resolveContentOwnership(isCenterAdmin, primaryCenterId)
+        : { centre_id: source.centre_id, is_global: source.is_global };
 
       const { data: newTest, error: insertTestError } = await supabase
         .from("tests")

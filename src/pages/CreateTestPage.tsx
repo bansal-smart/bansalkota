@@ -108,15 +108,41 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     rangeEnabled: (q as any).answer_range_min != null && (q as any).answer_range_max != null,
     rangeMin: (q as any).answer_range_min != null ? String((q as any).answer_range_min) : "",
     rangeMax: (q as any).answer_range_max != null ? String((q as any).answer_range_max) : "",
-    // Auto-set marks from the bank question; fall back to test defaults
-    marksCorrect: Number(q.marks_correct ?? defaults.correct),
-    marksWrong: Number(q.marks_wrong ?? defaults.wrong),
+    // Always pre-fill from the test's own marking scheme. question_bank.marks_*
+    // are NOT NULL with a hardcoded +4/-1 default, so preferring them would
+    // silently override the test's configured scheme on every add. The admin
+    // can still override per question afterwards.
+    marksCorrect: defaults.correct,
+    marksWrong: defaults.wrong,
   };
 };
 
 
 const hasRenderableContent = (value: string) =>
   value.replace(/<[^>]*>/g, "").trim().length > 0 || /<img\b/i.test(value);
+
+const isComplete = (q: DraftQuestion) => {
+  if (!hasRenderableContent(q.text)) return false;
+  const hasOptionContent =
+    q.options.some((o) => o.trim()) ||
+    q.optionImages.some(Boolean) ||
+    /<img\b/i.test(q.text);
+  if (q.type === "mcq-single") return q.options.length >= 2 && hasOptionContent && Number.isInteger(q.correct);
+  if (q.type === "mcq-multi") return q.options.length >= 2 && hasOptionContent && q.correctMulti.length > 0;
+  if (q.type === "numerical" || q.type === "integer") {
+    if (q.rangeEnabled) {
+      const a = Number(q.rangeMin);
+      const b = Number(q.rangeMax);
+      if (q.rangeMin.trim() === "" || q.rangeMax.trim() === "" || Number.isNaN(a) || Number.isNaN(b)) return false;
+      return true;
+    }
+    const s = q.numericalAnswer.trim();
+    if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
+    // Integer-type questions also allow decimal answers (per Bansal exam pattern).
+    return true;
+  }
+  return false;
+};
 
 const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boolean }) => {
   const { setNodeRef, isOver } = useDroppable({ id: "test-drop" });
@@ -406,8 +432,8 @@ const CreateTestPage = () => {
             rangeEnabled: q.answer_range_min != null && q.answer_range_max != null,
             rangeMin: q.answer_range_min != null ? String(q.answer_range_min) : "",
             rangeMax: q.answer_range_max != null ? String(q.answer_range_max) : "",
-            marksCorrect: Number(q.marks_correct ?? 4),
-            marksWrong: Number(q.marks_wrong ?? -1),
+            marksCorrect: Number(q.marks_correct ?? test.correct_marks ?? 4),
+            marksWrong: Number(q.marks_wrong ?? test.wrong_marks ?? -1),
           };
 
         }),
@@ -764,7 +790,7 @@ const CreateTestPage = () => {
     return base;
   };
 
-  const publishImportedDraft = async () => {
+  const publishImportedDraft = async (publish = true) => {
     if (!resolvedTestId) return toast.error("Create or import into a test first");
     setSubmitting(true);
     try {
@@ -773,17 +799,42 @@ const CreateTestPage = () => {
       // marks. Imported questions already have a row, so this is an UPDATE
       // using the same field mapping the normal insert path uses.
       const perQuestionUpdates = questions
-        .filter((q) => !!q.id)
-        .map((q) =>
+        .map((q, i) => ({ q, i }))
+        .filter(({ q }) => !!q.id)
+        .map(({ q, i }) =>
           supabase
             .from("test_questions")
-            .update(buildQuestionFields(q) as any)
+            .update({ ...buildQuestionFields(q), position: i } as any)
             .eq("id", q.id as string)
             .eq("test_id", resolvedTestId),
         );
       const results = await Promise.all(perQuestionUpdates);
       const firstErr = results.find((r) => r.error)?.error;
       if (firstErr) throw firstErr;
+
+      // Rows removed via the per-question trash button only left local state.
+      // Runs before the insert below so freshly inserted rows aren't caught.
+      // Skip when the editor is empty — that path must never wipe imported rows.
+      if (questions.length > 0) {
+        const keepIds = questions.map((q) => q.id).filter(Boolean) as string[];
+        let del = supabase.from("test_questions").delete().eq("test_id", resolvedTestId);
+        if (keepIds.length > 0) del = del.not("id", "in", `(${keepIds.join(",")})`);
+        const { error: delErr } = await del;
+        if (delErr) throw delErr;
+      }
+
+      // Questions added in the editor since load (Question Bank "+ Add", drag
+      // and drop, manual) have no row yet — insert them, or they'd be silently
+      // dropped. Duplicated tests land here too, since copied rows keep their
+      // import_batch_id.
+      const newRows = questions
+        .map((q, i) => ({ q, i }))
+        .filter(({ q }) => !q.id && isComplete(q))
+        .map(({ q, i }) => ({ test_id: resolvedTestId, position: i, ...buildQuestionFields(q) }));
+      if (newRows.length > 0) {
+        const { error: insErr } = await supabase.from("test_questions").insert(newRows as any);
+        if (insErr) throw insErr;
+      }
 
       await syncTestStats(resolvedTestId);
       const { error } = await supabase
@@ -806,11 +857,11 @@ const CreateTestPage = () => {
           cbt_allowed_batch_ids: allowedBatches,
           shuffle_questions: shuffleQuestions,
           ...buildSchedulePayload(),
-          is_published: true,
+          is_published: publish,
         })
         .eq("id", resolvedTestId);
       if (error) throw error;
-      toast.success("Test published with imported questions");
+      toast.success(publish ? "Test published with imported questions" : "Test saved as draft");
       navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not publish imported test");
@@ -824,34 +875,12 @@ const CreateTestPage = () => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
     if (!allowsDigitalMode && !allowsKioskMode) return toast.error("Select at least one test mode");
-    const isComplete = (q: DraftQuestion) => {
-      if (!hasRenderableContent(q.text)) return false;
-      const hasOptionContent =
-        q.options.some((o) => o.trim()) ||
-        q.optionImages.some(Boolean) ||
-        /<img\b/i.test(q.text);
-      if (q.type === "mcq-single") return q.options.length >= 2 && hasOptionContent && Number.isInteger(q.correct);
-      if (q.type === "mcq-multi") return q.options.length >= 2 && hasOptionContent && q.correctMulti.length > 0;
-      if (q.type === "numerical" || q.type === "integer") {
-        if (q.rangeEnabled) {
-          const a = Number(q.rangeMin);
-          const b = Number(q.rangeMax);
-          if (q.rangeMin.trim() === "" || q.rangeMax.trim() === "" || Number.isNaN(a) || Number.isNaN(b)) return false;
-          return true;
-        }
-        const s = q.numericalAnswer.trim();
-        if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
-        // Integer-type questions also allow decimal answers (per Bansal exam pattern).
-        return true;
-      }
-      return false;
-    };
     if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
-      return publishImportedDraft();
+      return publishImportedDraft(publish);
     }
     // If the editor is empty but the DB has imported rows, never wipe them — publish as-is.
     if (isEditMode && resolvedTestId && questions.length === 0 && importedQuestionCount.current > 0) {
-      return publishImportedDraft();
+      return publishImportedDraft(publish);
     }
 
     const validQ = questions.filter(isComplete);
