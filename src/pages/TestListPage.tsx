@@ -35,7 +35,7 @@ const TestListPage = () => {
   const [tests, setTests] = useState<TestRow[]>([]);
   const [courses, setCourses] = useState<EnrolledCourse[]>([]);
   const [attemptStatus, setAttemptStatus] = useState<Record<string, AttemptInfo>>({});
-  const [batchId, setBatchId] = useState<string | null>(null);
+  const [batchIds, setBatchIds] = useState<string[]>([]);
   const [assignedTestIds, setAssignedTestIds] = useState<Set<string>>(new Set());
   const [retakeAllowedIds, setRetakeAllowedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ const TestListPage = () => {
     let active = true;
     (async () => {
       setLoading(true);
-      const [enrollRes, testsRes, attemptsRes, profileRes, assignRes, retakeRes] = await Promise.all([
+      const [enrollRes, testsRes, attemptsRes, batchesRes, assignRes, retakeRes] = await Promise.all([
         supabase
           .from("enrollments")
           .select("course:courses(id, name, subject, slug)")
@@ -58,7 +58,7 @@ const TestListPage = () => {
           .eq("is_published", true)
           .order("created_at", { ascending: false }),
         supabase.from("test_attempts").select("id, test_id, status").eq("user_id", user.id),
-        supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
+        supabase.from("student_batches").select("batch_id").eq("user_id", user.id),
         supabase.from("test_assignments").select("test_id").eq("user_id", user.id).eq("is_active", true),
         supabase
           .from("test_reattempt_requests")
@@ -83,7 +83,7 @@ const TestListPage = () => {
         }
       });
       setAttemptStatus(map);
-      setBatchId((profileRes.data as any)?.batch_id ?? null);
+      setBatchIds(((batchesRes.data ?? []) as Array<{ batch_id: string }>).map((r) => r.batch_id));
       setAssignedTestIds(new Set((assignRes.data ?? []).map((a: any) => a.test_id)));
       setRetakeAllowedIds(new Set((retakeRes.data ?? []).map((r: any) => r.test_id)));
       // open all by default
@@ -105,7 +105,7 @@ const TestListPage = () => {
       // always visible, regardless of batch/course — same as an attempted test.
       if (assignedTestIds.has(t.id)) return true;
       const allowed = t.cbt_allowed_batch_ids;
-      const inBatch = !!(batchId && allowed?.includes(batchId));
+      const inBatch = !!allowed?.some((id) => batchIds.includes(id));
       // CBT tests: only show after results are released to mapped batch students
       if (t.allows_kiosk_mode && !t.allows_digital_mode) {
         return !!t.results_released_at && inBatch;
@@ -114,7 +114,7 @@ const TestListPage = () => {
       const inCourse = !!(t.course_id && enrolledCourseIds.has(t.course_id));
       return isOpen || inBatch || inCourse;
     });
-  }, [tests, batchId, attemptStatus, enrolledCourseIds, assignedTestIds]);
+  }, [tests, batchIds, attemptStatus, enrolledCourseIds, assignedTestIds]);
 
   const filteredTests = useMemo(
     () => visibleTests.filter((t) => t.title.toLowerCase().includes(search.toLowerCase())),

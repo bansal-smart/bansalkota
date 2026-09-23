@@ -47,7 +47,7 @@ const LiveTestsWidget = () => {
   const { user } = useAuth();
   const [tests, setTests] = useState<TestRow[]>([]);
   const [attempts, setAttempts] = useState<Record<string, string>>({});
-  const [batchId, setBatchId] = useState<string | null>(null);
+  const [batchIds, setBatchIds] = useState<string[]>([]);
   const [courseIds, setCourseIds] = useState<Set<string>>(new Set());
   const [recent, setRecent] = useState<Array<{ id: string; test_name: string; score: number | null; submitted_at: string; slug: string | null; test_id: string | null }>>([]);
   const [now, setNow] = useState(() => Date.now());
@@ -72,7 +72,7 @@ const LiveTestsWidget = () => {
           .in("status", ["submitted", "auto_submitted"])
           .order("submitted_at", { ascending: false })
           .limit(3),
-        supabase.from("profiles").select("batch_id").eq("user_id", user.id).maybeSingle(),
+        supabase.from("student_batches").select("batch_id").eq("user_id", user.id),
         supabase.from("enrollments").select("course_id").eq("user_id", user.id).eq("is_active", true),
       ]);
       if (!active) return;
@@ -87,7 +87,7 @@ const LiveTestsWidget = () => {
         }
       });
       setAttempts(m);
-      setBatchId((pRes.data as any)?.batch_id ?? null);
+      setBatchIds(((pRes.data ?? []) as Array<{ batch_id: string }>).map((r) => r.batch_id));
       setCourseIds(new Set(((eRes.data ?? []) as any[]).map((e) => e.course_id).filter(Boolean)));
       setRecent(((rRes.data ?? []) as any[]).map((r) => ({
         id: r.id, test_name: r.test_name, score: r.score, submitted_at: r.submitted_at,
@@ -117,7 +117,7 @@ const LiveTestsWidget = () => {
         // Audience scope
         const allowed = t.cbt_allowed_batch_ids;
         const isOpen = !allowed || allowed.length === 0;
-        const inBatch = !!(batchId && allowed?.includes(batchId));
+        const inBatch = !!allowed?.some((id) => batchIds.includes(id));
         const inCourse = !!(t.course_id && courseIds.has(t.course_id));
         const hasAttempt = !!attempts[t.id];
         if (!(isOpen || inBatch || inCourse || hasAttempt)) return false;
@@ -136,7 +136,7 @@ const LiveTestsWidget = () => {
         return sa - sb;
       })
       .slice(0, 4);
-  }, [tests, now, batchId, courseIds, attempts]);
+  }, [tests, now, batchIds, courseIds, attempts]);
 
   if (visible.length === 0 && recent.length === 0) return null;
 

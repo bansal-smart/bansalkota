@@ -59,10 +59,17 @@ Deno.serve(async (req) => {
       const f = bc.audience_filter as { role?: string; course_id?: string; centre_id?: string; batch_id?: string };
       let query = supabase.from("profiles").select("user_id, phone_e164, phone, full_name");
       if (f.centre_id) query = query.eq("centre_id", f.centre_id);
-      if (f.batch_id) query = query.eq("batch_id", f.batch_id);
       const { data: profs } = await query.limit(10000);
 
       let userIds = (profs ?? []).map((p) => p.user_id);
+      // Batch audience = every member of the batch (student_batches), not
+      // just students whose primary profiles.batch_id is that batch.
+      if (f.batch_id) {
+        const { data: members } = await supabase
+          .from("student_batches").select("user_id").eq("batch_id", f.batch_id).limit(10000);
+        const inBatch = new Set((members ?? []).map((m) => m.user_id));
+        userIds = userIds.filter((u) => inBatch.has(u));
+      }
       if (f.course_id) {
         const { data: enrolls } = await supabase
           .from("enrollments").select("user_id").eq("course_id", f.course_id).eq("is_active", true);

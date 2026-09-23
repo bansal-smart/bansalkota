@@ -123,11 +123,81 @@ Deno.serve(async (req) => {
           return json(403, { error: "Cannot move a student to another centre" });
         }
       }
+
+      // Multi-batch membership (student_batches). profiles.batch_id is kept as
+      // the deprecated "primary" batch: keep the current primary while it's
+      // still selected, otherwise prefer a classroom batch over a
+      // test-series-only one (AITS etc.) so a test series never becomes the
+      // student's home batch.
+      let batchIds: string[] | null = null;
+      if (Array.isArray(body?.batch_ids)) {
+        batchIds = Array.from(new Set(
+          (body.batch_ids as unknown[])
+            .map((x) => String(x ?? "").trim())
+            .filter((x) => x.length > 0),
+        ));
+        const { data: cur } = await admin
+          .from("profiles")
+          .select("batch_id")
+          .eq("user_id", user_id)
+          .maybeSingle();
+        if (!isPlatformAdmin && batchIds.length) {
+          const [{ data: owned }, { data: existing }] = await Promise.all([
+            admin.from("course_batches").select("id, centre_id").in("id", batchIds),
+            admin.from("student_batches").select("batch_id").eq("user_id", user_id),
+          ]);
+          const alreadyHas = new Set((existing ?? []).map((r: { batch_id: string }) => r.batch_id));
+          const foreign = (owned ?? []).some(
+            (b: { id: string; centre_id: string | null }) =>
+              b.centre_id !== null && !staffCentreIds.includes(b.centre_id) && !alreadyHas.has(b.id),
+          );
+          if (foreign || (owned ?? []).length !== batchIds.length) {
+            return json(403, { error: "Cannot assign a batch from another centre" });
+          }
+        }
+        const currentPrimary = (cur?.batch_id as string | null) ?? null;
+        let primary: string | null = null;
+        if (currentPrimary && batchIds.includes(currentPrimary)) {
+          primary = currentPrimary;
+        } else if (batchIds.length) {
+          const { data: bRows } = await admin
+            .from("course_batches")
+            .select("id, course:courses(included_services)")
+            .in("id", batchIds);
+          const testSeriesOnly = new Set(
+            (bRows ?? [])
+              .filter((b: any) => {
+                const svc = b.course?.included_services;
+                return Array.isArray(svc) && svc.length > 0 && svc.every((s: string) => s === "test_series");
+              })
+              .map((b: any) => b.id as string),
+          );
+          primary = batchIds.find((id) => !testSeriesOnly.has(id)) ?? batchIds[0];
+        }
+        update.batch_id = primary;
+      }
       if (Object.keys(update).length > 1) {
         const { error: pErr } = await admin
           .from("profiles")
           .upsert(update, { onConflict: "user_id" });
         if (pErr) throw pErr;
+      }
+
+      // Sync batch memberships if provided. Runs after the profile write: the
+      // trg_sync_primary_batch trigger has already mirrored the primary, and
+      // only batches explicitly deselected in the UI are removed here.
+      if (batchIds) {
+        if (batchIds.length > 0) {
+          const rows = batchIds.map((batch_id) => ({ user_id, batch_id }));
+          const { error: sbErr } = await admin
+            .from("student_batches")
+            .upsert(rows, { onConflict: "user_id,batch_id", ignoreDuplicates: true });
+          if (sbErr) throw sbErr;
+        }
+        let dq = admin.from("student_batches").delete().eq("user_id", user_id);
+        if (batchIds.length > 0) dq = dq.not("batch_id", "in", `(${batchIds.join(",")})`);
+        const { error: sdErr } = await dq;
+        if (sdErr) throw sdErr;
       }
 
       // Sync course enrollments if provided

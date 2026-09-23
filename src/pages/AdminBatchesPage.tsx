@@ -163,15 +163,21 @@ const AdminBatchesPage = () => {
     setBatchCentreMap(map);
     setCentres((centresResult.data ?? []) as CentreLite[]);
 
-    const { data: profs } = await supabase
-      .from("profiles")
-      .select("batch_id")
-      .not("batch_id", "is", null);
+    // A student counts under every batch they belong to (student_batches),
+    // paged past PostgREST's 1000-row default.
     const counts: Record<string, number> = {};
-    (profs ?? []).forEach((p: { batch_id: string | null }) => {
-      if (!p.batch_id) return;
-      counts[p.batch_id] = (counts[p.batch_id] ?? 0) + 1;
-    });
+    for (let from = 0; ; from += 1000) {
+      const { data: members } = await supabase
+        .from("student_batches")
+        .select("batch_id")
+        .order("id", { ascending: true })
+        .range(from, from + 999);
+      const chunk = (members ?? []) as { batch_id: string }[];
+      chunk.forEach((m) => {
+        counts[m.batch_id] = (counts[m.batch_id] ?? 0) + 1;
+      });
+      if (chunk.length < 1000) break;
+    }
     setStudentCounts(counts);
     setLoading(false);
   };

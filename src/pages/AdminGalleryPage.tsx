@@ -75,6 +75,12 @@ type AlbumImage = { id: string; album_id: string; image_url: string; sort_order:
 
 const sb: any = supabase;
 
+// Must stay <= the 'site-content' bucket's storage.buckets.file_size_limit
+// (500MB, set in migration 20260923010000). A client-side check fails fast
+// with a clear error instead of letting the admin wait through a multi-minute
+// upload of a large video that the server will reject anyway.
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+
 const AdminGalleryPage = () => {
   const [tab, setTab] = useState<"image" | "video">("image");
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -156,7 +162,9 @@ const AdminGalleryPage = () => {
   const uploadFile = async (file: File, folder: string) => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage.from("site-content").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage
+      .from("site-content")
+      .upload(path, file, { upsert: true, contentType: file.type || undefined });
     if (error) throw error;
     const { data } = supabase.storage.from("site-content").getPublicUrl(path);
     return data.publicUrl;
@@ -176,6 +184,12 @@ const AdminGalleryPage = () => {
   };
 
   const uploadVideo = async (file: File) => {
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error(
+        `Video is ${(file.size / (1024 * 1024)).toFixed(0)}MB, which exceeds the ${MAX_VIDEO_BYTES / (1024 * 1024)}MB upload limit. Compress it or trim it and try again.`,
+      );
+      return;
+    }
     setUploading(true);
     try {
       const url = await uploadFile(file, "gallery/videos");
@@ -426,6 +440,9 @@ const AdminGalleryPage = () => {
                         onChange={(e) => e.target.files?.[0] && uploadVideo(e.target.files[0])}
                       />
                     </label>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Max {MAX_VIDEO_BYTES / (1024 * 1024)}MB per video file.
+                    </p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-muted-foreground">Thumbnail (optional)</label>

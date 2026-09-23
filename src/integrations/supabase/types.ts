@@ -3995,6 +3995,38 @@ export type Database = {
         }
         Relationships: []
       }
+      student_batches: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_batches_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "course_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       study_sessions: {
         Row: {
           created_at: string
@@ -5744,6 +5776,20 @@ export type Database = {
       }
       cbt_live_tests_for_batch: {
         Args: { _batch_id: string }
+        Returns: {
+          description: string
+          duration_minutes: number
+          ends_at: string
+          id: string
+          starts_at: string
+          subjects: string[]
+          title: string
+          total_marks: number
+          total_questions: number
+        }[]
+      }
+      cbt_live_tests_for_me: {
+        Args: never
         Returns: {
           description: string
           duration_minutes: number

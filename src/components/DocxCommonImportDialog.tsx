@@ -59,6 +59,21 @@ const DEFAULT_MARKS: Record<ParsedQuestionType, { c: number; w: number; u: numbe
   "match-following": { c: 4, w: -1, u: 0, partial: false },
 };
 
+// A question already in the target test, as the replace is about to delete it.
+type ExistingQuestion = { subject: string | null; type: string; c: number; w: number };
+
+// Collapses a per-question list into contiguous `from–to` runs of equal value,
+// keyed by the (new) question numbers the values are being mapped onto.
+const toRuns = <T,>(nums: number[], values: T[], same: (a: T, b: T) => boolean) => {
+  const runs: { from: number; to: number; value: T }[] = [];
+  nums.forEach((n, i) => {
+    const last = runs[runs.length - 1];
+    if (last && last.to === n - 1 && same(last.value, values[i])) last.to = n;
+    else runs.push({ from: n, to: n, value: values[i] });
+  });
+  return runs;
+};
+
 const typeLabel = (t: ParsedQuestionType) =>
   t === "mcq-single"
     ? "Single correct"
@@ -130,6 +145,76 @@ const DocxCommonImportDialog = ({
   const [marksRanges, setMarksRanges] = useState<MarksRange[]>([]);
 
   const [selectedTestId, setSelectedTestId] = useState<string | null>(testId ?? null);
+
+  // Replace mode deletes the target test's questions, and with them the only
+  // record of its marks/subject layout (ranges are dialog-local, never stored).
+  // Snapshot that layout up front so it can be carried onto the new questions.
+  const replaceTargetId = target === "test" ? (testId ?? selectedTestId) : null;
+  const [existingQs, setExistingQs] = useState<ExistingQuestion[] | null>(null);
+  const [parseToken, setParseToken] = useState(0);
+  const [carryOver, setCarryOver] = useState<
+    | { kind: "preserved"; subjectsKept: boolean; typeChanged: number[] }
+    | { kind: "mismatch"; existingCount: number; marks: MarksRange[]; subjects: SubjectRange[] }
+    | null
+  >(null);
+
+  useEffect(() => {
+    setExistingQs(null);
+    if (!open || !replaceTargetId) return;
+    let ignore = false;
+    supabase
+      .from("test_questions")
+      .select("position, subject, question_type, marks_correct, marks_wrong")
+      .eq("test_id", replaceTargetId)
+      .order("position")
+      .then(({ data }) => {
+        if (ignore) return;
+        setExistingQs(
+          (data ?? []).map((r) => ({
+            subject: r.subject,
+            type: r.question_type,
+            c: Number(r.marks_correct),
+            w: Number(r.marks_wrong),
+          })),
+        );
+      });
+    return () => { ignore = true; };
+  }, [open, replaceTargetId]);
+
+  // Once a file is parsed and the snapshot is in, rebuild ranges from the old
+  // layout. Same question count → carry it over (warning on any position whose
+  // question type changed). Different count → don't guess; show the admin the
+  // mismatch and let them apply the old ranges explicitly.
+  useEffect(() => {
+    if (parseToken === 0 || !existingQs || existingQs.length === 0 || questions.length === 0) {
+      setCarryOver(null);
+      return;
+    }
+    const n = Math.min(existingQs.length, questions.length);
+    const nums = questions.slice(0, n).map((q) => q.number);
+    const old = existingQs.slice(0, n);
+    const marks: MarksRange[] = toRuns(nums, old.map((e) => ({ c: e.c, w: e.w })), (a, b) => a.c === b.c && a.w === b.w)
+      .map((r) => ({ from: r.from, to: r.to, marksCorrect: r.value.c, marksWrong: r.value.w }));
+    const subjects: SubjectRange[] = old.every((e) => e.subject && allowedSubjects.includes(e.subject))
+      ? toRuns(nums, old.map((e) => e.subject as string), (a, b) => a === b)
+        .map((r) => ({ from: r.from, to: r.to, subject: r.value }))
+      : [];
+    const numbersContiguous = nums.every((x, i) => i === 0 || x === nums[i - 1] + 1);
+
+    if (existingQs.length === questions.length && numbersContiguous) {
+      setMarksRanges(marks);
+      if (subjects.length) setSubjectRanges(subjects);
+      setCarryOver({
+        kind: "preserved",
+        subjectsKept: subjects.length > 0,
+        typeChanged: questions.filter((q, i) => q.type !== existingQs[i].type).map((q) => q.number),
+      });
+    } else {
+      setCarryOver({ kind: "mismatch", existingCount: existingQs.length, marks, subjects });
+    }
+    // Only re-run on a new parse or a new target test, never on range edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parseToken, existingQs]);
   const [tests, setTests] = useState<TestRow[]>([]);
   const [detectedOptionStyle, setDetectedOptionStyle] = useState<"numeric" | "alpha" | null>(null);
   const isNeetPattern = (examPattern ?? "").toLowerCase().includes("neet");
@@ -193,7 +278,9 @@ const DocxCommonImportDialog = ({
     setErrorMsg(null);
     setImported({ ok: 0, failed: 0 });
     setSubjectRanges([]);
-      setDetectedOptionStyle(null);
+    setMarksRanges([]);
+    setParseToken(0);
+    setDetectedOptionStyle(null);
     setClassLevel("");
     setStream(streamFromExamPattern(examPattern) ?? "");
     setTestType(defaultTestType ?? "");
@@ -236,6 +323,8 @@ const DocxCommonImportDialog = ({
       const maxN = nums.length ? Math.max(...nums) : result.questions.length;
       setSubjectRanges([{ from: minN, to: maxN, subject: allowedSubjects[0] }]);
       setMarksRanges([]);
+      // Triggers carrying the target test's existing marks/subject layout over.
+      setParseToken((t) => t + 1);
       setStep("preview");
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Failed to read the document.");
@@ -923,6 +1012,40 @@ const DocxCommonImportDialog = ({
                     </button>
                   </div>
                 </div>
+                {carryOver?.kind === "preserved" && (
+                  <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-2 text-[11px] text-emerald-800 dark:text-emerald-300 space-y-1">
+                    <p>
+                      Kept this test's existing marks{carryOver.subjectsKept ? " and subject" : ""} layout for all {questions.length} questions. Edit below if the new paper needs something different.
+                    </p>
+                    {carryOver.typeChanged.length > 0 && (
+                      <p className="font-semibold text-amber-700 dark:text-amber-300">
+                        Question type changed for Q{carryOver.typeChanged.slice(0, 10).join(", Q")}
+                        {carryOver.typeChanged.length > 10 ? "…" : ""} — please review their marks.
+                      </p>
+                    )}
+                  </div>
+                )}
+                {carryOver?.kind === "mismatch" && (
+                  <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-800 dark:text-amber-300 space-y-1.5">
+                    <p>
+                      This test's existing marks ranges cover {carryOver.existingCount} question{carryOver.existingCount === 1 ? "" : "s"}, but this import has {questions.length}. They weren't applied automatically — please review.
+                    </p>
+                    <p className="font-mono">
+                      Existing: {carryOver.marks.map((r) => `Q${r.from}–${r.to} +${r.marksCorrect}/${r.marksWrong}`).join(" · ")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMarksRanges(carryOver.marks);
+                        if (carryOver.subjects.length) setSubjectRanges(carryOver.subjects);
+                        toast.info(`Applied existing ranges to the first ${Math.min(carryOver.existingCount, questions.length)} questions`);
+                      }}
+                      className="rounded-md border border-amber-500/50 bg-background px-2 py-1 font-semibold hover:bg-amber-500/10"
+                    >
+                      Apply existing ranges anyway
+                    </button>
+                  </div>
+                )}
                 <div className="space-y-2">
                   {marksRanges.map((r, i) => (
                     <div key={i} className="flex items-center gap-2 flex-wrap">

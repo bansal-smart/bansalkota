@@ -69,11 +69,11 @@ function subjectBreakdownFromAttempt(a: any): SubjectBreakdown[] {
 export async function fetchStudentReport(studentId: string): Promise<StudentReportData> {
   const nowIso = new Date().toISOString();
 
-  const [profileRes, attemptsRes, enrollRes] = await Promise.all([
+  const [profileRes, attemptsRes, enrollRes, batchesRes] = await Promise.all([
     safe(
       supabase
         .from("profiles")
-        .select("full_name, target_exam, class_level, batch_id")
+        .select("full_name, target_exam, class_level")
         .eq("user_id", studentId)
         .maybeSingle(),
     ),
@@ -91,11 +91,17 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
         .eq("user_id", studentId)
         .eq("is_active", true),
     ),
+    safe(
+      (supabase as any)
+        .from("student_batches")
+        .select("batch_id")
+        .eq("user_id", studentId),
+    ),
   ]);
 
   const profile = (profileRes as any)?.data ?? {};
   const mentorName: string | null = null;
-  const batchId = profile.batch_id as string | null | undefined;
+  const batchIds: string[] = ((batchesRes as any)?.data ?? []).map((b: any) => b.batch_id).filter(Boolean);
   const courseIds = ((enrollRes as any)?.data ?? []).map((e: any) => e.course_id).filter(Boolean);
 
   const attempts = ((attemptsRes as any)?.data ?? []) as any[];
@@ -105,7 +111,7 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
   // skipped. Open-to-all CBTs (empty cbt_allowed_batch_ids) are excluded
   // since we can't tell whether this specific student was really assigned.
   let audienceTests: any[] = [];
-  if (batchId || courseIds.length) {
+  if (batchIds.length || courseIds.length) {
     const { data: candidateTests } = await safe(
       (supabase as any)
         .from("tests")
@@ -113,8 +119,8 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
         .lt("ends_at", nowIso),
     ) ?? { data: [] };
     audienceTests = (candidateTests ?? []).filter((t: any) => {
-      const batchMatch = batchId && Array.isArray(t.cbt_allowed_batch_ids) && t.cbt_allowed_batch_ids.length > 0
-        && t.cbt_allowed_batch_ids.includes(batchId);
+      const batchMatch = Array.isArray(t.cbt_allowed_batch_ids)
+        && t.cbt_allowed_batch_ids.some((id: string) => batchIds.includes(id));
       const courseMatch = t.course_id && courseIds.includes(t.course_id);
       return batchMatch || courseMatch;
     });

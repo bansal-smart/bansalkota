@@ -33,7 +33,9 @@ type StudentRow = {
   dob: string | null;
   centre_id?: string | null;
   centre_name?: string | null;
+  /** Deprecated primary batch (profiles.batch_id) — membership lives in batch_ids. */
   batch_id?: string | null;
+  batch_ids?: string[];
   batch_name?: string | null;
   batch_label?: string | null;
   cbt_password_set_at?: string | null;
@@ -86,11 +88,17 @@ function CoursesMultiSelect({
   courses,
   value,
   onChange,
+  placeholder = "Select courses...",
+  searchPlaceholder = "Search courses...",
+  emptyText = "No courses found",
 }: {
   label: string;
   courses: CourseLite[];
   value: string[];
   onChange: (ids: string[]) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyText?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -114,18 +122,18 @@ function CoursesMultiSelect({
       >
         {selectedNames.length
           ? selectedNames.slice(0, 3).join(", ") + (selectedNames.length > 3 ? ` +${selectedNames.length - 3} more` : "")
-          : "Select courses..."}
+          : placeholder}
       </button>
       {open && (
         <div className="rounded-lg border border-border bg-background p-2 max-h-56 overflow-y-auto space-y-1">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search courses..."
+            placeholder={searchPlaceholder}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
           {filtered.length === 0 && (
-            <div className="text-[11px] text-muted-foreground px-2 py-1">No courses found</div>
+            <div className="text-[11px] text-muted-foreground px-2 py-1">{emptyText}</div>
           )}
           {filtered.map((c) => (
             <label key={c.id} className="flex items-center gap-2 text-xs font-medium text-foreground px-2 py-1 rounded hover:bg-muted/50 cursor-pointer">
@@ -202,6 +210,38 @@ function BatchesMultiSelect({
   );
 }
 
+/**
+ * user_id -> batch ids from student_batches (the multi-batch source of truth).
+ * Fetched whole and paged because the student list itself is filtered
+ * client-side; RLS already limits a centre admin to their own students.
+ */
+async function fetchBatchMemberships(): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  let from = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("student_batches")
+      .select("user_id, batch_id")
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + 999);
+    if (error) throw error;
+    const chunk = (data ?? []) as { user_id: string; batch_id: string }[];
+    chunk.forEach((r) => map.set(r.user_id, [...(map.get(r.user_id) ?? []), r.batch_id]));
+    if (chunk.length < 1000) break;
+    from += 1000;
+  }
+  return map;
+}
+
+/** A student matches the batch filter when ANY of their batches is selected. */
+const inBatchFilter = (ids: string[] | undefined, filter: string[]) =>
+  !filter.length || (ids ?? []).some((id) => filter.includes(id));
+
+const batchNames = (ids: string[] | undefined, batchMap: Map<string, string>) => {
+  const names = (ids ?? []).map((id) => batchMap.get(id)).filter((n): n is string => !!n);
+  return names.length ? names.join(", ") : null;
+};
 
 const AdminStudentsPage = () => {
   const { isCenterAdmin } = useAuth();
@@ -240,6 +280,7 @@ const AdminStudentsPage = () => {
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
   const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
   const [editCourseIds, setEditCourseIds] = useState<string[]>([]);
+  const [editBatchIds, setEditBatchIds] = useState<string[]>([]);
 
   // CBT password management
   const [pwdBulkOpen, setPwdBulkOpen] = useState(false);
@@ -283,7 +324,7 @@ const AdminStudentsPage = () => {
       q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
     }
     if (classFilter) q = q.eq("class_level", classFilter);
-    if (batchFilter.length) q = q.in("batch_id", batchFilter);
+    const memberships = batchFilter.length ? await fetchBatchMemberships() : null;
 
     const all: string[] = [];
     let from = 0;
@@ -292,7 +333,9 @@ const AdminStudentsPage = () => {
       if (error) throw error;
       const chunk = (data ?? []) as { user_id: string }[];
       chunk.forEach((r) => {
-        if (!staffIds.has(r.user_id)) all.push(r.user_id);
+        if (staffIds.has(r.user_id)) return;
+        if (memberships && !inBatchFilter(memberships.get(r.user_id), batchFilter)) return;
+        all.push(r.user_id);
       });
       if (chunk.length < 1000) break;
       from += 1000;
@@ -490,8 +533,7 @@ const AdminStudentsPage = () => {
         query = query.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
       if (classFilter) query = query.eq("class_level", classFilter);
-      if (batchFilter.length) query = query.in("batch_id", batchFilter);
-
+      const memberships = await fetchBatchMemberships();
       const fetched: StudentRow[] = [];
       let cursor = 0;
       while (true) {
@@ -503,7 +545,8 @@ const AdminStudentsPage = () => {
         cursor += 1000;
       }
 
-      const filtered = fetched.filter((r) => !staffIds.has(r.user_id));
+      fetched.forEach((r) => { r.batch_ids = memberships.get(r.user_id) ?? []; });
+      const filtered = fetched.filter((r) => !staffIds.has(r.user_id) && inBatchFilter(r.batch_ids, batchFilter));
       const size = pageSize === TABLE_PAGE_SIZE_ALL ? filtered.length || 1 : pageSize;
       const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
       const baseRows = pageSize === TABLE_PAGE_SIZE_ALL ? filtered : filtered.slice(from, from + size);
@@ -511,7 +554,7 @@ const AdminStudentsPage = () => {
       const batchMap = new Map(batches.map((b) => [b.id, b.name]));
       baseRows.forEach((r) => {
         r.centre_name = r.centre_id ? centreMap.get(r.centre_id) ?? null : null;
-        r.batch_name = r.batch_id ? batchMap.get(r.batch_id) ?? null : null;
+        r.batch_name = batchNames(r.batch_ids, batchMap);
       });
 
       // Fetch emails via edge function for visible rows
@@ -561,18 +604,28 @@ const AdminStudentsPage = () => {
       dob: u.dob ?? "",
       target_exam: u.target_exam ?? "",
       class_level: u.class_level ?? "",
-      batch_id: u.batch_id ?? "",
       centre_id: u.centre_id ?? "",
       city: u.city ?? "",
       country: u.country ?? "",
     });
     setEditCourseIds([]);
-    const { data: er } = await supabase
-      .from("enrollments")
-      .select("course_id")
-      .eq("user_id", u.user_id)
-      .eq("is_active", true);
+    // Seed from the list row so saving before the fetch below lands can never
+    // drop an existing batch, then refresh from the source of truth.
+    setEditBatchIds(u.batch_ids ?? (u.batch_id ? [u.batch_id] : []));
+    const [{ data: er }, { data: sb, error: sbErr }] = await Promise.all([
+      supabase
+        .from("enrollments")
+        .select("course_id")
+        .eq("user_id", u.user_id)
+        .eq("is_active", true),
+      supabase
+        .from("student_batches")
+        .select("batch_id")
+        .eq("user_id", u.user_id)
+        .order("created_at", { ascending: true }),
+    ]);
     setEditCourseIds(((er ?? []) as Array<{ course_id: string }>).map((r) => r.course_id));
+    if (!sbErr && sb) setEditBatchIds((sb as Array<{ batch_id: string }>).map((r) => r.batch_id));
   };
 
   const saveEdit = async () => {
@@ -584,6 +637,8 @@ const AdminStudentsPage = () => {
         payload[k] = typeof v === "string" && v.trim() === "" ? null : v;
       });
       payload.course_ids = editCourseIds;
+      // Full membership set; manage-student derives the primary batch_id.
+      payload.batch_ids = editBatchIds;
       const { error } = await supabase.functions.invoke("manage-student", { body: payload });
       if (error) throw error;
       toast.success("Student updated");
@@ -653,8 +708,7 @@ const AdminStudentsPage = () => {
         q = q.or(`full_name.ilike.%${s}%,phone.ilike.%${s}%,city.ilike.%${s}%,target_exam.ilike.%${s}%,roll_number.ilike.%${s}%`);
       }
       if (classFilter) q = q.eq("class_level", classFilter);
-      if (batchFilter.length) q = q.in("batch_id", batchFilter);
-
+      const memberships = await fetchBatchMemberships();
       const fetched: StudentRow[] = [];
       let from = 0;
       while (true) {
@@ -665,14 +719,15 @@ const AdminStudentsPage = () => {
         if (chunk.length < 1000) break;
         from += 1000;
       }
-      const all = fetched.filter((r) => !staffIds.has(r.user_id));
+      fetched.forEach((r) => { r.batch_ids = memberships.get(r.user_id) ?? []; });
+      const all = fetched.filter((r) => !staffIds.has(r.user_id) && inBatchFilter(r.batch_ids, batchFilter));
       if (!all.length) { toast.dismiss(tId); return toast.error("Nothing to export"); }
 
       const centreMap = new Map(centres.map((c) => [c.id, centreLabel(c)]));
       const batchMap = new Map(batches.map((b) => [b.id, b.name]));
       all.forEach((r) => {
         r.centre_name = r.centre_id ? centreMap.get(r.centre_id) ?? null : null;
-        r.batch_name = r.batch_id ? batchMap.get(r.batch_id) ?? null : null;
+        r.batch_name = batchNames(r.batch_ids, batchMap);
       });
 
       // Fetch emails in batches
@@ -752,6 +807,7 @@ const AdminStudentsPage = () => {
   const addBatches = addCentreId ? batches.filter((b) => b.centre_id === addCentreId || b.centre_id === null) : batches;
   const editCentreId = isCenterAdmin ? primaryCenterId : (edit.centre_id ?? null);
   const editBatches = editCentreId ? batches.filter((b) => b.centre_id === editCentreId || b.centre_id === null) : batches;
+  const editBatchOptions: CourseLite[] = editBatches.map((b) => ({ id: b.id, name: b.code ? `${b.name} · ${b.code}` : b.name }));
 
   return (
     <div className="p-4 lg:p-6 space-y-4 pb-24 lg:pb-6">
@@ -1075,7 +1131,7 @@ const AdminStudentsPage = () => {
                     <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.dob ? new Date(u.dob).toLocaleDateString() : "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.class_level || "—"}</td>
-                    <td className="p-3 hidden lg:table-cell text-muted-foreground truncate max-w-[140px]">{u.batch_name || u.batch_label || "—"}</td>
+                    <td className="p-3 hidden lg:table-cell text-muted-foreground truncate max-w-[180px]" title={u.batch_name || undefined}>{u.batch_name || u.batch_label || "—"}</td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground truncate max-w-[140px]">{u.centre_name || "—"}</td>
                     <td className="p-3">
                       <div className="flex flex-col gap-1">
@@ -1146,7 +1202,6 @@ const AdminStudentsPage = () => {
                 { k: "dob", l: "DOB", ph: "", type: "date" },
                 { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS.map((o) => ({ value: o, label: o })) },
                 { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS.map((o) => ({ value: o, label: o })) },
-                { k: "batch_id", l: "Batch (optional)", ph: "Select batch", type: "select", options: batches.map((b) => ({ value: b.id, label: b.code ? `${b.name} · ${b.code}` : b.name })) },
                 { k: "centre_id", l: "Centre", ph: "Select centre", type: "select", options: centres.map((c) => ({ value: c.id, label: centreLabel(c) })) },
               ] as Array<{ k: keyof StudentRow; l: string; ph: string; type: string; options?: Array<{ value: string; label: string }> }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -1180,6 +1235,17 @@ const AdminStudentsPage = () => {
                   )}
                 </label>
               ))}
+              <div className="sm:col-span-2">
+                <CoursesMultiSelect
+                  label="Batches (assigned)"
+                  courses={editBatchOptions}
+                  value={editBatchIds}
+                  onChange={setEditBatchIds}
+                  placeholder="Select batches..."
+                  searchPlaceholder="Search batches..."
+                  emptyText="No batches found"
+                />
+              </div>
               <div className="sm:col-span-2">
                 <CoursesMultiSelect
                   label="Courses (assigned)"

@@ -61,19 +61,30 @@ const CbtLiveTestsPage = () => {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, roll_number, batch_id, course_batches:batch_id(code)")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const prof = profile as { full_name: string; roll_number: string | null; batch_id: string | null; course_batches: { code: string } | null } | null;
+      const [{ data: profile }, { data: memberships }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("full_name, roll_number")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("student_batches")
+          .select("course_batches:batch_id(code)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true }),
+      ]);
+      const prof = profile as { full_name: string; roll_number: string | null } | null;
       setStudentName(prof?.full_name ?? "");
       setRoll(prof?.roll_number ?? "");
-      setBatchCode(prof?.course_batches?.code ?? "");
+      setBatchCode(
+        ((memberships ?? []) as Array<{ course_batches: { code: string | null } | null }>)
+          .map((m) => m.course_batches?.code)
+          .filter(Boolean)
+          .join(", "),
+      );
 
-      const { data, error } = await supabase.rpc("cbt_live_tests_for_batch", {
-        _batch_id: prof?.batch_id ?? null,
-      });
+      // Live tests across every batch the student belongs to.
+      const { data, error } = await supabase.rpc("cbt_live_tests_for_me");
       if (error) toast.error(error.message);
       const baseTests = (data ?? []) as LiveTest[];
 

@@ -100,6 +100,19 @@ must add `|| b.centre_id === null` (see `AdminStudentsPage`, `CreateTestPage`,
 (no `batch_code` given) resolves the PAN-India batch by stream+class via a fixed
 code map, not a per-centre lookup.
 
+**Batch membership is many-to-many (2026-09-23):** a student can belong to several
+batches at once (e.g. classroom `MEPAN-XII` + an AITS test-series batch) via
+**`student_batches(user_id, batch_id)`** — the source of truth for every "is this
+student in batch X" check (CBT targeting, result sheets, batch counts, SMS batch
+audiences). `profiles.batch_id` is **deprecated** but kept as the student's
+*primary* (classroom) batch; the `trg_sync_primary_batch` trigger mirrors it into
+`student_batches`, and a primary change moves only that one row, so legacy
+single-batch writers (bulk-import, cbt-bulk-setup, center-create-student) never
+strip an additional batch. The Students edit modal saves the full set through
+`manage-student` (`batch_ids`), which picks the primary (keeps the current one if
+still selected, otherwise prefers a non-test-series batch). Centre scoping of
+centreless students still reads the primary batch client-side.
+
 **Roll number (resolved):** franchise centres auto-assign a roll on student creation,
 format `{CITY_CODE}{CENTRE_CODE}{SEQ}` — e.g. `BLR010001` = Bengaluru, centre `01`,
 student `0001`. City code is shared by all centres in a city; centre code is unique
