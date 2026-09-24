@@ -28,6 +28,9 @@ verify_jwt = false
 [functions.cashfree-boost-pay]
 verify_jwt = false
 
+[functions.create-boost-registration]
+verify_jwt = false
+
 [functions.cashfree-create-order]
 verify_jwt = false
 

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { CheckCircle2, XCircle, Clock, PartyPopper } from "lucide-react";
 import Seo from "@/components/Seo";
 
@@ -54,8 +54,12 @@ const moduleCopy: Record<ThankYouModule, {
 
 const ThankYouPage = ({ module }: { module?: ThankYouModule }) => {
   const location = useLocation();
+  const { module: moduleParam } = useParams();
   const state = (location.state as ThankYouState | null) ?? null;
-  const pageModule = module ?? state?.type ?? "e_store";
+  const routeModule = ["e_store", "course", "test_series", "boost"].includes(moduleParam ?? "")
+    ? moduleParam as ThankYouModule
+    : undefined;
+  const pageModule = module ?? state?.type ?? routeModule ?? "e_store";
   const copy = moduleCopy[pageModule];
 
   // Direct visit, refresh, or a bookmarked/shared link carries no router

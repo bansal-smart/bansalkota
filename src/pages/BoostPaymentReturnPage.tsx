@@ -15,7 +15,7 @@ const BoostPaymentReturnPage = () => {
     let attempts = 0;
     async function poll() {
       if (!regId) {
-        navigate("/thank-you/boost", {
+        navigate("/thank-you", {
           replace: true,
           state: { type: "boost", status: "error", message: "Missing registration id" },
         });
@@ -27,7 +27,7 @@ const BoostPaymentReturnPage = () => {
       });
       if (cancelled) return;
       if (error) {
-        navigate("/thank-you/boost", {
+        navigate("/thank-you", {
           replace: true,
           state: { type: "boost", status: "error", message: error.message },
         });
@@ -41,14 +41,14 @@ const BoostPaymentReturnPage = () => {
         if (amount != null) {
           trackPurchaseOnce(`boost:${regId}`, amount);
         }
-        navigate("/thank-you/boost", {
+        navigate("/thank-you", {
           replace: true,
           state: { type: "boost", status: "paid", admitCardNumber, amount },
         });
         return;
       }
       if (s === "failed") {
-        navigate("/thank-you/boost", {
+        navigate("/thank-you", {
           replace: true,
           state: { type: "boost", status: "failed", admitCardNumber },
         });
@@ -57,7 +57,7 @@ const BoostPaymentReturnPage = () => {
       if (attempts < 6) {
         setTimeout(poll, 2500);
       } else {
-        navigate("/thank-you/boost", {
+        navigate("/thank-you", {
           replace: true,
           state: { type: "boost", status: "pending", admitCardNumber },
         });

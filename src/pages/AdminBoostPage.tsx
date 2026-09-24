@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Award, Loader2, Search, Download, Check, X as XIcon } from "lucide-react";
+import { Award, Loader2, Search, Download, Check, X as XIcon, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import BoostSettingsPanel from "@/components/admin/BoostSettingsPanel";
 import BoostSyllabusPanel from "@/components/admin/BoostSyllabusPanel";
 import { useAuth } from "@/context/AuthContext";
 import TablePagination from "@/components/TablePagination";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 type Registration = {
   id: string;
@@ -40,7 +41,8 @@ const STATUS_OPTIONS = ["all", "registered", "confirmed", "attended", "cancelled
 const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
 
 const AdminBoostPage = () => {
-  const { isCenterAdmin } = useAuth();
+  const { isCenterAdmin, isStaff } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [rows, setRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -59,6 +61,7 @@ const AdminBoostPage = () => {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const applyFilters = (query: any) => {
     if (debouncedQ.trim()) {
@@ -136,6 +139,23 @@ const AdminBoostPage = () => {
     toast.success("Updated");
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...full } : r)));
     if (selected?.id === id) setSelected({ ...selected, ...full } as Registration);
+  };
+
+  const deleteRegistration = async (r: Registration) => {
+    const ok = await confirm({
+      title: `Delete registration for "${r.full_name}"?`,
+      description: "This permanently deletes this BOOST registration record. This cannot be undone.",
+      confirmLabel: "Delete registration",
+    });
+    if (!ok) return;
+    setDeletingId(r.id);
+    const { error } = await supabase.from("boost_registrations").delete().eq("id", r.id);
+    setDeletingId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Registration deleted");
+    setRows((rs) => rs.filter((row) => row.id !== r.id));
+    setTotal((value) => Math.max(0, value - 1));
+    if (selected?.id === r.id) setSelected(null);
   };
 
 
@@ -294,6 +314,7 @@ const AdminBoostPage = () => {
                 <th className="text-left p-3">Payment</th>
                 <th className="text-left p-3">Status</th>
                 <th className="text-left p-3">When</th>
+                {isStaff && <th className="text-left p-3 w-10">Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -331,10 +352,22 @@ const AdminBoostPage = () => {
                     <span className="inline-flex rounded-full bg-bansal-blue/10 text-bansal-blue px-2 py-0.5 text-[10px] font-bold">{r.status}</span>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("en-IN")}</td>
+                  {isStaff && (
+                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => deleteRegistration(r)}
+                        disabled={deletingId === r.id}
+                        title="Delete registration"
+                        className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        {deletingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={8} className="p-10 text-center text-muted-foreground">No registrations match your filters.</td></tr>
+                <tr><td colSpan={isStaff ? 9 : 8} className="p-10 text-center text-muted-foreground">No registrations match your filters.</td></tr>
               )}
             </tbody>
           </table>
@@ -404,6 +437,7 @@ const AdminBoostPage = () => {
           </div>
         </div>
       )}
+      {ConfirmDialog}
     </div>
   );
 };

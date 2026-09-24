@@ -9,7 +9,6 @@ import { useCenters } from "@/hooks/useCenters";
 import { useBoostSettings } from "@/hooks/useBoostSettings";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 import { startBoostCashfreeCheckout } from "@/lib/cashfree";
-import { generateId } from "@/lib/uuid";
 import { trackInitiateCheckout, trackCompleteRegistrationOnce } from "@/lib/metaPixel";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
@@ -108,48 +107,39 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
     setSubmitting(true);
     try {
       const centre = centers.find((c) => c.id === parsed.data.preferred_centre_id);
-      // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
-      // Anonymous/guest submitters have no SELECT policy on boost_registrations,
-      // and requesting the row back via RETURNING fails RLS even though the
-      // INSERT itself is permitted. admit_card_number is assigned server-side by
-      // a trigger, so we fetch just that one field back via a narrow RPC after.
-      const regId = generateId();
-      // A ₹0 registration fee has nothing for Cashfree to collect — its own
-      // order-creation API rejects amount<=0 with a 400 ("Invalid amount"),
-      // so this must never reach startBoostCashfreeCheckout. There's no
-      // anonymous UPDATE policy on this table (only admins/centre-staff can
-      // UPDATE), but the INSERT policy is unrestricted, so the confirmed
-      // state is set directly in this initial insert instead.
-      const isFree = Number(priceInr) <= 0;
+      // Creation goes through the Edge Function so anonymous callers cannot
+      // bypass the duplicate check by posting straight to the table.
       const payload = {
         ...parsed.data,
-        id: regId,
         date_of_birth: parsed.data.date_of_birth || null,
         preferred_centre_id: parsed.data.preferred_centre_id || null,
         exam_mode: parsed.data.exam_mode,
         exam_slot: parsed.data.exam_slot || null,
         preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
-        amount: priceInr,
-        payment_status: isFree ? "paid" : "pending",
-        status: isFree ? "confirmed" : undefined,
-        paid_at: isFree ? new Date().toISOString() : undefined,
       };
-      // Generate the id client-side and skip `.select()` (i.e. no RETURNING).
-      // Anonymous/guest submitters have no SELECT policy on boost_registrations,
-      // and requesting the row back via RETURNING fails RLS even though the
-      // INSERT itself is permitted. admit_card_number is assigned server-side by
-      // a trigger, so we fetch just that one field back via a narrow RPC after.
-      const { error } = await supabase.from("boost_registrations").insert([payload as any]);
+      const { data, error } = await supabase.functions.invoke("create-boost-registration", { body: payload });
       if (error) {
+        const response = (error as { context?: Response }).context;
+        const errorBody = response ? await response.clone().json().catch(() => null) : null;
+        if (errorBody?.code === "DUPLICATE_REGISTRATION") {
+          toast.error("You've already registered for this exam with this phone number and email.");
+          return;
+        }
         toast.error(error.message);
         return;
       }
-      const { data: admitData, error: admitErr } = await (supabase as any).rpc("get_boost_admit_card", { _id: regId });
-      if (admitErr) {
-        toast.error(admitErr.message);
+      if (data?.code === "DUPLICATE_REGISTRATION") {
+        toast.error("You've already registered for this exam with this phone number and email.");
         return;
       }
-      const admit = admitData as string;
+      if (!data?.registration_id || !data?.admit_card_number) {
+        toast.error(data?.error || "Could not create your registration");
+        return;
+      }
+      const regId = data.registration_id as string;
+      const admit = data.admit_card_number as string;
+      const registeredPrice = Number(data.amount ?? priceInr);
+      const isFree = registeredPrice <= 0;
       // Email temporarily disabled per admin request
       // void sendConfirmation({
       //   templateName: "boost-confirmation",
@@ -166,14 +156,14 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
       if (isFree) {
         trackCompleteRegistrationOnce(`boost:${regId}`, { content_name: "BOOST Registration" });
         onClose();
-        navigate("/thank-you/boost", {
+        navigate("/thank-you", {
           state: { type: "boost", status: "free", admitCardNumber: admit },
         });
         return;
       }
       // Open Cashfree's checkout modal to collect payment
       try {
-        trackInitiateCheckout({ content_name: "BOOST Registration", value: priceInr, currency: "INR" });
+        trackInitiateCheckout({ content_name: "BOOST Registration", value: registeredPrice, currency: "INR" });
         await startBoostCashfreeCheckout(regId);
       } catch (e) {
         toast.error((e as Error).message || "Could not start payment");

@@ -209,6 +209,10 @@ const AdminCentersPage = () => {
 
   const save = async () => {
     if (!form.city || !form.state) return toast.error("City and State are required");
+    const centreCode = (form.centre_code as string)?.trim() || "";
+    if (centreCode && !/^\d{1,4}$/.test(centreCode)) {
+      return toast.error("Centre code must contain one to four digits");
+    }
     const slug = form.slug || slugify(`${form.city}${form.area ? "-" + form.area : ""}`);
     setSaving(true);
     const payload = {
@@ -222,7 +226,7 @@ const AdminCentersPage = () => {
       email: form.email || null,
       is_hq: !!form.is_hq,
       city_code: (form.city_code as string)?.trim().toUpperCase() || null,
-      centre_code: (form.centre_code as string)?.trim() || null,
+      centre_code: centreCode || null,
       established: form.established ? Number(form.established) : null,
       theme: form.theme || "metro",
       image_url: form.image_url || null,
@@ -393,7 +397,7 @@ const AdminCentersPage = () => {
           </select>
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Slug (auto)" value={form.slug ?? ""} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm uppercase" maxLength={3} placeholder="City code (e.g. BLR)" value={form.city_code ?? ""} onChange={(e) => setForm({ ...form, city_code: e.target.value.toUpperCase() })} title="3-letter city code, shared by all centres in this city. Used for roll numbers. Leave blank for HQ." />
-          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" maxLength={2} placeholder="Centre code (e.g. 01)" value={form.centre_code ?? ""} onChange={(e) => setForm({ ...form, centre_code: e.target.value })} title="2-digit code, unique within the city. Roll numbers become {CITY}{CENTRE}{0001}. Leave blank for HQ." />
+          <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" inputMode="numeric" pattern="[0-9]*" maxLength={4} placeholder="Centre code (e.g. 0123)" value={form.centre_code ?? ""} onChange={(e) => setForm({ ...form, centre_code: e.target.value.replace(/\D/g, "").slice(0, 4) })} title="One to four digits, unique within the city. Roll numbers become {CITY}{CENTRE}{0001}. Leave blank for HQ." />
           <textarea className="rounded-lg border border-border bg-background px-3 py-2 text-sm md:col-span-3" rows={2} placeholder="Address" value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Phone" value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
