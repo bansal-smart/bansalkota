@@ -39,6 +39,7 @@ type Centre = { id: string; city: string; area: string | null };
 
 const STATUS_OPTIONS = ["all", "registered", "confirmed", "attended", "cancelled"] as const;
 const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
+const EXAM_MODE_OPTIONS = ["all", "Online", "Offline"] as const;
 
 const AdminBoostPage = () => {
   const { isCenterAdmin, isStaff } = useAuth();
@@ -53,10 +54,12 @@ const AdminBoostPage = () => {
   const [cityFilter, setCityFilter] = useState("all");
   const [stateFilter, setStateFilter] = useState("all");
   const [classFilter, setClassFilter] = useState("all");
+  const [examModeFilter, setExamModeFilter] = useState<(typeof EXAM_MODE_OPTIONS)[number]>("all");
+  const [examSlotFilter, setExamSlotFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [centres, setCentres] = useState<Centre[]>([]);
-  const [filterValues, setFilterValues] = useState({ cities: [] as string[], states: [] as string[], classes: [] as string[] });
+  const [filterValues, setFilterValues] = useState({ cities: [] as string[], states: [] as string[], classes: [] as string[], examSlots: [] as string[] });
   const [selected, setSelected] = useState<Registration | null>(null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
@@ -74,6 +77,8 @@ const AdminBoostPage = () => {
     if (cityFilter !== "all") query = query.eq("city", cityFilter);
     if (stateFilter !== "all") query = query.eq("state", stateFilter);
     if (classFilter !== "all") query = query.eq("class_level", classFilter);
+    if (examModeFilter !== "all") query = query.eq("exam_mode", examModeFilter);
+    if (examSlotFilter !== "all") query = query.eq("exam_slot", examSlotFilter);
     if (fromDate) query = query.gte("created_at", `${fromDate}T00:00:00`);
     if (toDate) {
       const end = new Date(`${toDate}T00:00:00`);
@@ -92,7 +97,7 @@ const AdminBoostPage = () => {
       .order("created_at", { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)),
       supabase.from("centres").select("id, city, area").order("city"),
-      supabase.from("boost_registrations").select("city, state, class_level").limit(10000),
+      supabase.from("boost_registrations").select("city, state, class_level, exam_slot").limit(10000),
     ]);
     if (error) toast.error(error.message);
     else {
@@ -100,19 +105,20 @@ const AdminBoostPage = () => {
       setTotal(count ?? 0);
     }
     setCentres((centreRows ?? []) as Centre[]);
-    const options = (optionRows ?? []) as Array<{ city: string | null; state: string | null; class_level: string }>;
+    const options = (optionRows ?? []) as Array<{ city: string | null; state: string | null; class_level: string; exam_slot: string | null }>;
     setFilterValues({
       cities: Array.from(new Set(options.map((r) => r.city).filter(Boolean) as string[])).sort(),
       states: Array.from(new Set(options.map((r) => r.state).filter(Boolean) as string[])).sort(),
       classes: Array.from(new Set(options.map((r) => r.class_level).filter(Boolean))).sort(),
+      examSlots: Array.from(new Set(options.map((r) => r.exam_slot).filter(Boolean) as string[])).sort(),
     });
     setLoading(false);
   };
   useEffect(() => {
     void load();
-  }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, fromDate, toDate, page, pageSize]);
+  }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, examModeFilter, examSlotFilter, fromDate, toDate, page, pageSize]);
 
-  useEffect(() => { setPage(0); }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, fromDate, toDate]);
+  useEffect(() => { setPage(0); }, [debouncedQ, statusFilter, payFilter, centreFilter, cityFilter, stateFilter, classFilter, examModeFilter, examSlotFilter, fromDate, toDate]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const filtered = rows;
@@ -287,6 +293,13 @@ const AdminBoostPage = () => {
         <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
           <option value="all">Class: all</option>
           {filterValues.classes.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        <select value={examModeFilter} onChange={(e) => setExamModeFilter(e.target.value as any)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          {EXAM_MODE_OPTIONS.map((o) => <option key={o} value={o}>Exam Mode: {o}</option>)}
+        </select>
+        <select value={examSlotFilter} onChange={(e) => setExamSlotFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+          <option value="all">Exam Slot: all</option>
+          {filterValues.examSlots.map((value) => <option key={value} value={value}>{value}</option>)}
         </select>
         <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
           From
