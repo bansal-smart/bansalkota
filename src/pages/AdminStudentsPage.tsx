@@ -1145,7 +1145,12 @@ const AdminStudentsPage = () => {
                       </div>
                     </td>
                     <td className="p-3 hidden xl:table-cell text-muted-foreground truncate max-w-[160px]">{u.father_name || "—"}</td>
-                    <td className="p-3 hidden sm:table-cell text-muted-foreground">{u.phone || "—"}</td>
+                    <td
+                      className="p-3 hidden sm:table-cell text-muted-foreground"
+                      title={!u.phone && u.parent_phone ? "Parent number shown because the student's contact number is missing" : undefined}
+                    >
+                      {u.phone || u.parent_phone || "—"}
+                    </td>
                     <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.parent_phone || "—"}</td>
                     <td className="p-3 hidden xl:table-cell text-muted-foreground">{u.dob ? new Date(u.dob).toLocaleDateString() : "—"}</td>
                     <td className="p-3 hidden lg:table-cell text-muted-foreground">{u.target_exam || "—"}</td>
