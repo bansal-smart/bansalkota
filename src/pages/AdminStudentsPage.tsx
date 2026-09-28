@@ -526,12 +526,16 @@ const AdminStudentsPage = () => {
       const staffIds = new Set(await fetchStaffUserIds());
       const effectiveCentreFilter = isCenterAdmin ? (primaryCenterId || "none") : centreFilter;
 
-      let query = supabase
-        .from("profiles")
+        let query = supabase
+          .from("profiles")
         .select(
           "user_id, full_name, father_name, phone, parent_phone, avatar_url, country, city, target_exam, class_level, goal, plan, is_suspended, onboarding_completed, created_at, roll_number, dob, centre_id, batch_id, batch_label, cbt_password_set_at"
-        )
-        .order("created_at", { ascending: false });
+          )
+          // Incomplete phone-OTP placeholders have no name and are not
+          // students. Filtering them in PostgREST avoids a second, oversized
+          // user_roles lookup for every profile in the database.
+          .not("full_name", "is", null)
+          .order("created_at", { ascending: false });
       if (isCenterAdmin && primaryCenterId) {
         const centreBatchIds = batches
           .filter((b) => b.centre_id === primaryCenterId)
@@ -559,23 +563,8 @@ const AdminStudentsPage = () => {
         cursor += 1000;
       }
 
-      // A profile is not a student merely because it has a phone number. In
-      // particular, unfinished self-signup accounts have no student role and
-      // must never appear as "Unnamed" active students in this admin list.
-      const studentIds = new Set<string>();
-      const ids = fetched.map((row) => row.user_id);
-      for (let i = 0; i < ids.length; i += 500) {
-        const { data: roleRows, error: roleError } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "student")
-          .in("user_id", ids.slice(i, i + 500));
-        if (roleError) throw roleError;
-        (roleRows ?? []).forEach((row) => studentIds.add(row.user_id));
-      }
-
       fetched.forEach((r) => { r.batch_ids = memberships.get(r.user_id) ?? []; });
-      const filtered = fetched.filter((r) => studentIds.has(r.user_id) && !staffIds.has(r.user_id) && inBatchFilter(r.batch_ids, batchFilter));
+      const filtered = fetched.filter((r) => !!r.full_name?.trim() && !staffIds.has(r.user_id) && inBatchFilter(r.batch_ids, batchFilter));
       const size = pageSize === TABLE_PAGE_SIZE_ALL ? filtered.length || 1 : pageSize;
       const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
       const baseRows = pageSize === TABLE_PAGE_SIZE_ALL ? filtered : filtered.slice(from, from + size);
