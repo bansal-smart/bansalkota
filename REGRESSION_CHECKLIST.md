@@ -62,6 +62,7 @@ touches admin pages, filters, or navigation:
 - [ ] Question Bank: visibility rules match the last-agreed scope (class/stream/batch)
 - [ ] Batch visibility: franchise centre queries include PAN-India (`centre_id IS NULL`) batches alongside their own (see `CONTEXT.md` → "Batch (centralized, 2026-08-13)")
 - [ ] Centre pin/PIN fields are 4 digits where required (recent fix, `69ba915a`)
+- [ ] Students: Add Student and bulk import reject every new centre student missing name, father's name, DOB, stream, class, or centre; phone OTP matches an existing student/parent number or routes to registration without creating a profile
 - [ ] Any admin filter bar you touch still has *all* its previous filters, not just the ones relevant to your current task — diff the filter `<select>` block against `git show HEAD~1:<file>` if unsure
 
 Add a line here whenever a client-reported bug is fixed, so the next session

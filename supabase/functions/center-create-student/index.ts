@@ -76,7 +76,15 @@ Deno.serve(async (req) => {
       ? body.student_status
       : "active";
 
-    if (!full_name) return json(400, { error: "full_name required" });
+    const missing = [
+      !full_name && "full_name",
+      !father_name && "father_name",
+      !dob && "dob",
+      !target_exam && "target_exam",
+      !class_level && "class_level",
+      !centre_id && "centre_id",
+    ].filter(Boolean);
+    if (missing.length) return json(400, { error: `Missing required field(s): ${missing.join(", ")}` });
     if (!phone && !roll_number) return json(400, { error: "phone or roll_number required" });
 
     let email = body?.email ? String(body.email).toLowerCase().trim() : "";

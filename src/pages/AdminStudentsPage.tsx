@@ -278,6 +278,7 @@ const AdminStudentsPage = () => {
     dob: "", target_exam: "", class_level: "", batch_id: "", centre: "",
   };
   const [addForm, setAddForm] = useState<Record<string, string>>(emptyAdd);
+  const [addErrors, setAddErrors] = useState<Record<string, string>>({});
   const [addCourseIds, setAddCourseIds] = useState<string[]>([]);
   const [editCourseIds, setEditCourseIds] = useState<string[]>([]);
   const [editBatchIds, setEditBatchIds] = useState<string[]>([]);
@@ -442,9 +443,21 @@ const AdminStudentsPage = () => {
 
   const submitAddStudent = async () => {
     const finalCentre = (isCenterAdmin && primaryCenter) ? centreLabel(primaryCenter) : addForm.centre;
-    if (!addForm.roll_number.trim() || !addForm.full_name.trim() || !finalCentre.trim()) {
-      return toast.error("Roll No, Student Name and Centre are required");
+    const required: Array<[string, string, string]> = [
+      ["roll_number", "Roll No", addForm.roll_number],
+      ["full_name", "Student Name", addForm.full_name],
+      ["father_name", "Father's Name", addForm.father_name],
+      ["dob", "DOB", addForm.dob],
+      ["target_exam", "Stream", addForm.target_exam],
+      ["class_level", "Class", addForm.class_level],
+      ["centre", "Centre", finalCentre],
+    ];
+    const nextErrors = Object.fromEntries(required.filter(([, , value]) => !value.trim()).map(([key, label]) => [key, `${label} is required`]));
+    if (Object.keys(nextErrors).length) {
+      setAddErrors(nextErrors);
+      return toast.error("Complete the required student details");
     }
+    setAddErrors({});
     setAddSaving(true);
     try {
       const row: Record<string, string | string[] | null> = {};
@@ -467,6 +480,7 @@ const AdminStudentsPage = () => {
       toast.success("Student added");
       setAddOpen(false);
       setAddForm(emptyAdd);
+      setAddErrors({});
       setAddCourseIds([]);
       load();
     } catch (e: unknown) {
@@ -545,8 +559,23 @@ const AdminStudentsPage = () => {
         cursor += 1000;
       }
 
+      // A profile is not a student merely because it has a phone number. In
+      // particular, unfinished self-signup accounts have no student role and
+      // must never appear as "Unnamed" active students in this admin list.
+      const studentIds = new Set<string>();
+      const ids = fetched.map((row) => row.user_id);
+      for (let i = 0; i < ids.length; i += 500) {
+        const { data: roleRows, error: roleError } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "student")
+          .in("user_id", ids.slice(i, i + 500));
+        if (roleError) throw roleError;
+        (roleRows ?? []).forEach((row) => studentIds.add(row.user_id));
+      }
+
       fetched.forEach((r) => { r.batch_ids = memberships.get(r.user_id) ?? []; });
-      const filtered = fetched.filter((r) => !staffIds.has(r.user_id) && inBatchFilter(r.batch_ids, batchFilter));
+      const filtered = fetched.filter((r) => studentIds.has(r.user_id) && !staffIds.has(r.user_id) && inBatchFilter(r.batch_ids, batchFilter));
       const size = pageSize === TABLE_PAGE_SIZE_ALL ? filtered.length || 1 : pageSize;
       const from = pageSize === TABLE_PAGE_SIZE_ALL ? 0 : page * size;
       const baseRows = pageSize === TABLE_PAGE_SIZE_ALL ? filtered : filtered.slice(from, from + size);
@@ -860,12 +889,12 @@ const AdminStudentsPage = () => {
           const base = [
             { key: "roll_number", label: "Roll No", required: true, example: "1001" },
             { key: "full_name", label: "Student Name", required: true, example: "Aviral Singh" },
-            { key: "father_name", label: "Father's Name", example: "Ashok Kumar Singh" },
+            { key: "father_name", label: "Father's Name", required: true, example: "Ashok Kumar Singh" },
             { key: "phone", label: "Contact No.", example: "7857852344" },
             { key: "parent_phone", label: "Parent No.", example: "7909075201" },
-            { key: "dob", label: "DOB", example: "2008-05-12" },
-            { key: "target_exam", label: "Stream", example: "JEE" },
-            { key: "class_level", label: "Class", example: "XI" },
+            { key: "dob", label: "DOB", required: true, example: "2008-05-12" },
+            { key: "target_exam", label: "Stream", required: true, example: "JEE" },
+            { key: "class_level", label: "Class", required: true, example: "XI" },
             { key: "batch_code", label: "Batch Code", example: "XI-J1" },
           ];
           if (!isCenterAdmin) {
@@ -905,12 +934,12 @@ const AdminStudentsPage = () => {
               {([
                 { k: "roll_number", l: "Roll No *", ph: "1001", type: "text" },
                 { k: "full_name", l: "Student Name *", ph: "Aviral Singh", type: "text" },
-                { k: "father_name", l: "Father's Name", ph: "Ashok Kumar Singh", type: "text" },
+                { k: "father_name", l: "Father's Name *", ph: "Ashok Kumar Singh", type: "text" },
                 { k: "phone", l: "Contact No.", ph: "7857852344", type: "text" },
                 { k: "parent_phone", l: "Parent No.", ph: "7909075201", type: "text" },
-                { k: "dob", l: "DOB", ph: "", type: "date" },
-                { k: "target_exam", l: "Stream", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
-                { k: "class_level", l: "Class", ph: "Select class", type: "select", options: CLASS_OPTIONS },
+                { k: "dob", l: "DOB *", ph: "", type: "date" },
+                { k: "target_exam", l: "Stream *", ph: "Select stream", type: "select", options: STREAM_OPTIONS },
+                { k: "class_level", l: "Class *", ph: "Select class", type: "select", options: CLASS_OPTIONS },
                 ...(!isCenterAdmin ? [{ k: "centre", l: "Centre *", ph: "Select centre", type: "select", options: centres.map((c) => centreLabel(c)) }] : []),
               ] as Array<{ k: string; l: string; ph: string; type: string; options?: string[] }>).map((f) => (
                 <label key={f.k} className="text-xs font-semibold text-muted-foreground space-y-1">
@@ -926,7 +955,7 @@ const AdminStudentsPage = () => {
                     <select
                       value={addForm[f.k] ?? ""}
                       onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                      className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary ${addErrors[f.k] ? "border-destructive" : "border-border"}`}
                     >
                       <option value="">{f.ph}</option>
                       {(f.options ?? []).map((opt) => (
@@ -939,9 +968,10 @@ const AdminStudentsPage = () => {
                       value={addForm[f.k] ?? ""}
                       onChange={(e) => setAddForm((s) => ({ ...s, [f.k]: e.target.value }))}
                       placeholder={f.ph}
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                      className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary ${addErrors[f.k] ? "border-destructive" : "border-border"}`}
                     />
                   )}
+                  {addErrors[f.k] && <span className="block text-[11px] text-destructive">{addErrors[f.k]}</span>}
                 </label>
               ))}
               <label className="text-xs font-semibold text-muted-foreground space-y-1">
