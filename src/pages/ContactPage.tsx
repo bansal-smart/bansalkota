@@ -28,6 +28,8 @@ const CHANNELS = [
   { icon: Phone, label: "Admissions", value: "+91 9773343246", href: "tel:+919773343246" },
   { icon: Phone, label: "Admissions Alt.", value: "+91 8003045222", href: "tel:+918003045222" },
   { icon: Phone, label: "HR", value: "+91 8375015384", href: "tel:+918375015384" },
+  { icon: Phone, label: "Franchise", value: "+91 9119321345", href: "tel:+919119321345" },
+  { icon: Phone, label: "Franchise Alt.", value: "+91 9001822790", href: "tel:+919001822790" },
   { icon: Phone, label: "BFTP", value: "+91 8003046222", href: "tel:+918003046222" },
   { icon: Mail, label: "Email", value: "admin@bansal.ac.in", href: "mailto:admin@bansal.ac.in" },
   { icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/919773343246" },
