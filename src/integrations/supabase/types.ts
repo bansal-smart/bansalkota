@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       achievement_posters: {
@@ -1100,6 +1125,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_channels: {
+        Row: {
+          created_at: string
+          display_order: number
+          href: string
+          id: string
+          is_active: boolean
+          kind: string
+          label: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          href: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          label: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          href?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
       course_batches: {
         Row: {
@@ -5701,6 +5762,34 @@ export type Database = {
           numerical_answer: number
         }[]
       }
+      admin_get_test_series_order_registrations: {
+        Args: never
+        Returns: {
+          city: string
+          class_level: string
+          email: string
+          father_name: string
+          full_name: string
+          item_id: string
+          item_title: string
+          oi_created_at: string
+          order_created_at: string
+          order_id: string
+          order_item_id: string
+          order_status: string
+          order_total: number
+          parent_phone: string
+          phone: string
+          shipping_city: string
+          shipping_name: string
+          shipping_phone: string
+          shipping_state: string
+          state: string
+          target_exam: string
+          unit_price: number
+          user_id: string
+        }[]
+      }
       admin_recompute_test_attempt: {
         Args: { _attempt_id: string }
         Returns: Json
@@ -5955,6 +6044,15 @@ export type Database = {
         Args: { _student_id: string; _user_id: string }
         Returns: boolean
       }
+      is_centre_staff_via_student_batch: {
+        Args: {
+          _action: string
+          _module: string
+          _staff_id: string
+          _student_id: string
+        }
+        Returns: boolean
+      }
       is_centre_suspended_for_user: {
         Args: { _user_id: string }
         Returns: boolean
@@ -6160,6 +6258,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: [

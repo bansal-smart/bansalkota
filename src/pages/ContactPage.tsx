@@ -11,6 +11,7 @@ import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalD
 import SubmissionSuccess from "@/components/SubmissionSuccess";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 import Seo from "@/components/Seo";
+import { useContactChannels, type ContactChannel } from "@/hooks/useContactChannels";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -24,21 +25,17 @@ const contactSchema = z.object({
   message: z.string().trim().min(10, "Please share a few details").max(2000),
 });
 
-const CHANNELS = [
-  { icon: Phone, label: "Admissions", value: "+91 9773343246", href: "tel:+919773343246" },
-  { icon: Phone, label: "Admissions Alt.", value: "+91 8003045222", href: "tel:+918003045222" },
-  { icon: Phone, label: "HR", value: "+91 8375015384", href: "tel:+918375015384" },
-  { icon: Phone, label: "Franchise", value: "+91 9119321345", href: "tel:+919119321345" },
-  { icon: Phone, label: "Franchise Alt.", value: "+91 9001822790", href: "tel:+919001822790" },
-  { icon: Phone, label: "BFTP", value: "+91 8003046222", href: "tel:+918003046222" },
-  { icon: Mail, label: "Email", value: "admin@bansal.ac.in", href: "mailto:admin@bansal.ac.in" },
-  { icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: "https://wa.me/919773343246" },
-];
+const KIND_ICON: Record<ContactChannel["kind"], typeof Phone> = {
+  phone: Phone,
+  email: Mail,
+  whatsapp: MessageCircle,
+};
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
+  const { channels } = useContactChannels();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,23 +237,26 @@ export default function ContactPage() {
               <BansalCard>
                 <h3 className="font-display text-lg font-bold text-bansal-black mb-4">Direct Channels</h3>
                 <div className="space-y-3">
-                  {CHANNELS.map((c) => (
-                    <a
-                      key={c.label + c.value}
-                      href={c.href}
-                      target={c.href.startsWith("http") ? "_blank" : undefined}
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg p-3 hover:bg-bansal-blue-light transition-colors group"
-                    >
-                      <div className="h-9 w-9 rounded-lg bg-bansal-blue-light text-bansal-blue flex items-center justify-center group-hover:bg-bansal-blue group-hover:text-white transition-colors">
-                        <c.icon className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs text-muted-foreground">{c.label}</div>
-                        <div className="text-sm font-semibold text-bansal-black truncate">{c.value}</div>
-                      </div>
-                    </a>
-                  ))}
+                  {channels.map((c) => {
+                    const Icon = KIND_ICON[c.kind] ?? Phone;
+                    return (
+                      <a
+                        key={c.id}
+                        href={c.href}
+                        target={c.href.startsWith("http") ? "_blank" : undefined}
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-lg p-3 hover:bg-bansal-blue-light transition-colors group"
+                      >
+                        <div className="h-9 w-9 rounded-lg bg-bansal-blue-light text-bansal-blue flex items-center justify-center group-hover:bg-bansal-blue group-hover:text-white transition-colors">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs text-muted-foreground">{c.label}</div>
+                          <div className="text-sm font-semibold text-bansal-black truncate">{c.value}</div>
+                        </div>
+                      </a>
+                    );
+                  })}
                 </div>
               </BansalCard>
 
