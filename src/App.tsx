@@ -70,6 +70,7 @@ const AdminAdminsPage = lazy(() => import("./pages/AdminAdminsPage"));
 const AdminRolesPage = lazy(() => import("./pages/AdminRolesPage"));
 const AdminModerationPage = lazy(() => import("./pages/AdminModerationPage"));
 const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
+const AdminCouponsPage = lazy(() => import("./pages/AdminCouponsPage"));
 
 const AdminLoginPage = lazy(() => import("./pages/AdminLoginPage"));
 const StaffDashboardPage = lazy(() => import("./pages/StaffDashboardPage"));
@@ -393,6 +394,7 @@ const App = () => (
                   <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
                   <Route path="/admin/moderation" element={<AdminModerationPage />} />
                   <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                  <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                   <Route path="/admin/admins" element={<AdminAdminsPage />} />
                   <Route path="/admin/roles" element={<AdminRolesPage />} />
                   <Route path="/admin/profile" element={<AdminProfilePage />} />

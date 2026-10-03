@@ -22,6 +22,7 @@ type RegistrationInput = {
   preferred_centre_label?: string | null;
   exam_mode?: "Online" | "Offline";
   exam_slot?: string | null;
+  coupon_code?: string | null;
 };
 
 const cleanText = (value: unknown) => typeof value === "string" ? value.trim() : "";
@@ -69,7 +70,30 @@ Deno.serve(async (req) => {
       .eq("id", SETTINGS_ID)
       .maybeSingle();
     if (settingsError) throw settingsError;
-    const amount = Number(settings?.price_inr ?? 99);
+    const baseAmount = Number(settings?.price_inr ?? 99);
+
+    let discountAmount = 0;
+    let couponId: string | null = null;
+    let couponCode: string | null = null;
+    const requestedCoupon = cleanText(input.coupon_code);
+    if (requestedCoupon && baseAmount > 0) {
+      const { data: cv, error: cvErr } = await admin.rpc("validate_coupon", {
+        p_code: requestedCoupon,
+        p_scope: "boost",
+        p_subtotal: baseAmount,
+        p_user_id: null,
+        p_identifier: email,
+      });
+      if (cvErr) throw cvErr;
+      if (!cv?.valid) return json({ error: cv?.message || "Invalid coupon code" }, 400);
+      discountAmount = Number(cv.discount_amount) || 0;
+      if (discountAmount > 0) {
+        couponId = cv.coupon_id;
+        couponCode = cv.code;
+      }
+    }
+
+    const amount = +(baseAmount - discountAmount).toFixed(2);
     const isFree = amount <= 0;
 
     const { data: registration, error: insertError } = await admin
@@ -92,6 +116,9 @@ Deno.serve(async (req) => {
         exam_mode: examMode,
         exam_slot: examSlot,
         amount,
+        coupon_id: couponId,
+        coupon_code: couponCode,
+        discount_amount: discountAmount,
         payment_status: isFree ? "paid" : "pending",
         status: isFree ? "confirmed" : "registered",
         paid_at: isFree ? new Date().toISOString() : null,
@@ -99,6 +126,17 @@ Deno.serve(async (req) => {
       .select("id, admit_card_number")
       .single();
     if (insertError) throw insertError;
+
+    if (couponId) {
+      const { error: redErr } = await admin.from("coupon_redemptions").insert({
+        coupon_id: couponId,
+        identifier: email,
+        boost_registration_id: registration.id,
+        discount_amount: discountAmount,
+        status: isFree ? "confirmed" : "pending",
+      });
+      if (redErr) console.error("coupon redemption insert failed", redErr);
+    }
 
     return json({ registration_id: registration.id, admit_card_number: registration.admit_card_number, amount });
   } catch (error) {

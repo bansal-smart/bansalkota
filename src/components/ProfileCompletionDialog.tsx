@@ -63,6 +63,7 @@ async function resumePendingEnrollment(userId: string, navigate: NavigateFunctio
       courseId: pending.courseId,
       enquiryId: pending.enquiryId,
       centreId: pending.centreId,
+      couponCode: pending.couponCode,
     } as any);
   } catch (e: any) {
     toast.error(e?.message || "Could not resume payment. Please try enrolling again.");

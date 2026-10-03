@@ -52,6 +52,11 @@ Deno.serve(async (req) => {
         patch.status = "confirmed";
       }
       await admin.from("boost_registrations").update(patch).eq("id", reg.id);
+      if (newStatus === "paid") {
+        await admin.from("coupon_redemptions").update({ status: "confirmed" }).eq("boost_registration_id", reg.id);
+      } else if (newStatus === "failed") {
+        await admin.from("coupon_redemptions").update({ status: "failed" }).eq("boost_registration_id", reg.id).eq("status", "pending");
+      }
     }
 
     return json({

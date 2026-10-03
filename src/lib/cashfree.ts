@@ -24,12 +24,26 @@ function loadSdk(): Promise<void> {
   return sdkPromise;
 }
 
+// couponCode is only a hint — the server re-validates it and computes the discount.
 type StartPaymentArgs =
-  | { orderType: "cart"; items: Array<{ type: "book" | "pack"; id: string; quantity: number }>; shipping: any }
+  | { orderType: "cart"; items: Array<{ type: "book" | "pack"; id: string; quantity: number }>; shipping: any; couponCode?: string }
   // centreId is a hint for resolving a centre-offering price — the server
   // re-resolves and validates it against course_offerings, never trusts it.
-  | { orderType: "course"; courseId: string; enquiryId?: string; centreId?: string }
-  | { orderType: "test_series"; testSeriesId: string };
+  | { orderType: "course"; courseId: string; enquiryId?: string; centreId?: string; couponCode?: string }
+  | { orderType: "test_series"; testSeriesId: string; couponCode?: string };
+
+export type CouponScope = "course" | "test_series" | "cart" | "boost";
+export type CouponPreview = { valid: boolean; message: string; code?: string; discount_amount?: number };
+
+export async function previewCoupon(code: string, scope: CouponScope, subtotal: number): Promise<CouponPreview> {
+  const { data, error } = await (supabase as any).rpc("preview_coupon", {
+    p_code: code,
+    p_scope: scope,
+    p_subtotal: subtotal,
+  });
+  if (error) return { valid: false, message: "Could not check coupon. Please try again." };
+  return data as CouponPreview;
+}
 
 type CashfreeOrderData = { order_id: string; payment_session_id: string; cf_order_id: string | null; env: string };
 

@@ -16,9 +16,9 @@ type Shipping = {
   city: string; state: string; pincode: string;
 };
 type Body =
-  | { orderType: "cart"; items: CartItem[]; shipping: Shipping }
-  | { orderType: "course"; courseId: string; enquiryId?: string; centreId?: string }
-  | { orderType: "test_series"; testSeriesId: string };
+  | { orderType: "cart"; items: CartItem[]; shipping: Shipping; couponCode?: string }
+  | { orderType: "course"; courseId: string; enquiryId?: string; centreId?: string; couponCode?: string }
+  | { orderType: "test_series"; testSeriesId: string; couponCode?: string };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -115,7 +115,31 @@ Deno.serve(async (req) => {
       return json({ error: "Invalid orderType" }, 400);
     }
 
-    const total = +(subtotal + shippingFee).toFixed(2);
+    // Coupon: client only sends the code; validity and discount are decided here.
+    let discountAmount = 0;
+    let couponId: string | null = null;
+    let couponCode: string | null = null;
+    const requestedCoupon = typeof body.couponCode === "string" ? body.couponCode.trim() : "";
+    if (requestedCoupon) {
+      const { data: cv, error: cvErr } = await admin.rpc("validate_coupon", {
+        p_code: requestedCoupon,
+        p_scope: body.orderType,
+        p_subtotal: subtotal,
+        p_user_id: user.id,
+        p_identifier: user.email ?? null,
+      });
+      if (cvErr) return json({ error: "Could not validate coupon" }, 500);
+      if (!cv?.valid) return json({ error: cv?.message || "Invalid coupon code" }, 400);
+      discountAmount = Number(cv.discount_amount) || 0;
+      // Cashfree needs a positive amount: never discount below ₹1 payable.
+      discountAmount = Math.max(0, Math.min(discountAmount, subtotal + shippingFee - 1));
+      if (discountAmount > 0) {
+        couponId = cv.coupon_id;
+        couponCode = cv.code;
+      }
+    }
+
+    const total = +(subtotal - discountAmount + shippingFee).toFixed(2);
     if (total <= 0) return json({ error: "Invalid amount" }, 400);
 
     // Insert order
@@ -128,6 +152,9 @@ Deno.serve(async (req) => {
         subtotal,
         shipping_fee: shippingFee,
         total,
+        coupon_id: couponId,
+        coupon_code: couponCode,
+        discount_amount: discountAmount,
         currency: "INR",
         provider: "cashfree",
         notes: orderNotes || null,
@@ -148,6 +175,21 @@ Deno.serve(async (req) => {
       .from("order_items")
       .insert(items.map((i) => ({ ...i, order_id: order.id })));
     if (itemsErr) return json({ error: "Order items failed: " + itemsErr.message }, 500);
+
+    if (couponId) {
+      const { error: redErr } = await admin.from("coupon_redemptions").insert({
+        coupon_id: couponId,
+        user_id: user.id,
+        identifier: user.email ?? null,
+        order_id: order.id,
+        discount_amount: discountAmount,
+        status: "pending",
+      });
+      if (redErr) {
+        await admin.from("orders").update({ status: "failed", notes: `coupon_redemption_failed: ${redErr.message}` }).eq("id", order.id);
+        return json({ error: "Could not apply coupon" }, 500);
+      }
+    }
 
     // Build return URL from referer. Cashfree rejects non-https return_url values
     // (e.g. http://localhost during local dev), so fall back to the production

@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
 
     if (resolved === "paid" && order.status !== "paid") {
       await admin.from("orders").update({ status: "paid" }).eq("id", order.id);
+      await admin.from("coupon_redemptions").update({ status: "confirmed" }).eq("order_id", order.id);
       const { data: items } = await admin
         .from("order_items").select("item_type, item_id, item_title").eq("order_id", order.id);
       for (const it of items || []) {

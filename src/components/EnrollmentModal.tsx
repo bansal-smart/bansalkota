@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { dispatchEmailOnly } from "@/lib/notify";
 import { startCashfreeCheckout } from "@/lib/cashfree";
+import CouponInput from "@/components/CouponInput";
 
 
 interface EnrollmentModalProps {
@@ -21,6 +22,9 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
   const [step, setStep] = useState<"plan" | "success" | "error">("plan");
   const [submitting, setSubmitting] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const discount = coupon ? Math.max(0, Math.min(coupon.discount, coursePrice - 1)) : 0;
+  const payable = coursePrice - discount;
 
   useEffect(() => {
     if (!user) return;
@@ -38,6 +42,7 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
 
   const close = () => {
     setStep("plan");
+    setCoupon(null);
     onClose();
   };
 
@@ -89,7 +94,7 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
     }
     setSubmitting(true);
     try {
-      await startCashfreeCheckout({ orderType: "course", courseId });
+      await startCashfreeCheckout({ orderType: "course", courseId, couponCode: coupon?.code });
       // redirects away
     } catch (e) {
       setSubmitting(false);
@@ -117,10 +122,23 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
             <div className="rounded-xl border border-border p-4 flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase font-bold text-muted-foreground">Total</p>
-                <p className="text-2xl font-black text-foreground">₹{coursePrice.toLocaleString()}</p>
+                <p className="text-2xl font-black text-foreground">₹{payable.toLocaleString()}</p>
+                {discount > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="line-through">₹{coursePrice.toLocaleString()}</span> · coupon {coupon?.code}
+                  </p>
+                )}
               </div>
               <ShieldCheck className="h-8 w-8 text-secondary" />
             </div>
+
+            <CouponInput
+              scope="course"
+              subtotal={coursePrice}
+              disabled={submitting}
+              onApplied={(code, d) => setCoupon({ code, discount: d })}
+              onRemoved={() => setCoupon(null)}
+            />
 
             <button
               onClick={handlePay}
@@ -128,7 +146,7 @@ const EnrollmentModal = ({ open, onClose, courseId, courseName, coursePrice, onE
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[hsl(var(--bansal-orange))] px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-              Pay ₹{coursePrice.toLocaleString()} with Cashfree
+              Pay ₹{payable.toLocaleString()} with Cashfree
             </button>
             <p className="text-[11px] text-center text-muted-foreground">
               UPI · Cards · Netbanking · Wallets · EMI

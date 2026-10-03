@@ -6,12 +6,14 @@ import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 import Seo from "@/components/Seo";
+import CouponInput from "@/components/CouponInput";
 import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 const CheckoutPage = () => {
   const { cart, user } = useAppStore();
   const navigate = useNavigate();
   const [placing, setPlacing] = useState(false);
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [form, setForm] = useState({
     name: user?.full_name ?? "",
     phone: "",
@@ -23,7 +25,8 @@ const CheckoutPage = () => {
 
   const subtotal = cart.reduce((s, c) => s + Number(c.price) * c.quantity, 0);
   const shippingFee = subtotal >= 500 || subtotal === 0 ? 0 : 60;
-  const total = subtotal + shippingFee;
+  const discount = coupon ? Math.max(0, Math.min(coupon.discount, subtotal + shippingFee - 1)) : 0;
+  const total = subtotal - discount + shippingFee;
 
   const placeOrder = async () => {
     if (!user) {
@@ -46,6 +49,7 @@ const CheckoutPage = () => {
         orderType: "cart",
         items: cart.map((c) => ({ type: c.type, id: c.id, quantity: c.quantity })),
         shipping: form,
+        couponCode: coupon?.code,
       });
       // Browser redirects to Cashfree; control returns via /payments/return
     } catch (e) {
@@ -137,11 +141,26 @@ const CheckoutPage = () => {
           <aside className="space-y-4">
             <div className="rounded-2xl border border-border bg-card p-5">
               <h2 className="mb-3 font-bold">Order summary</h2>
+              <div className="mb-4">
+                <CouponInput
+                  scope="cart"
+                  subtotal={subtotal}
+                  disabled={placing || cart.length === 0}
+                  onApplied={(code, d) => setCoupon({ code, discount: d })}
+                  onRemoved={() => setCoupon(null)}
+                />
+              </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>₹{subtotal.toLocaleString("en-IN")}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-700 dark:text-green-400">
+                    <span>Coupon ({coupon?.code})</span>
+                    <span>−₹{discount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
                   <span>{shippingFee === 0 ? "Free" : `₹${shippingFee}`}</span>

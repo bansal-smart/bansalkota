@@ -8,6 +8,7 @@ export type PendingEnrollment = {
   coursePrice: number;
   createdAt: number;
   centreId?: string;
+  couponCode?: string;
 };
 
 export function setPendingEnrollment(data: PendingEnrollment) {

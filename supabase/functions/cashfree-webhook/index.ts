@@ -72,11 +72,13 @@ Deno.serve(async (req) => {
         payment_ref: paymentId ?? null,
         paid_at: new Date().toISOString(),
       }).eq("id", reg.id);
+      await admin.from("coupon_redemptions").update({ status: "confirmed" }).eq("boost_registration_id", reg.id);
     } else if ((type === "PAYMENT_FAILED_WEBHOOK" || type === "PAYMENT_USER_DROPPED_WEBHOOK") && reg.payment_status === "pending") {
       await admin.from("boost_registrations").update({
         payment_status: "failed",
         payment_ref: paymentId ?? null,
       }).eq("id", reg.id);
+      await admin.from("coupon_redemptions").update({ status: "failed" }).eq("boost_registration_id", reg.id).eq("status", "pending");
     }
     return new Response("ok", { status: 200, headers: corsHeaders });
   }
@@ -112,6 +114,7 @@ Deno.serve(async (req) => {
   // Handle success
   if (type === "PAYMENT_SUCCESS_WEBHOOK" && paymentStatus === "SUCCESS" && order.status !== "paid") {
     await admin.from("orders").update({ status: "paid" }).eq("id", order.id);
+    await admin.from("coupon_redemptions").update({ status: "confirmed" }).eq("order_id", order.id);
 
     // Reflect on linked course enquiry, if any.
     await admin.from("course_enquiries").update({
@@ -173,6 +176,7 @@ Deno.serve(async (req) => {
       await admin.from("orders").update({
         status: type === "PAYMENT_FAILED_WEBHOOK" ? "failed" : "cancelled",
       }).eq("id", order.id);
+      await admin.from("coupon_redemptions").update({ status: "failed" }).eq("order_id", order.id).eq("status", "pending");
     }
     // Flip enquiry to failed too (only if it isn't already paid).
     await admin.from("course_enquiries").update({

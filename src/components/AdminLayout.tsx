@@ -27,6 +27,7 @@ import {
   Megaphone,
   Bell,
   ClipboardList,
+  Tag,
 } from "lucide-react";
 import LogoutButton from "@/components/LogoutButton";
 import NotificationBell from "@/components/NotificationBell";
@@ -119,6 +120,7 @@ const superAdminNav: NavItem[] = [
   { label: "Role Management", icon: ShieldCheck, path: "/admin/roles" },
   { label: "Centre Notifications", icon: Bell, path: "/admin/centre-notifications" },
   { label: "Payments & Revenue", icon: CreditCard, path: "/admin/payments" },
+  { label: "Coupons", icon: Tag, path: "/admin/coupons" },
   { label: "Moderation", icon: ShieldCheck, path: "/admin/moderation" },
   { label: "Platform Settings", icon: Settings, path: "/admin/settings" },
 ];

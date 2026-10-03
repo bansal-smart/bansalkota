@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import { startCashfreeCheckout } from "@/lib/cashfree";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import CouponInput from "@/components/CouponInput";
 import { setPendingEnrollment } from "@/lib/pendingEnrollment";
 import { generateId } from "@/lib/uuid";
 import { trackCompleteRegistrationOnce, trackInitiateCheckout } from "@/lib/metaPixel";
@@ -60,6 +61,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   const navigate = useNavigate();
   const [centres, setCentres] = useState<Centre[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -89,37 +91,32 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
   }, [open, user]);
 
   // Logged-in users skip the enquiry form entirely — we already have their
-  // lead via their account — and go straight to Cashfree checkout (or, for a
-  // free course, straight to a direct enrollment with no payment step).
+  // lead via their account. A free course enrolls directly with no payment
+  // step; a paid course shows a short confirm step (with a coupon box) below.
   useEffect(() => {
-    if (!open || !user) return;
+    if (!open || !user || Number(course.price) !== 0) return;
     let cancelled = false;
     (async () => {
       setSubmitting(true);
       try {
-        if (Number(course.price) === 0) {
-          const { error } = await supabase.from("enrollments").upsert(
-            {
-              user_id: user.id,
-              course_id: course.id,
-              is_active: true,
-              last_accessed_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,course_id" },
-          );
-          if (error) throw error;
-          trackCompleteRegistrationOnce(`course:${user.id}:${course.id}`, { content_name: course.name });
-          if (!cancelled) {
-            navigate("/thank-you/course", {
-              state: { type: "course", status: "free", title: course.name },
-            });
-          }
-          return;
+        const { error } = await supabase.from("enrollments").upsert(
+          {
+            user_id: user.id,
+            course_id: course.id,
+            is_active: true,
+            last_accessed_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,course_id" },
+        );
+        if (error) throw error;
+        trackCompleteRegistrationOnce(`course:${user.id}:${course.id}`, { content_name: course.name });
+        if (!cancelled) {
+          navigate("/thank-you/course", {
+            state: { type: "course", status: "free", title: course.name },
+          });
         }
-        trackInitiateCheckout({ content_name: course.name, value: Number(course.price), currency: "INR" });
-        await startCashfreeCheckout({ orderType: "course", courseId: course.id, centreId: course.centreId });
       } catch (e: any) {
-        if (!cancelled) toast.error(e?.message || "Could not start payment");
+        if (!cancelled) toast.error(e?.message || "Could not enroll");
       } finally {
         if (!cancelled) {
           setSubmitting(false);
@@ -130,6 +127,28 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user, course.id]);
+
+  const coursePrice = Number(course.price);
+  const discount = coupon ? Math.max(0, Math.min(coupon.discount, coursePrice - 1)) : 0;
+  const payable = coursePrice - discount;
+
+  const payNow = async () => {
+    setSubmitting(true);
+    try {
+      trackInitiateCheckout({ content_name: course.name, value: payable, currency: "INR" });
+      await startCashfreeCheckout({
+        orderType: "course",
+        courseId: course.id,
+        centreId: course.centreId,
+        couponCode: coupon?.code,
+      });
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Could not start payment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -181,6 +200,7 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
         coursePrice: Number(course.price),
         createdAt: Date.now(),
         centreId: course.centreId,
+        couponCode: coupon?.code,
       });
       toast.success("Enquiry saved! Verify your mobile number to continue to payment.");
       onOpenChange(false);
@@ -192,9 +212,49 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
     }
   };
 
-  // Logged-in users never see the form — the effect above sends them
-  // straight to checkout — so render nothing while that's in flight.
-  if (user) return null;
+  // Logged-in users never see the enquiry form. Free courses render nothing
+  // while the effect above enrolls them; paid courses get a confirm step.
+  if (user && coursePrice === 0) return null;
+
+  if (user) {
+    return (
+      <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
+        <DialogContent className="w-[calc(100%-2rem)] sm:w-full sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Enroll in {course.name}</DialogTitle>
+            <DialogDescription>One-time payment · secure checkout by Cashfree</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="rounded-xl border border-border p-4">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Total</p>
+              <p className="text-2xl font-black text-foreground">₹{payable.toLocaleString("en-IN")}</p>
+              {discount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  <span className="line-through">₹{coursePrice.toLocaleString("en-IN")}</span> · coupon {coupon?.code}
+                </p>
+              )}
+            </div>
+            <CouponInput
+              scope="course"
+              subtotal={coursePrice}
+              disabled={submitting}
+              onApplied={(code, d) => setCoupon({ code, discount: d })}
+              onRemoved={() => setCoupon(null)}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button onClick={payNow} disabled={submitting}>
+              {submitting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CreditCard className="h-4 w-4 mr-1.5" />}
+              Pay ₹{payable.toLocaleString("en-IN")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
@@ -296,9 +356,18 @@ const CourseEnquiryDialog = ({ open, onOpenChange, course }: Props) => {
               placeholder="Any questions for our counsellors?"
             />
           </div>
+          {coursePrice > 0 && (
+            <CouponInput
+              scope="course"
+              subtotal={coursePrice}
+              disabled={submitting}
+              onApplied={(code, d) => setCoupon({ code, discount: d })}
+              onRemoved={() => setCoupon(null)}
+            />
+          )}
           <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <CreditCard className="h-3 w-3" /> After verifying your mobile number, you'll be redirected to Cashfree to pay ₹
-            {Number(course.price).toLocaleString()}.
+            {payable.toLocaleString()}.
           </p>
         </div>
 

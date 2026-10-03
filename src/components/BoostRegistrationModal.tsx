@@ -11,6 +11,7 @@ import { sendConfirmation } from "@/lib/sendConfirmation";
 import { startBoostCashfreeCheckout } from "@/lib/cashfree";
 import { trackInitiateCheckout, trackCompleteRegistrationOnce } from "@/lib/metaPixel";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import CouponInput from "@/components/CouponInput";
 import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 
@@ -83,6 +84,10 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
   const [success, setSuccess] = useState<{ admit_card_number: string } | null>(null);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const boostFee = Number(priceInr);
+  const boostDiscount = coupon ? Math.max(0, Math.min(coupon.discount, boostFee)) : 0;
+  const payableFee = boostFee - boostDiscount;
 
   if (!open) return null;
 
@@ -115,6 +120,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
         preferred_centre_id: parsed.data.preferred_centre_id || null,
         exam_mode: parsed.data.exam_mode,
         exam_slot: parsed.data.exam_slot || null,
+        coupon_code: coupon?.code ?? null,
         preferred_centre_label: centre ? `${centre.city}${centre.area ? " — " + centre.area : ""}` : null,
       };
       const { data, error } = await supabase.functions.invoke("create-boost-registration", { body: payload });
@@ -280,7 +286,23 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
             </Section>
 
             <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
-              <div className="font-semibold text-bansal-black">Registration fee: ₹{priceInr}</div>
+              <div className="font-semibold text-bansal-black">
+                Registration fee: ₹{payableFee}
+                {boostDiscount > 0 && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground line-through">₹{boostFee}</span>
+                )}
+              </div>
+              {boostFee > 0 && (
+                <div className="mt-3">
+                  <CouponInput
+                    scope="boost"
+                    subtotal={boostFee}
+                    disabled={submitting}
+                    onApplied={(code, d) => setCoupon({ code, discount: d })}
+                    onRemoved={() => setCoupon(null)}
+                  />
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 You'll be redirected to Cashfree's secure checkout (UPI, cards, netbanking, wallets) to complete payment. Your slot is confirmed only after successful payment.
               </p>
@@ -292,7 +314,7 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
                 Cancel
               </button>
               <BansalButton variant="cta" disabled={submitting} type="submit">
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : `Pay ₹${priceInr} & Register`}
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : payableFee <= 0 ? "Register for free" : `Pay ₹${payableFee} & Register`}
               </BansalButton>
 
             </div>

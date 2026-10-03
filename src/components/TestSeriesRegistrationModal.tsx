@@ -7,6 +7,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { createCashfreeOrder, openCashfreeCheckout } from "@/lib/cashfree";
 import BansalButton from "@/components/bansal/BansalButton";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import CouponInput from "@/components/CouponInput";
 
 const schema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
@@ -65,6 +66,9 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
   const user = useAppStore((s) => s.user);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState<RegistrationForm>(EMPTY_FORM);
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const basePrice = Number(testSeries.price);
+  const discount = coupon ? Math.max(0, Math.min(coupon.discount, basePrice - 1)) : 0;
 
   useEffect(() => {
     if (!open || !user) return;
@@ -144,7 +148,7 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
     }
     let orderData: Awaited<ReturnType<typeof createCashfreeOrder>>;
     try {
-      orderData = await createCashfreeOrder({ orderType: "test_series", testSeriesId: testSeries.id });
+      orderData = await createCashfreeOrder({ orderType: "test_series", testSeriesId: testSeries.id, couponCode: coupon?.code });
     } catch (err) {
       setSubmitting(false);
       toast.error((err as Error).message || "Could not start payment");
@@ -255,7 +259,21 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
 
           <div className="rounded-lg bg-bansal-cream/50 border border-bansal-orange/30 p-4 text-sm">
             <div className="font-semibold text-bansal-black">
-              Enrollment fee: ₹{Number(testSeries.price).toLocaleString("en-IN")}
+              Enrollment fee: ₹{(basePrice - discount).toLocaleString("en-IN")}
+              {discount > 0 && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground line-through">
+                  ₹{basePrice.toLocaleString("en-IN")}
+                </span>
+              )}
+            </div>
+            <div className="mt-3">
+              <CouponInput
+                scope="test_series"
+                subtotal={basePrice}
+                disabled={submitting}
+                onApplied={(code, d) => setCoupon({ code, discount: d })}
+                onRemoved={() => setCoupon(null)}
+              />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               You'll be redirected to Cashfree's secure checkout (UPI, cards, netbanking, wallets) to complete payment.
