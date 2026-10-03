@@ -37,11 +37,15 @@ type FormState = {
   max_discount_amount: string;
   valid_from: string;
   valid_until: string;
+  duration_value: string;
+  duration_unit: "minutes" | "hours" | "days";
   usage_limit: string;
   per_user_limit: string;
   applicable_scope: Scope[];
   is_active: boolean;
 };
+
+const UNIT_MS = { minutes: 60_000, hours: 3_600_000, days: 86_400_000 } as const;
 
 const EMPTY: FormState = {
   id: null,
@@ -52,6 +56,8 @@ const EMPTY: FormState = {
   max_discount_amount: "",
   valid_from: "",
   valid_until: "",
+  duration_value: "",
+  duration_unit: "minutes",
   usage_limit: "",
   per_user_limit: "1",
   applicable_scope: SCOPES.map((s) => s.key),
@@ -103,6 +109,8 @@ const AdminCouponsPage = () => {
       max_discount_amount: c.max_discount_amount == null ? "" : String(c.max_discount_amount),
       valid_from: toLocalInput(c.valid_from),
       valid_until: toLocalInput(c.valid_until),
+      duration_value: "",
+      duration_unit: "minutes",
       usage_limit: c.usage_limit == null ? "" : String(c.usage_limit),
       per_user_limit: String(c.per_user_limit),
       applicable_scope: c.applicable_scope,
@@ -119,8 +127,15 @@ const AdminCouponsPage = () => {
     if (form.applicable_scope.length === 0) return toast.error("Select at least one applicable purchase type");
     const perUser = Number(form.per_user_limit);
     if (!(perUser >= 1)) return toast.error("Per-user limit must be at least 1");
-    const from = fromLocalInput(form.valid_from);
-    const until = fromLocalInput(form.valid_until);
+    let from = fromLocalInput(form.valid_from);
+    let until = fromLocalInput(form.valid_until);
+    const duration = numOrNull(form.duration_value);
+    if (duration !== null) {
+      if (!(duration > 0)) return toast.error("Duration must be greater than 0");
+      // Window starts at "Valid from", or right now if that is blank.
+      from = from ?? new Date().toISOString();
+      until = new Date(new Date(from).getTime() + duration * UNIT_MS[form.duration_unit]).toISOString();
+    }
     if (from && until && new Date(until) <= new Date(from)) return toast.error("'Valid until' must be after 'Valid from'");
 
     const payload = {
@@ -229,8 +244,19 @@ const AdminCouponsPage = () => {
               <input type="datetime-local" className={`${inputClass} mt-1`} value={form.valid_from} onChange={(e) => setForm({ ...form, valid_from: e.target.value })} />
             </label>
             <label className="text-xs font-semibold text-muted-foreground">Valid until
-              <input type="datetime-local" className={`${inputClass} mt-1`} value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} />
+              <input type="datetime-local" disabled={form.duration_value.trim() !== ""} className={`${inputClass} mt-1 disabled:opacity-50`} value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} />
             </label>
+            <div className="text-xs font-semibold text-muted-foreground">Or valid for (timer)
+              <div className="mt-1 flex gap-2">
+                <input type="number" min="1" placeholder="e.g. 15" className={inputClass} value={form.duration_value} onChange={(e) => setForm({ ...form, duration_value: e.target.value })} />
+                <select className={`${inputClass} w-32`} value={form.duration_unit} onChange={(e) => setForm({ ...form, duration_unit: e.target.value as FormState["duration_unit"] })}>
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                  <option value="days">Days</option>
+                </select>
+              </div>
+              <p className="mt-1 font-normal">Counts from "Valid from", or from the moment you save if that is blank. Overrides "Valid until".</p>
+            </div>
             <label className="text-xs font-semibold text-muted-foreground">Total usage limit (blank = unlimited)
               <input type="number" min="1" className={`${inputClass} mt-1`} value={form.usage_limit} onChange={(e) => setForm({ ...form, usage_limit: e.target.value })} />
             </label>
