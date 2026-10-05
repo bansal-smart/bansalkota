@@ -313,7 +313,9 @@ const TestResultPage = () => {
         : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
       const isNum = q.question_type === "numerical" || q.question_type === "integer";
       const correctVal = isNum
-        ? (Array.isArray(q.numerical_answers) && q.numerical_answers.length > 1 ? q.numerical_answers : q.numerical_answer)
+        ? (Array.isArray(q.numerical_answers) && q.numerical_answers.length > 1
+            ? q.numerical_answers.join(q.answer_match_mode === "any" ? " or " : " / ")
+            : q.numerical_answer)
         : q.correct_answer;
       const marks = Number(m.marks ?? 0);
       return {

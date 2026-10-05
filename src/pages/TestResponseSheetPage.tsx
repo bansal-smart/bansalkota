@@ -273,7 +273,7 @@ const TestResponseSheetPage = () => {
                         <p className="text-[10px] uppercase tracking-wider text-emerald-700">Correct answer</p>
                         <p className="mt-1 font-mono text-sm font-bold text-emerald-700">
                           {Array.isArray(q.numerical_answers) && q.numerical_answers.length > 1
-                            ? q.numerical_answers.join(" / ")
+                            ? q.numerical_answers.join(q.answer_match_mode === "any" ? " or " : " / ")
                             : q.numerical_answer != null ? String(q.numerical_answer) : stringifyAnswer(q.correct_answer)}
                         </p>
                       </div>

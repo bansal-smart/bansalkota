@@ -799,7 +799,8 @@ const AdminTestResultPage = () => {
               return parts.length ? parts.join(" / ") : "—";
             }
             const multi = (val && typeof val === "object" ? (val as { values?: unknown }).values : undefined);
-            if (Array.isArray(multi) && multi.length > 1) return multi.join(" / ");
+            const joiner = (val && typeof val === "object" && (val as { mode?: unknown }).mode === "any") ? " or " : " / ";
+            if (Array.isArray(multi) && multi.length > 1) return multi.join(joiner);
             if (val && typeof val === "object" && "value" in val) return String((val as any).value);
             return String(val);
           }

@@ -40,6 +40,7 @@ type TestQuestion = {
   answer_range_min: number | null;
   answer_range_max: number | null;
   answer_count?: number | null;
+  answer_match_mode?: string | null;
 };
 
 
@@ -214,7 +215,7 @@ const TestTakingPage = () => {
 
       const { data: qs, error: qErr } = await supabase
         .from("test_questions")
-        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_count")
+        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_count, answer_match_mode")
         .eq("test_id", t.id).order("position");
       if (qErr) {
         console.error("[TestTakingPage] questions load failed", qErr);
@@ -993,7 +994,8 @@ const TestTakingPage = () => {
   const hh = Math.floor(mins / 60);
   const mm = mins % 60;
   const lowTime = secondsLeft < 300;
-  const numericCount = isNumeric(q.question_type) ? Math.max(1, Number(attemptCounts[q.id] ?? q.answer_count ?? 1) || 1) : 1;
+  const ownBoxes = q.answer_match_mode === "any" ? 1 : Number(q.answer_count ?? 1) || 1;
+  const numericCount = isNumeric(q.question_type) ? Math.max(1, Number(attemptCounts[q.id] ?? ownBoxes) || 1) : 1;
   const numericRaw = isNumeric(q.question_type) ? (answers[q.id] as any)?.selected : undefined;
   const numericValue = numericCount === 1
     ? (Array.isArray(numericRaw) ? String(numericRaw[0] ?? "") : (typeof numericRaw === "string" ? numericRaw : ""))
@@ -1009,7 +1011,7 @@ const TestTakingPage = () => {
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
       q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
         q.question_type === "integer" ? "Integer Type" :
-          q.question_type === "numerical" ? (Number(attemptCounts[q.id] ?? q.answer_count ?? 1) > 1 ? `Numerical Answer (${attemptCounts[q.id] ?? q.answer_count} values)` : "Numerical Answer") :
+          q.question_type === "numerical" ? (Number(attemptCounts[q.id] ?? (q.answer_match_mode === "any" ? 1 : q.answer_count) ?? 1) > 1 ? `Numerical Answer (${attemptCounts[q.id] ?? q.answer_count} values)` : "Numerical Answer") :
             q.question_type === "match-following" ? "Match the Following" :
               "Assertion & Reason";
 

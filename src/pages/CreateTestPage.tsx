@@ -53,6 +53,7 @@ type DraftQuestion = {
   answerCount: number;         // numerical/integer: how many values the student must enter (1 = classic)
   numericalAnswers: string[];  // numerical/integer with answerCount > 1: the correct values
   orderMatters: boolean;       // multi-answer: values must be entered in this order
+  matchMode: "all" | "any";    // multi-answer: student enters every value, or any one accepted value
   tolerance: number;           // used by numerical
   rangeEnabled: boolean;       // integer/numerical: accept any value in [min, max]
   rangeMin: string;
@@ -77,6 +78,7 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   answerCount: 1,
   numericalAnswers: [""],
   orderMatters: false,
+  matchMode: "all",
   tolerance: 0,
   rangeEnabled: false,
   rangeMin: "",
@@ -113,6 +115,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     answerCount: 1,
     numericalAnswers: [numericalVal],
     orderMatters: false,
+    matchMode: "all",
     tolerance: Number((q as any).tolerance ?? 0),
     rangeEnabled: (q as any).answer_range_min != null && (q as any).answer_range_max != null,
     rangeMin: (q as any).answer_range_min != null ? String((q as any).answer_range_min) : "",
@@ -470,6 +473,7 @@ const CreateTestPage = () => {
               ? (q.numerical_answers as unknown[]).map((v) => String(v))
               : [q.numerical_answer != null ? String(q.numerical_answer) : ""],
             orderMatters: !!q.answer_order_matters,
+            matchMode: q.answer_match_mode === "any" ? "any" : "all",
             tolerance: Number(q.tolerance ?? 0),
             rangeEnabled: q.answer_range_min != null && q.answer_range_max != null,
             rangeMin: q.answer_range_min != null ? String(q.answer_range_min) : "",
@@ -798,6 +802,7 @@ const CreateTestPage = () => {
       answer_count: 1,
       numerical_answers: null,
       answer_order_matters: false,
+      answer_match_mode: "all",
     };
     // Normalize option_images to match option count
     const optImgs = (q.optionImages ?? []).slice(0, q.options.length);
@@ -816,13 +821,15 @@ const CreateTestPage = () => {
       base.options = [];
       if (q.answerCount > 1) {
         const vals = q.numericalAnswers.slice(0, q.answerCount).map((v) => Number(v));
+        const anyOne = q.matchMode === "any";
         base.answer_count = q.answerCount;
         base.numerical_answers = vals;
-        base.answer_order_matters = q.orderMatters;
+        base.answer_match_mode = anyOne ? "any" : "all";
+        base.answer_order_matters = anyOne ? false : q.orderMatters;
         base.numerical_answer = vals[0];
-        base.correct_answer = { value: vals[0], values: vals };
+        base.correct_answer = anyOne ? { value: vals[0], values: vals, mode: "any" } : { value: vals[0], values: vals };
         base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
-        base.partial_marking = q.partial;
+        base.partial_marking = anyOne ? false : q.partial;
         base.answer_range_min = null;
         base.answer_range_max = null;
       } else if (q.rangeEnabled) {
@@ -2001,10 +2008,21 @@ const CreateTestPage = () => {
 
                     {q.answerCount > 1 ? (
                       <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="text-[10px] font-semibold text-muted-foreground">Student must enter</label>
+                          <select
+                            value={q.matchMode}
+                            onChange={(e) => updateQ(i, { matchMode: e.target.value === "any" ? "any" : "all" })}
+                            className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                          >
+                            <option value="all">All {q.answerCount} values</option>
+                            <option value="any">Any one of these values (either is correct)</option>
+                          </select>
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {Array.from({ length: q.answerCount }, (_, k) => (
                             <div key={k}>
-                              <label className="text-[10px] font-semibold text-muted-foreground">Answer {k + 1}</label>
+                              <label className="text-[10px] font-semibold text-muted-foreground">{q.matchMode === "any" ? "Accepted answer" : "Answer"} {k + 1}</label>
                               <input
                                 value={q.numericalAnswers[k] ?? ""}
                                 onChange={(e) => {
@@ -2037,17 +2055,23 @@ const CreateTestPage = () => {
                               />
                             </div>
                           )}
-                          <label className="flex items-center gap-2 text-[11px] text-foreground">
-                            <input type="checkbox" checked={q.orderMatters} onChange={(e) => updateQ(i, { orderMatters: e.target.checked })} />
-                            Order matters (student must enter values in this order)
-                          </label>
-                          <label className="flex items-center gap-2 text-[11px] text-foreground">
-                            <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
-                            Partial marking (proportional credit when only some values are right, no wrong entries)
-                          </label>
+                          {q.matchMode === "all" && (
+                            <>
+                              <label className="flex items-center gap-2 text-[11px] text-foreground">
+                                <input type="checkbox" checked={q.orderMatters} onChange={(e) => updateQ(i, { orderMatters: e.target.checked })} />
+                                Order matters (student must enter values in this order)
+                              </label>
+                              <label className="flex items-center gap-2 text-[11px] text-foreground">
+                                <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
+                                Partial marking (proportional credit when only some values are right, no wrong entries)
+                              </label>
+                            </>
+                          )}
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                          The student must enter all {q.answerCount} values. A wrong or missing value gets the wrong-answer marks unless partial marking is on.
+                          {q.matchMode === "any"
+                            ? `The student sees one box. Entering any of these ${q.answerCount} values earns full marks; anything else gets the wrong-answer marks.`
+                            : `The student must enter all ${q.answerCount} values. A wrong or missing value gets the wrong-answer marks unless partial marking is on.`}
                         </p>
                       </div>
                     ) : q.rangeEnabled ? (
