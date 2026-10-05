@@ -110,6 +110,22 @@ const TestTakingPage = () => {
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [started, setStarted] = useState(false);
+  // Number of answer boxes per numeric question as recorded when this attempt started.
+  // Falls back to the question's current count (fresh attempts, or older records).
+  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({});
+  const loadAttemptCounts = async (id: string) => {
+    try {
+      const { data } = await supabase.rpc("get_my_attempt_answer_counts", { _attempt_id: id });
+      if (data && typeof data === "object") {
+        const next: Record<string, number> = {};
+        for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
+          const n = Number(v);
+          if (Number.isFinite(n) && n >= 1) next[k] = n;
+        }
+        setAttemptCounts(next);
+      }
+    } catch { /* non-fatal: the question's own count is used */ }
+  };
   const [submitting, setSubmitting] = useState(false);
 
   const [currentQ, setCurrentQ] = useState(0);
@@ -217,6 +233,7 @@ const TestTakingPage = () => {
       setQuestions(applyStoredOrder(canonicalQs, orderIds));
 
       if (existing) {
+        void loadAttemptCounts(existing.id);
         setAttemptId(existing.id);
         setStartedAt(new Date(existing.started_at as string));
         // Recover any answers lost in a crash by merging the latest snapshot.
@@ -609,6 +626,7 @@ const TestTakingPage = () => {
       toast.error("Could not start test");
       return;
     }
+    void loadAttemptCounts(data.id);
     setAttemptId(data.id);
     setStartedAt(new Date(data.started_at as string));
     if (orderIds) setQuestions((prev) => applyStoredOrder(prev, orderIds));
@@ -975,7 +993,7 @@ const TestTakingPage = () => {
   const hh = Math.floor(mins / 60);
   const mm = mins % 60;
   const lowTime = secondsLeft < 300;
-  const numericCount = isNumeric(q.question_type) ? Math.max(1, Number(q.answer_count ?? 1) || 1) : 1;
+  const numericCount = isNumeric(q.question_type) ? Math.max(1, Number(attemptCounts[q.id] ?? q.answer_count ?? 1) || 1) : 1;
   const numericRaw = isNumeric(q.question_type) ? (answers[q.id] as any)?.selected : undefined;
   const numericValue = numericCount === 1
     ? (Array.isArray(numericRaw) ? String(numericRaw[0] ?? "") : (typeof numericRaw === "string" ? numericRaw : ""))
@@ -991,7 +1009,7 @@ const TestTakingPage = () => {
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
       q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
         q.question_type === "integer" ? "Integer Type" :
-          q.question_type === "numerical" ? (Number(q.answer_count ?? 1) > 1 ? `Numerical Answer (${q.answer_count} values)` : "Numerical Answer") :
+          q.question_type === "numerical" ? (Number(attemptCounts[q.id] ?? q.answer_count ?? 1) > 1 ? `Numerical Answer (${attemptCounts[q.id] ?? q.answer_count} values)` : "Numerical Answer") :
             q.question_type === "match-following" ? "Match the Following" :
               "Assertion & Reason";
 

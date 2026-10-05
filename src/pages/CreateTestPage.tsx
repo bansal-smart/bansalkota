@@ -847,24 +847,9 @@ const CreateTestPage = () => {
     return base;
   };
 
-  // Once students have attempted a test, a question's answer count is frozen
-  // (the database enforces it too). Returns the 1-based numbers of questions that
-  // would change, so the save can stop before writing anything.
-  const frozenAnswerCountChanges = () => {
-    if (attemptCount === 0) return [] as number[];
-    return questions
-      .map((q, i) => ({ q, i }))
-      .filter(({ q }) => !!q.id && (q.type === "numerical" || q.type === "integer"))
-      .filter(({ q }) => q.answerCount !== (originalAnswerCounts.current[q.id as string] ?? q.answerCount))
-      .map(({ i }) => i + 1);
-  };
-
   const publishImportedDraft = async (publish = true) => {
     if (!resolvedTestId) return toast.error("Create or import into a test first");
-    const frozen = frozenAnswerCountChanges();
-    if (frozen.length > 0) {
-      return toast.error(`Q${frozen.join(", Q")}: students have already attempted this test, so the number of answers can't be changed. Duplicate the test to change it.`);
-    }
+
     setSubmitting(true);
     try {
       // Persist every editable field the user may have changed in the UI
@@ -957,10 +942,6 @@ const CreateTestPage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
-    const frozen = frozenAnswerCountChanges();
-    if (frozen.length > 0) {
-      return toast.error(`Q${frozen.join(", Q")}: students have already attempted this test, so the number of answers can't be changed. Duplicate the test to change it.`);
-    }
     const overLimit = questions.findIndex((q) => (q.type === "numerical" || q.type === "integer") && q.answerCount > maxAnswers);
     if (overLimit >= 0) {
       return toast.error(`Question ${overLimit + 1} asks for ${questions[overLimit].answerCount} answers, but this test allows at most ${maxAnswers}. Raise the limit or reduce the question.`);
@@ -1988,8 +1969,6 @@ const CreateTestPage = () => {
                         <label className="text-[10px] font-semibold text-muted-foreground">Number of answers</label>
                         <select
                           value={q.answerCount}
-                          disabled={attemptCount > 0 && !!q.id}
-                          title={attemptCount > 0 && !!q.id ? "Locked: students have attempted this test" : undefined}
                           onChange={(e) => {
                             const n = Math.max(1, Number(e.target.value) || 1);
                             const cur = q.numericalAnswers.length ? q.numericalAnswers : [q.numericalAnswer];
@@ -2007,9 +1986,9 @@ const CreateTestPage = () => {
                             <option key={n} value={n} disabled={n > maxAnswers}>{n}{n > maxAnswers ? " (over test limit)" : ""}</option>
                           ))}
                         </select>
-                        {attemptCount > 0 && !!q.id && (
+                        {attemptCount > 0 && !!q.id && q.answerCount !== (originalAnswerCounts.current[q.id as string] ?? q.answerCount) && (
                           <span className="text-[10px] font-semibold text-amber-700">
-                            Locked: students have attempted this test. Duplicate the test to change the number of answers.
+                            Students have already attempted this test. Their results keep the previous number of answers ({originalAnswerCounts.current[q.id as string]}); attempts started after you save use {q.answerCount}.
                           </span>
                         )}
                         <span className="text-[10px] text-muted-foreground">
