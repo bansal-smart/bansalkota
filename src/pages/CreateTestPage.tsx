@@ -324,18 +324,26 @@ const CreateTestPage = () => {
       const [tqsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, tolerance, answer_range_min, answer_range_max, difficulty, solution_image_url, import_batch_id, source_filename, stem_image_url, created_at")
+          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, difficulty, import_batch_id, source_filename, stem_image_url, created_at")
           .eq("test_id", test.id)
           .order("position"),
         supabase.rpc("admin_get_test_questions_full", { _test_id: test.id }),
       ]);
-      const ansMap = new Map<string, { correct_answer: unknown; numerical_answer: number | null; explanation: string | null }>(
-        ((ansRes.data ?? []) as Array<{ id: string; correct_answer: unknown; numerical_answer: number | null; explanation: string | null }>)
-          .map((a) => [a.id, { correct_answer: a.correct_answer, numerical_answer: a.numerical_answer, explanation: a.explanation }]),
+      type AnswerFields = {
+        correct_answer: unknown; numerical_answer: number | null; explanation: string | null;
+        tolerance: number | null; answer_range_min: number | null; answer_range_max: number | null;
+        solution_image_url: string | null;
+      };
+      const ansMap = new Map<string, AnswerFields>(
+        ((ansRes.data ?? []) as Array<AnswerFields & { id: string }>).map(({ id, ...fields }) => [id, fields]),
       );
+      const emptyAnswers: AnswerFields = {
+        correct_answer: null, numerical_answer: null, explanation: null,
+        tolerance: null, answer_range_min: null, answer_range_max: null, solution_image_url: null,
+      };
       const tqs = (tqsRes.data ?? []).map((q: Record<string, unknown>) => ({
         ...q,
-        ...(ansMap.get(q.id as string) ?? { correct_answer: null, numerical_answer: null, explanation: null }),
+        ...(ansMap.get(q.id as string) ?? emptyAnswers),
       }));
       if (ignore) return;
       setResolvedTestId(test.id);

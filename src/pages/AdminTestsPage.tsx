@@ -133,14 +133,19 @@ const AdminTestsPage = () => {
         return;
       }
 
-      const { data: sourceQuestions, error: questionsError } = await supabase
-        .from("test_questions")
-        .select("*")
-        .eq("test_id", t.id);
-      if (questionsError) {
-        toast.error(questionsError.message);
+      const [{ data: qRows, error: questionsError }, { data: answerRows, error: answersError }] = await Promise.all([
+        supabase
+          .from("test_questions")
+          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, difficulty, stem_image_url, is_bonus, import_batch_id, source_filename, created_at")
+          .eq("test_id", t.id),
+        supabase.rpc("admin_get_test_questions_full", { _test_id: t.id }),
+      ]);
+      if (questionsError || answersError) {
+        toast.error((questionsError ?? answersError)?.message ?? "Could not read questions");
         return;
       }
+      const answerById = new Map(((answerRows ?? []) as Array<{ id: string }>).map((a) => [a.id, a]));
+      const sourceQuestions = (qRows ?? []).map((q) => ({ ...q, ...(answerById.get(q.id) ?? {}) }));
 
       const {
         id: _id,

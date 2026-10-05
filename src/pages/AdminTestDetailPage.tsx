@@ -97,12 +97,13 @@ const AdminTestDetailPage = () => {
       }
       setTest(t as TestRow);
 
-      const [qRes, aRes] = await Promise.all([
+      const [qRes, ansRes, aRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong, is_bonus, options, correct_answer")
+          .select("id, position, subject, topic, question_text, question_type, difficulty, marks_correct, marks_wrong, is_bonus, options")
           .eq("test_id", t.id)
           .order("position"),
+        supabase.rpc("admin_get_test_questions_full", { _test_id: t.id }),
         supabase
           .from("test_attempts")
           .select("id, user_id, score, percentile, correct_answers, total_questions, status, submitted_at, time_spent_seconds, answers")
@@ -112,7 +113,8 @@ const AdminTestDetailPage = () => {
       ]);
       if ((qRes as any).error) console.warn("[AdminTestDetail] questions load error", (qRes as any).error);
       if ((aRes as any).error) console.warn("[AdminTestDetail] attempts load error", (aRes as any).error);
-      setQuestions((((qRes as any).data ?? []) as QRow[]));
+      const answerById = new Map(((ansRes.data ?? []) as Array<{ id: string; correct_answer: unknown }>).map((a) => [a.id, a.correct_answer]));
+      setQuestions((((qRes as any).data ?? []) as QRow[]).map((q) => ({ ...q, correct_answer: answerById.get(q.id) ?? null } as QRow)));
       const aRows = (((aRes as any).data ?? []) as any[]);
       setAttempts(aRows);
       const userIds = Array.from(new Set(aRows.map((a) => a.user_id).filter(Boolean)));
