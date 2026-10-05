@@ -1951,7 +1951,7 @@ const CreateTestPage = () => {
                       )}
                     </div>
 
-                    {(maxAnswers > 1 || q.answerCount > 1) && (
+                    {(
                       <div className="flex flex-wrap items-center gap-2">
                         <label className="text-[10px] font-semibold text-muted-foreground">Number of answers</label>
                         <select
@@ -1973,7 +1973,11 @@ const CreateTestPage = () => {
                             <option key={n} value={n} disabled={n > maxAnswers}>{n}{n > maxAnswers ? " (over test limit)" : ""}</option>
                           ))}
                         </select>
-                        <span className="text-[10px] text-muted-foreground">Test allows up to {maxAnswers}.</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {maxAnswers > 1
+                            ? `Test allows up to ${maxAnswers}.`
+                            : "Only 1 answer is allowed on this test. Set \"Max answers per numerical question\" in the test settings (top of the page) to allow more."}
+                        </span>
                       </div>
                     )}
 
