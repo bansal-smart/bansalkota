@@ -67,7 +67,7 @@ const LiveTestsWidget = () => {
         supabase.from("test_attempts").select("test_id,status").eq("user_id", user.id),
         supabase
           .from("test_attempts")
-          .select("id, test_name, score, submitted_at, test_id, tests(slug)")
+          .select("id, test_name, score, submitted_at, test_id")
           .eq("user_id", user.id)
           .in("status", ["submitted", "auto_submitted"])
           .order("submitted_at", { ascending: false })
@@ -89,9 +89,15 @@ const LiveTestsWidget = () => {
       setAttempts(m);
       setBatchIds(((pRes.data ?? []) as Array<{ batch_id: string }>).map((r) => r.batch_id));
       setCourseIds(new Set(((eRes.data ?? []) as any[]).map((e) => e.course_id).filter(Boolean)));
-      setRecent(((rRes.data ?? []) as any[]).map((r) => ({
+      const recentRows = (rRes.data ?? []) as any[];
+      const recentIds = Array.from(new Set(recentRows.map((r) => r.test_id).filter(Boolean)));
+      const { data: recentTests } = recentIds.length
+        ? await supabase.from("tests").select("id, slug").in("id", recentIds)
+        : { data: [] as Array<{ id: string; slug: string }> };
+      const slugById = new Map((recentTests ?? []).map((t) => [t.id, t.slug]));
+      setRecent(recentRows.map((r) => ({
         id: r.id, test_name: r.test_name, score: r.score, submitted_at: r.submitted_at,
-        test_id: r.test_id, slug: r.tests?.slug ?? null,
+        test_id: r.test_id, slug: slugById.get(r.test_id) ?? null,
       })));
     };
     load();

@@ -52,11 +52,17 @@ const AnalyticsPage = () => {
     if (!user) return;
     const { data } = await supabase
       .from("test_attempts")
-      .select("id, test_id, test_name, subject, score, total_questions, correct_answers, percentile, attempted_at, tests(exam_pattern, subjects)")
+      .select("id, test_id, test_name, subject, score, total_questions, correct_answers, percentile, attempted_at")
       .eq("user_id", user.id)
       .in("status", ["submitted", "auto_submitted"])
       .order("attempted_at", { ascending: false });
-    setAttempts((data ?? []) as any);
+    const rows = (data ?? []) as Attempt[];
+    const testIds = Array.from(new Set(rows.map((r) => r.test_id).filter((id): id is string => Boolean(id))));
+    const { data: tests } = testIds.length
+      ? await supabase.from("tests").select("id, exam_pattern, subjects").in("id", testIds)
+      : { data: [] };
+    const testById = new Map((tests ?? []).map((t) => [t.id, { exam_pattern: t.exam_pattern, subjects: t.subjects }]));
+    setAttempts(rows.map((r) => ({ ...r, tests: testById.get(r.test_id ?? "") ?? null })));
     setLoading(false);
   }, [user?.id]);
 
