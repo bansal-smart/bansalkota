@@ -203,7 +203,8 @@ const CreateTestPage = () => {
   const [duration, setDuration] = useState(180);
   const [correctMarks, setCorrectMarks] = useState(4);
   const [wrongMarks, setWrongMarks] = useState(-1);
-  const [maxAnswers, setMaxAnswers] = useState(1);
+  const [maxAnswersInput, setMaxAnswersInput] = useState("1");
+  const maxAnswers = Math.min(10, Math.max(1, Math.floor(Number(maxAnswersInput)) || 1));
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
   const { confirm, ConfirmDialog } = useConfirm();
@@ -388,7 +389,7 @@ const CreateTestPage = () => {
       setDuration(test.duration_minutes ?? 180);
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
-      setMaxAnswers(Math.min(10, Math.max(1, Number((test as { max_answers_per_question?: number }).max_answers_per_question ?? 1) || 1)));
+      setMaxAnswersInput(String(Number((test as { max_answers_per_question?: number }).max_answers_per_question ?? 1) || 1));
       setCourseId(test.course_id ?? "");
       const testWithModes = test as { test_mode?: string; allows_digital_mode?: boolean; allows_kiosk_mode?: boolean };
       setAllowsDigitalMode(testWithModes.allows_digital_mode ?? testWithModes.test_mode !== "cbt");
@@ -1439,8 +1440,9 @@ const CreateTestPage = () => {
               type="number"
               min={1}
               max={10}
-              value={maxAnswers}
-              onChange={(e) => setMaxAnswers(Math.min(10, Math.max(1, Math.floor(Number(e.target.value)) || 1)))}
+              value={maxAnswersInput}
+              onChange={(e) => setMaxAnswersInput(e.target.value.replace(/[^0-9]/g, ""))}
+              onBlur={() => setMaxAnswersInput(String(maxAnswers))}
               className={inputCls}
             />
             <p className="mt-1 text-[10px] text-muted-foreground">
