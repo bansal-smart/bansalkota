@@ -50,6 +50,9 @@ type DraftQuestion = {
   correctMulti: number[];      // used by mcq-multi
   partial: boolean;            // used by mcq-multi
   numericalAnswer: string;     // used by numerical / integer
+  answerCount: number;         // numerical/integer: how many values the student must enter (1 = classic)
+  numericalAnswers: string[];  // numerical/integer with answerCount > 1: the correct values
+  orderMatters: boolean;       // multi-answer: values must be entered in this order
   tolerance: number;           // used by numerical
   rangeEnabled: boolean;       // integer/numerical: accept any value in [min, max]
   rangeMin: string;
@@ -71,6 +74,9 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   correctMulti: [],
   partial: false,
   numericalAnswer: "",
+  answerCount: 1,
+  numericalAnswers: [""],
+  orderMatters: false,
   tolerance: 0,
   rangeEnabled: false,
   rangeMin: "",
@@ -104,6 +110,9 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     correctMulti: correctArr,
     partial: !!(q as any).partial_marking,
     numericalAnswer: numericalVal,
+    answerCount: 1,
+    numericalAnswers: [numericalVal],
+    orderMatters: false,
     tolerance: Number((q as any).tolerance ?? 0),
     rangeEnabled: (q as any).answer_range_min != null && (q as any).answer_range_max != null,
     rangeMin: (q as any).answer_range_min != null ? String((q as any).answer_range_min) : "",
@@ -135,6 +144,13 @@ const isComplete = (q: DraftQuestion) => {
       const b = Number(q.rangeMax);
       if (q.rangeMin.trim() === "" || q.rangeMax.trim() === "" || Number.isNaN(a) || Number.isNaN(b)) return false;
       return true;
+    }
+    if (q.answerCount > 1) {
+      return q.numericalAnswers.length === q.answerCount
+        && q.numericalAnswers.every((v) => {
+          const t = v.trim();
+          return t !== "" && t !== "-" && t !== "." && !Number.isNaN(Number(t));
+        });
     }
     const s = q.numericalAnswer.trim();
     if (s === "" || s === "-" || Number.isNaN(Number(s))) return false;
@@ -187,6 +203,7 @@ const CreateTestPage = () => {
   const [duration, setDuration] = useState(180);
   const [correctMarks, setCorrectMarks] = useState(4);
   const [wrongMarks, setWrongMarks] = useState(-1);
+  const [maxAnswers, setMaxAnswers] = useState(1);
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
   const { confirm, ConfirmDialog } = useConfirm();
@@ -324,7 +341,7 @@ const CreateTestPage = () => {
       const [tqsRes, ansRes] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, difficulty, import_batch_id, source_filename, stem_image_url, created_at")
+          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_count, difficulty, import_batch_id, source_filename, stem_image_url, created_at")
           .eq("test_id", test.id)
           .order("position"),
         supabase.rpc("admin_get_test_questions_full", { _test_id: test.id }),
@@ -371,6 +388,7 @@ const CreateTestPage = () => {
       setDuration(test.duration_minutes ?? 180);
       setCorrectMarks(Number(test.correct_marks ?? 4));
       setWrongMarks(Number(test.wrong_marks ?? -1));
+      setMaxAnswers(Math.min(10, Math.max(1, Number((test as { max_answers_per_question?: number }).max_answers_per_question ?? 1) || 1)));
       setCourseId(test.course_id ?? "");
       const testWithModes = test as { test_mode?: string; allows_digital_mode?: boolean; allows_kiosk_mode?: boolean };
       setAllowsDigitalMode(testWithModes.allows_digital_mode ?? testWithModes.test_mode !== "cbt");
@@ -436,6 +454,11 @@ const CreateTestPage = () => {
             correctMulti: correctArr,
             partial: !!q.partial_marking,
             numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
+            answerCount: Number(q.answer_count ?? 1) || 1,
+            numericalAnswers: Array.isArray(q.numerical_answers) && q.numerical_answers.length > 0
+              ? (q.numerical_answers as unknown[]).map((v) => String(v))
+              : [q.numerical_answer != null ? String(q.numerical_answer) : ""],
+            orderMatters: !!q.answer_order_matters,
             tolerance: Number(q.tolerance ?? 0),
             rangeEnabled: q.answer_range_min != null && q.answer_range_max != null,
             rangeMin: q.answer_range_min != null ? String(q.answer_range_min) : "",
@@ -675,6 +698,7 @@ const CreateTestPage = () => {
         duration_minutes: duration,
         correct_marks: correctMarks,
         wrong_marks: wrongMarks,
+        max_answers_per_question: maxAnswers,
         total_questions: 0,
         total_marks: 0,
         is_published: false,
@@ -760,6 +784,9 @@ const CreateTestPage = () => {
       options: [],
       option_images: [],
       correct_answer: null,
+      answer_count: 1,
+      numerical_answers: null,
+      answer_order_matters: false,
     };
     // Normalize option_images to match option count
     const optImgs = (q.optionImages ?? []).slice(0, q.options.length);
@@ -776,7 +803,18 @@ const CreateTestPage = () => {
       base.partial_marking = q.partial;
     } else if (q.type === "numerical" || q.type === "integer") {
       base.options = [];
-      if (q.rangeEnabled) {
+      if (q.answerCount > 1) {
+        const vals = q.numericalAnswers.slice(0, q.answerCount).map((v) => Number(v));
+        base.answer_count = q.answerCount;
+        base.numerical_answers = vals;
+        base.answer_order_matters = q.orderMatters;
+        base.numerical_answer = vals[0];
+        base.correct_answer = { value: vals[0], values: vals };
+        base.tolerance = q.type === "integer" ? 0 : Number(q.tolerance || 0);
+        base.partial_marking = q.partial;
+        base.answer_range_min = null;
+        base.answer_range_max = null;
+      } else if (q.rangeEnabled) {
         const lo = Math.min(Number(q.rangeMin), Number(q.rangeMax));
         const hi = Math.max(Number(q.rangeMin), Number(q.rangeMax));
         base.answer_range_min = lo;
@@ -806,6 +844,15 @@ const CreateTestPage = () => {
       // (text, title image, options, correct answer, marks, etc.) — not just
       // marks. Imported questions already have a row, so this is an UPDATE
       // using the same field mapping the normal insert path uses.
+      // The per-test answer limit must be in place before any question asks for
+      // more answers than the stored limit allows.
+      {
+        const { error: maxErr } = await supabase
+          .from("tests")
+          .update({ max_answers_per_question: maxAnswers })
+          .eq("id", resolvedTestId);
+        if (maxErr) throw maxErr;
+      }
       const perQuestionUpdates = questions
         .map((q, i) => ({ q, i }))
         .filter(({ q }) => !!q.id)
@@ -857,6 +904,7 @@ const CreateTestPage = () => {
           duration_minutes: duration,
           correct_marks: correctMarks,
           wrong_marks: wrongMarks,
+          max_answers_per_question: maxAnswers,
           course_id: courseId || null,
           test_mode: allowsKioskMode && !allowsDigitalMode ? "cbt" : "digital",
           cbt_enabled: allowsKioskMode,
@@ -882,6 +930,10 @@ const CreateTestPage = () => {
   const submit = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
+    const overLimit = questions.findIndex((q) => (q.type === "numerical" || q.type === "integer") && q.answerCount > maxAnswers);
+    if (overLimit >= 0) {
+      return toast.error(`Question ${overLimit + 1} asks for ${questions[overLimit].answerCount} answers, but this test allows at most ${maxAnswers}. Raise the limit or reduce the question.`);
+    }
     if (!allowsDigitalMode && !allowsKioskMode) return toast.error("Select at least one test mode");
     if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
       return publishImportedDraft(publish);
@@ -927,6 +979,7 @@ const CreateTestPage = () => {
       duration_minutes: duration,
       correct_marks: correctMarks,
       wrong_marks: wrongMarks,
+      max_answers_per_question: maxAnswers,
       total_questions: validQ.length,
       total_marks: validQ.reduce((s, q) => s + Number(q.marksCorrect || 0), 0),
       is_published: publish,
@@ -1379,6 +1432,20 @@ const CreateTestPage = () => {
               onChange={(e) => setWrongMarks(Number(e.target.value) || 0)}
               className={inputCls}
             />
+          </div>
+          <div>
+            <label className={labelCls}>Max answers per numerical question</label>
+            <input
+              type="number"
+              min={1}
+              max={10}
+              value={maxAnswers}
+              onChange={(e) => setMaxAnswers(Math.min(10, Math.max(1, Math.floor(Number(e.target.value)) || 1)))}
+              className={inputCls}
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              1 = one value per question. Raise it to let a numerical question ask for several values (e.g. 200 and 400).
+            </p>
           </div>
         </div>
 
@@ -1869,6 +1936,7 @@ const CreateTestPage = () => {
                       <label className="text-[11px] font-semibold text-foreground">
                         Correct {q.type === "integer" ? "Integer" : "Numerical"} Answer
                       </label>
+                      {q.answerCount <= 1 && (
                       <button
                         type="button"
                         onClick={() => updateQ(i, { rangeEnabled: !q.rangeEnabled })}
@@ -1880,9 +1948,87 @@ const CreateTestPage = () => {
                       >
                         {q.rangeEnabled ? "Range enabled" : "Enable Range"}
                       </button>
+                      )}
                     </div>
 
-                    {q.rangeEnabled ? (
+                    {(maxAnswers > 1 || q.answerCount > 1) && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="text-[10px] font-semibold text-muted-foreground">Number of answers</label>
+                        <select
+                          value={q.answerCount}
+                          onChange={(e) => {
+                            const n = Math.max(1, Number(e.target.value) || 1);
+                            const cur = q.numericalAnswers.length ? q.numericalAnswers : [q.numericalAnswer];
+                            const next = Array.from({ length: n }, (_, k) => cur[k] ?? "");
+                            updateQ(i, {
+                              answerCount: n,
+                              numericalAnswers: next,
+                              numericalAnswer: next[0] ?? "",
+                              rangeEnabled: n > 1 ? false : q.rangeEnabled,
+                            });
+                          }}
+                          className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                        >
+                          {Array.from({ length: Math.max(maxAnswers, q.answerCount) }, (_, k) => k + 1).map((n) => (
+                            <option key={n} value={n} disabled={n > maxAnswers}>{n}{n > maxAnswers ? " (over test limit)" : ""}</option>
+                          ))}
+                        </select>
+                        <span className="text-[10px] text-muted-foreground">Test allows up to {maxAnswers}.</span>
+                      </div>
+                    )}
+
+                    {q.answerCount > 1 ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {Array.from({ length: q.answerCount }, (_, k) => (
+                            <div key={k}>
+                              <label className="text-[10px] font-semibold text-muted-foreground">Answer {k + 1}</label>
+                              <input
+                                value={q.numericalAnswers[k] ?? ""}
+                                onChange={(e) => {
+                                  let cleaned = e.target.value.replace(/[^0-9.-]/g, "");
+                                  const neg = cleaned.startsWith("-");
+                                  cleaned = cleaned.replace(/-/g, "");
+                                  const firstDot = cleaned.indexOf(".");
+                                  if (firstDot !== -1) cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/./g, "");
+                                  cleaned = (neg ? "-" : "") + cleaned;
+                                  const next = Array.from({ length: q.answerCount }, (_, idx) => (idx === k ? cleaned : q.numericalAnswers[idx] ?? ""));
+                                  updateQ(i, { numericalAnswers: next, numericalAnswer: next[0] ?? "" });
+                                }}
+                                placeholder="e.g. 200"
+                                inputMode="decimal"
+                                className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none tabular-nums"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                          {q.type === "numerical" && (
+                            <div className="flex items-center gap-2">
+                              <label className="text-[10px] font-semibold text-muted-foreground">Tolerance (±)</label>
+                              <input
+                                type="number"
+                                step="0.0001"
+                                value={q.tolerance}
+                                onChange={(e) => updateQ(i, { tolerance: Number(e.target.value) || 0 })}
+                                className="w-24 rounded-md border border-border bg-background px-2 py-1 text-xs tabular-nums"
+                              />
+                            </div>
+                          )}
+                          <label className="flex items-center gap-2 text-[11px] text-foreground">
+                            <input type="checkbox" checked={q.orderMatters} onChange={(e) => updateQ(i, { orderMatters: e.target.checked })} />
+                            Order matters (student must enter values in this order)
+                          </label>
+                          <label className="flex items-center gap-2 text-[11px] text-foreground">
+                            <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
+                            Partial marking (proportional credit when only some values are right, no wrong entries)
+                          </label>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          The student must enter all {q.answerCount} values. A wrong or missing value gets the wrong-answer marks unless partial marking is on.
+                        </p>
+                      </div>
+                    ) : q.rangeEnabled ? (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] font-semibold text-muted-foreground">From</label>

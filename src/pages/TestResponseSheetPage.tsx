@@ -42,6 +42,10 @@ type SheetData = {
 
 const stringifyAnswer = (val: any): string => {
   if (val == null) return "—";
+  if (Array.isArray(val) && val.every((v) => typeof v === "string" || typeof v === "number")) {
+    const parts = val.map((v) => String(v).trim()).filter(Boolean);
+    return parts.length ? parts.join(" / ") : "—";
+  }
   if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") return String(val);
   try { return JSON.stringify(val); } catch { return String(val); }
 };
@@ -268,7 +272,9 @@ const TestResponseSheetPage = () => {
                       <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3">
                         <p className="text-[10px] uppercase tracking-wider text-emerald-700">Correct answer</p>
                         <p className="mt-1 font-mono text-sm font-bold text-emerald-700">
-                          {q.numerical_answer != null ? String(q.numerical_answer) : stringifyAnswer(q.correct_answer)}
+                          {Array.isArray(q.numerical_answers) && q.numerical_answers.length > 1
+                            ? q.numerical_answers.join(" / ")
+                            : q.numerical_answer != null ? String(q.numerical_answer) : stringifyAnswer(q.correct_answer)}
                         </p>
                       </div>
                     )}

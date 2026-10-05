@@ -794,6 +794,12 @@ const AdminTestResultPage = () => {
           if (val === null || val === undefined || val === "") return "—";
           // integer/numerical
           if (qType === "integer" || qType === "numerical") {
+            if (Array.isArray(val)) {
+              const parts = val.map((v) => String(v ?? "").trim()).filter(Boolean);
+              return parts.length ? parts.join(" / ") : "—";
+            }
+            const multi = (val && typeof val === "object" ? (val as { values?: unknown }).values : undefined);
+            if (Array.isArray(multi) && multi.length > 1) return multi.join(" / ");
             if (val && typeof val === "object" && "value" in val) return String((val as any).value);
             return String(val);
           }

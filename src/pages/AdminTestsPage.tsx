@@ -136,7 +136,7 @@ const AdminTestsPage = () => {
       const [{ data: qRows, error: questionsError }, { data: answerRows, error: answersError }] = await Promise.all([
         supabase
           .from("test_questions")
-          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, difficulty, stem_image_url, is_bonus, import_batch_id, source_filename, created_at")
+          .select("id, test_id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_count, difficulty, stem_image_url, is_bonus, import_batch_id, source_filename, created_at")
           .eq("test_id", t.id),
         supabase.rpc("admin_get_test_questions_full", { _test_id: t.id }),
       ]);

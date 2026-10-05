@@ -294,7 +294,13 @@ const TestResultPage = () => {
       if (qt === "match-following" && val && typeof val === "object" && !Array.isArray(val)) {
         return Object.entries(val).map(([k, v]) => `${k}→${formatOne(v)}`).join(", ");
       }
-      if (qt === "numerical" || qt === "integer") return String(val);
+      if (qt === "numerical" || qt === "integer") {
+        if (Array.isArray(val)) {
+          const parts = val.map((v) => String(v ?? "").trim()).filter(Boolean);
+          return parts.length ? parts.join(" / ") : "—";
+        }
+        return String(val);
+      }
       return formatOne(val);
     };
     const questions = qList.map((q) => {
@@ -305,7 +311,10 @@ const TestResultPage = () => {
       const result: "Correct" | "Wrong" | "Unattempted" | "Bonus" = isBonus
         ? "Bonus"
         : !attemptedQ ? "Unattempted" : isCorrect ? "Correct" : "Wrong";
-      const correctVal = (q.question_type === "numerical" || q.question_type === "integer") ? q.numerical_answer : q.correct_answer;
+      const isNum = q.question_type === "numerical" || q.question_type === "integer";
+      const correctVal = isNum
+        ? (Array.isArray(q.numerical_answers) && q.numerical_answers.length > 1 ? q.numerical_answers : q.numerical_answer)
+        : q.correct_answer;
       const marks = Number(m.marks ?? 0);
       return {
         position: Number(q.display_index ?? q.position ?? 0) + 1,
