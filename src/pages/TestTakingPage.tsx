@@ -39,8 +39,6 @@ type TestQuestion = {
   answer_format: string | null;
   answer_range_min: number | null;
   answer_range_max: number | null;
-  answer_count?: number | null;
-  answer_match_mode?: string | null;
 };
 
 
@@ -111,22 +109,6 @@ const TestTakingPage = () => {
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [started, setStarted] = useState(false);
-  // Number of answer boxes per numeric question as recorded when this attempt started.
-  // Falls back to the question's current count (fresh attempts, or older records).
-  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({});
-  const loadAttemptCounts = async (id: string) => {
-    try {
-      const { data } = await supabase.rpc("get_my_attempt_answer_counts", { _attempt_id: id });
-      if (data && typeof data === "object") {
-        const next: Record<string, number> = {};
-        for (const [k, v] of Object.entries(data as Record<string, unknown>)) {
-          const n = Number(v);
-          if (Number.isFinite(n) && n >= 1) next[k] = n;
-        }
-        setAttemptCounts(next);
-      }
-    } catch { /* non-fatal: the question's own count is used */ }
-  };
   const [submitting, setSubmitting] = useState(false);
 
   const [currentQ, setCurrentQ] = useState(0);
@@ -215,7 +197,7 @@ const TestTakingPage = () => {
 
       const { data: qs, error: qErr } = await supabase
         .from("test_questions")
-        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format, answer_count, answer_match_mode")
+        .select("id, position, subject, topic, sub_topic, question_text, question_image_url, question_type, options, option_images, match_left, marks_correct, marks_wrong, marks_unanswered, partial_marking, answer_format")
         .eq("test_id", t.id).order("position");
       if (qErr) {
         console.error("[TestTakingPage] questions load failed", qErr);
@@ -234,7 +216,6 @@ const TestTakingPage = () => {
       setQuestions(applyStoredOrder(canonicalQs, orderIds));
 
       if (existing) {
-        void loadAttemptCounts(existing.id);
         setAttemptId(existing.id);
         setStartedAt(new Date(existing.started_at as string));
         // Recover any answers lost in a crash by merging the latest snapshot.
@@ -627,7 +608,6 @@ const TestTakingPage = () => {
       toast.error("Could not start test");
       return;
     }
-    void loadAttemptCounts(data.id);
     setAttemptId(data.id);
     setStartedAt(new Date(data.started_at as string));
     if (orderIds) setQuestions((prev) => applyStoredOrder(prev, orderIds));
@@ -994,15 +974,11 @@ const TestTakingPage = () => {
   const hh = Math.floor(mins / 60);
   const mm = mins % 60;
   const lowTime = secondsLeft < 300;
-  const ownBoxes = q.answer_match_mode === "any" ? 1 : Number(q.answer_count ?? 1) || 1;
-  const numericCount = isNumeric(q.question_type) ? Math.max(1, Number(attemptCounts[q.id] ?? ownBoxes) || 1) : 1;
   const numericRaw = isNumeric(q.question_type) ? (answers[q.id] as any)?.selected : undefined;
-  const numericValue = numericCount === 1
-    ? (Array.isArray(numericRaw) ? String(numericRaw[0] ?? "") : (typeof numericRaw === "string" ? numericRaw : ""))
-    : "";
-  const numericValues: string[] = numericCount > 1
-    ? Array.from({ length: numericCount }, (_, k) => (Array.isArray(numericRaw) ? String(numericRaw[k] ?? "") : (k === 0 && typeof numericRaw === "string" ? numericRaw : "")))
-    : [];
+  // One box always; if an earlier build saved several boxes, show the first filled one.
+  const numericValue = Array.isArray(numericRaw)
+    ? String(numericRaw.find((v: unknown) => String(v ?? "").trim() !== "") ?? "")
+    : (typeof numericRaw === "string" ? numericRaw : "");
 
   const subjectIndex = subjectIndices.findIndex(({ i }) => i === currentQ);
   const subjectPosLabel = `${currentQ + 1} / ${questions.length}`;
@@ -1011,7 +987,7 @@ const TestTakingPage = () => {
     q.question_type === "mcq-single" ? "Single Correct (MCQ)" :
       q.question_type === "mcq-multi" ? "Multiple Correct (MSQ)" :
         q.question_type === "integer" ? "Integer Type" :
-          q.question_type === "numerical" ? (Number(attemptCounts[q.id] ?? (q.answer_match_mode === "any" ? 1 : q.answer_count) ?? 1) > 1 ? `Numerical Answer (${attemptCounts[q.id] ?? q.answer_count} values)` : "Numerical Answer") :
+          q.question_type === "numerical" ? "Numerical Answer" :
             q.question_type === "match-following" ? "Match the Following" :
               "Assertion & Reason";
 
@@ -1183,14 +1159,6 @@ const TestTakingPage = () => {
                   optionImages={q.option_images ?? undefined}
                   value={((answers[q.id] as any)?.selected as Record<string, string>) || {}}
                   onChange={handleMatchChange}
-                />
-              ) : isNumeric(q.question_type) && numericCount > 1 ? (
-                <MultiNumericInput
-                  key={q.id}
-                  values={numericValues}
-                  count={numericCount}
-                  onChange={handleNumericInput}
-                  questionType={q.question_type as "integer" | "numerical"}
                 />
               ) : isNumeric(q.question_type) ? (
                 <NumericInput
@@ -1638,56 +1606,6 @@ const SummaryRow = ({ status, label, v }: { status: PaletteStatus; label: string
   </div>
 );
 
-
-// Several numeric answers for one question (e.g. 200 and 400). Each box is
-// edited with the shared keypad; the question counts as answered once any box
-// has a value, and the server requires all of them for full marks.
-const MultiNumericInput = ({
-  values,
-  count,
-  onChange,
-  questionType,
-}: {
-  values: string[];
-  count: number;
-  onChange: (v: string[]) => void;
-  questionType: "integer" | "numerical";
-}) => {
-  const [active, setActive] = useState(0);
-  const slots = Array.from({ length: count }, (_, i) => values[i] ?? "");
-  const setSlot = (i: number, v: string) => {
-    const next = slots.slice();
-    next[i] = v;
-    onChange(next);
-  };
-  return (
-    <div className="space-y-3">
-      <div className="rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-[12px] text-sky-900">
-        <span className="font-bold uppercase tracking-wide text-[10px] mr-2">{count} answers</span>
-        Enter all {count} values. Tap a box to switch between them.
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {slots.map((v, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setActive(i)}
-            className={`rounded-lg border-2 px-3 py-2 text-left transition-colors ${active === i ? "border-primary bg-primary/10" : "border-border bg-card hover:bg-muted"}`}
-          >
-            <span className="block text-[10px] font-bold uppercase text-muted-foreground">Answer {i + 1}</span>
-            <span className="block text-lg font-bold tabular-nums text-foreground">{v || "—"}</span>
-          </button>
-        ))}
-      </div>
-      <NumericInput
-        key={active}
-        value={slots[active]}
-        onChange={(v) => setSlot(active, v)}
-        questionType={questionType}
-      />
-    </div>
-  );
-};
 
 const NumericInput = ({
   value,

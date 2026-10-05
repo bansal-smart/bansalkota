@@ -47,6 +47,7 @@ type DraftQuestion = {
   options: string[];           // used by mcq-*
   optionImages: string[];      // per-option image URLs (index-aligned, "" = none)
   correct: number;             // used by mcq-single
+  alsoAccept: number[];        // mcq-single: further options that are also marked correct
   correctMulti: number[];      // used by mcq-multi
   partial: boolean;            // used by mcq-multi
   numericalAnswer: string;     // used by numerical / integer
@@ -72,6 +73,7 @@ const blankQuestion = (defaults: { correct: number; wrong: number }): DraftQuest
   options: ["", "", "", ""],
   optionImages: ["", "", "", ""],
   correct: 0,
+  alsoAccept: [],
   correctMulti: [],
   partial: false,
   numericalAnswer: "",
@@ -109,6 +111,7 @@ const fromBank = (q: BankQuestion, defaults: { correct: number; wrong: number })
     options: (q.options ?? []).map((o) => o.text),
     optionImages: Array.isArray((q as any).option_images) ? (q as any).option_images.map((s: any) => String(s ?? "")) : ["", "", "", ""],
     correct: correctIdx,
+    alsoAccept: [],
     correctMulti: correctArr,
     partial: !!(q as any).partial_marking,
     numericalAnswer: numericalVal,
@@ -207,8 +210,7 @@ const CreateTestPage = () => {
   const [correctMarks, setCorrectMarks] = useState(4);
   const [wrongMarks, setWrongMarks] = useState(-1);
   const [maxAnswersInput, setMaxAnswersInput] = useState("1");
-  const [attemptCount, setAttemptCount] = useState(0);
-  const originalAnswerCounts = useRef<Record<string, number>>({});
+
   const maxAnswers = Math.min(10, Math.max(1, Math.floor(Number(maxAnswersInput)) || 1));
   const [questions, setQuestions] = useState<DraftQuestion[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
@@ -370,14 +372,6 @@ const CreateTestPage = () => {
       }));
       if (ignore) return;
       setResolvedTestId(test.id);
-      const { count: attemptTotal } = await supabase
-        .from("test_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("test_id", test.id);
-      setAttemptCount(attemptTotal ?? 0);
-      originalAnswerCounts.current = Object.fromEntries(
-        tqs.map((q) => [q.id as string, Number((q as { answer_count?: number }).answer_count ?? 1) || 1]),
-      );
       importedQuestionCount.current = tqs.length;
       setTitle(test.title ?? "");
       setDescription(test.description ?? "");
@@ -447,8 +441,11 @@ const CreateTestPage = () => {
       setQuestions(
         tqs.map((q: any) => {
           const type = (q.question_type ?? "mcq-single") as QType;
-          const correctIdx = typeof q.correct_answer === "number" ? q.correct_answer : 0;
-          const correctArr = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
+          const accepted = Array.isArray(q.correct_answer) ? (q.correct_answer as number[]) : [];
+          const correctIdx = typeof q.correct_answer === "number"
+            ? q.correct_answer
+            : (type === "mcq-single" && accepted.length > 0 ? Number(accepted[0]) : 0);
+          const correctArr = type === "mcq-single" ? [] : accepted;
           return {
             source: "manual" as const,
             id: q.id,
@@ -465,6 +462,7 @@ const CreateTestPage = () => {
               ? (q.option_images as any[]).map((s) => String(s ?? ""))
               : ["", "", "", ""],
             correct: correctIdx,
+            alsoAccept: type === "mcq-single" ? accepted.slice(1).map(Number) : [],
             correctMulti: correctArr,
             partial: !!q.partial_marking,
             numericalAnswer: q.numerical_answer != null ? String(q.numerical_answer) : "",
@@ -812,7 +810,8 @@ const CreateTestPage = () => {
     }
     if (q.type === "mcq-single") {
       base.options = q.options.map((t, id) => ({ id, text: t }));
-      base.correct_answer = q.correct;
+      const accepted = Array.from(new Set([q.correct, ...q.alsoAccept])).sort((a, b) => a - b);
+      base.correct_answer = accepted.length > 1 ? [q.correct, ...accepted.filter((n) => n !== q.correct)] : q.correct;
     } else if (q.type === "mcq-multi") {
       base.options = q.options.map((t, id) => ({ id, text: t }));
       base.correct_answer = q.correctMulti.slice().sort((a, b) => a - b);
@@ -821,7 +820,7 @@ const CreateTestPage = () => {
       base.options = [];
       if (q.answerCount > 1) {
         const vals = q.numericalAnswers.slice(0, q.answerCount).map((v) => Number(v));
-        const anyOne = q.matchMode === "any";
+        const anyOne = true;
         base.answer_count = q.answerCount;
         base.numerical_answers = vals;
         base.answer_match_mode = anyOne ? "any" : "all";
@@ -852,6 +851,17 @@ const CreateTestPage = () => {
       base.answer_format = q.type === "integer" ? "integer" : "decimal";
     }
     return base;
+  };
+
+  // After an answer-key edit the database marks the test; re-score its submitted attempts once.
+  const rescoreIfAnswersChanged = async (testId: string) => {
+    const { data, error } = await supabase.rpc("rescore_test_if_pending", { _test_id: testId });
+    if (error) {
+      toast.error(`Saved, but re-scoring failed: ${error.message}`);
+      return;
+    }
+    const res = data as { rescored?: number; pending?: boolean } | null;
+    if (res?.pending) toast.success(`Answer key changed: re-scored ${res.rescored ?? 0} submitted attempt(s).`);
   };
 
   const publishImportedDraft = async (publish = true) => {
@@ -936,7 +946,8 @@ const CreateTestPage = () => {
         })
         .eq("id", resolvedTestId);
       if (error) throw error;
-      toast.success(publish ? "Test published with imported questions" : "Test saved as draft");
+      await rescoreIfAnswersChanged(resolvedTestId);
+      toast.success(publish ? "Test saved and published" : "Test saved as draft");
       navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not publish imported test");
@@ -954,7 +965,9 @@ const CreateTestPage = () => {
       return toast.error(`Question ${overLimit + 1} asks for ${questions[overLimit].answerCount} answers, but this test allows at most ${maxAnswers}. Raise the limit or reduce the question.`);
     }
     if (!allowsDigitalMode && !allowsKioskMode) return toast.error("Select at least one test mode");
-    if (isEditMode && resolvedTestId && questions.some((q) => q.imported)) {
+    // Existing questions are updated in place (never deleted and re-created), so students'
+    // saved answers keep pointing at the same question ids.
+    if (isEditMode && resolvedTestId && questions.some((q) => !!q.id)) {
       return publishImportedDraft(publish);
     }
     // If the editor is empty but the DB has imported rows, never wipe them — publish as-is.
@@ -1875,7 +1888,7 @@ const CreateTestPage = () => {
                 {(q.type === "mcq-single" || q.type === "mcq-multi") && (
                   <div className="space-y-1.5">
                     {q.options.map((opt, oi) => {
-                      const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : q.correct === oi;
+                      const isCorrect = q.type === "mcq-multi" ? q.correctMulti.includes(oi) : (q.correct === oi || q.alsoAccept.includes(oi));
                       const optImg = q.optionImages?.[oi] || "";
                       const optKey = `${i}:${oi}`;
                       return (
@@ -1900,7 +1913,7 @@ const CreateTestPage = () => {
                               <input
                                 type="radio"
                                 checked={isCorrect}
-                                onChange={() => updateQ(i, { correct: oi })}
+                                onChange={() => updateQ(i, { correct: oi, alsoAccept: q.alsoAccept.filter((n) => n !== oi) })}
                                 className="shrink-0 accent-secondary"
                               />
                             )}
@@ -1938,6 +1951,21 @@ const CreateTestPage = () => {
                               </label>
                             )}
                           </label>
+                          {q.type === "mcq-single" && q.correct !== oi && (
+                            <label className="mt-1 flex items-center gap-1.5 pl-6 text-[10px] text-muted-foreground cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={q.alsoAccept.includes(oi)}
+                                onChange={() => {
+                                  const set = new Set(q.alsoAccept);
+                                  if (set.has(oi)) set.delete(oi); else set.add(oi);
+                                  updateQ(i, { alsoAccept: Array.from(set).sort((a, b) => a - b) });
+                                }}
+                                className="accent-secondary"
+                              />
+                              Also accept this option as correct (a student choosing it gets full marks)
+                            </label>
+                          )}
                         </div>
                       );
                     })}
@@ -1973,7 +2001,7 @@ const CreateTestPage = () => {
 
                     {(
                       <div className="flex flex-wrap items-center gap-2">
-                        <label className="text-[10px] font-semibold text-muted-foreground">Number of answers</label>
+                        <label className="text-[10px] font-semibold text-muted-foreground">Number of accepted answers</label>
                         <select
                           value={q.answerCount}
                           onChange={(e) => {
@@ -1993,11 +2021,6 @@ const CreateTestPage = () => {
                             <option key={n} value={n} disabled={n > maxAnswers}>{n}{n > maxAnswers ? " (over test limit)" : ""}</option>
                           ))}
                         </select>
-                        {attemptCount > 0 && !!q.id && q.answerCount !== (originalAnswerCounts.current[q.id as string] ?? q.answerCount) && (
-                          <span className="text-[10px] font-semibold text-amber-700">
-                            Students have already attempted this test. Their results keep the previous number of answers ({originalAnswerCounts.current[q.id as string]}); attempts started after you save use {q.answerCount}.
-                          </span>
-                        )}
                         <span className="text-[10px] text-muted-foreground">
                           {maxAnswers > 1
                             ? `Test allows up to ${maxAnswers}.`
@@ -2008,21 +2031,10 @@ const CreateTestPage = () => {
 
                     {q.answerCount > 1 ? (
                       <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <label className="text-[10px] font-semibold text-muted-foreground">Student must enter</label>
-                          <select
-                            value={q.matchMode}
-                            onChange={(e) => updateQ(i, { matchMode: e.target.value === "any" ? "any" : "all" })}
-                            className="rounded-md border border-border bg-background px-2 py-1 text-xs"
-                          >
-                            <option value="all">All {q.answerCount} values</option>
-                            <option value="any">Any one of these values (either is correct)</option>
-                          </select>
-                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {Array.from({ length: q.answerCount }, (_, k) => (
                             <div key={k}>
-                              <label className="text-[10px] font-semibold text-muted-foreground">{q.matchMode === "any" ? "Accepted answer" : "Answer"} {k + 1}</label>
+                              <label className="text-[10px] font-semibold text-muted-foreground">Accepted answer {k + 1}</label>
                               <input
                                 value={q.numericalAnswers[k] ?? ""}
                                 onChange={(e) => {
@@ -2030,7 +2042,7 @@ const CreateTestPage = () => {
                                   const neg = cleaned.startsWith("-");
                                   cleaned = cleaned.replace(/-/g, "");
                                   const firstDot = cleaned.indexOf(".");
-                                  if (firstDot !== -1) cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/./g, "");
+                                  if (firstDot !== -1) cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
                                   cleaned = (neg ? "-" : "") + cleaned;
                                   const next = Array.from({ length: q.answerCount }, (_, idx) => (idx === k ? cleaned : q.numericalAnswers[idx] ?? ""));
                                   updateQ(i, { numericalAnswers: next, numericalAnswer: next[0] ?? "" });
@@ -2055,23 +2067,9 @@ const CreateTestPage = () => {
                               />
                             </div>
                           )}
-                          {q.matchMode === "all" && (
-                            <>
-                              <label className="flex items-center gap-2 text-[11px] text-foreground">
-                                <input type="checkbox" checked={q.orderMatters} onChange={(e) => updateQ(i, { orderMatters: e.target.checked })} />
-                                Order matters (student must enter values in this order)
-                              </label>
-                              <label className="flex items-center gap-2 text-[11px] text-foreground">
-                                <input type="checkbox" checked={q.partial} onChange={(e) => updateQ(i, { partial: e.target.checked })} />
-                                Partial marking (proportional credit when only some values are right, no wrong entries)
-                              </label>
-                            </>
-                          )}
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                          {q.matchMode === "any"
-                            ? `The student sees one box. Entering any of these ${q.answerCount} values earns full marks; anything else gets the wrong-answer marks.`
-                            : `The student must enter all ${q.answerCount} values. A wrong or missing value gets the wrong-answer marks unless partial marking is on.`}
+                          The student always sees one box. Entering any of these {q.answerCount} values earns full marks. You can change the accepted values later; submitted results are re-scored when you save.
                         </p>
                       </div>
                     ) : q.rangeEnabled ? (
