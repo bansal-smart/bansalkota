@@ -39,9 +39,10 @@ const LandingCTAForm = () => {
       phone: form.phone,
       email: form.email,
       message: form.message || `Wants info for ${form.exam} · ${form.classLevel}`,
-      source: "Free Counselling",
-      source_type: "landing_cta",
+      source: "contact",
+      source_type: "website",
       category: form.exam.toLowerCase(),
+      class_level: form.classLevel,
       priority: "high",
     });
     setSubmitting(false);

@@ -32,6 +32,7 @@ const schema = z.object({
 });
 
 const CLASS_LEVELS = ["IX", "X", "XI", "XII", "Dropper"];
+const SEHSS_CLASS_LEVELS = ["VIII", "IX", "X"];
 
 type TestSeriesInfo = { id: string; title: string; target_exam: string | null; price: number };
 type Props = { open: boolean; onClose: () => void; testSeries: TestSeriesInfo };
@@ -69,6 +70,7 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const basePrice = Number(testSeries.price);
   const discount = coupon ? Math.max(0, Math.min(coupon.discount, basePrice - 1)) : 0;
+  const classLevels = /sehss/i.test(testSeries.title) ? SEHSS_CLASS_LEVELS : CLASS_LEVELS;
 
   useEffect(() => {
     if (!open || !user) return;
@@ -86,11 +88,12 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
       const boost = boostRes.data as any;
       const first = (...values: unknown[]) => values.find((value) => typeof value === "string" && value.trim()) as string | undefined;
       const realName = (...values: unknown[]) => values.find((value) => typeof value === "string" && !isPlaceholderName(value)) as string | undefined;
+      const prefilledClass = first(p?.class_level, prior?.class_level, boost?.class_level) ?? "";
       setForm({
         full_name: realName(p?.full_name, prior?.full_name, boost?.full_name, user.full_name) ?? "",
         email: first(realEmail, prior?.email, boost?.email) ?? "",
         phone: first(p?.phone, prior?.phone, boost?.phone) ?? "",
-        class_level: first(p?.class_level, prior?.class_level, boost?.class_level) ?? "",
+        class_level: classLevels.includes(prefilledClass) ? prefilledClass : "",
         school_name: first(p?.school_name, prior?.school_name, boost?.school_name) ?? "",
         city: first(p?.city, prior?.city, boost?.city) ?? "",
         state: first(p?.state, prior?.state, boost?.state) ?? "",
@@ -215,7 +218,7 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
               <label className="text-xs font-semibold text-muted-foreground">Class *</label>
               <select name="class_level" required value={form.class_level} onChange={(e) => updateField("class_level", e.target.value)} className={inputClass}>
                 <option value="" disabled>Select class</option>
-                {CLASS_LEVELS.map((c) => (
+                {classLevels.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>

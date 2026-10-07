@@ -257,13 +257,21 @@ const AdminCouponsPage = () => {
               </div>
               <p className="mt-1 font-normal">Counts from "Valid from", or from the moment you save if that is blank. Overrides "Valid until".</p>
             </div>
-            <label className="text-xs font-semibold text-muted-foreground">Total usage limit (blank = unlimited)
+            <label className="text-xs font-semibold text-muted-foreground">
+              Total redemptions — ALL students combined (blank = unlimited)
               <input type="number" min="1" className={`${inputClass} mt-1`} value={form.usage_limit} onChange={(e) => setForm({ ...form, usage_limit: e.target.value })} />
+              <p className="mt-1 font-normal normal-case">Leave this blank if you want many different students to be able to use the code. A number here is a shared cap across everyone — e.g. 1 means the code stops working for everybody the moment a single student redeems it.</p>
             </label>
-            <label className="text-xs font-semibold text-muted-foreground">Uses per student *
+            <label className="text-xs font-semibold text-muted-foreground">Redemptions per individual student *
               <input type="number" min="1" className={`${inputClass} mt-1`} value={form.per_user_limit} onChange={(e) => setForm({ ...form, per_user_limit: e.target.value })} />
+              <p className="mt-1 font-normal normal-case">How many times the SAME student can use this code (default 1).</p>
             </label>
           </div>
+          {form.usage_limit.trim() !== "" && Number(form.usage_limit) <= 5 && (
+            <p className="mt-3 rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:bg-amber-950/20 dark:text-amber-400">
+              ⚠ Only {form.usage_limit} student{Number(form.usage_limit) === 1 ? "" : "s"} total — across everyone — will be able to redeem this coupon, even though "redemptions per student" is set separately. If you meant to cap how many times each student can use it, clear this field instead and set "Redemptions per individual student".
+            </p>
+          )}
           <div className="mt-4">
             <p className="mb-2 text-xs font-semibold text-muted-foreground">Applies to *</p>
             <div className="flex flex-wrap gap-4 text-sm">
