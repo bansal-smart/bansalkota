@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Sparkles, Rocket, Stethoscope, Loader2, CheckCircle2, Phone, User, GraduationCap } from "lucide-react";
+import { Sparkles, Rocket, Stethoscope, Loader2, CheckCircle2, Phone, User, GraduationCap, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BansalButton from "@/components/bansal/BansalButton";
 import { postSubmission } from "@/content/postSubmissionMessages";
 import { CLASS_LEVELS } from "@/lib/constants";
+import CityAutocompleteInput from "@/components/CityAutocompleteInput";
 
 const STORAGE_KEY = "bansal_welcome_popup_v1";
+// Popup is for students actively choosing a stream — Class 1-3 is too early.
+const POPUP_CLASS_LEVELS = CLASS_LEVELS.filter((c) => !["Class 1", "Class 2", "Class 3"].includes(c));
 
 const WelcomeEnquiryPopup = () => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [classLevel, setClassLevel] = useState<string>("Class 11");
-  const [goal, setGoal] = useState<"Engineer (JEE)" | "Doctor (NEET)" | "Not sure yet">("Engineer (JEE)");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [goal, setGoal] = useState<"Engineer (JEE)" | "Doctor (NEET)" | "Others">("Engineer (JEE)");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -50,6 +55,8 @@ const WelcomeEnquiryPopup = () => {
       source_type: "website",
       category: goal.includes("NEET") ? "neet" : goal.includes("JEE") ? "jee" : "general",
       class_level: classLevel,
+      city: city.trim() || null,
+      state: state.trim() || null,
       priority: "high",
     });
     setSubmitting(false);
@@ -101,12 +108,12 @@ const WelcomeEnquiryPopup = () => {
             ) : (
               <form onSubmit={submit} className="space-y-3">
                 <div>
-                  <label className="text-[11px] font-semibold uppercase tracking-wide text-bansal-gray">Goal</label>
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-bansal-gray">Target</label>
                   <div className="mt-1.5 grid grid-cols-3 gap-2">
                     {([
                       { label: "Engineer (JEE)", icon: Rocket },
                       { label: "Doctor (NEET)", icon: Stethoscope },
-                      { label: "Not sure yet", icon: Sparkles },
+                      { label: "Others", icon: Sparkles },
                     ] as const).map(({ label, icon: Icon }) => (
                       <button
                         type="button"
@@ -148,12 +155,37 @@ const WelcomeEnquiryPopup = () => {
                       onChange={(e) => setClassLevel(e.target.value)}
                       className="w-full appearance-none rounded-xl border-2 border-bansal-cream bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-bansal-orange"
                     >
-                      {CLASS_LEVELS.map((c) => (
+                      {POPUP_CLASS_LEVELS.map((c) => (
                         <option key={c} value={c}>
                           {c}
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-bansal-gray">City</label>
+                    <div className="relative mt-1.5">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-bansal-gray z-10" />
+                      <CityAutocompleteInput
+                        value={city}
+                        onChange={setCity}
+                        onSelectCity={(c, s) => { setCity(c); setState(s); }}
+                        placeholder="Your city"
+                        className="w-full rounded-xl border-2 border-bansal-cream bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-bansal-orange"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-bansal-gray">State</label>
+                    <input
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      placeholder="Your state"
+                      className="w-full mt-1.5 rounded-xl border-2 border-bansal-cream bg-white px-3 py-2.5 text-sm outline-none focus:border-bansal-orange"
+                    />
                   </div>
                 </div>
 

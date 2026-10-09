@@ -1871,6 +1871,7 @@ export type Database = {
           assigned_to: string | null
           category: string | null
           centre_id: string | null
+          city: string | null
           class_level: string | null
           created_at: string
           email: string | null
@@ -1883,6 +1884,7 @@ export type Database = {
           source: string
           source_type: string
           staff_notes: string | null
+          state: string | null
           status: string
           updated_at: string
         }
@@ -1890,6 +1892,7 @@ export type Database = {
           assigned_to?: string | null
           category?: string | null
           centre_id?: string | null
+          city?: string | null
           class_level?: string | null
           created_at?: string
           email?: string | null
@@ -1902,6 +1905,7 @@ export type Database = {
           source?: string
           source_type?: string
           staff_notes?: string | null
+          state?: string | null
           status?: string
           updated_at?: string
         }
@@ -1909,6 +1913,7 @@ export type Database = {
           assigned_to?: string | null
           category?: string | null
           centre_id?: string | null
+          city?: string | null
           class_level?: string | null
           created_at?: string
           email?: string | null
@@ -1921,6 +1926,7 @@ export type Database = {
           source?: string
           source_type?: string
           staff_notes?: string | null
+          state?: string | null
           status?: string
           updated_at?: string
         }

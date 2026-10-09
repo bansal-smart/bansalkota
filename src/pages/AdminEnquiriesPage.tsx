@@ -29,6 +29,8 @@ type Enquiry = {
   created_at: string;
   category: string | null;
   class_level: string | null;
+  city: string | null;
+  state: string | null;
   centre_id: string | null;
   centre?: { id: string; city: string; area: string | null; slug: string } | null;
 };
@@ -348,6 +350,14 @@ const AdminEnquiriesPage = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">Region</p>
                     <p className="font-medium text-foreground capitalize">{active.region || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">City</p>
+                    <p className="font-medium text-foreground">{active.city || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">State</p>
+                    <p className="font-medium text-foreground">{active.state || "—"}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-xs text-muted-foreground">Centre</p>

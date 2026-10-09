@@ -140,6 +140,7 @@ const centreNav: NavGroup = {
     { label: "Test Support Queries", icon: LifeBuoy, path: "/admin/test-support" },
     { label: "Enquiries", icon: Inbox, path: "/admin/enquiries" },
     { label: "BOOST Registrations", icon: Award, path: "/admin/boost" },
+    { label: "Test Series Registrations", icon: ClipboardList, path: "/admin/test-series-registrations" },
     { label: "Centre Support", icon: LifeBuoy, path: "/admin/centre-support" },
     { label: "Gallery", icon: ImageIcon, path: "/admin/centre-gallery" },
     { label: "News & Updates", icon: Megaphone, path: "/admin/news-updates" },
