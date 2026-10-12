@@ -45,13 +45,19 @@ export const useCenterAdmin = () => {
       const { data, error } = await supabase
         .from("centre_staff" as any)
         .select("id, centre_id, role, center:centres(id, slug, city, area, state, is_hq, is_suspended)")
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true });
       if (cancelled) return;
       if (error) {
         console.error("Failed to load centre memberships", error);
         setMemberships([]);
       } else {
-        setMemberships((data ?? []) as any);
+        const rows = (data ?? []) as any as CenterStaffRow[];
+        if (rows.length > 1) {
+          console.warn("Account has multiple centre memberships; using the oldest as primary", rows.map((r) => r.centre_id));
+        }
+        setMemberships(rows);
       }
       setLoading(false);
     })();

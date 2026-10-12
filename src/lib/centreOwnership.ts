@@ -16,6 +16,15 @@ export async function resolveContentOwnership(
   if (isCenterAdmin) {
     return { centre_id: primaryCenterId, is_global: false };
   }
-  const { data: hq } = await supabase.from("centres").select("id").eq("is_hq", true).maybeSingle();
-  return { centre_id: hq?.id ?? null, is_global: false };
+  // More than one centre can be flagged HQ; `.maybeSingle()` errors on that and
+  // used to yield a NULL centre_id, which every centre reads as "global".
+  const { data: hq, error } = await supabase
+    .from("centres")
+    .select("id")
+    .eq("is_hq", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error || !hq) throw new Error("Could not determine the HQ centre for this content");
+  return { centre_id: hq.id, is_global: false };
 }

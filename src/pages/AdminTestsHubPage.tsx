@@ -9,10 +9,13 @@ import {
   BarChart, Bar,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 
 type Stat = { label: string; value: string; icon: any; hint?: string; color: string };
 
-const fetchHub = async () => {
+const fetchHub = async (scopeCentreId: string | null) => {
   const todayIso = startOfDay(new Date()).toISOString();
   const weekIso = subDays(new Date(), 7).toISOString();
   const thirtyIso = subDays(new Date(), 30).toISOString();
@@ -21,7 +24,7 @@ const fetchHub = async () => {
     testsRes, qBankRes, qByTypeRes, attTodayRes, attWeekRes, attAllRes,
     attRecent, attChart, attLast7, importsRes, profilesRes,
   ] = await Promise.all([
-    supabase.from("tests").select("id, is_published"),
+    scopeQueryToCentre(supabase.from("tests").select("id, is_published"), scopeCentreId, { globalFlagColumn: "is_global" }),
     supabase.from("question_bank").select("id, subject"),
     supabase.from("test_questions").select("subject"),
     supabase.from("test_attempts").select("id", { count: "exact", head: true }).gte("created_at", todayIso),
@@ -76,7 +79,15 @@ const subjectColors: Record<string, string> = {
 };
 
 const AdminTestsHubPage = () => {
-  const { data, isLoading } = useQuery({ queryKey: ["admin-tests-hub"], queryFn: fetchHub, staleTime: 60_000 });
+  const { isCenterAdmin } = useAuth();
+  const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
+  const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-tests-hub", scopeCentreId],
+    queryFn: () => fetchHub(scopeCentreId),
+    staleTime: 60_000,
+    enabled: !(isCenterAdmin && centreLoading),
+  });
 
   if (isLoading || !data) {
     return <div className="flex h-96 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;

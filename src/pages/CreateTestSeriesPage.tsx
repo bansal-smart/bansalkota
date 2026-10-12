@@ -48,6 +48,7 @@ const CreateTestSeriesPage = () => {
   const [modeValue, setModeValue] = useState<string>("Online");
   const [language, setLanguage] = useState<string>("English / Hindi");
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isGlobal, setIsGlobal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(isEditMode);
 
@@ -56,7 +57,7 @@ const CreateTestSeriesPage = () => {
     (async () => {
       setLoading(true);
       const { data, error } = await supabase.from("test_series").select("*").eq("id", id).maybeSingle();
-      if (error || !data || (isCenterContext && (data as any).centre_id !== primaryCenterId)) {
+      if (error || !data || ((isCenterContext || isCenterAdmin) && (data as any).centre_id !== primaryCenterId)) {
         toast.error("Test series not found");
         setLoading(false);
         return;
@@ -80,6 +81,7 @@ const CreateTestSeriesPage = () => {
       setModeValue(r.mode ?? "Online");
       setLanguage(r.language ?? "English / Hindi");
       setIsFeatured(!!r.is_featured);
+      setIsGlobal(!!r.is_global);
       setLoading(false);
     })();
   }, [isEditMode, id]);
@@ -130,14 +132,23 @@ const CreateTestSeriesPage = () => {
       const baseSlug = slugify(title) || `test-series-${Date.now()}`;
       const slug = `${baseSlug}-${Date.now().toString(36)}`;
       const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
-      const { error } = await supabase.from("test_series").insert({ ...payload, slug, created_by: user.id, ...ownership });
+      const { error } = await supabase.from("test_series").insert({
+        ...payload,
+        slug,
+        created_by: user.id,
+        ...ownership,
+        is_global: isCenterAdmin ? false : isGlobal,
+      });
       if (error) {
         toast.error(error.message);
         setSubmitting(false);
         return;
       }
     } else {
-      const { error } = await supabase.from("test_series").update(payload).eq("id", id!);
+      const { error } = await supabase
+        .from("test_series")
+        .update(isCenterAdmin ? payload : { ...payload, is_global: isGlobal })
+        .eq("id", id!);
       if (error) {
         toast.error(error.message);
         setSubmitting(false);
@@ -368,6 +379,12 @@ const CreateTestSeriesPage = () => {
           <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} />
           <span className="font-semibold text-foreground">Mark as Featured</span>
         </label>
+        {!isCenterAdmin && (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={isGlobal} onChange={(e) => setIsGlobal(e.target.checked)} />
+            <span className="font-semibold text-foreground">Visible to all centres (global)</span>
+          </label>
+        )}
       </div>
 
       <div aria-hidden className="h-40" />

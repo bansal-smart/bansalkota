@@ -21,6 +21,7 @@ type TS = {
   is_featured: boolean;
   thumbnail_url: string | null;
   centre_id: string | null;
+  is_global: boolean;
   centre: { city: string; area: string | null; is_hq: boolean } | null;
 };
 
@@ -44,7 +45,7 @@ const AdminTestSeriesPage = () => {
       supabase
         .from("test_series")
         .select(
-          "id, slug, title, target_exam, total_tests, price, original_price, is_published, is_featured, thumbnail_url, centre_id, centre:centres(city, area, is_hq)"
+          "id, slug, title, target_exam, total_tests, price, original_price, is_published, is_featured, thumbnail_url, centre_id, is_global, centre:centres(city, area, is_hq)"
         ),
       scopeCentreId,
       { globalFlagColumn: "is_global" }
@@ -125,7 +126,9 @@ const AdminTestSeriesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {paged.map((r) => (
+                {paged.map((r) => {
+                  const readOnly = isCenterAdmin && r.centre_id !== primaryCenterId;
+                  return (
                   <tr key={r.id} className="border-t border-border">
                     <td className="px-4 py-3">
                       <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded border border-border bg-muted">
@@ -138,7 +141,9 @@ const AdminTestSeriesPage = () => {
                     </td>
                     <td className="px-4 py-3 font-semibold text-foreground">{r.title}</td>
                     <td className="px-4 py-3">
-                      {r.centre
+                      {r.is_global
+                        ? <span className="font-semibold text-primary">All centres</span>
+                        : r.centre
                         ? r.centre.is_hq
                           ? "Kota HQ"
                           : `${r.centre.city}${r.centre.area && r.centre.area !== r.centre.city ? " — " + r.centre.area : ""}`
@@ -153,12 +158,18 @@ const AdminTestSeriesPage = () => {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => togglePublish(r)}
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${r.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}
-                      >
-                        {r.is_published ? "Published" : "Hidden"}
-                      </button>
+                      {readOnly ? (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${r.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                          {r.is_published ? "Published" : "Hidden"}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => togglePublish(r)}
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${r.is_published ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}
+                        >
+                          {r.is_published ? "Published" : "Hidden"}
+                        </button>
+                      )}
                     </td>
                     <td className="px-4 py-3">{r.is_featured ? "Yes" : "No"}</td>
                     <td className="px-4 py-3">
@@ -166,24 +177,29 @@ const AdminTestSeriesPage = () => {
                         <a href={`/test-series/${r.slug}`} target="_blank" rel="noreferrer" className="rounded-lg border border-border bg-background p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Preview">
                           <Eye className="h-4 w-4" />
                         </a>
-                        <button
-                          onClick={() => navigate(`/admin/test-series/${r.id}/edit`)}
-                          className="rounded-lg border border-border bg-background p-1.5 text-primary hover:bg-primary/10"
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => remove(r.id)}
-                          className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {!readOnly && (
+                          <>
+                            <button
+                              onClick={() => navigate(`/admin/test-series/${r.id}/edit`)}
+                              className="rounded-lg border border-border bg-background p-1.5 text-primary hover:bg-primary/10"
+                              title="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => remove(r.id)}
+                              className="rounded-lg border border-border bg-background p-1.5 text-destructive hover:bg-muted"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {rows.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">

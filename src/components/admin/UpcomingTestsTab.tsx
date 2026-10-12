@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { Loader2, CalendarClock, Pencil, Eye, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { scopeQueryToCentre } from "@/lib/centreScope";
 
 type Test = {
   id: string;
@@ -20,23 +23,31 @@ const UpcomingTestsTab = () => {
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { isCenterAdmin } = useAuth();
+  const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
+  const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
+
   useEffect(() => {
+    if (isCenterAdmin && centreLoading) return;
     (async () => {
       setLoading(true);
       const nowIso = new Date().toISOString();
-      const { data } = await supabase
-        .from("tests")
-        .select(
-          "id, title, slug, test_type, starts_at, ends_at, duration_minutes, total_questions, is_published",
-        )
-        .is("centre_id", null)
-        .gt("starts_at", nowIso)
+      const { data } = await scopeQueryToCentre(
+        supabase
+          .from("tests")
+          .select(
+            "id, title, slug, test_type, starts_at, ends_at, duration_minutes, total_questions, is_published",
+          )
+          .gt("starts_at", nowIso),
+        scopeCentreId,
+        { globalFlagColumn: "is_global" },
+      )
         .order("starts_at", { ascending: true })
         .limit(200);
       setTests((data ?? []) as Test[]);
       setLoading(false);
     })();
-  }, []);
+  }, [isCenterAdmin, centreLoading, scopeCentreId]);
 
   if (loading) {
     return (
