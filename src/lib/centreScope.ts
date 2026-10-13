@@ -24,11 +24,23 @@
 export function scopeQueryToCentre<Q extends { or: (filter: string) => Q }>(
   query: Q,
   centreId: string | null,
-  { includeGlobal = true, globalFlagColumn }: { includeGlobal?: boolean; globalFlagColumn?: string } = {},
+  {
+    includeGlobal = true,
+    globalFlagColumn,
+    batchOverlap,
+  }: {
+    includeGlobal?: boolean;
+    globalFlagColumn?: string;
+    /** Also keep rows whose array column overlaps these batch ids (tests assigned to batches the centre can see). */
+    batchOverlap?: { column: string; ids: string[] };
+  } = {},
 ): Q {
   if (!centreId) return query;
   if (!includeGlobal) return query.or(`centre_id.eq.${centreId}`);
   const clauses = [`centre_id.eq.${centreId}`, `centre_id.is.null`];
   if (globalFlagColumn) clauses.push(`${globalFlagColumn}.eq.true`);
+  if (batchOverlap && batchOverlap.ids.length) {
+    clauses.push(`${batchOverlap.column}.ov.{${batchOverlap.ids.join(",")}}`);
+  }
   return query.or(clauses.join(","));
 }

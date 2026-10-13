@@ -236,6 +236,7 @@ const CreateTestPage = () => {
   const [selectedCentreId, setSelectedCentreId] = useState<string>("");
   const [centres, setCentres] = useState<{ id: string; city: string; area: string | null; is_hq: boolean }[]>([]);
   const [testCentreId, setTestCentreId] = useState<string | null>(null);
+  const [isGlobal, setIsGlobal] = useState(false);
   const [solutionPdfPath, setSolutionPdfPath] = useState<string | null>(null);
   const [solutionPdfUploading, setSolutionPdfUploading] = useState(false);
   // Scheduling — controls when test opens, closes, and results auto-release
@@ -407,6 +408,7 @@ const CreateTestPage = () => {
         : []);
       setSolutionPdfPath((test as { solution_pdf_path?: string | null }).solution_pdf_path ?? null);
       setTestCentreId((test as any).centre_id ?? null);
+      setIsGlobal(!!(test as any).is_global);
       if ((test as any).centre_id) {
         setSelectedCentreId((test as any).centre_id);
       }
@@ -727,6 +729,7 @@ const CreateTestPage = () => {
         slug,
         created_by: user.id,
         ...(isCenterContext ? { centre_id: primaryCenterId } : {}),
+        is_global: isCenterAdmin ? false : isGlobal,
       })
       .select("id, slug")
       .single();
@@ -1046,7 +1049,10 @@ const CreateTestPage = () => {
         setSubmitting(false);
         return;
       }
-      const { error } = await supabase.from("tests").update(basePayload).eq("id", resolvedTestId);
+      const { error } = await supabase
+        .from("tests")
+        .update(isCenterAdmin ? basePayload : { ...basePayload, is_global: isGlobal })
+        .eq("id", resolvedTestId);
       if (error) {
         toast.error(error.message);
         setSubmitting(false);
@@ -1058,7 +1064,7 @@ const CreateTestPage = () => {
       const ownership = await resolveContentOwnership(isCenterAdmin, primaryCenterId);
       const { data: test, error } = await supabase
         .from("tests")
-        .insert({ ...basePayload, ...ownership, slug, created_by: user.id })
+        .insert({ ...basePayload, ...ownership, is_global: isCenterAdmin ? false : isGlobal, slug, created_by: user.id })
         .select("id")
         .single();
       if (error || !test) {
@@ -1161,6 +1167,26 @@ const CreateTestPage = () => {
             Enabled
           </label>
         </div>
+
+        {!isCenterAdmin && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">Visible to all centres (global)</p>
+              <p className="text-[11px] text-muted-foreground">
+                Every centre can see this test and assign it to its own batches, but cannot edit or delete it.
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-[11px] font-semibold text-foreground">
+              <input
+                type="checkbox"
+                checked={isGlobal}
+                onChange={(e) => setIsGlobal(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              Global
+            </label>
+          </div>
+        )}
 
         {(
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">

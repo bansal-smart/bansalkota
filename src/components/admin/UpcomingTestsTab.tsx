@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { getCentreVisibleBatchIds } from "@/lib/batchVisibility";
 
 type Test = {
   id: string;
@@ -32,6 +33,7 @@ const UpcomingTestsTab = () => {
     (async () => {
       setLoading(true);
       const nowIso = new Date().toISOString();
+      const visibleBatchIds = await getCentreVisibleBatchIds(scopeCentreId);
       const { data } = await scopeQueryToCentre(
         supabase
           .from("tests")
@@ -40,7 +42,7 @@ const UpcomingTestsTab = () => {
           )
           .gt("starts_at", nowIso),
         scopeCentreId,
-        { globalFlagColumn: "is_global" },
+        { globalFlagColumn: "is_global", batchOverlap: { column: "cbt_allowed_batch_ids", ids: visibleBatchIds } },
       )
         .order("starts_at", { ascending: true })
         .limit(200);

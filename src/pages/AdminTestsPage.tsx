@@ -7,7 +7,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
-import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
+import { filterBatchesForCentre, getCentreVisibleBatchIds, type BatchVisibility } from "@/lib/batchVisibility";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
 import { examPatternLabel } from "@/lib/examPattern";
@@ -69,6 +69,7 @@ const AdminTestsPage = () => {
 
   const load = async () => {
     setLoading(true);
+    const visibleBatchIds = await getCentreVisibleBatchIds(scopeCentreId);
     const [{ data: testRows }, { data: batchRows }] = await Promise.all([
       scopeQueryToCentre(
         supabase
@@ -77,7 +78,7 @@ const AdminTestsPage = () => {
             "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
           ),
         scopeCentreId,
-        { globalFlagColumn: "is_global" },
+        { globalFlagColumn: "is_global", batchOverlap: { column: "cbt_allowed_batch_ids", ids: visibleBatchIds } },
       ).order("created_at", { ascending: false }),
       // Fetched unscoped (visibility replaces the old centre_id-only
       // OR-filter) and narrowed below via filterBatchesForCentre, which also

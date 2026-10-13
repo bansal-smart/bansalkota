@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { getCentreVisibleBatchIds } from "@/lib/batchVisibility";
 
 type Stat = { label: string; value: string; icon: any; hint?: string; color: string };
 
@@ -19,12 +20,13 @@ const fetchHub = async (scopeCentreId: string | null) => {
   const todayIso = startOfDay(new Date()).toISOString();
   const weekIso = subDays(new Date(), 7).toISOString();
   const thirtyIso = subDays(new Date(), 30).toISOString();
+  const visibleBatchIds = await getCentreVisibleBatchIds(scopeCentreId);
 
   const [
     testsRes, qBankRes, qByTypeRes, attTodayRes, attWeekRes, attAllRes,
     attRecent, attChart, attLast7, importsRes, profilesRes,
   ] = await Promise.all([
-    scopeQueryToCentre(supabase.from("tests").select("id, is_published"), scopeCentreId, { globalFlagColumn: "is_global" }),
+    scopeQueryToCentre(supabase.from("tests").select("id, is_published"), scopeCentreId, { globalFlagColumn: "is_global", batchOverlap: { column: "cbt_allowed_batch_ids", ids: visibleBatchIds } }),
     supabase.from("question_bank").select("id, subject"),
     supabase.from("test_questions").select("subject"),
     supabase.from("test_attempts").select("id", { count: "exact", head: true }).gte("created_at", todayIso),

@@ -17,6 +17,13 @@ export type VisibilityAwareBatch = {
 // Pass `centreId: null` for the Super Admin / unscoped view — nothing is
 // filtered out, since that view is the one place disabled/centre-restricted
 // rows need to stay visible for management.
+export async function getCentreVisibleBatchIds(centreId: string | null): Promise<string[]> {
+  if (!centreId) return [];
+  const { data } = await supabase.from("course_batches").select("id, visibility");
+  const visible = await filterBatchesForCentre((data ?? []) as VisibilityAwareBatch[], centreId);
+  return visible.map((b) => b.id);
+}
+
 export async function filterBatchesForCentre<T extends VisibilityAwareBatch>(
   batches: T[],
   centreId: string | null,
