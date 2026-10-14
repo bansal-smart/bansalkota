@@ -50,6 +50,7 @@ const AdminTestDetailPage = () => {
   const [questions, setQuestions] = useState<QRow[]>([]);
   const [attempts, setAttempts] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Map<string, string>>(new Map());
+  const [sheetRanks, setSheetRanks] = useState<{ user_id: string; rank_num: number; total_score: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
@@ -124,6 +125,12 @@ const AdminTestDetailPage = () => {
       } else {
         setProfiles(new Map());
       }
+      const { data: sheet } = await (supabase.rpc as any)("admin_test_result_sheet", { _test_id: t.id });
+      setSheetRanks(
+        ((sheet ?? []) as any[])
+          .filter((r) => r.status === "present" && r.rank_num != null)
+          .map((r) => ({ user_id: r.user_id, rank_num: Number(r.rank_num), total_score: Number(r.total_score ?? 0) })),
+      );
     } catch (e: any) {
       console.error("[AdminTestDetail] load failed", e);
       setLoadError(e?.message ?? "Failed to load test.");
@@ -247,7 +254,15 @@ const AdminTestDetailPage = () => {
 
   const hardest = [...perQuestion].filter((p) => p.attempted > 0).sort((a, b) => a.accuracy - b.accuracy).slice(0, 5);
   const easiest = [...perQuestion].filter((p) => p.attempted > 0).sort((a, b) => b.accuracy - a.accuracy).slice(0, 5);
-  const leaderboard = [...submitted].sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0)).slice(0, 20);
+  const latestByUser = new Map<string, any>();
+  [...submitted]
+    .sort((a, b) => String(a.submitted_at ?? "").localeCompare(String(b.submitted_at ?? "")))
+    .forEach((a) => latestByUser.set(a.user_id, a));
+  const leaderboard = [...sheetRanks]
+    .sort((a, b) => a.rank_num - b.rank_num)
+    .slice(0, 20)
+    .map((r) => ({ ...r, attempt: latestByUser.get(r.user_id) }))
+    .filter((r) => r.attempt);
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
@@ -441,14 +456,14 @@ const AdminTestDetailPage = () => {
                 <th className="px-4 py-2 text-right">Time</th>
               </tr></thead>
               <tbody>
-                {leaderboard.map((a, i) => (
-                  <tr key={a.id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-2 font-bold flex items-center gap-1.5">{i < 3 && <Trophy className="h-3.5 w-3.5 text-amber-500" />} {i + 1}</td>
-                    <td className="px-4 py-2 text-foreground">{profiles.get(a.user_id) ?? "Student"}</td>
-                    <td className="px-4 py-2 text-right text-foreground">{a.score}</td>
-                    <td className="px-4 py-2 text-right text-xs text-muted-foreground">{a.correct_answers}/{a.total_questions}</td>
-                    <td className="px-4 py-2 text-right text-accent">{a.percentile ?? "—"}</td>
-                    <td className="px-4 py-2 text-right text-xs text-muted-foreground">{a.time_spent_seconds ? `${Math.round(a.time_spent_seconds / 60)} min` : "—"}</td>
+                {leaderboard.map((r) => (
+                  <tr key={r.attempt.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-2 font-bold flex items-center gap-1.5">{r.rank_num <= 3 && <Trophy className="h-3.5 w-3.5 text-amber-500" />} {r.rank_num}</td>
+                    <td className="px-4 py-2 text-foreground">{profiles.get(r.user_id) ?? "Student"}</td>
+                    <td className="px-4 py-2 text-right text-foreground">{r.attempt.score}</td>
+                    <td className="px-4 py-2 text-right text-xs text-muted-foreground">{r.attempt.correct_answers}/{r.attempt.total_questions}</td>
+                    <td className="px-4 py-2 text-right text-accent">{r.attempt.percentile ?? "—"}</td>
+                    <td className="px-4 py-2 text-right text-xs text-muted-foreground">{r.attempt.time_spent_seconds ? `${Math.round(r.attempt.time_spent_seconds / 60)} min` : "—"}</td>
                   </tr>
                 ))}
               </tbody>

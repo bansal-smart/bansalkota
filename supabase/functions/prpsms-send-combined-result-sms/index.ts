@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
     // AdminCombinedResultPage.tsx uses so the SMS recipient list matches the
     // combined result table exactly.
     type Merged = {
+      key: string;
       user_id: string;
       full_name: string | null;
       p1?: SheetRow;
@@ -120,7 +121,7 @@ Deno.serve(async (req) => {
       const k = keyOf(r);
       let m = map.get(k);
       if (!m) {
-        m = { user_id: r.user_id, full_name: r.full_name, grandTotal: 0, maxMarks: 0 };
+        m = { key: k, user_id: r.user_id, full_name: r.full_name, grandTotal: 0, maxMarks: 0 };
         map.set(k, m);
       }
       if (!m.full_name && r.full_name) m.full_name = r.full_name;
@@ -142,15 +143,14 @@ Deno.serve(async (req) => {
       m.maxMarks = maxM;
     });
 
-    // Dense rank on grand total, eligible = present on at least one paper.
-    const eligible = merged.filter((m) => m.maxMarks > 0).sort((a, b) => b.grandTotal - a.grandTotal);
+    const { data: rankRows, error: rankErr } = await (supabaseAsUser.rpc as any)("admin_combined_result_ranks", {
+      _test_a: test_id,
+      _test_b: partner_test_id,
+    });
+    if (rankErr) throw rankErr;
     const rankOf = new Map<string, number>();
-    let prevScore: number | null = null;
-    let rank = 0;
-    eligible.forEach((m, i) => {
-      if (prevScore === null || m.grandTotal !== prevScore) rank = i + 1;
-      rankOf.set(m.user_id, rank);
-      prevScore = m.grandTotal;
+    (rankRows || []).forEach((r: any) => {
+      if (r.rank_combined !== null && r.rank_combined !== undefined) rankOf.set(r.merge_key, Number(r.rank_combined));
     });
 
     const buildResultField = (m: Merged): string => {
@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
           const score = num(p1Present ? m.p1!.subjects?.[s] : 0) + num(p2Present ? m.p2!.subjects?.[s] : 0);
           return `${subjectCode(s)}=${Math.round(score)}/${subjectMax.get(s)}`;
         });
-      const r = rankOf.get(m.user_id);
+      const r = rankOf.get(m.key);
       return parts.length ? `${parts.join(", ")}, Rank ${r ?? "—"}` : `Score ${m.grandTotal}, Rank ${r ?? "—"}`;
     };
 

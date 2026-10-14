@@ -4,6 +4,7 @@ import { ArrowLeft, Download, FileSpreadsheet, Loader2, MessageSquare, User2, X 
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { buildCombinedRankMap, rankText, type CombinedRank } from "@/lib/combinedRanks";
 
 type TestRow = {
   id: string;
@@ -80,6 +81,7 @@ const AdminCombinedResultPage = () => {
   const [test2, setTest2] = useState<TestRow | null>(null);
   const [rows1, setRows1] = useState<ResultRow[]>([]);
   const [rows2, setRows2] = useState<ResultRow[]>([]);
+  const [rankMap, setRankMap] = useState<Map<string, CombinedRank>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [smsConfirmOpen, setSmsConfirmOpen] = useState(false);
@@ -111,6 +113,12 @@ const AdminCombinedResultPage = () => {
     ]);
     if (r1.error) setError(r1.error.message);
     if (r2.error) setError(r2.error.message);
+    const rk = await (supabase.rpc as any)("admin_combined_result_ranks", {
+      _test_a: (a.data as any).id,
+      _test_b: (b.data as any).id,
+    });
+    if (rk.error) setError(rk.error.message);
+    setRankMap(buildCombinedRankMap(rk.data));
     setRows1((r1.data ?? []) as ResultRow[]);
     setRows2((r2.data ?? []) as ResultRow[]);
     setLoading(false);
@@ -170,30 +178,11 @@ const AdminCombinedResultPage = () => {
       m.pct = maxM > 0 ? (total / maxM) * 100 : 0;
     });
 
-    // Dense ranking helpers
-    const denseRank = (vals: { k: string; score: number; eligible: boolean }[]) => {
-      const sorted = [...vals].filter((v) => v.eligible).sort((a, b) => b.score - a.score);
-      const ranks = new Map<string, string>();
-      let prev: number | null = null;
-      let r = 0;
-      let i = 0;
-      for (const v of sorted) {
-        i += 1;
-        if (prev === null || v.score !== prev) r = i;
-        ranks.set(v.k, String(r));
-        prev = v.score;
-      }
-      return ranks;
-    };
-
-    const p1Rank = denseRank(list.map((m) => ({ k: m.key, score: num(m.p1?.total_score), eligible: !!(m.p1 && m.p1.status === "present") })));
-    const p2Rank = denseRank(list.map((m) => ({ k: m.key, score: num(m.p2?.total_score), eligible: !!(m.p2 && m.p2.status === "present") })));
-    const combinedRank = denseRank(list.map((m) => ({ k: m.key, score: m.grandTotal, eligible: m.maxMarks > 0 })));
-
     list.forEach((m) => {
-      m.rankP1 = p1Rank.get(m.key) ?? (m.p1 ? "ABS" : "—");
-      m.rankP2 = p2Rank.get(m.key) ?? (m.p2 ? "ABS" : "—");
-      m.rankCombined = combinedRank.get(m.key) ?? "ABS";
+      const rk = rankMap.get(m.key);
+      m.rankP1 = rankText(rk?.p1, m.p1 ? "ABS" : "—");
+      m.rankP2 = rankText(rk?.p2, m.p2 ? "ABS" : "—");
+      m.rankCombined = rankText(rk?.combined, "ABS");
     });
 
     // Sort: combined-rank ascending; ABS at the bottom
@@ -204,7 +193,7 @@ const AdminCombinedResultPage = () => {
       return (a.full_name ?? "").localeCompare(b.full_name ?? "");
     });
     return list;
-  }, [test1, test2, rows1, rows2]);
+  }, [test1, test2, rows1, rows2, rankMap]);
 
   // Stats per (subject,paper), per total, per grand
   const stats = useMemo(() => {
