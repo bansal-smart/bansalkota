@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useCenterAdmin } from "@/hooks/useCenterAdmin";
+import { canEditTest } from "@/lib/testPermissions";
 import { useConfirm } from "@/components/ConfirmDialog";
 import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
@@ -43,7 +45,8 @@ type QRow = {
 const AdminTestDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, isCenterAdmin } = useAuth();
+  const { primaryCenterId, isHq } = useCenterAdmin();
   const { confirm, ConfirmDialog } = useConfirm();
   const [tab, setTab] = useState<Tab>("summary");
   const [test, setTest] = useState<TestRow | null>(null);
@@ -194,6 +197,8 @@ const AdminTestDetailPage = () => {
     </div>
   );
 
+  const mayEdit = canEditTest(test as any, { isCenterAdmin, primaryCenterId, isHq });
+
   const togglePublish = async () => {
     const { error } = await supabase.from("tests").update({ is_published: !test.is_published }).eq("id", test.id);
     if (error) return toast.error(error.message);
@@ -279,19 +284,23 @@ const AdminTestDetailPage = () => {
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${test.is_published ? "bg-secondary/20 text-secondary" : "bg-amber-500/20 text-amber-600"}`}>
             {test.is_published ? "Published" : "Draft"}
           </span>
-          <button onClick={togglePublish} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
-            {test.is_published ? <><X className="h-3.5 w-3.5" /> Unpublish</> : <><Check className="h-3.5 w-3.5" /> Publish</>}
-          </button>
-          <Link to={`/admin/tests/${test.slug}/edit`} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground inline-flex items-center gap-1 hover:opacity-90">
-            <Pencil className="h-3.5 w-3.5" /> Edit
-          </Link>
+          {mayEdit && (
+            <>
+              <button onClick={togglePublish} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
+                {test.is_published ? <><X className="h-3.5 w-3.5" /> Unpublish</> : <><Check className="h-3.5 w-3.5" /> Publish</>}
+              </button>
+              <Link to={`/admin/tests/${test.slug}/edit`} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground inline-flex items-center gap-1 hover:opacity-90">
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Link>
+            </>
+          )}
           <Link to={`/tests/${test.slug}/take`} target="_blank" className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted inline-flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" /> Preview
           </Link>
           <Link to={`/admin/tests/${test.slug}/result`} className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground inline-flex items-center gap-1 hover:opacity-90">
             <FileSpreadsheet className="h-3.5 w-3.5" /> Result Sheet
           </Link>
-          {isSuperAdmin && (
+          {isSuperAdmin && mayEdit && (
             <button onClick={deleteTest} className="rounded-lg border border-destructive/30 text-destructive px-3 py-1.5 text-xs font-semibold hover:bg-destructive/10 inline-flex items-center gap-1">
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </button>
@@ -346,6 +355,7 @@ const AdminTestDetailPage = () => {
 
       {tab === "questions" && (
         <div className="space-y-3">
+          {mayEdit && (
           <div className="flex justify-end gap-2 flex-wrap">
             <button onClick={() => setShowImport(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted">
               <Upload className="h-4 w-4" /> Master import
@@ -375,6 +385,7 @@ const AdminTestDetailPage = () => {
               </button>
             )}
           </div>
+          )}
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
@@ -404,6 +415,9 @@ const AdminTestDetailPage = () => {
                     <td className="px-3 py-2 text-xs text-muted-foreground">{q.subject ?? "—"}</td>
                     <td className="px-3 py-2 text-center text-xs">+{q.marks_correct ?? 0}/{q.marks_wrong ?? 0}</td>
                     <td className="px-3 py-2 text-center">
+                      {!mayEdit ? (
+                        <span className="text-[10px] text-muted-foreground">{q.is_bonus ? "Bonus" : "—"}</span>
+                      ) : (
                       <button
                         onClick={() => toggleBonus(q)}
                         title={q.is_bonus ? "Remove bonus" : "Mark as bonus (award full marks to all)"}
@@ -415,8 +429,10 @@ const AdminTestDetailPage = () => {
                       >
                         <Sparkles className="h-3 w-3" /> {q.is_bonus ? "On" : "Off"}
                       </button>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right">
+                      {mayEdit && (
                       <div className="inline-flex items-center gap-1">
                         <button
                           onClick={() => setEditingAnswerKey(q)}
@@ -427,6 +443,7 @@ const AdminTestDetailPage = () => {
                         </button>
                         <button onClick={() => deleteQuestion(q)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))}

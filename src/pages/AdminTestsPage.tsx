@@ -7,6 +7,7 @@ import useDebouncedValue from "@/hooks/useDebouncedValue";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { scopeQueryToCentre } from "@/lib/centreScope";
+import { canEditTest } from "@/lib/testPermissions";
 import { filterBatchesForCentre, getCentreVisibleBatchIds, type BatchVisibility } from "@/lib/batchVisibility";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { usePagination } from "@/hooks/usePagination";
@@ -28,6 +29,8 @@ type AdminTest = {
   starts_at: string | null;
   ends_at: string | null;
   cbt_allowed_batch_ids: string[] | null;
+  centre_id: string | null;
+  is_global: boolean;
 };
 
 type BatchOpt = { id: string; name: string; visibility: BatchVisibility };
@@ -51,7 +54,7 @@ const STATUS_LABEL: Record<Exclude<StatusFilter, "all">, string> = {
 
 const AdminTestsPage = () => {
   const { user, isSuperAdmin, isCenterAdmin } = useAuth();
-  const { primaryCenterId, loading: centreLoading } = useCenterAdmin();
+  const { primaryCenterId, isHq, loading: centreLoading } = useCenterAdmin();
   const { confirm, ConfirmDialog } = useConfirm();
   const navigate = useNavigate();
   const [tests, setTests] = useState<AdminTest[]>([]);
@@ -66,6 +69,7 @@ const AdminTestsPage = () => {
   // `Authenticated can view published tests` matches for every logged-in user,
   // so RLS alone would show a centre admin every other centre's tests.
   const scopeCentreId = isCenterAdmin ? primaryCenterId : null;
+  const mayEdit = (t: AdminTest) => canEditTest(t, { isCenterAdmin, primaryCenterId, isHq });
 
   const load = async () => {
     setLoading(true);
@@ -75,7 +79,7 @@ const AdminTestsPage = () => {
         supabase
           .from("tests")
           .select(
-            "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids",
+            "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids, centre_id, is_global",
           ),
         scopeCentreId,
         { globalFlagColumn: "is_global", batchOverlap: { column: "cbt_allowed_batch_ids", ids: visibleBatchIds } },
@@ -321,9 +325,11 @@ const AdminTestsPage = () => {
                         <a href={`/tests/${t.slug || t.id}/take`} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted transition-colors" title="Preview">
                           <Eye className="h-3.5 w-3.5" />
                         </a>
-                        <Link to={`/admin/tests/${t.slug || t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Link>
+                        {mayEdit(t) && (
+                          <Link to={`/admin/tests/${t.slug || t.id}/edit`} className="rounded-md p-1.5 text-foreground hover:bg-muted transition-colors" title="Edit test">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Link>
+                        )}
                         <button
                           onClick={() => duplicateTest(t)}
                           disabled={duplicatingId === t.id}
@@ -339,7 +345,7 @@ const AdminTestsPage = () => {
                         <Link to={`/admin/tests/${t.slug || t.id}/result`} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Result sheet">
                           <FileSpreadsheet className="h-3.5 w-3.5" />
                         </Link>
-                        {!t.is_published ? (
+                        {mayEdit(t) && (!t.is_published ? (
                           <button onClick={() => togglePublish(t, true)} className="rounded-md p-1.5 text-secondary hover:bg-secondary/10">
                             <Check className="h-3.5 w-3.5" />
                           </button>
@@ -347,8 +353,8 @@ const AdminTestsPage = () => {
                           <button onClick={() => togglePublish(t, false)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10">
                             <X className="h-3.5 w-3.5" />
                           </button>
-                        )}
-                        {isSuperAdmin && (
+                        ))}
+                        {isSuperAdmin && mayEdit(t) && (
                           <button
                             onClick={() => deleteTest(t)}
                             className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"

@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { resolveContentOwnership } from "@/lib/centreOwnership";
+import { canEditTest } from "@/lib/testPermissions";
 import { filterBatchesForCentre, type BatchVisibility } from "@/lib/batchVisibility";
 import QuestionBankPanel from "@/components/QuestionBankPanel";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
@@ -185,7 +186,7 @@ const DropZone = ({ children, empty }: { children: React.ReactNode; empty: boole
 const CreateTestPage = () => {
   const { exams: examList } = useExams();
   const { user, isCenterAdmin } = useAuth();
-  const { primaryCenterId } = useCenterAdmin();
+  const { primaryCenterId, isHq, loading: centreLoading } = useCenterAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ testId?: string; slug?: string }>();
@@ -333,6 +334,7 @@ const CreateTestPage = () => {
   // Load existing test for edit mode (by slug or id)
   useEffect(() => {
     if (!isEditMode) return;
+    if (isCenterAdmin && centreLoading) return;
     let ignore = false;
     (async () => {
       const baseQ = supabase.from("tests").select("*");
@@ -342,8 +344,8 @@ const CreateTestPage = () => {
         ? await baseQ.eq("id", useId).maybeSingle()
         : await baseQ.eq("slug", slugParam!).maybeSingle();
       if (ignore) return;
-      if (!test || (isCenterContext && (test as any).centre_id !== primaryCenterId)) {
-        toast.error("Test not found");
+      if (!test || (isCenterContext && (test as any).centre_id !== primaryCenterId) || (isCenterAdmin && !canEditTest(test as any, { isCenterAdmin, primaryCenterId, isHq }))) {
+        toast.error(test ? "You can't edit this test" : "Test not found");
         navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
         return;
       }
@@ -487,7 +489,7 @@ const CreateTestPage = () => {
       setLoading(false);
     })();
     return () => { ignore = true; };
-  }, [isEditMode, slugParam, testIdParam, isAdminContext, isCenterContext, primaryCenterId, navigate, reloadKey]);
+  }, [isEditMode, slugParam, testIdParam, isAdminContext, isCenterContext, primaryCenterId, isCenterAdmin, isHq, centreLoading, navigate, reloadKey]);
 
   const updateQ = (i: number, patch: Partial<DraftQuestion>) => {
     const next = [...questions];
