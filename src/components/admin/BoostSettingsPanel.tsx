@@ -2,7 +2,15 @@ import { useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, Settings as SettingsIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { BOOST_SETTINGS_ID } from "@/hooks/useBoostSettings";
+import { BOOST_SETTINGS_ID, BOOST_CARD_DEFAULTS } from "@/hooks/useBoostSettings";
+
+const CARD_FIELDS: { key: keyof typeof BOOST_CARD_DEFAULTS; label: string; hint?: string }[] = [
+  { key: "card_badge", label: "Badge" },
+  { key: "card_title", label: "Title" },
+  { key: "card_scholarship", label: "Scholarship text", hint: 'Shown as "Up to …"' },
+  { key: "card_class_range", label: "Class range", hint: 'Shown as "Open to …"' },
+  { key: "card_cta_label", label: "Button label" },
+];
 
 type Row = {
   id: string;
@@ -19,6 +27,7 @@ export default function BoostSettingsPanel() {
   const [price, setPrice] = useState(99);
   const [time, setTime] = useState("18:00");
   const [daysBefore, setDaysBefore] = useState(1);
+  const [card, setCard] = useState<Record<string, string>>({ ...BOOST_CARD_DEFAULTS });
 
   useEffect(() => {
     (async () => {
@@ -34,6 +43,9 @@ export default function BoostSettingsPanel() {
         setPrice(r.price_inr ?? 99);
         setTime((r.apply_deadline_time ?? "18:00:00").slice(0, 5));
         setDaysBefore(r.apply_deadline_days_before ?? 1);
+        setCard(Object.fromEntries(
+          CARD_FIELDS.map((f) => [f.key, (r as any)[f.key] || BOOST_CARD_DEFAULTS[f.key]]),
+        ));
       }
       setLoading(false);
     })();
@@ -42,17 +54,25 @@ export default function BoostSettingsPanel() {
   const save = async () => {
     setSaving(true);
     const clean = Array.from(new Set(dates.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))).sort();
-    const { error } = await supabase
+    const cardClean = Object.fromEntries(
+      CARD_FIELDS.map((f) => [f.key, card[f.key]?.trim() || BOOST_CARD_DEFAULTS[f.key]]),
+    );
+    const { data, error } = await supabase
       .from("boost_settings" as any)
       .update({
         exam_dates: clean,
         price_inr: price,
         apply_deadline_time: time.length === 5 ? `${time}:00` : time,
         apply_deadline_days_before: daysBefore,
+        ...cardClean,
       })
-      .eq("id", BOOST_SETTINGS_ID);
+      .eq("id", BOOST_SETTINGS_ID)
+      .select("id");
     setSaving(false);
     if (error) return toast.error(error.message);
+    // RLS blocks silently (0 rows, no error) for users without write access.
+    if (!data || data.length === 0) return toast.error("Not saved — you don't have permission to edit BOOST settings.");
+    setCard(cardClean as Record<string, string>);
     setDates(clean);
     toast.success("BOOST settings saved");
   };
@@ -71,6 +91,25 @@ export default function BoostSettingsPanel() {
         <SettingsIcon className="h-5 w-5 text-bansal-orange" />
         <h2 className="font-bold text-foreground">BOOST Settings</h2>
         <span className="text-xs text-muted-foreground">Drives landing CTA, /boost page, and registration price.</span>
+      </div>
+
+      <div className="mb-5">
+        <label className="text-xs font-semibold text-muted-foreground">Card text (landing page, course pages, /boost)</label>
+        <div className="grid md:grid-cols-3 gap-4 mt-2">
+          {CARD_FIELDS.map((f) => (
+            <div key={f.key}>
+              <label className="text-xs text-muted-foreground">
+                {f.label}
+                {f.hint && <span className="ml-1 opacity-70">({f.hint})</span>}
+              </label>
+              <input
+                value={card[f.key] ?? ""}
+                onChange={(e) => setCard((c) => ({ ...c, [f.key]: e.target.value }))}
+                className="w-full mt-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 mb-5">

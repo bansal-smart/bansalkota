@@ -9,6 +9,19 @@ export type BoostSettings = {
   price_inr: number;
   apply_deadline_time: string; // HH:MM:SS
   apply_deadline_days_before: number;
+  card_badge: string;
+  card_title: string;
+  card_scholarship: string;
+  card_class_range: string;
+  card_cta_label: string;
+};
+
+export const BOOST_CARD_DEFAULTS = {
+  card_badge: "BOOST 2026",
+  card_title: "Bansal Open Opportunity Scholarship Test",
+  card_scholarship: "90% Scholarship",
+  card_class_range: "Class V to XII",
+  card_cta_label: "Explore Now",
 };
 
 const DEFAULTS: BoostSettings = {
@@ -17,6 +30,7 @@ const DEFAULTS: BoostSettings = {
   price_inr: 99,
   apply_deadline_time: "18:00:00",
   apply_deadline_days_before: 2,
+  ...BOOST_CARD_DEFAULTS,
 };
 
 // Parse "YYYY-MM-DD" as a local-noon Date to avoid TZ off-by-one
@@ -63,7 +77,14 @@ export function useBoostSettings() {
         .eq("id", BOOST_SETTINGS_ID)
         .maybeSingle();
       if (cancelled) return;
-      if (data) setSettings(data as unknown as BoostSettings);
+      if (data) {
+        const row = data as unknown as BoostSettings;
+        // Blank card fields fall back to defaults so a card never renders empty.
+        const card = Object.fromEntries(
+          Object.entries(BOOST_CARD_DEFAULTS).map(([k, v]) => [k, (row as any)[k]?.trim() || v]),
+        );
+        setSettings({ ...row, ...card });
+      }
       setLoading(false);
     })();
     return () => {
@@ -101,6 +122,13 @@ export function useBoostSettings() {
     loading,
     settings,
     priceInr: settings.price_inr,
+    card: {
+      badge: settings.card_badge,
+      title: settings.card_title,
+      scholarship: settings.card_scholarship,
+      classRange: settings.card_class_range,
+      ctaLabel: settings.card_cta_label,
+    },
     examDates,
     examDateLabels: examDates.map(formatDate),
     nextExamDate,

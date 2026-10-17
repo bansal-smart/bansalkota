@@ -39,7 +39,13 @@ export const useTestSeriesList = (exam?: string) => {
         .eq("is_published", true)
         .order("is_featured", { ascending: false })
         .order("sort_order", { ascending: true });
-      if (exam && exam !== "All") q = q.eq("target_exam", exam);
+      if (exam && exam !== "All") {
+        // Legacy "IIT-JEE" series (pre-split) show under both JEE filters.
+        const isJee = exam === "JEE (Main)" || exam === "JEE Advanced";
+        q = isJee
+          ? q.in("target_exam", [exam, "IIT-JEE"])
+          : q.eq("target_exam", exam);
+      }
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as TestSeriesRow[];

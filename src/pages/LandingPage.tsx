@@ -527,12 +527,12 @@ const LandingPage = () => {
         />
         <div className="relative container mx-auto px-4 grid lg:grid-cols-2 gap-8 items-center">
           <div>
-            <BansalBadge tone="orange">BOOST 2026</BansalBadge>
+            <BansalBadge tone="orange">{boost.card.badge}</BansalBadge>
             <h2 className="mt-4 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight">
-              Bansal Open Opportunity Scholarship Test
+              {boost.card.title}
             </h2>
             <p className="mt-4 text-sm md:text-base text-white/85">
-              Up to <span className="text-bansal-orange font-bold">90% Scholarship</span>. Open to Class V to XII. Just{" "}
+              Up to <span className="text-bansal-orange font-bold">{boost.card.scholarship}</span>. Open to {boost.card.classRange}. Just{" "}
               <span className="text-bansal-orange font-bold">₹{boost.priceInr}</span> to register.
             </p>
             {boost.examDateLabels.length > 0 && (
@@ -554,7 +554,7 @@ const LandingPage = () => {
               className="inline-block"
             >
               <BansalButton variant="cta" className="text-base px-8 py-4">
-                Explore Now <ArrowRight className="h-5 w-5" />
+                {boost.card.ctaLabel} <ArrowRight className="h-5 w-5" />
               </BansalButton>
             </Link>
             {boost.applyBeforeLabel && <p className="mt-3 text-xs text-white/70">{boost.applyBeforeLabel}</p>}

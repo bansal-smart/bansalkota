@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Loader2, Plus, Trash2, ChevronUp, ChevronDown, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,6 +74,7 @@ function AddButton({ onClick, label }: { onClick: () => void; label: string }) {
 }
 
 export default function BoostContentPanel() {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<BoostContent>(DEFAULTS);
@@ -93,12 +95,16 @@ export default function BoostContentPanel() {
 
   const save = async () => {
     setSaving(true);
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("boost_page_content" as any)
       .update({ content: draft })
-      .eq("id", BOOST_CONTENT_ID);
+      .eq("id", BOOST_CONTENT_ID)
+      .select("id");
     setSaving(false);
     if (error) return toast.error(error.message);
+    // RLS blocks silently (0 rows, no error) for users without write access.
+    if (!data || data.length === 0) return toast.error("Not saved — you don't have permission to edit BOOST content.");
+    await queryClient.invalidateQueries({ queryKey: ["boost_page_content"] });
     toast.success("BOOST page content saved");
   };
 

@@ -199,7 +199,9 @@ export function useBoostContent() {
       const content = (data as any)?.content;
       return content ? { ...DEFAULTS, ...(content as BoostContent) } : DEFAULTS;
     },
-    staleTime: 10 * 60 * 1000,
+    // Short staleness + refetch on mount so superadmin edits reach visitors quickly.
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
   });
   return { content: query.data ?? DEFAULTS, loading: query.isPending };
 }

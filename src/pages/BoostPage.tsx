@@ -56,7 +56,7 @@ export default function BoostPage() {
     <div className="min-h-screen bg-background">
       <Seo
         title="BOOST Exam 2026 | Bansal Scholarship Test"
-        description={`Register for BOOST, the Bansal Open Opportunity Scholarship Test. Up to 90% scholarship for Class V–XII students.${boost.nextExamDateLabel ? ` Next exam: ${boost.nextExamDateLabel}.` : ""} Check eligibility, exam dates and syllabus.`}
+        description={`Register for BOOST, the Bansal Open Opportunity Scholarship Test. Up to ${boost.card.scholarship} for ${boost.card.classRange} students.${boost.nextExamDateLabel ? ` Next exam: ${boost.nextExamDateLabel}.` : ""} Check eligibility, exam dates and syllabus.`}
         path="/boost"
         jsonLd={{
           "@context": "https://schema.org",
@@ -95,7 +95,7 @@ export default function BoostPage() {
             <p className="text-lg md:text-xl text-white/85 mb-8 max-w-2xl leading-relaxed">
               {banner?.subheading || (
                 <>
-                  Win up to <span className="text-bansal-orange font-bold">100% scholarship</span> on India's most
+                  Win up to <span className="text-bansal-orange font-bold">{boost.card.scholarship}</span> on India's most
                   trusted JEE / NEET coaching at Bansal Classes, Kota. Just{" "}
                   <span className="font-bold">₹{boost.priceInr}</span> to register.
                 </>

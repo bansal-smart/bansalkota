@@ -360,13 +360,13 @@ const CourseDetailPage = () => {
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <span className="inline-flex items-center rounded-full bg-bansal-orange px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-                    BOOST 2026
+                    {boost.card.badge}
                   </span>
                   <h3 className="mt-3 font-display text-xl font-extrabold leading-tight sm:text-2xl">
-                    Bansal Open Opportunity Scholarship Test
+                    {boost.card.title}
                   </h3>
                   <p className="mt-2 text-sm text-white/85">
-                    Up to <span className="font-bold text-bansal-orange">90% Scholarship</span>. Open to Class V to XII. Just{" "}
+                    Up to <span className="font-bold text-bansal-orange">{boost.card.scholarship}</span>. Open to {boost.card.classRange}. Just{" "}
                     <span className="font-bold text-bansal-orange">₹{boost.priceInr}</span> to register.
                   </p>
                   {boost.examDateLabels.length > 0 && (
@@ -385,7 +385,7 @@ const CourseDetailPage = () => {
                     to="/boost"
                     className="inline-flex items-center gap-2 rounded-lg bg-bansal-orange px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-bansal-orange-dark"
                   >
-                    Explore Now <ArrowRight className="h-4 w-4" />
+                    {boost.card.ctaLabel} <ArrowRight className="h-4 w-4" />
                   </Link>
                   {boost.applyBeforeLabel && (
                     <p className="mt-2 text-[11px] text-white/70">{boost.applyBeforeLabel}</p>

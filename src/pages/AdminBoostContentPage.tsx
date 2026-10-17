@@ -1,14 +1,11 @@
 import { FileText, ShieldAlert } from "lucide-react";
 import BoostContentPanel from "@/components/admin/BoostContentPanel";
 import { useAuth } from "@/context/AuthContext";
-import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 
 const AdminBoostContentPage = () => {
   const { isSuperAdmin } = useAuth();
-  const { isHq } = useCenterAdmin();
-  // Only the HQ (Kota) centre admin and super admins manage this page —
-  // matches the is_hq_centre_admin() RLS on boost_page_content.
-  const canManage = isHq || isSuperAdmin;
+  // Only super admins manage this page — matches the RLS on boost_page_content.
+  const canManage = isSuperAdmin;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -28,7 +25,7 @@ const AdminBoostContentPage = () => {
           <ShieldAlert className="h-5 w-5 text-bansal-orange shrink-0" />
           <div>
             <p className="font-semibold text-foreground">Not available for your account</p>
-            <p>The BOOST page is managed by the Kota HQ centre admin.</p>
+            <p>The BOOST page is managed by the super admin.</p>
           </div>
         </div>
       )}

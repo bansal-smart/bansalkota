@@ -42,7 +42,7 @@ const PAYMENT_OPTIONS = ["all", "pending", "paid", "failed"] as const;
 const EXAM_MODE_OPTIONS = ["all", "Online", "Offline"] as const;
 
 const AdminBoostPage = () => {
-  const { isCenterAdmin, isStaff } = useAuth();
+  const { isCenterAdmin, isStaff, isSuperAdmin } = useAuth();
   const { confirm, ConfirmDialog } = useConfirm();
   const [rows, setRows] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,10 @@ const AdminBoostPage = () => {
     if (classFilter !== "all") query = query.eq("class_level", classFilter);
     if (examModeFilter !== "all") query = query.eq("exam_mode", examModeFilter);
     if (examSlotFilter !== "all") query = query.eq("exam_slot", examSlotFilter);
-    if (fromDate) query = query.gte("created_at", `${fromDate}T00:00:00`);
+    // Day boundaries are the admin's local midnight, sent as UTC instants. A bare
+    // "YYYY-MM-DDT00:00:00" is read as UTC by Postgres and shifts the range
+    // (e.g. IST leads before 05:30 on the first day were dropped).
+    if (fromDate) query = query.gte("created_at", new Date(`${fromDate}T00:00:00`).toISOString());
     if (toDate) {
       const end = new Date(`${toDate}T00:00:00`);
       end.setDate(end.getDate() + 1);
@@ -95,6 +98,7 @@ const AdminBoostPage = () => {
       .from("boost_registrations")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .range(page * pageSize, page * pageSize + pageSize - 1)),
       supabase.from("centres").select("id, city, area").order("city"),
       supabase.from("boost_registrations").select("city, state, class_level, exam_slot").limit(10000),
@@ -173,11 +177,13 @@ const AdminBoostPage = () => {
         .from("boost_registrations")
         .select("*")
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false }) // unique tiebreaker so pages never skip/duplicate rows
         .range(from, from + 999));
       if (error) return toast.error(error.message);
       exportRows.push(...((data ?? []) as Registration[]));
-      if (!data || data.length < 1000) break;
-      from += 1000;
+      // Advance by what was actually returned: the API may cap pages below 1000 rows.
+      if (!data || data.length === 0) break;
+      from += data.length;
     }
     const headers = [
       "admit_card_number","full_name","email","phone","whatsapp","date_of_birth","class_level","target_exam",
@@ -226,7 +232,7 @@ const AdminBoostPage = () => {
 
       {/* Exam dates/price and syllabus resources are global (not per-centre) —
           only HQ admins manage them; centre staff only work their own leads below. */}
-      {!isCenterAdmin && (
+      {isSuperAdmin && !isCenterAdmin && (
         <>
           <BoostSettingsPanel />
           <BoostSyllabusPanel />

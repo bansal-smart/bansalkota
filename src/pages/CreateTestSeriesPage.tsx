@@ -13,7 +13,11 @@ import TestSeriesImagesEditor from "@/components/admin/TestSeriesImagesEditor";
 
 const MODE_OPTIONS = ["Online", "Offline", "Hybrid"];
 const LANGUAGE_OPTIONS = ["English", "Hindi", "English / Hindi"];
-const EXAM_OPTIONS = ["IIT-JEE", "NEET", "Foundation", "Other"];
+// Must match the filter chips on TestSeriesCatalogPage (matched on target_exam).
+const EXAM_OPTIONS = ["JEE (Main)", "JEE Advanced", "NEET", "Foundation", "Other"];
+// Series saved before the JEE split carry "IIT-JEE"; map them onto a current option.
+const normalizeExam = (v: string | null | undefined) =>
+  !v || v === "IIT-JEE" ? "JEE (Main)" : v;
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
@@ -31,7 +35,7 @@ const CreateTestSeriesPage = () => {
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [exam, setExam] = useState("IIT-JEE");
+  const [exam, setExam] = useState("JEE (Main)");
   const [subject, setSubject] = useState("");
   const [subjectInput, setSubjectInput] = useState("");
   const [subjectsCovered, setSubjectsCovered] = useState<string[]>([]);
@@ -67,7 +71,7 @@ const CreateTestSeriesPage = () => {
       setShortDesc(r.short_description ?? "");
       setDescription(r.description ?? "");
       setDescriptionHtml(r.description_html ?? "");
-      setExam(r.target_exam ?? "IIT-JEE");
+      setExam(normalizeExam(r.target_exam));
       setSubject(r.subject ?? "");
       setSubjectsCovered((r.subjects_covered as string[] | null) ?? []);
       setTotalTests(Number(r.total_tests ?? 0));
