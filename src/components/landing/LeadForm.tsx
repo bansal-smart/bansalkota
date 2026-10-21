@@ -83,7 +83,7 @@ export default function LeadForm({ config = {}, compact = false }: Props) {
   return (
     <form
       onSubmit={submit}
-      className={`rounded-xl bg-card p-5 shadow-xl ring-1 ring-border ${compact ? "" : "lg:p-6"}`}
+      className={`rounded-xl bg-form p-5 shadow-xl ring-1 ring-border ${compact ? "" : "lg:p-6"}`}
       id="lead-form"
     >
       <div className="mb-4">

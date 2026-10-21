@@ -275,7 +275,7 @@ export default function AlumniPage() {
                         <div
                           className={`hidden md:block absolute top-6 ${dot} h-3.5 w-3.5 rounded-full bg-bansal-orange ring-4 ring-bansal-cream`}
                         />
-                        <div className="bg-white rounded-3xl border border-border p-6 md:p-7 shadow-sm hover:shadow-xl hover:border-bansal-orange/40 transition-all">
+                        <div className="bg-card rounded-3xl border border-border p-6 md:p-7 shadow-sm hover:shadow-xl hover:border-bansal-orange/40 transition-all">
                           <div className="flex items-baseline gap-3 flex-wrap">
                             <span className="font-display text-3xl md:text-4xl font-extrabold text-bansal-orange">
                               {decadeLabel(decade)}
@@ -391,7 +391,7 @@ export default function AlumniPage() {
               {filtered.map((a) => (
                 <article
                   key={a.id}
-                  className="group relative rounded-2xl border border-border bg-white p-5 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl"
+                  className="group relative rounded-2xl border border-border bg-card p-5 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl"
                 >
                   <div>
                     {a.rank_label && (

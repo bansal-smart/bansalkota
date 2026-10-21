@@ -173,7 +173,7 @@ const CentreUpdateDetailPage = () => {
                 <Link
                   key={r.id}
                   to={`/centres/${slug}/updates/${r.id}`}
-                  className="group rounded-xl border border-border bg-white p-4 hover:shadow-md hover:border-bansal-orange/40 transition"
+                  className="group rounded-xl border border-border bg-card p-4 hover:shadow-md hover:border-bansal-orange/40 transition"
                 >
                   {r.image_url && (
                     <img

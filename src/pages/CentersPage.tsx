@@ -145,7 +145,7 @@ export default function CentersPage() {
                 <Link
                   key={c.slug}
                   to={`/centres/${c.slug}`}
-                  className="group block rounded-2xl overflow-hidden bg-white border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                  className="group block rounded-2xl overflow-hidden bg-card border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
                   {/* Thumbnail */}
                   <div className="relative aspect-[16/9] overflow-hidden bg-bansal-blue">

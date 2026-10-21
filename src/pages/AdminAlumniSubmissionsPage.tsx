@@ -212,7 +212,7 @@ export default function AdminAlumniSubmissionsPage() {
           <p className="text-bansal-gray text-sm">No submissions match these filters.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-border bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-bansal-cream/40 text-xs uppercase tracking-wider text-bansal-blue/70">
               <tr>

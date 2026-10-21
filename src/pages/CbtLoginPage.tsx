@@ -112,7 +112,7 @@ const CbtLoginPage = () => {
       {/* Right: sign-in form */}
       <div className="flex-1 flex items-center justify-center p-6 lg:p-10 bg-gradient-to-br from-white via-orange-50/40 to-white">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border-2 border-border bg-white shadow-xl overflow-hidden">
+          <div className="rounded-2xl border-2 border-border bg-form shadow-xl overflow-hidden">
             <div className="px-7 pt-7 pb-2">
               <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-bansal-blue">
                 <ShieldCheck className="h-3.5 w-3.5" /> Secure Sign-In

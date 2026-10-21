@@ -65,7 +65,7 @@ const AdminLoginPage = () => {
           <span className="text-2xl font-black font-display text-white">Bansal Classes</span>
         </Link>
 
-        <div className="rounded-2xl border border-white/10 bg-card p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-2xl border border-white/10 bg-form p-6 sm:p-8 shadow-2xl">
           <div className="mb-6 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15">
               <Lock className="h-5 w-5 text-primary" />

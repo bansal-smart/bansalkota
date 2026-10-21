@@ -642,7 +642,7 @@ const TestResultPage = () => {
                   rows={3}
                   maxLength={500}
                   placeholder="e.g. Lost internet connection during the test / wanted more practice on Mechanics…"
-                  className="mt-1.5 block w-full rounded-lg border border-border bg-card px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="mt-1.5 block w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </label>
               <div className="flex justify-end gap-2">

@@ -131,7 +131,7 @@ export const AdmissionEnquiryModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 space-y-3">
+      <div className="w-full max-w-md rounded-2xl bg-form p-6 space-y-3">
         <div className="flex items-start justify-between">
           <h3 className="font-display text-lg font-bold text-bansal-black">Admission Enquiry — {centerCity}</h3>
           <button onClick={onClose}>

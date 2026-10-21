@@ -186,8 +186,8 @@ export default function BoostRegistrationModal({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" />
-      <div className="relative w-full max-w-2xl bg-card rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
+      <div className="relative w-full max-w-2xl bg-form rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-form">
           <div>
             <h2 className="font-display text-xl font-bold text-bansal-black">BOOST {academicYear} Registration</h2>
             <p className="text-xs text-muted-foreground">Just ₹{priceInr} to reserve your scholarship.</p>

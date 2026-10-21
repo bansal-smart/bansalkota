@@ -107,7 +107,7 @@ const CentreGalleryPublicPage = () => {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
             <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No photos yet in this category.</p>
           </div>
@@ -117,7 +117,7 @@ const CentreGalleryPublicPage = () => {
               <button
                 key={p.id}
                 onClick={() => setLightbox(idx)}
-                className="group mb-3 block w-full break-inside-avoid overflow-hidden rounded-xl border border-border bg-white hover:shadow-lg transition-shadow"
+                className="group mb-3 block w-full break-inside-avoid overflow-hidden rounded-xl border border-border bg-card hover:shadow-lg transition-shadow"
               >
                 <div className="relative">
                   <img

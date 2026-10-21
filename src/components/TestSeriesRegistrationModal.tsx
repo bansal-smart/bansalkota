@@ -179,8 +179,8 @@ export default function TestSeriesRegistrationModal({ open, onClose, testSeries 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60" onClick={() => !submitting && onClose()} />
-      <div className="relative w-full max-w-lg bg-card rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-card">
+      <div className="relative w-full max-w-lg bg-form rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 flex items-center justify-between p-5 border-b border-border bg-form">
           <div>
             <h2 className="font-display text-xl font-bold text-bansal-black">Register for {testSeries.title}</h2>
             <p className="text-xs text-muted-foreground">Just a few details before you proceed to payment.</p>

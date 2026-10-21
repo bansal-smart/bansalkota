@@ -42,7 +42,7 @@ const UpcomingBatches = () => {
             <Link
               key={b?.id ?? i}
               to={b?.slug ? `/courses/${b.slug}` : "/courses"}
-              className="group rounded-2xl bg-white border border-border overflow-hidden hover-lift shadow-sm hover:shadow-xl transition-all"
+              className="group rounded-2xl bg-card border border-border overflow-hidden hover-lift shadow-sm hover:shadow-xl transition-all"
             >
               <div className="relative aspect-[16/9] bg-bansal-blue-light/40 overflow-hidden">
                 {b?.thumbnail_url ? (

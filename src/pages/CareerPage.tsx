@@ -163,7 +163,7 @@ const CareerPage = () => {
               <p className="text-bansal-gray text-sm">Thank you for applying to Bansal Classes. Our HR team will reach out shortly at <strong>{form.email}</strong>.</p>
             </BansalCard>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5 bg-white p-8 rounded-xl border border-border shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-5 bg-form p-8 rounded-xl border border-border shadow-sm">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="name">Full name *</Label>

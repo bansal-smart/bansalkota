@@ -88,7 +88,7 @@ const LandingCTAForm = () => {
           </ul>
         </div>
 
-        <div className="rounded-3xl bg-white text-bansal-black p-6 md:p-8 shadow-2xl">
+        <div className="rounded-3xl bg-form text-bansal-black p-6 md:p-8 shadow-2xl">
           {done ? (
             <div className="py-10 text-center">
               <div className="h-16 w-16 rounded-full bg-emerald-100 grid place-items-center mx-auto">

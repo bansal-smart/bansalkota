@@ -277,7 +277,7 @@ export default function LeadershipDetailPage() {
                   <Link
                     key={b.title}
                     to="/e-store"
-                    className="group h-full rounded-2xl bg-white border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl block"
+                    className="group h-full rounded-2xl bg-card border border-bansal-blue/10 p-4 hover:border-bansal-orange/40 hover:-translate-y-1 transition-all shadow-sm hover:shadow-xl block"
                   >
                     <div className="aspect-[2/3] overflow-hidden rounded-xl bg-gradient-to-br from-bansal-cream to-bansal-blue/5 mb-4 flex items-center justify-center p-3">
                       <img

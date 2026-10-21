@@ -367,7 +367,7 @@ const AdminCoursesPage = () => {
             onChange={(e) => setSearch(e.target.value)}
             disabled={reorderMode}
             placeholder={reorderMode ? "Search disabled in reorder mode" : "Search courses or educators..."}
-            className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none disabled:opacity-60"
+            className="w-full rounded-xl border border-border bg-background py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none disabled:opacity-60"
           />
         </div>
         <button

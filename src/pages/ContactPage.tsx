@@ -123,7 +123,7 @@ export default function ContactPage() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid lg:grid-cols-5 gap-8 items-start">
             {/* Form */}
-            <BansalCard className="lg:col-span-3 p-8">
+            <BansalCard className="lg:col-span-3 p-8 form-surface">
               {submitted ? (
                 <SubmissionSuccess
                   title="Thank you! Your message is on its way."

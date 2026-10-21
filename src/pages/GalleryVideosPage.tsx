@@ -70,7 +70,7 @@ const GalleryVideosPage = () => {
             <Loader2 className="h-6 w-6 animate-spin text-bansal-blue" />
           </div>
         ) : videos.length === 0 ? (
-          <div className="rounded-2xl bg-white border border-dashed border-border p-12 text-center text-muted-foreground">
+          <div className="rounded-2xl bg-card border border-dashed border-border p-12 text-center text-muted-foreground">
             No videos available yet.
           </div>
         ) : (
@@ -78,7 +78,7 @@ const GalleryVideosPage = () => {
             {videos.map((v) => (
               <div
                 key={v.id}
-                className="rounded-2xl bg-white border-2 border-bansal-blue/30 overflow-hidden shadow-sm flex flex-col"
+                className="rounded-2xl bg-card border-2 border-bansal-blue/30 overflow-hidden shadow-sm flex flex-col"
               >
                 <div className="relative flex items-center justify-center pt-3">
                   <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-10 bg-white rounded-full p-2 border-2 border-bansal-blue/30">

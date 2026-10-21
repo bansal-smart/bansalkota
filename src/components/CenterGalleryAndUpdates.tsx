@@ -64,7 +64,7 @@ export default function CenterGalleryAndUpdates({ centerId, slug }: { centerId: 
               {gallery.map((g) => (
                 <figure
                   key={g.id}
-                  className="group relative rounded-xl overflow-hidden border border-border bg-white"
+                  className="group relative rounded-xl overflow-hidden border border-border bg-card"
                 >
                   <img
                     src={g.image_url}
@@ -99,7 +99,7 @@ export default function CenterGalleryAndUpdates({ centerId, slug }: { centerId: 
               {updates.map((u) => (
                 <article
                   key={u.id}
-                  className="rounded-xl border border-border bg-white p-5 hover:shadow-md transition-shadow"
+                  className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                     <Calendar className="h-3.5 w-3.5 text-bansal-orange" />

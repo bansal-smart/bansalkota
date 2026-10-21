@@ -17,7 +17,7 @@ const AlbumCarousel = ({ images, title }: { images: AlbumImage[]; title: string 
   const visible = images.slice(start, start + perPage);
 
   return (
-    <section className="rounded-2xl bg-white border border-border shadow-sm p-6 md:p-8">
+    <section className="rounded-2xl bg-card border border-border shadow-sm p-6 md:p-8">
       <h2 className="text-center text-xl md:text-2xl font-bold text-bansal-blue mb-2">{title}</h2>
       <div className="mx-auto w-14 h-0.5 bg-bansal-orange/70 mb-6" />
       <div className="relative">
@@ -166,7 +166,7 @@ const GalleryImagesPage = () => {
             <Loader2 className="h-6 w-6 animate-spin text-bansal-blue" />
           </div>
         ) : albums.length === 0 ? (
-          <div className="rounded-2xl bg-white border border-dashed border-border p-12 text-center text-muted-foreground">
+          <div className="rounded-2xl bg-card border border-dashed border-border p-12 text-center text-muted-foreground">
             No image albums available yet.
           </div>
         ) : (

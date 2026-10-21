@@ -19,7 +19,8 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 7%;
 
-    --card: 0 0% 100%;
+    --card: 176.7 40.9% 91.4%;          /* #E0F2F1 — all cards */
+    --form: 231.4 43.8% 93.7%;          /* #E8EAF6 — all forms */
     --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
@@ -160,6 +161,9 @@
 
 .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Form containers use the form colour even when also a card */
+.form-surface { background: hsl(var(--form)) !important; }
 
 /* Bansal card with blue left accent */
 .bansal-card {

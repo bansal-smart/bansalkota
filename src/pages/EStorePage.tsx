@@ -95,7 +95,7 @@ const EStorePage = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={tab === "books" ? "Search books, authors..." : "Search module packs..."}
-              className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
+              className="w-full rounded-xl border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
             />
           </div>
           <select

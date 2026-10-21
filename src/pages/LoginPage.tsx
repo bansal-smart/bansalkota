@@ -208,7 +208,7 @@ const LoginPage = () => {
       </div>
 
       {/* Right form panel */}
-      <div className="flex flex-1 items-center justify-center bg-white p-6">
+      <div className="flex flex-1 items-center justify-center bg-form p-6">
         <div className="w-full max-w-sm animate-fade-in-up">
           <Link to="/" className="inline-flex items-center gap-1.5 mb-6 text-sm font-medium text-bansal-gray hover:text-bansal-blue">
             <ArrowLeft className="h-4 w-4" /> Back to home

@@ -71,7 +71,7 @@ const CentreUpdatesPublicPage = () => {
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center">
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
             <Megaphone className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No updates posted yet.</p>
           </div>
@@ -81,7 +81,7 @@ const CentreUpdatesPublicPage = () => {
               <Link
                 key={u.id}
                 to={`/centres/${slug}/updates/${u.id}`}
-                className="group block rounded-xl border border-border bg-white p-5 hover:shadow-md hover:border-bansal-orange/40 transition"
+                className="group block rounded-xl border border-border bg-card p-5 hover:shadow-md hover:border-bansal-orange/40 transition"
               >
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                   <Calendar className="h-3.5 w-3.5 text-bansal-orange" />

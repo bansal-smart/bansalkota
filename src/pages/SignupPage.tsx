@@ -146,7 +146,7 @@ const SignupPage = () => {
       </div>
 
       {/* Right Panel */}
-      <div className="flex flex-1 items-center justify-center bg-card p-8 overflow-y-auto">
+      <div className="flex flex-1 items-center justify-center bg-form p-8 overflow-y-auto">
         <div className="w-full max-w-sm">
           <Link to="/" className="inline-flex items-center gap-1.5 mb-4 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to home
@@ -167,7 +167,7 @@ const SignupPage = () => {
 
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-            <div className="relative flex justify-center"><span className="bg-card px-2 text-xs text-muted-foreground">or sign up with email</span></div>
+            <div className="relative flex justify-center"><span className="bg-form px-2 text-xs text-muted-foreground">or sign up with email</span></div>
           </div>
 
           <div className="space-y-3">
@@ -175,30 +175,30 @@ const SignupPage = () => {
               <label className="text-sm font-medium text-foreground">Full Name</label>
               <div className="relative mt-1">
                 <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input value={form.full_name} onChange={(e) => update("full_name", e.target.value)} type="text" placeholder="Enter your name" className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+                <input value={form.full_name} onChange={(e) => update("full_name", e.target.value)} type="text" placeholder="Enter your name" className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Phone Number</label>
               <div className="mt-1 flex gap-2">
-                <select value={form.countryCode} onChange={(e) => update("countryCode", e.target.value)} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground">
+                <select value={form.countryCode} onChange={(e) => update("countryCode", e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-medium text-foreground">
                   <option value="+91">IN +91</option>
                   <option value="+971">AE +971</option>
                 </select>
-                <input value={form.phone} onChange={(e) => update("phone", e.target.value.replace(/\D/g, ""))} type="tel" inputMode="numeric" maxLength={15} placeholder="Phone number" className="flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+                <input value={form.phone} onChange={(e) => update("phone", e.target.value.replace(/\D/g, ""))} type="tel" inputMode="numeric" maxLength={15} placeholder="Phone number" className="flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Email</label>
               <div className="relative mt-1">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input value={form.email} onChange={(e) => update("email", e.target.value)} type="email" placeholder="you@example.com" className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+                <input value={form.email} onChange={(e) => update("email", e.target.value)} type="email" placeholder="you@example.com" className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
               </div>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Password</label>
               <div className="relative mt-1">
-                <input value={form.password} onChange={(e) => update("password", e.target.value)} type={showPassword ? "text" : "password"} placeholder="Min 8 characters" className="w-full rounded-lg border border-border bg-card py-2.5 px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+                <input value={form.password} onChange={(e) => update("password", e.target.value)} type={showPassword ? "text" : "password"} placeholder="Min 8 characters" className="w-full rounded-lg border border-border bg-background py-2.5 px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -207,7 +207,7 @@ const SignupPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground">Target Exam</label>
-                <select value={form.target_exam} onChange={(e) => update("target_exam", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground">
+                <select value={form.target_exam} onChange={(e) => update("target_exam", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
                   <option>IIT JEE</option>
                   <option>NEET</option>
                   <option>Boards</option>
@@ -216,7 +216,7 @@ const SignupPage = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Class</label>
-                <select value={form.class_level} onChange={(e) => update("class_level", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground">
+                <select value={form.class_level} onChange={(e) => update("class_level", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
                   <option>Class 1</option>
                   <option>Class 2</option>
                   <option>Class 3</option>
@@ -238,12 +238,12 @@ const SignupPage = () => {
                 <label className="text-sm font-medium text-foreground">City</label>
                 <div className="relative mt-1">
                   <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input value={form.city} onChange={(e) => update("city", e.target.value)} type="text" placeholder="City" className="w-full rounded-lg border border-border bg-card py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
+                  <input value={form.city} onChange={(e) => update("city", e.target.value)} type="text" placeholder="City" className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none" />
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Country</label>
-                <select value={form.country} onChange={(e) => update("country", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground">
+                <select value={form.country} onChange={(e) => update("country", e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
                   <option>India</option>
                 </select>
               </div>
@@ -273,7 +273,7 @@ const SignupPage = () => {
                 <select
                   value={form.centre_id}
                   onChange={(e) => update("centre_id", e.target.value)}
-                  className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Choose your centre…</option>
                   {centers.map((c) => (

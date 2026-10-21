@@ -54,7 +54,7 @@ const CentresShowcase = () => {
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-xl bg-white border border-border animate-pulse" />
+              <div key={i} className="h-20 rounded-xl bg-card border border-border animate-pulse" />
             ))}
           </div>
         ) : Object.keys(byRegion).length === 0 && featured.length === 0 ? (
@@ -119,7 +119,7 @@ const CentresShowcase = () => {
                         <Link
                           key={c.id}
                           to={`/centres/${c.slug}`}
-                          className="group rounded-xl bg-white border border-border p-3 hover-lift shadow-sm hover:shadow-md hover:border-bansal-orange/40 transition-all"
+                          className="group rounded-xl bg-card border border-border p-3 hover-lift shadow-sm hover:shadow-md hover:border-bansal-orange/40 transition-all"
                         >
                           <div className="flex items-start gap-2">
                             <MapPin className="h-4 w-4 text-bansal-orange shrink-0 mt-0.5" />

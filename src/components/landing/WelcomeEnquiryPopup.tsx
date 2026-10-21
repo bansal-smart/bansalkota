@@ -73,7 +73,7 @@ const WelcomeEnquiryPopup = () => {
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : dismiss())}>
       <DialogContent className="p-0 overflow-hidden max-w-md border-0 bg-transparent shadow-2xl">
-        <div className="relative rounded-2xl overflow-hidden bg-white">
+        <div className="relative rounded-2xl overflow-hidden bg-form">
           {/* Header band */}
           <div className="relative bg-gradient-to-br from-bansal-blue via-bansal-blue to-[#0b1a33] text-white px-6 pt-6 pb-8">
             <div className="absolute inset-0 grid-texture opacity-30" />

@@ -218,7 +218,7 @@ const AboutPage = () => {
             </div>
 
             <div className="md:col-span-5">
-              <figure className="rounded-xl overflow-hidden bg-white shadow-md border border-border">
+              <figure className="rounded-xl overflow-hidden bg-card shadow-md border border-border">
                 <img
                   src={vkGehlot}
                   alt="Shri Bansal Sir with Shri Ashok Gehlot, former Chief Minister of Rajasthan"

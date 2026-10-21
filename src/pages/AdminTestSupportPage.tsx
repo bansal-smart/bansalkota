@@ -159,7 +159,7 @@ const AdminTestSupportPage = () => {
           {rows.map((r) => (
             <div
               key={r.id}
-              className={`rounded-xl border bg-white p-4 shadow-sm ${
+              className={`rounded-xl border bg-card p-4 shadow-sm ${
                 r.status === "open" ? "border-amber-300" : "border-neutral-200"
               }`}
             >

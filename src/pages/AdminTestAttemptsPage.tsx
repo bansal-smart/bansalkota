@@ -442,10 +442,10 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search student or test..."
-            className="w-full rounded-xl border border-border bg-card py-2 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            className="w-full rounded-xl border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
           <option value="all">All statuses</option>
           {effectiveTestId && <option value="not_attempted">Absent</option>}
           <option value="in_progress">In progress</option>
@@ -456,7 +456,7 @@ const AdminTestAttemptsPage = ({ testId, compact }: Props = {}) => {
           <Radio className={`h-3 w-3 ${liveConnected ? "animate-pulse" : ""}`} /> {liveConnected ? "Live" : "Offline"}
         </span>
         {!testId && (
-          <select value={testFilter} onChange={(e) => setTestFilter(e.target.value)} className="rounded-xl border border-border bg-card px-3 py-2 text-sm max-w-[220px]">
+          <select value={testFilter} onChange={(e) => setTestFilter(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm max-w-[220px]">
             <option value="all">All tests</option>
             {tests.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
           </select>

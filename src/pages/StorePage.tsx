@@ -28,7 +28,7 @@ const StorePage = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search courses..."
-          className="w-full rounded-xl border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+          className="w-full rounded-xl border border-border bg-background py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
         />
       </div>
 

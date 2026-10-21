@@ -53,7 +53,7 @@ const ResourcesTeaser = () => (
           <Link
             key={title}
             to={to}
-            className="group rounded-2xl bg-white border border-border p-5 hover-lift shadow-sm hover:shadow-xl transition-all flex flex-col"
+            className="group rounded-2xl bg-card border border-border p-5 hover-lift shadow-sm hover:shadow-xl transition-all flex flex-col"
           >
             <div className={`h-12 w-12 rounded-xl ${tone} text-white grid place-items-center shadow-md`}>
               <Icon className="h-6 w-6" />
