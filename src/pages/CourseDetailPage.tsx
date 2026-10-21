@@ -396,7 +396,7 @@ const CourseDetailPage = () => {
           </section>
 
           {/* Know More Details */}
-          <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <section className="rounded-2xl border border-border bg-white p-5 space-y-4">
             <h3 className="font-display text-lg font-black text-foreground">Know More Details</h3>
 
             {course.description_html ? (

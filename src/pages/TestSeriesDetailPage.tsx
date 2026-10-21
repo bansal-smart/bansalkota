@@ -137,7 +137,7 @@ const TestSeriesDetailPage = () => {
           </div>
 
           {item.description_html && (
-            <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="rounded-2xl border border-border bg-white p-6">
               <h2 className="font-display text-xl font-bold mb-4">Know More Details</h2>
               <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-th:bg-muted prose-th:p-2 prose-td:p-2 [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border" dangerouslySetInnerHTML={{ __html: item.description_html }} />
             </div>
