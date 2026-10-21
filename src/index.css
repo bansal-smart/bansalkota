@@ -19,8 +19,8 @@
     --background: 0 0% 100%;
     --foreground: 0 0% 7%;
 
-    --card: 176.7 40.9% 91.4%;          /* #E0F2F1 — all cards */
-    --form: 231.4 43.8% 93.7%;          /* #E8EAF6 — all forms */
+    --card: 174.0 41.7% 95.3%;          /* #EEF8F7 — #E0F2F1 at 55% over white */
+    --form: 232.5 44.4% 96.5%;          /* #F2F3FA — #E8EAF6 at 55% over white */
     --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;

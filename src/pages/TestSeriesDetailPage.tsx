@@ -102,7 +102,7 @@ const TestSeriesDetailPage = () => {
       </section>
 
       <section className="container mx-auto px-4 max-w-6xl py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           {carouselImages.length > 0 && (
             <HeroBannerCarousel banners={carouselImages} aspectRatio="2/1" badge="" />
           )}
@@ -139,7 +139,7 @@ const TestSeriesDetailPage = () => {
           {item.description_html && (
             <div className="rounded-2xl border border-border bg-card p-6">
               <h2 className="font-display text-xl font-bold mb-4">Know More Details</h2>
-              <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-table:border prose-th:bg-muted prose-th:p-2 prose-td:p-2 prose-td:border" dangerouslySetInnerHTML={{ __html: item.description_html }} />
+              <div className="prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-foreground/90 prose-li:text-foreground/90 prose-th:bg-muted prose-th:p-2 prose-td:p-2 [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:overflow-x-auto [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border" dangerouslySetInnerHTML={{ __html: item.description_html }} />
             </div>
           )}
         </div>
