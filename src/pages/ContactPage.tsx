@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Phone, MapPin, MessageCircle, Send, CheckCircle2, Loader2, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Send, CheckCircle2, Loader2, Clock, ChevronDown } from "lucide-react";
 import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { FloatingIcons, DotTexture, GlowBlob } from "@/components/bansal/BansalD
 import SubmissionSuccess from "@/components/SubmissionSuccess";
 import { sendConfirmation } from "@/lib/sendConfirmation";
 import Seo from "@/components/Seo";
+import { useFranchiseContacts } from "@/hooks/useFranchiseContacts";
 import { useContactChannels, type ContactChannel } from "@/hooks/useContactChannels";
 
 const contactSchema = z.object({
@@ -36,6 +37,7 @@ export default function ContactPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
   const { channels } = useContactChannels();
+  const { sections: franchiseSections } = useFranchiseContacts();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,6 +260,38 @@ export default function ContactPage() {
                     );
                   })}
                 </div>
+
+                <details className="group mt-4 border-t border-border pt-4">
+                  <summary className="flex cursor-pointer list-none items-center justify-between font-display text-base font-bold text-bansal-black [&::-webkit-details-marker]:hidden">
+                    Franchise
+                    <ChevronDown className="h-5 w-5 text-bansal-blue transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="mt-3 space-y-4">
+                    {franchiseSections.map((section) => (
+                      <div key={section.region}>
+                        <div className="text-xs font-bold uppercase tracking-wide text-bansal-orange">{section.region}</div>
+                        <div className="mt-1 space-y-1">
+                          {section.people.map((p) => (
+                            <a
+                              key={p.phone}
+                              href={`tel:+91${p.phone}`}
+                              className="flex items-center gap-3 rounded-lg p-3 hover:bg-bansal-blue-light transition-colors group/row"
+                            >
+                              <div className="h-9 w-9 shrink-0 rounded-lg bg-bansal-blue-light text-bansal-blue flex items-center justify-center group-hover/row:bg-bansal-blue group-hover/row:text-white transition-colors">
+                                <Phone className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-bansal-black">{p.name}</div>
+                                <div className="text-xs text-muted-foreground">{p.role}</div>
+                                <div className="text-sm font-semibold text-bansal-blue">+91 {p.phone}</div>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </BansalCard>
 
               <BansalCard>

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import type { ContactChannel } from "@/hooks/useContactChannels";
+import type { FranchiseContact } from "@/hooks/useFranchiseContacts";
 
 type PlatformSettings = {
   id: number;
@@ -28,6 +29,50 @@ const AdminSettingsPage = () => {
   const [channels, setChannels] = useState<ContactChannel[]>([]);
   const [channelsLoading, setChannelsLoading] = useState(true);
   const [addingChannel, setAddingChannel] = useState(false);
+  const [franchise, setFranchise] = useState<FranchiseContact[]>([]);
+  const [franchiseLoading, setFranchiseLoading] = useState(true);
+
+  const loadFranchise = async () => {
+    const { data, error } = await supabase
+      .from("franchise_contacts" as any)
+      .select("*")
+      .order("display_order", { ascending: true });
+    if (error) toast.error(error.message);
+    setFranchise((data ?? []) as unknown as FranchiseContact[]);
+    setFranchiseLoading(false);
+  };
+
+  const updateFranchise = async (id: string, patch: Partial<FranchiseContact>) => {
+    const prev = franchise;
+    setFranchise((fs) => fs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    const { error } = await supabase.from("franchise_contacts" as any).update(patch).eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setFranchise(prev);
+    }
+  };
+
+  const addFranchise = async (region = "") => {
+    const nextOrder = franchise.length ? Math.max(...franchise.map((c) => c.display_order)) + 1 : 0;
+    const { data, error } = await supabase
+      .from("franchise_contacts" as any)
+      .insert({ region: region || "New Region", name: "New Contact", role: "", phone: "", display_order: nextOrder })
+      .select("*")
+      .single();
+    if (error) return toast.error(error.message);
+    setFranchise((fs) => [...fs, data as unknown as FranchiseContact]);
+  };
+
+  const deleteFranchise = async (id: string) => {
+    if (!window.confirm("Remove this franchise contact from the public Contact page?")) return;
+    const prev = franchise;
+    setFranchise((fs) => fs.filter((c) => c.id !== id));
+    const { error } = await supabase.from("franchise_contacts" as any).delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setFranchise(prev);
+    }
+  };
 
   const loadChannels = async () => {
     const { data, error } = await supabase
@@ -51,6 +96,7 @@ const AdminSettingsPage = () => {
       setLoading(false);
     })();
     void loadChannels();
+    void loadFranchise();
   }, []);
 
   const updateChannel = async (id: string, patch: Partial<ContactChannel>) => {
@@ -281,6 +327,55 @@ const AdminSettingsPage = () => {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> Franchise Contacts</h3>
+            {!readOnly && (
+              <button type="button" onClick={() => addFranchise()} className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                <Plus className="h-3 w-3" /> Add contact
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">Shown in the "Franchise" dropdown under Direct Channels on the public Contact page. Contacts with the same region are grouped together.</p>
+          {franchiseLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+          ) : (
+            <div className="space-y-2">
+              {franchise.length === 0 && <div className="text-xs text-muted-foreground italic">No contacts yet. The built-in list is shown on the site until you add some.</div>}
+              {franchise.map((c) => (
+                <div key={c.id} className={`rounded-lg border border-border p-3 flex items-center gap-2 flex-wrap ${!c.is_active ? "opacity-50" : ""}`}>
+                  {([
+                    ["region", "Region (e.g. Kota H.O.)", "min-w-[150px]"],
+                    ["name", "Name", "min-w-[140px]"],
+                    ["role", "Designation", "min-w-[130px]"],
+                    ["phone", "10-digit phone", "min-w-[120px]"],
+                  ] as const).map(([key, placeholder, width]) => (
+                    <input
+                      key={key}
+                      value={c[key]}
+                      disabled={readOnly}
+                      onChange={(e) => setFranchise((fs) => fs.map((x) => (x.id === c.id ? { ...x, [key]: e.target.value } : x)))}
+                      onBlur={(e) => updateFranchise(c.id, { [key]: key === "phone" ? e.target.value.replace(/\D/g, "") : e.target.value.trim() })}
+                      placeholder={placeholder}
+                      className={`flex-1 ${width} rounded-md border border-border bg-background px-2 py-1.5 text-xs disabled:opacity-60`}
+                    />
+                  ))}
+                  {!readOnly && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span title={c.is_active ? "Shown on public page" : "Hidden from public page"}>
+                        <Toggle on={c.is_active} toggle={() => updateFranchise(c.id, { is_active: !c.is_active })} />
+                      </span>
+                      <button type="button" onClick={() => deleteFranchise(c.id)} title="Delete contact" className="p-1.5 rounded-md text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

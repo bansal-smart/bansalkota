@@ -869,8 +869,29 @@ const CreateTestPage = () => {
     if (res?.pending) toast.success(`Answer key changed: re-scored ${res.rescored ?? 0} submitted attempt(s).`);
   };
 
+  // Returns an error message when the schedule can't be saved as entered, else null.
+  // (An end date without an end time is stored as NO end date, so reject it.)
+  const scheduleError = (): string | null => {
+    if ((testDate && !startTime) || (!testDate && startTime)) {
+      return "Choose both a test start date and start time";
+    }
+    if ((endDate && !endTime) || (!endDate && endTime && !testDate)) {
+      return "Choose both a test end date and end time";
+    }
+    if (testDate && startTime && endTime) {
+      const startMs = new Date(`${testDate}T${startTime}:00`).getTime();
+      const endMs = new Date(`${endDate || testDate}T${endTime}:00`).getTime();
+      if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+        return "End date and time must be after the start date and time";
+      }
+    }
+    return null;
+  };
+
   const publishImportedDraft = async (publish = true) => {
     if (!resolvedTestId) return toast.error("Create or import into a test first");
+    const schedErr = scheduleError();
+    if (schedErr) return toast.error(schedErr);
 
     setSubmitting(true);
     try {
@@ -1571,7 +1592,11 @@ const CreateTestPage = () => {
                 type="date"
                 value={endDate || testDate}
                 min={testDate || undefined}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  // A date input emits "" while a date is half-typed (e.g. mid-year).
+                  // Ignore that, otherwise the field snaps back to the start date.
+                  if (e.target.value) setEndDate(e.target.value);
+                }}
                 className={inputCls}
               />
               <p className="mt-1 text-[10px] text-muted-foreground">
