@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Loader2, Clock, FileText, LogOut, PlayCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2, Clock, FileText, LogOut, PlayCircle, LayoutDashboard } from "lucide-react";
 import { toast } from "sonner";
+import BansalButton from "@/components/bansal/BansalButton";
 import { supabase } from "@/integrations/supabase/client";
 import { formatTestDateTime } from "@/lib/utils";
 
@@ -154,9 +155,16 @@ const CbtLiveTestsPage = () => {
             <h1 className="text-lg font-bold text-foreground">{studentName || "Student"}</h1>
             <p className="text-xs text-muted-foreground">Roll {roll}{batchCode ? ` · Batch ${batchCode}` : ""}</p>
           </div>
-          <button onClick={signOut} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">
-            <LogOut className="h-3.5 w-3.5" /> Sign out
-          </button>
+          <div className="flex items-center gap-2">
+            <Link to="/dashboard">
+              <BansalButton variant="primary" className="px-4 py-2 text-xs">
+                <LayoutDashboard className="h-3.5 w-3.5" /> Dashboard
+              </BansalButton>
+            </Link>
+            <button onClick={signOut} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">
+              <LogOut className="h-3.5 w-3.5" /> Sign out
+            </button>
+          </div>
         </div>
       </header>
 

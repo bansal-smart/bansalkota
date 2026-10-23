@@ -236,7 +236,7 @@ const TestResponseSheetPage = () => {
               <article key={q.id} className="rounded-2xl border border-border bg-card p-5 print:break-inside-avoid">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-foreground">Q{(q.display_index ?? q.position) + 1}</span>
+                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-foreground">Q{data.questions.indexOf(q) + 1}</span>
                     {q.subject && <span className="text-xs font-semibold text-muted-foreground">{q.subject}</span>}
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{q.question_type}</span>
                     {isBonus && (
@@ -259,7 +259,7 @@ const TestResponseSheetPage = () => {
                   <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: q.question_text }} />
                 )}
                 {q.question_image_url && (
-                  <TestImage src={q.question_image_url} alt={`Question ${(q.display_index ?? q.position) + 1}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
+                  <TestImage src={q.question_image_url} alt={`Question ${data.questions.indexOf(q) + 1}`} className="mt-3 max-h-[400px] rounded-lg border border-border" />
                 )}
 
                 {isNumerical ? (

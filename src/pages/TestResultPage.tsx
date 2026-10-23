@@ -303,7 +303,9 @@ const TestResultPage = () => {
       }
       return formatOne(val);
     };
-    const questions = qList.map((q) => {
+    // qList arrives already sorted in the student's display order. Number by index:
+    // display_index/position can be 0-based (non-shuffled tests) and made Q# start at 0.
+    const questions = qList.map((q, idx) => {
       const m = byId[q.id] ?? {};
       const isBonus = !!m.is_bonus;
       const attemptedQ = !!m.attempted;
@@ -319,7 +321,7 @@ const TestResultPage = () => {
         : q.correct_answer;
       const marks = Number(m.marks ?? 0);
       return {
-        position: Number(q.display_index ?? q.position ?? 0) + 1,
+        position: idx + 1,
         subject: String(q.subject ?? "—"),
         result,
         marks_str: marks > 0 ? `+${marks}` : String(marks),
