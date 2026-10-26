@@ -270,6 +270,9 @@ export default function ContactPage() {
                     {franchiseSections.map((section) => (
                       <div key={section.region}>
                         <div className="text-xs font-bold uppercase tracking-wide text-bansal-orange">{section.region}</div>
+                        {section.region === "Karnataka Business Associate" && (
+                          <div className="mt-1 text-sm font-semibold text-bansal-blue">Golden Grove Learning Pvt. Ltd.</div>
+                        )}
                         <div className="mt-1 space-y-1">
                           {section.people.map((p) => (
                             <a
