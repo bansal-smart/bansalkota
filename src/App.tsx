@@ -93,7 +93,6 @@ const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage"));
 const DeleteAccountPage = lazy(() => import("./pages/DeleteAccountPage"));
 const AccessDeniedPage = lazy(() => import("./pages/AccessDeniedPage"));
 const AdminSchoolsPage = lazy(() => import("./pages/AdminSchoolsPage"));
-const BansalPlaceholderPage = lazy(() => import("./pages/BansalPlaceholderPage"));
 const CbtLoginPage = lazy(() => import("./pages/CbtLoginPage"));
 const CbtLiveTestsPage = lazy(() => import("./pages/CbtLiveTestsPage"));
 const CbtSubmittedPage = lazy(() => import("./pages/CbtSubmittedPage"));
@@ -250,15 +249,8 @@ const App = () => (
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/refund-policy" element={<RefundPolicyPage />} />
                   <Route path="/disclaimer" element={<DisclaimerPage />} />
-                  <Route
-                    path="/blog"
-                    element={
-                      <BansalPlaceholderPage
-                        title="Bansal Blog"
-                        description="Insights, exam tips, and student stories — coming soon."
-                      />
-                    }
-                  />
+                  <Route path="/blog" element={<BlogsListPage />} />
+                  <Route path="/blog/:slug" element={<BlogDetailPage />} />
                   {/* Removed pages → redirects */}
                   <Route path="/mentorship" element={<Navigate to="/" replace />} />
                   <Route path="/educators" element={<Navigate to="/" replace />} />
@@ -382,8 +374,6 @@ const App = () => (
                   <Route path="/admin/leadership" element={<AdminLeadershipPage />} />
                   <Route path="/admin/advantages" element={<AdminAdvantagesPage />} />
                   <Route path="/admin/blogs" element={<AdminBlogsPage />} />
-                  <Route path="/blog" element={<BlogsListPage />} />
-                  <Route path="/blog/:slug" element={<BlogDetailPage />} />
 
                   {/* Removed: compete-questions, mentor-assignments, mentor-handovers */}
                   <Route path="/admin/compete-questions" element={<Navigate to="/admin/dashboard" replace />} />
