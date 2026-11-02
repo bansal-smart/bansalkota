@@ -217,6 +217,9 @@ const CreateTestPage = () => {
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
   const { confirm, ConfirmDialog } = useConfirm();
   const [submitting, setSubmitting] = useState(false);
+  // setSubmitting() only disables the buttons after the next render; this ref blocks a second
+  // save from starting in the meantime (double-click / retry while the first is still in flight).
+  const savingRef = useRef(false);
   const [loading, setLoading] = useState(isEditMode);
   const [bankSheetOpen, setBankSheetOpen] = useState(false);
   const [courseId, setCourseId] = useState<string>("");
@@ -888,10 +891,67 @@ const CreateTestPage = () => {
     return null;
   };
 
+  // Saves every edited question of a test in ONE request / ONE transaction (see the
+  // admin_save_test_questions migration). The previous implementation fired one PATCH per
+  // question concurrently (75+ at once), which saturated the API pool, left tests half-saved
+  // on partial failure, and — when the user re-clicked Save — piled up on row locks until the
+  // database's statement timeout hit.
+  const saveQuestionRows = async (testId: string, rows: Array<Record<string, any>>) => {
+    if (rows.length === 0) return;
+    const { data, error } = await supabase.rpc("admin_save_test_questions", { _test_id: testId, _rows: rows as any });
+    if (!error) {
+      const res = data as { requested?: number; updated?: number } | null;
+      // `requested` is the server's de-duplicated count (falls back to what we sent).
+      const expected = typeof res?.requested === "number" ? res.requested : rows.length;
+      if (res && typeof res.updated === "number" && res.updated < expected) {
+        // Stop here: do NOT go on to publish/navigate as if everything was saved.
+        throw new Error(
+          `${expected - res.updated} of ${expected} questions could not be updated (they were removed elsewhere or you lack permission). The rest were saved. Reload this page to see the current state, then Save again.`,
+        );
+      }
+      return;
+    }
+    // Environment without the new function: degrade to a small, bounded-concurrency loop
+    // instead of the old 75-wide storm.
+    const missingFn = error.code === "PGRST202" || /could not find the function/i.test(error.message ?? "");
+    if (!missingFn) throw error;
+    const CHUNK = 4;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const results = await Promise.all(
+        rows.slice(i, i + CHUNK).map(({ id, ...fields }) =>
+          supabase.from("test_questions").update(fields as any).eq("id", id as string).eq("test_id", testId),
+        ),
+      );
+      const firstErr = results.find((r) => r.error)?.error;
+      if (firstErr) throw firstErr;
+    }
+  };
+
+  // Turn raw Postgres/PostgREST failures into something an admin can act on.
+  const friendlySaveError = (e: any, fallback: string): string => {
+    const code = e?.code as string | undefined;
+    const msg = (e?.message as string | undefined) ?? "";
+    if (code === "42501") {
+      return "You don't have permission to edit this test's questions (it may belong to another centre or be a read-only global test).";
+    }
+    if (code === "55P03" || /lock timeout|could not obtain lock/i.test(msg)) {
+      return "Another save of this test is still running. Wait a few seconds, then press Save again (don't click repeatedly).";
+    }
+    if (code === "57014" || /statement timeout/i.test(msg)) {
+      return "The save took too long and was cancelled by the database, so your question edits were not applied. Wait a moment and press Save once more.";
+    }
+    if (/failed to fetch|networkerror|load failed/i.test(msg)) {
+      return "Network problem while saving. Check your connection and try Save once more.";
+    }
+    return msg || fallback;
+  };
+
   const publishImportedDraft = async (publish = true) => {
     if (!resolvedTestId) return toast.error("Create or import into a test first");
     const schedErr = scheduleError();
     if (schedErr) return toast.error(schedErr);
+    if (savingRef.current) return;
+    savingRef.current = true;
 
     setSubmitting(true);
     try {
@@ -908,19 +968,11 @@ const CreateTestPage = () => {
           .eq("id", resolvedTestId);
         if (maxErr) throw maxErr;
       }
-      const perQuestionUpdates = questions
+      const questionRows = questions
         .map((q, i) => ({ q, i }))
         .filter(({ q }) => !!q.id)
-        .map(({ q, i }) =>
-          supabase
-            .from("test_questions")
-            .update({ ...buildQuestionFields(q), position: i } as any)
-            .eq("id", q.id as string)
-            .eq("test_id", resolvedTestId),
-        );
-      const results = await Promise.all(perQuestionUpdates);
-      const firstErr = results.find((r) => r.error)?.error;
-      if (firstErr) throw firstErr;
+        .map(({ q, i }) => ({ id: q.id as string, ...buildQuestionFields(q), position: i }));
+      await saveQuestionRows(resolvedTestId, questionRows);
 
       // Rows removed via the per-question trash button only left local state.
       // Runs before the insert below so freshly inserted rows aren't caught.
@@ -976,14 +1028,29 @@ const CreateTestPage = () => {
       toast.success(publish ? "Test saved and published" : "Test saved as draft");
       navigate(isAdminContext ? "/admin/tests" : isCenterContext ? "/center/tests" : "/teacher/dashboard");
     } catch (e: any) {
-      toast.error(e?.message ?? "Could not publish imported test");
+      toast.error(friendlySaveError(e, "Could not publish imported test"));
     } finally {
+      savingRef.current = false;
       setSubmitting(false);
     }
   };
 
 
+  // Guards the entire submit flow (including create mode and the delete+reinsert edit path),
+  // not just the imported-questions branch: a double-click before React re-renders would
+  // otherwise run two submits in parallel (duplicate tests / interleaved delete+insert).
+  const submitInFlightRef = useRef(false);
   const submit = async (publish: boolean) => {
+    if (submitInFlightRef.current || savingRef.current) return;
+    submitInFlightRef.current = true;
+    try {
+      await submitInner(publish);
+    } finally {
+      submitInFlightRef.current = false;
+    }
+  };
+
+  const submitInner = async (publish: boolean) => {
     if (!user) return toast.error("Sign in required");
     if (!title.trim()) return toast.error("Title required");
     const overLimit = questions.findIndex((q) => (q.type === "numerical" || q.type === "integer") && q.answerCount > maxAnswers);

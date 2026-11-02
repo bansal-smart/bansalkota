@@ -5768,6 +5768,10 @@ export type Database = {
           total_refs: number
         }[]
       }
+      admin_save_test_questions: {
+        Args: { _rows: Json; _test_id: string }
+        Returns: Json
+      }
       admin_get_test_questions_full: {
         Args: { _test_id: string }
         Returns: {
