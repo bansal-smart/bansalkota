@@ -52,6 +52,28 @@ export const uploadParsedImages = async (
 };
 
 /**
+ * Best-effort cleanup after a FAILED import: delete the files this batch just
+ * uploaded, but only when no question row (test or bank) was saved with this
+ * batch id. Never touches files from any other batch, so it cannot break a
+ * test that shares images. Errors are swallowed — leaking files is harmless.
+ */
+export const removeOrphanedBatchImages = async (batchId: string): Promise<void> => {
+  try {
+    const [{ count: testRows }, { count: bankRows }] = await Promise.all([
+      supabase.from("test_questions").select("id", { count: "exact", head: true }).eq("import_batch_id", batchId),
+      supabase.from("question_bank").select("id", { count: "exact", head: true }).eq("import_batch_id", batchId),
+    ]);
+    // If we could not confirm "zero rows", keep the files.
+    if (testRows !== 0 || bankRows !== 0) return;
+    const { data: files } = await supabase.storage.from("question-images").list(batchId, { limit: 1000 });
+    const paths = (files ?? []).map((f) => `${batchId}/${f.name}`);
+    if (paths.length > 0) await supabase.storage.from("question-images").remove(paths);
+  } catch {
+    /* non-fatal */
+  }
+};
+
+/**
  * Replace `<span data-img="id">` markers in HTML with `<img>` tags whose
  * `src` points at the uploaded public URL.
  */

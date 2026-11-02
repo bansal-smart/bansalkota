@@ -9,6 +9,7 @@ import PaletteShape, { type PaletteStatus } from "@/components/test/PaletteShape
 import CandidateCard from "@/components/test/CandidateCard";
 import MatchFollowing, { type MatchItem } from "@/components/test/MatchFollowing";
 import ReportQuestionButton from "@/components/test/ReportQuestionButton";
+import TestImage from "@/components/test/TestImage";
 import { optionLabel, resolveOptionStyle } from "@/lib/optionLabel";
 import { getStudentAttemptGate, isAlreadyAttemptedError } from "@/lib/testAttemptGuard";
 
@@ -157,7 +158,6 @@ const TestTakingPage = () => {
   const [overrideStartedAt, setOverrideStartedAt] = useState<Date | null>(null);
 
   // Image preloading
-  const [loadedImgs, setLoadedImgs] = useState<Set<string>>(new Set());
   const [preloadProgress, setPreloadProgress] = useState<{ loaded: number; total: number }>({ loaded: 0, total: 0 });
 
   // Guard so the loader runs only ONCE per (slug, user.id).
@@ -306,10 +306,6 @@ const TestTakingPage = () => {
       const finish = () => {
         if (cancelled) return;
         done += 1;
-        setLoadedImgs((prev) => {
-          if (prev.has(url)) return prev;
-          const next = new Set(prev); next.add(url); return next;
-        });
         setPreloadProgress({ loaded: done, total: list.length });
       };
       img.onload = finish;
@@ -1135,20 +1131,7 @@ const TestTakingPage = () => {
               <div className="text-[15px] text-neutral-900 leading-relaxed"><MathRenderer content={q.question_text} /></div>
 
               {q.question_image_url && !/<img\b/i.test(q.question_text || "") && (
-                <div className="relative inline-block min-h-[80px]">
-                  {!loadedImgs.has(q.question_image_url) && (
-                    <div className="absolute inset-0 flex items-center justify-center gap-2 rounded border border-dashed border-neutral-300 bg-neutral-50 px-4 py-6 text-xs text-neutral-500">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading question image…
-                    </div>
-                  )}
-                  <img
-                    src={q.question_image_url}
-                    alt=""
-                    onLoad={() => setLoadedImgs((prev) => { if (prev.has(q.question_image_url!)) return prev; const n = new Set(prev); n.add(q.question_image_url!); return n; })}
-                    className={`rounded border border-neutral-200 max-h-72 select-none pointer-events-none ${loadedImgs.has(q.question_image_url) ? "opacity-100" : "opacity-0"}`}
-                    draggable="false"
-                  />
-                </div>
+                <TestImage src={q.question_image_url} className="rounded border border-neutral-200 max-h-72 select-none pointer-events-none" />
               )}
 
               {/* Input */}
@@ -1183,7 +1166,7 @@ const TestTakingPage = () => {
                         <div className="flex-1">
                           <span className="font-bold mr-1">{optionLabel(opt.id, resolveOptionStyle(test))}.</span>
                           <MathRenderer content={opt.text} inline />
-                          {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
+                          {img && <div className="mt-2"><TestImage src={img} className="max-h-32 rounded border border-neutral-200" /></div>}
                         </div>
                       </button>
                     );
@@ -1203,7 +1186,7 @@ const TestTakingPage = () => {
                         <div className="flex-1">
                           <span className="font-bold mr-1">{optionLabel(opt.id, resolveOptionStyle(test))}.</span>
                           <MathRenderer content={opt.text} inline />
-                          {img && <img src={img} alt="" className="mt-2 max-h-32 rounded border border-neutral-200" />}
+                          {img && <div className="mt-2"><TestImage src={img} className="max-h-32 rounded border border-neutral-200" /></div>}
                         </div>
                       </button>
                     );

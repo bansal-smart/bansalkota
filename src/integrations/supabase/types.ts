@@ -5759,6 +5759,15 @@ export type Database = {
           id: string
         }[]
       }
+      admin_check_test_images: {
+        Args: { _test_ids: string[] }
+        Returns: {
+          broken_questions: number
+          missing_refs: number
+          test_id: string
+          total_refs: number
+        }[]
+      }
       admin_get_test_questions_full: {
         Args: { _test_id: string }
         Returns: {

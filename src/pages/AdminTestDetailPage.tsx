@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCenterAdmin } from "@/hooks/useCenterAdmin";
 import { canEditTest } from "@/lib/testPermissions";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { useTestImageHealth } from "@/hooks/useTestImageHealth";
 import AdminTestAttemptsPage from "./AdminTestAttemptsPage";
 import DocxBulkImportDialog from "@/components/DocxBulkImportDialog";
 import DocxCommonImportDialog from "@/components/DocxCommonImportDialog";
@@ -77,6 +78,9 @@ const AdminTestDetailPage = () => {
   }, [test]);
 
   const derivedClassLevel = useMemo(() => classFromBatchCodes(testBatchCodes) ?? undefined, [testBatchCodes]);
+  const imageHealthIds = useMemo(() => (test ? [test.id] : []), [test?.id]);
+  const { health: imageHealth, refetch: refetchImageHealth } = useTestImageHealth(imageHealthIds);
+  const brokenImages = test ? imageHealth[test.id] : undefined;
 
   const load = async () => {
     if (!slug) {
@@ -100,6 +104,7 @@ const AdminTestDetailPage = () => {
         return;
       }
       setTest(t as TestRow);
+      refetchImageHealth();
 
       const [qRes, ansRes, aRes] = await Promise.all([
         supabase
@@ -200,6 +205,15 @@ const AdminTestDetailPage = () => {
   const mayEdit = canEditTest(test as any, { isCenterAdmin, primaryCenterId, isHq });
 
   const togglePublish = async () => {
+    if (!test.is_published && brokenImages && brokenImages.missing > 0) {
+      const go = await confirm({
+        title: "Question images are missing",
+        description: `${brokenImages.brokenQuestions} question(s) reference image files that no longer exist, so students would see blank questions. Re-import the question paper first. Publish anyway?`,
+        confirmLabel: "Publish anyway",
+        variant: "default",
+      });
+      if (!go) return;
+    }
     const { error } = await supabase.from("tests").update({ is_published: !test.is_published }).eq("id", test.id);
     if (error) return toast.error(error.message);
     toast.success(test.is_published ? "Unpublished" : "Published");
@@ -272,6 +286,13 @@ const AdminTestDetailPage = () => {
   return (
     <div className="p-4 lg:p-6 space-y-5">
       {ConfirmDialog}
+      {brokenImages && brokenImages.missing > 0 && (
+        <div role="alert" className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <b>{brokenImages.brokenQuestions} question(s) have missing images.</b> {brokenImages.missing} of {brokenImages.total} image
+          file(s) no longer exist in storage, so students will see blank questions. This usually happens when a copied test's
+          source was re-imported. Re-import this test's question paper before students take it.
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Link to="/admin/tests" className="rounded-lg border border-border p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>

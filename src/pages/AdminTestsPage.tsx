@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useTestImageHealth } from "@/hooks/useTestImageHealth";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet, Copy } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -223,6 +224,8 @@ const AdminTestsPage = () => {
     return true;
   });
   const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
+  const pagedIds = useMemo(() => paged.map((t) => t.id), [paged]);
+  const { health: imageHealth } = useTestImageHealth(pagedIds);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -316,6 +319,14 @@ const AdminTestsPage = () => {
                       >
                         {t.is_published ? "Published" : "Draft"}
                       </span>
+                      {imageHealth[t.id]?.missing > 0 && (
+                        <span
+                          className="ml-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-600"
+                          title={`${imageHealth[t.id].missing} image file(s) are missing from storage — students will see blank questions. Re-import this test's question paper.`}
+                        >
+                          ⚠ {imageHealth[t.id].brokenQuestions} Q images missing
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">

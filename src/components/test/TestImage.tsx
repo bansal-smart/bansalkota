@@ -24,12 +24,17 @@ export function TestImage({
   onClick,
 }: TestImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-  const [attempt, setAttempt] = useState(0);
+  // Attempt counter is tied to the src it was counted for, so a src change can never
+  // inherit the previous image's `_r=N` cache-buster (no wasted request / stale retry).
+  const [attemptState, setAttemptState] = useState({ src, n: 0 });
+  const attempt = attemptState.src === src ? attemptState.n : 0;
+  const setAttempt = (fn: (a: number) => number) =>
+    setAttemptState((s) => ({ src, n: fn(s.src === src ? s.n : 0) }));
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    if (timerRef.current) { window.clearTimeout(timerRef.current); timerRef.current = null; }
     setStatus("loading");
-    setAttempt(0);
   }, [src]);
 
   useEffect(() => () => {
@@ -64,17 +69,21 @@ export function TestImage({
         </div>
       )}
       {status === "error" ? (
-        <button
-          type="button"
-          onClick={manualRetry}
-          className="flex items-center gap-2 rounded border border-dashed border-red-300 bg-red-50 px-4 py-6 text-xs text-red-700 hover:bg-red-100"
+        // span[role=button] (not <button>): this component is rendered inside option
+        // <button>s on the test page, and nested buttons are invalid HTML.
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => { e.stopPropagation(); manualRetry(); }}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); manualRetry(); } }}
+          className="flex cursor-pointer items-center gap-2 rounded border border-dashed border-red-300 bg-red-50 px-4 py-6 text-xs text-red-700 hover:bg-red-100"
         >
           <ImageOff className="h-4 w-4" />
           Image failed to load.
           <span className="ml-1 inline-flex items-center gap-1 font-semibold underline">
             <RotateCw className="h-3 w-3" /> Retry
           </span>
-        </button>
+        </span>
       ) : (
         <img
           key={attempt}

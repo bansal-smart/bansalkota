@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import katex from "katex";
 import "katex/contrib/mhchem";
 import { cn } from "@/lib/utils";
@@ -101,13 +101,71 @@ const renderContent = (raw: string): string => {
   return out;
 };
 
+const MAX_IMG_RETRIES = 3;
+const FAILED_ALT = "Image failed to load — tap to retry";
+const FAILED_STYLE_PROPS = ["min-height", "min-width", "cursor", "border", "background", "font-size", "color"];
+
+/** Re-request an <img> with a cache-busting param so a transient 4xx/5xx/CDN miss is not sticky. */
+const reloadImg = (img: HTMLImageElement, attempt: number) => {
+  const base = img.dataset.origSrc ?? img.getAttribute("src") ?? "";
+  if (!img.dataset.origSrc) img.dataset.origSrc = base;
+  if (img.dataset.origAlt === undefined) img.dataset.origAlt = img.alt === FAILED_ALT ? "" : img.alt;
+  img.dataset.retries = String(attempt);
+  img.removeAttribute("data-failed");
+  img.alt = img.dataset.origAlt;
+  for (const prop of FAILED_STYLE_PROPS) img.style.removeProperty(prop);
+  img.src = `${base}${base.includes("?") ? "&" : "?"}_r=${attempt}`;
+};
+
 const MathRenderer = ({ content, className, inline = false }: Props) => {
   const html = useMemo(() => renderContent(content ?? ""), [content]);
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => { timers.current.forEach((t) => window.clearTimeout(t)); }, []);
   if (!content) return null;
   const Tag: keyof JSX.IntrinsicElements = inline ? "span" : "div";
+
+  // <img> `error` does not bubble, but it is capturable. The HTML is injected as a
+  // string, so delegate: retry with backoff, then leave a tap-to-retry placeholder
+  // instead of a silently blank question.
+  const onErrorCapture = (e: React.SyntheticEvent<HTMLElement>) => {
+    const img = e.target as HTMLElement;
+    if (!(img instanceof HTMLImageElement)) return;
+    const tries = Number(img.dataset.retries ?? "0");
+    if (tries >= MAX_IMG_RETRIES) {
+      if (img.dataset.origAlt === undefined) img.dataset.origAlt = img.alt;
+      img.dataset.failed = "1";
+      img.alt = FAILED_ALT;
+      img.style.minHeight = "56px";
+      img.style.minWidth = "180px";
+      img.style.cursor = "pointer";
+      img.style.border = "1px dashed #fca5a5";
+      img.style.background = "#fef2f2";
+      img.style.fontSize = "12px";
+      img.style.color = "#b91c1c";
+      return;
+    }
+    const delay = Math.min(2500, 400 * 2 ** tries) + Math.random() * 300;
+    const id = window.setTimeout(() => {
+      if (img.isConnected) reloadImg(img, tries + 1);
+    }, delay);
+    timers.current.push(id);
+  };
+
+  const onClick = (e: React.MouseEvent<HTMLElement>) => {
+    const img = e.target as HTMLElement;
+    if (img instanceof HTMLImageElement && img.dataset.failed) {
+      // The placeholder may sit inside an option <button>: don't also select the option.
+      e.stopPropagation();
+      e.preventDefault();
+      reloadImg(img, 1);
+    }
+  };
+
   return (
     <Tag
       className={cn("math-content", className)}
+      onErrorCapture={onErrorCapture}
+      onClick={onClick}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

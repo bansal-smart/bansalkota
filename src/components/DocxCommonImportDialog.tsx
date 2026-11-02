@@ -17,6 +17,7 @@ import {
 import type { ParsedDocxQuestion, DocxImage, ParsedQuestionType } from "@/lib/docxImport/parseDocx";
 import {
   uploadParsedImages,
+  removeOrphanedBatchImages,
   replaceMarkersWithUrls,
   firstImageForSlot,
 } from "@/lib/docxImport/uploadImages";
@@ -523,6 +524,10 @@ const DocxCommonImportDialog = ({
 
     let okCount = 0;
     let failCount = 0;
+    // Once an insert has been sent we can no longer prove (RLS-scoped reads, timeouts
+    // that commit server-side) that no row references this batch's files, so we never
+    // clean them up after that point.
+    let insertAttempted = false;
 
     try {
       if (target === "test" && targetTestId) {
@@ -535,45 +540,25 @@ const DocxCommonImportDialog = ({
 
 
         // Replace mode: importing into a test always replaces every existing
-        // question in that test (and their S3 images) instead of appending.
+        // question row in that test instead of appending.
         const { data: existingRows } = await supabase
           .from("test_questions")
-          .select("question_text, question_image_url, option_images")
+          .select("id")
           .eq("test_id", targetTestId);
 
         if (existingRows && existingRows.length > 0) {
-          const oldImageUrls: string[] = [];
-          for (const r of existingRows as any[]) {
-            if (r.question_image_url) oldImageUrls.push(r.question_image_url);
-            if (Array.isArray(r.option_images)) {
-              for (const u of r.option_images) if (u) oldImageUrls.push(u);
-            }
-            const txt = String(r.question_text ?? "");
-            const imgSrcRe = /<img[^>]+src="([^"]+)"/gi;
-            let m: RegExpExecArray | null;
-            while ((m = imgSrcRe.exec(txt))) oldImageUrls.push(m[1]);
-          }
-
           const { error: delErr } = await supabase
             .from("test_questions")
             .delete()
             .eq("test_id", targetTestId);
           if (delErr) throw delErr;
 
-          if (oldImageUrls.length > 0) {
-            const pathFromSignedUrl = (url: string): string | null => {
-              const m = url.match(/\/storage\/v1\/object\/sign\/question-images\/([^?]+)/);
-              return m ? decodeURIComponent(m[1]) : null;
-            };
-            const paths = oldImageUrls.map(pathFromSignedUrl).filter((p): p is string => !!p);
-            if (paths.length > 0) {
-              try {
-                await supabase.storage.from("question-images").remove(paths);
-              } catch {
-                // Non-fatal: rows are already replaced; stray storage objects can be cleaned up later.
-              }
-            }
-          }
+          // NOTE: the old images are deliberately NOT deleted from storage.
+          // Duplicated tests, the question bank mirror, and earlier imports all
+          // keep pointing at these same files (duplicateTest copies the image
+          // URLs verbatim). Deleting them here silently broke every other test
+          // that shared them — including a live exam (Nov 1 2026). Orphaned
+          // files only cost storage; a missing image costs a whole exam.
 
           toast.info(`Replaced ${existingRows.length} existing question${existingRows.length === 1 ? "" : "s"} in this test.`);
         }
@@ -595,6 +580,7 @@ const DocxCommonImportDialog = ({
           };
         });
 
+        insertAttempted = true;
         const { error: insErr } = await supabase.from("test_questions").insert(rows as any);
         if (insErr) throw insErr;
 
@@ -660,6 +646,7 @@ const DocxCommonImportDialog = ({
           };
         });
 
+        insertAttempted = true;
         const { error: insErr } = await supabase.from("question_bank").insert(rows as any);
         if (insErr) throw insErr;
 
@@ -676,6 +663,7 @@ const DocxCommonImportDialog = ({
       }
     } catch (err: any) {
       failCount = questions.length;
+      if (!insertAttempted) await removeOrphanedBatchImages(batchId);
       await supabase
         .from("question_import_batches")
         .update({
