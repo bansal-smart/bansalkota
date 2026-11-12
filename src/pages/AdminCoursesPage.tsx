@@ -41,6 +41,7 @@ type AdminCourse = {
   sort_order: number;
   is_global?: boolean;
   centre_id?: string | null;
+  centre?: { city: string; area: string | null; is_hq: boolean } | null;
   chapter_count?: number;
   test_count?: number;
   lesson_count?: number;
@@ -69,6 +70,12 @@ const SortableRow = ({
 }) => {
   const isSuperAdminCourse = Boolean(c.is_global) || !c.centre_id || (isCenterAdmin && c.centre_id !== primaryCenterId);
   const isEditable = isSuperAdmin || !isSuperAdminCourse;
+  // Separate from the edit-permission check above (which is unaffected): purely
+  // for the "who created this" badge. A course owned by the HQ centre is
+  // Super-Admin content even though it isn't flagged `is_global` and has a
+  // real (non-null) centre_id.
+  const isHqOwned = isSuperAdminCourse || c.centre?.is_hq === true;
+  const ownerLabel = isHqOwned ? "Super Admin" : c.centre ? `Centre: ${c.centre.city}` : "Centre Admin";
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: c.id,
@@ -100,20 +107,25 @@ const SortableRow = ({
           <GripVertical className="h-4 w-4" />
         </button>
       </td>
-      <td className="px-4 py-3 font-medium text-foreground">
-        {c.name}
-        {isSuperAdminCourse && isCenterAdmin && (
-          <span className="ml-2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-semibold">
-            Super Admin
-          </span>
-        )}
-      </td>
+      <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
       <td className="px-4 py-3 text-muted-foreground text-xs">{c.educator_name}</td>
+      <td className="px-4 py-3 text-center">
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+            isHqOwned ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-accent/15 text-accent"
+          }`}
+          title={!isHqOwned && c.centre?.area && c.centre.area !== c.centre.city ? `${c.centre.city} — ${c.centre.area}` : undefined}
+        >
+          {ownerLabel}
+        </span>
+      </td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{c.chapter_count ?? 0}</td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{c.lesson_count ?? 0}</td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{c.test_count ?? 0}</td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{(c.total_enrolled ?? 0).toLocaleString()}</td>
-      <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
+      {!isCenterAdmin && (
+        <td className="px-4 py-3 text-center text-xs text-foreground">₹{Number(c.price).toLocaleString()}</td>
+      )}
       <td className="px-4 py-3 text-center">
         <span
           className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -233,7 +245,7 @@ const AdminCoursesPage = () => {
     const { data } = await scopeQueryToCentre(
       supabase
         .from("courses")
-        .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order, is_global, centre_id"),
+        .select("id, name, slug, educator_name, is_published, total_enrolled, price, created_at, sort_order, is_global, centre_id, centre:centres(city, area, is_hq)"),
       scopeCentreId,
       { globalFlagColumn: "is_global" },
     )
@@ -414,11 +426,14 @@ const AdminCoursesPage = () => {
                     <th className="px-2 py-3 text-center text-xs font-semibold text-muted-foreground w-10"></th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Course</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Educator</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Created By</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Chapters</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Lectures</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Tests</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Students</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
+                    {!isCenterAdmin && (
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Price</th>
+                    )}
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Actions</th>
                   </tr>

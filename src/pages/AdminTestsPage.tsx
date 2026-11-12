@@ -1,6 +1,6 @@
 import { useTestImageHealth } from "@/hooks/useTestImageHealth";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet, Copy } from "lucide-react";
+import { Search, Check, X, Eye, Loader2, Plus, Pencil, Trash2, FileSpreadsheet, Copy, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,10 +32,20 @@ type AdminTest = {
   cbt_allowed_batch_ids: string[] | null;
   centre_id: string | null;
   is_global: boolean;
+  centre: { city: string; area: string | null; is_hq: boolean } | null;
 };
 
 type BatchOpt = { id: string; name: string; visibility: BatchVisibility };
 type StatusFilter = "all" | "upcoming" | "active" | "previous" | "untimed";
+type OwnerFilter = "all" | "super_admin" | "centre_admin";
+
+// A test is Super Admin/HQ-owned if it has no centre (legacy rows) or its
+// owning centre is flagged HQ; everything else was created by a franchise
+// Centre Admin for their own centre. `is_global` is an orthogonal "visible to
+// every centre" reach flag and doesn't by itself indicate who created it.
+const isHqOwned = (t: AdminTest) => !t.centre_id || t.centre?.is_hq === true;
+const ownerLabel = (t: AdminTest) =>
+  isHqOwned(t) ? "Super Admin" : t.centre ? `Centre: ${t.centre.city}` : "Centre";
 
 const computeStatus = (t: AdminTest, now: number): Exclude<StatusFilter, "all"> => {
   const s = t.starts_at ? new Date(t.starts_at).getTime() : null;
@@ -63,6 +73,8 @@ const AdminTestsPage = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>("all");
+  const [brokenOnly, setBrokenOnly] = useState(false);
   const [batchFilter, setBatchFilter] = useState<string>("all"); // "all" | "unrestricted" | batchId
   const [loading, setLoading] = useState(true);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
@@ -80,7 +92,7 @@ const AdminTestsPage = () => {
         supabase
           .from("tests")
           .select(
-            "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids, centre_id, is_global",
+            "id, title, slug, test_type, exam_pattern, total_questions, duration_minutes, is_published, created_at, starts_at, ends_at, cbt_allowed_batch_ids, centre_id, is_global, centre:centres(city, area, is_hq)",
           ),
         scopeCentreId,
         { globalFlagColumn: "is_global", batchOverlap: { column: "cbt_allowed_batch_ids", ids: visibleBatchIds } },
@@ -209,10 +221,22 @@ const AdminTestsPage = () => {
     }
   };
 
+  // Checked for every loaded test (not just the current page) so the "broken
+  // images" filter and the summary banner below can see tests before pagination
+  // narrows the list down.
+  const allTestIds = useMemo(() => tests.map((t) => t.id), [tests]);
+  const { health: imageHealth } = useTestImageHealth(allTestIds);
+  const brokenTestCount = useMemo(
+    () => tests.filter((t) => (imageHealth[t.id]?.missing ?? 0) > 0).length,
+    [tests, imageHealth],
+  );
+
   const now = Date.now();
   const filtered = tests.filter((t) => {
     if (debouncedSearch && !t.title.toLowerCase().includes(debouncedSearch.toLowerCase())) return false;
     if (statusFilter !== "all" && computeStatus(t, now) !== statusFilter) return false;
+    if (ownerFilter !== "all" && (ownerFilter === "super_admin") !== isHqOwned(t)) return false;
+    if (brokenOnly && !((imageHealth[t.id]?.missing ?? 0) > 0)) return false;
     if (batchFilter !== "all") {
       const ids = t.cbt_allowed_batch_ids ?? [];
       if (batchFilter === "unrestricted") {
@@ -224,14 +248,12 @@ const AdminTestsPage = () => {
     return true;
   });
   const { paged, page, setPage, totalPages, total, pageSize, setPageSize } = usePagination(filtered, 25);
-  const pagedIds = useMemo(() => paged.map((t) => t.id), [paged]);
-  const { health: imageHealth } = useTestImageHealth(pagedIds);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, statusFilter, batchFilter]);
+  }, [debouncedSearch, statusFilter, ownerFilter, brokenOnly, batchFilter]);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -245,6 +267,20 @@ const AdminTestsPage = () => {
           <Plus className="h-4 w-4" /> New test
         </Link>
       </div>
+
+      {brokenTestCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setBrokenOnly(true)}
+          className="flex w-full items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700 hover:bg-red-100 transition-colors dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            <strong>{brokenTestCount}</strong> {brokenTestCount === 1 ? "test has" : "tests have"} question images missing from
+            storage — students will see blank images on affected questions. Click to filter the list down to only these tests.
+          </span>
+        </button>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[220px]">
@@ -268,6 +304,20 @@ const AdminTestsPage = () => {
           <option value="previous">{STATUS_LABEL.previous}</option>
           <option value="untimed">{STATUS_LABEL.untimed}</option>
         </select>
+        <select
+          value={ownerFilter}
+          onChange={(e) => setOwnerFilter(e.target.value as OwnerFilter)}
+          className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
+          title="Filter by who created the test"
+        >
+          <option value="all">All creators</option>
+          <option value="super_admin">Super Admin</option>
+          <option value="centre_admin">Centre Admin</option>
+        </select>
+        <label className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground cursor-pointer">
+          <input type="checkbox" checked={brokenOnly} onChange={(e) => setBrokenOnly(e.target.checked)} />
+          Broken images only
+        </label>
         <select
           value={batchFilter}
           onChange={(e) => setBatchFilter(e.target.value)}
@@ -298,6 +348,7 @@ const AdminTestsPage = () => {
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Test</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">Type</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Created By</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Questions</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Duration</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">Status</th>
@@ -309,6 +360,21 @@ const AdminTestsPage = () => {
                   <tr key={t.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{t.title}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs capitalize">{t.test_type} · {examPatternLabel(t.exam_pattern)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          isHqOwned(t) ? "bg-primary/15 text-primary" : "bg-accent/15 text-accent"
+                        }`}
+                        title={!isHqOwned(t) && t.centre?.area && t.centre.area !== t.centre.city ? `${t.centre.city} — ${t.centre.area}` : undefined}
+                      >
+                        {ownerLabel(t)}
+                      </span>
+                      {t.is_global && (
+                        <span className="ml-1 rounded-full bg-secondary/20 px-2 py-0.5 text-[10px] font-bold text-secondary" title="Visible to every centre">
+                          Global
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{t.total_questions}</td>
                     <td className="px-4 py-3 text-center text-xs text-foreground">{t.duration_minutes} min</td>
                     <td className="px-4 py-3 text-center">
@@ -365,11 +431,11 @@ const AdminTestsPage = () => {
                             <X className="h-3.5 w-3.5" />
                           </button>
                         ))}
-                        {isSuperAdmin && mayEdit(t) && (
+                        {(isSuperAdmin || isCenterAdmin) && mayEdit(t) && (
                           <button
                             onClick={() => deleteTest(t)}
                             className="rounded-md p-1.5 text-destructive hover:bg-destructive/10"
-                            title="Delete test (super admin)"
+                            title="Delete test"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>

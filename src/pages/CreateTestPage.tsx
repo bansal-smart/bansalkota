@@ -1922,7 +1922,7 @@ const CreateTestPage = () => {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                {q.imported ? (
+                {q.imported || /<img\b[^>]*>/i.test(q.text) ? (
                   <div className="rounded-md border border-border bg-background px-3 py-2 text-sm">
                     <MathRenderer content={q.text} />
                   </div>
