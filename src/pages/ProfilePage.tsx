@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import CityAutocompleteInput from "@/components/CityAutocompleteInput";
+import { onlyPublishedAttempts } from "@/lib/publishedAttempts";
 import { INDIAN_STATES_AND_UTS } from "@/lib/indianStates";
 
 const tabItems = ["Personal Info"];
@@ -43,7 +44,7 @@ const ProfilePage = () => {
         supabase.from("profiles").select("*").eq("user_id", authUser.id).maybeSingle(),
         supabase.rpc("get_user_streak", { _user_id: authUser.id }),
         supabase.from("study_sessions").select("questions_attempted, questions_correct").eq("user_id", authUser.id),
-        supabase.from("test_attempts").select("percentile").eq("user_id", authUser.id).order("attempted_at", { ascending: false }).limit(5),
+        supabase.from("test_attempts").select("percentile, test_id").eq("user_id", authUser.id).order("attempted_at", { ascending: false }).limit(60),
       ]);
       if (!active) return;
       const p = profileRes.data as any;
@@ -67,7 +68,15 @@ const ProfilePage = () => {
       const sessions = sessionsRes.data ?? [];
       const att = sessions.reduce((s, r) => s + (r.questions_attempted ?? 0), 0);
       const cor = sessions.reduce((s, r) => s + (r.questions_correct ?? 0), 0);
-      const tests = testsRes.data ?? [];
+      // Latest 5 attempts of tests that still exist and are published (fetch extra, then filter).
+      let tests = testsRes.data ?? [];
+      try {
+        tests = await onlyPublishedAttempts(tests);
+      } catch (e) {
+        console.warn("[profile] could not verify published tests; showing all attempts", e);
+      }
+      if (!active) return;
+      tests = tests.slice(0, 5);
       const pctile = tests.length > 0 ? tests.reduce((s, t) => s + (Number(t.percentile) || 0), 0) / tests.length : 0;
       setStats({
         streak: (streakRes.data as number) ?? 0,

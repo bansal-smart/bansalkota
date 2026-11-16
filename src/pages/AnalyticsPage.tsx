@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { onlyPublishedAttempts } from "@/lib/publishedAttempts";
 import { Target, Trophy, ClipboardCheck, BookOpen, Inbox, LineChart as LineChartIcon, BarChart3, Filter } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,12 +57,22 @@ const AnalyticsPage = () => {
       .eq("user_id", user.id)
       .in("status", ["submitted", "auto_submitted"])
       .order("attempted_at", { ascending: false });
-    const rows = (data ?? []) as Attempt[];
+    const allRows = (data ?? []) as Attempt[];
+    // Only attempts of tests that still exist and are published count (matches the admin report).
+    // A transient failure of the publish check must not blank the page: fall back to all attempts.
+    let rows = allRows;
+    try {
+      rows = await onlyPublishedAttempts(allRows);
+    } catch (e) {
+      console.warn("[analytics] could not verify published tests; showing all attempts", e);
+    }
     const testIds = Array.from(new Set(rows.map((r) => r.test_id).filter((id): id is string => Boolean(id))));
-    const { data: tests } = testIds.length
-      ? await supabase.from("tests").select("id, exam_pattern, subjects").in("id", testIds)
-      : { data: [] };
-    const testById = new Map((tests ?? []).map((t) => [t.id, { exam_pattern: t.exam_pattern, subjects: t.subjects }]));
+    // exam_pattern/subjects are display metadata only: chunked, and a failure just leaves them empty.
+    const testById = new Map<string, { exam_pattern: string | null; subjects: string[] | null }>();
+    for (let i = 0; i < testIds.length; i += 150) {
+      const { data: tests } = await supabase.from("tests").select("id, exam_pattern, subjects").in("id", testIds.slice(i, i + 150));
+      (tests ?? []).forEach((t) => testById.set(t.id, { exam_pattern: t.exam_pattern, subjects: t.subjects }));
+    }
     setAttempts(rows.map((r) => ({ ...r, tests: testById.get(r.test_id ?? "") ?? null })));
     setLoading(false);
   }, [user?.id]);

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchPublishedTestIds, keepPublishedAttempts } from "@/lib/publishedAttempts";
 
 export type SubjectBreakdown = { subject: string; score: number; maxScore: number };
 
@@ -104,9 +105,15 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
   const batchIds: string[] = ((batchesRes as any)?.data ?? []).map((b: any) => b.batch_id).filter(Boolean);
   const courseIds = ((enrollRes as any)?.data ?? []).map((e: any) => e.course_id).filter(Boolean);
 
-  const attempts = ((attemptsRes as any)?.data ?? []) as any[];
+  // Only attempts of tests that still exist AND are published count toward the analysis
+  // (unpublished/draft and deleted tests are ignored). Filter ONCE here, before any totals,
+  // subject averages or per-attempt rank lookups, so every figure and the PDF stay consistent.
+  // Throws (rather than silently over-reporting) if publication status can't be verified.
+  const allAttempts = ((attemptsRes as any)?.data ?? []) as any[];
+  const publishedTestIds = await fetchPublishedTestIds(allAttempts.map((a) => a.test_id));
+  const attempts = keepPublishedAttempts(allAttempts, publishedTestIds);
 
-  // Audience: concluded tests explicitly assigned to this student's batch or
+  // Audience: concluded, PUBLISHED tests explicitly assigned to this student's batch or
   // enrolled course — used to detect tests they were expected to take but
   // skipped. Open-to-all CBTs (empty cbt_allowed_batch_ids) are excluded
   // since we can't tell whether this specific student was really assigned.
@@ -116,6 +123,7 @@ export async function fetchStudentReport(studentId: string): Promise<StudentRepo
       (supabase as any)
         .from("tests")
         .select("id, title, ends_at, total_marks, cbt_allowed_batch_ids, course_id")
+        .eq("is_published", true) // a draft/unpublished test is never "skipped" by a student
         .lt("ends_at", nowIso),
     ) ?? { data: [] };
     audienceTests = (candidateTests ?? []).filter((t: any) => {

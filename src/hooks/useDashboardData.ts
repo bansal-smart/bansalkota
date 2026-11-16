@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { calcLessonProgress } from "@/lib/progress";
+import { onlyPublishedAttempts } from "@/lib/publishedAttempts";
 
 export interface DashboardData {
   loading: boolean;
@@ -78,7 +79,7 @@ export const useDashboardData = (): DashboardData => {
           .eq("user_id", user.id),
         supabase
           .from("test_attempts")
-          .select("id, test_name, subject, score, total_questions, correct_answers, percentile, attempted_at")
+          .select("id, test_id, test_name, subject, score, total_questions, correct_answers, percentile, attempted_at")
           .eq("user_id", user.id)
           .order("attempted_at", { ascending: false }),
         supabase
@@ -111,7 +112,14 @@ export const useDashboardData = (): DashboardData => {
       const accuracyPct = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : null;
 
       // Tests
-      const tests = testsRes.data ?? [];
+      // Only attempts of tests that still exist and are published count (matches the admin report).
+      let tests = testsRes.data ?? [];
+      try {
+        tests = await onlyPublishedAttempts(tests);
+      } catch (e) {
+        console.warn("[dashboard] could not verify published tests; showing all attempts", e);
+      }
+      if (!active) return;
       const testsCompleted = tests.length;
       const percentile = tests.length > 0
         ? Math.round(

@@ -5768,6 +5768,10 @@ export type Database = {
           total_refs: number
         }[]
       }
+      published_test_ids: {
+        Args: { _test_ids: string[] }
+        Returns: { id: string }[]
+      }
       rescore_test: {
         Args: { _note?: string; _test_id: string }
         Returns: Json
