@@ -531,27 +531,29 @@ const DocxCommonImportDialog = ({
 
     try {
       if (target === "test" && targetTestId) {
-        // Mark the test as common-method; pin the resolved option label style so NEET + Auto renders 1/2/3/4.
-        const update: Record<string, unknown> = {
-          import_method: "common",
-          option_label_style: effectiveOptionStyle,
-        };
-        await supabase.from("tests").update(update as any).eq("id", targetTestId);
 
-
-        // Replace mode: importing into a test always replaces every existing
-        // question row in that test instead of appending.
+        // Replace mode: importing into a test replaces its existing questions.
+        //  - Normal tests: delete the old rows, insert the new ones.
+        //  - Tests that students have already attempted: the database forbids deleting their
+        //    questions (answers point at the question ids), so we UPDATE the existing rows in
+        //    place instead (same ids, new text/images/answer key) and append any extras. This is
+        //    what lets an admin repair a past test whose images were lost.
         const { data: existingRows } = await supabase
           .from("test_questions")
-          .select("id")
-          .eq("test_id", targetTestId);
+          .select("id, position, question_type")
+          .eq("test_id", targetTestId)
+          .order("position");
 
+        let inPlace = false;
         if (existingRows && existingRows.length > 0) {
           const { error: delErr } = await supabase
             .from("test_questions")
             .delete()
             .eq("test_id", targetTestId);
-          if (delErr) throw delErr;
+          if (delErr) {
+            if (/already has student attempts/i.test(delErr.message ?? "")) inPlace = true;
+            else throw delErr;
+          }
 
           // NOTE: the old images are deliberately NOT deleted from storage.
           // Duplicated tests, the question bank mirror, and earlier imports all
@@ -560,7 +562,9 @@ const DocxCommonImportDialog = ({
           // that shared them — including a live exam (Nov 1 2026). Orphaned
           // files only cost storage; a missing image costs a whole exam.
 
-          toast.info(`Replaced ${existingRows.length} existing question${existingRows.length === 1 ? "" : "s"} in this test.`);
+          if (!inPlace) {
+            toast.info(`Replaced ${existingRows.length} existing question${existingRows.length === 1 ? "" : "s"} in this test.`);
+          }
         }
 
         const startPos = 0;
@@ -580,9 +584,83 @@ const DocxCommonImportDialog = ({
           };
         });
 
-        insertAttempted = true;
-        const { error: insErr } = await supabase.from("test_questions").insert(rows as any);
-        if (insErr) throw insErr;
+        // Pre-flight for in-place mode — BEFORE anything on the live test is modified.
+        if (inPlace) {
+          const oldRows = existingRows ?? [];
+          if (rows.length < oldRows.length) {
+            throw new Error(
+              `This test already has student attempts, so its ${oldRows.length} questions can't be removed. The uploaded paper has only ${rows.length} questions — upload a paper with at least ${oldRows.length}.`,
+            );
+          }
+          // Wrong-file guard: students' answers stay attached to question ids, so a different
+          // paper would silently re-score everyone against unrelated questions. A repaired copy
+          // of the same paper keeps its question types; refuse if many positions differ.
+          const typeMismatches = oldRows.filter((o, i) => o.question_type && o.question_type !== rows[i].question_type).length;
+          if (oldRows.length > 0 && typeMismatches / oldRows.length > 0.1) {
+            throw new Error(
+              `This doesn't look like the paper originally uploaded to this test: ${typeMismatches} of ${oldRows.length} questions have a different type (MCQ/numerical). Students already attempted this test, so only a corrected copy of the same paper can be uploaded.`,
+            );
+          }
+        }
+
+        // Mark the test as common-method; pin the resolved option label style so NEET + Auto renders 1/2/3/4.
+        // (Done only after the pre-flight above, so a refused import never touches the live test.)
+        {
+          const update: Record<string, unknown> = {
+            import_method: "common",
+            option_label_style: effectiveOptionStyle,
+          };
+          await supabase.from("tests").update(update as any).eq("id", targetTestId);
+        }
+
+        if (inPlace) {
+          const oldRows = existingRows ?? [];
+          insertAttempted = true; // rows now reference this batch's images: never clean them up
+          // Update the existing rows in place, a few at a time (not 80 at once — that is what
+          // saturated the API on Nov 2).
+          const CHUNK = 5;
+          for (let i = 0; i < oldRows.length; i += CHUNK) {
+            const results = await Promise.all(
+              oldRows.slice(i, i + CHUNK).map((old, j) => {
+                const { test_id: _t, ...fields } = rows[i + j];
+                // Same end state as delete + insert: reset every scoring/answer-key column the
+                // importer owns so nothing stale (old range, tolerance, multi-answer keys,
+                // solution, explanation) survives onto the new question. is_bonus is kept on
+                // purpose: it is a deliberate admin decision (logged) about that question slot.
+                const fresh = {
+                  ...fields,
+                  answer_range_min: null,
+                  answer_range_max: null,
+                  tolerance: null,
+                  numerical_answers: null,
+                  answer_count: 1,
+                  answer_match_mode: "all",
+                  answer_order_matters: false,
+                  answer_format: null,
+                  stem_image_url: null,
+                  solution_image_url: null,
+                  sub_topic: null,
+                };
+                return supabase.from("test_questions").update(fresh as any).eq("id", old.id).eq("test_id", targetTestId);
+              }),
+            );
+            const firstErr = results.find((r) => r.error)?.error;
+            if (firstErr) throw firstErr;
+          }
+          const extras = rows.slice(oldRows.length);
+          if (extras.length > 0) {
+            const { error: addErr } = await supabase.from("test_questions").insert(extras as any);
+            if (addErr) throw addErr;
+          }
+          toast.info(
+            `This test already has student attempts, so its ${oldRows.length} question${oldRows.length === 1 ? "" : "s"} were updated in place` +
+              (extras.length ? ` and ${extras.length} new one${extras.length === 1 ? " was" : "s were"} added.` : "."),
+          );
+        } else {
+          insertAttempted = true;
+          const { error: insErr } = await supabase.from("test_questions").insert(rows as any);
+          if (insErr) throw insErr;
+        }
 
         // Verify rows actually landed
         const { count, error: cntErr } = await supabase
@@ -597,6 +675,20 @@ const DocxCommonImportDialog = ({
 
         okCount = rows.length;
         await syncTestStats(targetTestId);
+        if (inPlace) {
+          // Marks/answer key may have changed (the pending-rescore trigger does not watch marks),
+          // so re-score the already-submitted attempts against the updated questions.
+          const { data: rs, error: rsErr } = await supabase.rpc("rescore_test", {
+            _test_id: targetTestId,
+            _note: "paper re-imported in place",
+          });
+          if (rsErr) {
+            toast.warning(`Questions updated, but re-scoring submitted attempts failed: ${rsErr.message}. Open the test and press Save to retry.`);
+          } else {
+            const r = rs as { rescored?: number } | null;
+            toast.success(`Re-scored ${r?.rescored ?? 0} submitted attempt(s) against the updated questions.`);
+          }
+        }
 
         // Also mirror into the Question Bank so imported papers are reusable
         // across tests, matching the Master-method import's behavior.
@@ -1252,7 +1344,7 @@ const DocxCommonImportDialog = ({
           <div className="border-t border-border p-3 flex items-center justify-between gap-2">
             <p className="text-[11px] text-muted-foreground">
               {target === "test"
-                ? "This replaces all existing questions (and images) in the target test."
+                ? "This replaces all existing questions (and images) in the target test. If students already attempted it, questions are updated in place (the new paper needs at least as many questions)."
                 : "Tip: type detection follows the answer cell. Override per question above."}
             </p>
             <div className="flex gap-2">

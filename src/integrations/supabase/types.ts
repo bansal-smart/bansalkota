@@ -5768,6 +5768,14 @@ export type Database = {
           total_refs: number
         }[]
       }
+      rescore_test: {
+        Args: { _note?: string; _test_id: string }
+        Returns: Json
+      }
+      rescore_test_if_pending: {
+        Args: { _test_id: string }
+        Returns: Json
+      }
       admin_save_test_questions: {
         Args: { _rows: Json; _test_id: string }
         Returns: Json
