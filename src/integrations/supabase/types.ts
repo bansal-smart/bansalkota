@@ -3141,6 +3141,7 @@ export type Database = {
           gateway: string
           id: string
           metadata: Json | null
+          order_ref: string | null
           plan: string | null
           refunded_at: string | null
           status: string
@@ -3156,6 +3157,7 @@ export type Database = {
           gateway?: string
           id?: string
           metadata?: Json | null
+          order_ref?: string | null
           plan?: string | null
           refunded_at?: string | null
           status?: string
@@ -3171,6 +3173,7 @@ export type Database = {
           gateway?: string
           id?: string
           metadata?: Json | null
+          order_ref?: string | null
           plan?: string | null
           refunded_at?: string | null
           status?: string

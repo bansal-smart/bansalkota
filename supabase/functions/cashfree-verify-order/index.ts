@@ -1,6 +1,7 @@
 // Cashfree: verify order status from server (used by return page)
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { describeOrder, mapCashfreeStatus, recordPayment } from "../_shared/record-payment.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -45,6 +46,24 @@ Deno.serve(async (req) => {
       if (payments.some((p) => p.payment_status === "SUCCESS")) resolved = "paid";
       else if (payments.some((p) => p.payment_status === "USER_DROPPED")) resolved = "cancelled";
       else if (payments.length && payments.every((p) => p.payment_status === "FAILED")) resolved = "failed";
+    }
+
+    // Safety net if the webhook was missed/delayed: make sure every attempt is in the ledger.
+    if (Array.isArray(payments) && payments.length) {
+      const { studentName, plan } = await describeOrder(admin, order.id, order.user_id);
+      for (const p of payments) {
+        await recordPayment(admin, {
+          orderRef: order.id,
+          externalId: p.cf_payment_id?.toString(),
+          userId: order.user_id,
+          studentName,
+          plan,
+          amount: Number(p.payment_amount ?? order.total),
+          currency: p.payment_currency ?? "INR",
+          status: mapCashfreeStatus(p.payment_status),
+          metadata: { source: "verify", order_id: order.id, payment_method: p.payment_group ?? null },
+        });
+      }
     }
 
     if (resolved === "paid" && order.status !== "paid") {

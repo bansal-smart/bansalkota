@@ -205,7 +205,7 @@ const AdminPaymentsPage = () => {
         <h2 className="text-sm font-bold text-foreground mb-4">Monthly Revenue</h2>
         {monthly.length === 0 ? (
           <p className="py-8 text-center text-xs text-muted-foreground">
-            No revenue data yet — once payment gateways are connected, monthly trends will appear here.
+            No revenue data yet — monthly trends will appear here once payments are received.
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
@@ -247,7 +247,7 @@ const AdminPaymentsPage = () => {
             <CreditCard className="mx-auto h-10 w-10 text-muted-foreground/40" />
             <p className="text-sm font-semibold text-foreground">No transactions yet</p>
             <p className="text-xs text-muted-foreground">
-              Once Razorpay payments are wired in, every successful, failed or refunded charge will land here.
+              Every successful, failed, pending or refunded Cashfree charge from the portal will appear here.
             </p>
           </div>
         ) : (

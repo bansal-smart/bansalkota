@@ -1,6 +1,7 @@
 // Cashfree webhook receiver (signature verified)
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { describeOrder, mapCashfreeStatus, recordPayment } from "../_shared/record-payment.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -58,13 +59,25 @@ Deno.serve(async (req) => {
     const regId = orderId.slice("boost_".length);
     const { data: reg } = await admin
       .from("boost_registrations")
-      .select("id, payment_status")
+      .select("id, payment_status, full_name, amount")
       .eq("id", regId)
       .maybeSingle();
     if (!reg) {
       console.warn("BOOST registration not found", regId);
       return new Response("ok", { status: 200 });
     }
+    const boostLedgerOk = paymentId
+      ? await recordPayment(admin, {
+          orderRef: orderId,
+          externalId: paymentId,
+          studentName: reg.full_name,
+          plan: "BOOST 2026 registration",
+          amount: Number(cfPayment.payment_amount ?? reg.amount),
+          currency: cfPayment.payment_currency ?? "INR",
+          status: mapCashfreeStatus(paymentStatus),
+          metadata: { type, order_id: orderId, payment_method: cfPayment.payment_group ?? null },
+        })
+      : true;
     if (type === "PAYMENT_SUCCESS_WEBHOOK" && paymentStatus === "SUCCESS" && reg.payment_status !== "paid") {
       await admin.from("boost_registrations").update({
         payment_status: "paid",
@@ -80,6 +93,7 @@ Deno.serve(async (req) => {
       }).eq("id", reg.id);
       await admin.from("coupon_redemptions").update({ status: "failed" }).eq("boost_registration_id", reg.id).eq("status", "pending");
     }
+    if (!boostLedgerOk) return new Response("ledger write failed", { status: 500 });
     return new Response("ok", { status: 200, headers: corsHeaders });
   }
 
@@ -92,23 +106,21 @@ Deno.serve(async (req) => {
   }
 
 
-  // Upsert payment row (idempotent on gateway + external_id)
+  // Record in the payments ledger (Super Admin → Payments & Revenue).
+  let ledgerOk = true;
   if (paymentId) {
-    const newStatus =
-      paymentStatus === "SUCCESS" ? "succeeded" :
-      paymentStatus === "FAILED" ? "failed" :
-      paymentStatus === "USER_DROPPED" ? "cancelled" :
-      "pending";
-
-    await admin.from("payments").upsert({
-      user_id: order.user_id,
-      amount: cfPayment.payment_amount ?? order.total,
+    const { studentName, plan } = await describeOrder(admin, order.id, order.user_id);
+    ledgerOk = await recordPayment(admin, {
+      orderRef: order.id,
+      externalId: paymentId,
+      userId: order.user_id,
+      studentName,
+      plan,
+      amount: Number(cfPayment.payment_amount ?? order.total),
       currency: cfPayment.payment_currency ?? order.currency,
-      gateway: "cashfree",
-      external_id: paymentId,
-      status: newStatus,
-      metadata: { type, order_id: orderId, payload: data },
-    }, { onConflict: "gateway,external_id" });
+      status: mapCashfreeStatus(paymentStatus),
+      metadata: { type, order_id: orderId, payment_method: cfPayment.payment_group ?? null },
+    });
   }
 
   // Handle success
@@ -185,5 +197,7 @@ Deno.serve(async (req) => {
     }).eq("payment_order_id", order.id).neq("payment_status", "paid");
   }
 
+  // Ledger write failed: answer 500 so Cashfree retries (everything above is idempotent).
+  if (!ledgerOk) return new Response("ledger write failed", { status: 500 });
   return new Response("ok", { status: 200, headers: corsHeaders });
 });

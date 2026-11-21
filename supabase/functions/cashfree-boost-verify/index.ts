@@ -1,6 +1,7 @@
 // Verify a BOOST registration payment by polling latest status (no auth)
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { mapCashfreeStatus, recordPayment } from "../_shared/record-payment.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -40,6 +41,31 @@ Deno.serve(async (req) => {
     });
     const cf = await cfRes.json();
     const cfStatus: string = cf?.order_status || "";
+
+    // Safety net if the webhook was missed: record each payment attempt in the ledger.
+    try {
+      const pr = await fetch(`${CF_BASE}/orders/${cfOrderId}/payments`, {
+        headers: { "x-api-version": CF_API_VERSION, "x-client-id": APP_ID, "x-client-secret": SECRET },
+      });
+      const attempts = await pr.json();
+      if (Array.isArray(attempts)) {
+        const { data: full } = await admin.from("boost_registrations").select("full_name").eq("id", reg.id).maybeSingle();
+        for (const p of attempts) {
+          await recordPayment(admin, {
+            orderRef: cfOrderId,
+            externalId: p.cf_payment_id?.toString(),
+            studentName: full?.full_name ?? null,
+            plan: "BOOST 2026 registration",
+            amount: Number(p.payment_amount ?? reg.amount),
+            currency: p.payment_currency ?? "INR",
+            status: mapCashfreeStatus(p.payment_status),
+            metadata: { source: "verify", order_id: cfOrderId, payment_method: p.payment_group ?? null },
+          });
+        }
+      }
+    } catch (e) {
+      console.error("boost ledger sync failed (non-fatal)", e);
+    }
 
     let newStatus = reg.payment_status;
     if (cfStatus === "PAID") newStatus = "paid";
